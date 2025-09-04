@@ -466,25 +466,84 @@ export default function WindTreDashboard() {
                     boxShadow: 'none'
                   }}
                   onMouseOver={(e) => {
-                    if (leftSidebarCollapsed && !isActive) {
-                      e.currentTarget.style.color = '#FF6900';
-                      e.currentTarget.style.transform = 'scale(1.1)';
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.transform = leftSidebarCollapsed ? 'scale(1.1)' : 'translateX(4px)';
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (leftSidebarCollapsed && !isActive) {
+                    if (!isActive) {
                       e.currentTarget.style.color = '#374151';
-                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.transform = 'scale(1) translateX(0)';
                     }
                   }}
                 >
-                  <Icon size={leftSidebarCollapsed && !isMobile ? 30 : (isMobile ? 16 : 20)} />
+                  {/* Icon con effetti speciali per dashboard */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}>
+                    <Icon size={leftSidebarCollapsed && !isMobile ? 30 : (isMobile ? 16 : 20)} />
+                    {isActive && (
+                      <>
+                        {/* Glow effect base */}
+                        <div style={{
+                          position: 'absolute',
+                          inset: '-6px',
+                          background: 'rgba(255, 105, 0, 0.4)',
+                          borderRadius: '50%',
+                          filter: 'blur(12px)',
+                          zIndex: -1,
+                          animation: leftSidebarCollapsed ? 'none' : 'dashboardPulse 2s ease-in-out infinite'
+                        }} />
+                        {/* Enhanced glow quando aperta */}
+                        {!leftSidebarCollapsed && (
+                          <div style={{
+                            position: 'absolute',
+                            inset: '-10px',
+                            background: 'rgba(255, 105, 0, 0.2)',
+                            borderRadius: '50%',
+                            filter: 'blur(20px)',
+                            zIndex: -2,
+                            animation: 'dashboardGlow 3s ease-in-out infinite alternate'
+                          }} />
+                        )}
+                      </>
+                    )}
+                  </div>
                   {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
             })}
           </nav>
         </aside>
+
+        {/* CSS Animations per effetti dashboard */}
+        <style>{`
+          @keyframes dashboardPulse {
+            0%, 100% { 
+              opacity: 0.4;
+              transform: scale(1);
+            }
+            50% { 
+              opacity: 0.7;
+              transform: scale(1.1);
+            }
+          }
+          
+          @keyframes dashboardGlow {
+            0% { 
+              opacity: 0.2;
+              transform: scale(0.8);
+            }
+            100% { 
+              opacity: 0.4;
+              transform: scale(1.2);
+            }
+          }
+        `}</style>
 
         {/* Main Content - Responsive */}
         <main style={{
