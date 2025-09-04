@@ -51,16 +51,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(' ')[1];
     
-    // For development, return mock user if we have any auth attempt
-    const mockUser = {
-      id: 'admin-user', 
-      email: 'admin@w3suite.com',
-      firstName: 'Admin',
-      lastName: 'User',
-      tenantId: 'demo-tenant'
-    };
+    if (!token) {
+      return res.status(401).json({ message: "Non autenticato" });
+    }
     
-    res.json(mockUser);
+    try {
+      // Verify JWT token
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const mockUser = {
+        id: decoded.id || 'admin-user', 
+        email: decoded.email || 'admin@w3suite.com',
+        firstName: 'Admin',
+        lastName: 'User',
+        tenantId: decoded.tenantId || 'demo-tenant'
+      };
+      
+      res.json(mockUser);
+    } catch (error) {
+      return res.status(401).json({ message: "Token non valido" });
+    }
   });
   
   // Setup OAuth2/OIDC authentication

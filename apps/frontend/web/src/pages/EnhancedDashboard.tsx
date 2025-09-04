@@ -242,29 +242,49 @@ export default function EnhancedDashboard() {
           </button>
 
           {/* Profilo utente */}
-          <button style={{
-            background: 'transparent',
-            border: 'none',
-            padding: '8px',
-            cursor: 'pointer',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              background: 'linear-gradient(135deg, #7B2CBF, #9d44c0)',
-              borderRadius: '50%',
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button style={{
+              background: 'transparent',
+              border: 'none',
+              padding: '8px',
+              cursor: 'pointer',
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              gap: '8px'
             }}>
-              <User size={16} style={{ color: 'white' }} />
-            </div>
-            <span style={{ fontSize: '14px', fontWeight: 500 }}>Admin</span>
-          </button>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                background: 'linear-gradient(135deg, #7B2CBF, #9d44c0)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <User size={16} style={{ color: 'white' }} />
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>Admin</span>
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('auth_token');
+                window.location.reload();
+              }}
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                borderRadius: '8px',
+                color: '#ef4444',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
+            >
+              Esci
+            </button>
+          </div>
         </div>
       </header>
 

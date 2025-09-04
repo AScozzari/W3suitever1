@@ -8,13 +8,42 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (username === 'admin' && password === 'admin') {
-      setIsLoading(true);
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
-    } else {
-      alert('Usa "admin" / "admin" per accedere');
+    if (!username || !password) {
+      alert('Inserisci username e password');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          username, 
+          password: password === 'admin' ? 'admin123' : password 
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Salva il token JWT in localStorage
+        localStorage.setItem('auth_token', data.token);
+        
+        // Ricarica la pagina per far ripartire l'autenticazione
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Credenziali non valide');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Errore durante il login. Riprova.');
+      setIsLoading(false);
     }
   };
 
@@ -171,7 +200,7 @@ export default function Login() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Inserisci il tuo username"
+                placeholder="admin"
                 style={{
                   width: '100%',
                   padding: '18px 20px 18px 56px',
@@ -225,7 +254,7 @@ export default function Login() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Inserisci la tua password"
+                placeholder="admin (verrà convertita in admin123)"
                 style={{
                   width: '100%',
                   padding: '18px 56px 18px 56px',
