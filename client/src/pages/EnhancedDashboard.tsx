@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "../contexts/ThemeContext";
-import DashboardModule from "../modules/DashboardModule";
-import POSModule from "../modules/POSModule";
-import InventoryModule from "../modules/InventoryModule";
-import CRMModule from "../modules/CRMModule";
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -21,366 +17,369 @@ import {
   TrendingDown,
   DollarSign,
   ShoppingCart,
-  Activity
+  Activity,
+  Plus,
+  Download,
+  Filter,
+  User,
+  Phone,
+  Wifi,
+  Zap,
+  Clock,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'pos', label: 'POS / Cassa', icon: CreditCard },
-  { id: 'inventory', label: 'Magazzino', icon: Package },
-  { id: 'crm', label: 'CRM', icon: Users },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'settings', label: 'Impostazioni', icon: Settings },
-];
-
-const notifications = [
-  { id: 1, type: 'lead', title: 'Nuovo Lead', message: 'Mario Rossi ha richiesto info', time: '2 min fa', unread: true },
-  { id: 2, type: 'sale', title: 'Vendita Completata', message: '€1,250 - Order #3847', time: '15 min fa', unread: true },
-  { id: 3, type: 'task', title: 'Task Scaduto', message: 'Review contratto cliente', time: '1 ora fa', unread: false },
-];
-
-const upcomingEvents = [
-  { id: 1, title: 'Meeting Cliente ABC', time: '10:00', date: 'Oggi', type: 'meeting' },
-  { id: 2, title: 'Call Fornitore', time: '14:30', date: 'Oggi', type: 'call' },
-  { id: 3, title: 'Demo Prodotto', time: '11:00', date: 'Domani', type: 'demo' },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/' },
+  { id: 'clienti', label: 'Clienti', icon: Users, href: '/clienti' },
+  { id: 'contratti', label: 'Contratti', icon: Package, href: '/contratti' },
+  { id: 'fatturazione', label: 'Fatturazione', icon: CreditCard, href: '/fatturazione' },
+  { id: 'hr', label: 'Human Resources', icon: Users, href: '/hr' },
+  { id: 'amministrazione', label: 'Amministrazione', icon: Settings, href: '/amministrazione' },
+  { id: 'cassa', label: 'Cassa', icon: CreditCard, href: '/cassa' },
+  { id: 'ai', label: 'AI Tools', icon: Zap, href: '/ai' },
+  { id: 'impostazioni', label: 'Impostazioni', icon: Settings, href: '/impostazioni' },
 ];
 
 const tasks = [
-  { id: 1, title: 'Completare report vendite', priority: 'high', status: 'in-progress', due: 'Oggi' },
-  { id: 2, title: 'Aggiornare inventario', priority: 'medium', status: 'pending', due: 'Domani' },
-  { id: 3, title: 'Contattare nuovi lead', priority: 'high', status: 'pending', due: 'Oggi' },
+  { 
+    id: 1, 
+    title: 'Follow-up cliente Premium', 
+    description: 'Chiamare Mario Rossi per rinnovo contratto Enterprise',
+    priority: 'high',
+    time: '15:00'
+  },
+  { 
+    id: 2, 
+    title: 'Preparare documentazione', 
+    description: 'Contratto fibra ottica per Laura Bianchi',
+    priority: 'medium',
+    time: '16:00'
+  },
+  { 
+    id: 3, 
+    title: 'Verifica pagamento', 
+    description: 'Contratto fattura cliente Giuseppe Verdi',
+    priority: 'low',
+    time: '17:30'
+  },
+  { 
+    id: 4, 
+    title: 'Attivazione servizi', 
+    description: 'Nuovo contratto mobile SG - fibra',
+    priority: 'high',
+    time: '18:00'
+  },
 ];
 
+const stats = [
+  {
+    title: 'Clienti Attivi',
+    value: '12,483',
+    description: 'Utenti registrati',
+    trend: 'up' as const,
+    trendValue: '+12.5%',
+    icon: Users,
+    variant: 'orange' as const,
+  },
+  {
+    title: 'Linee Mobile',
+    value: '8,927',
+    description: 'Contratti attivi',
+    trend: 'up' as const,
+    trendValue: '+8.2%',
+    icon: Phone,
+    variant: 'purple' as const,
+  },
+  {
+    title: 'Connessioni Fibra',
+    value: '3,556',
+    description: 'Installazioni attive',
+    trend: 'stable' as const,
+    trendValue: '+2.1%',
+    icon: Wifi,
+    variant: 'success' as const,
+  },
+  {
+    title: 'Servizi Energia',
+    value: '1,284',
+    description: 'Forniture attive',
+    trend: 'up' as const,
+    trendValue: '+24.3%',
+    icon: Zap,
+    variant: 'warning' as const,
+  },
+];
+
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'high': return '#ef4444';
+    case 'medium': return '#f59e0b';
+    case 'low': return '#6b7280';
+    default: return '#6b7280';
+  }
+};
+
+const getPriorityLabel = (priority: string) => {
+  switch (priority) {
+    case 'high': return 'Alta';
+    case 'medium': return 'Media';
+    case 'low': return 'Bassa';
+    default: return 'Normale';
+  }
+};
+
 export default function EnhancedDashboard() {
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
   const [currentModule, setCurrentModule] = useState('dashboard');
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
-  const [leftSidebarHovered, setLeftSidebarHovered] = useState(false);
-  const [rightSidebarHovered, setRightSidebarHovered] = useState(false);
-  const { theme, setTheme, currentTheme } = useTheme();
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
+  const { data: dashboardStats } = useQuery({ queryKey: ["/api/dashboard/stats"] });
 
-  const renderModule = () => {
-    switch (currentModule) {
-      case 'dashboard':
-        return <DashboardModule />;
-      case 'pos':
-        return <POSModule />;
-      case 'inventory':
-        return <InventoryModule />;
-      case 'crm':
-        return <CRMModule />;
-      default:
-        return <div style={{ padding: '24px' }}>
-          <h2 style={{ color: currentTheme === 'dark' ? 'white' : '#1f2937' }}>
-            Modulo {currentModule} in sviluppo...
-          </h2>
-        </div>;
-    }
-  };
-
-  const getColors = () => ({
-    bg: currentTheme === 'dark' 
-      ? 'linear-gradient(180deg, #0a0a1e 0%, #1a0033 100%)'
-      : 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
-    headerBg: currentTheme === 'dark'
-      ? 'rgba(0, 0, 0, 0.2)'
-      : 'rgba(255, 255, 255, 0.2)',
-    sidebarBg: currentTheme === 'dark'
-      ? 'rgba(0, 0, 0, 0.4)'
-      : 'rgba(255, 255, 255, 0.4)',
-    cardBg: currentTheme === 'dark'
-      ? 'rgba(255, 255, 255, 0.05)'
-      : 'rgba(0, 0, 0, 0.05)',
-    border: currentTheme === 'dark'
-      ? 'rgba(255, 255, 255, 0.1)'
-      : 'rgba(0, 0, 0, 0.1)',
-    text: currentTheme === 'dark' ? 'white' : '#1f2937',
-    textSecondary: currentTheme === 'dark' 
-      ? 'rgba(255, 255, 255, 0.7)'
-      : 'rgba(31, 41, 55, 0.7)',
-    textMuted: currentTheme === 'dark'
-      ? 'rgba(255, 255, 255, 0.5)'
-      : 'rgba(31, 41, 55, 0.5)',
-  });
-
-  const colors = getColors();
+  const isMobile = window.innerWidth < 768;
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: colors.bg,
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))',
       fontFamily: 'Inter, system-ui, sans-serif',
-      position: 'relative',
+      position: 'relative'
     }}>
-      {/* Header - Sopra tutto */}
+      {/* Header fisso */}
       <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
-        width: '100%',
-        height: '60px',
-        background: colors.headerBg,
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${colors.border}`,
-        zIndex: 1000, // Header sopra tutto
+        height: '64px',
+        background: 'hsla(0, 0%, 100%, 0.35)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid hsla(0, 0%, 100%, 0.18)',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 20px',
-        justifyContent: 'space-between',
+        justifyContent: 'between',
+        padding: '0 24px',
+        zIndex: 50
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          {/* Toggle Left Sidebar */}
-          <button
-            onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
-            style={{
-              background: colors.cardBg,
-              border: `1px solid ${colors.border}`,
-              borderRadius: '8px',
-              padding: '8px',
-              color: colors.text,
-              cursor: 'pointer',
-              fontSize: '18px',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Menu size={18} style={{ color: colors.text }} />
+        {/* Logo e Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>W</span>
+          </div>
+          <div>
+            <h1 style={{ fontSize: '18px', fontWeight: 'bold', color: '#FF6900', margin: 0, lineHeight: 1 }}>WindTre Suite</h1>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: 1 }}>Multitenant Dashboard</p>
+          </div>
+        </div>
+
+        {/* Barra di ricerca centrale */}
+        <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={16} style={{ 
+              position: 'absolute', 
+              left: '12px', 
+              top: '50%', 
+              transform: 'translateY(-50%)', 
+              color: '#6b7280' 
+            }} />
+            <input
+              placeholder="Cerca clienti, contratti, fatture..."
+              style={{
+                width: '100%',
+                padding: '8px 12px 8px 40px',
+                background: 'hsla(0, 0%, 100%, 0.25)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Sezione destra */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Windtre Milano */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+            <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
+            <span style={{ fontWeight: 500 }}>Windtre Milano</span>
+          </div>
+
+          {/* Notifiche */}
+          <button style={{
+            position: 'relative',
+            background: 'transparent',
+            border: 'none',
+            padding: '8px',
+            cursor: 'pointer',
+            borderRadius: '8px'
+          }}>
+            <Bell size={20} />
+            <span style={{
+              position: 'absolute',
+              top: '4px',
+              right: '4px',
+              width: '20px',
+              height: '20px',
+              background: '#FF6900',
+              color: 'white',
+              borderRadius: '50%',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>3</span>
           </button>
-          
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+          {/* Profilo utente */}
+          <button style={{
+            background: 'transparent',
+            border: 'none',
+            padding: '8px',
+            cursor: 'pointer',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
             <div style={{
-              width: '36px',
-              height: '36px',
-              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              borderRadius: '8px',
+              width: '32px',
+              height: '32px',
+              background: 'linear-gradient(135deg, #7B2CBF, #9d44c0)',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <span style={{ color: 'white', fontWeight: 'bold' }}>W3</span>
+              <User size={16} style={{ color: 'white' }} />
             </div>
-            <span style={{ color: colors.text, fontSize: '18px', fontWeight: '600' }}>
-              W3 Suite Enterprise
-            </span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Search */}
-          <div style={{
-            position: 'relative',
-            background: colors.cardBg,
-            borderRadius: '8px',
-            border: `1px solid ${colors.border}`,
-            padding: '8px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            minWidth: '250px'
-          }}>
-            <span style={{ color: colors.textMuted }}>🔍</span>
-            <input
-              type="text"
-              placeholder="Cerca..."
-              style={{
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: colors.text,
-                width: '100%'
-              }}
-            />
-          </div>
-
-          {/* Theme Switcher */}
-          <div style={{
-            display: 'flex',
-            gap: '4px',
-            background: colors.cardBg,
-            borderRadius: '8px',
-            padding: '4px',
-            border: `1px solid ${colors.border}`
-          }}>
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setTheme('light')}
-              style={{
-                padding: '6px 10px',
-                background: theme === 'light' ? '#FF6900' : 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: theme === 'light' ? 'white' : colors.text,
-                cursor: 'pointer',
-                fontSize: '16px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              ☀️
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              style={{
-                padding: '6px 10px',
-                background: theme === 'dark' ? '#FF6900' : 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: theme === 'dark' ? 'white' : colors.text,
-                cursor: 'pointer',
-                fontSize: '16px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🌙
-            </button>
-            <button
-              onClick={() => setTheme('auto')}
-              style={{
-                padding: '6px 10px',
-                background: theme === 'auto' ? '#FF6900' : 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: theme === 'auto' ? 'white' : colors.text,
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Auto
-            </button>
-          </div>
-
-          {/* Toggle Right Sidebar */}
-          <button
-            onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
-            style={{
-              background: colors.cardBg,
-              border: `1px solid ${colors.border}`,
-              borderRadius: '8px',
-              padding: '8px',
-              color: colors.text,
-              cursor: 'pointer',
-              fontSize: '18px',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <CheckSquare size={18} style={{ color: colors.text }} />
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>Admin</span>
           </button>
         </div>
       </header>
 
-      <div style={{ 
-        display: 'flex', 
-        paddingTop: '60px',
-        minHeight: '100vh'
-      }}>
-        {/* Left Sidebar - Menu */}
-        <aside
-          onMouseEnter={() => setLeftSidebarHovered(true)}
-          onMouseLeave={() => setLeftSidebarHovered(false)}
-          style={{
-            width: leftSidebarOpen || leftSidebarHovered ? '260px' : '70px',
-            background: colors.sidebarBg,
-            backdropFilter: 'blur(20px)',
-            borderRight: `1px solid ${colors.border}`,
-            transition: 'width 0.3s ease',
-            position: 'fixed',
-            top: '60px',
-            bottom: 0,
-            left: 0,
-            zIndex: 100,
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-          }}>
-          
-          {/* Menu Items */}
-          <nav style={{ padding: '16px 12px', flex: 1 }}>
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setCurrentModule(item.id)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  marginBottom: '8px',
-                  background: currentModule === item.id
-                    ? 'linear-gradient(135deg, rgba(255, 105, 0, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%)'
-                    : 'transparent',
-                  border: currentModule === item.id
-                    ? '1px solid rgba(255, 105, 0, 0.3)'
-                    : '1px solid transparent',
-                  borderRadius: '12px',
-                  color: colors.text,
-                  fontSize: '15px',
-                  fontWeight: currentModule === item.id ? '600' : '400',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  textAlign: 'left',
-                  overflow: 'hidden'
-                }}
-                onMouseOver={(e) => {
-                  if (currentModule !== item.id) {
-                    e.currentTarget.style.background = colors.cardBg;
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (currentModule !== item.id) {
-                    e.currentTarget.style.background = 'transparent';
-                  }
-                }}
-              >
-                {item.id === 'dashboard' && <LayoutDashboard size={20} style={{ flexShrink: 0, color: colors.text }} />}
-                {item.id === 'pos' && <CreditCard size={20} style={{ flexShrink: 0, color: colors.text }} />}
-                {item.id === 'inventory' && <Package size={20} style={{ flexShrink: 0, color: colors.text }} />}
-                {item.id === 'crm' && <Users size={20} style={{ flexShrink: 0, color: colors.text }} />}
-                {item.id === 'reports' && <BarChart3 size={20} style={{ flexShrink: 0, color: colors.text }} />}
-                {item.id === 'settings' && <Settings size={20} style={{ flexShrink: 0, color: colors.text }} />}
-                {(leftSidebarOpen || leftSidebarHovered) && (
-                  <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {/* User Section */}
-          {(leftSidebarOpen || leftSidebarHovered) && (
-            <div style={{
-              padding: '16px',
-              borderTop: `1px solid ${colors.border}`
-            }}>
-              <div style={{
+      {/* Layout principale */}
+      <div style={{ display: 'flex', paddingTop: '64px' }}>
+        {/* Sidebar sinistra */}
+        <aside style={{
+          position: 'fixed',
+          left: 0,
+          top: '64px',
+          height: 'calc(100vh - 64px)',
+          width: leftSidebarCollapsed ? '64px' : '256px',
+          background: 'hsla(0, 0%, 100%, 0.35)',
+          backdropFilter: 'blur(16px)',
+          borderRight: '1px solid hsla(0, 0%, 100%, 0.18)',
+          transition: 'all 0.3s ease',
+          zIndex: 40,
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Toggle Button */}
+          <div style={{ position: 'absolute', right: '-12px', top: '24px', zIndex: 50 }}>
+            <button
+              onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+              style={{
+                width: '24px',
+                height: '24px',
+                background: 'hsla(0, 0%, 100%, 0.35)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                borderRadius: '50%',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                marginBottom: '12px'
+                justifyContent: 'center'
+              }}
+            >
+              {leftSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+            </button>
+          </div>
+
+          {/* Menu Items */}
+          <nav style={{ padding: '16px', flexGrow: 1 }}>
+            {menuItems.map((item) => {
+              const isActive = currentModule === item.id;
+              const Icon = item.icon;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentModule(item.id)}
+                  style={{
+                    width: '100%',
+                    padding: leftSidebarCollapsed ? '12px' : '12px 16px',
+                    marginBottom: '8px',
+                    background: isActive 
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
+                      : 'transparent',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: isActive ? 'white' : '#374151',
+                    fontSize: '14px',
+                    fontWeight: isActive ? 600 : 400,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left',
+                    justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'hsla(18, 100%, 50%, 0.1)';
+                      e.currentTarget.style.color = '#FF6900';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#374151';
+                    }
+                  }}
+                >
+                  <Icon size={20} style={{ flexShrink: 0 }} />
+                  {!leftSidebarCollapsed && <span>{item.label}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* User section */}
+          {!leftSidebarCollapsed && (
+            <div style={{ padding: '16px', borderTop: '1px solid hsla(0, 0%, 100%, 0.18)' }}>
+              <div style={{
+                background: 'hsla(0, 0%, 100%, 0.25)',
+                borderRadius: '8px',
+                padding: '12px'
               }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>
-                    {(user as any)?.firstName?.[0] || 'A'}{(user as any)?.lastName?.[0] || 'U'}
-                  </span>
-                </div>
-                <div>
-                  <p style={{ color: colors.text, fontSize: '14px', fontWeight: '500', margin: 0 }}>
-                    {(user as any)?.firstName || 'Admin'} {(user as any)?.lastName || 'User'}
-                  </p>
-                  <p style={{ color: colors.textMuted, fontSize: '12px', margin: 0 }}>
-                    {(user as any)?.email || 'admin@w3suite.com'}
-                  </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    background: 'linear-gradient(135deg, #7B2CBF, #9d44c0)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <span style={{ color: 'white', fontWeight: 600, fontSize: '14px' }}>AU</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '14px', fontWeight: 500, margin: 0 }}>Admin User</p>
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>Tenant: Corporate</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -390,283 +389,535 @@ export default function EnhancedDashboard() {
         {/* Main Content */}
         <main style={{
           flex: 1,
-          marginLeft: leftSidebarOpen || leftSidebarHovered ? '260px' : '70px',
-          marginRight: rightSidebarOpen || rightSidebarHovered ? '320px' : '70px',
-          transition: 'all 0.3s ease',
-          padding: '24px'
+          marginLeft: leftSidebarCollapsed ? '64px' : '256px',
+          marginRight: !isMobile && !workspaceCollapsed ? '320px' : (!isMobile ? '64px' : '0'),
+          padding: '24px',
+          transition: 'all 0.3s ease'
         }}>
-          {renderModule()}
-        </main>
-
-        {/* Right Sidebar - Workspace */}
-        <aside
-          onMouseEnter={() => setRightSidebarHovered(true)}
-          onMouseLeave={() => setRightSidebarHovered(false)}
-          style={{
-            width: rightSidebarOpen || rightSidebarHovered ? '320px' : '70px',
-            background: colors.sidebarBg,
-            backdropFilter: 'blur(20px)',
-            borderLeft: `1px solid ${colors.border}`,
-            transition: 'width 0.3s ease',
-            position: 'fixed',
-            top: '60px',
-            bottom: 0,
-            right: 0,
-            zIndex: 100,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column'
+          {/* Hero Section */}
+          <div style={{
+            marginBottom: '32px',
+            overflow: 'hidden',
+            borderRadius: '16px',
+            position: 'relative'
           }}>
-          
-          {(rightSidebarOpen || rightSidebarHovered) ? (
-            <>
-              {/* Notifications */}
-              <div style={{ padding: '20px', borderBottom: `1px solid ${colors.border}` }}>
-                <h3 style={{ 
-                  color: colors.text, 
-                  fontSize: '16px', 
-                  fontWeight: '600', 
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Bell size={16} style={{ color: '#FF6900' }} />
-                    Notifiche
-                  </span>
-                  <span style={{
-                    background: '#FF6900',
-                    color: 'white',
-                    borderRadius: '12px',
-                    padding: '2px 8px',
-                    fontSize: '12px'
-                  }}>
-                    {notifications.filter(n => n.unread).length}
-                  </span>
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {notifications.slice(0, 3).map((notif) => (
-                    <div
-                      key={notif.id}
-                      style={{
-                        background: notif.unread ? colors.cardBg : 'transparent',
-                        borderRadius: '8px',
-                        padding: '12px',
-                        border: `1px solid ${colors.border}`,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = currentTheme === 'dark'
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.08)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = notif.unread ? colors.cardBg : 'transparent';
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ color: colors.text, fontSize: '14px', fontWeight: '500' }}>
-                          {notif.title}
-                        </span>
-                        {notif.unread && (
-                          <span style={{
-                            width: '8px',
-                            height: '8px',
-                            background: '#FF6900',
-                            borderRadius: '50%'
-                          }}></span>
-                        )}
-                      </div>
-                      <p style={{ color: colors.textSecondary, fontSize: '13px', margin: '0 0 4px 0' }}>
-                        {notif.message}
-                      </p>
-                      <p style={{ color: colors.textMuted, fontSize: '11px', margin: 0 }}>
-                        {notif.time}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Calendar */}
-              <div style={{ padding: '20px', borderBottom: `1px solid ${colors.border}` }}>
-                <h3 style={{ 
-                  color: colors.text, 
-                  fontSize: '16px', 
-                  fontWeight: '600', 
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <Calendar size={16} style={{ color: '#FF6900' }} />
-                  Prossimi Eventi
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {upcomingEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      style={{
-                        background: colors.cardBg,
-                        borderRadius: '8px',
-                        padding: '12px',
-                        border: `1px solid ${colors.border}`,
-                        display: 'flex',
-                        gap: '12px',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%)',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '18px'
-                      }}>
-                        {event.type === 'meeting' ? <Users size={18} style={{ color: '#FF6900' }} /> : 
-                         event.type === 'call' ? <Bell size={18} style={{ color: '#FF6900' }} /> : 
-                         <Activity size={18} style={{ color: '#FF6900' }} />}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ color: colors.text, fontSize: '14px', fontWeight: '500', margin: 0 }}>
-                          {event.title}
-                        </p>
-                        <p style={{ color: colors.textMuted, fontSize: '12px', margin: '2px 0 0 0' }}>
-                          {event.date} • {event.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tasks */}
-              <div style={{ padding: '20px', flex: 1 }}>
-                <h3 style={{ 
-                  color: colors.text, 
-                  fontSize: '16px', 
-                  fontWeight: '600', 
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <CheckSquare size={16} style={{ color: '#FF6900' }} />
-                  Task Attivi
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      style={{
-                        background: colors.cardBg,
-                        borderRadius: '8px',
-                        padding: '12px',
-                        border: `1px solid ${colors.border}`
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ color: colors.text, fontSize: '14px', fontWeight: '500' }}>
-                          {task.title}
-                        </span>
-                        <span style={{
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          background: task.priority === 'high' 
-                            ? 'rgba(239, 68, 68, 0.2)' 
-                            : 'rgba(251, 191, 36, 0.2)',
-                          color: task.priority === 'high' ? '#ef4444' : '#fbbf24'
-                        }}>
-                          {task.priority === 'high' ? 'Alta' : 'Media'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{
-                          color: colors.textMuted,
-                          fontSize: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          📆 {task.due}
-                        </span>
-                        <span style={{
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          background: task.status === 'in-progress'
-                            ? 'rgba(59, 130, 246, 0.2)'
-                            : 'rgba(156, 163, 175, 0.2)',
-                          color: task.status === 'in-progress' ? '#3b82f6' : '#9ca3af'
-                        }}>
-                          {task.status === 'in-progress' ? 'In corso' : 'In attesa'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : (
             <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: '20px 10px',
-              gap: '20px'
+              height: '192px',
+              background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+              position: 'relative'
             }}>
               <div style={{
-                background: notifications.filter(n => n.unread).length > 0 ? '#FF6900' : colors.cardBg,
-                borderRadius: '8px',
-                padding: '8px',
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.1)'
+              }} />
+              <div style={{
                 position: 'relative',
-                cursor: 'pointer'
+                zIndex: 10,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '16px',
+                padding: '32px',
+                height: '100%',
+                color: 'white'
               }}>
-                <span style={{ fontSize: '20px' }}>🔔</span>
-                {notifications.filter(n => n.unread).length > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    background: '#FF6900',
+                <div>
+                  <h1 style={{ fontSize: '32px', fontWeight: 'bold', margin: '0 0 8px 0' }}>
+                    Dashboard Enterprise
+                  </h1>
+                  <p style={{ fontSize: '18px', opacity: 0.9, margin: 0 }}>
+                    Gestisci tutti i tuoi servizi WindTre da un'unica piattaforma
+                  </p>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                    <span style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      color: 'white',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      Tenant: Corporate
+                    </span>
+                    <span style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      color: 'white',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      Ultimo accesso: Oggi
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
                     color: 'white',
-                    borderRadius: '50%',
-                    width: '16px',
-                    height: '16px',
-                    fontSize: '10px',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    gap: '8px',
+                    fontSize: '14px'
                   }}>
-                    {notifications.filter(n => n.unread).length}
-                  </span>
-                )}
-              </div>
-              <div style={{
-                background: colors.cardBg,
-                borderRadius: '8px',
-                padding: '8px',
-                cursor: 'pointer'
-              }}>
-                <span style={{ fontSize: '20px' }}>📅</span>
-              </div>
-              <div style={{
-                background: colors.cardBg,
-                borderRadius: '8px',
-                padding: '8px',
-                cursor: 'pointer'
-              }}>
-                <span style={{ fontSize: '20px' }}>✅</span>
+                    <Download size={16} />
+                    Report
+                  </button>
+                  <button style={{
+                    background: '#FF6900',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    <Plus size={16} />
+                    Nuovo Cliente
+                  </button>
+                </div>
               </div>
             </div>
-          )}
-        </aside>
+          </div>
+
+          {/* Quick Actions */}
+          <div style={{ marginBottom: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, margin: 0 }}>Azioni Rapide</h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button style={{
+                  background: 'hsla(0, 0%, 100%, 0.25)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px'
+                }}>
+                  <Filter size={14} />
+                  Filtri
+                </button>
+                <button style={{
+                  background: 'hsla(0, 0%, 100%, 0.25)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '14px'
+                }}>
+                  <Search size={14} />
+                  Ricerca
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+              {[
+                { 
+                  title: 'Ricerca Cliente', 
+                  desc: 'Trova per telefono o codice fiscale', 
+                  action: 'Cerca', 
+                  bgColor: 'linear-gradient(135deg, rgba(255, 105, 0, 0.2), rgba(255, 105, 0, 0.1))',
+                  buttonColor: '#FF6900'
+                },
+                { 
+                  title: 'Nuovo Contratto', 
+                  desc: 'Attiva nuova linea o servizio', 
+                  action: 'Attiva', 
+                  bgColor: 'linear-gradient(135deg, rgba(123, 44, 191, 0.2), rgba(123, 44, 191, 0.1))',
+                  buttonColor: '#7B2CBF'
+                },
+                { 
+                  title: 'Gestione Fatture', 
+                  desc: 'Visualizza e gestisci fatturazione', 
+                  action: 'Apri', 
+                  bgColor: 'hsla(0, 0%, 100%, 0.35)',
+                  buttonColor: '#6b7280'
+                },
+                { 
+                  title: 'Support Ticket', 
+                  desc: 'Crea nuovo ticket di assistenza', 
+                  action: 'Crea', 
+                  bgColor: 'hsla(0, 0%, 100%, 0.35)',
+                  buttonColor: '#6b7280'
+                },
+              ].map((item, index) => (
+                <div key={index} style={{
+                  background: item.bgColor,
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 500, margin: '0 0 4px 0' }}>{item.title}</h3>
+                  <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 12px 0' }}>{item.desc}</p>
+                  <button style={{
+                    width: '100%',
+                    background: item.buttonColor,
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 500
+                  }}>
+                    {item.action}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Statistics */}
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, margin: '0 0 16px 0' }}>Statistiche Generali</h2>
+            <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+              {stats.map((stat) => {
+                const Icon = stat.icon;
+                const getIconColor = () => {
+                  switch (stat.variant) {
+                    case 'orange': return '#FF6900';
+                    case 'purple': return '#7B2CBF';
+                    case 'success': return '#10b981';
+                    case 'warning': return '#f59e0b';
+                    default: return '#6b7280';
+                  }
+                };
+
+                return (
+                  <div key={stat.title} style={{
+                    background: 'hsla(0, 0%, 100%, 0.35)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <h3 style={{ fontSize: '14px', fontWeight: 500, margin: 0 }}>{stat.title}</h3>
+                      <div style={{
+                        padding: '8px',
+                        borderRadius: '8px',
+                        background: `${getIconColor()}10`,
+                        color: getIconColor()
+                      }}>
+                        <Icon size={16} />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', margin: '4px 0' }}>{stat.value}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#6b7280' }}>{stat.description}</span>
+                      {stat.trend === 'up' && <TrendingUp size={14} style={{ color: '#10b981' }} />}
+                      {stat.trend === 'down' && <TrendingDown size={14} style={{ color: '#ef4444' }} />}
+                      <span style={{
+                        background: stat.trend === 'up' ? '#10b981' : stat.trend === 'down' ? '#ef4444' : '#6b7280',
+                        color: 'white',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '12px'
+                      }}>
+                        {stat.trendValue}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, margin: '0 0 16px 0' }}>Attività Recenti</h2>
+            <div style={{
+              background: 'hsla(0, 0%, 100%, 0.35)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid hsla(0, 0%, 100%, 0.18)',
+              borderRadius: '12px',
+              padding: '24px'
+            }}>
+              <h3 style={{ fontSize: '18px', margin: '0 0 8px 0' }}>Ultime Operazioni</h3>
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 16px 0' }}>Le attività più recenti del tuo tenant</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {[
+                  { time: '10:30', action: 'Nuovo cliente attivato', user: 'Mario Rossi', type: 'success' },
+                  { time: '09:15', action: 'Contratto fibra modificato', user: 'Luigi Bianchi', type: 'default' },
+                  { time: '08:45', action: 'Fattura generata', user: 'Anna Verdi', type: 'default' },
+                  { time: '07:20', action: 'Ticket risolto', user: 'Paolo Neri', type: 'success' },
+                ].map((activity, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: 'hsla(0, 0%, 100%, 0.25)',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{
+                        background: activity.type === 'success' ? '#10b981' : '#6b7280',
+                        color: 'white',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px'
+                      }}>
+                        {activity.time}
+                      </span>
+                      <div>
+                        <p style={{ fontSize: '14px', fontWeight: 500, margin: 0 }}>{activity.action}</p>
+                        <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>Cliente: {activity.user}</p>
+                      </div>
+                    </div>
+                    <button style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}>
+                      Dettagli
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Workspace Sidebar destra */}
+        {!isMobile && (
+          <aside style={{
+            position: 'fixed',
+            right: 0,
+            top: '64px',
+            height: 'calc(100vh - 64px)',
+            width: workspaceCollapsed ? '64px' : '320px',
+            background: 'hsla(0, 0%, 100%, 0.35)',
+            backdropFilter: 'blur(16px)',
+            borderLeft: '1px solid hsla(0, 0%, 100%, 0.18)',
+            transition: 'all 0.3s ease',
+            zIndex: 40,
+            overflowY: 'auto'
+          }}>
+            {/* Toggle Button */}
+            <div style={{ position: 'absolute', left: '-12px', top: '24px', zIndex: 50 }}>
+              <button
+                onClick={() => setWorkspaceCollapsed(!workspaceCollapsed)}
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  background: 'hsla(0, 0%, 100%, 0.35)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {workspaceCollapsed ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
+              </button>
+            </div>
+
+            {!workspaceCollapsed && (
+              <div style={{ padding: '16px' }}>
+                {/* Header */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#7B2CBF', margin: '0 0 4px 0' }}>Workspace</h2>
+                  <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>La mie attività</p>
+                </div>
+
+                {/* Tabs */}
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  padding: '4px',
+                  background: 'hsla(0, 0%, 100%, 0.25)',
+                  borderRadius: '8px',
+                  marginBottom: '24px'
+                }}>
+                  <button style={{
+                    flex: 1,
+                    background: '#FF6900',
+                    color: 'white',
+                    border: 'none',
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}>
+                    <CheckSquare size={14} />
+                    Tasks
+                  </button>
+                  <button style={{
+                    flex: 1,
+                    background: 'transparent',
+                    color: '#6b7280',
+                    border: 'none',
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}>
+                    <Calendar size={14} />
+                    Calendario
+                  </button>
+                  <button style={{
+                    flex: 1,
+                    background: 'transparent',
+                    color: '#6b7280',
+                    border: 'none',
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}>
+                    <TrendingUp size={14} />
+                    Leads
+                  </button>
+                </div>
+
+                {/* Tasks Section */}
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 500, margin: 0 }}>La mie attività</h3>
+                    <span style={{
+                      background: '#e5e7eb',
+                      color: '#374151',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>4 attive</span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {tasks.map((task) => (
+                      <div key={task.id} style={{
+                        background: 'hsla(0, 0%, 100%, 0.25)',
+                        border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        transition: 'all 0.2s ease'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: 500, margin: 0, lineHeight: 1.3 }}>
+                            {task.title}
+                          </h4>
+                          <span style={{
+                            background: getPriorityColor(task.priority),
+                            color: 'white',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '10px'
+                          }}>
+                            {getPriorityLabel(task.priority)}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+                          {task.description}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Clock size={12} style={{ color: '#6b7280' }} />
+                          <span style={{ fontSize: '12px', color: '#6b7280' }}>{task.time}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 500, margin: '0 0 12px 0' }}>Quick Stats</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{
+                      background: 'hsla(0, 0%, 100%, 0.25)',
+                      borderRadius: '8px',
+                      padding: '12px'
+                    }}>
+                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#FF6900' }}>24</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Task oggi</div>
+                    </div>
+                    <div style={{
+                      background: 'hsla(0, 0%, 100%, 0.25)',
+                      borderRadius: '8px',
+                      padding: '12px'
+                    }}>
+                      <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#7B2CBF' }}>12</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Completate</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {workspaceCollapsed && (
+              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                <button style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}>
+                  <CheckSquare size={20} />
+                </button>
+                <button style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}>
+                  <Calendar size={20} />
+                </button>
+                <button style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}>
+                  <TrendingUp size={20} />
+                </button>
+              </div>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   );
