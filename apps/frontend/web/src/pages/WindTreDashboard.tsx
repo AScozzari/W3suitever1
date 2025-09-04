@@ -381,8 +381,8 @@ export default function WindTreDashboard() {
                   key={item.id}
                   onClick={() => setCurrentModule(item.id)}
                   style={{
-                    width: isMobile ? 'auto' : (leftSidebarCollapsed ? '48px' : '100%'),
-                    height: leftSidebarCollapsed && !isMobile ? '48px' : 'auto',
+                    width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
+                    height: leftSidebarCollapsed && !isMobile ? '40px' : 'auto',
                     minWidth: isMobile ? '80px' : 'auto',
                     padding: isMobile ? '12px' : (leftSidebarCollapsed ? '12px' : '12px 16px'),
                     marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
@@ -417,7 +417,7 @@ export default function WindTreDashboard() {
                     }
                   }}
                 >
-                  <Icon size={leftSidebarCollapsed && !isMobile ? 24 : (isMobile ? 16 : 20)} />
+                  <Icon size={leftSidebarCollapsed && !isMobile ? 18 : (isMobile ? 16 : 20)} />
                   {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
