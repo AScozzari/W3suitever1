@@ -66,8 +66,8 @@ export default function EnhancedDashboard() {
       ? 'linear-gradient(180deg, #0a0a1e 0%, #1a0033 100%)'
       : 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
     headerBg: currentTheme === 'dark'
-      ? 'rgba(0, 0, 0, 0.3)'
-      : 'rgba(255, 255, 255, 0.3)',
+      ? 'rgba(0, 0, 0, 0.2)'
+      : 'rgba(255, 255, 255, 0.2)',
     sidebarBg: currentTheme === 'dark'
       ? 'rgba(0, 0, 0, 0.4)'
       : 'rgba(255, 255, 255, 0.4)',
@@ -101,9 +101,11 @@ export default function EnhancedDashboard() {
         top: 0,
         left: 0,
         right: 0,
+        width: '100%',
         height: '60px',
         background: colors.headerBg,
         backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${colors.border}`,
         zIndex: 1000,
         display: 'flex',
