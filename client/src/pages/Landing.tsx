@@ -1,4 +1,9 @@
+import { useState } from 'react';
+
 export default function Landing() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   return (
     <div style={{
       minHeight: '100vh',
@@ -70,29 +75,140 @@ export default function Landing() {
             color: 'rgba(255, 255, 255, 0.5)',
             fontSize: '14px',
           }}>
-            Utilizza le tue credenziali Replit per accedere
+            Inserisci le tue credenziali per accedere
           </p>
         </div>
 
-        <a
-          href="/api/login"
+        {/* Username Field */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{
+            display: 'block',
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '13px',
+            marginBottom: '8px',
+            fontWeight: '500'
+          }}>
+            Username
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Inserisci il tuo username"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '15px',
+              outline: 'none',
+              transition: 'all 0.2s ease',
+              boxSizing: 'border-box'
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#FF6900';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+            }}
+          />
+        </div>
+
+        {/* Password Field */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{
+            display: 'block',
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '13px',
+            marginBottom: '8px',
+            fontWeight: '500'
+          }}>
+            Password
+          </label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Inserisci la tua password"
+              style={{
+                width: '100%',
+                padding: '12px 45px 12px 16px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '15px',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+                boxSizing: 'border-box'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#FF6900';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.5)',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'color 0.2s ease'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)'}
+              onMouseOut={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'}
+            >
+              {showPassword ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="2" y1="2" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={() => window.location.href = '/api/login'}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
             width: '100%',
-            padding: '12px 20px',
+            padding: '13px 20px',
             background: '#FF6900',
             color: 'white',
             fontSize: '15px',
             fontWeight: '500',
             textAlign: 'center',
             borderRadius: '8px',
-            textDecoration: 'none',
-            transition: 'all 0.2s ease',
             border: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            marginBottom: '16px'
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.background = '#E55A00';
@@ -103,11 +219,46 @@ export default function Landing() {
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7V12C2 16.5 4.23 20.68 7.62 23L12 20L16.38 23C19.77 20.68 22 16.5 22 12V7L12 2Z" fill="white"/>
-          </svg>
-          Accedi con Replit
-        </a>
+          Accedi
+        </button>
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px'
+        }}>
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '13px',
+            cursor: 'pointer'
+          }}>
+            <input
+              type="checkbox"
+              style={{
+                width: '16px',
+                height: '16px',
+                accentColor: '#FF6900'
+              }}
+            />
+            Ricordami
+          </label>
+          <a
+            href="#"
+            style={{
+              color: '#FF6900',
+              fontSize: '13px',
+              textDecoration: 'none'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+            onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
+          >
+            Password dimenticata?
+          </a>
+        </div>
 
         <div style={{
           marginTop: '32px',
