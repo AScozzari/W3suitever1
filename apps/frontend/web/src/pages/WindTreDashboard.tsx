@@ -696,7 +696,7 @@ export default function WindTreDashboard() {
                     justifyContent: 'center',
                     position: 'relative'
                   }}>
-                    <Icon size={leftSidebarCollapsed && !isMobile ? 30 : (isMobile ? 16 : 20)} />
+                    <Icon size={leftSidebarCollapsed && !isMobile ? 18 : (isMobile ? 16 : 20)} />
                     {isActive && (
                       <>
                         {/* Glow effect base */}
@@ -1911,162 +1911,139 @@ export default function WindTreDashboard() {
                       fontWeight: 600,
                       color: '#1f2937',
                       margin: 0
-                    }}>Calendario</h4>
+                    }}>Leads</h4>
                     <span style={{
-                      background: '#7B2CBF',
+                      background: '#10b981',
                       color: 'white',
                       fontSize: '10px',
                       fontWeight: 600,
                       padding: '2px 8px',
                       borderRadius: '10px'
-                    }}>16 eventi totali</span>
-                  </div>
-
-                  {/* Mini calendario placeholder */}
-                  <div style={{
-                    background: 'hsla(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(16px) saturate(120%)',
-                    WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-                    border: '1px solid hsla(255, 255, 255, 0.15)',
-                    borderRadius: '12px',
-                    padding: '16px'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '12px'
-                    }}>
-                      <span style={{
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        color: '#1f2937'
-                      }}>Settembre 2025</span>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <ChevronLeft size={16} style={{ cursor: 'pointer', color: '#6b7280' }} />
-                        <ChevronRight size={16} style={{ cursor: 'pointer', color: '#6b7280' }} />
-                      </div>
-                    </div>
-
-                    {/* Calendar grid placeholder */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(7, 1fr)',
-                      gap: '4px',
-                      marginBottom: '16px'
-                    }}>
-                      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                        <div
-                          key={day}
-                          style={{
-                            textAlign: 'center',
-                            fontSize: '10px',
-                            color: '#9ca3af',
-                            fontWeight: 600,
-                            padding: '4px'
-                          }}
-                        >
-                          {day}
-                        </div>
-                      ))}
-                      {/* Date cells placeholder */}
-                      {Array.from({ length: 35 }, (_, i) => {
-                        const day = i - 6;
-                        const isCurrentMonth = day > 0 && day <= 30;
-                        const isToday = day === 4;
-                        return (
-                          <div
-                            key={i}
-                            style={{
-                              textAlign: 'center',
-                              fontSize: '11px',
-                              padding: '6px 2px',
-                              borderRadius: '6px',
-                              color: isCurrentMonth ? '#1f2937' : '#d1d5db',
-                              background: isToday ? '#FF6900' : 'transparent',
-                              fontWeight: isToday ? 600 : 400,
-                              cursor: isCurrentMonth ? 'pointer' : 'default'
-                            }}
-                          >
-                            {isCurrentMonth ? day : ''}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Eventi oggi */}
-                    <div>
-                      <p style={{
-                        fontSize: '12px',
-                        color: '#374151',
-                        margin: '0 0 8px 0'
-                      }}>Eventi per giovedì 4 settembre 2025</p>
-                      <p style={{
-                        fontSize: '11px',
-                        color: '#9ca3af',
-                        margin: '0 0 12px 0'
-                      }}>Nessun evento programmato per questa data</p>
-
-                      <div style={{
-                        borderTop: '1px solid #f3f4f6',
-                        paddingTop: '12px'
-                      }}>
-                        <p style={{
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          color: '#1f2937',
-                          margin: '0 0 8px 0'
-                        }}>Prossimi eventi</p>
-                        <p style={{
-                          fontSize: '11px',
-                          color: '#FF6900',
-                          margin: '0 0 4px 0'
-                        }}>📅 04/09 - 11/09</p>
-
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          background: 'rgba(255, 105, 0, 0.1)',
-                          borderRadius: '8px',
-                          padding: '8px'
-                        }}>
-                          <div style={{
-                            width: '24px',
-                            height: '24px',
-                            background: '#FF6900',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '10px',
-                            color: 'white',
-                            fontWeight: 600
-                          }}>MR</div>
-                          <div style={{ flex: 1 }}>
-                            <p style={{
-                              fontSize: '11px',
-                              fontWeight: 600,
-                              color: '#1f2937',
-                              margin: '0 0 2px 0'
-                            }}>Riunione Team Vendite Q1</p>
-                            <p style={{
-                              fontSize: '10px',
-                              color: '#374151',
-                              margin: 0
-                            }}>Revisione obiettivi Q1 e pianificazione...</p>
-                          </div>
-                          <Star size={12} style={{ color: '#f59e0b' }} />
-                        </div>
-                      </div>
-                    </div>
+                    }}>{leads.length} leads attivi</span>
                   </div>
                 </div>
+                )}
+
+              </div>
+            ) : (
+              <div style={{ 
+                padding: '24px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                {/* Icona Calendario */}
+                <button style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  color: '#374151',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
+                  e.currentTarget.style.color = '#6b7280';
+                }} onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#374151';
+                }}>
+                  <Calendar size={18} />
+                </button>
+                {/* Icona Tasks */}
+                <button style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  color: '#374151',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
+                  e.currentTarget.style.color = '#6b7280';
+                }} onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#374151';
+                }}>
+                  <CheckCircle size={18} />
+                </button>
+                {/* Icona Leads */}
+                <button style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  color: '#374151',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
+                  e.currentTarget.style.color = '#6b7280';
+                }} onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#374151';
+                }}>
+                  <Users size={18} />
+                </button>
               </div>
             )}
           </aside>
-        )}
+
+        {/* CSS Animations per effetti dashboard */}
+        <style>{`
+          @keyframes dashboardPulse {
+            0%, 100% { 
+              opacity: 0.4;
+              transform: scale(1);
+            }
+            50% { 
+              opacity: 0.7;
+              transform: scale(1.1);
+            }
+          }
+          
+          @keyframes dashboardGlow {
+            0% { 
+              opacity: 0.2;
+              transform: scale(0.8);
+            }
+            100% { 
+              opacity: 0.4;
+              transform: scale(1.2);
+            }
+          }
+        `}</style>
+
+        {/* Main Content - Responsive */}
+        <main style={{
+          flex: 1,
+          marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
+          marginRight: isMobile ? '0' : (!workspaceCollapsed ? '320px' : '64px'),
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          padding: isMobile ? '16px' : '24px',
+          minHeight: '100vh',
+          overflowX: 'hidden'
+        }}>
+          {/* Contenuto principale dashboard */}
+        </main>
       </div>
     </div>
   );
 }
+                      <p style={{
+                        fontSize: '12px',
+                        color: '#374151',
