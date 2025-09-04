@@ -1,7 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
-import WindTreDashboard from "./pages/WindTreDashboard";
+import WindTreDashboard from "./pages/WindTreDashboardClean";
 import ProfessionalLogin from "./pages/ProfessionalLogin";
 import { ThemeProvider } from "./contexts/ThemeContext";
 

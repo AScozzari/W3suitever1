@@ -8,8 +8,9 @@ import {
   Plus, Filter, Download, Phone, Wifi, Smartphone, 
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
-  Folder, UserX, Star, Home, Building, Briefcase, Tool
+  Folder, UserX, Star, Home, Building, Briefcase, Wrench
 } from 'lucide-react';
+import { RealWorkspaceSidebar } from '../components/RealWorkspaceSidebar';
 
 export default function WindTreDashboard() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
@@ -1250,118 +1251,10 @@ export default function WindTreDashboard() {
           </div>
         </main>
 
-        {/* Workspace Sidebar destra - Desktop only */}
+        {/* Real Workspace Sidebar */}
         {!isMobile && !isTablet && (
-          <aside style={{
-            position: 'fixed',
-            right: 0,
-            top: '64px',
-            height: 'calc(100vh - 64px)',
-            width: workspaceCollapsed ? '64px' : '320px',
-            background: 'hsla(0, 0%, 100%, 0.35)',
-            backdropFilter: 'blur(16px)',
-            borderLeft: '1px solid hsla(0, 0%, 100%, 0.18)',
-            transition: 'all 0.3s ease',
-            zIndex: 40,
-            overflowY: 'auto'
-          }}>
-            {/* Toggle Button */}
-            <div style={{ position: 'absolute', left: '-12px', top: '24px', zIndex: 50 }}>
-              <button
-                onClick={() => setWorkspaceCollapsed(!workspaceCollapsed)}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  background: 'hsla(0, 0%, 100%, 0.35)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {workspaceCollapsed ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
-              </button>
-            </div>
-
-            {workspaceCollapsed ? (
-              <div style={{ 
-                padding: '24px 8px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '16px'
-              }}>
-                {/* Icona Calendario */}
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: '#6b7280',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.color = '#1f2937';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
-                }}>
-                  <Calendar size={18} />
-                </button>
-                {/* Icona Tasks */}
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: '#6b7280',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.color = '#1f2937';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
-                }}>
-                  <CheckCircle size={18} />
-                </button>
-                {/* Icona Leads */}
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: '#6b7280',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.color = '#1f2937';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
-                }}>
-                  <Users size={18} />
-                </button>
-              </div>
-            ) : (
+          <RealWorkspaceSidebar onCollapseChange={setWorkspaceCollapsed} />
+        )}
               <div style={{ padding: '24px 16px' }}>
                 {/* Header Workspace */}
                 <div style={{
@@ -1703,8 +1596,6 @@ export default function WindTreDashboard() {
                 </div>
               </div>
             )}
-          </aside>
-        )}
       </div>
     </div>
   );
