@@ -60,16 +60,8 @@ export default function App() {
 }
 
 function AppRouter() {
-  const { isAuthenticated, isLoading, user } = useAuth();
-  const [currentTenant, setCurrentTenant] = useState<any>(null);
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
+  // Mostra sempre la schermata di login per ora
+  return <LoginPage />;
 
   return (
     <TenantProvider tenant={currentTenant} setTenant={setCurrentTenant}>
