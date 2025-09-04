@@ -2,8 +2,66 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupOAuthRoutes, requireAuth, requirePermission } from "./oauth";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Local authentication for development
+  app.post("/api/auth/login", async (req: any, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username e password richiesti" });
+      }
+      
+      // Per development, accetta admin/admin123
+      if (username === 'admin' && password === 'admin123') {
+        const mockUser = {
+          id: 'admin-user',
+          email: 'admin@w3suite.com',
+          firstName: 'Admin',
+          lastName: 'User',
+          tenantId: 'demo-tenant',
+          username: 'admin'
+        };
+        
+        // Create JWT token
+        const token = jwt.sign(
+          { id: mockUser.id, email: mockUser.email, tenantId: mockUser.tenantId },
+          JWT_SECRET,
+          { expiresIn: "7d" }
+        );
+        
+        return res.json({ user: mockUser, token });
+      }
+      
+      return res.status(401).json({ message: "Credenziali non valide" });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Errore durante il login" });
+    }
+  });
+
+  // Mock user endpoint for development
+  app.get('/api/auth/user', async (req: any, res) => {
+    // Check for auth token
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    
+    // For development, return mock user if we have any auth attempt
+    const mockUser = {
+      id: 'admin-user', 
+      email: 'admin@w3suite.com',
+      firstName: 'Admin',
+      lastName: 'User',
+      tenantId: 'demo-tenant'
+    };
+    
+    res.json(mockUser);
+  });
   
   // Setup OAuth2/OIDC authentication
   setupOAuthRoutes(app);
@@ -11,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== TENANT MANAGEMENT API ====================
   
   // Get tenant info
-  app.get('/api/tenants/:id', requireAuth(), requirePermission('tenant.view'), async (req: any, res) => {
+  app.get('/api/tenants/:id', requireAuth(), requirePermission('tenant.view'), async (req, res) => {
     try {
       const tenant = await storage.getTenant(req.params.id);
       if (!tenant) {
@@ -25,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create tenant
-  app.post('/api/tenants', requireAuth(), requirePermission('tenant.create'), async (req: any, res) => {
+  app.post('/api/tenants', requireAuth(), requirePermission('tenant.create'), async (req, res) => {
     try {
       const tenant = await storage.createTenant(req.body);
       res.status(201).json(tenant);
@@ -38,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== STORE MANAGEMENT API ====================
   
   // Get stores for tenant
-  app.get('/api/tenants/:tenantId/stores', requireAuth(), requirePermission('store.view'), async (req: any, res) => {
+  app.get('/api/tenants/:tenantId/stores', requireAuth(), requirePermission('store.view'), async (req, res) => {
     try {
       const stores = await storage.getStoresByTenant(req.params.tenantId);
       res.json(stores);
@@ -49,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create store
-  app.post('/api/tenants/:tenantId/stores', requireAuth(), requirePermission('store.create'), async (req: any, res) => {
+  app.post('/api/tenants/:tenantId/stores', requireAuth(), requirePermission('store.create'), async (req, res) => {
     try {
       const storeData = { ...req.body, tenantId: req.params.tenantId };
       const store = await storage.createStore(storeData);
@@ -63,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== USER MANAGEMENT API ====================
 
   // Get user roles
-  app.get('/api/users/:userId/roles', requireAuth(), requirePermission('user.view'), async (req: any, res) => {
+  app.get('/api/users/:userId/roles', requireAuth(), requirePermission('user.view'), async (req, res) => {
     try {
       const roles = await storage.getUserTenantRoles(req.params.userId);
       res.json(roles);
@@ -74,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assign user role
-  app.post('/api/users/:userId/roles', requireAuth(), requirePermission('user.manage'), async (req: any, res) => {
+  app.post('/api/users/:userId/roles', requireAuth(), requirePermission('user.manage'), async (req, res) => {
     try {
       const roleData = { ...req.body, userId: req.params.userId };
       const role = await storage.createUserTenantRole(roleData);
@@ -88,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== ENTERPRISE API ENDPOINTS ====================
 
   // Dashboard data
-  app.get('/api/dashboard/metrics', requireAuth(), requirePermission('dashboard.view'), async (req: any, res) => {
+  app.get('/api/dashboard/metrics', requireAuth(), requirePermission('dashboard.view'), async (req, res) => {
     try {
       // TODO: Implement dashboard metrics
       const metrics = {
@@ -105,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRM endpoints
-  app.get('/api/crm/customers', requireAuth(), requirePermission('crm.view'), async (req: any, res) => {
+  app.get('/api/crm/customers', requireAuth(), requirePermission('crm.view'), async (req, res) => {
     try {
       // TODO: Implement CRM customer management
       res.json({ customers: [], total: 0 });
@@ -116,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POS endpoints  
-  app.get('/api/pos/transactions', requireAuth(), requirePermission('pos.view'), async (req: any, res) => {
+  app.get('/api/pos/transactions', requireAuth(), requirePermission('pos.view'), async (req, res) => {
     try {
       // TODO: Implement POS transaction management
       res.json({ transactions: [], total: 0 });
@@ -127,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Inventory endpoints
-  app.get('/api/inventory/products', requireAuth(), requirePermission('inventory.view'), async (req: any, res) => {
+  app.get('/api/inventory/products', requireAuth(), requirePermission('inventory.view'), async (req, res) => {
     try {
       // TODO: Implement inventory management
       res.json({ products: [], total: 0 });
@@ -138,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics endpoints
-  app.get('/api/analytics/reports', requireAuth(), requirePermission('analytics.view'), async (req: any, res) => {
+  app.get('/api/analytics/reports', requireAuth(), requirePermission('analytics.view'), async (req, res) => {
     try {
       // TODO: Implement analytics and reporting
       res.json({ reports: [], total: 0 });
