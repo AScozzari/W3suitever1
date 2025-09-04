@@ -345,18 +345,18 @@ export default function WindTreDashboard() {
           top: isMobile ? '0' : '64px',
           height: isMobile ? 'auto' : 'calc(100vh - 64px)',
           width: isMobile ? '100%' : (leftSidebarCollapsed ? '64px' : '256px'),
-          background: 'hsla(255, 255, 255, 0.12)',
-          backdropFilter: 'blur(28px) saturate(150%)',
-          WebkitBackdropFilter: 'blur(28px) saturate(150%)',
-          borderRight: isMobile ? 'none' : '1px solid hsla(255, 255, 255, 0.25)',
-          borderBottom: isMobile ? '1px solid hsla(255, 255, 255, 0.25)' : 'none',
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          borderRight: isMobile ? 'none' : '1px solid hsla(255, 255, 255, 0.12)',
+          borderBottom: isMobile ? '1px solid hsla(255, 255, 255, 0.12)' : 'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           zIndex: 40,
           display: isMobile && leftSidebarCollapsed ? 'none' : 'flex',
           flexDirection: isMobile ? 'row' : 'column',
           overflowX: isMobile ? 'auto' : 'visible',
           padding: isMobile ? '12px' : '0',
-          boxShadow: isMobile ? 'none' : '8px 0 32px rgba(0, 0, 0, 0.06)'
+          boxShadow: isMobile ? 'none' : '4px 0 24px rgba(0, 0, 0, 0.04)'
         }}>
           {/* Toggle Button - Mobile hamburger */}
           {isMobile ? (
@@ -1273,12 +1273,14 @@ export default function WindTreDashboard() {
             top: '64px',
             height: 'calc(100vh - 64px)',
             width: workspaceCollapsed ? '64px' : '320px',
-            background: 'hsla(0, 0%, 100%, 0.35)',
-            backdropFilter: 'blur(16px)',
-            borderLeft: '1px solid hsla(0, 0%, 100%, 0.18)',
-            transition: 'all 0.3s ease',
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            borderLeft: '1px solid hsla(255, 255, 255, 0.12)',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 40,
-            overflowY: 'auto'
+            overflowY: 'auto',
+            boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.04)'
           }}>
             {/* Smart workspace trigger area */}
             <div style={{
@@ -1325,7 +1327,7 @@ export default function WindTreDashboard() {
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
                   e.currentTarget.style.color = '#1f2937';
                 }} onMouseOut={(e) => {
                   e.currentTarget.style.background = 'transparent';
@@ -1347,7 +1349,7 @@ export default function WindTreDashboard() {
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
                   e.currentTarget.style.color = '#1f2937';
                 }} onMouseOut={(e) => {
                   e.currentTarget.style.background = 'transparent';
@@ -1369,7 +1371,7 @@ export default function WindTreDashboard() {
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
                   e.currentTarget.style.color = '#1f2937';
                 }} onMouseOut={(e) => {
                   e.currentTarget.style.background = 'transparent';
@@ -1498,11 +1500,13 @@ export default function WindTreDashboard() {
                     <div
                       key={index}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.5)',
+                        background: 'hsla(255, 255, 255, 0.15)',
+                        backdropFilter: 'blur(16px) saturate(120%)',
+                        WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+                        border: '1px solid hsla(255, 255, 255, 0.15)',
                         borderRadius: '12px',
                         padding: '16px',
-                        marginBottom: '12px',
-                        border: '1px solid rgba(255, 255, 255, 0.2)'
+                        marginBottom: '12px'
                       }}
                     >
                       <div style={{
@@ -1582,10 +1586,12 @@ export default function WindTreDashboard() {
 
                   {/* Mini calendario placeholder */}
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.5)',
+                    background: 'hsla(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(16px) saturate(120%)',
+                    WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+                    border: '1px solid hsla(255, 255, 255, 0.15)',
                     borderRadius: '12px',
-                    padding: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                    padding: '16px'
                   }}>
                     <div style={{
                       display: 'flex',
