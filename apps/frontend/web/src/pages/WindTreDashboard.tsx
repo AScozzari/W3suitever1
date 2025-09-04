@@ -1261,41 +1261,77 @@ export default function WindTreDashboard() {
 
             {workspaceCollapsed ? (
               <div style={{ 
-                padding: '24px 16px',
+                padding: '24px 8px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '16px'
               }}>
+                {/* Icona Calendario */}
                 <button style={{
-                  background: 'rgba(255, 105, 0, 0.1)',
+                  width: '40px',
+                  height: '40px',
+                  background: 'transparent',
                   border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#FF6900'
+                  color: '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.color = '#1f2937';
+                }} onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
                 }}>
-                  <Calendar size={20} />
+                  <Calendar size={18} />
                 </button>
+                {/* Icona Tasks */}
                 <button style={{
-                  background: 'rgba(123, 44, 191, 0.1)',
+                  width: '40px',
+                  height: '40px',
+                  background: 'transparent',
                   border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#7B2CBF'
+                  color: '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.color = '#1f2937';
+                }} onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
                 }}>
-                  <CheckCircle size={20} />
+                  <CheckCircle size={18} />
                 </button>
+                {/* Icona Leads */}
                 <button style={{
-                  background: 'rgba(16, 185, 129, 0.1)',
+                  width: '40px',
+                  height: '40px',
+                  background: 'transparent',
                   border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#10b981'
+                  color: '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.color = '#1f2937';
+                }} onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
                 }}>
-                  <FileText size={20} />
+                  <Users size={18} />
                 </button>
               </div>
             ) : (
