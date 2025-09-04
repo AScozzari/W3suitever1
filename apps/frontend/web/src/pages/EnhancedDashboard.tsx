@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "../contexts/ThemeContext";
 import { 
@@ -134,10 +134,28 @@ export default function EnhancedDashboard() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
   const [currentModule, setCurrentModule] = useState('dashboard');
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
   const { data: dashboardStats } = useQuery({ queryKey: ["/api/dashboard/stats"] });
 
-  const isMobile = window.innerWidth < 768;
+  useEffect(() => {
+    const checkDevice = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+      
+      // Auto-collapse sidebars on mobile/tablet
+      if (width < 1024) {
+        setLeftSidebarCollapsed(true);
+        setWorkspaceCollapsed(true);
+      }
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
 
   return (
     <div style={{ 
@@ -146,20 +164,20 @@ export default function EnhancedDashboard() {
       fontFamily: 'Inter, system-ui, sans-serif',
       position: 'relative'
     }}>
-      {/* Header fisso */}
+      {/* Header fisso - Responsive */}
       <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
-        height: '64px',
+        height: isMobile ? '56px' : '64px',
         background: 'hsla(0, 0%, 100%, 0.35)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid hsla(0, 0%, 100%, 0.18)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'between',
-        padding: '0 24px',
+        justifyContent: 'space-between',
+        padding: isMobile ? '0 16px' : '0 24px',
         zIndex: 50
       }}>
         {/* Logo e Brand */}
@@ -181,39 +199,56 @@ export default function EnhancedDashboard() {
           </div>
         </div>
 
-        {/* Barra di ricerca centrale */}
-        <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
-          <div style={{ position: 'relative' }}>
-            <Search size={16} style={{ 
-              position: 'absolute', 
-              left: '12px', 
-              top: '50%', 
-              transform: 'translateY(-50%)', 
-              color: '#6b7280' 
-            }} />
-            <input
-              placeholder="Cerca clienti, contratti, fatture..."
-              style={{
-                width: '100%',
-                padding: '8px 12px 8px 40px',
-                background: 'hsla(0, 0%, 100%, 0.25)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none'
-              }}
-            />
+        {/* Barra di ricerca centrale - Hidden on mobile */}
+        {!isMobile && (
+          <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={16} style={{ 
+                position: 'absolute', 
+                left: '12px', 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                color: '#6b7280' 
+              }} />
+              <input
+                placeholder="Cerca clienti, contratti, fatture..."
+                style={{
+                  width: '100%',
+                  padding: '8px 12px 8px 40px',
+                  background: 'hsla(0, 0%, 100%, 0.25)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
+        
+        {/* Mobile search button */}
+        {isMobile && (
+          <button style={{
+            background: 'transparent',
+            border: 'none',
+            padding: '8px',
+            cursor: 'pointer',
+            borderRadius: '8px'
+          }}>
+            <Search size={20} />
+          </button>
+        )}
 
-        {/* Sezione destra */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Windtre Milano */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-            <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
-            <span style={{ fontWeight: 500 }}>Windtre Milano</span>
-          </div>
+        {/* Sezione destra - Responsive */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+          {/* Windtre Milano - Hidden on mobile */}
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+              <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
+              <span style={{ fontWeight: 500 }}>Windtre Milano</span>
+            </div>
+          )}
 
           {/* Notifiche */}
           <button style={{
@@ -288,46 +323,84 @@ export default function EnhancedDashboard() {
         </div>
       </header>
 
-      {/* Layout principale */}
-      <div style={{ display: 'flex', paddingTop: '64px' }}>
-        {/* Sidebar sinistra */}
+      {/* Layout principale - Responsive */}
+      <div style={{ 
+        display: 'flex', 
+        paddingTop: isMobile ? '56px' : '64px',
+        flexDirection: isMobile ? 'column' : 'row'
+      }}>
+        {/* Sidebar sinistra - Responsive */}
         <aside style={{
-          position: 'fixed',
+          position: isMobile ? 'static' : 'fixed',
           left: 0,
-          top: '64px',
-          height: 'calc(100vh - 64px)',
-          width: leftSidebarCollapsed ? '64px' : '256px',
+          top: isMobile ? '0' : '64px',
+          height: isMobile ? 'auto' : 'calc(100vh - 64px)',
+          width: isMobile ? '100%' : (leftSidebarCollapsed ? '64px' : '256px'),
           background: 'hsla(0, 0%, 100%, 0.35)',
           backdropFilter: 'blur(16px)',
-          borderRight: '1px solid hsla(0, 0%, 100%, 0.18)',
+          borderRight: isMobile ? 'none' : '1px solid hsla(0, 0%, 100%, 0.18)',
+          borderBottom: isMobile ? '1px solid hsla(0, 0%, 100%, 0.18)' : 'none',
           transition: 'all 0.3s ease',
           zIndex: 40,
-          display: 'flex',
-          flexDirection: 'column'
+          display: isMobile && leftSidebarCollapsed ? 'none' : 'flex',
+          flexDirection: isMobile ? 'row' : 'column',
+          overflowX: isMobile ? 'auto' : 'visible',
+          padding: isMobile ? '12px' : '0'
         }}>
-          {/* Toggle Button */}
-          <div style={{ position: 'absolute', right: '-12px', top: '24px', zIndex: 50 }}>
+          {/* Toggle Button - Mobile hamburger */}
+          {isMobile ? (
             <button
               onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
               style={{
-                width: '24px',
-                height: '24px',
+                position: 'fixed',
+                top: '14px',
+                left: '16px',
+                width: '28px',
+                height: '28px',
                 background: 'hsla(0, 0%, 100%, 0.35)',
                 backdropFilter: 'blur(16px)',
                 border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                borderRadius: '50%',
+                borderRadius: '8px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                zIndex: 60
               }}
             >
-              {leftSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+              <Menu size={16} />
             </button>
-          </div>
+          ) : (
+            <div style={{ position: 'absolute', right: '-12px', top: '24px', zIndex: 50 }}>
+              <button
+                onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  background: 'hsla(0, 0%, 100%, 0.35)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {leftSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+              </button>
+            </div>
+          )}
 
-          {/* Menu Items */}
-          <nav style={{ padding: '16px', flexGrow: 1 }}>
+          {/* Menu Items - Responsive */}
+          <nav style={{ 
+            padding: isMobile ? '8px 0' : '16px', 
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: isMobile ? 'row' : 'column',
+            gap: isMobile ? '8px' : '0',
+            overflowX: isMobile ? 'auto' : 'visible'
+          }}>
             {menuItems.map((item) => {
               const isActive = currentModule === item.id;
               const Icon = item.icon;
@@ -337,24 +410,26 @@ export default function EnhancedDashboard() {
                   key={item.id}
                   onClick={() => setCurrentModule(item.id)}
                   style={{
-                    width: '100%',
-                    padding: leftSidebarCollapsed ? '12px' : '12px 16px',
-                    marginBottom: '8px',
+                    width: isMobile ? 'auto' : '100%',
+                    minWidth: isMobile ? '80px' : 'auto',
+                    padding: isMobile ? '12px' : (leftSidebarCollapsed ? '12px' : '12px 16px'),
+                    marginBottom: isMobile ? '0' : '8px',
                     background: isActive 
                       ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
                       : 'transparent',
                     border: 'none',
                     borderRadius: '12px',
                     color: isActive ? 'white' : '#374151',
-                    fontSize: '14px',
+                    fontSize: isMobile ? '12px' : '14px',
                     fontWeight: isActive ? 600 : 400,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? '4px' : '12px',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    textAlign: 'left',
-                    justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start'
+                    textAlign: 'center',
+                    justifyContent: isMobile ? 'center' : (leftSidebarCollapsed ? 'center' : 'flex-start')
                   }}
                   onMouseOver={(e) => {
                     if (!isActive) {
@@ -406,13 +481,14 @@ export default function EnhancedDashboard() {
           )}
         </aside>
 
-        {/* Main Content */}
+        {/* Main Content - Responsive */}
         <main style={{
           flex: 1,
-          marginLeft: leftSidebarCollapsed ? '64px' : '256px',
-          marginRight: !isMobile && !workspaceCollapsed ? '320px' : (!isMobile ? '64px' : '0'),
-          padding: '24px',
-          transition: 'all 0.3s ease'
+          marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
+          marginRight: isMobile ? '0' : (!workspaceCollapsed ? '320px' : '64px'),
+          padding: isMobile ? '16px' : '24px',
+          transition: 'all 0.3s ease',
+          minHeight: isMobile ? 'calc(100vh - 120px)' : 'auto'
         }}>
           {/* Hero Section */}
           <div style={{
@@ -547,7 +623,11 @@ export default function EnhancedDashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+            <div style={{ 
+              display: 'grid', 
+              gap: '16px', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))'
+            }}>
               {[
                 { 
                   title: 'Ricerca Cliente', 
@@ -610,7 +690,11 @@ export default function EnhancedDashboard() {
           {/* Statistics */}
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 600, margin: '0 0 16px 0' }}>Statistiche Generali</h2>
-            <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+            <div style={{ 
+              display: 'grid', 
+              gap: isMobile ? '16px' : '24px', 
+              gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(200px, 1fr))' : 'repeat(auto-fit, minmax(250px, 1fr))'
+            }}>
               {stats.map((stat) => {
                 const Icon = stat.icon;
                 const getIconColor = () => {
@@ -666,8 +750,8 @@ export default function EnhancedDashboard() {
           </div>
         </main>
 
-        {/* Workspace Sidebar destra */}
-        {!isMobile && (
+        {/* Workspace Sidebar destra - Desktop only */}
+        {!isMobile && !isTablet && (
           <aside style={{
             position: 'fixed',
             right: 0,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Lock, Eye, EyeOff, ArrowRight, Shield, Zap, Users, CheckCircle, Wifi } from 'lucide-react';
 
 export default function Login() {
@@ -6,6 +6,14 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -48,11 +56,12 @@ export default function Login() {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))',
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       fontFamily: 'Inter, system-ui, sans-serif',
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Background Pattern identico al dashboard */}
+      {/* Background Pattern */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -67,14 +76,15 @@ export default function Login() {
         zIndex: -1
       }} />
 
-      {/* Left Panel - Informazioni */}
+      {/* Left Panel - Hero/Brand (Mobile: Top section) */}
       <div style={{
-        flex: 1,
+        flex: isMobile ? 'none' : 1,
+        minHeight: isMobile ? '60vh' : '100vh',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '64px',
+        padding: isMobile ? '32px 24px' : '64px',
         background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
         position: 'relative'
       }}>
@@ -89,23 +99,23 @@ export default function Login() {
           zIndex: 10,
           textAlign: 'center',
           color: 'white',
-          maxWidth: '500px'
+          maxWidth: isMobile ? '100%' : '500px'
         }}>
-          {/* Logo Grande */}
+          {/* Logo */}
           <div style={{
-            width: '120px',
-            height: '120px',
+            width: isMobile ? '80px' : '120px',
+            height: isMobile ? '80px' : '120px',
             background: 'rgba(255, 255, 255, 0.15)',
             backdropFilter: 'blur(20px)',
-            borderRadius: '30px',
+            borderRadius: isMobile ? '20px' : '30px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 40px auto',
+            margin: `0 auto ${isMobile ? '24px' : '40px'} auto`,
             border: '2px solid rgba(255, 255, 255, 0.2)'
           }}>
             <span style={{
-              fontSize: '48px',
+              fontSize: isMobile ? '36px' : '48px',
               fontWeight: 'bold',
               background: 'linear-gradient(135deg, #ffffff, #f0f0f0)',
               WebkitBackgroundClip: 'text',
@@ -114,116 +124,164 @@ export default function Login() {
           </div>
 
           <h1 style={{
-            fontSize: '48px',
+            fontSize: isMobile ? '32px' : '48px',
             fontWeight: 'bold',
-            margin: '0 0 16px 0',
+            margin: `0 0 ${isMobile ? '12px' : '16px'} 0`,
             letterSpacing: '-1px'
           }}>WindTre Suite</h1>
           
           <p style={{
-            fontSize: '24px',
+            fontSize: isMobile ? '16px' : '24px',
             opacity: 0.9,
-            margin: '0 0 48px 0',
+            margin: `0 0 ${isMobile ? '32px' : '48px'} 0`,
             fontWeight: 300,
-            lineHeight: 1.4
+            lineHeight: 1.4,
+            padding: isMobile ? '0 16px' : '0'
           }}>
-            La piattaforma enterprise più avanzata per la gestione multitenant
+            {isMobile 
+              ? 'Piattaforma enterprise multitenant'
+              : 'La piattaforma enterprise più avanzata per la gestione multitenant'
+            }
           </p>
 
-          {/* Features Premium */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: '24px',
-            textAlign: 'left'
-          }}>
-            {[
-              { icon: Shield, title: 'Sicurezza Enterprise', desc: 'Autenticazione OAuth2 con MFA e crittografia end-to-end' },
-              { icon: Zap, title: 'AI & Machine Learning', desc: 'Analytics predittivi e automazione intelligente' },
-              { icon: Users, title: 'Multi-Tenant Architecture', desc: 'Isolamento completo dei dati con RLS PostgreSQL' },
-              { icon: Wifi, title: 'Cloud Native', desc: 'Scalabilità infinita con architettura microservizi' }
-            ].map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div key={index} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '20px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(20px)',
-                  padding: '24px',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255, 255, 255, 0.2)'
-                }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    padding: '12px',
-                    borderRadius: '12px'
+          {/* Features - Compact on mobile */}
+          {isMobile ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '16px',
+              maxWidth: '320px',
+              margin: '0 auto'
+            }}>
+              {[
+                { icon: Shield, title: 'Sicurezza' },
+                { icon: Zap, title: 'AI Powered' },
+                { icon: Users, title: 'Multi-Tenant' },
+                { icon: Wifi, title: 'Cloud Native' }
+              ].map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={index} style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '12px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(20px)',
+                    padding: '20px 12px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
                   }}>
-                    <Icon size={28} />
-                  </div>
-                  <div>
-                    <h3 style={{
-                      fontSize: '18px',
+                    <Icon size={24} />
+                    <span style={{
+                      fontSize: '12px',
                       fontWeight: 600,
-                      margin: '0 0 8px 0'
-                    }}>{feature.title}</h3>
-                    <p style={{
-                      fontSize: '14px',
-                      opacity: 0.8,
-                      margin: 0,
-                      lineHeight: 1.4
-                    }}>{feature.desc}</p>
+                      textAlign: 'center'
+                    }}>{feature.title}</span>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: '24px',
+              textAlign: 'left'
+            }}>
+              {[
+                { icon: Shield, title: 'Sicurezza Enterprise', desc: 'Autenticazione OAuth2 con MFA e crittografia end-to-end' },
+                { icon: Zap, title: 'AI & Machine Learning', desc: 'Analytics predittivi e automazione intelligente' },
+                { icon: Users, title: 'Multi-Tenant Architecture', desc: 'Isolamento completo dei dati con RLS PostgreSQL' },
+                { icon: Wifi, title: 'Cloud Native', desc: 'Scalabilità infinita con architettura microservizi' }
+              ].map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={index} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '20px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(20px)',
+                    padding: '24px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                  }}>
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      padding: '12px',
+                      borderRadius: '12px'
+                    }}>
+                      <Icon size={28} />
+                    </div>
+                    <div>
+                      <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: 600,
+                        margin: '0 0 8px 0'
+                      }}>{feature.title}</h3>
+                      <p style={{
+                        fontSize: '14px',
+                        opacity: 0.8,
+                        margin: 0,
+                        lineHeight: 1.4
+                      }}>{feature.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Right Panel - Login Form */}
+      {/* Right Panel - Login Form (Mobile: Bottom section) */}
       <div style={{
-        flex: '0 0 600px',
+        flex: isMobile ? 'none' : '0 0 600px',
+        minHeight: isMobile ? '40vh' : '100vh',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        padding: '64px',
+        padding: isMobile ? '24px' : '64px',
         background: 'hsla(0, 0%, 100%, 0.35)',
         backdropFilter: 'blur(16px)',
-        borderLeft: '1px solid hsla(0, 0%, 100%, 0.18)'
+        borderLeft: isMobile ? 'none' : '1px solid hsla(0, 0%, 100%, 0.18)',
+        borderTop: isMobile ? '1px solid hsla(0, 0%, 100%, 0.18)' : 'none'
       }}>
         {/* Header Form */}
-        <div style={{ marginBottom: '48px' }}>
+        <div style={{ marginBottom: isMobile ? '32px' : '48px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            marginBottom: '24px',
+            marginBottom: isMobile ? '16px' : '24px',
             background: 'hsla(0, 0%, 100%, 0.25)',
-            padding: '8px 16px',
+            padding: '6px 12px',
             borderRadius: '12px',
             border: '1px solid hsla(0, 0%, 100%, 0.18)'
           }}>
             <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
-            <span style={{ fontSize: '14px', color: '#374151', fontWeight: 500 }}>Sistema Operativo</span>
+            <span style={{ fontSize: '12px', color: '#374151', fontWeight: 500 }}>Sistema Operativo</span>
           </div>
           
           <h2 style={{
-            fontSize: '32px',
+            fontSize: isMobile ? '24px' : '32px',
             fontWeight: 700,
             color: '#1f2937',
-            margin: '0 0 12px 0',
+            margin: `0 0 ${isMobile ? '8px' : '12px'} 0`,
             letterSpacing: '-0.5px'
           }}>Accesso Sicuro</h2>
           
           <p style={{
             color: '#6b7280',
-            fontSize: '18px',
+            fontSize: isMobile ? '14px' : '18px',
             margin: 0,
             lineHeight: 1.5
           }}>
-            Inserisci le tue credenziali aziendali per accedere alla dashboard enterprise
+            {isMobile 
+              ? 'Inserisci le credenziali per accedere'
+              : 'Inserisci le tue credenziali aziendali per accedere alla dashboard enterprise'
+            }
           </p>
         </div>
 
@@ -232,31 +290,31 @@ export default function Login() {
           background: 'hsla(0, 0%, 100%, 0.4)',
           backdropFilter: 'blur(20px)',
           borderRadius: '20px',
-          padding: '40px',
+          padding: isMobile ? '24px' : '40px',
           border: '1px solid hsla(0, 0%, 100%, 0.18)',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)'
         }}>
           {/* Username Field */}
-          <div style={{ marginBottom: '28px' }}>
+          <div style={{ marginBottom: isMobile ? '20px' : '28px' }}>
             <label style={{
               display: 'block',
               color: '#374151',
-              fontSize: '16px',
+              fontSize: isMobile ? '14px' : '16px',
               fontWeight: 600,
-              marginBottom: '12px'
+              marginBottom: '8px'
             }}>
               Username Aziendale
             </label>
             <div style={{ position: 'relative' }}>
               <div style={{
                 position: 'absolute',
-                left: '20px',
+                left: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: '#6b7280',
                 zIndex: 10
               }}>
-                <User size={22} />
+                <User size={isMobile ? 18 : 22} />
               </div>
               <input
                 type="text"
@@ -265,13 +323,13 @@ export default function Login() {
                 placeholder="admin"
                 style={{
                   width: '100%',
-                  padding: '20px 20px 20px 60px',
+                  padding: isMobile ? '16px 16px 16px 48px' : '20px 20px 20px 60px',
                   background: 'hsla(0, 0%, 100%, 0.6)',
                   backdropFilter: 'blur(16px)',
                   border: '2px solid hsla(0, 0%, 100%, 0.3)',
-                  borderRadius: '16px',
+                  borderRadius: isMobile ? '12px' : '16px',
                   color: '#1f2937',
-                  fontSize: '16px',
+                  fontSize: isMobile ? '14px' : '16px',
                   outline: 'none',
                   transition: 'all 0.3s ease',
                   boxSizing: 'border-box',
@@ -292,26 +350,26 @@ export default function Login() {
           </div>
 
           {/* Password Field */}
-          <div style={{ marginBottom: '32px' }}>
+          <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
             <label style={{
               display: 'block',
               color: '#374151',
-              fontSize: '16px',
+              fontSize: isMobile ? '14px' : '16px',
               fontWeight: 600,
-              marginBottom: '12px'
+              marginBottom: '8px'
             }}>
               Password Sicura
             </label>
             <div style={{ position: 'relative' }}>
               <div style={{
                 position: 'absolute',
-                left: '20px',
+                left: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: '#6b7280',
                 zIndex: 10
               }}>
-                <Lock size={22} />
+                <Lock size={isMobile ? 18 : 22} />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -320,13 +378,13 @@ export default function Login() {
                 placeholder="admin"
                 style={{
                   width: '100%',
-                  padding: '20px 60px 20px 60px',
+                  padding: isMobile ? '16px 48px 16px 48px' : '20px 60px 20px 60px',
                   background: 'hsla(0, 0%, 100%, 0.6)',
                   backdropFilter: 'blur(16px)',
                   border: '2px solid hsla(0, 0%, 100%, 0.3)',
-                  borderRadius: '16px',
+                  borderRadius: isMobile ? '12px' : '16px',
                   color: '#1f2937',
-                  fontSize: '16px',
+                  fontSize: isMobile ? '14px' : '16px',
                   outline: 'none',
                   transition: 'all 0.3s ease',
                   boxSizing: 'border-box',
@@ -353,7 +411,7 @@ export default function Login() {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
                   position: 'absolute',
-                  right: '20px',
+                  right: '16px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'transparent',
@@ -365,7 +423,9 @@ export default function Login() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease',
-                  borderRadius: '8px'
+                  borderRadius: '8px',
+                  minWidth: '40px',
+                  minHeight: '40px'
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.color = '#FF6900';
@@ -376,134 +436,150 @@ export default function Login() {
                   e.currentTarget.style.background = 'transparent';
                 }}
               >
-                {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                {showPassword ? <EyeOff size={isMobile ? 18 : 22} /> : <Eye size={isMobile ? 18 : 22} />}
               </button>
             </div>
           </div>
 
-          {/* Remember & Security */}
+          {/* Remember & Security - Mobile optimized */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '40px',
+            marginBottom: isMobile ? '24px' : '40px',
             background: 'hsla(0, 0%, 100%, 0.25)',
-            padding: '16px 20px',
+            padding: isMobile ? '12px 16px' : '16px 20px',
             borderRadius: '12px',
-            border: '1px solid hsla(0, 0%, 100%, 0.18)'
+            border: '1px solid hsla(0, 0%, 100%, 0.18)',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+            gap: isMobile ? '12px' : '0'
           }}>
             <label style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              gap: '8px',
               color: '#6b7280',
-              fontSize: '15px',
+              fontSize: isMobile ? '13px' : '15px',
               cursor: 'pointer',
               fontWeight: 500
             }}>
               <input
                 type="checkbox"
                 style={{
-                  width: '20px',
-                  height: '20px',
+                  width: '18px',
+                  height: '18px',
                   accentColor: '#FF6900',
-                  borderRadius: '6px'
+                  borderRadius: '4px'
                 }}
               />
-              Mantieni accesso per 30 giorni
+              {isMobile ? 'Ricordami' : 'Mantieni accesso per 30 giorni'}
             </label>
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               color: '#10b981',
-              fontSize: '14px',
+              fontSize: isMobile ? '12px' : '14px',
               fontWeight: 500
             }}>
-              <CheckCircle size={16} />
-              Connessione Sicura
+              <CheckCircle size={14} />
+              Sicura
             </div>
           </div>
 
-          {/* Login Button */}
+          {/* Login Button - Touch optimized */}
           <button
             onClick={handleLogin}
             disabled={isLoading}
             style={{
               width: '100%',
-              padding: '20px 32px',
+              padding: isMobile ? '18px 24px' : '20px 32px',
               background: isLoading 
                 ? 'linear-gradient(135deg, #d1d5db, #9ca3af)' 
                 : 'linear-gradient(135deg, #FF6900, #ff8533)',
               color: 'white',
-              fontSize: '18px',
+              fontSize: isMobile ? '16px' : '18px',
               fontWeight: 700,
               textAlign: 'center',
-              borderRadius: '16px',
+              borderRadius: isMobile ? '14px' : '16px',
               border: 'none',
               cursor: isLoading ? 'not-allowed' : 'pointer',
               transition: 'all 0.3s ease',
-              marginBottom: '24px',
+              marginBottom: isMobile ? '16px' : '24px',
               boxShadow: isLoading 
                 ? 'none' 
                 : '0 16px 40px rgba(255, 105, 0, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px'
+              gap: '12px',
+              minHeight: isMobile ? '56px' : 'auto'
             }}
             onMouseOver={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.transform = 'translateY(-3px)';
+              if (!isLoading && !isMobile) {
+                e.currentTarget.style.transform = 'translateY(-2px)';
                 e.currentTarget.style.boxShadow = '0 20px 50px rgba(255, 105, 0, 0.4)';
               }
             }}
             onMouseOut={(e) => {
-              if (!isLoading) {
+              if (!isLoading && !isMobile) {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 16px 40px rgba(255, 105, 0, 0.3)';
+              }
+            }}
+            onTouchStart={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.transform = 'scale(0.98)';
+              }
+            }}
+            onTouchEnd={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.transform = 'scale(1)';
               }
             }}
           >
             {isLoading ? (
               <>
                 <div style={{
-                  width: '22px',
-                  height: '22px',
-                  border: '3px solid rgba(255, 255, 255, 0.3)',
-                  borderTop: '3px solid white',
+                  width: '20px',
+                  height: '20px',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  borderTop: '2px solid white',
                   borderRadius: '50%',
                   animation: 'spin 1s linear infinite'
                 }} />
-                Autenticazione in corso...
+                {isMobile ? 'Accesso...' : 'Autenticazione in corso...'}
               </>
             ) : (
               <>
-                Accedi al Workspace Enterprise
-                <ArrowRight size={22} />
+                {isMobile ? 'Accedi' : 'Accedi al Workspace Enterprise'}
+                <ArrowRight size={isMobile ? 18 : 22} />
               </>
             )}
           </button>
 
-          {/* Help Links */}
+          {/* Help Links - Mobile optimized */}
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: '32px'
+            gap: isMobile ? '24px' : '32px',
+            flexWrap: 'wrap'
           }}>
             <a href="#" style={{ 
               color: '#FF6900', 
-              fontSize: '15px', 
+              fontSize: isMobile ? '14px' : '15px', 
               textDecoration: 'none',
-              fontWeight: 500
+              fontWeight: 500,
+              padding: isMobile ? '8px' : '0'
             }}>
               Password dimenticata?
             </a>
             <a href="#" style={{ 
               color: '#6b7280', 
-              fontSize: '15px', 
+              fontSize: isMobile ? '14px' : '15px', 
               textDecoration: 'none',
-              fontWeight: 500
+              fontWeight: 500,
+              padding: isMobile ? '8px' : '0'
             }}>
               Supporto IT
             </a>
@@ -512,20 +588,26 @@ export default function Login() {
 
         {/* Footer */}
         <div style={{
-          marginTop: '40px',
+          marginTop: isMobile ? '24px' : '40px',
           textAlign: 'center',
           color: '#9ca3af',
-          fontSize: '14px'
+          fontSize: isMobile ? '12px' : '14px'
         }}>
-          <p style={{ margin: '0 0 8px 0' }}>© 2025 WindTre Business Solutions</p>
+          <p style={{ margin: '0 0 4px 0' }}>© 2025 WindTre Business Solutions</p>
           <p style={{ margin: 0 }}>Enterprise Resource Planning Platform v2.0</p>
         </div>
 
-        {/* CSS Animation */}
+        {/* CSS Animations */}
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          
+          @media (max-width: 768px) {
+            input:focus {
+              font-size: 16px !important;
+            }
           }
         `}</style>
       </div>
