@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
-import Landing from "./pages/Landing";
+import Login from "./pages/Login";
 import { useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
@@ -42,7 +42,7 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    return <Landing />;
+    return <Login />;
   }
 
   return <EnhancedDashboard />;

@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
 import { useState } from "react";
 import Dashboard from "./pages/Dashboard";
-import Landing from "./pages/Landing";
+import Login from "./pages/Login";
 
 export default function App() {
   return (
@@ -40,7 +40,7 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    return <Landing />;
+    return <Login />;
   }
 
   return <Dashboard currentModule={currentModule} setCurrentModule={setCurrentModule} />;
