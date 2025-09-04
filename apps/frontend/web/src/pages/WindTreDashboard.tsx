@@ -475,7 +475,7 @@ export default function WindTreDashboard() {
                     }
                   }}
                 >
-                  <Icon size={leftSidebarCollapsed && !isMobile ? 18 : (isMobile ? 16 : 20)} />
+                  <Icon size={leftSidebarCollapsed && !isMobile ? 22 : (isMobile ? 16 : 20)} />
                   {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
