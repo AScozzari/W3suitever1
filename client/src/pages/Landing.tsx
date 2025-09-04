@@ -196,12 +196,33 @@ export default function Landing() {
 
         <button
           onClick={async () => {
-            // Per testing diretto - bypassa auth temporaneamente
-            if (username === 'admin' && password === 'admin123') {
-              // Accesso mockato per development
-              window.location.href = '/';
-            } else {
-              alert('Usa admin / admin123 per accedere');
+            if (!username || !password) {
+              alert('Inserisci username e password');
+              return;
+            }
+            
+            try {
+              const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+                credentials: 'include'
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                // Salva il token se presente
+                if (data.token) {
+                  localStorage.setItem('auth_token', data.token);
+                }
+                // Forza un refresh completo per ricaricare l'app
+                window.location.replace('/');
+              } else {
+                const data = await response.json();
+                alert(data.message || 'Credenziali non valide');
+              }
+            } catch (error) {
+              alert('Errore durante il login');
             }
           }}
           style={{

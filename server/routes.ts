@@ -18,6 +18,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username e password richiesti" });
       }
       
+      // Per development, accetta admin/admin123
+      if (username === 'admin' && password === 'admin123') {
+        const mockUser = {
+          id: 'admin-user',
+          email: 'admin@w3suite.com',
+          firstName: 'Admin',
+          lastName: 'User',
+          tenantId: 'demo-tenant',
+          username: 'admin'
+        };
+        
+        // Create JWT token
+        const token = jwt.sign(
+          { id: mockUser.id, email: mockUser.email, tenantId: mockUser.tenantId },
+          JWT_SECRET,
+          { expiresIn: "7d" }
+        );
+        
+        // Set session data
+        (req as any).session = (req as any).session || {};
+        (req as any).session.user = mockUser;
+        (req as any).session.token = token;
+        
+        return res.json({ user: mockUser, token });
+      }
+      
+      // Controlla nel database per altri utenti
       const user = await storage.getUserByUsername(username);
       
       if (!user || !user.password) {
