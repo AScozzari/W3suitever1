@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
 import WindTreDashboard from "./pages/WindTreDashboard";
-import MinimalLogin from "./pages/MinimalLogin";
+import ProfessionalLogin from "./pages/ProfessionalLogin";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 export default function App() {
@@ -60,7 +60,7 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    return <MinimalLogin />;
+    return <ProfessionalLogin />;
   }
 
   return <WindTreDashboard />;
