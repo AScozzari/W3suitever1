@@ -8,23 +8,44 @@ export default {
   theme: {
     extend: {
       colors: {
-        // WindTre Brand Colors ESATTI
-        windtre: {
-          orange: '#FF6900',
-          purple: '#7B2CBF',
-          dark: '#0a0a0a',
-          gray: '#6b7280'
-        }
-      },
-      fontFamily: {
-        'inter': ['Inter', 'sans-serif'],
-        'jetbrains': ['JetBrains Mono', 'monospace']
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "#FF6900",
+          foreground: "#ffffff",
+        },
+        secondary: {
+          DEFAULT: "#7B2CBF",
+          foreground: "#ffffff",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
       },
       backdropBlur: {
-        'glass': '20px',
+        xs: '2px',
       }
     },
   },
   plugins: [],
-  darkMode: 'class'
 } satisfies Config
