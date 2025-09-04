@@ -365,11 +365,11 @@ export default function WindTreDashboard() {
 
           {/* Menu Items - Responsive */}
           <nav style={{ 
-            padding: isMobile ? '8px 0' : '16px', 
+            padding: isMobile ? '8px 0' : (leftSidebarCollapsed ? '16px 8px' : '16px'), 
             flexGrow: 1,
             display: 'flex',
             flexDirection: isMobile ? 'row' : 'column',
-            gap: isMobile ? '8px' : '0',
+            gap: isMobile ? '8px' : (leftSidebarCollapsed ? '12px' : '0'),
             overflowX: isMobile ? 'auto' : 'visible'
           }}>
             {menuItems.map((item) => {
@@ -381,26 +381,40 @@ export default function WindTreDashboard() {
                   key={item.id}
                   onClick={() => setCurrentModule(item.id)}
                   style={{
-                    width: isMobile ? 'auto' : '100%',
+                    width: isMobile ? 'auto' : (leftSidebarCollapsed ? '48px' : '100%'),
+                    height: leftSidebarCollapsed && !isMobile ? '48px' : 'auto',
                     minWidth: isMobile ? '80px' : 'auto',
-                    padding: isMobile ? '12px' : (leftSidebarCollapsed ? '16px' : '12px 16px'),
-                    marginBottom: isMobile ? '0' : '8px',
+                    padding: isMobile ? '12px' : (leftSidebarCollapsed ? '12px' : '12px 16px'),
+                    marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
                     background: isActive 
                       ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
-                      : 'transparent',
-                    border: 'none',
-                    borderRadius: '12px',
+                      : 'rgba(255, 255, 255, 0.1)',
+                    border: leftSidebarCollapsed ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+                    borderRadius: leftSidebarCollapsed ? '12px' : '12px',
                     color: isActive ? 'white' : '#374151',
                     fontSize: isMobile ? '12px' : '14px',
-                    fontWeight: isActive ? 600 : 400,
+                    fontWeight: isActive ? 600 : 500,
                     display: 'flex',
                     alignItems: 'center',
                     flexDirection: isMobile ? 'column' : 'row',
-                    gap: isMobile ? '4px' : '12px',
+                    gap: isMobile ? '4px' : (leftSidebarCollapsed ? '0' : '12px'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     textAlign: 'center',
-                    justifyContent: isMobile ? 'center' : (leftSidebarCollapsed ? 'center' : 'flex-start')
+                    justifyContent: 'center',
+                    boxShadow: leftSidebarCollapsed && !isActive ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none'
+                  }}
+                  onMouseOver={(e) => {
+                    if (leftSidebarCollapsed && !isActive) {
+                      e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)';
+                      e.currentTarget.style.color = '#FF6900';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (leftSidebarCollapsed && !isActive) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.color = '#374151';
+                    }
                   }}
                 >
                   <Icon size={leftSidebarCollapsed && !isMobile ? 24 : (isMobile ? 16 : 20)} />
