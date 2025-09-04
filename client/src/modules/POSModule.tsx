@@ -1,12 +1,14 @@
-// Tema light fisso
+import { useTheme } from '../contexts/ThemeContext';
 import { CreditCard } from 'lucide-react';
 
 export default function POSModule() {
+  const { currentTheme } = useTheme();
+
   const colors = {
-    text: '#1f2937',
-    textSecondary: 'rgba(31, 41, 55, 0.7)',
-    cardBg: 'rgba(255, 255, 255, 0.9)',
-    border: 'rgba(0, 0, 0, 0.1)',
+    text: currentTheme === 'dark' ? 'white' : '#1f2937',
+    textSecondary: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(31, 41, 55, 0.7)',
+    cardBg: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+    border: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
   };
 
   return (
