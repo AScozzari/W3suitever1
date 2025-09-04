@@ -408,10 +408,10 @@ export default function WindTreDashboard() {
                     marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
                     background: isActive 
                       ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
-                      : 'hsla(255, 255, 255, 0.08)',
-                    backdropFilter: leftSidebarCollapsed ? 'blur(12px)' : 'none',
-                    WebkitBackdropFilter: leftSidebarCollapsed ? 'blur(12px)' : 'none',
-                    border: leftSidebarCollapsed ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+                      : (leftSidebarCollapsed ? 'transparent' : 'hsla(255, 255, 255, 0.08)'),
+                    backdropFilter: 'none',
+                    WebkitBackdropFilter: 'none',
+                    border: 'none',
                     borderRadius: leftSidebarCollapsed ? '12px' : '12px',
                     color: isActive ? 'white' : '#374151',
                     fontSize: isMobile ? '12px' : '14px',
@@ -424,22 +424,16 @@ export default function WindTreDashboard() {
                     transition: 'all 0.2s ease',
                     textAlign: 'center',
                     justifyContent: 'center',
-                    boxShadow: leftSidebarCollapsed && !isActive ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none'
+                    boxShadow: 'none'
                   }}
                   onMouseOver={(e) => {
                     if (leftSidebarCollapsed && !isActive) {
-                      e.currentTarget.style.background = 'hsla(25, 100%, 50%, 0.15)';
-                      e.currentTarget.style.backdropFilter = 'blur(16px) saturate(200%)';
-                      e.currentTarget.style.WebkitBackdropFilter = 'blur(16px) saturate(200%)';
                       e.currentTarget.style.color = '#FF6900';
-                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.transform = 'scale(1.1)';
                     }
                   }}
                   onMouseOut={(e) => {
                     if (leftSidebarCollapsed && !isActive) {
-                      e.currentTarget.style.background = 'hsla(255, 255, 255, 0.08)';
-                      e.currentTarget.style.backdropFilter = 'blur(12px)';
-                      e.currentTarget.style.WebkitBackdropFilter = 'blur(12px)';
                       e.currentTarget.style.color = '#374151';
                       e.currentTarget.style.transform = 'scale(1)';
                     }
@@ -1282,46 +1276,6 @@ export default function WindTreDashboard() {
             overflowY: 'auto',
             boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.04)'
           }}>
-            {/* Workspace Toggle Button */}
-            <div style={{ position: 'absolute', left: '-16px', top: '20px', zIndex: 50 }}>
-              <button
-                onClick={() => {
-                  setWorkspaceCollapsed(!workspaceCollapsed);
-                  setLastInteraction(Date.now());
-                }}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  background: 'hsla(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(16px) saturate(120%)',
-                  WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-                  border: '1px solid hsla(255, 255, 255, 0.25)',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#6b7280',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(260, 100%, 45%, 0.15)';
-                  e.currentTarget.style.color = '#7B2CBF';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(123, 44, 191, 0.3)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#6b7280';
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                }}
-                title={workspaceCollapsed ? 'Espandi Workspace' : 'Comprimi Workspace'}
-              >
-                {workspaceCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-              </button>
-            </div>
 
             {workspaceCollapsed ? (
               <div style={{ 
