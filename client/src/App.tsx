@@ -1,9 +1,9 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
-import { useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
+import { useState } from "react";
 
 export default function App() {
   return (
