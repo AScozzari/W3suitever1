@@ -43,7 +43,10 @@ export default function DashboardModule() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <stat.icon size={24} style={{ color: '#FF6900' }} />
+              {stat.label === 'Vendite Oggi' && <DollarSign size={24} style={{ color: '#FF6900' }} />}
+              {stat.label === 'Clienti Attivi' && <Users size={24} style={{ color: '#FF6900' }} />}
+              {stat.label === 'Ordini Aperti' && <ShoppingCart size={24} style={{ color: '#FF6900' }} />}
+              {stat.label === 'Performance' && <Activity size={24} style={{ color: '#FF6900' }} />}
               <span style={{
                 color: stat.change.startsWith('+') ? '#10b981' : '#ef4444',
                 fontSize: '14px',

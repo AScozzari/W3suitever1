@@ -146,7 +146,7 @@ export default function EnhancedDashboard() {
               transition: 'all 0.2s ease'
             }}
           >
-            <Menu size={18} />
+            <Menu size={18} style={{ color: colors.text }} />
           </button>
           
           {/* Logo */}
@@ -267,7 +267,7 @@ export default function EnhancedDashboard() {
               transition: 'all 0.2s ease'
             }}
           >
-            <CheckSquare size={18} />
+            <CheckSquare size={18} style={{ color: colors.text }} />
           </button>
         </div>
       </header>
@@ -336,7 +336,12 @@ export default function EnhancedDashboard() {
                   }
                 }}
               >
-                <item.icon size={20} style={{ flexShrink: 0, color: colors.text }} />
+                {item.id === 'dashboard' && <LayoutDashboard size={20} style={{ flexShrink: 0, color: colors.text }} />}
+                {item.id === 'pos' && <CreditCard size={20} style={{ flexShrink: 0, color: colors.text }} />}
+                {item.id === 'inventory' && <Package size={20} style={{ flexShrink: 0, color: colors.text }} />}
+                {item.id === 'crm' && <Users size={20} style={{ flexShrink: 0, color: colors.text }} />}
+                {item.id === 'reports' && <BarChart3 size={20} style={{ flexShrink: 0, color: colors.text }} />}
+                {item.id === 'settings' && <Settings size={20} style={{ flexShrink: 0, color: colors.text }} />}
                 {(leftSidebarOpen || leftSidebarHovered) && (
                   <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
                 )}
