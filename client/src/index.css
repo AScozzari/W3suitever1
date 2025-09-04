@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* WindTre Enterprise Design System - Professional glassmorphism design
+All colors based on official WindTre brand palette - HSL format only
+*/
+
+@layer base {
+  :root {
+    /* WindTre Brand Colors */
+    --windtre-orange: 18 100% 50%;        /* #FF6900 - Primary brand orange */
+    --windtre-orange-light: 18 100% 65%;  /* Lighter orange for accents */
+    --windtre-orange-dark: 18 100% 35%;   /* Darker orange for depth */
+    --windtre-purple: 270 67% 47%;        /* #7B2CBF - Secondary brand purple */
+    --windtre-purple-light: 270 67% 65%;  /* Lighter purple */
+    --windtre-purple-dark: 270 67% 30%;   /* Darker purple */
+
+    /* Glassmorphism Base Colors */
+    --glass-white: 0 0% 100%;
+    --glass-black: 0 0% 0%;
+    --glass-neutral: 210 20% 50%;
+
+    /* Main Theme Colors */
+    --background: 210 25% 97%;             /* Soft neutral background */
+    --foreground: 210 15% 15%;             /* Dark text */
+
+    --card: var(--glass-white);
+    --card-foreground: 210 15% 15%;
+
+    --popover: var(--glass-white);
+    --popover-foreground: 210 15% 15%;
+
+    --primary: var(--windtre-orange);      /* WindTre orange primary */
+    --primary-foreground: var(--glass-white);
+
+    --secondary: var(--windtre-purple);    /* WindTre purple secondary */
+    --secondary-foreground: var(--glass-white);
+
+    --muted: 210 25% 95%;
+    --muted-foreground: 210 15% 45%;
+
+    --accent: var(--windtre-orange-light);
+    --accent-foreground: var(--glass-white);
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: var(--glass-white);
+
+    --border: 210 25% 90%;
+    --input: 210 25% 92%;
+    --ring: var(--windtre-orange);
+
+    --radius: 1rem;
+
+    /* Glassmorphism Effects */
+    --glass-bg: hsla(var(--glass-white), 0.25);
+    --glass-bg-strong: hsla(var(--glass-white), 0.35);
+    --glass-border: hsla(var(--glass-white), 0.18);
+    --glass-shadow: 0 8px 32px hsla(var(--glass-black), 0.1);
+    --glass-blur: blur(16px);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--windtre-orange)), hsl(var(--windtre-orange-light)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--windtre-purple)), hsl(var(--windtre-purple-light)));
+    --gradient-glass: linear-gradient(135deg, hsla(var(--glass-white), 0.3), hsla(var(--glass-white), 0.1));
+    --gradient-background: linear-gradient(135deg, hsl(210 25% 97%), hsl(210 30% 95%));
+
+    /* Enterprise Sidebar */
+    --sidebar-background: hsl(var(--glass-white));
+    --sidebar-foreground: 210 15% 25%;
+    --sidebar-primary: var(--windtre-orange);
+    --sidebar-primary-foreground: var(--glass-white);
+    --sidebar-accent: hsla(var(--windtre-orange), 0.1);
+    --sidebar-accent-foreground: 210 15% 25%;
+    --sidebar-border: hsla(var(--glass-white), 0.2);
+    --sidebar-ring: var(--windtre-orange);
+
+    /* Enterprise Status Colors */
+    --success: 120 60% 50%;
+    --success-foreground: var(--glass-white);
+    --warning: 43 100% 50%;
+    --warning-foreground: var(--glass-white);
+    --info: 210 100% 60%;
+    --info-foreground: var(--glass-white);
+  }
+
+  .dark {
+    --background: 210 25% 8%;
+    --foreground: 210 15% 85%;
+
+    --card: hsla(var(--glass-black), 0.4);
+    --card-foreground: 210 15% 85%;
+
+    --popover: hsla(var(--glass-black), 0.4);
+    --popover-foreground: 210 15% 85%;
+
+    --primary: var(--windtre-orange);
+    --primary-foreground: var(--glass-white);
+
+    --secondary: var(--windtre-purple);
+    --secondary-foreground: var(--glass-white);
+
+    --muted: 210 25% 15%;
+    --muted-foreground: 210 15% 65%;
+
+    --accent: var(--windtre-orange-light);
+    --accent-foreground: var(--glass-white);
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: var(--glass-white);
+
+    --border: 210 25% 20%;
+    --input: 210 25% 18%;
+    --ring: var(--windtre-orange);
+
+    /* Dark Glassmorphism */
+    --glass-bg: hsla(var(--glass-black), 0.25);
+    --glass-bg-strong: hsla(var(--glass-black), 0.35);
+    --glass-border: hsla(var(--glass-white), 0.1);
+    --glass-shadow: 0 8px 32px hsla(var(--glass-black), 0.3);
+
+    --sidebar-background: hsl(210 25% 15%);
+    --sidebar-foreground: 210 15% 75%;
+    --sidebar-accent: hsla(var(--windtre-orange), 0.2);
+    --sidebar-accent-foreground: 210 15% 75%;
+    --sidebar-border: hsla(var(--glass-white), 0.1);
+
+    --gradient-background: linear-gradient(135deg, hsl(210 25% 8%), hsl(210 30% 10%));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background: var(--gradient-background);
+    min-height: 100vh;
+  }
+
+  /* Glassmorphism Base Classes */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-strong {
+    background: var(--glass-bg-strong);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Professional Animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 0 20px hsl(var(--windtre-orange) / 0.2); }
+    to { box-shadow: 0 0 30px hsl(var(--windtre-orange) / 0.4); }
+  }
+
+  /* Custom Mobile Sidebar Fix */
+  [data-sidebar="sidebar"][data-mobile="true"] {
+    background: hsl(var(--sidebar-background)) !important;
+    backdrop-filter: none !important;
+  }
+
+  .dark [data-sidebar="sidebar"][data-mobile="true"] {
+    background: hsl(210 25% 15%) !important;
+  }
+
+  /* Prevent horizontal scrolling */
+  html, body, #root {
+    overflow-x: hidden;
+  }
+
+  /* Enterprise Professional Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--windtre-orange) / 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--windtre-orange) / 0.5);
+  }
+}

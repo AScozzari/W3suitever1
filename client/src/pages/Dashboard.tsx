@@ -1,248 +1,153 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import DashboardModule from "../modules/DashboardModule";
-import POSModule from "../modules/POSModule";
-import InventoryModule from "../modules/InventoryModule";
-import CRMModule from "../modules/CRMModule";
+import { EnterpriseLayout } from "../components/EnterpriseLayout";
+import { DashboardStats } from "../components/DashboardStats";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Download, Filter, Search } from 'lucide-react';
 
-const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'pos', label: 'POS / Cassa', icon: '💳' },
-  { id: 'inventory', label: 'Magazzino', icon: '📦' },
-  { id: 'crm', label: 'CRM', icon: '👥' },
-  { id: 'reports', label: 'Reports', icon: '📈' },
-  { id: 'settings', label: 'Impostazioni', icon: '⚙️' },
-];
-
-export default function Dashboard({ 
-  currentModule, 
-  setCurrentModule 
-}: { 
-  currentModule: string, 
-  setCurrentModule: (module: string) => void 
-}) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
-
-  const renderModule = () => {
-    switch (currentModule) {
-      case 'dashboard':
-        return <DashboardModule />;
-      case 'pos':
-        return <POSModule />;
-      case 'inventory':
-        return <InventoryModule />;
-      case 'crm':
-        return <CRMModule />;
-      default:
-        return <div style={{ padding: '24px' }}>
-          <h2 style={{ color: 'white' }}>Modulo {currentModule} in sviluppo...</h2>
-        </div>;
-    }
-  };
-
+const Dashboard = () => {
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a1e 0%, #1a0033 50%, #0a0a1e 100%)',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      display: 'flex'
-    }}>
-      {/* Sidebar */}
-      <aside style={{
-        width: sidebarOpen ? '260px' : '80px',
-        background: 'rgba(0, 0, 0, 0.3)',
-        backdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-        transition: 'width 0.3s ease',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Logo */}
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <span style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>W3</span>
-          </div>
-          {sidebarOpen && (
-            <span style={{ color: 'white', fontSize: '18px', fontWeight: '600' }}>W3 Suite</span>
-          )}
-        </div>
-
-        {/* Menu */}
-        <nav style={{ flex: 1, padding: '16px 12px' }}>
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setCurrentModule(item.id)}
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                marginBottom: '8px',
-                background: currentModule === item.id
-                  ? 'linear-gradient(135deg, rgba(255, 105, 0, 0.2) 0%, rgba(123, 44, 191, 0.2) 100%)'
-                  : 'transparent',
-                border: currentModule === item.id
-                  ? '1px solid rgba(255, 105, 0, 0.3)'
-                  : '1px solid transparent',
-                borderRadius: '12px',
-                color: 'white',
-                fontSize: '15px',
-                fontWeight: currentModule === item.id ? '600' : '400',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left'
-              }}
-              onMouseOver={(e) => {
-                if (currentModule !== item.id) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (currentModule !== item.id) {
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
-            >
-              <span style={{ fontSize: '20px' }}>{item.icon}</span>
-              {sidebarOpen && <span>{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-
-        {/* User section */}
-        <div style={{
-          padding: '16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '12px'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <span style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
-            </div>
-            {sidebarOpen && (
-              <div>
-                <p style={{ color: 'white', fontSize: '14px', fontWeight: '500', margin: 0 }}>
-                  {user?.firstName} {user?.lastName}
-                </p>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '12px', margin: 0 }}>
-                  {user?.email}
-                </p>
+    <EnterpriseLayout>
+      {/* Hero Section */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl">
+        <div className="h-48 bg-gradient-to-r from-windtre-orange to-windtre-purple relative">
+          <div className="absolute inset-0 bg-black/10" />
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 md:p-8 h-full">
+            <div className="text-white">
+              <h1 className="text-3xl font-bold mb-2">
+                Dashboard Enterprise
+              </h1>
+              <p className="text-white/90 text-lg">
+                Gestisci tutti i tuoi servizi WindTre da un'unica piattaforma
+              </p>
+              <div className="flex gap-2 mt-4">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  Tenant: Corporate
+                </Badge>
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  Ultimo accesso: Oggi
+                </Badge>
               </div>
-            )}
+            </div>
+            <div className="flex gap-3 w-full md:w-auto md:justify-end">
+              <Button variant="outline" className="bg-white/20 text-white border-white/30 hover:bg-white/30 w-full md:w-auto">
+                <Download className="h-4 w-4 mr-2" />
+                Report
+              </Button>
+              <Button className="w-full md:w-auto bg-windtre-orange hover:bg-windtre-orange-dark">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Cliente
+              </Button>
+            </div>
           </div>
-          <a
-            href="/api/logout"
-            style={{
-              display: 'block',
-              padding: '10px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '14px',
-              textAlign: 'center',
-              textDecoration: 'none',
-              transition: 'background 0.2s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-          >
-            {sidebarOpen ? 'Esci' : '🚪'}
-          </a>
         </div>
-      </aside>
+      </div>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <header style={{
-          height: '70px',
-          background: 'rgba(0, 0, 0, 0.2)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 24px',
-          justifyContent: 'space-between'
-        }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '20px'
-            }}
-          >
-            {sidebarOpen ? '◀' : '▶'}
-          </button>
-          
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <button style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '20px'
-            }}>
-              🔔
-            </button>
-            <button style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '20px'
-            }}>
-              🔍
-            </button>
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Azioni Rapide</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="glass">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtri
+            </Button>
+            <Button variant="outline" size="sm" className="glass">
+              <Search className="h-4 w-4 mr-2" />
+              Ricerca
+            </Button>
           </div>
-        </header>
-
-        {/* Module Content */}
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          {renderModule()}
         </div>
-      </main>
-    </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            { 
+              title: 'Ricerca Cliente', 
+              desc: 'Trova per telefono o codice fiscale', 
+              action: 'Cerca', 
+              variant: 'bg-gradient-to-r from-windtre-orange/20 to-windtre-orange/10',
+              buttonClass: 'bg-windtre-orange hover:bg-windtre-orange-dark text-white'
+            },
+            { 
+              title: 'Nuovo Contratto', 
+              desc: 'Attiva nuova linea o servizio', 
+              action: 'Attiva', 
+              variant: 'bg-gradient-to-r from-windtre-purple/20 to-windtre-purple/10',
+              buttonClass: 'bg-windtre-purple hover:bg-windtre-purple-dark text-white'
+            },
+            { 
+              title: 'Gestione Fatture', 
+              desc: 'Visualizza e gestisci fatturazione', 
+              action: 'Apri', 
+              variant: 'glass-strong',
+              buttonClass: 'bg-muted hover:bg-muted/80'
+            },
+            { 
+              title: 'Support Ticket', 
+              desc: 'Crea nuovo ticket di assistenza', 
+              action: 'Crea', 
+              variant: 'glass-strong',
+              buttonClass: 'bg-muted hover:bg-muted/80'
+            },
+          ].map((item, index) => (
+            <Card key={index} className={`${item.variant} border-border/50 hover:shadow-lg transition-all duration-300`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                <CardDescription className="text-xs">{item.desc}</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button size="sm" className={`w-full ${item.buttonClass}`}>
+                  {item.action}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Statistics */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Statistiche Generali</h2>
+        <DashboardStats />
+      </div>
+
+      {/* Recent Activity */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Attività Recenti</h2>
+        <Card className="glass-strong border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Ultime Operazioni</CardTitle>
+            <CardDescription>Le attività più recenti del tuo tenant</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { time: '10:30', action: 'Nuovo cliente attivato', user: 'Mario Rossi', type: 'success' },
+                { time: '09:15', action: 'Contratto fibra modificato', user: 'Luigi Bianchi', type: 'default' },
+                { time: '08:45', action: 'Fattura generata', user: 'Anna Verdi', type: 'default' },
+                { time: '07:20', action: 'Ticket risolto', user: 'Paolo Neri', type: 'success' },
+              ].map((activity, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg glass hover:glass-strong transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={activity.type === 'success' ? 'default' : 'secondary'} className="text-xs">
+                      {activity.time}
+                    </Badge>
+                    <div>
+                      <p className="text-sm font-medium">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">Cliente: {activity.user}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm">
+                    Dettagli
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </EnterpriseLayout>
   );
-}
+};
+
+export default Dashboard;
