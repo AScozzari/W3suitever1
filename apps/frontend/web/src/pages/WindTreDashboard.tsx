@@ -153,21 +153,24 @@ export default function WindTreDashboard() {
       fontFamily: 'Inter, system-ui, sans-serif',
       position: 'relative'
     }}>
-      {/* Header fisso - Responsive */}
+      {/* Header fisso - Glassmorphism Enhanced */}
       <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         height: isMobile ? '56px' : '64px',
-        background: 'hsla(0, 0%, 100%, 0.35)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid hsla(0, 0%, 100%, 0.18)',
+        background: 'hsla(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        borderBottom: '1px solid hsla(255, 255, 255, 0.25)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: isMobile ? '0 16px' : '0 24px',
-        zIndex: 50
+        zIndex: 50,
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+        borderRadius: '0 0 20px 20px'
       }}>
         {/* Logo e Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -300,23 +303,25 @@ export default function WindTreDashboard() {
         paddingTop: isMobile ? '56px' : '64px',
         flexDirection: isMobile ? 'column' : 'row'
       }}>
-        {/* Sidebar sinistra - Responsive */}
+        {/* Sidebar sinistra - Enhanced Glassmorphism */}
         <aside style={{
           position: isMobile ? 'static' : 'fixed',
           left: 0,
           top: isMobile ? '0' : '64px',
           height: isMobile ? 'auto' : 'calc(100vh - 64px)',
           width: isMobile ? '100%' : (leftSidebarCollapsed ? '64px' : '256px'),
-          background: 'hsla(0, 0%, 100%, 0.35)',
-          backdropFilter: 'blur(16px)',
-          borderRight: isMobile ? 'none' : '1px solid hsla(0, 0%, 100%, 0.18)',
-          borderBottom: isMobile ? '1px solid hsla(0, 0%, 100%, 0.18)' : 'none',
-          transition: 'all 0.3s ease',
+          background: 'hsla(255, 255, 255, 0.12)',
+          backdropFilter: 'blur(28px) saturate(150%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(150%)',
+          borderRight: isMobile ? 'none' : '1px solid hsla(255, 255, 255, 0.25)',
+          borderBottom: isMobile ? '1px solid hsla(255, 255, 255, 0.25)' : 'none',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           zIndex: 40,
           display: isMobile && leftSidebarCollapsed ? 'none' : 'flex',
           flexDirection: isMobile ? 'row' : 'column',
           overflowX: isMobile ? 'auto' : 'visible',
-          padding: isMobile ? '12px' : '0'
+          padding: isMobile ? '12px' : '0',
+          boxShadow: isMobile ? 'none' : '8px 0 32px rgba(0, 0, 0, 0.06)'
         }}>
           {/* Toggle Button - Mobile hamburger */}
           {isMobile ? (
@@ -388,7 +393,9 @@ export default function WindTreDashboard() {
                     marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
                     background: isActive 
                       ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
-                      : 'rgba(255, 255, 255, 0.1)',
+                      : 'hsla(255, 255, 255, 0.08)',
+                    backdropFilter: leftSidebarCollapsed ? 'blur(12px)' : 'none',
+                    WebkitBackdropFilter: leftSidebarCollapsed ? 'blur(12px)' : 'none',
                     border: leftSidebarCollapsed ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
                     borderRadius: leftSidebarCollapsed ? '12px' : '12px',
                     color: isActive ? 'white' : '#374151',
@@ -406,14 +413,20 @@ export default function WindTreDashboard() {
                   }}
                   onMouseOver={(e) => {
                     if (leftSidebarCollapsed && !isActive) {
-                      e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)';
+                      e.currentTarget.style.background = 'hsla(25, 100%, 50%, 0.15)';
+                      e.currentTarget.style.backdropFilter = 'blur(16px) saturate(200%)';
+                      e.currentTarget.style.WebkitBackdropFilter = 'blur(16px) saturate(200%)';
                       e.currentTarget.style.color = '#FF6900';
+                      e.currentTarget.style.transform = 'scale(1.05)';
                     }
                   }}
                   onMouseOut={(e) => {
                     if (leftSidebarCollapsed && !isActive) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.background = 'hsla(255, 255, 255, 0.08)';
+                      e.currentTarget.style.backdropFilter = 'blur(12px)';
+                      e.currentTarget.style.WebkitBackdropFilter = 'blur(12px)';
                       e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.transform = 'scale(1)';
                     }
                   }}
                 >
