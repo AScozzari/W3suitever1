@@ -85,7 +85,7 @@ function AppRouter() {
             <Route path="/cms" component={CmsPage} />
             <Route path="/gare" component={GarePage} />
             <Route path="/settings" component={SettingsPage} />
-            <Route component={NotFound} />
+            <Route component={() => <div className="p-8 text-center"><h1 className="text-2xl font-bold">404 - Pagina non trovata</h1></div>} />
           </Switch>
         </AppShell>
       </Router>
