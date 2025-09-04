@@ -14,6 +14,7 @@ import {
 export default function WindTreDashboard() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
+  const [lastInteraction, setLastInteraction] = useState(Date.now());
   const [currentModule, setCurrentModule] = useState('dashboard');
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -36,6 +37,40 @@ export default function WindTreDashboard() {
     window.addEventListener('resize', checkDevice);
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
+
+  // Auto-collapse intelligente delle sidebar dopo inattività
+  useEffect(() => {
+    const handleUserActivity = () => {
+      setLastInteraction(Date.now());
+    };
+
+    const checkInactivity = () => {
+      const now = Date.now();
+      const inactiveTime = now - lastInteraction;
+      
+      // Auto-collapse dopo 30 secondi di inattività su desktop
+      if (inactiveTime > 30000 && !isMobile && !isTablet) {
+        if (!leftSidebarCollapsed) setLeftSidebarCollapsed(true);
+        if (!workspaceCollapsed) setWorkspaceCollapsed(true);
+      }
+    };
+
+    // Eventi per rilevare attività utente
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      document.addEventListener(event, handleUserActivity, true);
+    });
+
+    // Check inattività ogni 5 secondi
+    const inactivityTimer = setInterval(checkInactivity, 5000);
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleUserActivity, true);
+      });
+      clearInterval(inactivityTimer);
+    };
+  }, [lastInteraction, leftSidebarCollapsed, workspaceCollapsed, isMobile, isTablet]);
 
   const handleLogout = async () => {
     try {
@@ -346,27 +381,7 @@ export default function WindTreDashboard() {
             >
               <Menu size={16} />
             </button>
-          ) : (
-            <div style={{ position: 'absolute', right: '-12px', top: '24px', zIndex: 50 }}>
-              <button
-                onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  background: 'hsla(0, 0%, 100%, 0.35)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {leftSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-              </button>
-            </div>
-          )}
+          ) : null}
 
           {/* Menu Items - Responsive */}
           <nav style={{ 
@@ -1265,26 +1280,28 @@ export default function WindTreDashboard() {
             zIndex: 40,
             overflowY: 'auto'
           }}>
-            {/* Toggle Button */}
-            <div style={{ position: 'absolute', left: '-12px', top: '24px', zIndex: 50 }}>
-              <button
-                onClick={() => setWorkspaceCollapsed(!workspaceCollapsed)}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  background: 'hsla(0, 0%, 100%, 0.35)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {workspaceCollapsed ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
-              </button>
-            </div>
+            {/* Smart workspace trigger area */}
+            <div style={{
+              position: 'absolute',
+              left: '-8px',
+              top: 0,
+              bottom: 0,
+              width: '8px',
+              cursor: 'col-resize',
+              background: 'transparent',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'hsla(260, 100%, 45%, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+            onClick={() => {
+              setWorkspaceCollapsed(!workspaceCollapsed);
+              setLastInteraction(Date.now());
+            }}
+            />
 
             {workspaceCollapsed ? (
               <div style={{ 
