@@ -15,6 +15,8 @@ export default function WindTreDashboard() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
   const [lastInteraction, setLastInteraction] = useState(Date.now());
+  const [leftSidebarTimer, setLeftSidebarTimer] = useState<NodeJS.Timeout | null>(null);
+  const [workspaceTimer, setWorkspaceTimer] = useState<NodeJS.Timeout | null>(null);
   const [currentModule, setCurrentModule] = useState('dashboard');
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -71,6 +73,14 @@ export default function WindTreDashboard() {
       clearInterval(inactivityTimer);
     };
   }, [lastInteraction, leftSidebarCollapsed, workspaceCollapsed, isMobile, isTablet]);
+
+  // Cleanup dei timer al dismount del componente
+  useEffect(() => {
+    return () => {
+      if (leftSidebarTimer) clearTimeout(leftSidebarTimer);
+      if (workspaceTimer) clearTimeout(workspaceTimer);
+    };
+  }, [leftSidebarTimer, workspaceTimer]);
 
   const handleLogout = async () => {
     try {
@@ -338,8 +348,34 @@ export default function WindTreDashboard() {
         paddingTop: isMobile ? '56px' : '64px',
         flexDirection: isMobile ? 'column' : 'row'
       }}>
-        {/* Sidebar sinistra - Enhanced Glassmorphism */}
-        <aside style={{
+        {/* Sidebar sinistra - Smart Hover Glassmorphism */}
+        <aside 
+          onMouseEnter={() => {
+            if (!isMobile && leftSidebarCollapsed) {
+              setLeftSidebarCollapsed(false);
+              setLastInteraction(Date.now());
+            }
+            // Cancella timer di chiusura se esiste
+            if (leftSidebarTimer) {
+              clearTimeout(leftSidebarTimer);
+              setLeftSidebarTimer(null);
+            }
+          }}
+          onMouseLeave={() => {
+            if (!isMobile && !leftSidebarCollapsed) {
+              // Cancella timer precedente
+              if (leftSidebarTimer) {
+                clearTimeout(leftSidebarTimer);
+              }
+              // Imposta nuovo timer
+              const timer = setTimeout(() => {
+                setLeftSidebarCollapsed(true);
+                setLeftSidebarTimer(null);
+              }, 1500); // Delay aumentato per usabilità
+              setLeftSidebarTimer(timer);
+            }
+          }}
+          style={{
           position: isMobile ? 'static' : 'fixed',
           left: 0,
           top: isMobile ? '0' : '64px',
@@ -1259,9 +1295,35 @@ export default function WindTreDashboard() {
           </div>
         </main>
 
-        {/* Workspace Sidebar destra - Desktop only */}
+        {/* Workspace Sidebar destra - Smart Hover Glassmorphism */}
         {!isMobile && !isTablet && (
-          <aside style={{
+          <aside 
+            onMouseEnter={() => {
+              if (workspaceCollapsed) {
+                setWorkspaceCollapsed(false);
+                setLastInteraction(Date.now());
+              }
+              // Cancella timer di chiusura se esiste
+              if (workspaceTimer) {
+                clearTimeout(workspaceTimer);
+                setWorkspaceTimer(null);
+              }
+            }}
+            onMouseLeave={() => {
+              if (!workspaceCollapsed) {
+                // Cancella timer precedente
+                if (workspaceTimer) {
+                  clearTimeout(workspaceTimer);
+                }
+                // Imposta nuovo timer
+                const timer = setTimeout(() => {
+                  setWorkspaceCollapsed(true);
+                  setWorkspaceTimer(null);
+                }, 1500); // Delay aumentato per usabilità
+                setWorkspaceTimer(timer);
+              }
+            }}
+            style={{
             position: 'fixed',
             right: 0,
             top: '64px',
