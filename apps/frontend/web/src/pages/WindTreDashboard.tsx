@@ -447,11 +447,11 @@ export default function WindTreDashboard() {
                     marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
                     background: isActive 
                       ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
-                      : (leftSidebarCollapsed ? 'transparent' : 'hsla(255, 255, 255, 0.08)'),
+                      : 'transparent',
                     backdropFilter: 'none',
                     WebkitBackdropFilter: 'none',
                     border: 'none',
-                    borderRadius: leftSidebarCollapsed ? '12px' : '12px',
+                    borderRadius: leftSidebarCollapsed ? '12px' : '8px',
                     color: isActive ? 'white' : '#374151',
                     fontSize: isMobile ? '12px' : '14px',
                     fontWeight: isActive ? 600 : 500,
