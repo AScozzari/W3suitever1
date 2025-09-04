@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTheme } from "../contexts/ThemeContext";
+// Rimosso import useTheme - tema light fisso
 import DashboardModule from "../modules/DashboardModule";
 import POSModule from "../modules/POSModule";
 import InventoryModule from "../modules/InventoryModule";
@@ -39,7 +39,8 @@ export default function EnhancedDashboard() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [leftSidebarHovered, setLeftSidebarHovered] = useState(false);
   const [rightSidebarHovered, setRightSidebarHovered] = useState(false);
-  const { theme, setTheme, currentTheme } = useTheme();
+  // Forza tema light come default
+  const currentTheme = 'light';
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
 
   const renderModule = () => {
@@ -54,7 +55,7 @@ export default function EnhancedDashboard() {
         return <CRMModule />;
       default:
         return <div style={{ padding: '24px' }}>
-          <h2 style={{ color: currentTheme === 'dark' ? 'white' : '#1f2937' }}>
+          <h2 style={{ color: '#1f2937' }}>
             Modulo {currentModule} in sviluppo...
           </h2>
         </div>;
@@ -62,28 +63,14 @@ export default function EnhancedDashboard() {
   };
 
   const getColors = () => ({
-    bg: currentTheme === 'dark' 
-      ? 'linear-gradient(180deg, #0a0a1e 0%, #1a0033 100%)'
-      : 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
-    headerBg: currentTheme === 'dark'
-      ? 'rgba(0, 0, 0, 0.2)'
-      : 'rgba(255, 255, 255, 0.2)',
-    sidebarBg: currentTheme === 'dark'
-      ? 'rgba(0, 0, 0, 0.4)'
-      : 'rgba(255, 255, 255, 0.4)',
-    cardBg: currentTheme === 'dark'
-      ? 'rgba(255, 255, 255, 0.05)'
-      : 'rgba(0, 0, 0, 0.05)',
-    border: currentTheme === 'dark'
-      ? 'rgba(255, 255, 255, 0.1)'
-      : 'rgba(0, 0, 0, 0.1)',
-    text: currentTheme === 'dark' ? 'white' : '#1f2937',
-    textSecondary: currentTheme === 'dark' 
-      ? 'rgba(255, 255, 255, 0.7)'
-      : 'rgba(31, 41, 55, 0.7)',
-    textMuted: currentTheme === 'dark'
-      ? 'rgba(255, 255, 255, 0.5)'
-      : 'rgba(31, 41, 55, 0.5)',
+    bg: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
+    headerBg: 'rgba(255, 255, 255, 0.2)',
+    sidebarBg: 'rgba(255, 255, 255, 0.4)',
+    cardBg: 'rgba(0, 0, 0, 0.05)',
+    border: 'rgba(0, 0, 0, 0.1)',
+    text: '#1f2937',
+    textSecondary: 'rgba(31, 41, 55, 0.7)',
+    textMuted: 'rgba(31, 41, 55, 0.5)',
   });
 
   const colors = getColors();
@@ -107,7 +94,7 @@ export default function EnhancedDashboard() {
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${colors.border}`,
-        zIndex: 1000,
+        zIndex: 1000, // Header sopra tutto
         display: 'flex',
         alignItems: 'center',
         padding: '0 20px',
@@ -186,52 +173,18 @@ export default function EnhancedDashboard() {
             padding: '4px',
             border: `1px solid ${colors.border}`
           }}>
-            <button
-              onClick={() => setTheme('light')}
-              style={{
-                padding: '6px 10px',
-                background: theme === 'light' ? '#FF6900' : 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: theme === 'light' ? 'white' : colors.text,
-                cursor: 'pointer',
-                fontSize: '16px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              ☀️
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              style={{
-                padding: '6px 10px',
-                background: theme === 'dark' ? '#FF6900' : 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: theme === 'dark' ? 'white' : colors.text,
-                cursor: 'pointer',
-                fontSize: '16px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🌙
-            </button>
-            <button
-              onClick={() => setTheme('auto')}
-              style={{
-                padding: '6px 10px',
-                background: theme === 'auto' ? '#FF6900' : 'transparent',
-                border: 'none',
-                borderRadius: '6px',
-                color: theme === 'auto' ? 'white' : colors.text,
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Auto
-            </button>
+            {/* Tema Light Fisso - Pulsanti tema rimossi */}
+            <div style={{
+              padding: '6px 12px',
+              background: 'rgba(255, 105, 0, 0.1)',
+              border: '1px solid rgba(255, 105, 0, 0.3)',
+              borderRadius: '6px',
+              color: colors.text,
+              fontSize: '12px',
+              fontWeight: '500'
+            }}>
+              ☀️ Light Mode
+            </div>
           </div>
 
           {/* Toggle Right Sidebar */}
@@ -431,9 +384,7 @@ export default function EnhancedDashboard() {
                         transition: 'all 0.2s ease'
                       }}
                       onMouseOver={(e) => {
-                        e.currentTarget.style.background = currentTheme === 'dark'
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(0, 0, 0, 0.08)';
+                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.08)';
                       }}
                       onMouseOut={(e) => {
                         e.currentTarget.style.background = notif.unread ? colors.cardBg : 'transparent';
