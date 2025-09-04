@@ -458,8 +458,8 @@ export default function WindTreDashboard() {
                     gap: isMobile ? '4px' : (leftSidebarCollapsed ? '0' : '12px'),
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    textAlign: 'center',
-                    justifyContent: 'center',
+                    textAlign: leftSidebarCollapsed ? 'center' : 'left',
+                    justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start',
                     boxShadow: 'none'
                   }}
                   onMouseOver={(e) => {
@@ -475,7 +475,7 @@ export default function WindTreDashboard() {
                     }
                   }}
                 >
-                  <Icon size={leftSidebarCollapsed && !isMobile ? 22 : (isMobile ? 16 : 20)} />
+                  <Icon size={leftSidebarCollapsed && !isMobile ? 26 : (isMobile ? 16 : 20)} />
                   {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
