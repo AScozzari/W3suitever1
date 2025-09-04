@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+// Removed framer-motion for better compatibility
 import { X } from 'lucide-react';
 
 interface NavigationItem {
@@ -41,21 +41,19 @@ export function Sidebar({ navigation, isOpen, onClose }: SidebarProps) {
           {/* Navigation */}
           <nav className="flex-1 space-y-2">
             {navigation.map((item, index) => (
-              <motion.a
+              <a
                 key={index}
                 href={item.href}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 hover:translate-x-1 ${
                   item.active
-                    ? 'bg-primary/20 border border-primary/30 text-primary-700 dark:text-primary-300'
+                    ? 'bg-orange-500/20 border border-orange-500/30 text-orange-700 dark:text-orange-300'
                     : 'text-neutral-600 dark:text-neutral-400 hover:bg-white/10 hover:text-neutral-900 dark:hover:text-neutral-100'
                 }`}
-                whileHover={{ x: 4 }}
-                whileTap={{ scale: 0.98 }}
                 data-testid={`link-sidebar-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 {item.icon}
                 <span className="text-sm font-medium">{item.label}</span>
-              </motion.a>
+              </a>
             ))}
           </nav>
 
@@ -76,7 +74,7 @@ export function Sidebar({ navigation, isOpen, onClose }: SidebarProps) {
       </aside>
 
       {/* Mobile Sidebar */}
-      <motion.aside
+      <aside
         initial={{ x: -300 }}
         animate={{ x: isOpen ? 0 : -300 }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
@@ -124,7 +122,7 @@ export function Sidebar({ navigation, isOpen, onClose }: SidebarProps) {
           {/* Mobile Navigation */}
           <nav className="flex-1 space-y-2">
             {navigation.map((item, index) => (
-              <motion.a
+              <a
                 key={index}
                 href={item.href}
                 className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200 ${
@@ -138,7 +136,7 @@ export function Sidebar({ navigation, isOpen, onClose }: SidebarProps) {
               >
                 {item.icon}
                 <span className="text-sm font-medium">{item.label}</span>
-              </motion.a>
+              </a>
             ))}
           </nav>
 
@@ -156,7 +154,7 @@ export function Sidebar({ navigation, isOpen, onClose }: SidebarProps) {
             </Card>
           </div>
         </div>
-      </motion.aside>
+      </aside>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+// Removed framer-motion for better compatibility
 import { 
   LayoutDashboard, 
   ShoppingCart, 
