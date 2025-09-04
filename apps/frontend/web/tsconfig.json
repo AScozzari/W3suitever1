@@ -1,0 +1,14 @@
+{
+  "extends": "../../../configs/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ui/*": ["../../packages/ui/src/*"],
+      "@tokens/*": ["../../packages/tokens/*"],
+      "@sdk/*": ["../../packages/sdk/*"]
+    }
+  },
+  "include": ["src/**/*", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

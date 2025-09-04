@@ -21,7 +21,7 @@ import {
   type InsertUserTenantRole,
   type Permission,
   type InsertPermission,
-} from "@shared/schema";
+} from "../../../../../packages/sdk/src/schema";
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
 

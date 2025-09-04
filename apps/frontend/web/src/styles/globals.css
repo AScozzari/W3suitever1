@@ -1,0 +1,99 @@
+/* W3 Suite - Global Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import design tokens */
+@import "@tokens/index.css";
+
+/* Base styles with glassmorphism support */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-neutral-50 via-primary-50/30 to-secondary-50/30 dark:from-neutral-950 dark:via-primary-950/20 dark:to-secondary-950/20;
+    @apply text-neutral-900 dark:text-neutral-100;
+    @apply font-sans antialiased;
+    min-height: 100vh;
+  }
+
+  /* Glassmorphism background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(255, 105, 0, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(123, 44, 191, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-400/50 dark:bg-neutral-600/50 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-500/70 dark:bg-neutral-500/70;
+  }
+}
+
+@layer components {
+  /* Custom page layout with padding for fixed header */
+  .page-layout {
+    @apply pt-16 min-h-screen;
+  }
+
+  /* Glassmorphism sidebar styles */
+  .sidebar-glass {
+    @apply bg-white/10 dark:bg-black/10 backdrop-blur-lg border-r border-white/20 dark:border-white/10;
+    @apply shadow-[0_8px_32px_rgba(31,38,135,0.37)];
+  }
+
+  /* Enterprise module cards */
+  .module-card {
+    @apply glass rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300;
+    @apply border border-white/20 dark:border-white/10;
+  }
+
+  /* Feature highlight gradients */
+  .feature-gradient {
+    background: linear-gradient(135deg, 
+      rgba(255, 105, 0, 0.1) 0%, 
+      rgba(123, 44, 191, 0.1) 100%
+    );
+  }
+
+  /* Loading animations */
+  .loading-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+}

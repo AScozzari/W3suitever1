@@ -1,0 +1,21 @@
+{
+  "name": "@w3-suite/tokens",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./tailwind-preset": "./tailwind-preset.js"
+  },
+  "files": [
+    "*.js", 
+    "*.css",
+    "*.d.ts"
+  ],
+  "devDependencies": {
+    "tailwindcss": "^3.4.16"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^3.0.0"
+  }
+}
