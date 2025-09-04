@@ -8,7 +8,7 @@ import {
   Plus, Filter, Download, Phone, Wifi, Smartphone, 
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
-  Folder, UserX, Star, Home, Building, Briefcase, Tool
+  Folder, UserX, Star, Home, Building, Briefcase, Wrench
 } from 'lucide-react';
 
 export default function WindTreDashboard() {
@@ -537,7 +537,7 @@ export default function WindTreDashboard() {
               fontSize: '14px',
               fontWeight: 600
             }}>
-              {user?.email?.[0]?.toUpperCase() || 'A'}
+              {(user as any)?.email?.[0]?.toUpperCase() || 'A'}
             </div>
             {!isMobile && (
               <button
@@ -562,6 +562,31 @@ export default function WindTreDashboard() {
         paddingTop: isMobile ? '56px' : '64px',
         flexDirection: isMobile ? 'column' : 'row'
       }}>
+        
+        {/* Sidebar sinistra - mobile toggle */}
+        {isMobile && (
+          <button
+            onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+            style={{
+              position: 'fixed',
+              top: '14px',
+              left: '16px',
+              width: '28px',
+              height: '28px',
+              background: 'hsla(0, 0%, 100%, 0.35)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid hsla(0, 0%, 100%, 0.18)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 60
+            }}
+          >
+            <Menu size={16} />
+          </button>
+        )}
         {/* Sidebar sinistra - Smart Hover Glassmorphism */}
         <aside 
           onMouseEnter={() => {
@@ -1925,83 +1950,27 @@ export default function WindTreDashboard() {
                 )}
 
               </div>
-            ) : (
-              <div style={{ 
-                padding: '24px 8px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '16px'
-              }}>
-                {/* Icona Calendario */}
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: '#374151',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#6b7280';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#374151';
-                }}>
-                  <Calendar size={18} />
-                </button>
-                {/* Icona Tasks */}
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: '#374151',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#6b7280';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#374151';
-                }}>
-                  <CheckCircle size={18} />
-                </button>
-                {/* Icona Leads */}
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: '#374151',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#6b7280';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#374151';
-                }}>
-                  <Users size={18} />
-                </button>
-              </div>
             )}
           </aside>
+
+        {/* Workspace Sidebar - Right side */}
+        <aside style={{
+          position: 'fixed',
+          right: 0,
+          top: '64px',
+          height: 'calc(100vh - 64px)',
+          width: workspaceCollapsed ? '64px' : '320px',
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          borderLeft: '1px solid hsla(255, 255, 255, 0.12)',
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          zIndex: 40,
+          overflowY: 'auto',
+          boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.04)'
+        }}>
+          {/* Workspace content would go here */}
+        </aside>
 
         {/* CSS Animations per effetti dashboard */}
         <style>{`
@@ -2044,6 +2013,3 @@ export default function WindTreDashboard() {
     </div>
   );
 }
-                      <p style={{
-                        fontSize: '12px',
-                        color: '#374151',
