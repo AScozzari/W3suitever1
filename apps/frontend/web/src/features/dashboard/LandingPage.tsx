@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-// import { Button } from '../../../../../packages/ui/src/index';
 import { ArrowRight, Shield, Zap, Globe } from 'lucide-react';
 
 export function LandingPage() {

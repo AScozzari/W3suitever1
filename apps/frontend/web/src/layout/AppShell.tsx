@@ -12,7 +12,6 @@ import {
   Settings
 } from 'lucide-react';
 
-// import { Header } from '../../../../packages/ui/src/components/Header';
 import { Sidebar } from './Sidebar';
 
 interface AppShellProps {
@@ -94,7 +93,7 @@ export function AppShell({ children, user, tenant }: AppShellProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-primary-50/30 to-secondary-50/30 dark:from-neutral-950 dark:via-primary-950/20 dark:to-secondary-950/20">
       
-      {/* Header temporaneamente disabilitato per import issues */}
+      {/* W3 Suite Header */}
       <div className="h-16 glass border-b border-white/20">
         <div className="flex items-center justify-between h-full px-4">
           <div className="flex items-center space-x-2">

@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-// import { Card, CardHeader, CardTitle, CardContent } from '../../../../../packages/ui/src/index';
 import { 
   LayoutDashboard, 
   ShoppingCart, 

@@ -3,7 +3,7 @@
  * WindTre Brand Colors & Glassmorphism Design System
  */
 
-import plugin from 'tailwindcss/plugin';
+import plugin from 'tailwindcss/plugin.js';
 
 /** @type {import('tailwindcss').Config} */
 export default {

@@ -3,7 +3,7 @@
  * Main export for the design tokens package
  */
 
-export { default as tailwindPreset } from './tailwind-preset.ts';
+export { default } from './tailwind-preset.ts';
 
 // WindTre Brand Colors (exported for programmatic use)
 export const colors = {
