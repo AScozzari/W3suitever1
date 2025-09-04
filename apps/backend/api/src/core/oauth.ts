@@ -8,6 +8,15 @@ import { sql } from 'drizzle-orm';
 import session from 'express-session';
 import { randomBytes, createHash } from 'crypto';
 
+// Extend Express Request interface
+declare global {
+  namespace Express {
+    interface Request {
+      user?: UserSession;
+    }
+  }
+}
+
 // ==================== OAUTH2/OIDC CONFIGURATION ====================
 
 interface OAuthConfig {
@@ -437,7 +446,7 @@ export function setupOAuthRoutes(app: Express) {
   });
 
   // Get current user info (/me endpoint)
-  app.get('/api/auth/me', requireAuth(), async (req, res: Response) => {
+  app.get('/api/auth/me', requireAuth(), async (req: Request, res: Response) => {
     try {
       const session = (req as any).user!;
       
@@ -505,7 +514,7 @@ export function setupOAuthRoutes(app: Express) {
   });
 
   // MFA endpoint (placeholder)
-  app.get('/api/auth/mfa', requireAuth(), (req, res: Response) => {
+  app.get('/api/auth/mfa', requireAuth(), (req: Request, res: Response) => {
     res.json({ 
       message: 'MFA implementation required',
       methods: ['totp', 'sms', 'email']

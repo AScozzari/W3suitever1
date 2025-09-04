@@ -1952,24 +1952,7 @@ export default function WindTreDashboard() {
               </div>
             )}
           </aside>
-
-          <aside style={{
-          position: 'fixed',
-          right: 0,
-          top: '64px',
-          height: 'calc(100vh - 64px)',
-          width: workspaceCollapsed ? '64px' : '320px',
-          background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-          borderLeft: '1px solid hsla(255, 255, 255, 0.12)',
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          zIndex: 40,
-          overflowY: 'auto',
-          boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.04)'
-        }}>
-          {/* Workspace content would go here */}
-        </aside>
+        )}
 
         {/* CSS Animations per effetti dashboard */}
         <style>{`
@@ -1995,19 +1978,6 @@ export default function WindTreDashboard() {
             }
           }
         `}</style>
-
-        {/* Main Content - Responsive */}
-        <main style={{
-          flex: 1,
-          marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
-          marginRight: isMobile ? '0' : (!workspaceCollapsed ? '320px' : '64px'),
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          padding: isMobile ? '16px' : '24px',
-          minHeight: '100vh',
-          overflowX: 'hidden'
-        }}>
-          {/* Contenuto principale dashboard */}
-        </main>
       </div>
     </div>
   );
