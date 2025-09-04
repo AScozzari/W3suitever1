@@ -16,7 +16,26 @@ export default function App() {
 }
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  console.log('Auth status:', { isAuthenticated, isLoading, user });
+  
+  // Debug panel per testing
+  if (window.location.search.includes('debug=true')) {
+    return (
+      <div style={{ padding: '20px', fontFamily: 'monospace' }}>
+        <h2>Debug Auth</h2>
+        <p>isLoading: {String(isLoading)}</p>
+        <p>isAuthenticated: {String(isAuthenticated)}</p>
+        <p>user: {JSON.stringify(user)}</p>
+        <button onClick={() => {
+          localStorage.clear();
+          queryClient.clear();
+          window.location.href = '/';
+        }}>Clear All & Reload</button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
