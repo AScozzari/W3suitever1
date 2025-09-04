@@ -1,54 +1,82 @@
 # Overview
 
-This is a full-stack web application called "W3 Suite Development Hub" built as a cross-project development and code sharing platform for enterprise multi-tenant applications. The application serves as a centralized hub for managing code sharing strategies, templates, and references across multiple related projects in a suite. It demonstrates various architectural patterns for code reuse and project organization on the Replit platform.
+W3 Suite è una piattaforma enterprise multitenant completa per la gestione aziendale con architettura monorepo rigorosamente strutturata. Include moduli CRM, POS, Magazzino, Analytics, HR, CMS, Gare con design system glassmorphism WindTre (arancione #FF6900, viola #7B2CBF). Autenticazione OAuth2/OIDC con MFA, PostgreSQL con RLS, feature-first architecture.
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-# System Architecture
+# System Architecture - W3 Suite Enterprise Monorepo
 
-## Frontend Architecture
-- **Framework**: React with TypeScript using Vite as the build tool
-- **Routing**: Wouter for lightweight client-side routing
-- **State Management**: TanStack React Query for server state management
-- **UI Framework**: shadcn/ui components built on Radix UI primitives
-- **Styling**: Tailwind CSS with custom design tokens and CSS variables
-- **Authentication Flow**: Protected routes with automatic redirects based on authentication status
+## 🏗️ STRUTTURA MONOREPO ENTERPRISE (ESATTA DA DOCUMENTO TECNICO)
 
-## Backend Architecture
-- **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ES modules
-- **Development**: tsx for TypeScript execution in development
-- **Production Build**: esbuild for server bundling
-- **API Structure**: RESTful endpoints with centralized route registration
-- **Middleware**: Custom logging, JSON parsing, and error handling
+### apps/
+- **frontend/web/** - SPA "Suite" (tenant-facing) React + Glassmorphism WindTre
+  - src/app/ - bootstrap, router, providers, theme
+  - src/layout/ - AppShell/Header/Sidebar (glass effects)
+  - src/features/ - feature-first: cassa/, magazzino/, settings/, crm/, gare/, report/, hr/, cms/
+  - src/core/ - api client, access guard, hooks comuni
+  - src/styles/ - tailwind.css, tokens bridge
+  
+- **frontend/brand-web/** - SPA "Brand Interface" (HQ)
+  - src/app/ - bootstrap brand, OIDC brand
+  - src/layout/ - shell con settori (marketing/sales/ops/admin)
+  - src/core/ - BrandAccessProvider, guards, scope switcher
+  - src/features/ - sales/, marketing/, ops/, amministrativo/, dev-tools/
 
-## Authentication & Session Management
-- **Provider**: Replit Auth (OpenID Connect)
-- **Strategy**: Passport.js with OpenID Client strategy
-- **Session Storage**: PostgreSQL-based sessions using connect-pg-simple
-- **Security**: HTTP-only cookies with CSRF protection
+- **backend/api/** - NestJS Suite (OLTP)
+  - src/core/ - auth (OIDC+MFA), rbac, tenancy (RLS), audit, settings-base
+  - src/db/ - schema/, migrations/, seed/
+  - src/modules/ - DDD-lite per dominio
 
-## Database Architecture
-- **Database**: PostgreSQL (configured for Neon serverless)
-- **ORM**: Drizzle ORM with TypeScript schema definitions
-- **Migration**: Drizzle Kit for schema management
-- **Connection**: Connection pooling with @neondatabase/serverless
-- **Schema Location**: Shared schema definitions in `/shared/schema.ts`
+- **backend/brand-api/** - NestJS Brand (DWH + orchestrazione)
+  - src/auth/, src/rbac/ - ruoli per settore + scope rete
+  - src/analytics/ - query DWH (read-only)
+  - src/pricing/, src/campaigns/, src/templates/
+  - src/propagation/ - emitter eventi (BullMQ) → workers
 
-## Project Structure
-- **Monorepo Style**: Organized with client, server, and shared directories
-- **Client**: React frontend with component-based architecture
-- **Server**: Express backend with modular route organization  
-- **Shared**: Common TypeScript types and database schemas
-- **Component Library**: shadcn/ui components for consistent design system
+- **backend/workers/brand-propagation/** - consumer eventi brand→tenant (BullMQ)
+- **backend/cms-render/** - renderer edge (Astro/Workers) per landing pubbliche
 
-## Development Workflow
-- **Hot Reloading**: Vite HMR for frontend, tsx watch mode for backend
-- **Type Safety**: Strict TypeScript configuration across all modules
-- **Path Aliases**: Configured aliases for clean imports (@/, @shared/, @assets/)
-- **Error Handling**: Runtime error overlay in development with Replit integration
+### packages/
+- **ui/** - design system (Tailwind+shadcn, glass) Button, Card, Table, Sidebar, Header
+- **tokens/** - Tailwind preset + CSS vars (palette W3: arancio/viola/nero)  
+- **sdk/** - client TS: sdk.api (suite) + sdk.brand (brand-api)
+- **dwh/** - query/typing DWH (zod/types, sql tagged)
+- **cms-core/** - schema/logic CMS (sites/pages/forms, publish)
+- **cms-render/** - blocchi di rendering condivisi (Astro/React)
+- **agents/** - strumenti AI per dev (PR-only): runner/, adapters/, orchestrator/, prompts/
+
+### db/
+- **oltp/** - migrazioni OLTP (Suite)
+- **brand/** - migrazioni Brand API (cataloghi, deployments)  
+- **dwh/** - schema DWH (read-only)
+
+### Infrastruttura
+- **configs/** - preset condivisi: eslint/, prettier/, tsconfig/, vite/, jest/
+- **.github/workflows/** - CI/CD per ogni app + agent-orchestrator
+- **docker/** - Dockerfile per ogni servizio + docker-compose.dev.yml
+- **scripts/** - DX & ops: db.reset.ts, codegen.ts, dwh.sync.ts
+
+## 🎨 DESIGN SYSTEM WINDTRE
+- **Colori Brand**: Arancione #FF6900, Viola #7B2CBF, Nero/Bianco
+- **Effetti**: Glassmorphism completo con backdrop-blur, rgba backgrounds
+- **Typography**: Inter + JetBrains Mono
+- **Spacing**: Scale xs→4xl, Border radius sm→full
+- **Animazioni**: glass-float, glass-pulse, gradient-shift
+
+## 🔐 ARCHITETTURA SICUREZZA ENTERPRISE  
+- **Auth**: OAuth2/OIDC con Authorization Code + PKCE, MFA obbligatorio
+- **Tokens**: JWT con capabilities, refresh automatico
+- **Database**: PostgreSQL con RLS (Row Level Security) per isolamento tenant
+- **RBAC**: Ruoli granulari per settore, scope per rete
+- **Session**: PostgreSQL-based sessions, HTTP-only cookies
+
+## 🏢 MULTITENANT ENTERPRISE
+- **Isolamento**: RLS a livello database per separazione dati tenant
+- **Context**: TenantProvider per context switching automatico
+- **Billing**: Override billing per tenant, flags feature
+- **Branding**: Logo/colori personalizzabili per tenant
 
 # External Dependencies
 
