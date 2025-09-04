@@ -1,1 +1,1 @@
-import "../apps/backend/api/src/main.js";
+export * from "../apps/backend/api/src/main.js";
