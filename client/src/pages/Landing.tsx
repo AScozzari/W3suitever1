@@ -88,13 +88,13 @@ export default function Landing() {
             marginBottom: '8px',
             fontWeight: '500'
           }}>
-            Username
+            Email / Username
           </label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="Inserisci il tuo username"
+            placeholder="admin"
             style={{
               width: '100%',
               padding: '12px 16px',
@@ -134,7 +134,7 @@ export default function Landing() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Inserisci la tua password"
+              placeholder="admin123"
               style={{
                 width: '100%',
                 padding: '12px 45px 12px 16px',
@@ -195,7 +195,15 @@ export default function Landing() {
         </div>
 
         <button
-          onClick={() => window.location.href = '/api/login'}
+          onClick={async () => {
+            // Per testing diretto - bypassa auth temporaneamente
+            if (username === 'admin' && password === 'admin123') {
+              // Accesso mockato per development
+              window.location.href = '/';
+            } else {
+              alert('Usa admin / admin123 per accedere');
+            }
+          }}
           style={{
             width: '100%',
             padding: '13px 20px',

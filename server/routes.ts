@@ -1,10 +1,60 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertProductSchema, insertCustomerSchema, insertOrderSchema, insertOrderItemSchema } from "../shared/schema";
+import * as bcrypt from "bcryptjs";
+import * as jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Local auth for username/password
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username e password richiesti" });
+      }
+      
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Credenziali non valide" });
+      }
+      
+      const validPassword = await bcrypt.compare(password, user.password);
+      
+      if (!validPassword) {
+        return res.status(401).json({ message: "Credenziali non valide" });
+      }
+      
+      // Create JWT token
+      const token = jwt.sign(
+        { id: user.id, email: user.email, tenantId: user.tenantId },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+      
+      // Set session data for compatibility
+      (req as any).session = (req as any).session || {};
+      (req as any).session.user = user;
+      (req as any).session.token = token;
+      
+      res.json({ user, token });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Errore durante il login" });
+    }
+  });
+  
+  // Logout
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    res.clearCookie("auth_token");
+    res.json({ message: "Logout effettuato" });
+  });
+  
   // Auth middleware
   await setupAuth(app);
 
