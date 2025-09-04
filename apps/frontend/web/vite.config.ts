@@ -1,37 +1,19 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-        ]
-      : []),
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src"),
-      "@ui": path.resolve(import.meta.dirname, "..", "..", "packages", "ui", "src"),
-      "@tokens": path.resolve(import.meta.dirname, "..", "..", "packages", "tokens"),
-      "@sdk": path.resolve(import.meta.dirname, "..", "..", "packages", "sdk"),
-      "@assets": path.resolve(import.meta.dirname, "..", "..", "..", "attached_assets"),
+      "@": path.resolve(__dirname, "src"),
     },
-  },
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
-    emptyOutDir: true,
   },
   server: {
-    fs: {
-      strict: false,
-    },
+    port: 3000,
+    host: "0.0.0.0",
   },
 });
