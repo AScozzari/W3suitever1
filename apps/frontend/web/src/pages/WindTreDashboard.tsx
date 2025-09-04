@@ -478,7 +478,7 @@ export default function WindTreDashboard() {
                     }
                   }}
                 >
-                  <Icon size={leftSidebarCollapsed && !isMobile ? 28 : (isMobile ? 16 : 20)} />
+                  <Icon size={leftSidebarCollapsed && !isMobile ? 30 : (isMobile ? 16 : 20)} />
                   {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
@@ -776,7 +776,7 @@ export default function WindTreDashboard() {
                     <h3 style={{
                       fontSize: isMobile ? '12px' : '14px',
                       fontWeight: 500,
-                      color: '#6b7280',
+                      color: '#374151',
                       margin: '0 0 4px 0'
                     }}>{stat.title}</h3>
                     
@@ -857,7 +857,7 @@ export default function WindTreDashboard() {
                     }}>Andamento Ricavi</h3>
                     <p style={{
                       fontSize: '14px',
-                      color: '#6b7280',
+                      color: '#374151',
                       margin: 0
                     }}>Fatturato mensile per servizio</p>
                   </div>
@@ -926,7 +926,7 @@ export default function WindTreDashboard() {
                     }}>Distribuzione Clienti</h3>
                     <p style={{
                       fontSize: '14px',
-                      color: '#6b7280',
+                      color: '#374151',
                       margin: 0
                     }}>Per tipologia di servizio</p>
                   </div>
@@ -1246,7 +1246,7 @@ export default function WindTreDashboard() {
               }}>
                 <div style={{
                   fontSize: '14px',
-                  color: '#6b7280',
+                  color: '#374151',
                   fontWeight: 500,
                   minWidth: '48px'
                 }}>10:30</div>
@@ -1269,7 +1269,7 @@ export default function WindTreDashboard() {
                   }}>Nuovo cliente attivato</p>
                   <p style={{
                     fontSize: '12px',
-                    color: '#6b7280',
+                    color: '#374151',
                     margin: 0
                   }}>Mario Rossi - Contratto fibra domestica</p>
                 </div>
@@ -1358,17 +1358,17 @@ export default function WindTreDashboard() {
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#6b7280',
+                  color: '#374151',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
                   e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#1f2937';
+                  e.currentTarget.style.color = '#FF6900';
                 }} onMouseOut={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
+                  e.currentTarget.style.color = '#374151';
                 }}>
                   <Calendar size={18} />
                 </button>
@@ -1380,17 +1380,17 @@ export default function WindTreDashboard() {
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#6b7280',
+                  color: '#374151',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
                   e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#1f2937';
+                  e.currentTarget.style.color = '#FF6900';
                 }} onMouseOut={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
+                  e.currentTarget.style.color = '#374151';
                 }}>
                   <CheckCircle size={18} />
                 </button>
@@ -1402,17 +1402,17 @@ export default function WindTreDashboard() {
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#6b7280',
+                  color: '#374151',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
                   e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#1f2937';
+                  e.currentTarget.style.color = '#FF6900';
                 }} onMouseOut={(e) => {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
+                  e.currentTarget.style.color = '#374151';
                 }}>
                   <Users size={18} />
                 </button>
@@ -1569,7 +1569,7 @@ export default function WindTreDashboard() {
                           }}>{task.title}</h5>
                           <p style={{
                             fontSize: '11px',
-                            color: '#6b7280',
+                            color: '#374151',
                             margin: '0 0 8px 0',
                             lineHeight: 1.3
                           }}>{task.subtitle}</p>
@@ -1697,7 +1697,7 @@ export default function WindTreDashboard() {
                     <div>
                       <p style={{
                         fontSize: '12px',
-                        color: '#6b7280',
+                        color: '#374151',
                         margin: '0 0 8px 0'
                       }}>Eventi per giovedì 4 settembre 2025</p>
                       <p style={{
@@ -1751,7 +1751,7 @@ export default function WindTreDashboard() {
                             }}>Riunione Team Vendite Q1</p>
                             <p style={{
                               fontSize: '10px',
-                              color: '#6b7280',
+                              color: '#374151',
                               margin: 0
                             }}>Revisione obiettivi Q1 e pianificazione...</p>
                           </div>
