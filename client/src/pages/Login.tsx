@@ -4,7 +4,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const isLight = !localStorage.getItem('theme') || localStorage.getItem('theme') === 'light';
+  const isLight = true; // Default light theme
   
   return (
     <div style={{
