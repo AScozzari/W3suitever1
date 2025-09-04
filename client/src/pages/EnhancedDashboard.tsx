@@ -5,14 +5,32 @@ import DashboardModule from "../modules/DashboardModule";
 import POSModule from "../modules/POSModule";
 import InventoryModule from "../modules/InventoryModule";
 import CRMModule from "../modules/CRMModule";
+import { 
+  LayoutDashboard, 
+  CreditCard, 
+  Package, 
+  Users, 
+  BarChart3, 
+  Settings,
+  Menu,
+  Search,
+  Bell,
+  Calendar,
+  CheckSquare,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  ShoppingCart,
+  Activity
+} from "lucide-react";
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'pos', label: 'POS / Cassa', icon: '💳' },
-  { id: 'inventory', label: 'Magazzino', icon: '📦' },
-  { id: 'crm', label: 'CRM', icon: '👥' },
-  { id: 'reports', label: 'Reports', icon: '📈' },
-  { id: 'settings', label: 'Impostazioni', icon: '⚙️' },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'pos', label: 'POS / Cassa', icon: CreditCard },
+  { id: 'inventory', label: 'Magazzino', icon: Package },
+  { id: 'crm', label: 'CRM', icon: Users },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { id: 'settings', label: 'Impostazioni', icon: Settings },
 ];
 
 const notifications = [
@@ -115,7 +133,7 @@ export default function EnhancedDashboard() {
               transition: 'all 0.2s ease'
             }}
           >
-            ☰
+            <Menu size={18} />
           </button>
           
           {/* Logo */}
@@ -201,7 +219,7 @@ export default function EnhancedDashboard() {
               transition: 'all 0.2s ease'
             }}
           >
-            📋
+            <CheckSquare size={18} />
           </button>
         </div>
       </header>
@@ -270,7 +288,7 @@ export default function EnhancedDashboard() {
                   }
                 }}
               >
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>{item.icon}</span>
+                <item.icon size={20} style={{ flexShrink: 0, color: colors.text }} />
                 {(leftSidebarOpen || leftSidebarHovered) && (
                   <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
                 )}
@@ -360,7 +378,10 @@ export default function EnhancedDashboard() {
                   alignItems: 'center',
                   justifyContent: 'space-between'
                 }}>
-                  <span>🔔 Notifiche</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Bell size={16} style={{ color: '#FF6900' }} />
+                    Notifiche
+                  </span>
                   <span style={{
                     background: '#FF6900',
                     color: 'white',
@@ -420,9 +441,13 @@ export default function EnhancedDashboard() {
                   color: colors.text, 
                   fontSize: '16px', 
                   fontWeight: '600', 
-                  marginBottom: '16px' 
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  📅 Prossimi Eventi
+                  <Calendar size={16} style={{ color: '#FF6900' }} />
+                  Prossimi Eventi
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {upcomingEvents.map((event) => (
@@ -448,7 +473,9 @@ export default function EnhancedDashboard() {
                         justifyContent: 'center',
                         fontSize: '18px'
                       }}>
-                        {event.type === 'meeting' ? '🤝' : event.type === 'call' ? '📞' : '🎯'}
+                        {event.type === 'meeting' ? <Users size={18} style={{ color: '#FF6900' }} /> : 
+                         event.type === 'call' ? <Bell size={18} style={{ color: '#FF6900' }} /> : 
+                         <Activity size={18} style={{ color: '#FF6900' }} />}
                       </div>
                       <div style={{ flex: 1 }}>
                         <p style={{ color: colors.text, fontSize: '14px', fontWeight: '500', margin: 0 }}>
@@ -469,9 +496,13 @@ export default function EnhancedDashboard() {
                   color: colors.text, 
                   fontSize: '16px', 
                   fontWeight: '600', 
-                  marginBottom: '16px' 
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  ✅ Task Attivi
+                  <CheckSquare size={16} style={{ color: '#FF6900' }} />
+                  Task Attivi
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {tasks.map((task) => (

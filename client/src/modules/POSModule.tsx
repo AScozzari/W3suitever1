@@ -1,4 +1,5 @@
 // Tema light fisso
+import { CreditCard } from 'lucide-react';
 
 export default function POSModule() {
   const colors = {
@@ -27,7 +28,7 @@ export default function POSModule() {
         justifyContent: 'center'
       }}>
         <div>
-          <span style={{ fontSize: '64px', marginBottom: '16px', display: 'block' }}>💳</span>
+          <CreditCard size={64} style={{ marginBottom: '16px', color: '#FF6900' }} />
           <h2 style={{ color: colors.text, fontSize: '24px', marginBottom: '8px' }}>
             Sistema POS
           </h2>

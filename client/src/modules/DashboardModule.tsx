@@ -1,10 +1,11 @@
 // Tema light fisso
+import { DollarSign, Users, ShoppingCart, Activity, TrendingUp, TrendingDown } from 'lucide-react';
 
 const stats = [
-  { label: 'Vendite Oggi', value: '€12,450', change: '+15%', icon: '💰' },
-  { label: 'Clienti Attivi', value: '324', change: '+8%', icon: '👥' },
-  { label: 'Ordini Aperti', value: '42', change: '-3%', icon: '📦' },
-  { label: 'Performance', value: '92%', change: '+12%', icon: '📈' },
+  { label: 'Vendite Oggi', value: '€12,450', change: '+15%', icon: DollarSign, trend: 'up' },
+  { label: 'Clienti Attivi', value: '324', change: '+8%', icon: Users, trend: 'up' },
+  { label: 'Ordini Aperti', value: '42', change: '-3%', icon: ShoppingCart, trend: 'down' },
+  { label: 'Performance', value: '92%', change: '+12%', icon: Activity, trend: 'up' },
 ];
 
 export default function DashboardModule() {
@@ -40,7 +41,7 @@ export default function DashboardModule() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <span style={{ fontSize: '24px' }}>{stat.icon}</span>
+              <stat.icon size={24} style={{ color: '#FF6900' }} />
               <span style={{
                 color: stat.change.startsWith('+') ? '#10b981' : '#ef4444',
                 fontSize: '14px',
