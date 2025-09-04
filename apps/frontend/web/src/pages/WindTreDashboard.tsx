@@ -22,6 +22,217 @@ export default function WindTreDashboard() {
   const [isTablet, setIsTablet] = useState(false);
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
   const { data: dashboardStats } = useQuery({ queryKey: ["/api/dashboard/stats"] });
+  
+  // Tab attiva per workspace
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
+  
+  // Dati tasks dal repository GitHub
+  const [tasks, setTasks] = useState([
+    {
+      id: 1,
+      titolo: 'Follow-up cliente Premium',
+      descrizione: 'Chiamare Mario Rossi per rinnovo contratto Enterprise',
+      priorita: 'Alta',
+      scadenza: 'Oggi 15:00',
+      completato: false,
+      urgente: true,
+      categoria: 'vendite'
+    },
+    {
+      id: 2,
+      titolo: 'Preparare documentazione',
+      descrizione: 'Contratto fibra ottica per Laura Bianchi',
+      priorita: 'Media',
+      scadenza: 'Domani 10:00',
+      completato: false,
+      urgente: false,
+      categoria: 'documentazione'
+    },
+    {
+      id: 3,
+      titolo: 'Verifica pagamento',
+      descrizione: 'Controllo fattura cliente Giuseppe Verde - €2.300',
+      priorita: 'Bassa',
+      scadenza: 'Venerdì 16:00',
+      completato: true,
+      urgente: false,
+      categoria: 'amministrativo'
+    },
+    {
+      id: 4,
+      titolo: 'Attivazione servizi',
+      descrizione: 'Nuovo contratto mobile 5G + fibra 1GB/s',
+      priorita: 'Alta',
+      scadenza: 'Oggi 17:30',
+      completato: false,
+      urgente: true,
+      categoria: 'tecnico'
+    },
+    {
+      id: 5,
+      titolo: 'Demo prodotto WindTre Business',
+      descrizione: 'Presentazione soluzioni per PMI - Azienda Tecno Solutions',
+      priorita: 'Alta',
+      scadenza: 'Lunedì 09:30',
+      completato: false,
+      urgente: false,
+      categoria: 'vendite'
+    }
+  ]);
+  
+  // Dati leads dal repository GitHub
+  const [leads, setLeads] = useState([
+    {
+      id: 1,
+      tipo: 'nuovo_lead',
+      messaggio: 'Lead interessato a Piano Business Pro',
+      cliente: 'Alessandro Martini',
+      azienda: 'Digital Marketing SRL',
+      fonte: 'LinkedIn Ads',
+      priorita: 'Alta',
+      tempo: '2 min fa',
+      letto: false,
+      potenziale: '€15.000/anno',
+      telefono: '+39 349 123 4567'
+    },
+    {
+      id: 2,
+      tipo: 'lead_qualificato',
+      messaggio: 'Lead qualificato pronto per chiamata',
+      cliente: 'Francesca Lombardi',
+      azienda: 'Consulting Express',
+      fonte: 'Campagna Email',
+      priorita: 'Alta',
+      tempo: '8 min fa',
+      letto: false,
+      potenziale: '€25.000/anno',
+      telefono: '+39 335 987 6543'
+    },
+    {
+      id: 3,
+      tipo: 'appuntamento_fissato',
+      messaggio: 'Demo confermata per martedì',
+      cliente: 'Roberto Conti',
+      azienda: 'Startup Innovation Hub',
+      fonte: 'Chiamata diretta',
+      priorita: 'Media',
+      tempo: '45 min fa',
+      letto: true,
+      potenziale: '€8.500/anno',
+      telefono: '+39 347 456 7890'
+    },
+    {
+      id: 4,
+      tipo: 'contratto_in_chiusura',
+      messaggio: 'Contratto in fase di finalizzazione',
+      cliente: 'Maria Ferretti',
+      azienda: 'E-commerce Plus',
+      fonte: 'Referral Partner',
+      priorita: 'Alta',
+      tempo: '1 ora fa',
+      letto: false,
+      potenziale: '€32.000/anno',
+      telefono: '+39 366 234 5678'
+    },
+    {
+      id: 5,
+      tipo: 'follow_up_richiesto',
+      messaggio: 'Richieste info su soluzioni Cloud',
+      cliente: 'Giuseppe Bianchi',
+      azienda: 'Manufacturing Co.',
+      fonte: 'Website Form',
+      priorita: 'Media',
+      tempo: '2 ore fa',
+      letto: true,
+      potenziale: '€18.000/anno',
+      telefono: '+39 328 876 5432'
+    }
+  ]);
+  
+  // Eventi calendario dal repository GitHub
+  const [eventiCalendario, setEventiCalendario] = useState(() => {
+    const oggi = new Date();
+    return [
+      {
+        id: 1,
+        titolo: 'Riunione Team Vendite Q1',
+        ora: '14:30',
+        dataCompleta: new Date(oggi.getTime() + 1 * 24 * 60 * 60 * 1000),
+        tipo: 'meeting',
+        partecipanti: 8,
+        location: 'Sala Conferenze A',
+        colore: 'blue',
+        descrizione: 'Revisione obiettivi Q1 e pianificazione strategie commerciali'
+      },
+      {
+        id: 2,
+        titolo: 'Presentazione Risultati Trimestrali',
+        ora: '16:00',
+        dataCompleta: new Date(oggi.getTime() + 1 * 24 * 60 * 60 * 1000),
+        tipo: 'presentation',
+        partecipanti: 15,
+        location: 'Auditorium Principale',
+        colore: 'purple',
+        descrizione: 'Presentazione KPI e risultati del trimestre agli stakeholder'
+      },
+      {
+        id: 3,
+        titolo: 'Training Nuovo Personale Vendite',
+        ora: '09:00',
+        dataCompleta: new Date(oggi.getTime() + 2 * 24 * 60 * 60 * 1000),
+        tipo: 'training',
+        partecipanti: 6,
+        location: 'Aula Formazione B',
+        colore: 'green',
+        descrizione: 'Formazione su prodotti WindTre Business e tecniche di vendita'
+      },
+      {
+        id: 4,
+        titolo: 'Demo Enterprise per Fortune 500',
+        ora: '11:30',
+        dataCompleta: new Date(oggi.getTime() + 2 * 24 * 60 * 60 * 1000),
+        tipo: 'client',
+        partecipanti: 5,
+        location: 'Ufficio Direzione',
+        colore: 'orange',
+        descrizione: 'Presentazione soluzioni enterprise per cliente multinazionale'
+      },
+      {
+        id: 5,
+        titolo: 'Revisione Budget Marketing',
+        ora: '15:00',
+        dataCompleta: new Date(oggi.getTime() + 3 * 24 * 60 * 60 * 1000),
+        tipo: 'meeting',
+        partecipanti: 4,
+        location: 'Sala Riunioni C',
+        colore: 'red',
+        descrizione: 'Analisi ROI campagne pubblicitarie e allocazione budget 2025'
+      },
+      {
+        id: 6,
+        titolo: 'Call con Cliente Premium',
+        ora: '10:00',
+        dataCompleta: new Date(oggi.getTime() + 4 * 24 * 60 * 60 * 1000),
+        tipo: 'client',
+        partecipanti: 3,
+        location: 'Online - Teams',
+        colore: 'blue',
+        descrizione: 'Follow-up contratto renewal e upselling servizi aggiuntivi'
+      }
+    ];
+  });
+  
+  // Funzioni per gestire tasks
+  const toggleTaskComplete = (taskId: number) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId ? { ...task, completato: !task.completato } : task
+    ));
+  };
+  
+  // Contatori per stats
+  const tasksOggi = tasks.filter(task => task.scadenza.includes('Oggi')).length;
+  const tasksCompletate = tasks.filter(task => task.completato).length;
+  const eventiTotali = eventiCalendario.length;
 
   useEffect(() => {
     const checkDevice = () => {
@@ -1517,18 +1728,19 @@ export default function WindTreDashboard() {
                   padding: '4px',
                   marginBottom: '20px'
                 }}>
-                  {['Tasks', 'Calendario', 'Leads'].map((tab, index) => (
+                  {['Tasks', 'Calendario', 'Leads'].map((tab) => (
                     <button
                       key={tab}
+                      onClick={() => setActiveWorkspaceTab(tab)}
                       style={{
                         flex: 1,
                         padding: '8px 12px',
-                        background: index === 0 ? 'white' : 'transparent',
+                        background: activeWorkspaceTab === tab ? 'white' : 'transparent',
                         border: 'none',
                         borderRadius: '6px',
                         fontSize: '12px',
-                        fontWeight: index === 0 ? 600 : 400,
-                        color: index === 0 ? '#1f2937' : '#6b7280',
+                        fontWeight: activeWorkspaceTab === tab ? 600 : 400,
+                        color: activeWorkspaceTab === tab ? '#1f2937' : '#6b7280',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease'
                       }}
@@ -1538,7 +1750,8 @@ export default function WindTreDashboard() {
                   ))}
                 </div>
 
-                {/* Le mie attività */}
+                {/* Contenuto dinamico basato su tab attivo */}
+                {activeWorkspaceTab === 'Tasks' && (
                 <div style={{ marginBottom: '24px' }}>
                   <div style={{
                     display: 'flex',
@@ -1655,8 +1868,37 @@ export default function WindTreDashboard() {
                     </div>
                   ))}
                 </div>
+                )}
 
-                {/* Calendario come negli screenshots */}
+                {/* Tab Calendario */}
+                {activeWorkspaceTab === 'Calendario' && (
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <h4 style={{
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      margin: 0
+                    }}>Calendario</h4>
+                    <span style={{
+                      background: '#7B2CBF',
+                      color: 'white',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      padding: '2px 8px',
+                      borderRadius: '10px'
+                    }}>{eventiTotali} eventi totali</span>
+                  </div>
+                </div>
+                )}
+
+                {/* Tab Leads */}
+                {activeWorkspaceTab === 'Leads' && (
                 <div>
                   <div style={{
                     display: 'flex',
