@@ -403,7 +403,7 @@ export default function WindTreDashboard() {
                     justifyContent: isMobile ? 'center' : (leftSidebarCollapsed ? 'center' : 'flex-start')
                   }}
                 >
-                  <Icon size={leftSidebarCollapsed ? 24 : (isMobile ? 16 : 20)} />
+                  <Icon size={leftSidebarCollapsed && !isMobile ? 24 : (isMobile ? 16 : 20)} />
                   {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
