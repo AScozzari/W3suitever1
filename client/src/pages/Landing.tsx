@@ -4,10 +4,14 @@ export default function Landing() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const isLight = !localStorage.getItem('theme') || localStorage.getItem('theme') === 'light';
+  
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 100%)',
+      background: isLight 
+        ? 'linear-gradient(180deg, #f0f2f5 0%, #e1e5ea 100%)'
+        : 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -19,12 +23,18 @@ export default function Landing() {
         position: 'relative',
         maxWidth: '400px',
         width: '100%',
-        background: 'rgba(255, 255, 255, 0.03)',
+        background: isLight 
+          ? 'rgba(255, 255, 255, 0.9)'
+          : 'rgba(255, 255, 255, 0.03)',
         backdropFilter: 'blur(10px)',
         borderRadius: '12px',
         padding: '40px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+        border: isLight 
+          ? '1px solid rgba(0, 0, 0, 0.1)'
+          : '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: isLight
+          ? '0 10px 30px rgba(0, 0, 0, 0.1)'
+          : '0 20px 40px rgba(0, 0, 0, 0.4)',
       }}>
         {/* Logo */}
         <div style={{
@@ -50,14 +60,14 @@ export default function Landing() {
           </div>
           <div>
             <h1 style={{
-              color: 'white',
+              color: isLight ? '#1f2937' : 'white',
               fontSize: '24px',
               fontWeight: '600',
               margin: 0,
               letterSpacing: '-0.5px'
             }}>W3 Suite</h1>
             <p style={{
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: isLight ? 'rgba(31, 41, 55, 0.6)' : 'rgba(255, 255, 255, 0.5)',
               fontSize: '13px',
               margin: 0
             }}>Enterprise Platform</p>
@@ -66,13 +76,13 @@ export default function Landing() {
 
         <div style={{ marginBottom: '32px' }}>
           <h2 style={{
-            color: 'white',
+            color: isLight ? '#1f2937' : 'white',
             fontSize: '20px',
             fontWeight: '500',
             marginBottom: '8px'
           }}>Accedi al tuo account</h2>
           <p style={{
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: isLight ? 'rgba(31, 41, 55, 0.6)' : 'rgba(255, 255, 255, 0.5)',
             fontSize: '14px',
           }}>
             Inserisci le tue credenziali per accedere
@@ -83,7 +93,7 @@ export default function Landing() {
         <div style={{ marginBottom: '20px' }}>
           <label style={{
             display: 'block',
-            color: 'rgba(255, 255, 255, 0.7)',
+            color: isLight ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.7)',
             fontSize: '13px',
             marginBottom: '8px',
             fontWeight: '500'
@@ -98,10 +108,10 @@ export default function Landing() {
             style={{
               width: '100%',
               padding: '12px 16px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)',
+              border: isLight ? '1px solid rgba(0, 0, 0, 0.15)' : '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '8px',
-              color: 'white',
+              color: isLight ? '#1f2937' : 'white',
               fontSize: '15px',
               outline: 'none',
               transition: 'all 0.2s ease',
@@ -109,11 +119,11 @@ export default function Landing() {
             }}
             onFocus={(e) => {
               e.currentTarget.style.borderColor = '#FF6900';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.background = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
             }}
             onBlur={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.borderColor = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.background = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
             }}
           />
         </div>
@@ -122,7 +132,7 @@ export default function Landing() {
         <div style={{ marginBottom: '24px' }}>
           <label style={{
             display: 'block',
-            color: 'rgba(255, 255, 255, 0.7)',
+            color: isLight ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.7)',
             fontSize: '13px',
             marginBottom: '8px',
             fontWeight: '500'
@@ -138,10 +148,10 @@ export default function Landing() {
               style={{
                 width: '100%',
                 padding: '12px 45px 12px 16px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)',
+                border: isLight ? '1px solid rgba(0, 0, 0, 0.15)' : '1px solid rgba(255, 255, 255, 0.15)',
                 borderRadius: '8px',
-                color: 'white',
+                color: isLight ? '#1f2937' : 'white',
                 fontSize: '15px',
                 outline: 'none',
                 transition: 'all 0.2s ease',
@@ -149,11 +159,11 @@ export default function Landing() {
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = '#FF6900';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.background = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.background = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
               }}
             />
             <button
@@ -166,7 +176,7 @@ export default function Landing() {
                 transform: 'translateY(-50%)',
                 background: 'transparent',
                 border: 'none',
-                color: 'rgba(255, 255, 255, 0.5)',
+                color: isLight ? 'rgba(31, 41, 55, 0.5)' : 'rgba(255, 255, 255, 0.5)',
                 cursor: 'pointer',
                 padding: '4px',
                 display: 'flex',
@@ -174,8 +184,8 @@ export default function Landing() {
                 justifyContent: 'center',
                 transition: 'color 0.2s ease'
               }}
-              onMouseOver={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)'}
-              onMouseOut={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'}
+              onMouseOver={(e) => e.currentTarget.style.color = isLight ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.8)'}
+              onMouseOut={(e) => e.currentTarget.style.color = isLight ? 'rgba(31, 41, 55, 0.5)' : 'rgba(255, 255, 255, 0.5)'}
             >
               {showPassword ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -261,7 +271,7 @@ export default function Landing() {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            color: 'rgba(255, 255, 255, 0.6)',
+            color: isLight ? 'rgba(31, 41, 55, 0.6)' : 'rgba(255, 255, 255, 0.6)',
             fontSize: '13px',
             cursor: 'pointer'
           }}>
