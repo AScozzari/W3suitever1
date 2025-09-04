@@ -21,9 +21,9 @@ import { GarePage } from '../features/gare/GarePage';
 import { LoginPage } from '../features/auth/LoginPage';
 
 // Core providers and hooks
-import { useAuth } from '../core/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { ThemeProvider } from '../core/providers/ThemeProvider';
-import { TenantProvider } from '../core/providers/TenantProvider';
+import { TenantProvider } from '../components/TenantProvider';
 
 // Create query client
 const queryClient = new QueryClient({
@@ -60,21 +60,36 @@ export default function App() {
 }
 
 function AppRouter() {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [currentTenant, setCurrentTenant] = useState<any>(null);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-4">
-          W3 Suite
-        </h1>
-        <p className="text-gray-600 mb-8">Piattaforma Enterprise</p>
-        <button 
-          onClick={() => window.location.href = '/api/login'}
-          className="bg-gradient-to-r from-orange-500 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
-        >
-          Accedi alla Suite
-        </button>
-      </div>
-    </div>
+    <TenantProvider tenant={currentTenant} setTenant={setCurrentTenant}>
+      <Router>
+        <AppShell user={user as any} tenant={currentTenant}>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/cassa" component={CassaPage} />
+            <Route path="/magazzino" component={MagazzinoPage} />
+            <Route path="/crm" component={CrmPage} />
+            <Route path="/analytics" component={AnalyticsPage} />
+            <Route path="/hr" component={HrPage} />
+            <Route path="/cms" component={CmsPage} />
+            <Route path="/gare" component={GarePage} />
+            <Route path="/settings" component={SettingsPage} />
+            <Route component={NotFound} />
+          </Switch>
+        </AppShell>
+      </Router>
+    </TenantProvider>
   );
 }
 
