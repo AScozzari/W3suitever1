@@ -1,0 +1,1 @@
+// Blocchi di rendering condivisi (Astro/React)

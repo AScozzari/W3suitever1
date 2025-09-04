@@ -61,7 +61,7 @@ export default function App() {
 
 function AppRouter() {
   const { isAuthenticated, isLoading, user } = useAuth();
-  const [currentTenant, setCurrentTenant] = useState(null);
+  const [currentTenant, setCurrentTenant] = useState<any>(null);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -74,7 +74,7 @@ function AppRouter() {
   return (
     <TenantProvider tenant={currentTenant} setTenant={setCurrentTenant}>
       <Router>
-        <AppShell user={user} tenant={currentTenant}>
+        <AppShell user={user as any} tenant={currentTenant}>
           <AnimatePresence mode="wait">
             <Switch>
               <Route path="/" component={Dashboard} />

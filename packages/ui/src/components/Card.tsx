@@ -112,7 +112,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
           whileHover={interactive ? cardAnimations.whileHover : undefined}
           whileTap={interactive ? cardAnimations.whileTap : undefined}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          {...props}
+          {...(props as any)}
         >
           {children}
         </motion.div>

@@ -3,8 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import design tokens */
-@import "@tokens/index.css";
+/* WindTre Brand Colors directly */
 
 /* Base styles with glassmorphism support */
 @layer base {

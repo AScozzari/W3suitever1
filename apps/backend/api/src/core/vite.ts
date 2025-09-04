@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../../../../frontend/web/vite.config";
+import viteConfig from "../../../../../apps/frontend/web/vite.config";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -29,6 +29,7 @@ export async function setupVite(app: Express, server: Server) {
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
+    root: path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "web"),
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
@@ -51,12 +52,17 @@ export async function setupVite(app: Express, server: Server) {
         "..",
         "..",
         "..",
+        "..",
         "apps",
         "frontend",
         "web",
         "index.html",
       );
 
+      // Debug logging
+      console.log(`Looking for template at: ${clientTemplate}`);
+      console.log(`File exists: ${fs.existsSync(clientTemplate)}`);
+      
       // always reload the index.html file from disk incase it changes
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(

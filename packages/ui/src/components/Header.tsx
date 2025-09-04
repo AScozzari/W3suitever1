@@ -60,7 +60,7 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        {...props}
+        {...(props as any)}
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">

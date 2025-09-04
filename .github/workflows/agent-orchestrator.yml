@@ -1,0 +1,9 @@
+name: Agent Orchestrator
+on: [push, pull_request]
+jobs:
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Codegen
+        run: echo "Codegen → QA → Docs (OpenAI orchestrator)"

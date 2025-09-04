@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { Button } from '@ui/components/Button';
-import { Card } from '@ui/components/Card';
+// import { Button } from '../../../../packages/ui/src/components/Button';
+// import { Card } from '../../../../packages/ui/src/components/Card';
 
 interface NavigationItem {
   label: string;

@@ -1,0 +1,1 @@
+// OpenAPI client o fetch wrapper per Suite API

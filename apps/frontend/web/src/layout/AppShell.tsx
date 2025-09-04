@@ -12,7 +12,7 @@ import {
   Settings
 } from 'lucide-react';
 
-import { Header } from '@ui/components/Header';
+// import { Header } from '../../../../packages/ui/src/components/Header';
 import { Sidebar } from './Sidebar';
 
 interface AppShellProps {
@@ -94,25 +94,26 @@ export function AppShell({ children, user, tenant }: AppShellProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-primary-50/30 to-secondary-50/30 dark:from-neutral-950 dark:via-primary-950/20 dark:to-secondary-950/20">
       
-      {/* Header */}
-      <Header
-        logo={
+      {/* Header temporaneamente disabilitato per import issues */}
+      <div className="h-16 glass border-b border-white/20">
+        <div className="flex items-center justify-between h-full px-4">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-brand flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center">
               <span className="text-white font-bold text-sm">W3</span>
             </div>
-            <span className="font-semibold text-lg text-gradient-brand">
+            <span className="font-semibold text-lg bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
               Suite
             </span>
           </div>
-        }
-        navigation={navigation}
-        user={user}
-        tenant={tenant}
-        onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        isMobileMenuOpen={isSidebarOpen}
-        notifications={3}
-      />
+          <div className="flex items-center space-x-4">
+            {user && (
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                {user.name}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="flex">
         {/* Sidebar */}
