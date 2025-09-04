@@ -1,24 +1,30 @@
-import type { Config } from "tailwindcss";
-import preset from "../../packages/tokens/index.js";
+import type { Config } from 'tailwindcss'
 
-const config: Config = {
-  presets: [preset],
+export default {
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
     "./index.html",
-    "../../packages/ui/src/**/*.{js,ts,jsx,tsx}"
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: ["class"],
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
+    extend: {
+      colors: {
+        // WindTre Brand Colors ESATTI
+        windtre: {
+          orange: '#FF6900',
+          purple: '#7B2CBF',
+          dark: '#0a0a0a',
+          gray: '#6b7280'
+        }
       },
+      fontFamily: {
+        'inter': ['Inter', 'sans-serif'],
+        'jetbrains': ['JetBrains Mono', 'monospace']
+      },
+      backdropBlur: {
+        'glass': '20px',
+      }
     },
   },
   plugins: [],
-};
-
-export default config;
+  darkMode: 'class'
+} satisfies Config

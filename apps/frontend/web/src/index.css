@@ -4,10 +4,6 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
-  
   html {
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: 'cv11', 'ss01';
@@ -17,41 +13,50 @@
   body {
     margin: 0;
     padding: 0;
-    background: #f8fafc;
-    color: #1e293b;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+    color: #ffffff;
+    min-height: 100vh;
   }
 }
 
-/* WindTre Brand Colors */
-:root {
-  --orange-500: #f97316;
-  --orange-600: #ea580c;
-  --purple-600: #9333ea;
+/* Glassmorphism WindTre */
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-[20px] border border-white/10 shadow-2xl;
+  }
+  
+  .glass-button {
+    @apply bg-white/10 backdrop-blur-[16px] border border-white/20 hover:bg-white/20 transition-all duration-300;
+  }
+  
+  .windtre-gradient {
+    background: linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%);
+  }
+  
+  .windtre-gradient-subtle {
+    background: linear-gradient(135deg, #FF6900/20 0%, #7B2CBF/20 100%);
+  }
+  
+  .glass-input {
+    @apply bg-white/5 backdrop-blur-[16px] border border-white/20 focus:border-windtre-orange/50 focus:ring-2 focus:ring-windtre-orange/20 transition-all;
+  }
 }
 
-/* Glassmorphism Effects */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+/* Animazioni glassmorphism */
+@keyframes glass-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-10px) scale(1.02); }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 105, 0, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(255, 105, 0, 0.6); }
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+.animate-glass-float {
+  animation: glass-float 6s ease-in-out infinite;
 }
 
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #f97316, #9333ea);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #ea580c, #7c3aed);
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
 }
