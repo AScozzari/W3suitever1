@@ -1953,8 +1953,7 @@ export default function WindTreDashboard() {
             )}
           </aside>
 
-        {/* Workspace Sidebar - Right side */}
-        <aside style={{
+          <aside style={{
           position: 'fixed',
           right: 0,
           top: '64px',

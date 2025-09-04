@@ -6,6 +6,7 @@ import { storage } from './storage';
 import { db } from './db';
 import { sql } from 'drizzle-orm';
 import session from 'express-session';
+import { randomBytes, createHash } from 'crypto';
 
 // ==================== OAUTH2/OIDC CONFIGURATION ====================
 
@@ -307,9 +308,9 @@ export function setupOAuthRoutes(app: Express) {
         await initializeOAuth();
       }
 
-      const codeVerifier = openid.generators.codeVerifier();
-      const codeChallenge = openid.generators.codeChallenge(codeVerifier);
-      const state = openid.generators.state();
+      const codeVerifier = randomBytes(32).toString('base64url');
+      const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
+      const state = randomBytes(32).toString('base64url');
 
       // Store PKCE values in session
       (req as any).session = (req as any).session || {};
@@ -436,9 +437,9 @@ export function setupOAuthRoutes(app: Express) {
   });
 
   // Get current user info (/me endpoint)
-  app.get('/api/auth/me', requireAuth(), async (req: any, res: Response) => {
+  app.get('/api/auth/me', requireAuth(), async (req, res: Response) => {
     try {
-      const session = req.user!;
+      const session = (req as any).user!;
       
       // Get user details
       const user = await storage.getUser(session.userId);
@@ -468,7 +469,7 @@ export function setupOAuthRoutes(app: Express) {
           id: tenant.id,
           name: tenant.name,
           slug: tenant.slug,
-          type: tenant.type,
+          type: 'tenant',
         } : undefined,
         roles: session.roles,
         permissions: session.permissions,
@@ -504,7 +505,7 @@ export function setupOAuthRoutes(app: Express) {
   });
 
   // MFA endpoint (placeholder)
-  app.get('/api/auth/mfa', requireAuth(), (req: any, res: Response) => {
+  app.get('/api/auth/mfa', requireAuth(), (req, res: Response) => {
     res.json({ 
       message: 'MFA implementation required',
       methods: ['totp', 'sms', 'email']
