@@ -366,15 +366,15 @@ export default function EnhancedDashboard() {
                   justifyContent: 'center'
                 }}>
                   <span style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>
-                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                    {(user as any)?.firstName?.[0] || 'A'}{(user as any)?.lastName?.[0] || 'U'}
                   </span>
                 </div>
                 <div>
                   <p style={{ color: colors.text, fontSize: '14px', fontWeight: '500', margin: 0 }}>
-                    {user?.firstName} {user?.lastName}
+                    {(user as any)?.firstName || 'Admin'} {(user as any)?.lastName || 'User'}
                   </p>
                   <p style={{ color: colors.textMuted, fontSize: '12px', margin: 0 }}>
-                    {user?.email}
+                    {(user as any)?.email || 'admin@w3suite.com'}
                   </p>
                 </div>
               </div>
