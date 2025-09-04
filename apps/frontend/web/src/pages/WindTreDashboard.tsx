@@ -13,7 +13,7 @@ import {
 
 export default function WindTreDashboard() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
-  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
+  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
   const [lastInteraction, setLastInteraction] = useState(Date.now());
   const [leftSidebarTimer, setLeftSidebarTimer] = useState<NodeJS.Timeout | null>(null);
   const [workspaceTimer, setWorkspaceTimer] = useState<NodeJS.Timeout | null>(null);
@@ -32,6 +32,9 @@ export default function WindTreDashboard() {
       if (width < 1024) {
         setLeftSidebarCollapsed(true);
         setWorkspaceCollapsed(true);
+      } else {
+        // Su desktop, inizia con workspace aperta per permettere auto-collapse
+        setWorkspaceCollapsed(false);
       }
     };
     
