@@ -17,8 +17,8 @@ import { HrPage } from '../features/hr/HrPage';
 import { CmsPage } from '../features/cms/CmsPage';
 import { GarePage } from '../features/gare/GarePage';
 
-// Landing page
-import { LandingPage } from '../features/dashboard/LandingPage';
+// Auth pages
+import { LoginPage } from '../features/auth/LoginPage';
 
 // Core providers and hooks
 import { useAuth } from '../core/hooks/useAuth';
@@ -68,7 +68,7 @@ function AppRouter() {
   }
 
   if (!isAuthenticated) {
-    return <LandingPage />;
+    return <LoginPage />;
   }
 
   return (
