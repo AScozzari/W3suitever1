@@ -1282,28 +1282,46 @@ export default function WindTreDashboard() {
             overflowY: 'auto',
             boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.04)'
           }}>
-            {/* Smart workspace trigger area */}
-            <div style={{
-              position: 'absolute',
-              left: '-8px',
-              top: 0,
-              bottom: 0,
-              width: '8px',
-              cursor: 'col-resize',
-              background: 'transparent',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'hsla(260, 100%, 45%, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-            onClick={() => {
-              setWorkspaceCollapsed(!workspaceCollapsed);
-              setLastInteraction(Date.now());
-            }}
-            />
+            {/* Workspace Toggle Button */}
+            <div style={{ position: 'absolute', left: '-16px', top: '20px', zIndex: 50 }}>
+              <button
+                onClick={() => {
+                  setWorkspaceCollapsed(!workspaceCollapsed);
+                  setLastInteraction(Date.now());
+                }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'hsla(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(16px) saturate(120%)',
+                  WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+                  border: '1px solid hsla(255, 255, 255, 0.25)',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#6b7280',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'hsla(260, 100%, 45%, 0.15)';
+                  e.currentTarget.style.color = '#7B2CBF';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(123, 44, 191, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
+                  e.currentTarget.style.color = '#6b7280';
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                }}
+                title={workspaceCollapsed ? 'Espandi Workspace' : 'Comprimi Workspace'}
+              >
+                {workspaceCollapsed ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+              </button>
+            </div>
 
             {workspaceCollapsed ? (
               <div style={{ 
