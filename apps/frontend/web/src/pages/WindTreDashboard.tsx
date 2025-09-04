@@ -383,7 +383,7 @@ export default function WindTreDashboard() {
                   style={{
                     width: isMobile ? 'auto' : '100%',
                     minWidth: isMobile ? '80px' : 'auto',
-                    padding: isMobile ? '12px' : (leftSidebarCollapsed ? '12px' : '12px 16px'),
+                    padding: isMobile ? '12px' : (leftSidebarCollapsed ? '16px' : '12px 16px'),
                     marginBottom: isMobile ? '0' : '8px',
                     background: isActive 
                       ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
@@ -403,7 +403,7 @@ export default function WindTreDashboard() {
                     justifyContent: isMobile ? 'center' : (leftSidebarCollapsed ? 'center' : 'flex-start')
                   }}
                 >
-                  <Icon size={isMobile ? 16 : 20} />
+                  <Icon size={leftSidebarCollapsed ? 24 : (isMobile ? 16 : 20)} />
                   {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
@@ -1259,7 +1259,46 @@ export default function WindTreDashboard() {
               </button>
             </div>
 
-            {!workspaceCollapsed && (
+            {workspaceCollapsed ? (
+              <div style={{ 
+                padding: '24px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                <button style={{
+                  background: 'rgba(255, 105, 0, 0.1)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  color: '#FF6900'
+                }}>
+                  <Calendar size={20} />
+                </button>
+                <button style={{
+                  background: 'rgba(123, 44, 191, 0.1)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  color: '#7B2CBF'
+                }}>
+                  <CheckCircle size={20} />
+                </button>
+                <button style={{
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  color: '#10b981'
+                }}>
+                  <FileText size={20} />
+                </button>
+              </div>
+            ) : (
               <div style={{ padding: '24px 16px' }}>
                 {/* Header Workspace */}
                 <div style={{
