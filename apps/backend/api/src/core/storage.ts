@@ -2,26 +2,22 @@ import {
   users,
   tenants,
   legalEntities,
-  strategicGroups,
   stores,
-  userTenantRoles,
-  permissions,
-  rolePermissions,
+  roles,
+  userAssignments,
   type User,
   type UpsertUser,
   type Tenant,
   type InsertTenant,
   type LegalEntity,
   type InsertLegalEntity,
-  type StrategicGroup,
-  type InsertStrategicGroup,
   type Store,
   type InsertStore,
-  type UserTenantRole,
-  type InsertUserTenantRole,
-  type Permission,
-  type InsertPermission,
-} from "../../../../../packages/sdk/src/schema";
+  type UserAssignment,
+  type InsertUserAssignment,
+  type Role,
+  type InsertRole,
+} from "../db/schema";
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
 
@@ -41,23 +37,18 @@ export interface IStorage {
   getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]>;
   createLegalEntity(legalEntity: InsertLegalEntity): Promise<LegalEntity>;
   
-  // Strategic Group Management
-  getStrategicGroupsByTenant(tenantId: string): Promise<StrategicGroup[]>;
-  createStrategicGroup(strategicGroup: InsertStrategicGroup): Promise<StrategicGroup>;
+  // Role Management
+  getRolesByTenant(tenantId: string): Promise<Role[]>;
+  createRole(role: InsertRole): Promise<Role>;
   
   // Store Management
   getStoresByTenant(tenantId: string): Promise<Store[]>;
-  getStoresByStrategicGroup(strategicGroupId: string): Promise<Store[]>;
   createStore(store: InsertStore): Promise<Store>;
   
-  // User-Tenant Role Management
-  getUserTenantRoles(userId: string): Promise<UserTenantRole[]>;
-  getUserTenantRole(userId: string, tenantId: string): Promise<UserTenantRole | undefined>;
-  createUserTenantRole(userTenantRole: InsertUserTenantRole): Promise<UserTenantRole>;
-  
-  // Permission Management
-  getPermissionsByRole(role: string): Promise<Permission[]>;
-  createPermission(permission: InsertPermission): Promise<Permission>;
+  // User Assignment Management
+  getUserAssignments(userId: string): Promise<UserAssignment[]>;
+  getUserTenantAssignments(userId: string, tenantId: string): Promise<UserAssignment[]>;
+  createUserAssignment(userAssignment: InsertUserAssignment): Promise<UserAssignment>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -121,15 +112,15 @@ export class DatabaseStorage implements IStorage {
     return legalEntity;
   }
 
-  // ==================== STRATEGIC GROUP MANAGEMENT ====================
+  // ==================== ROLE MANAGEMENT ====================
 
-  async getStrategicGroupsByTenant(tenantId: string): Promise<StrategicGroup[]> {
-    return await db.select().from(strategicGroups).where(eq(strategicGroups.tenantId, tenantId));
+  async getRolesByTenant(tenantId: string): Promise<Role[]> {
+    return await db.select().from(roles).where(eq(roles.tenantId, tenantId));
   }
 
-  async createStrategicGroup(strategicGroupData: InsertStrategicGroup): Promise<StrategicGroup> {
-    const [strategicGroup] = await db.insert(strategicGroups).values(strategicGroupData).returning();
-    return strategicGroup;
+  async createRole(roleData: InsertRole): Promise<Role> {
+    const [role] = await db.insert(roles).values(roleData).returning();
+    return role;
   }
 
   // ==================== STORE MANAGEMENT ====================
@@ -138,57 +129,34 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(stores).where(eq(stores.tenantId, tenantId));
   }
 
-  async getStoresByStrategicGroup(strategicGroupId: string): Promise<Store[]> {
-    return await db.select().from(stores).where(eq(stores.strategicGroupId, strategicGroupId));
-  }
 
   async createStore(storeData: InsertStore): Promise<Store> {
     const [store] = await db.insert(stores).values(storeData).returning();
     return store;
   }
 
-  // ==================== USER-TENANT ROLE MANAGEMENT ====================
+  // ==================== USER ASSIGNMENT MANAGEMENT ====================
 
-  async getUserTenantRoles(userId: string): Promise<UserTenantRole[]> {
-    return await db.select().from(userTenantRoles).where(eq(userTenantRoles.userId, userId));
+  async getUserAssignments(userId: string): Promise<UserAssignment[]> {
+    return await db.select().from(userAssignments).where(eq(userAssignments.userId, userId));
   }
 
-  async getUserTenantRole(userId: string, tenantId: string): Promise<UserTenantRole | undefined> {
-    const [userTenantRole] = await db
-      .select()
-      .from(userTenantRoles)
-      .where(and(eq(userTenantRoles.userId, userId), eq(userTenantRoles.tenantId, tenantId)));
-    return userTenantRole;
-  }
-
-  async createUserTenantRole(userTenantRoleData: InsertUserTenantRole): Promise<UserTenantRole> {
-    const [userTenantRole] = await db.insert(userTenantRoles).values(userTenantRoleData).returning();
-    return userTenantRole;
-  }
-
-  // ==================== PERMISSION MANAGEMENT ====================
-
-  async getPermissionsByRole(role: string): Promise<Permission[]> {
+  async getUserTenantAssignments(userId: string, tenantId: string): Promise<UserAssignment[]> {
+    // Get assignments for tenant scope
     return await db
-      .select({ 
-        id: permissions.id,
-        code: permissions.code,
-        name: permissions.name,
-        description: permissions.description,
-        module: permissions.module,
-        scope: permissions.scope,
-        isActive: permissions.isActive,
-        createdAt: permissions.createdAt
-      })
-      .from(permissions)
-      .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
-      .where(eq(rolePermissions.role, role));
+      .select()
+      .from(userAssignments)
+      .where(and(
+        eq(userAssignments.userId, userId),
+        eq(userAssignments.scopeType, 'tenant')
+      ));
   }
 
-  async createPermission(permissionData: InsertPermission): Promise<Permission> {
-    const [permission] = await db.insert(permissions).values(permissionData).returning();
-    return permission;
+  async createUserAssignment(userAssignmentData: InsertUserAssignment): Promise<UserAssignment> {
+    const [userAssignment] = await db.insert(userAssignments).values(userAssignmentData).returning();
+    return userAssignment;
   }
+
 }
 
 export const storage = new DatabaseStorage();
