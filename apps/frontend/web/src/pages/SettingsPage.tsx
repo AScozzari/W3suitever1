@@ -1426,9 +1426,10 @@ export default function SettingsPage() {
               }}>
                 <h2 style={{
                   fontSize: '20px',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: 0
+                  fontWeight: '700',
+                  color: '#111827',
+                  margin: 0,
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                 }}>
                   {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
                 </h2>
@@ -1462,10 +1463,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Codice Ragione Sociale
                   </label>
@@ -1476,21 +1478,23 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
                       background: '#ffffff',
-                      transition: 'all 0.2s ease',
+                      transition: 'all 0.15s ease',
                       outline: 'none',
-                      color: '#1e293b'
+                      color: '#111827',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1500,10 +1504,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1541,10 +1546,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1599,10 +1605,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Partita IVA <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1641,10 +1648,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Codice Fiscale
                   </label>
@@ -1684,10 +1692,11 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1725,10 +1734,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1795,10 +1805,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     CAP
                   </label>
@@ -1838,10 +1849,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Provincia
                   </label>
@@ -1883,10 +1895,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Telefono
                   </label>
@@ -1924,10 +1937,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Email
                   </label>
@@ -1965,10 +1979,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     PEC <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2006,10 +2021,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Stato
                   </label>
@@ -2048,86 +2064,66 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Footer Modal con stile uniforme */}
+              {/* Footer Modal */}
               <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '32px',
-                paddingTop: '24px',
-                borderTop: '1px solid rgba(255, 105, 0, 0.1)'
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '24px',
+                paddingTop: '20px',
+                borderTop: '1px solid #e5e7eb'
               }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: '#6b7280',
-                  fontSize: '13px'
-                }}>
-                  <span style={{
-                    display: 'inline-block',
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: '#10b981'
-                  }} />
-                  Tutti i campi con * sono obbligatori
-                </div>
-                
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => setLegalEntityModal({ open: false, data: null })}
-                    style={{
-                      padding: '12px 24px',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '12px',
-                      background: 'white',
-                      color: '#6b7280',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#FF6900';
-                      e.currentTarget.style.color = '#FF6900';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e5e7eb';
-                      e.currentTarget.style.color = '#6b7280';
-                    }}
-                  >
-                    Annulla
-                  </button>
-                  <button
-                    onClick={handleSaveRagioneSociale}
-                    style={{
-                      padding: '12px 32px',
-                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
-                    }}
-                  >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Save size={16} />
-                      {legalEntityModal.data ? 'Salva Modifiche' : 'Crea Ragione Sociale'}
-                    </span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => setLegalEntityModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#9ca3af';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#ffffff';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleSaveRagioneSociale}
+                  style={{
+                    padding: '10px 24px',
+                    background: '#6366f1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#4f46e5';
+                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(0, 0, 0, 0.15)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#6366f1';
+                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1)';
+                  }}
+                >
+                  {legalEntityModal.data ? 'Salva' : 'Crea'}
+                </button>
               </div>
             </div>
           </div>
@@ -2171,9 +2167,10 @@ export default function SettingsPage() {
               }}>
                 <h2 style={{
                   fontSize: '20px',
-                  fontWeight: '600',
-                  color: '#1e293b',
-                  margin: 0
+                  fontWeight: '700',
+                  color: '#111827',
+                  margin: 0,
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                 }}>
                   {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
                 </h2>
@@ -2207,10 +2204,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Codice Punto Vendita
                   </label>
@@ -2253,10 +2251,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2297,10 +2296,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2345,10 +2345,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Canale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2392,10 +2393,11 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Indirizzo <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2436,10 +2438,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2508,10 +2511,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     CAP
                   </label>
@@ -2551,10 +2555,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Telefono
                   </label>
@@ -2595,10 +2600,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Email
                   </label>
@@ -2729,10 +2735,11 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#475569',
-                    marginBottom: '6px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
                     Stato
                   </label>
