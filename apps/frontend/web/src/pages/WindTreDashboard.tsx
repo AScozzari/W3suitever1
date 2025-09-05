@@ -1917,8 +1917,63 @@ export default function WindTreDashboard() {
                       fontWeight: 600,
                       padding: '2px 8px',
                       borderRadius: '10px'
-                    }}>{eventiTotali} eventi totali</span>
+                    }}>{eventiTotali} eventi</span>
                   </div>
+
+                  {/* Eventi oggi */}
+                  <div style={{
+                    marginBottom: '16px'
+                  }}>
+                    <h5 style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      margin: '0 0 8px 0'
+                    }}>Prossimi eventi</h5>
+                    
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px'
+                    }}>
+                      {eventiCalendario.slice(0, 3).map((evento) => (
+                        <div key={evento.id} style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '6px',
+                          padding: '8px',
+                          borderLeft: '3px solid #7B2CBF',
+                          cursor: 'pointer'
+                        }}>
+                          <div style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: '#1f2937',
+                            marginBottom: '2px'
+                          }}>{evento.titolo}</div>
+                          <div style={{
+                            fontSize: '9px',
+                            color: '#6b7280'
+                          }}>
+                            {evento.ora} - {evento.location}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    background: 'rgba(123, 44, 191, 0.1)',
+                    border: '1px solid rgba(123, 44, 191, 0.2)',
+                    borderRadius: '6px',
+                    color: '#7B2CBF',
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}>
+                    Visualizza calendario completo
+                  </button>
                 </div>
                 )}
 
@@ -1944,8 +1999,143 @@ export default function WindTreDashboard() {
                       fontWeight: 600,
                       padding: '2px 8px',
                       borderRadius: '10px'
-                    }}>{leads.length} leads attivi</span>
+                    }}>{leads.length} attivi</span>
                   </div>
+
+                  {/* Lead stats */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '6px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      borderRadius: '6px',
+                      padding: '8px',
+                      border: '1px solid rgba(16, 185, 129, 0.2)'
+                    }}>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        color: '#10b981'
+                      }}>{leads.filter(l => l.priorita === 'Alta').length}</div>
+                      <div style={{
+                        fontSize: '8px',
+                        color: '#065f46',
+                        fontWeight: 500
+                      }}>Alta Priorità</div>
+                    </div>
+                    <div style={{
+                      background: 'rgba(255, 105, 0, 0.1)',
+                      borderRadius: '6px',
+                      padding: '8px',
+                      border: '1px solid rgba(255, 105, 0, 0.2)'
+                    }}>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        color: '#FF6900'
+                      }}>€24K</div>
+                      <div style={{
+                        fontSize: '8px',
+                        color: '#ea580c',
+                        fontWeight: 500
+                      }}>Potenziale</div>
+                    </div>
+                  </div>
+
+                  {/* Leads list */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    marginBottom: '16px'
+                  }}>
+                    {leads.slice(0, 4).map((lead) => {
+                      const getPriorityColor = (priorita: string) => {
+                        switch(priorita) {
+                          case 'Alta': return '#ef4444';
+                          case 'Media': return '#f59e0b';
+                          case 'Bassa': return '#10b981';
+                          default: return '#6b7280';
+                        }
+                      };
+                      
+                      return (
+                        <div key={lead.id} style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '6px',
+                          padding: '10px',
+                          borderLeft: `3px solid ${getPriorityColor(lead.priorita)}`,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            marginBottom: '4px'
+                          }}>
+                            <div>
+                              <div style={{
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                color: '#1f2937',
+                                marginBottom: '2px'
+                              }}>{lead.cliente}</div>
+                              <div style={{
+                                fontSize: '10px',
+                                color: '#6b7280',
+                                marginBottom: '4px'
+                              }}>{lead.azienda}</div>
+                            </div>
+                            <span style={{
+                              fontSize: '8px',
+                              fontWeight: 600,
+                              color: getPriorityColor(lead.priorita),
+                              background: `${getPriorityColor(lead.priorita)}20`,
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}>{lead.priorita}</span>
+                          </div>
+                          
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}>
+                            <div style={{
+                              fontSize: '9px',
+                              color: '#6b7280'
+                            }}>
+                              {lead.fonte} • {lead.tempo}
+                            </div>
+                            
+                            <div style={{
+                              fontSize: '10px',
+                              fontWeight: 600,
+                              color: '#10b981'
+                            }}>{lead.potenziale}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <button style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    borderRadius: '6px',
+                    color: '#10b981',
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}>
+                    Gestisci tutti i leads
+                  </button>
                 </div>
                 )}
 
