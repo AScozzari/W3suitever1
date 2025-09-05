@@ -1474,12 +1474,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Codice Ragione Sociale
                   </label>
@@ -1502,13 +1500,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1517,12 +1517,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1543,13 +1541,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1558,12 +1558,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1583,13 +1581,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     <option value="">Seleziona...</option>
@@ -1616,12 +1616,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Partita IVA <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1643,13 +1641,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1658,12 +1658,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Codice Fiscale
                   </label>
@@ -1686,13 +1684,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1701,12 +1701,10 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1727,13 +1725,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1742,12 +1742,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1779,13 +1777,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     <option value="">Seleziona città...</option>
@@ -1812,12 +1812,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     CAP
                   </label>
@@ -1857,12 +1855,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Provincia
                   </label>
@@ -1904,12 +1900,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Telefono
                   </label>
@@ -1930,13 +1924,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1945,12 +1941,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Email
                   </label>
@@ -1971,13 +1965,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1986,12 +1982,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     PEC <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2012,13 +2006,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2027,12 +2023,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Stato
                   </label>
@@ -2052,13 +2046,15 @@ export default function SettingsPage() {
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     <option value="Attiva">Attiva</option>
@@ -2179,21 +2175,58 @@ export default function SettingsPage() {
             overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
           }}>
-            {/* Header Modal */}
+            {/* Header Modal con stile uniforme */}
             <div style={{
-              padding: '24px',
-              borderBottom: '1px solid #e5e7eb',
-              background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
-              borderRadius: '24px 24px 0 0'
+              padding: '32px 32px 0 32px'
             }}>
-              <h2 style={{
-                fontSize: '20px',
-                fontWeight: '700',
-                color: 'white',
-                margin: 0
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '32px',
+                paddingBottom: '20px',
+                borderBottom: '1px solid rgba(255, 105, 0, 0.1)'
               }}>
-                {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
-              </h2>
+                <div>
+                  <h2 style={{
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    marginBottom: '8px'
+                  }}>
+                    {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
+                  </h2>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280'
+                  }}>
+                    Configura i dettagli del punto vendita
+                  </p>
+                </div>
+                <button
+                  onClick={() => setStoreModal({ open: false, data: null })}
+                  style={{
+                    background: 'rgba(255, 105, 0, 0.1)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    padding: '12px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.2)';
+                    e.currentTarget.style.transform = 'rotate(90deg)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)';
+                    e.currentTarget.style.transform = 'rotate(0deg)';
+                  }}
+                >
+                  <X size={20} style={{ color: '#FF6900' }} />
+                </button>
+              </div>
             </div>
 
             {/* Body Modal */}
@@ -2203,12 +2236,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Codice Punto Vendita
                   </label>
@@ -2219,25 +2250,30 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
                       fontFamily: 'monospace',
                       fontWeight: '600',
-                      outline: 'none'
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2246,12 +2282,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2262,23 +2296,28 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2287,12 +2326,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2301,24 +2338,29 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, ragioneSociale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
                       cursor: 'pointer',
-                      outline: 'none'
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     <option value="">Seleziona...</option>
@@ -2332,12 +2374,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Canale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2346,24 +2386,29 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, canale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
                       cursor: 'pointer',
-                      outline: 'none'
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     <option value="Franchising">Franchising</option>
@@ -2376,12 +2421,10 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Indirizzo <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2392,23 +2435,28 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2417,12 +2465,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2442,24 +2488,29 @@ export default function SettingsPage() {
                     }}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
                       cursor: 'pointer',
-                      outline: 'none'
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     <option value="">Seleziona città...</option>
@@ -2486,12 +2537,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     CAP
                   </label>
@@ -2531,12 +2580,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Telefono
                   </label>
@@ -2547,23 +2594,28 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2572,12 +2624,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Email
                   </label>
@@ -2588,23 +2638,28 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2703,12 +2758,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    color: '#6b7280',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    marginBottom: '8px'
                   }}>
                     Stato
                   </label>
@@ -2717,24 +2770,29 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(255, 255, 255, 0.6)',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                      transition: 'all 0.3s ease',
                       cursor: 'pointer',
-                      outline: 'none'
+                      outline: 'none',
+                      color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                       e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     <option value="Attivo">Attivo</option>
@@ -2744,46 +2802,83 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Footer Modal */}
+              {/* Footer Modal con stile uniforme */}
               <div style={{
                 display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px',
-                marginTop: '24px',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '32px',
                 paddingTop: '24px',
-                borderTop: '1px solid #e5e7eb'
+                borderTop: '1px solid rgba(255, 105, 0, 0.1)'
               }}>
-                <button
-                  onClick={() => setStoreModal({ open: false, data: null })}
-                  style={{
-                    padding: '10px 20px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    background: 'white',
-                    color: '#6b7280',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={handleSaveStore}
-                  style={{
-                    padding: '10px 20px',
-                    background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)'
-                  }}
-                >
-                  {storeModal.data ? 'Salva Modifiche' : 'Crea Punto Vendita'}
-                </button>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: '#6b7280',
+                  fontSize: '13px'
+                }}>
+                  <span style={{
+                    display: 'inline-block',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: '#10b981'
+                  }} />
+                  Tutti i campi con * sono obbligatori
+                </div>
+                
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    onClick={() => setStoreModal({ open: false, data: null })}
+                    style={{
+                      padding: '12px 24px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '12px',
+                      background: 'white',
+                      color: '#6b7280',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = '#FF6900';
+                      e.currentTarget.style.color = '#FF6900';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                      e.currentTarget.style.color = '#6b7280';
+                    }}
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    onClick={handleSaveStore}
+                    style={{
+                      padding: '12px 32px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 105, 0, 0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
+                    }}
+                  >
+                    {storeModal.data ? 'Salva Modifiche' : 'Crea Punto Vendita'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
