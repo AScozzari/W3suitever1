@@ -1,46 +1,56 @@
-import { useState } from "react";
-import { 
-  Building2, Users, Settings as SettingsIcon, Shield, 
-  Globe, Database, Bell, Cpu, ChevronRight, Plus, Edit,
-  Trash2, Search, Filter, MoreHorizontal, Briefcase
-} from "lucide-react";
-// Per ora uso componenti HTML nativi, da sostituire con UI components quando configurato
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Settings as SettingsIcon,
+  Users,
+  Shield,
+  Building,
+  Server,
+  Key,
+  Bell,
+  Palette,
+  User,
+  Lock,
+  Activity,
+  FileText,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  CreditCard,
+  Save,
+  Edit3,
+  Plus,
+  Trash2,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Briefcase,
+  Store,
+  UserCheck
+} from 'lucide-react';
 
-// Componenti temporanei
+// Componenti temporanei con styling glassmorphism WindTre
 const Card = ({ className = "", children, ...props }: any) => (
-  <div className={`backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl ${className}`} {...props}>{children}</div>
+  <div className={`backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl ${className}`} {...props}>
+    {children}
+  </div>
 );
+
 const CardHeader = ({ className = "", children, ...props }: any) => (
   <div className={`p-6 ${className}`} {...props}>{children}</div>
 );
+
 const CardTitle = ({ className = "", children, ...props }: any) => (
   <h3 className={`text-xl font-semibold text-white ${className}`} {...props}>{children}</h3>
 );
+
 const CardDescription = ({ className = "", children, ...props }: any) => (
   <p className={`text-white/70 ${className}`} {...props}>{children}</p>
 );
+
 const CardContent = ({ className = "", children, ...props }: any) => (
   <div className={`p-6 pt-0 ${className}`} {...props}>{children}</div>
-);
-
-const Tabs = ({ value, onValueChange, className = "", children, ...props }: any) => (
-  <div className={className} data-value={value} {...props}>{children}</div>
-);
-const TabsList = ({ className = "", children, ...props }: any) => (
-  <div className={`flex p-1 ${className}`} {...props}>{children}</div>
-);
-const TabsTrigger = ({ value, className = "", children, onClick, ...props }: any) => (
-  <button 
-    className={`flex-1 px-4 py-3 text-sm font-medium transition-all duration-300 rounded-xl text-white/80 hover:text-white ${className}`}
-    onClick={() => onClick?.(value)}
-    {...props}
-  >{children}</button>
-);
-const TabsContent = ({ value, className = "", children, ...props }: any) => (
-  <div className={`mt-6 ${className}`} {...props}>{children}</div>
 );
 
 const Button = ({ className = "", variant = "default", children, ...props }: any) => (
@@ -51,7 +61,9 @@ const Button = ({ className = "", variant = "default", children, ...props }: any
       "bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
     } ${className}`}
     {...props}
-  >{children}</button>
+  >
+    {children}
+  </button>
 );
 
 const Input = ({ className = "", ...props }: any) => (
@@ -69,7 +81,9 @@ const Badge = ({ className = "", variant = "default", children, ...props }: any)
       "bg-blue-500/20 text-blue-300 border-blue-500/30"
     } ${className}`}
     {...props}
-  >{children}</span>
+  >
+    {children}
+  </span>
 );
 
 const Table = ({ className = "", children, ...props }: any) => (
@@ -77,73 +91,107 @@ const Table = ({ className = "", children, ...props }: any) => (
     <table className={`w-full ${className}`} {...props}>{children}</table>
   </div>
 );
+
 const TableHeader = ({ className = "", children, ...props }: any) => (
   <thead className={className} {...props}>{children}</thead>
 );
+
 const TableBody = ({ className = "", children, ...props }: any) => (
   <tbody className={className} {...props}>{children}</tbody>
 );
+
 const TableRow = ({ className = "", children, ...props }: any) => (
   <tr className={`border-b border-white/10 hover:bg-white/5 ${className}`} {...props}>{children}</tr>
 );
+
 const TableHead = ({ className = "", children, ...props }: any) => (
-  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${className}`} {...props}>{children}</th>
+  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/70 ${className}`} {...props}>{children}</th>
 );
+
 const TableCell = ({ className = "", children, ...props }: any) => (
-  <td className={`px-4 py-3 ${className}`} {...props}>{children}</td>
+  <td className={`px-4 py-3 text-white/80 ${className}`} {...props}>{children}</td>
 );
 
-const DropdownMenu = ({ children }: any) => <div className="relative inline-block">{children}</div>;
-const DropdownMenuTrigger = ({ asChild, children, ...props }: any) => (
-  <div {...props}>{children}</div>
-);
-const DropdownMenuContent = ({ className = "", children, ...props }: any) => (
-  <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-lg backdrop-blur-xl bg-gray-800/95 border border-white/20 py-1 z-50 ${className}`} {...props}>
-    {children}
-  </div>
-);
-const DropdownMenuItem = ({ className = "", children, ...props }: any) => (
-  <button className={`w-full px-4 py-2 text-sm text-left hover:bg-white/10 flex items-center gap-2 ${className}`} {...props}>
-    {children}
-  </button>
-);
+export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState('organizzazione');
+  const [activeSubTab, setActiveSubTab] = useState('generale');
+  const [editMode, setEditMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-interface Entity {
-  id: string;
-  name: string;
-  status: "active" | "inactive" | "pending";
-  type?: string;
-  createdAt: string;
-  count?: number;
-}
+  // Fetch dei dati del tenant corrente (non multi-tenant!)
+  const { data: currentTenant } = useQuery({ 
+    queryKey: ['/api/tenant/current']
+  });
+  
+  const { data: legalEntities } = useQuery({ 
+    queryKey: ['/api/tenant/legal-entities'] 
+  });
+  
+  const { data: stores } = useQuery({ 
+    queryKey: ['/api/tenant/stores'] 
+  });
+  
+  const { data: tenantUsers } = useQuery({ 
+    queryKey: ['/api/tenant/users'] 
+  });
 
-interface SystemStats {
-  totalTenants: number;
-  totalLegalEntities: number;
-  totalStores: number;
-  totalUsers: number;
-  activeConnections: number;
-  systemHealth: string;
-}
+  const mainTabs = [
+    { id: 'organizzazione', label: 'Organizzazione', icon: Building },
+    { id: 'utenti', label: 'Utenti & Ruoli', icon: Users },
+    { id: 'sistema', label: 'Sistema', icon: Server },
+    { id: 'sicurezza', label: 'Sicurezza', icon: Shield }
+  ];
 
-export default function Settings() {
-  const [activeTab, setActiveTab] = useState("organization");
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Mock data - sarà sostituito con API calls
-  const systemStats: SystemStats = {
-    totalTenants: 12,
-    totalLegalEntities: 45,
-    totalStores: 174,
-    totalUsers: 1250,
-    activeConnections: 98,
-    systemHealth: "Ottimale"
+  const subTabs = {
+    organizzazione: [
+      { id: 'generale', label: 'Info Generali', icon: Building },
+      { id: 'ragioni-sociali', label: 'Ragioni Sociali', icon: FileText },
+      { id: 'punti-vendita', label: 'Punti Vendita', icon: Store },
+      { id: 'branding', label: 'Personalizzazione', icon: Palette }
+    ],
+    utenti: [
+      { id: 'gestione', label: 'Gestione Utenti', icon: User },
+      { id: 'ruoli', label: 'Ruoli & Permessi', icon: Key }
+    ],
+    sistema: [
+      { id: 'configurazione', label: 'Configurazione', icon: Server },
+      { id: 'notifiche', label: 'Notifiche', icon: Bell }
+    ],
+    sicurezza: [
+      { id: 'autenticazione', label: 'Autenticazione', icon: Lock },
+      { id: 'sessioni', label: 'Sessioni Attive', icon: Activity },
+      { id: 'audit', label: 'Log Attività', icon: FileText }
+    ]
   };
 
-  const tenants: Entity[] = [
-    { id: "1", name: "WindTre Franchising Sud", status: "active", type: "Franchising", createdAt: "2024-01-15", count: 25 },
-    { id: "2", name: "Very Mobile Nord Est", status: "active", type: "Top Dealer", createdAt: "2024-02-20", count: 18 },
-    { id: "3", name: "Digital Operations Srl", status: "pending", type: "Dealer", createdAt: "2024-12-01", count: 8 }
+  // Mock data per il tenant corrente (sostituirà con API)
+  const tenantInfo = {
+    id: 'current-tenant',
+    name: 'WindTre Network Milano',
+    organizationType: 'Franchising',
+    businessCode: 'WT-MLN-001',
+    legalEntitiesCount: 3,
+    storesCount: 12,
+    usersCount: 28,
+    status: 'active'
+  };
+
+  const mockLegalEntities = [
+    { id: '1', name: 'WindTre Store Milano Centro Srl', vatNumber: 'IT12345678901', storesCount: 5, status: 'active' },
+    { id: '2', name: 'Very Mobile Point Nord Srl', vatNumber: 'IT98765432109', storesCount: 4, status: 'active' },
+    { id: '3', name: 'Digital Services Milano Srl', vatNumber: 'IT11223344556', storesCount: 3, status: 'pending' }
+  ];
+
+  const mockStores = [
+    { id: '1', name: 'Milano Duomo', address: 'Via del Corso 15, Milano', legalEntity: 'WindTre Store Milano Centro Srl', status: 'active', usersCount: 8 },
+    { id: '2', name: 'Milano Centrale', address: 'P.za Duca d\'Aosta 9, Milano', legalEntity: 'WindTre Store Milano Centro Srl', status: 'active', usersCount: 6 },
+    { id: '3', name: 'Very Mobile Isola', address: 'Via Brera 22, Milano', legalEntity: 'Very Mobile Point Nord Srl', status: 'active', usersCount: 4 }
+  ];
+
+  const mockUsers = [
+    { id: '1', name: 'Marco Rossi', email: 'marco.rossi@windtre.it', role: 'Store Manager', store: 'Milano Duomo', status: 'active', lastAccess: '2024-12-05' },
+    { id: '2', name: 'Laura Bianchi', email: 'laura.bianchi@windtre.it', role: 'Sales Agent', store: 'Milano Centrale', status: 'active', lastAccess: '2024-12-05' },
+    { id: '3', name: 'Giuseppe Verde', email: 'giuseppe.verde@verymobile.it', role: 'Assistant Manager', store: 'Very Mobile Isola', status: 'active', lastAccess: '2024-12-04' }
   ];
 
   const getStatusBadge = (status: string) => {
@@ -155,111 +203,141 @@ export default function Settings() {
     return variants[status as keyof typeof variants] || variants.active;
   };
 
-  return (
-    <div className="w-full h-full p-0 m-0">
-      {/* Header Glass */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-4 mb-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 via-purple-400 to-orange-400 bg-clip-text text-transparent">
-              Configurazioni Sistema
-            </h1>
-            <p className="text-white/70 text-base mt-1">
-              Gestione completa organizzazione e configurazione enterprise
-            </p>
-          </div>
-          <Button className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white px-6">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuova Configurazione
-          </Button>
-        </div>
+  const renderMainTabButton = (tab: any) => (
+    <button
+      key={tab.id}
+      onClick={() => {
+        setActiveTab(tab.id);
+        setActiveSubTab(subTabs[tab.id as keyof typeof subTabs][0].id);
+      }}
+      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+        activeTab === tab.id
+          ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg'
+          : 'text-white/80 hover:text-white hover:bg-white/10'
+      }`}
+    >
+      <tab.icon className="w-4 h-4" />
+      {tab.label}
+    </button>
+  );
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
-          <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400/30 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-300">{systemStats.totalTenants}</div>
-              <div className="text-sm text-blue-200">Tenants</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-400/30 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-300">{systemStats.totalLegalEntities}</div>
-              <div className="text-sm text-green-200">Ragioni Sociali</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 border-purple-400/30 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-300">{systemStats.totalStores}</div>
-              <div className="text-sm text-purple-200">Punti Vendita</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-orange-500/20 to-orange-600/20 border-orange-400/30 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-300">{systemStats.totalUsers}</div>
-              <div className="text-sm text-orange-200">Utenti</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border-cyan-400/30 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-cyan-300">{systemStats.activeConnections}</div>
-              <div className="text-sm text-cyan-200">Connessioni</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border-emerald-400/30 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-emerald-300">{systemStats.systemHealth}</div>
-              <div className="text-sm text-emerald-200">Stato Sistema</div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+  const renderSubTabButton = (subTab: any) => (
+    <button
+      key={subTab.id}
+      onClick={() => setActiveSubTab(subTab.id)}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+        activeSubTab === subTab.id
+          ? 'bg-white/20 text-white border border-white/30'
+          : 'text-white/70 hover:text-white hover:bg-white/10'
+      }`}
+    >
+      <subTab.icon className="w-4 h-4" />
+      {subTab.label}
+    </button>
+  );
 
-      {/* Main Tabs Container */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-2 mb-4">
-          <TabsTrigger 
-            value="organization" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-xl transition-all duration-300"
-          >
-            <Building2 className="w-4 h-4 mr-2" />
-            Organizzazione
-          </TabsTrigger>
-          <TabsTrigger 
-            value="users" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-xl transition-all duration-300"
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Utenti & Ruoli
-          </TabsTrigger>
-          <TabsTrigger 
-            value="system" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-xl transition-all duration-300"
-          >
-            <SettingsIcon className="w-4 h-4 mr-2" />
-            Sistema
-          </TabsTrigger>
-          <TabsTrigger 
-            value="security" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-xl transition-all duration-300"
-          >
-            <Shield className="w-4 h-4 mr-2" />
-            Sicurezza
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Organization Tab */}
-        <TabsContent value="organization" className="space-y-4">
-          <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20">
+  const renderContent = () => {
+    if (activeTab === 'organizzazione') {
+      if (activeSubTab === 'generale') {
+        return (
+          <Card>
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-white text-xl">Gestione Ragioni Sociali</CardTitle>
-                  <CardDescription className="text-white/70">
-                    Configurazione entità aziendali e punti vendita
-                  </CardDescription>
+                  <CardTitle>Informazioni Organizzazione</CardTitle>
+                  <CardDescription>Gestione dei dati principali della tua organizzazione</CardDescription>
                 </div>
-                <Button className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700">
+                <Button onClick={() => setEditMode(!editMode)}>
+                  <Edit3 className="w-4 h-4 mr-2" />
+                  {editMode ? 'Annulla' : 'Modifica'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Nome Organizzazione</label>
+                  <Input 
+                    value={tenantInfo.name} 
+                    disabled={!editMode}
+                    className={!editMode ? "bg-white/5 cursor-not-allowed" : ""}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Codice Business</label>
+                  <Input 
+                    value={tenantInfo.businessCode} 
+                    disabled={!editMode}
+                    className={!editMode ? "bg-white/5 cursor-not-allowed" : ""}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Tipo Organizzazione</label>
+                  <Input 
+                    value={tenantInfo.organizationType} 
+                    disabled={!editMode}
+                    className={!editMode ? "bg-white/5 cursor-not-allowed" : ""}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Stato</label>
+                  <Badge className={getStatusBadge(tenantInfo.status)}>
+                    {tenantInfo.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              {editMode && (
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="outline" onClick={() => setEditMode(false)}>
+                    Annulla
+                  </Button>
+                  <Button>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salva Modifiche
+                  </Button>
+                </div>
+              )}
+              
+              {/* Stats della propria organizzazione */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                <Card className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-400/30">
+                  <CardContent className="p-4 text-center">
+                    <FileText className="w-8 h-8 mx-auto mb-2 text-green-300" />
+                    <div className="text-2xl font-bold text-green-300">{tenantInfo.legalEntitiesCount}</div>
+                    <div className="text-sm text-green-200">Ragioni Sociali</div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400/30">
+                  <CardContent className="p-4 text-center">
+                    <Store className="w-8 h-8 mx-auto mb-2 text-blue-300" />
+                    <div className="text-2xl font-bold text-blue-300">{tenantInfo.storesCount}</div>
+                    <div className="text-sm text-blue-200">Punti Vendita</div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 border-purple-400/30">
+                  <CardContent className="p-4 text-center">
+                    <UserCheck className="w-8 h-8 mx-auto mb-2 text-purple-300" />
+                    <div className="text-2xl font-bold text-purple-300">{tenantInfo.usersCount}</div>
+                    <div className="text-sm text-purple-200">Utenti Attivi</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      }
+
+      if (activeSubTab === 'ragioni-sociali') {
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>Gestione Ragioni Sociali</CardTitle>
+                  <CardDescription>Le entità giuridiche della tua organizzazione</CardDescription>
+                </div>
+                <Button>
                   <Plus className="w-4 h-4 mr-2" />
                   Nuova Ragione Sociale
                 </Button>
@@ -270,12 +348,12 @@ export default function Settings() {
                   <Search className="absolute left-3 top-3 h-4 w-4 text-white/50" />
                   <Input 
                     placeholder="Cerca ragioni sociali..."
-                    className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/50 focus:border-orange-400"
+                    className="pl-10"
                     value={searchTerm}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                    onChange={(e: any) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Button variant="outline">
                   <Filter className="w-4 h-4 mr-2" />
                   Filtri
                 </Button>
@@ -284,62 +362,41 @@ export default function Settings() {
             <CardContent>
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/20 hover:bg-white/5">
-                    <TableHead className="text-white/70">Nome</TableHead>
-                    <TableHead className="text-white/70">Tipo Canale</TableHead>
-                    <TableHead className="text-white/70">Data Creazione</TableHead>
-                    <TableHead className="text-white/70">Punti Vendita</TableHead>
-                    <TableHead className="text-white/70">Stato</TableHead>
-                    <TableHead className="text-white/70 text-right">Azioni</TableHead>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Partita IVA</TableHead>
+                    <TableHead>Punti Vendita</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tenants.map((tenant) => (
-                    <TableRow key={tenant.id} className="border-white/10 hover:bg-white/5">
-                      <TableCell className="font-medium text-white">
+                  {mockLegalEntities.map((entity) => (
+                    <TableRow key={entity.id}>
+                      <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           <Briefcase className="w-4 h-4 text-orange-400" />
-                          {tenant.name}
+                          {entity.name}
                         </div>
                       </TableCell>
+                      <TableCell>{entity.vatNumber}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="border-purple-400/50 text-purple-300">
-                          {tenant.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-white/70">{tenant.createdAt}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-300">
-                          {tenant.count}
-                        </Badge>
+                        <Badge variant="secondary">{entity.storesCount}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusBadge(tenant.status)}>
-                          {tenant.status}
+                        <Badge className={getStatusBadge(entity.status)}>
+                          {entity.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 text-white/70 hover:text-white hover:bg-white/10">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-gray-800/95 backdrop-blur-xl border-white/20">
-                            <DropdownMenuItem className="text-white hover:bg-white/10">
-                              <Edit className="w-4 h-4 mr-2" />
-                              Modifica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-white hover:bg-white/10">
-                              <Globe className="w-4 h-4 mr-2" />
-                              Gestisci PV
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-400 hover:bg-red-500/10">
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Elimina
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="ghost" size="sm">
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -347,113 +404,240 @@ export default function Settings() {
               </Table>
             </CardContent>
           </Card>
-        </TabsContent>
+        );
+      }
 
-        {/* Users & Roles Tab */}
-        <TabsContent value="users" className="space-y-4">
-          <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-            <CardTitle className="text-white text-xl mb-4">Gestione Utenti e Ruoli RBAC</CardTitle>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400/30 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-blue-300 text-lg">Utenti Attivi</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-blue-200 mb-2">{systemStats.totalUsers}</div>
-                  <p className="text-blue-200/70">Gestione completa utenti</p>
-                  <Button className="mt-4 bg-blue-500/30 hover:bg-blue-500/50 text-blue-200 border-blue-400/30">
-                    Gestisci Utenti
-                  </Button>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 border-purple-400/30 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-purple-300 text-lg">Ruoli Definiti</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-purple-200 mb-2">24</div>
-                  <p className="text-purple-200/70">Configurazione RBAC</p>
-                  <Button className="mt-4 bg-purple-500/30 hover:bg-purple-500/50 text-purple-200 border-purple-400/30">
-                    Gestisci Ruoli
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+      if (activeSubTab === 'punti-vendita') {
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>Gestione Punti Vendita</CardTitle>
+                  <CardDescription>I punti vendita della tua organizzazione</CardDescription>
+                </div>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuovo Punto Vendita
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Indirizzo</TableHead>
+                    <TableHead>Ragione Sociale</TableHead>
+                    <TableHead>Utenti</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockStores.map((store) => (
+                    <TableRow key={store.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                          <Store className="w-4 h-4 text-blue-400" />
+                          {store.name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-white/70">{store.address}</TableCell>
+                      <TableCell className="text-white/70">{store.legalEntity}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{store.usersCount}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusBadge(store.status)}>
+                          {store.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="ghost" size="sm">
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
           </Card>
-        </TabsContent>
+        );
+      }
+    }
 
-        {/* System Configuration Tab */}
-        <TabsContent value="system" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-              <CardTitle className="text-white text-xl mb-4">Configurazione Database</CardTitle>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-white">Stato Connessione</span>
-                  <Badge className="bg-green-500/20 text-green-300">Attiva</Badge>
+    if (activeTab === 'utenti') {
+      if (activeSubTab === 'gestione') {
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>Gestione Utenti</CardTitle>
+                  <CardDescription>Gli utenti della tua organizzazione</CardDescription>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-white">Performance</span>
-                  <span className="text-green-300">98%</span>
-                </div>
-                <Button className="w-full bg-gradient-to-r from-orange-500 to-purple-600">
-                  <Database className="w-4 h-4 mr-2" />
-                  Gestisci Database
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuovo Utente
                 </Button>
               </div>
-            </Card>
-            
-            <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-              <CardTitle className="text-white text-xl mb-4">Configurazione Servizi</CardTitle>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-white">Backup Automatico</span>
-                  <Badge className="bg-blue-500/20 text-blue-300">Attivato</Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-white">Monitoraggio</span>
-                  <Badge className="bg-green-500/20 text-green-300">Attivo</Badge>
-                </div>
-                <Button className="w-full bg-gradient-to-r from-orange-500 to-purple-600">
-                  <Cpu className="w-4 h-4 mr-2" />
-                  Gestisci Servizi
-                </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Ruolo</TableHead>
+                    <TableHead>Punto Vendita</TableHead>
+                    <TableHead>Ultimo Accesso</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                          <User className="w-4 h-4 text-purple-400" />
+                          {user.name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-white/70">{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="border-orange-400/50 text-orange-300">
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-white/70">{user.store}</TableCell>
+                      <TableCell className="text-white/70">{user.lastAccess}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusBadge(user.status)}>
+                          {user.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="ghost" size="sm">
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+      }
+
+      if (activeSubTab === 'ruoli') {
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ruoli e Permessi</CardTitle>
+              <CardDescription>Configurazione RBAC per la tua organizzazione</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {['Admin', 'Store Manager', 'Sales Agent', 'Assistant Manager'].map((role) => (
+                  <Card key={role} className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Key className="w-5 h-5 text-blue-300" />
+                        <h4 className="font-medium text-blue-200">{role}</h4>
+                      </div>
+                      <p className="text-blue-200/70 text-sm mb-3">
+                        Permissions configured for {role.toLowerCase()} role in your organization.
+                      </p>
+                      <Button variant="outline" size="sm" className="w-full border-blue-400/50 text-blue-300">
+                        Gestisci Permessi
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </Card>
+            </CardContent>
+          </Card>
+        );
+      }
+    }
+
+    // Placeholder per altri tab
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Sezione in Sviluppo</CardTitle>
+          <CardDescription>Questa sezione è in fase di sviluppo</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-white/70">Le impostazioni per {activeTab} - {activeSubTab} saranno disponibili presto.</p>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="w-full h-full p-6 space-y-6">
+      {/* Header */}
+      <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 via-purple-400 to-orange-400 bg-clip-text text-transparent">
+              Impostazioni Organizzazione
+            </h1>
+            <p className="text-white/70 text-lg mt-2">
+              Gestione della tua organizzazione: {tenantInfo.name}
+            </p>
           </div>
-        </TabsContent>
+          <div className="text-right">
+            <Badge className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 text-orange-300 border-orange-400/30">
+              {tenantInfo.organizationType}
+            </Badge>
+          </div>
+        </div>
+      </div>
 
-        {/* Security Tab */}
-        <TabsContent value="security" className="space-y-4">
-          <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-            <CardTitle className="text-white text-xl mb-4">Configurazione Sicurezza</CardTitle>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-400/30 backdrop-blur-sm">
-                <CardContent className="p-4 text-center">
-                  <Shield className="w-8 h-8 mx-auto mb-2 text-red-300" />
-                  <div className="text-xl font-bold text-red-300">RLS</div>
-                  <div className="text-sm text-red-200">Row Level Security</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 border-yellow-400/30 backdrop-blur-sm">
-                <CardContent className="p-4 text-center">
-                  <Bell className="w-8 h-8 mx-auto mb-2 text-yellow-300" />
-                  <div className="text-xl font-bold text-yellow-300">MFA</div>
-                  <div className="text-sm text-yellow-200">Multi-Factor Auth</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 border-indigo-400/30 backdrop-blur-sm">
-                <CardContent className="p-4 text-center">
-                  <Globe className="w-8 h-8 mx-auto mb-2 text-indigo-300" />
-                  <div className="text-xl font-bold text-indigo-300">OAuth</div>
-                  <div className="text-sm text-indigo-200">OpenID Connect</div>
-                </CardContent>
-              </Card>
-            </div>
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar Navigation */}
+        <div className="lg:w-80 space-y-4">
+          {/* Main Tabs */}
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              {mainTabs.map(renderMainTabButton)}
+            </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+
+          {/* Sub Tabs */}
+          {subTabs[activeTab as keyof typeof subTabs] && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Sezioni</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-1">
+                {subTabs[activeTab as keyof typeof subTabs].map(renderSubTabButton)}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1">
+          {renderContent()}
+        </div>
+      </div>
     </div>
   );
 }
