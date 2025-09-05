@@ -69,7 +69,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     const token = localStorage.getItem('auth_token');
     if (!token && user) {
       // Simula login automatico per development con token JWT valido
-      const validJwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLXVzZXIiLCJlbWFpbCI6ImFkbWluQHczc3VpdGUuY29tIiwidGVuYW50SWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJpYXQiOjE3NTcwOTE4MjksImV4cCI6MTc1NzY5NjYyOX0.jy2yyRCPaYRDhmtcBiqZiKNzzfs-0s4_jdV_jZxogTI';
+      const validJwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLXVzZXIiLCJlbWFpbCI6ImFkbWluQHczc3VpdGUuY29tIiwidGVuYW50SWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJpYXQiOjE3NTcwOTIwMTYsImV4cCI6MTc1NzY5NjgxNn0.-YyFQ05KOSn4Ts48p92BBUl19G_GBD70s_1npIAErzM';
       localStorage.setItem('auth_token', validJwtToken);
       console.log('Setting valid JWT token for development');
       // Refresh stores query dopo aver impostato il token

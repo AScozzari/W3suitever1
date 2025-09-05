@@ -191,6 +191,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No tenant ID available" });
       }
       
+      // Valida che il tenantId sia un UUID valido
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(tenantId)) {
+        console.error("Invalid tenant ID format:", tenantId);
+        return res.status(400).json({ error: "Invalid tenant ID format" });
+      }
+      
       const stores = await storage.getStoresByTenant(tenantId);
       res.json(stores);
     } catch (error) {
