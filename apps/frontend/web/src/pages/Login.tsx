@@ -271,7 +271,7 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                 color: '#374151',
                 marginBottom: '12px',
                 letterSpacing: '0.025em'
-              }}>Email Aziendale</label>
+              }}>Nome Utente</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="email"
@@ -319,7 +319,7 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                 color: '#374151',
                 marginBottom: '12px',
                 letterSpacing: '0.025em'
-              }}>Password Sicura</label>
+              }}>Password</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -368,33 +368,24 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                     right: '16px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    background: 'hsla(255, 255, 255, 0.2)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid hsla(255, 255, 255, 0.3)',
-                    borderRadius: '12px',
+                    background: 'transparent',
+                    border: 'none',
                     color: '#6b7280',
                     cursor: 'pointer',
-                    padding: '12px',
+                    padding: '8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'all 0.2s ease',
-                    width: '44px',
-                    height: '44px'
+                    transition: 'color 0.2s ease'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.color = '#FF6900';
-                    e.currentTarget.style.background = 'hsla(25, 100%, 50%, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-50%) scale(1.05)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.color = '#6b7280';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.2)';
-                    e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
                   }}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
