@@ -2128,7 +2128,7 @@ export default function SettingsPage() {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                background: 'rgba(255, 255, 255, 0.75)',
+                background: 'rgba(255, 255, 255, 0.92)',
                 backdropFilter: 'blur(10px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(10px) saturate(180%)'
               }} />
@@ -2185,18 +2185,24 @@ export default function SettingsPage() {
                     <h2 style={{
                       fontSize: '22px',
                       fontWeight: '700',
-                      color: '#1e293b',
+                      color: '#111827',
                       margin: 0,
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                     }}>
                       {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: '#64748b',
+                    color: '#374151',
                     margin: 0,
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    position: 'relative',
+                    zIndex: 1,
+                    fontWeight: 500
                   }}>
                     {legalEntityModal.data ? 'Modifica i dati dell\'entità giuridica' : 'Inserisci i dati della nuova entità giuridica'}
                   </p>
@@ -2954,7 +2960,7 @@ export default function SettingsPage() {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                background: 'rgba(255, 255, 255, 0.75)',
+                background: 'rgba(255, 255, 255, 0.92)',
                 backdropFilter: 'blur(10px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(10px) saturate(180%)'
               }} />
@@ -3011,18 +3017,24 @@ export default function SettingsPage() {
                     <h2 style={{
                       fontSize: '22px',
                       fontWeight: '700',
-                      color: '#1e293b',
+                      color: '#111827',
                       margin: 0,
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                     }}>
                       {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: '#64748b',
+                    color: '#374151',
                     margin: 0,
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    position: 'relative',
+                    zIndex: 1,
+                    fontWeight: 500
                   }}>
                     {storeModal.data ? 'Modifica i dati del punto vendita' : 'Configura i dettagli del nuovo punto vendita'}
                   </p>
