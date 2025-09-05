@@ -36,6 +36,7 @@ import {
   Check,
   X,
   AlertTriangle,
+  AlertCircle,
   ArrowLeft,
   Home,
   RefreshCw,
@@ -302,8 +303,7 @@ const mockPuntiVendita = [
     indirizzo: 'Via Montenapoleone 15',
     citta: 'Milano',
     canale: 'Franchising', 
-    stato: 'Attivo',
-    ragioneSociale: 'Franchising Ltd'
+    stato: 'Attivo'
   },
   { 
     id: 2,
@@ -314,8 +314,7 @@ const mockPuntiVendita = [
     indirizzo: 'Via Nazionale 123',
     citta: 'Roma',
     canale: 'Top Dealer', 
-    stato: 'Attivo',
-    ragioneSociale: 'Digital Operations Snc'
+    stato: 'Attivo'
   },
   { 
     id: 3,
@@ -326,8 +325,7 @@ const mockPuntiVendita = [
     indirizzo: 'Piazza Garibaldi 45',
     citta: 'Napoli',
     canale: 'Franchising', 
-    stato: 'Attivo',
-    ragioneSociale: 'Tech Solutions Ltd'
+    stato: 'Attivo'
   }
 ];
 
@@ -391,14 +389,13 @@ export default function SettingsPage() {
     const newItem = {
       id: puntiVenditaList.length + 1,
       tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
-      ragioneSociale_id: 1, // Default alla prima ragione sociale
+      ragioneSociale_id: ragioneSocialiList[0]?.id || 1, // Default alla prima ragione sociale
       codice: newCode,
       nome: 'Nuovo Punto Vendita',
       indirizzo: 'Via Nuova 1',
       citta: 'Milano',
       canale: 'Franchising',
-      stato: 'Attivo',
-      ragioneSociale: ragioneSocialiList[0]?.nome || 'Default'
+      stato: 'Attivo'
     };
     setPuntiVenditaList([...puntiVenditaList, newItem]);
     setShowCreatePuntoVendita(false);
@@ -971,6 +968,9 @@ export default function SettingsPage() {
                 confirmPassword: '',
                 ruolo: '',
                 cambioPasswordObbligatorio: true,
+                ragioneSociale_id: null,
+                puntiVendita_ids: [] as number[],
+                puntoVenditaPreferito_id: null,
                 nome: '',
                 cognome: '',
                 codiceFiscale: '',
@@ -988,8 +988,8 @@ export default function SettingsPage() {
                 provincia: '',
                 paese: 'Italia',
                 scopeLevel: 'organizzazione',
-                selectedLegalEntities: [],
-                selectedStores: [],
+                selectedLegalEntities: [] as number[],
+                selectedStores: [] as number[],
                 tipoDocumento: 'Carta Identità',
                 numeroDocumento: '',
                 dataScadenzaDocumento: '',
@@ -1381,7 +1381,7 @@ export default function SettingsPage() {
                       <h4 style={{
                         fontSize: '16px',
                         fontWeight: '600',
-                        color: '#111827',
+                        color: 'white',
                         margin: '0 0 4px 0'
                       }}>
                         {role.name}
@@ -1526,7 +1526,7 @@ export default function SettingsPage() {
                     <h5 style={{
                       fontSize: '14px',
                       fontWeight: '600',
-                      color: '#111827',
+                      color: 'white',
                       marginBottom: '12px',
                       display: 'flex',
                       alignItems: 'center',
@@ -2384,8 +2384,8 @@ export default function SettingsPage() {
     
     // Scope gerarchico
     scopeLevel: 'organizzazione',
-    selectedLegalEntities: [],
-    selectedStores: [],
+    selectedLegalEntities: [] as number[],
+    selectedStores: [] as number[],
     
     // Informazioni personali
     nome: '',
@@ -2505,8 +2505,7 @@ export default function SettingsPage() {
       citta: newStore.citta || 'Milano',
       canale: newStore.canale,
       stato: newStore.stato,
-      ragioneSociale: newStore.ragioneSociale || ragioneSocialiList[0]?.nome || 'Default',
-      ragioneSociale_id: ragioneSocialiList.find(rs => rs.nome === newStore.ragioneSociale)?.id || 1 // ID della ragione sociale
+      ragioneSociale_id: newStore.ragioneSociale_id || ragioneSocialiList[0]?.id || 1
     };
     setPuntiVenditaList([...puntiVenditaList, newItem]);
     setStoreModal({ open: false, data: null });
@@ -2519,7 +2518,7 @@ export default function SettingsPage() {
       cap: '',
       telefono: '',
       email: '',
-      ragioneSociale: '',
+      ragioneSociale_id: null,
       canale: 'Franchising',
       brands: [],
       stato: 'Attivo'
@@ -2556,43 +2555,8 @@ export default function SettingsPage() {
             <div style={{
               padding: '32px 32px 24px 32px',
               background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              position: 'relative',
-              overflow: 'hidden'
+              position: 'relative'
             }}>
-              {/* Glassmorphism overlay */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(10px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(10px) saturate(180%)'
-              }} />
-              {/* Effetto glow decorativo */}
-              <div style={{
-                position: 'absolute',
-                top: '-50%',
-                right: '-20%',
-                width: '300px',
-                height: '300px',
-                background: 'radial-gradient(circle, rgba(255, 105, 0, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                filter: 'blur(40px)',
-                pointerEvents: 'none'
-              }} />
-              <div style={{
-                position: 'absolute',
-                bottom: '-50%',
-                left: '-20%',
-                width: '250px',
-                height: '250px',
-                background: 'radial-gradient(circle, rgba(123, 44, 191, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                filter: 'blur(40px)',
-                pointerEvents: 'none'
-              }} />
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -2623,23 +2587,21 @@ export default function SettingsPage() {
                     <h2 style={{
                       fontSize: '22px',
                       fontWeight: '700',
-                      color: '#111827',
+                      color: 'white',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       position: 'relative',
                       zIndex: 1,
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
                     }}>
                       {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: '#374151',
+                    color: 'rgba(255, 255, 255, 0.9)',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    position: 'relative',
-                    zIndex: 1,
                     fontWeight: 500
                   }}>
                     {legalEntityModal.data ? 'Modifica i dati dell\'entità giuridica' : 'Inserisci i dati della nuova entità giuridica'}
@@ -3388,43 +3350,8 @@ export default function SettingsPage() {
             <div style={{
               padding: '32px 32px 24px 32px',
               background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              position: 'relative',
-              overflow: 'hidden'
+              position: 'relative'
             }}>
-              {/* Glassmorphism overlay */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(10px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(10px) saturate(180%)'
-              }} />
-              {/* Effetto glow decorativo */}
-              <div style={{
-                position: 'absolute',
-                top: '-50%',
-                right: '-20%',
-                width: '300px',
-                height: '300px',
-                background: 'radial-gradient(circle, rgba(255, 105, 0, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                filter: 'blur(40px)',
-                pointerEvents: 'none'
-              }} />
-              <div style={{
-                position: 'absolute',
-                bottom: '-50%',
-                left: '-20%',
-                width: '250px',
-                height: '250px',
-                background: 'radial-gradient(circle, rgba(123, 44, 191, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                filter: 'blur(40px)',
-                pointerEvents: 'none'
-              }} />
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -3455,23 +3382,21 @@ export default function SettingsPage() {
                     <h2 style={{
                       fontSize: '22px',
                       fontWeight: '700',
-                      color: '#111827',
+                      color: 'white',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       position: 'relative',
                       zIndex: 1,
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
                     }}>
                       {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: '#374151',
+                    color: 'rgba(255, 255, 255, 0.9)',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    position: 'relative',
-                    zIndex: 1,
                     fontWeight: 500
                   }}>
                     {storeModal.data ? 'Modifica i dati del punto vendita' : 'Configura i dettagli del nuovo punto vendita'}
@@ -4151,43 +4076,8 @@ export default function SettingsPage() {
             <div style={{
               padding: '32px 32px 24px 32px',
               background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              position: 'relative',
-              overflow: 'hidden'
+              position: 'relative'
             }}>
-              {/* Glassmorphism overlay */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(10px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(10px) saturate(180%)'
-              }} />
-              {/* Effetto glow decorativo */}
-              <div style={{
-                position: 'absolute',
-                top: '-50%',
-                right: '-20%',
-                width: '300px',
-                height: '300px',
-                background: 'radial-gradient(circle, rgba(255, 105, 0, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                filter: 'blur(40px)',
-                pointerEvents: 'none'
-              }} />
-              <div style={{
-                position: 'absolute',
-                bottom: '-50%',
-                left: '-20%',
-                width: '250px',
-                height: '250px',
-                background: 'radial-gradient(circle, rgba(123, 44, 191, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                filter: 'blur(40px)',
-                pointerEvents: 'none'
-              }} />
               
               <div style={{
                 display: 'flex',
@@ -4217,23 +4107,21 @@ export default function SettingsPage() {
                     <h2 style={{
                       fontSize: '22px',
                       fontWeight: '700',
-                      color: '#111827',
+                      color: 'white',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       position: 'relative',
                       zIndex: 1,
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
                     }}>
                       {userModal.data ? 'Modifica Utente' : 'Nuovo Utente'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: '#374151',
+                    color: 'rgba(255, 255, 255, 0.9)',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    position: 'relative',
-                    zIndex: 1,
                     fontWeight: 500
                   }}>
                     {userModal.data ? 'Modifica i dati dell\'utente' : 'Completa tutte le informazioni per creare un nuovo utente'}
