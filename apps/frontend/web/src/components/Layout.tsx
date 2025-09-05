@@ -394,13 +394,28 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       });
       
       if (response.ok) {
+        // Rimuovi il token e invalida la cache
         localStorage.removeItem('auth_token');
-        window.location.reload();
+        localStorage.removeItem('currentTenantId');
+        
+        // Invalida tutte le query di autenticazione
+        queryClient.removeQueries({ queryKey: ['/api/auth/user'] });
+        queryClient.clear();
+        
+        // Reindirizza alla pagina di login del tenant corrente
+        const currentTenant = localStorage.getItem('currentTenant') || 'staging';
+        window.location.href = `/${currentTenant}`;
       }
     } catch (error) {
       console.error('Logout error:', error);
+      // Anche in caso di errore, pulisci tutto e reindirizza
       localStorage.removeItem('auth_token');
-      window.location.reload();
+      localStorage.removeItem('currentTenantId');
+      queryClient.removeQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.clear();
+      
+      const currentTenant = localStorage.getItem('currentTenant') || 'staging';
+      window.location.href = `/${currentTenant}`;
     }
   };
 
