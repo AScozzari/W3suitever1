@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
 import { Route, Switch } from "wouter";
-import WindTreDashboard from "./pages/WindTreDashboard";
+import DashboardPage from "./pages/DashboardPage";
 import ProfessionalLogin from "./pages/ProfessionalLogin";
 import SettingsPage from "./pages/SettingsPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -68,7 +68,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/settings" component={SettingsPage} />
-      <Route path="/" component={WindTreDashboard} />
+      <Route path="/" component={DashboardPage} />
     </Switch>
   );
 }
