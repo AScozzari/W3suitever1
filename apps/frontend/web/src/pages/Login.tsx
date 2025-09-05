@@ -240,8 +240,30 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
           }} />
 
           <div style={{ position: 'relative', zIndex: 2 }}>
-            {/* Email Field */}
-            <div style={{ marginBottom: '28px' }}>
+            {/* Modal Container per Form Fields */}
+            <div style={{
+              background: 'hsla(255, 255, 255, 0.6)',
+              backdropFilter: 'blur(20px) saturate(120%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(120%)',
+              borderRadius: '24px',
+              padding: isMobile ? '28px 20px' : '36px 32px',
+              border: '1px solid hsla(255, 255, 255, 0.4)',
+              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 hsla(255, 255, 255, 0.5)',
+              marginBottom: '32px',
+              position: 'relative'
+            }}>
+              {/* Inner Modal Glow */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(135deg, hsla(255, 255, 255, 0.2) 0%, hsla(255, 255, 255, 0.1) 100%)',
+                borderRadius: '24px',
+                pointerEvents: 'none'
+              }} />
+
+              <div style={{ position: 'relative', zIndex: 3 }}>
+                {/* Email Field */}
+                <div style={{ marginBottom: '28px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '14px',
@@ -374,6 +396,8 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
+              </div>
+            </div>
               </div>
             </div>
 
