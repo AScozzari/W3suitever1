@@ -1366,7 +1366,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         color: activeWorkspaceTab === tab ? 'white' : '#6b7280',
                         border: 'none',
                         borderRadius: '8px',
-                        fontSize: '12px',
+                        fontSize: '14px',
                         fontWeight: 500,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease'
