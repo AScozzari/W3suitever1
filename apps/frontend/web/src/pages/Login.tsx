@@ -3,6 +3,7 @@ import { Eye, EyeOff, ArrowRight, Shield, Zap, CheckCircle } from 'lucide-react'
 
 export default function ProfessionalLogin() {
   const [showPassword, setShowPassword] = useState(false);
+  const [tenantCode, setTenantCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -16,28 +17,40 @@ export default function ProfessionalLogin() {
   }, []);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      alert('Inserisci email e password');
+    if (!tenantCode || !email || !password) {
+      alert('Inserisci codice organizzazione, email e password');
       return;
     }
 
     setIsLoading(true);
     
     try {
+      // Mappa il codice tenant all'ID UUID
+      const tenantMapping = {
+        'DEMO001': '00000000-0000-0000-0000-000000000001',
+        'ACME001': '11111111-1111-1111-1111-111111111111',
+        'TECH002': '22222222-2222-2222-2222-222222222222'
+      };
+      
+      const tenantId = tenantMapping[tenantCode] || '00000000-0000-0000-0000-000000000001';
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          username: 'admin', 
+          tenantCode: tenantCode,
+          username: email.split('@')[0] || 'admin', 
           password: password 
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
+        // Salva sia il token che il tenant ID
         localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('currentTenantId', tenantId);
         window.location.reload();
       } else {
         const error = await response.json();
@@ -204,6 +217,63 @@ export default function ProfessionalLogin() {
           }} />
 
           <div style={{ position: 'relative', zIndex: 2 }}>
+            {/* Tenant Code Field */}
+            <div style={{ marginBottom: '28px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: '12px',
+                letterSpacing: '0.025em'
+              }}>Codice Organizzazione</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={tenantCode}
+                  onChange={(e) => setTenantCode(e.target.value.toUpperCase())}
+                  placeholder="es. DEMO001"
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '16px 20px' : '18px 24px',
+                    background: 'hsla(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '2px solid hsla(255, 255, 255, 0.3)',
+                    borderRadius: '16px',
+                    fontSize: '16px',
+                    color: '#1f2937',
+                    outline: 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxSizing: 'border-box',
+                    fontWeight: 500,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#7B2CBF';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.6)';
+                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(123, 44, 191, 0.15), 0 8px 32px rgba(123, 44, 191, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                />
+                <p style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  marginTop: '8px',
+                  fontStyle: 'italic'
+                }}>
+                  Il codice della tua organizzazione ti è stato fornito dall'amministratore
+                </p>
+              </div>
+            </div>
+
             {/* Email Field */}
             <div style={{ marginBottom: '28px' }}>
               <label style={{
