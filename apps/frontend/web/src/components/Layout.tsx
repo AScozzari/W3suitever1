@@ -1500,20 +1500,26 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             const title = card.querySelector('.task-title') as HTMLElement;
                             const priority = card.querySelector('.task-priority') as HTMLElement;
                             
-                            // Card animations
-                            card.style.background = 'rgba(255, 255, 255, 0.12)';
-                            card.style.transform = 'translateY(-4px) scale(1.02) rotateX(-2deg)';
-                            card.style.boxShadow = `0 12px 24px ${getPriorityColor(task.priorita)}35, 0 4px 8px rgba(0, 0, 0, 0.1)`;
+                            // Card animations - più evidenti
+                            card.style.background = 'rgba(255, 105, 0, 0.08)';
+                            card.style.transform = 'translateY(-2px) scale(1.01)';
+                            card.style.boxShadow = `0 8px 16px ${getPriorityColor(task.priorita)}30, 0 4px 8px rgba(0, 0, 0, 0.12)`;
                             card.style.borderLeftWidth = '4px';
+                            card.style.borderColor = `${getPriorityColor(task.priorita)}`;
+                            card.style.borderRightColor = 'rgba(255, 105, 0, 0.2)';
+                            card.style.borderTopColor = 'rgba(255, 105, 0, 0.2)';
+                            card.style.borderBottomColor = 'rgba(255, 105, 0, 0.2)';
                             
                             // Title animation
                             if (title) {
                               title.style.color = '#FF6900';
+                              title.style.fontWeight = '700';
                             }
                             
                             // Priority badge animation
                             if (priority) {
-                              priority.style.transform = 'scale(1.1)';
+                              priority.style.transform = 'scale(1.05)';
+                              priority.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -1523,18 +1529,24 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             
                             // Reset card
                             card.style.background = 'rgba(255, 255, 255, 0.03)';
-                            card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                            card.style.transform = 'translateY(0) scale(1)';
                             card.style.boxShadow = 'none';
                             card.style.borderLeftWidth = '3px';
+                            card.style.borderColor = '';
+                            card.style.borderRightColor = '';
+                            card.style.borderTopColor = '';
+                            card.style.borderBottomColor = '';
                             
                             // Reset title
                             if (title) {
                               title.style.color = '#1f2937';
+                              title.style.fontWeight = '600';
                             }
                             
                             // Reset priority
                             if (priority) {
                               priority.style.transform = 'scale(1)';
+                              priority.style.boxShadow = 'none';
                             }
                           }}>
                             <div style={{
@@ -1750,26 +1762,31 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             const icon = card.querySelector('.lead-icon') as HTMLElement;
                             const priority = card.querySelector('.lead-priority') as HTMLElement;
                             
-                            // Card animations
-                            card.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08))';
-                            card.style.transform = 'translateY(-4px) scale(1.02) rotateX(-2deg)';
-                            card.style.boxShadow = `0 12px 24px ${getPriorityColor(lead.priorita)}35, 0 4px 8px rgba(0, 0, 0, 0.1)`;
+                            // Card animations - più evidenti
+                            card.style.background = 'rgba(16, 185, 129, 0.08)';
+                            card.style.transform = 'translateY(-2px) scale(1.01)';
+                            card.style.boxShadow = `0 8px 16px ${getPriorityColor(lead.priorita)}30, 0 4px 8px rgba(0, 0, 0, 0.12)`;
                             card.style.borderLeftWidth = '4px';
+                            card.style.borderColor = `${getPriorityColor(lead.priorita)}`;
+                            card.style.borderRightColor = 'rgba(16, 185, 129, 0.2)';
+                            card.style.borderTopColor = 'rgba(16, 185, 129, 0.2)';
+                            card.style.borderBottomColor = 'rgba(16, 185, 129, 0.2)';
                             
                             // Name animation
                             if (name) {
                               name.style.color = '#10b981';
-                              name.style.transform = 'translateX(2px)';
+                              name.style.fontWeight = '700';
                             }
                             
                             // Icon animation
                             if (icon) {
-                              icon.style.transform = 'rotate(360deg) scale(1.2)';
+                              icon.style.transform = 'scale(1.15)';
                             }
                             
                             // Priority animation
                             if (priority) {
-                              priority.style.transform = 'scale(1.1) translateX(-2px)';
+                              priority.style.transform = 'scale(1.05)';
+                              priority.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -1780,24 +1797,29 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             
                             // Reset card
                             card.style.background = 'rgba(255, 255, 255, 0.03)';
-                            card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                            card.style.transform = 'translateY(0) scale(1)';
                             card.style.boxShadow = 'none';
                             card.style.borderLeftWidth = '3px';
+                            card.style.borderColor = '';
+                            card.style.borderRightColor = '';
+                            card.style.borderTopColor = '';
+                            card.style.borderBottomColor = '';
                             
                             // Reset name
                             if (name) {
                               name.style.color = '#1f2937';
-                              name.style.transform = 'translateX(0)';
+                              name.style.fontWeight = '600';
                             }
                             
                             // Reset icon
                             if (icon) {
-                              icon.style.transform = 'rotate(0deg) scale(1)';
+                              icon.style.transform = 'scale(1)';
                             }
                             
                             // Reset priority
                             if (priority) {
-                              priority.style.transform = 'scale(1) translateX(0)';
+                              priority.style.transform = 'scale(1)';
+                              priority.style.boxShadow = 'none';
                             }
                           }}>
                             <div style={{
@@ -2030,12 +2052,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                           <div key={evento.id} style={{
                             background: 'rgba(255, 255, 255, 0.03)',
                             borderRadius: '8px',
-                            padding: '10px',
+                            padding: '12px',
                             border: '1px solid rgba(255, 255, 255, 0.06)',
                             borderLeft: '3px solid #7B2CBF',
                             cursor: 'pointer',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            backdropFilter: 'blur(8px)'
+                            backdropFilter: 'blur(8px)',
+                            minHeight: '80px'
                           }}
                           onMouseEnter={(e) => {
                             const card = e.currentTarget;
@@ -2043,30 +2066,37 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             const time = card.querySelector('.event-time') as HTMLElement;
                             const location = card.querySelector('.event-location') as HTMLElement;
                             
-                            // Card animations with purple theme
-                            card.style.background = 'linear-gradient(135deg, rgba(123, 44, 191, 0.12), rgba(123, 44, 191, 0.06))';
-                            card.style.transform = 'translateY(-4px) scale(1.02) rotateX(-2deg)';
-                            card.style.boxShadow = '0 12px 24px rgba(123, 44, 191, 0.25), 0 4px 8px rgba(0, 0, 0, 0.1)';
+                            // Card animations - più evidenti con tema viola
+                            card.style.background = 'rgba(123, 44, 191, 0.08)';
+                            card.style.transform = 'translateY(-2px) scale(1.02)';
+                            card.style.boxShadow = '0 8px 16px rgba(123, 44, 191, 0.3), 0 4px 8px rgba(0, 0, 0, 0.12)';
                             card.style.borderLeftWidth = '4px';
                             card.style.borderLeftColor = '#8339ff';
+                            card.style.borderRightColor = 'rgba(123, 44, 191, 0.2)';
+                            card.style.borderTopColor = 'rgba(123, 44, 191, 0.2)';
+                            card.style.borderBottomColor = 'rgba(123, 44, 191, 0.2)';
                             
                             // Title animation
                             if (title) {
                               title.style.color = '#7B2CBF';
-                              title.style.transform = 'translateX(2px)';
+                              title.style.fontWeight = '700';
+                              title.style.fontSize = '13px';
                             }
                             
                             // Time animation
                             if (time) {
                               time.style.color = '#8339ff';
                               time.style.fontWeight = '600';
+                              time.style.fontSize = '11px';
                             }
                             
                             // Location badge animation
                             if (location) {
-                              location.style.background = 'rgba(123, 44, 191, 0.15)';
+                              location.style.background = 'rgba(123, 44, 191, 0.2)';
                               location.style.color = '#7B2CBF';
                               location.style.transform = 'scale(1.05)';
+                              location.style.padding = '2px 6px';
+                              location.style.fontWeight = '600';
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -2077,21 +2107,26 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             
                             // Reset card
                             card.style.background = 'rgba(255, 255, 255, 0.03)';
-                            card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                            card.style.transform = 'translateY(0) scale(1)';
                             card.style.boxShadow = 'none';
                             card.style.borderLeftWidth = '3px';
                             card.style.borderLeftColor = '#7B2CBF';
+                            card.style.borderRightColor = '';
+                            card.style.borderTopColor = '';
+                            card.style.borderBottomColor = '';
                             
                             // Reset title
                             if (title) {
                               title.style.color = '#1f2937';
-                              title.style.transform = 'translateX(0)';
+                              title.style.fontWeight = '600';
+                              title.style.fontSize = '12px';
                             }
                             
                             // Reset time
                             if (time) {
                               time.style.color = '#6b7280';
                               time.style.fontWeight = '400';
+                              title.style.fontSize = '10px';
                             }
                             
                             // Reset location
@@ -2099,6 +2134,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               location.style.background = 'rgba(255, 255, 255, 0.08)';
                               location.style.color = '#9ca3af';
                               location.style.transform = 'scale(1)';
+                              location.style.padding = '1px 4px';
+                              location.style.fontWeight = '400';
                             }
                           }}>
                             <div 
