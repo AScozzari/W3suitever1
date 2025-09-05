@@ -228,7 +228,9 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
           border: '1px solid hsla(255, 255, 255, 0.3)',
           boxShadow: '0 32px 80px rgba(0, 0, 0, 0.12), inset 0 1px 0 hsla(255, 255, 255, 0.4)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          maxWidth: isMobile ? '320px' : '380px',
+          margin: '0 auto'
         }}>
           {/* Inner Glow */}
           <div style={{
@@ -242,14 +244,14 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
           <div style={{ position: 'relative', zIndex: 2 }}>
             {/* Modal Container per Form Fields */}
             <div style={{
-              background: 'hsla(255, 255, 255, 0.6)',
+              background: 'hsla(255, 255, 255, 0.4)',
               backdropFilter: 'blur(20px) saturate(120%)',
               WebkitBackdropFilter: 'blur(20px) saturate(120%)',
-              borderRadius: '24px',
-              padding: isMobile ? '28px 20px' : '36px 32px',
-              border: '1px solid hsla(255, 255, 255, 0.4)',
-              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 hsla(255, 255, 255, 0.5)',
-              marginBottom: '32px',
+              borderRadius: '20px',
+              padding: isMobile ? '24px 16px' : '28px 24px',
+              border: '1px solid hsla(255, 255, 255, 0.2)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 hsla(255, 255, 255, 0.3)',
+              marginBottom: '24px',
               position: 'relative'
             }}>
               {/* Inner Modal Glow */}
@@ -280,31 +282,29 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                   placeholder="admin@w3suite.com"
                   style={{
                     width: '100%',
-                    padding: isMobile ? '16px 20px' : '18px 24px',
-                    background: 'hsla(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: '2px solid hsla(255, 255, 255, 0.3)',
-                    borderRadius: '16px',
-                    fontSize: '16px',
+                    padding: isMobile ? '14px 16px' : '16px 20px',
+                    background: 'hsla(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1px solid hsla(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    fontSize: '15px',
                     color: '#1f2937',
                     outline: 'none',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: 'all 0.2s ease',
                     boxSizing: 'border-box',
                     fontWeight: 500,
                     letterSpacing: '0.025em'
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = '#FF6900';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.6)';
-                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 105, 0, 0.15), 0 8px 32px rgba(255, 105, 0, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.5)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(255, 105, 0, 0.1)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
+                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.2)';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.3)';
                     e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 />
               </div>
@@ -328,31 +328,29 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                   placeholder="••••••••••••"
                   style={{
                     width: '100%',
-                    padding: isMobile ? '16px 60px 16px 20px' : '18px 70px 18px 24px',
-                    background: 'hsla(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: '2px solid hsla(255, 255, 255, 0.3)',
-                    borderRadius: '16px',
-                    fontSize: '16px',
+                    padding: isMobile ? '14px 50px 14px 16px' : '16px 60px 16px 20px',
+                    background: 'hsla(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1px solid hsla(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    fontSize: '15px',
                     color: '#1f2937',
                     outline: 'none',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: 'all 0.2s ease',
                     boxSizing: 'border-box',
                     fontWeight: 500,
-                    letterSpacing: '0.1em'
+                    letterSpacing: '0.05em'
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = '#FF6900';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.6)';
-                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 105, 0, 0.15), 0 8px 32px rgba(255, 105, 0, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.5)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(255, 105, 0, 0.1)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
+                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.2)';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.3)';
                     e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
