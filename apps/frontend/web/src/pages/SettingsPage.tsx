@@ -1004,8 +1004,7 @@ export default function SettingsPage() {
                 cap: '',
                 provincia: '',
                 paese: 'Italia',
-                ambito: 'organizzazione',
-                selectedOrganization: '',
+                scopeLevel: 'organizzazione',
                 selectedLegalEntities: [],
                 selectedStores: [],
                 tipoDocumento: 'Carta Identità',
@@ -2417,9 +2416,8 @@ export default function SettingsPage() {
     provincia: '',
     paese: 'Italia',
     
-    // Ambito operativo
-    ambito: 'organizzazione', // organizzazione | ragioni_sociali | punti_vendita
-    selectedOrganization: '',
+    // Ambito operativo - GERARCHICO PIRAMIDALE
+    scopeLevel: 'organizzazione', // organizzazione | ragioni_sociali | punti_vendita
     selectedLegalEntities: [] as number[],
     selectedStores: [] as number[],
     
@@ -4128,6 +4126,1036 @@ export default function SettingsPage() {
                   }}
                 >
                   Salva
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuovo Utente con Selezione Gerarchica */}
+      {userModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            width: '90%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
+          }}>
+            {/* Header Modal */}
+            <div style={{
+              padding: '32px 32px 24px 32px',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Glassmorphism overlay */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(255, 255, 255, 0.92)',
+                backdropFilter: 'blur(10px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(10px) saturate(180%)'
+              }} />
+              
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                    }}>
+                      <User size={20} style={{ color: 'white' }} />
+                    </div>
+                    <h2 style={{
+                      fontSize: '22px',
+                      fontWeight: '700',
+                      color: '#111827',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                    }}>
+                      {userModal.data ? 'Modifica Utente' : 'Nuovo Utente'}
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#374151',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    position: 'relative',
+                    zIndex: 1,
+                    fontWeight: 500
+                  }}>
+                    {userModal.data ? 'Modifica i dati dell\'utente' : 'Completa tutte le informazioni per creare un nuovo utente'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setUserModal({ open: false, data: null })}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    transition: 'all 0.15s ease',
+                    color: '#64748b',
+                    backdropFilter: 'blur(8px)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
+                    e.currentTarget.style.color = '#374151';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Body Modal con sezioni */}
+            <div style={{ padding: '24px' }}>
+              {/* SEZIONE AMBITO OPERATIVO GERARCHICO - PRIMA SEZIONE */}
+              <div style={{
+                marginBottom: '32px',
+                padding: '20px',
+                background: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                borderRadius: '12px',
+                border: '1px solid #f9a8d4'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#831843',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Building2 size={18} />
+                  Scope di Applicazione
+                </h3>
+                
+                {/* Selezione tipo scope */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '12px'
+                  }}>
+                    Livello di Accesso <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    {[
+                      { value: 'organizzazione', label: 'Organizzazione', color: '#8b5cf6', icon: '🏢' },
+                      { value: 'ragioni_sociali', label: 'Ragioni Sociali Specifiche', color: '#f59e0b', icon: '📋' },
+                      { value: 'punti_vendita', label: 'Punti Vendita Specifici', color: '#10b981', icon: '🏪' }
+                    ].map(option => (
+                      <label key={option.value} style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '14px',
+                        background: newUser.scopeLevel === option.value ? `${option.color}10` : '#ffffff',
+                        border: `2px solid ${newUser.scopeLevel === option.value ? option.color : '#e5e7eb'}`,
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        transform: newUser.scopeLevel === option.value ? 'scale(1.02)' : 'scale(1)',
+                        boxShadow: newUser.scopeLevel === option.value ? `0 4px 12px ${option.color}30` : 'none'
+                      }}>
+                        <input
+                          type="radio"
+                          name="scopeLevel"
+                          value={option.value}
+                          checked={newUser.scopeLevel === option.value}
+                          onChange={(e) => {
+                            setNewUser({ 
+                              ...newUser, 
+                              scopeLevel: e.target.value,
+                              // Reset selections when changing scope level
+                              selectedLegalEntities: [],
+                              selectedStores: []
+                            });
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          border: `2px solid ${newUser.scopeLevel === option.value ? option.color : '#d1d5db'}`,
+                          background: newUser.scopeLevel === option.value ? option.color : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.3s ease'
+                        }}>
+                          {newUser.scopeLevel === option.value && (
+                            <div style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: 'white'
+                            }} />
+                          )}
+                        </div>
+                        <span style={{
+                          fontSize: '14px',
+                          fontWeight: newUser.scopeLevel === option.value ? '600' : '500',
+                          color: newUser.scopeLevel === option.value ? option.color : '#6b7280'
+                        }}>
+                          <span style={{ fontSize: '16px', marginRight: '4px' }}>{option.icon}</span>
+                          {option.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Messaggio informativo per Organizzazione */}
+                {newUser.scopeLevel === 'organizzazione' && (
+                  <div style={{
+                    background: '#f0fdf4',
+                    border: '1px solid #86efac',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginTop: '16px'
+                  }}>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#166534',
+                      margin: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <Check size={16} />
+                      L'utente avrà accesso completo a tutta l'organizzazione
+                    </p>
+                  </div>
+                )}
+
+                {/* Selezione Ragioni Sociali */}
+                {(newUser.scopeLevel === 'ragioni_sociali' || newUser.scopeLevel === 'punti_vendita') && (
+                  <div style={{ marginTop: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Seleziona Ragioni Sociali 
+                      {newUser.scopeLevel === 'punti_vendita' && <span style={{ color: '#ef4444' }}> *</span>}
+                      {newUser.scopeLevel === 'ragioni_sociali' && (
+                        <span style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '400', 
+                          color: '#6b7280',
+                          marginLeft: '8px'
+                        }}>
+                          (Opzionale: seleziona solo alcuni punti vendita)
+                        </span>
+                      )}
+                    </label>
+                    <div style={{
+                      maxHeight: '150px',
+                      overflowY: 'auto',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      background: '#fafafa'
+                    }}>
+                      {ragioneSocialiList.map(rs => (
+                        <label key={rs.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '10px',
+                          cursor: 'pointer',
+                          borderRadius: '6px',
+                          transition: 'all 0.2s ease',
+                          background: newUser.selectedLegalEntities.includes(rs.id) ? '#e0e7ff' : 'transparent',
+                          border: `1px solid ${newUser.selectedLegalEntities.includes(rs.id) ? '#818cf8' : 'transparent'}`
+                        }}
+                        onMouseOver={(e) => {
+                          if (!newUser.selectedLegalEntities.includes(rs.id)) {
+                            e.currentTarget.style.background = '#f3f4f6';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!newUser.selectedLegalEntities.includes(rs.id)) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={newUser.selectedLegalEntities.includes(rs.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedLegalEntities: [...newUser.selectedLegalEntities, rs.id]
+                                });
+                              } else {
+                                // When unchecking a legal entity, remove its stores too
+                                const storesOfThisLegalEntity = puntiVenditaList
+                                  .filter(pv => pv.ragioneSociale_id === rs.id)
+                                  .map(pv => pv.id);
+                                setNewUser({
+                                  ...newUser,
+                                  selectedLegalEntities: newUser.selectedLegalEntities.filter(id => id !== rs.id),
+                                  selectedStores: newUser.selectedStores.filter(id => !storesOfThisLegalEntity.includes(id))
+                                });
+                              }
+                            }}
+                            style={{ 
+                              cursor: 'pointer',
+                              width: '16px',
+                              height: '16px'
+                            }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <span style={{ 
+                              fontSize: '14px', 
+                              color: '#374151',
+                              fontWeight: newUser.selectedLegalEntities.includes(rs.id) ? '600' : '400'
+                            }}>
+                              {rs.nome}
+                            </span>
+                            <span style={{ 
+                              fontSize: '12px', 
+                              color: '#6b7280',
+                              marginLeft: '8px'
+                            }}>
+                              ({rs.codice})
+                            </span>
+                          </div>
+                          {newUser.selectedLegalEntities.includes(rs.id) && (
+                            <Check size={16} style={{ color: '#4f46e5' }} />
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selezione Punti Vendita - Solo se selezionate ragioni sociali */}
+                {newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Seleziona Punti Vendita <span style={{ color: '#ef4444' }}>*</span>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '400', 
+                        color: '#6b7280',
+                        marginLeft: '8px'
+                      }}>
+                        (Solo punti vendita delle ragioni sociali selezionate)
+                      </span>
+                    </label>
+                    <div style={{
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      background: '#fafafa'
+                    }}>
+                      {ragioneSocialiList
+                        .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
+                        .map(rs => (
+                          <div key={rs.id} style={{ marginBottom: '16px' }}>
+                            <div style={{
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              color: '#4b5563',
+                              padding: '8px',
+                              background: '#f9fafb',
+                              borderBottom: '1px solid #e5e7eb',
+                              marginBottom: '8px'
+                            }}>
+                              {rs.nome}
+                            </div>
+                            {puntiVenditaList
+                              .filter(pv => pv.ragioneSociale_id === rs.id)
+                              .map(pv => (
+                                <label key={pv.id} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '10px',
+                                  paddingLeft: '20px',
+                                  cursor: 'pointer',
+                                  borderRadius: '6px',
+                                  transition: 'all 0.2s ease',
+                                  background: newUser.selectedStores.includes(pv.id) ? '#dcfce7' : 'transparent',
+                                  border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#86efac' : 'transparent'}`
+                                }}
+                                onMouseOver={(e) => {
+                                  if (!newUser.selectedStores.includes(pv.id)) {
+                                    e.currentTarget.style.background = '#f3f4f6';
+                                  }
+                                }}
+                                onMouseOut={(e) => {
+                                  if (!newUser.selectedStores.includes(pv.id)) {
+                                    e.currentTarget.style.background = 'transparent';
+                                  }
+                                }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={newUser.selectedStores.includes(pv.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setNewUser({
+                                          ...newUser,
+                                          selectedStores: [...newUser.selectedStores, pv.id]
+                                        });
+                                      } else {
+                                        setNewUser({
+                                          ...newUser,
+                                          selectedStores: newUser.selectedStores.filter(id => id !== pv.id)
+                                        });
+                                      }
+                                    }}
+                                    style={{ 
+                                      cursor: 'pointer',
+                                      width: '16px',
+                                      height: '16px'
+                                    }}
+                                  />
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ 
+                                      fontSize: '14px', 
+                                      color: '#374151',
+                                      fontWeight: newUser.selectedStores.includes(pv.id) ? '600' : '400'
+                                    }}>
+                                      {pv.nome}
+                                    </span>
+                                    <span style={{ 
+                                      fontSize: '12px', 
+                                      color: '#6b7280',
+                                      marginLeft: '8px'
+                                    }}>
+                                      ({pv.codice}) - {pv.citta}
+                                    </span>
+                                  </div>
+                                  {newUser.selectedStores.includes(pv.id) && (
+                                    <Check size={16} style={{ color: '#16a34a' }} />
+                                  )}
+                                </label>
+                              ))}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selezione Punti Vendita per Ragioni Sociali */}
+                {newUser.scopeLevel === 'ragioni_sociali' && newUser.selectedLegalEntities.length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Punti Vendita 
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '400', 
+                        color: '#6b7280',
+                        marginLeft: '8px'
+                      }}>
+                        (Opzionale: limita l'accesso solo ad alcuni punti vendita)
+                      </span>
+                    </label>
+                    <div style={{
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      background: '#fafafa'
+                    }}>
+                      {ragioneSocialiList
+                        .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
+                        .map(rs => (
+                          <div key={rs.id} style={{ marginBottom: '16px' }}>
+                            <div style={{
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              color: '#4b5563',
+                              padding: '8px',
+                              background: '#f9fafb',
+                              borderBottom: '1px solid #e5e7eb',
+                              marginBottom: '8px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <span>{rs.nome}</span>
+                              <button
+                                onClick={() => {
+                                  const storesOfThisLegalEntity = puntiVenditaList
+                                    .filter(pv => pv.ragioneSociale_id === rs.id)
+                                    .map(pv => pv.id);
+                                  const allSelected = storesOfThisLegalEntity.every(id => newUser.selectedStores.includes(id));
+                                  
+                                  if (allSelected) {
+                                    // Deselect all
+                                    setNewUser({
+                                      ...newUser,
+                                      selectedStores: newUser.selectedStores.filter(id => !storesOfThisLegalEntity.includes(id))
+                                    });
+                                  } else {
+                                    // Select all
+                                    setNewUser({
+                                      ...newUser,
+                                      selectedStores: [...new Set([...newUser.selectedStores, ...storesOfThisLegalEntity])]
+                                    });
+                                  }
+                                }}
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '4px 8px',
+                                  background: '#3b82f6',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Seleziona tutti
+                              </button>
+                            </div>
+                            {puntiVenditaList
+                              .filter(pv => pv.ragioneSociale_id === rs.id)
+                              .map(pv => (
+                                <label key={pv.id} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '10px',
+                                  paddingLeft: '20px',
+                                  cursor: 'pointer',
+                                  borderRadius: '6px',
+                                  transition: 'all 0.2s ease',
+                                  background: newUser.selectedStores.includes(pv.id) ? '#dbeafe' : 'transparent',
+                                  border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#93c5fd' : 'transparent'}`
+                                }}
+                                onMouseOver={(e) => {
+                                  if (!newUser.selectedStores.includes(pv.id)) {
+                                    e.currentTarget.style.background = '#f3f4f6';
+                                  }
+                                }}
+                                onMouseOut={(e) => {
+                                  if (!newUser.selectedStores.includes(pv.id)) {
+                                    e.currentTarget.style.background = 'transparent';
+                                  }
+                                }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={newUser.selectedStores.includes(pv.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setNewUser({
+                                          ...newUser,
+                                          selectedStores: [...newUser.selectedStores, pv.id]
+                                        });
+                                      } else {
+                                        setNewUser({
+                                          ...newUser,
+                                          selectedStores: newUser.selectedStores.filter(id => id !== pv.id)
+                                        });
+                                      }
+                                    }}
+                                    style={{ 
+                                      cursor: 'pointer',
+                                      width: '16px',
+                                      height: '16px'
+                                    }}
+                                  />
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ 
+                                      fontSize: '14px', 
+                                      color: '#374151',
+                                      fontWeight: newUser.selectedStores.includes(pv.id) ? '600' : '400'
+                                    }}>
+                                      {pv.nome}
+                                    </span>
+                                    <span style={{ 
+                                      fontSize: '12px', 
+                                      color: '#6b7280',
+                                      marginLeft: '8px'
+                                    }}>
+                                      ({pv.codice}) - {pv.citta}
+                                    </span>
+                                  </div>
+                                  {newUser.selectedStores.includes(pv.id) && (
+                                    <Check size={16} style={{ color: '#2563eb' }} />
+                                  )}
+                                </label>
+                              ))}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Warning se nessuna selezione per Punti Vendita */}
+                {newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length === 0 && (
+                  <div style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginTop: '16px'
+                  }}>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#991b1b',
+                      margin: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <AlertCircle size={16} />
+                      Seleziona prima almeno una ragione sociale
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* SEZIONE DATI DI ACCESSO */}
+              <div style={{
+                marginBottom: '32px',
+                padding: '20px',
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                borderRadius: '12px',
+                border: '1px solid #bae6fd'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#0369a1',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Lock size={18} />
+                  Dati di Accesso
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Username e Ruolo */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Username <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="mario.rossi"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Ruolo <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newUser.ruolo}
+                      onChange={(e) => setNewUser({ ...newUser, ruolo: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">Seleziona ruolo...</option>
+                      {availableRoles.map(role => (
+                        <option key={role} value={role}>{role}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Password fields */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Password <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Minimo 8 caratteri"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Conferma Password <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Ripeti password"
+                      value={newUser.confirmPassword}
+                      onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE INFORMAZIONI PERSONALI */}
+              <div style={{
+                marginBottom: '32px',
+                padding: '20px',
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                borderRadius: '12px',
+                border: '1px solid #fcd34d'
+              }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#92400e',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <User size={18} />
+                  Informazioni Personali
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Nome <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Mario"
+                      value={newUser.nome}
+                      onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Cognome <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Rossi"
+                      value={newUser.cognome}
+                      onChange={(e) => setNewUser({ ...newUser, cognome: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Email <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="mario.rossi@windtre.it"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Telefono <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+39 333 1234567"
+                      value={newUser.telefono}
+                      onChange={(e) => setNewUser({ ...newUser, telefono: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer con pulsanti */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '24px',
+                paddingTop: '20px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={() => setUserModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#9ca3af';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#ffffff';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={() => {
+                    // Validazione base
+                    if (!newUser.username || !newUser.password || !newUser.nome || !newUser.cognome || !newUser.email || !newUser.ruolo) {
+                      alert('Compila tutti i campi obbligatori');
+                      return;
+                    }
+                    
+                    if (newUser.password !== newUser.confirmPassword) {
+                      alert('Le password non corrispondono');
+                      return;
+                    }
+
+                    // Validazione scope
+                    if (newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length === 0) {
+                      alert('Seleziona almeno una ragione sociale');
+                      return;
+                    }
+                    
+                    // Aggiungi l'utente alla lista
+                    const newUserEntry = {
+                      id: utentiList.length + 1,
+                      tenant_id: getCurrentTenantId(),
+                      username: newUser.username,
+                      nome: newUser.nome,
+                      cognome: newUser.cognome,
+                      email: newUser.email,
+                      telefono: newUser.telefono,
+                      ruolo: newUser.ruolo,
+                      ambito: newUser.scopeLevel === 'organizzazione' ? 'Organizzazione' : 
+                              newUser.scopeLevel === 'ragioni_sociali' ? 
+                                (newUser.selectedStores.length > 0 ? 
+                                  `${newUser.selectedLegalEntities.length} RS, ${newUser.selectedStores.length} PV` :
+                                  `${newUser.selectedLegalEntities.length} Ragioni Sociali`) :
+                              `${newUser.selectedStores.length} Punti Vendita`,
+                      stato: newUser.stato,
+                      ultimoAccesso: 'Mai',
+                      createdAt: new Date().toISOString().split('T')[0]
+                    };
+                    
+                    setUtentiList([...utentiList, newUserEntry]);
+                    setUserModal({ open: false, data: null });
+                  }}
+                  style={{
+                    padding: '10px 24px',
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 1px 3px 0 rgba(59, 130, 246, 0.3)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#2563eb';
+                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(59, 130, 246, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#3b82f6';
+                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(59, 130, 246, 0.3)';
+                  }}
+                >
+                  Salva Utente
                 </button>
               </div>
             </div>
