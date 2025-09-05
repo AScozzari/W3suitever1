@@ -603,6 +603,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               const Icon = item.icon;
               const isActive = item.id === 'impostazioni' 
                 ? location === '/settings'
+                : item.id === 'dashboard'
+                ? location === '/'
                 : currentModule === item.id;
               
               return (
@@ -611,6 +613,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   onClick={() => {
                     if (item.id === 'impostazioni') {
                       navigate('/settings');
+                    } else if (item.id === 'dashboard') {
+                      navigate('/');
                     } else {
                       setCurrentModule(item.id);
                     }
