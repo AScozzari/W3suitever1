@@ -1,2 +1,2 @@
-// SDK Schema Export - Re-export from shared schema
-export * from '../../../shared/schema';
+// SDK Schema Export - Direct import from correct backend path
+export * from '../../../apps/backend/api/src/db/schema';
