@@ -64,6 +64,9 @@ export default function SettingsPage() {
   // Form states
   const [selectedCity, setSelectedCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
+  
+  // Entity Management sub-tabs
+  const [entitySubTab, setEntitySubTab] = useState('ragioni-sociali');
 
   // Load reference data from API
   const { data: legalForms = [] } = useQuery({
@@ -184,7 +187,53 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Sezione Icone Configurazione - Identica al print screen */}
+      {/* Sub-tabs per Entity Management */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        marginBottom: '24px',
+        borderBottom: '1px solid hsla(255, 255, 255, 0.12)'
+      }}>
+        {[
+          { id: 'ragioni-sociali', label: 'Ragioni Sociali', icon: Building2 },
+          { id: 'punti-vendita', label: 'Punti Vendita', icon: Store }
+        ].map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setEntitySubTab(tab.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 16px',
+                background: entitySubTab === tab.id 
+                  ? 'hsla(255, 255, 255, 0.08)' 
+                  : 'transparent',
+                border: entitySubTab === tab.id 
+                  ? '1px solid hsla(255, 255, 255, 0.12)' 
+                  : '1px solid transparent',
+                borderBottom: 'none',
+                borderRadius: '8px 8px 0 0',
+                color: entitySubTab === tab.id ? '#111827' : '#6b7280',
+                fontWeight: entitySubTab === tab.id ? '600' : '500',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Icon size={16} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contenuto condizionale basato su sub-tab selezionato */}
+      {entitySubTab === 'ragioni-sociali' && (
+        <>
+          {/* Sezione Icone Configurazione - Identica al print screen */}
       <div style={{
         background: 'hsla(255, 255, 255, 0.08)',
         backdropFilter: 'blur(24px) saturate(140%)',
@@ -662,6 +711,175 @@ export default function SettingsPage() {
           ))}
         </div>
       </div>
+        </>
+      )}
+
+      {/* Contenuto per tab Punti Vendita */}
+      {entitySubTab === 'punti-vendita' && (
+        <>
+          {/* Header Gestione Punti Vendita */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Gestione Punti Vendita
+            </h3>
+            <button style={{
+              background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
+              transition: 'all 0.2s ease'
+            }}>
+              <Plus size={16} />
+              Nuovo Punto Vendita
+            </button>
+          </div>
+
+          {/* Tabella Punti Vendita */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            borderRadius: '24px',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            padding: '20px',
+            marginBottom: '32px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            {/* Header tabella */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '100px 2fr 2fr 1fr 1fr 80px',
+              alignItems: 'center',
+              padding: '16px 20px',
+              gap: '16px'
+            }}>
+              {['Codice', 'Nome', 'Indirizzo', 'Canale', 'Stato', 'Azioni'].map((header, index) => (
+                <div key={index} style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#6b7280',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  {header}
+                </div>
+              ))}
+            </div>
+
+            {/* Rows tabella */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1px'
+            }}>
+              {mockPuntiVendita.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '100px 2fr 2fr 1fr 1fr 80px',
+                    alignItems: 'center',
+                    padding: '16px 20px',
+                    gap: '16px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '12px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {/* Codice */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#111827',
+                    fontWeight: '600'
+                  }}>
+                    {item.codice}
+                  </div>
+
+                  {/* Nome */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#111827',
+                    fontWeight: '500'
+                  }}>
+                    {item.nome}
+                  </div>
+
+                  {/* Indirizzo */}
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#6b7280'
+                  }}>
+                    {item.indirizzo}, {item.citta}
+                  </div>
+
+                  {/* Canale */}
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#7B2CBF',
+                    backgroundColor: 'rgba(123, 44, 191, 0.1)',
+                    padding: '4px 8px',
+                    borderRadius: '8px',
+                    display: 'inline-block'
+                  }}>
+                    {item.canale}
+                  </div>
+
+                  {/* Stato */}
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: item.stato === 'Attivo' ? '#10b981' : '#ef4444',
+                    backgroundColor: item.stato === 'Attivo' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    padding: '4px 8px',
+                    borderRadius: '8px'
+                  }}>
+                    {item.stato}
+                  </span>
+
+                  {/* Azioni */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px'
+                  }}>
+                    <button 
+                      onClick={() => setStoreModal({ open: true, data: item })}
+                      style={{
+                        background: 'hsla(123, 44, 191, 0.05)',
+                        border: '1px solid hsla(123, 44, 191, 0.1)',
+                        borderRadius: '6px',
+                        color: '#6b7280',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        transition: 'all 0.2s ease'
+                      }}>
+                      <Edit3 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 
