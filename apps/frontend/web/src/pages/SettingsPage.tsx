@@ -1408,25 +1408,62 @@ export default function SettingsPage() {
             overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
           }}>
-            {/* Header Modal */}
+            {/* Header Modal con stile uniforme */}
             <div style={{
-              padding: '24px',
-              borderBottom: '1px solid #e5e7eb',
-              background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-              borderRadius: '24px 24px 0 0'
+              padding: '32px 32px 0 32px'
             }}>
-              <h2 style={{
-                fontSize: '20px',
-                fontWeight: '700',
-                color: 'white',
-                margin: 0
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '32px',
+                paddingBottom: '20px',
+                borderBottom: '1px solid rgba(255, 105, 0, 0.1)'
               }}>
-                {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
-              </h2>
+                <div>
+                  <h2 style={{
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    marginBottom: '8px'
+                  }}>
+                    {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                  </h2>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280'
+                  }}>
+                    Inserisci i dati della nuova entità giuridica
+                  </p>
+                </div>
+                <button
+                  onClick={() => setLegalEntityModal({ open: false, data: null })}
+                  style={{
+                    background: 'rgba(255, 105, 0, 0.1)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    padding: '12px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.2)';
+                    e.currentTarget.style.transform = 'rotate(90deg)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)';
+                    e.currentTarget.style.transform = 'rotate(0deg)';
+                  }}
+                >
+                  <X size={20} style={{ color: '#FF6900' }} />
+                </button>
+              </div>
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '32px' }}>
+            <div style={{ padding: '0 32px 32px 32px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {/* Codice */}
                 <div>
@@ -1550,12 +1587,23 @@ export default function SettingsPage() {
                       e.target.style.boxShadow = 'none';
                     }}
                   >
-                    <option value="Srl">Srl - Società a Responsabilità Limitata</option>
-                    <option value="Spa">SpA - Società per Azioni</option>
-                    <option value="Snc">Snc - Società in Nome Collettivo</option>
-                    <option value="Sas">Sas - Società in Accomandita Semplice</option>
-                    <option value="Sapa">Sapa - Società in Accomandita per Azioni</option>
-                    <option value="Srls">Srls - Società a Responsabilità Limitata Semplificata</option>
+                    <option value="">Seleziona...</option>
+                    {legalForms.length > 0 ? (
+                      (legalForms as any[]).map((form: any) => (
+                        <option key={form.code} value={form.code}>
+                          {form.code} - {form.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="SRL">SRL - Società a Responsabilità Limitata</option>
+                        <option value="SPA">SPA - Società per Azioni</option>
+                        <option value="SNC">SNC - Società in Nome Collettivo</option>
+                        <option value="SAS">SAS - Società in Accomandita Semplice</option>
+                        <option value="SAPA">SAPA - Società in Accomandita per Azioni</option>
+                        <option value="SRLS">SRLS - Società a Responsabilità Limitata Semplificata</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -1698,11 +1746,21 @@ export default function SettingsPage() {
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="es. Milano"
+                  <select
                     value={newRagioneSociale.citta}
-                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, citta: e.target.value })}
+                    onChange={(e) => {
+                      const cityName = e.target.value;
+                      setNewRagioneSociale({ ...newRagioneSociale, citta: cityName });
+                      // Auto-popola CAP e Provincia dalla tabella città
+                      const city = (italianCities as any[]).find((c: any) => c.name === cityName);
+                      if (city) {
+                        setNewRagioneSociale(prev => ({
+                          ...prev,
+                          cap: city.postalCode || '',
+                          provincia: city.province || ''
+                        }));
+                      }
+                    }}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -1711,6 +1769,7 @@ export default function SettingsPage() {
                       fontSize: '14px',
                       background: '#f9fafb',
                       transition: 'all 0.2s ease',
+                      cursor: 'pointer',
                       outline: 'none'
                     }}
                     onFocus={(e) => {
@@ -1723,7 +1782,25 @@ export default function SettingsPage() {
                       e.target.style.background = '#f9fafb';
                       e.target.style.boxShadow = 'none';
                     }}
-                  />
+                  >
+                    <option value="">Seleziona città...</option>
+                    {italianCities.length > 0 ? (
+                      (italianCities as any[]).map((city: any) => (
+                        <option key={city.id} value={city.name}>
+                          {city.name} ({city.province})
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Milano">Milano</option>
+                        <option value="Roma">Roma</option>
+                        <option value="Napoli">Napoli</option>
+                        <option value="Torino">Torino</option>
+                        <option value="Bologna">Bologna</option>
+                        <option value="Firenze">Firenze</option>
+                      </>
+                    )}
+                  </select>
                 </div>
 
                 {/* CAP */}
@@ -1744,24 +1821,28 @@ export default function SettingsPage() {
                     placeholder="20121"
                     value={newRagioneSociale.cap}
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, cap: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
                       padding: '12px 16px',
                       border: '2px solid transparent',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
+                      background: italianCities.length > 0 && newRagioneSociale.cap ? '#f3f4f6' : '#f9fafb',
                       transition: 'all 0.2s ease',
-                      outline: 'none'
+                      outline: 'none',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.background = 'white';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.background = italianCities.length > 0 && newRagioneSociale.cap ? '#f3f4f6' : '#f9fafb';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1786,25 +1867,29 @@ export default function SettingsPage() {
                     maxLength={2}
                     value={newRagioneSociale.provincia}
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, provincia: e.target.value.toUpperCase() })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
                       padding: '12px 16px',
                       border: '2px solid transparent',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
+                      background: italianCities.length > 0 && newRagioneSociale.provincia ? '#f3f4f6' : '#f9fafb',
                       transition: 'all 0.2s ease',
                       textTransform: 'uppercase',
-                      outline: 'none'
+                      outline: 'none',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.background = 'white';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.background = italianCities.length > 0 && newRagioneSociale.provincia ? '#f3f4f6' : '#f9fafb';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1979,46 +2064,86 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Footer Modal */}
+              {/* Footer Modal con stile uniforme */}
               <div style={{
                 display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px',
-                marginTop: '24px',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '32px',
                 paddingTop: '24px',
-                borderTop: '1px solid #e5e7eb'
+                borderTop: '1px solid rgba(255, 105, 0, 0.1)'
               }}>
-                <button
-                  onClick={() => setLegalEntityModal({ open: false, data: null })}
-                  style={{
-                    padding: '10px 20px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    background: 'white',
-                    color: '#6b7280',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={handleSaveRagioneSociale}
-                  style={{
-                    padding: '10px 20px',
-                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)'
-                  }}
-                >
-                  {legalEntityModal.data ? 'Salva Modifiche' : 'Crea Ragione Sociale'}
-                </button>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: '#6b7280',
+                  fontSize: '13px'
+                }}>
+                  <span style={{
+                    display: 'inline-block',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: '#10b981'
+                  }} />
+                  Tutti i campi con * sono obbligatori
+                </div>
+                
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    onClick={() => setLegalEntityModal({ open: false, data: null })}
+                    style={{
+                      padding: '12px 24px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '12px',
+                      background: 'white',
+                      color: '#6b7280',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = '#FF6900';
+                      e.currentTarget.style.color = '#FF6900';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                      e.currentTarget.style.color = '#6b7280';
+                    }}
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    onClick={handleSaveRagioneSociale}
+                    style={{
+                      padding: '12px 32px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Save size={16} />
+                      {legalEntityModal.data ? 'Salva Modifiche' : 'Crea Ragione Sociale'}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2067,7 +2192,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '32px' }}>
+            <div style={{ padding: '0 32px 32px 32px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {/* Codice */}
                 <div>
@@ -2296,11 +2421,20 @@ export default function SettingsPage() {
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="es. Milano"
+                  <select
                     value={newStore.citta}
-                    onChange={(e) => setNewStore({ ...newStore, citta: e.target.value })}
+                    onChange={(e) => {
+                      const cityName = e.target.value;
+                      setNewStore({ ...newStore, citta: cityName });
+                      // Auto-popola CAP dalla tabella città
+                      const city = (italianCities as any[]).find((c: any) => c.name === cityName);
+                      if (city) {
+                        setNewStore(prev => ({
+                          ...prev,
+                          cap: city.postalCode || ''
+                        }));
+                      }
+                    }}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -2309,6 +2443,7 @@ export default function SettingsPage() {
                       fontSize: '14px',
                       background: '#f9fafb',
                       transition: 'all 0.2s ease',
+                      cursor: 'pointer',
                       outline: 'none'
                     }}
                     onFocus={(e) => {
@@ -2321,7 +2456,25 @@ export default function SettingsPage() {
                       e.target.style.background = '#f9fafb';
                       e.target.style.boxShadow = 'none';
                     }}
-                  />
+                  >
+                    <option value="">Seleziona città...</option>
+                    {italianCities.length > 0 ? (
+                      (italianCities as any[]).map((city: any) => (
+                        <option key={city.id} value={city.name}>
+                          {city.name} ({city.province})
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Milano">Milano</option>
+                        <option value="Roma">Roma</option>
+                        <option value="Napoli">Napoli</option>
+                        <option value="Torino">Torino</option>
+                        <option value="Bologna">Bologna</option>
+                        <option value="Firenze">Firenze</option>
+                      </>
+                    )}
+                  </select>
                 </div>
 
                 {/* CAP */}
@@ -2339,27 +2492,31 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="es. 20121"
+                    placeholder="20121"
                     value={newStore.cap}
                     onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
                       padding: '12px 16px',
                       border: '2px solid transparent',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: '#f9fafb',
+                      background: italianCities.length > 0 && newStore.cap ? '#f3f4f6' : '#f9fafb',
                       transition: 'all 0.2s ease',
-                      outline: 'none'
+                      outline: 'none',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#7B2CBF';
-                      e.target.style.background = 'white';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#7B2CBF';
+                        e.target.style.background = 'white';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                      }
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = 'transparent';
-                      e.target.style.background = '#f9fafb';
+                      e.target.style.background = italianCities.length > 0 && newStore.cap ? '#f3f4f6' : '#f9fafb';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
