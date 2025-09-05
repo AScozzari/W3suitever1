@@ -7,7 +7,6 @@ interface LoginProps {
 
 export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [showPassword, setShowPassword] = useState(false);
-  const [tenantCode, setTenantCode] = useState(propTenantCode || '');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,14 +41,15 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
     setIsLoading(true);
     
     try {
-      // Mappa il codice tenant all'ID UUID
-      const tenantMapping = {
-        'DEMO001': '00000000-0000-0000-0000-000000000001',
-        'ACME001': '11111111-1111-1111-1111-111111111111',
-        'TECH002': '22222222-2222-2222-2222-222222222222'
+      // Mappa il codice tenant all'ID UUID  
+      const tenantMapping: Record<string, string> = {
+        'staging': '00000000-0000-0000-0000-000000000001',
+        'demo': '99999999-9999-9999-9999-999999999999',
+        'acme': '11111111-1111-1111-1111-111111111111',
+        'tech': '22222222-2222-2222-2222-222222222222'
       };
       
-      const tenantId = tenantMapping[tenantCode] || '00000000-0000-0000-0000-000000000001';
+      const tenantId = tenantMapping[tenantFromPath] || '00000000-0000-0000-0000-000000000001';
       
       const response = await fetch('/api/auth/login', {
         method: 'POST',

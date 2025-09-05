@@ -21,17 +21,37 @@ export default function App() {
   );
 }
 
-// Wrapper component per gestire il tenant dal path
-function TenantRouter() {
-  const params = useParams();
-  const tenant = (params as any).tenant;
+
+function Router() {
+  return (
+    <Switch>
+      {/* Route con tenant nel path */}
+      <Route path="/:tenant/settings">
+        {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant">
+        {(params) => <TenantWrapper params={params}><MainApp /></TenantWrapper>}
+      </Route>
+      {/* Fallback - redirect a staging */}
+      <Route>
+        {() => {
+          window.location.href = '/staging';
+          return null;
+        }}
+      </Route>
+    </Switch>
+  );
+}
+
+// Component wrapper per gestire il tenant
+function TenantWrapper({ params, children }: { params: any, children: React.ReactNode }) {
+  const tenant = params.tenant;
   
   useEffect(() => {
-    // Salva il tenant dal path in localStorage per persistenza
+    // Salva il tenant corrente
     if (tenant) {
       localStorage.setItem('currentTenant', tenant);
       
-      // Mappa il codice tenant all'ID
       const tenantMapping: Record<string, string> = {
         'staging': '00000000-0000-0000-0000-000000000001',
         'demo': '99999999-9999-9999-9999-999999999999',
@@ -44,7 +64,14 @@ function TenantRouter() {
     }
   }, [tenant]);
   
-  const { isAuthenticated, isLoading, user } = useAuth();
+  return <>{children}</>;
+}
+
+// Main app component che gestisce autenticazione
+function MainApp() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const params = useParams();
+  const tenant = (params as any).tenant;
   
   if (isLoading) {
     return (
@@ -72,30 +99,5 @@ function TenantRouter() {
     return <Login tenantCode={tenant} />;
   }
 
-  return (
-    <Switch>
-      <Route path="/:tenant/settings" component={SettingsPage} />
-      <Route path="/:tenant" component={DashboardPage} />
-    </Switch>
-  );
-}
-
-function Router() {
-  // Se non c'è tenant nel path, redirect a /demo
-  const currentPath = window.location.pathname;
-  
-  // Lista dei tenant validi
-  const validTenants = ['staging', 'demo', 'acme', 'tech'];
-  const pathSegments = currentPath.split('/').filter(Boolean);
-  const firstSegment = pathSegments[0];
-  
-  // Se non c'è tenant o non è valido, redirect a staging
-  if (!firstSegment || !validTenants.includes(firstSegment)) {
-    // Se siamo già nel login o in un path specifico, mantieni il path
-    const savedTenant = localStorage.getItem('currentTenant') || 'staging';
-    window.location.href = `/${savedTenant}`;
-    return null;
-  }
-  
-  return <TenantRouter />;
+  return <DashboardPage />;
 }
