@@ -141,12 +141,14 @@ TENANT (Organizzazione)
 - **Environment**: Requires DATABASE_URL environment variable
 
 ## Authentication Services  
-- **Replit Auth**: OpenID Connect provider for user authentication
+- **OAuth2/OIDC Enterprise**: OpenID Connect provider for user authentication
 - **Required Environment Variables**: 
-  - REPL_ID (Replit application identifier)
+  - OAUTH_CLIENT_ID (OAuth2 client identifier)
+  - OAUTH_CLIENT_SECRET (OAuth2 client secret)
+  - OAUTH_ISSUER_URL (OIDC issuer URL, e.g., Keycloak, Auth0)
+  - OAUTH_REDIRECT_URI (OAuth2 callback URL)
+  - JWT_SECRET (JWT token encryption key)
   - SESSION_SECRET (session encryption key)
-  - ISSUER_URL (OIDC issuer, defaults to replit.com/oidc)
-  - REPLIT_DOMAINS (allowed domains for auth)
 
 ## UI Component Libraries
 - **Radix UI**: Headless component primitives for accessibility
