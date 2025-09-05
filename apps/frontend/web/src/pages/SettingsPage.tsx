@@ -352,46 +352,50 @@ export default function SettingsPage() {
                 gap: '8px'
               }}>
                 <button style={{
-                  background: 'hsla(59, 130, 246, 0.1)',
-                  border: '1px solid hsla(59, 130, 246, 0.2)',
-                  borderRadius: '8px',
-                  color: '#3b82f6',
+                  background: 'hsla(59, 130, 246, 0.05)',
+                  border: '1px solid hsla(59, 130, 246, 0.1)',
+                  borderRadius: '6px',
+                  color: '#6b7280',
                   cursor: 'pointer',
-                  padding: '6px',
+                  padding: '4px',
                   transition: 'all 0.2s ease',
                   backdropFilter: 'blur(8px)',
                   WebkitBackdropFilter: 'blur(8px)'
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(59, 130, 246, 0.15)';
-                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.background = 'hsla(59, 130, 246, 0.1)';
+                  e.currentTarget.style.color = '#3b82f6';
+                  e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'hsla(59, 130, 246, 0.1)';
+                  e.currentTarget.style.background = 'hsla(59, 130, 246, 0.05)';
+                  e.currentTarget.style.color = '#6b7280';
                   e.currentTarget.style.transform = 'scale(1)';
                 }}>
-                  <Edit3 size={14} />
+                  <Edit3 size={12} />
                 </button>
                 <button style={{
-                  background: 'hsla(239, 68, 68, 0.1)',
-                  border: '1px solid hsla(239, 68, 68, 0.2)',
-                  borderRadius: '8px',
-                  color: '#ef4444',
+                  background: 'hsla(239, 68, 68, 0.05)',
+                  border: '1px solid hsla(239, 68, 68, 0.1)',
+                  borderRadius: '6px',
+                  color: '#6b7280',
                   cursor: 'pointer',
-                  padding: '6px',
+                  padding: '4px',
                   transition: 'all 0.2s ease',
                   backdropFilter: 'blur(8px)',
                   WebkitBackdropFilter: 'blur(8px)'
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(239, 68, 68, 0.15)';
-                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.background = 'hsla(239, 68, 68, 0.1)';
+                  e.currentTarget.style.color = '#ef4444';
+                  e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'hsla(239, 68, 68, 0.1)';
+                  e.currentTarget.style.background = 'hsla(239, 68, 68, 0.05)';
+                  e.currentTarget.style.color = '#6b7280';
                   e.currentTarget.style.transform = 'scale(1)';
                 }}>
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                 </button>
               </div>
             </div>
