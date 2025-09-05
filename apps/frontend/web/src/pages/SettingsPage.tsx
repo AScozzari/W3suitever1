@@ -53,10 +53,14 @@ import {
   Save
 } from 'lucide-react';
 
+// Tenant ID demo per tutti i mock data
+const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 // Mock data per ragioni sociali - codici iniziano con 80 e hanno almeno 6 cifre
 const mockRagioneSociali = [
   { 
-    id: 1, 
+    id: 1,
+    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
     codice: '800001',
     nome: 'Franchising Ltd', 
     formaGiuridica: 'Srl', 
@@ -66,7 +70,8 @@ const mockRagioneSociali = [
     azioni: 'edit'
   },
   { 
-    id: 2, 
+    id: 2,
+    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
     codice: '800245',
     nome: 'Digital Operations Snc', 
     formaGiuridica: 'Snc', 
@@ -76,7 +81,8 @@ const mockRagioneSociali = [
     azioni: 'edit'
   },
   { 
-    id: 3, 
+    id: 3,
+    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
     codice: '801567',
     nome: 'Tech Solutions Ltd', 
     formaGiuridica: 'Srl', 
@@ -90,7 +96,9 @@ const mockRagioneSociali = [
 // Mock data per punti vendita - codici iniziano con 90 e hanno almeno 8 cifre
 const mockPuntiVendita = [
   { 
-    id: 1, 
+    id: 1,
+    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
+    ragioneSociale_id: 1, // FK alla ragione sociale
     codice: '90000012', 
     nome: 'WindTre Milano Centro', 
     indirizzo: 'Via Montenapoleone 15',
@@ -100,7 +108,9 @@ const mockPuntiVendita = [
     ragioneSociale: 'Franchising Ltd'
   },
   { 
-    id: 2, 
+    id: 2,
+    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
+    ragioneSociale_id: 2, // FK alla ragione sociale
     codice: '90001234', 
     nome: 'WindTre Roma Termini', 
     indirizzo: 'Via Nazionale 123',
@@ -110,7 +120,9 @@ const mockPuntiVendita = [
     ragioneSociale: 'Digital Operations Snc'
   },
   { 
-    id: 3, 
+    id: 3,
+    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
+    ragioneSociale_id: 3, // FK alla ragione sociale
     codice: '90002456', 
     nome: 'WindTre Napoli Centrale', 
     indirizzo: 'Piazza Garibaldi 45',
@@ -149,6 +161,7 @@ export default function SettingsPage() {
     const newCode = `80${String(Math.floor(Math.random() * 99999) + 1000).padStart(4, '0')}`;
     const newItem = {
       id: ragioneSocialiList.length + 1,
+      tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
       codice: newCode,
       nome: 'Nuova Ragione Sociale',
       formaGiuridica: 'Srl',
@@ -170,6 +183,8 @@ export default function SettingsPage() {
     const newCode = `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
     const newItem = {
       id: puntiVenditaList.length + 1,
+      tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
+      ragioneSociale_id: 1, // Default alla prima ragione sociale
       codice: newCode,
       nome: 'Nuovo Punto Vendita',
       indirizzo: 'Via Nuova 1',
@@ -1297,11 +1312,15 @@ export default function SettingsPage() {
     stato: 'Attiva'
   });
 
+  // Tenant ID - in produzione verrà preso dal context utente autenticato
+  const currentTenantId = '00000000-0000-0000-0000-000000000001'; // Demo tenant UUID
+
   // Handler per salvare la nuova ragione sociale
   const handleSaveRagioneSociale = () => {
     const newCode = newRagioneSociale.codice || `80${String(Math.floor(Math.random() * 9999) + 1000).padStart(4, '0')}`;
     const newItem = {
       id: ragioneSocialiList.length + 1,
+      tenant_id: currentTenantId, // TENANT ID OBBLIGATORIO
       codice: newCode,
       nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
       formaGiuridica: newRagioneSociale.formaGiuridica,
@@ -1335,13 +1354,15 @@ export default function SettingsPage() {
     const newCode = newStore.codice || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
     const newItem = {
       id: puntiVenditaList.length + 1,
+      tenant_id: currentTenantId, // TENANT ID OBBLIGATORIO
       codice: newCode,
       nome: newStore.nome || 'Nuovo Punto Vendita',
       indirizzo: newStore.indirizzo || 'Via Nuova 1',
       citta: newStore.citta || 'Milano',
       canale: newStore.canale,
       stato: newStore.stato,
-      ragioneSociale: newStore.ragioneSociale || ragioneSocialiList[0]?.nome || 'Default'
+      ragioneSociale: newStore.ragioneSociale || ragioneSocialiList[0]?.nome || 'Default',
+      ragioneSociale_id: ragioneSocialiList.find(rs => rs.nome === newStore.ragioneSociale)?.id || 1 // ID della ragione sociale
     };
     setPuntiVenditaList([...puntiVenditaList, newItem]);
     setStoreModal({ open: false, data: null });
