@@ -229,7 +229,7 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
           boxShadow: '0 32px 80px rgba(0, 0, 0, 0.12), inset 0 1px 0 hsla(255, 255, 255, 0.4)',
           position: 'relative',
           overflow: 'hidden',
-          maxWidth: isMobile ? '360px' : '420px',
+          maxWidth: isMobile ? '400px' : '480px',
           margin: '0 auto'
         }}>
           {/* Inner Glow */}
@@ -286,7 +286,7 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                     background: 'hsla(255, 255, 255, 0.25)',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid hsla(255, 255, 255, 0.1)',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '12px',
                     fontSize: '15px',
                     color: '#1f2937',
@@ -297,12 +297,12 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                     letterSpacing: '0.025em'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
+                    e.currentTarget.style.borderColor = '#d1d5db';
                     e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.1)';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
                     e.currentTarget.style.background = 'hsla(255, 255, 255, 0.25)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
@@ -332,7 +332,7 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                     background: 'hsla(255, 255, 255, 0.25)',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid hsla(255, 255, 255, 0.1)',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '12px',
                     fontSize: '15px',
                     color: '#1f2937',
@@ -343,12 +343,12 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                     letterSpacing: '0.05em'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
+                    e.currentTarget.style.borderColor = '#d1d5db';
                     e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.1)';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
                     e.currentTarget.style.background = 'hsla(255, 255, 255, 0.25)';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
