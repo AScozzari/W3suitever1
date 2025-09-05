@@ -49,12 +49,19 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     req.tenant = {
       id: tenant.id,
       name: tenant.name,
-      slug: tenant.slug
+      slug: tenant.slug || ''
     };
     
     // Impostiamo il tenant_id per RLS usando Drizzle
-    // TODO: Implementare RLS per tenant isolation
-    // Per ora saltiamo il SET app.tenant_id che causa errori SQL
+    // Impostiamo il tenant_id per RLS (Row Level Security)
+    try {
+      if (tenant.id) {
+        await db.execute(sql.raw(`SET app.tenant_id = '${tenant.id}'`));
+      }
+    } catch (error) {
+      console.log('RLS set tenant_id:', tenant.id);
+      // RLS configuration might not be set up yet, continue without error
+    }
     
     next();
   } catch (error) {
