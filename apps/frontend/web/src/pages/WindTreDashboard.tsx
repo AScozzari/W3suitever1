@@ -1646,36 +1646,42 @@ export default function WindTreDashboard() {
                 gap: '16px'
               }}>
                 {/* Icona Calendario */}
-                <button style={{
+                <button onClick={() => {
+                  setActiveWorkspaceTab('Calendario');
+                  setWorkspaceCollapsed(false);
+                }} style={{
                   width: '40px',
                   height: '40px',
-                  background: 'transparent',
-                  border: 'none',
+                  background: activeWorkspaceTab === 'Calendario' ? 'rgba(123, 44, 191, 0.2)' : 'transparent',
+                  border: activeWorkspaceTab === 'Calendario' ? '1px solid rgba(123, 44, 191, 0.3)' : 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#374151',
+                  color: activeWorkspaceTab === 'Calendario' ? '#7B2CBF' : '#374151',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
                   e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#FF6900';
+                  e.currentTarget.style.color = '#7B2CBF';
                 }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#374151';
+                  e.currentTarget.style.background = activeWorkspaceTab === 'Calendario' ? 'rgba(123, 44, 191, 0.2)' : 'transparent';
+                  e.currentTarget.style.color = activeWorkspaceTab === 'Calendario' ? '#7B2CBF' : '#374151';
                 }}>
                   <Calendar size={18} />
                 </button>
                 {/* Icona Tasks */}
-                <button style={{
+                <button onClick={() => {
+                  setActiveWorkspaceTab('Tasks');
+                  setWorkspaceCollapsed(false);
+                }} style={{
                   width: '40px',
                   height: '40px',
-                  background: 'transparent',
-                  border: 'none',
+                  background: activeWorkspaceTab === 'Tasks' ? 'rgba(255, 105, 0, 0.2)' : 'transparent',
+                  border: activeWorkspaceTab === 'Tasks' ? '1px solid rgba(255, 105, 0, 0.3)' : 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#374151',
+                  color: activeWorkspaceTab === 'Tasks' ? '#FF6900' : '#374151',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1684,30 +1690,33 @@ export default function WindTreDashboard() {
                   e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
                   e.currentTarget.style.color = '#FF6900';
                 }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#374151';
+                  e.currentTarget.style.background = activeWorkspaceTab === 'Tasks' ? 'rgba(255, 105, 0, 0.2)' : 'transparent';
+                  e.currentTarget.style.color = activeWorkspaceTab === 'Tasks' ? '#FF6900' : '#374151';
                 }}>
                   <CheckCircle size={18} />
                 </button>
                 {/* Icona Leads */}
-                <button style={{
+                <button onClick={() => {
+                  setActiveWorkspaceTab('Leads');
+                  setWorkspaceCollapsed(false);
+                }} style={{
                   width: '40px',
                   height: '40px',
-                  background: 'transparent',
-                  border: 'none',
+                  background: activeWorkspaceTab === 'Leads' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                  border: activeWorkspaceTab === 'Leads' ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
-                  color: '#374151',
+                  color: activeWorkspaceTab === 'Leads' ? '#10b981' : '#374151',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.2s ease'
                 }} onMouseOver={(e) => {
                   e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#FF6900';
+                  e.currentTarget.style.color = '#10b981';
                 }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#374151';
+                  e.currentTarget.style.background = activeWorkspaceTab === 'Leads' ? 'rgba(16, 185, 129, 0.2)' : 'transparent';
+                  e.currentTarget.style.color = activeWorkspaceTab === 'Leads' ? '#10b981' : '#374151';
                 }}>
                   <Users size={18} />
                 </button>
@@ -1834,61 +1843,57 @@ export default function WindTreDashboard() {
                     <div
                       key={index}
                       style={{
-                        background: 'hsla(255, 255, 255, 0.15)',
-                        backdropFilter: 'blur(16px) saturate(120%)',
-                        WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-                        border: '1px solid hsla(255, 255, 255, 0.15)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        marginBottom: '12px'
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        borderRadius: '8px',
+                        padding: '10px',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        borderLeft: '3px solid #FF6900',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        backdropFilter: 'blur(8px)',
+                        marginBottom: '6px'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.15)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     >
                       <div style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        marginBottom: '4px',
+                        lineHeight: 1.3
+                      }}>{task.title}</div>
+                      <p style={{
+                        fontSize: '9px',
+                        color: '#6b7280',
+                        margin: '0 0 8px 0',
+                        lineHeight: 1.3
+                      }}>{task.subtitle}</p>
+                      <div style={{
                         display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '12px'
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
                       }}>
-                        <div style={{
-                          width: '6px',
-                          height: '6px',
-                          background: '#10b981',
-                          borderRadius: '50%',
-                          marginTop: '6px',
-                          flexShrink: 0
-                        }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h5 style={{
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            color: '#1f2937',
-                            margin: '0 0 4px 0',
-                            lineHeight: 1.3
-                          }}>{task.title}</h5>
-                          <p style={{
-                            fontSize: '11px',
-                            color: '#374151',
-                            margin: '0 0 8px 0',
-                            lineHeight: 1.3
-                          }}>{task.subtitle}</p>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                          }}>
-                            <span style={{
-                              fontSize: '10px',
-                              color: '#9ca3af'
-                            }}>{task.time}</span>
-                            <span style={{
-                              background: task.statusColor,
-                              color: 'white',
-                              fontSize: '9px',
-                              fontWeight: 600,
-                              padding: '2px 6px',
-                              borderRadius: '6px'
-                            }}>{task.status}</span>
-                          </div>
-                        </div>
+                        <span style={{
+                          fontSize: '9px',
+                          color: '#9ca3af'
+                        }}>{task.time}</span>
+                        <span style={{
+                          background: task.statusColor,
+                          color: 'white',
+                          fontSize: '8px',
+                          fontWeight: 600,
+                          padding: '2px 6px',
+                          borderRadius: '6px'
+                        }}>{task.status}</span>
                       </div>
                     </div>
                   ))}
@@ -1920,12 +1925,101 @@ export default function WindTreDashboard() {
                     }}>{eventiTotali} eventi</span>
                   </div>
 
-                  {/* Eventi oggi */}
+                  {/* Mini calendario con giorni selezionabili */}
                   <div style={{
-                    marginBottom: '16px'
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                  }}>
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      marginBottom: '8px',
+                      textAlign: 'center'
+                    }}>
+                      {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                    </div>
+                    
+                    {/* Giorni della settimana */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(7, 1fr)',
+                      gap: '2px',
+                      marginBottom: '4px'
+                    }}>
+                      {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(day => (
+                        <div key={day} style={{
+                          fontSize: '8px',
+                          color: '#6b7280',
+                          textAlign: 'center',
+                          fontWeight: 500,
+                          padding: '2px'
+                        }}>{day}</div>
+                      ))}
+                    </div>
+                    
+                    {/* Griglia calendario */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(7, 1fr)',
+                      gap: '1px'
+                    }}>
+                      {Array.from({length: 35}, (_, i) => {
+                        const today = new Date();
+                        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                        const dayOfWeek = (firstDay.getDay() + 6) % 7;
+                        const day = i - dayOfWeek + 1;
+                        const isCurrentMonth = day > 0 && day <= new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                        const isToday = isCurrentMonth && day === today.getDate();
+                        const hasEvent = isCurrentMonth && eventiCalendario.some(evento => {
+                          const eventDate = new Date(evento.dataCompleta);
+                          return eventDate.getDate() === day && 
+                                 eventDate.getMonth() === today.getMonth() && 
+                                 eventDate.getFullYear() === today.getFullYear();
+                        });
+                        
+                        return (
+                          <button key={i} style={{
+                            width: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '8px',
+                            color: isCurrentMonth ? (isToday ? 'white' : '#374151') : '#9ca3af',
+                            background: isToday ? '#7B2CBF' : (hasEvent ? 'rgba(123, 44, 191, 0.15)' : 'transparent'),
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontWeight: isToday ? 600 : (hasEvent ? 500 : 400),
+                            cursor: isCurrentMonth ? 'pointer' : 'default',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
+                            if (isCurrentMonth && !isToday) {
+                              e.currentTarget.style.background = 'rgba(123, 44, 191, 0.2)';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (isCurrentMonth && !isToday) {
+                              e.currentTarget.style.background = hasEvent ? 'rgba(123, 44, 191, 0.15)' : 'transparent';
+                            }
+                          }}>
+                            {isCurrentMonth ? day : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Eventi prossimi */}
+                  <div style={{
+                    marginBottom: '12px'
                   }}>
                     <h5 style={{
-                      fontSize: '12px',
+                      fontSize: '11px',
                       fontWeight: 600,
                       color: '#1f2937',
                       margin: '0 0 8px 0'
@@ -1938,23 +2032,48 @@ export default function WindTreDashboard() {
                     }}>
                       {eventiCalendario.slice(0, 3).map((evento) => (
                         <div key={evento.id} style={{
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '6px',
-                          padding: '8px',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '8px',
+                          padding: '10px',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
                           borderLeft: '3px solid #7B2CBF',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          backdropFilter: 'blur(8px)'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(123, 44, 191, 0.15)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}>
                           <div style={{
                             fontSize: '11px',
                             fontWeight: 600,
                             color: '#1f2937',
-                            marginBottom: '2px'
+                            marginBottom: '4px',
+                            lineHeight: 1.3
                           }}>{evento.titolo}</div>
                           <div style={{
-                            fontSize: '9px',
-                            color: '#6b7280'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
                           }}>
-                            {evento.ora} - {evento.location}
+                            <span style={{
+                              fontSize: '9px',
+                              color: '#6b7280'
+                            }}>{evento.ora}</span>
+                            <span style={{
+                              fontSize: '8px',
+                              color: '#9ca3af',
+                              background: 'rgba(255, 255, 255, 0.08)',
+                              padding: '1px 4px',
+                              borderRadius: '4px'
+                            }}>{evento.location}</span>
                           </div>
                         </div>
                       ))}
@@ -1963,14 +2082,21 @@ export default function WindTreDashboard() {
 
                   <button style={{
                     width: '100%',
-                    padding: '6px 8px',
-                    background: 'rgba(123, 44, 191, 0.1)',
-                    border: '1px solid rgba(123, 44, 191, 0.2)',
-                    borderRadius: '6px',
+                    padding: '8px',
+                    background: 'rgba(123, 44, 191, 0.08)',
+                    border: '1px solid rgba(123, 44, 191, 0.15)',
+                    borderRadius: '8px',
                     color: '#7B2CBF',
-                    fontSize: '9px',
+                    fontSize: '10px',
                     fontWeight: 500,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(123, 44, 191, 0.15)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(123, 44, 191, 0.08)';
                   }}>
                     Visualizza calendario completo
                   </button>
@@ -2007,16 +2133,16 @@ export default function WindTreDashboard() {
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
                     gap: '6px',
-                    marginBottom: '16px'
+                    marginBottom: '12px'
                   }}>
                     <div style={{
-                      background: 'rgba(16, 185, 129, 0.1)',
+                      background: 'rgba(16, 185, 129, 0.08)',
                       borderRadius: '6px',
                       padding: '8px',
-                      border: '1px solid rgba(16, 185, 129, 0.2)'
+                      border: '1px solid rgba(16, 185, 129, 0.15)'
                     }}>
                       <div style={{
-                        fontSize: '16px',
+                        fontSize: '14px',
                         fontWeight: 700,
                         color: '#10b981'
                       }}>{leads.filter(l => l.priorita === 'Alta').length}</div>
@@ -2024,24 +2150,24 @@ export default function WindTreDashboard() {
                         fontSize: '8px',
                         color: '#065f46',
                         fontWeight: 500
-                      }}>Alta Priorità</div>
+                      }}>Priorità Alta</div>
                     </div>
                     <div style={{
-                      background: 'rgba(255, 105, 0, 0.1)',
+                      background: 'rgba(59, 130, 246, 0.08)',
                       borderRadius: '6px',
                       padding: '8px',
-                      border: '1px solid rgba(255, 105, 0, 0.2)'
+                      border: '1px solid rgba(59, 130, 246, 0.15)'
                     }}>
                       <div style={{
-                        fontSize: '16px',
+                        fontSize: '14px',
                         fontWeight: 700,
-                        color: '#FF6900'
-                      }}>€24K</div>
+                        color: '#3b82f6'
+                      }}>{leads.length}</div>
                       <div style={{
                         fontSize: '8px',
-                        color: '#ea580c',
+                        color: '#1e40af',
                         fontWeight: 500
-                      }}>Potenziale</div>
+                      }}>Contatti Attivi</div>
                     </div>
                   </div>
 
@@ -2062,30 +2188,54 @@ export default function WindTreDashboard() {
                         }
                       };
                       
+                      const getChannelIcon = (fonte: string) => {
+                        switch(fonte) {
+                          case 'LinkedIn Ads': return '💼';
+                          case 'Website': return '🌐';
+                          case 'Email': return '📧';
+                          case 'Telefono': return '📞';
+                          case 'Referral': return '👥';
+                          default: return '📝';
+                        }
+                      };
+                      
                       return (
                         <div key={lead.id} style={{
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '6px',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '8px',
                           padding: '10px',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
                           borderLeft: `3px solid ${getPriorityColor(lead.priorita)}`,
                           cursor: 'pointer',
-                          transition: 'all 0.2s ease'
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          backdropFilter: 'blur(8px)'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = `0 4px 12px ${getPriorityColor(lead.priorita)}25`;
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}>
                           <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'flex-start',
-                            marginBottom: '4px'
+                            marginBottom: '6px'
                           }}>
                             <div>
                               <div style={{
-                                fontSize: '12px',
+                                fontSize: '11px',
                                 fontWeight: 600,
                                 color: '#1f2937',
-                                marginBottom: '2px'
+                                marginBottom: '2px',
+                                lineHeight: 1.3
                               }}>{lead.cliente}</div>
                               <div style={{
-                                fontSize: '10px',
+                                fontSize: '9px',
                                 color: '#6b7280',
                                 marginBottom: '4px'
                               }}>{lead.azienda}</div>
@@ -2106,17 +2256,24 @@ export default function WindTreDashboard() {
                             justifyContent: 'space-between'
                           }}>
                             <div style={{
-                              fontSize: '9px',
-                              color: '#6b7280'
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
                             }}>
-                              {lead.fonte} • {lead.tempo}
+                              <span style={{ fontSize: '10px' }}>{getChannelIcon(lead.fonte)}</span>
+                              <span style={{
+                                fontSize: '8px',
+                                color: '#6b7280'
+                              }}>{lead.fonte}</span>
                             </div>
                             
                             <div style={{
-                              fontSize: '10px',
-                              fontWeight: 600,
-                              color: '#10b981'
-                            }}>{lead.potenziale}</div>
+                              fontSize: '8px',
+                              color: '#9ca3af',
+                              background: 'rgba(255, 255, 255, 0.08)',
+                              padding: '1px 4px',
+                              borderRadius: '4px'
+                            }}>{lead.tempo}</div>
                           </div>
                         </div>
                       );
@@ -2125,14 +2282,21 @@ export default function WindTreDashboard() {
 
                   <button style={{
                     width: '100%',
-                    padding: '6px 8px',
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                    borderRadius: '6px',
+                    padding: '8px',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.15)',
+                    borderRadius: '8px',
                     color: '#10b981',
-                    fontSize: '9px',
+                    fontSize: '10px',
                     fontWeight: 500,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
                   }}>
                     Gestisci tutti i leads
                   </button>
