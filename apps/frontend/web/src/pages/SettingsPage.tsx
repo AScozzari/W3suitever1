@@ -65,6 +65,9 @@ export default function SettingsPage() {
   const [selectedCity, setSelectedCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   
+  // Selected entity tab
+  const [selectedEntity, setSelectedEntity] = useState('ragione-sociale');
+  
   // Load reference data from API
   const { data: legalForms = [] } = useQuery({
     queryKey: ['/api/reference/legal-forms'],
@@ -201,24 +204,25 @@ export default function SettingsPage() {
           gap: '16px'
         }}>
           {[
-            { icon: Building2, label: 'Ragione Sociale', active: true, color: '#FF6900' },
-            { icon: Users, label: 'Clienti', color: '#3b82f6' },
-            { icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
-            { icon: Server, label: 'Smart Automation', color: '#10b981' },
-            { icon: Activity, label: 'Servizi', color: '#f59e0b' },
-            { icon: FileText, label: 'Auto Reporting', color: '#ef4444' },
-            { icon: Shield, label: 'GDPR', color: '#8b5cf6' },
-            { icon: Bell, label: 'Alert Notifications', color: '#06b6d4' }
+            { id: 'ragione-sociale', icon: Building2, label: 'Ragione Sociale', color: '#FF6900' },
+            { id: 'punti-vendita', icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
+            { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
+            { id: 'smart-automation', icon: Server, label: 'Smart Automation', color: '#10b981' },
+            { id: 'servizi', icon: Activity, label: 'Servizi', color: '#f59e0b' },
+            { id: 'auto-reporting', icon: FileText, label: 'Auto Reporting', color: '#ef4444' },
+            { id: 'gdpr', icon: Shield, label: 'GDPR', color: '#8b5cf6' },
+            { id: 'alert-notifications', icon: Bell, label: 'Alert Notifications', color: '#06b6d4' }
           ].map((item, index) => {
             const Icon = item.icon;
             return (
               <button
                 key={index}
+                onClick={() => setSelectedEntity(item.id)}
                 style={{
-                  background: item.active 
+                  background: selectedEntity === item.id 
                     ? `linear-gradient(135deg, ${item.color}15, ${item.color}08)`
                     : 'transparent',
-                  border: item.active 
+                  border: selectedEntity === item.id 
                     ? `1px solid ${item.color}30`
                     : '1px solid transparent',
                   borderRadius: '12px',
@@ -232,25 +236,25 @@ export default function SettingsPage() {
                   WebkitBackdropFilter: 'blur(8px)'
                 }}
                 onMouseOver={(e) => {
-                  if (!item.active) {
+                  if (selectedEntity !== item.id) {
                     e.currentTarget.style.background = `${item.color}10`;
                     e.currentTarget.style.borderColor = `${item.color}20`;
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }
                 }}
                 onMouseOut={(e) => {
-                  if (!item.active) {
+                  if (selectedEntity !== item.id) {
                     e.currentTarget.style.background = 'transparent';
                     e.currentTarget.style.borderColor = 'transparent';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }
                 }}
               >
-                <Icon size={16} style={{ color: item.active ? item.color : '#6b7280' }} />
+                <Icon size={16} style={{ color: selectedEntity === item.id ? item.color : '#6b7280' }} />
                 <span style={{
                   fontSize: '14px',
-                  fontWeight: item.active ? '600' : '500',
-                  color: item.active ? item.color : '#6b7280'
+                  fontWeight: selectedEntity === item.id ? '600' : '500',
+                  color: selectedEntity === item.id ? item.color : '#6b7280'
                 }}>
                   {item.label}
                 </span>
@@ -261,7 +265,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Ragioni Sociali Section */}
-      <div style={{ marginBottom: '48px' }}>
+      {selectedEntity === 'ragione-sociale' && (
+        <div style={{ marginBottom: '48px' }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -435,10 +440,11 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+      )}
 
-      
       {/* Punti Vendita Section */}
-      <div>
+      {selectedEntity === 'punti-vendita' && (
+        <div>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -614,6 +620,27 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+      )}
+      
+      {/* Placeholder per altre sezioni */}
+      {selectedEntity === 'utenti' && (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+          <Users size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Gestione Utenti</h3>
+          <p>Questa sezione sarà disponibile a breve</p>
+        </div>
+      )}
+      
+      {(selectedEntity === 'smart-automation' || 
+        selectedEntity === 'servizi' || 
+        selectedEntity === 'auto-reporting' || 
+        selectedEntity === 'gdpr' || 
+        selectedEntity === 'alert-notifications') && (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>In Sviluppo</h3>
+          <p>Questa funzionalità sarà disponibile a breve</p>
+        </div>
+      )}
     </div>
   );
 
