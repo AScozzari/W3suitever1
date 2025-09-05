@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, ArrowRight, Shield, Zap, CheckCircle } from 'lucide-react';
 
-export default function ProfessionalLogin() {
+interface LoginProps {
+  tenantCode?: string;
+}
+
+export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [showPassword, setShowPassword] = useState(false);
-  const [tenantCode, setTenantCode] = useState('');
+  const [tenantCode, setTenantCode] = useState(propTenantCode || '');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Mappa dei tenant disponibili
+  const tenantInfo: Record<string, { name: string, color: string }> = {
+    'demo': { name: 'Demo Organization', color: '#FF6900' },
+    'acme': { name: 'Acme Corporation', color: '#0066CC' },
+    'tech': { name: 'Tech Solutions Ltd', color: '#10B981' }
+  };
+  
+  const currentTenant = tenantInfo[propTenantCode || 'demo'] || tenantInfo['demo'];
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -17,10 +30,13 @@ export default function ProfessionalLogin() {
   }, []);
 
   const handleLogin = async () => {
-    if (!tenantCode || !email || !password) {
-      alert('Inserisci codice organizzazione, email e password');
+    if (!email || !password) {
+      alert('Inserisci email e password');
       return;
     }
+    
+    // Il tenant viene dal path URL
+    const tenantFromPath = propTenantCode || 'demo';
 
     setIsLoading(true);
     
@@ -40,7 +56,7 @@ export default function ProfessionalLogin() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          tenantCode: tenantCode,
+          tenantCode: tenantFromPath,
           username: email.split('@')[0] || 'admin', 
           password: password 
         }),
@@ -167,9 +183,15 @@ export default function ProfessionalLogin() {
             WebkitTextFillColor: 'transparent',
             margin: '0 0 12px 0',
             letterSpacing: '-0.5px'
-          }}>WindTre Suite</h1>
+          }}>W3 Suite</h1>
           <p style={{
             fontSize: isMobile ? '16px' : '18px',
+            color: currentTenant.color,
+            margin: '0 0 8px 0',
+            fontWeight: 600
+          }}>{currentTenant.name}</p>
+          <p style={{
+            fontSize: isMobile ? '14px' : '16px',
             color: '#6b7280',
             margin: '0 0 8px 0',
             fontWeight: 400
@@ -217,63 +239,6 @@ export default function ProfessionalLogin() {
           }} />
 
           <div style={{ position: 'relative', zIndex: 2 }}>
-            {/* Tenant Code Field */}
-            <div style={{ marginBottom: '28px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#374151',
-                marginBottom: '12px',
-                letterSpacing: '0.025em'
-              }}>Codice Organizzazione</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={tenantCode}
-                  onChange={(e) => setTenantCode(e.target.value.toUpperCase())}
-                  placeholder="es. DEMO001"
-                  style={{
-                    width: '100%',
-                    padding: isMobile ? '16px 20px' : '18px 24px',
-                    background: 'hsla(255, 255, 255, 0.4)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: '2px solid hsla(255, 255, 255, 0.3)',
-                    borderRadius: '16px',
-                    fontSize: '16px',
-                    color: '#1f2937',
-                    outline: 'none',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxSizing: 'border-box',
-                    fontWeight: 500,
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#7B2CBF';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.6)';
-                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(123, 44, 191, 0.15), 0 8px 32px rgba(123, 44, 191, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                />
-                <p style={{
-                  fontSize: '12px',
-                  color: '#6b7280',
-                  marginTop: '8px',
-                  fontStyle: 'italic'
-                }}>
-                  Il codice della tua organizzazione ti è stato fornito dall'amministratore
-                </p>
-              </div>
-            </div>
-
             {/* Email Field */}
             <div style={{ marginBottom: '28px' }}>
               <label style={{
