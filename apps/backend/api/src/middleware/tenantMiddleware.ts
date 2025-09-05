@@ -12,8 +12,12 @@ declare global {
 
 // Mapping sottodomini -> tenant IDs
 const TENANT_SUBDOMAIN_MAP: Record<string, { id: string, name: string }> = {
-  'demo': { 
+  'staging': { 
     id: '00000000-0000-0000-0000-000000000001', 
+    name: 'Staging Environment - W3 Suite' 
+  },
+  'demo': { 
+    id: '99999999-9999-9999-9999-999999999999', 
     name: 'Demo Organization' 
   },
   'acme': { 

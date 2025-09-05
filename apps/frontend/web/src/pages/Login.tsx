@@ -15,12 +15,13 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
   
   // Mappa dei tenant disponibili
   const tenantInfo: Record<string, { name: string, color: string }> = {
+    'staging': { name: 'Staging Environment - W3 Suite', color: '#7B2CBF' },
     'demo': { name: 'Demo Organization', color: '#FF6900' },
     'acme': { name: 'Acme Corporation', color: '#0066CC' },
     'tech': { name: 'Tech Solutions Ltd', color: '#10B981' }
   };
   
-  const currentTenant = tenantInfo[propTenantCode || 'demo'] || tenantInfo['demo'];
+  const currentTenant = tenantInfo[propTenantCode || 'staging'] || tenantInfo['staging'];
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -36,7 +37,7 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
     }
     
     // Il tenant viene dal path URL
-    const tenantFromPath = propTenantCode || 'demo';
+    const tenantFromPath = propTenantCode || 'staging';
 
     setIsLoading(true);
     

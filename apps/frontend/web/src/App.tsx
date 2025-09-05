@@ -33,12 +33,13 @@ function TenantRouter() {
       
       // Mappa il codice tenant all'ID
       const tenantMapping: Record<string, string> = {
-        'demo': '00000000-0000-0000-0000-000000000001',
+        'staging': '00000000-0000-0000-0000-000000000001',
+        'demo': '99999999-9999-9999-9999-999999999999',
         'acme': '11111111-1111-1111-1111-111111111111',
         'tech': '22222222-2222-2222-2222-222222222222'
       };
       
-      const tenantId = tenantMapping[tenant] || tenantMapping['demo'];
+      const tenantId = tenantMapping[tenant] || tenantMapping['staging'];
       localStorage.setItem('currentTenantId', tenantId);
     }
   }, [tenant]);
@@ -84,14 +85,14 @@ function Router() {
   const currentPath = window.location.pathname;
   
   // Lista dei tenant validi
-  const validTenants = ['demo', 'acme', 'tech'];
+  const validTenants = ['staging', 'demo', 'acme', 'tech'];
   const pathSegments = currentPath.split('/').filter(Boolean);
   const firstSegment = pathSegments[0];
   
-  // Se non c'è tenant o non è valido, redirect a demo
+  // Se non c'è tenant o non è valido, redirect a staging
   if (!firstSegment || !validTenants.includes(firstSegment)) {
     // Se siamo già nel login o in un path specifico, mantieni il path
-    const savedTenant = localStorage.getItem('currentTenant') || 'demo';
+    const savedTenant = localStorage.getItem('currentTenant') || 'staging';
     window.location.href = `/${savedTenant}`;
     return null;
   }
