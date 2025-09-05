@@ -878,41 +878,132 @@ export default function SettingsPage() {
                 <div
                   key={role.code}
                   style={{
-                    background: 'hsla(255, 255, 255, 0.05)',
-                    border: '1px solid hsla(255, 255, 255, 0.08)',
+                    background: selectedRole === role.code 
+                      ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
+                      : 'hsla(255, 255, 255, 0.05)',
+                    border: selectedRole === role.code
+                      ? `2px solid ${role.color}40`
+                      : '1px solid hsla(255, 255, 255, 0.08)',
                     borderRadius: '12px',
                     padding: '16px',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    transform: 'translateY(0) scale(1) rotateX(0deg)',
+                    transformStyle: 'preserve-3d',
+                    perspective: '1000px',
+                    boxShadow: selectedRole === role.code
+                      ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
+                      : '0 2px 8px rgba(0, 0, 0, 0.05)'
                   }}
                   onClick={() => setSelectedRole(role.code)}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = `linear-gradient(135deg, ${role.color}10, ${role.color}05)`;
-                    e.currentTarget.style.borderColor = `${role.color}30`;
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  onMouseEnter={(e) => {
+                    const card = e.currentTarget;
+                    const colorBar = card.querySelector('.color-bar') as HTMLElement;
+                    const icon = card.querySelector('.role-icon') as HTMLElement;
+                    const users = card.querySelector('.users-count') as HTMLElement;
+                    
+                    // Card animations
+                    card.style.background = `linear-gradient(135deg, ${role.color}18, ${role.color}10)`;
+                    card.style.borderColor = `${role.color}40`;
+                    card.style.transform = 'translateY(-8px) scale(1.03) rotateX(-2deg)';
+                    card.style.boxShadow = `0 16px 32px ${role.color}25, 0 8px 16px rgba(0, 0, 0, 0.15)`;
+                    
+                    // Color bar animation
+                    if (colorBar) {
+                      colorBar.style.height = '5px';
+                      colorBar.style.background = `linear-gradient(90deg, ${role.color}, ${role.color}dd, ${role.color})`;
+                      colorBar.style.boxShadow = `0 2px 8px ${role.color}60`;
+                    }
+                    
+                    // Icon animation
+                    if (icon) {
+                      icon.style.transform = 'rotate(360deg) scale(1.2)';
+                      icon.style.color = role.color;
+                    }
+                    
+                    // Users count animation
+                    if (users) {
+                      users.style.transform = 'translateX(4px)';
+                      users.style.color = role.color;
+                    }
                   }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
-                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.08)';
-                    e.currentTarget.style.transform = 'translateY(0)';
+                  onMouseLeave={(e) => {
+                    const card = e.currentTarget;
+                    const colorBar = card.querySelector('.color-bar') as HTMLElement;
+                    const icon = card.querySelector('.role-icon') as HTMLElement;
+                    const users = card.querySelector('.users-count') as HTMLElement;
+                    
+                    // Reset card
+                    card.style.background = selectedRole === role.code 
+                      ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
+                      : 'hsla(255, 255, 255, 0.05)';
+                    card.style.borderColor = selectedRole === role.code
+                      ? `${role.color}40`
+                      : 'hsla(255, 255, 255, 0.08)';
+                    card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                    card.style.boxShadow = selectedRole === role.code
+                      ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
+                      : '0 2px 8px rgba(0, 0, 0, 0.05)';
+                    
+                    // Reset color bar
+                    if (colorBar) {
+                      colorBar.style.height = '3px';
+                      colorBar.style.background = role.color;
+                      colorBar.style.boxShadow = 'none';
+                    }
+                    
+                    // Reset icon
+                    if (icon) {
+                      icon.style.transform = 'rotate(0deg) scale(1)';
+                      icon.style.color = role.color;
+                    }
+                    
+                    // Reset users count
+                    if (users) {
+                      users.style.transform = 'translateX(0)';
+                      users.style.color = '#6b7280';
+                    }
                   }}
                 >
+                  {/* Animated background gradient */}
                   <div style={{
                     position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '3px',
-                    background: role.color
-                  }} />
+                    top: '-100%',
+                    left: '-100%',
+                    width: '300%',
+                    height: '300%',
+                    background: `radial-gradient(circle at center, ${role.color}10 0%, transparent 70%)`,
+                    opacity: 0,
+                    transition: 'opacity 0.5s ease',
+                    pointerEvents: 'none',
+                    animation: 'pulse 3s ease-in-out infinite'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                  />
+                  
+                  <div 
+                    className="color-bar"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '3px',
+                      background: role.color,
+                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }} />
                   
                   <div style={{
                     display: 'flex',
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
-                    marginBottom: '12px'
+                    marginBottom: '12px',
+                    position: 'relative',
+                    zIndex: 1
                   }}>
                     <div>
                       <h4 style={{
@@ -932,26 +1023,47 @@ export default function SettingsPage() {
                       </p>
                     </div>
                     {role.code === 'admin' && (
-                      <Star size={16} style={{ color: role.color }} />
+                      <Star 
+                        size={16} 
+                        className="role-icon"
+                        style={{ 
+                          color: role.color,
+                          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                          transform: 'rotate(0deg) scale(1)'
+                        }} 
+                      />
                     )}
                   </div>
                   
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    zIndex: 1
                   }}>
-                    <span style={{
-                      fontSize: '12px',
-                      color: '#6b7280',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
+                    <span 
+                      className="users-count"
+                      style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.3s ease',
+                        transform: 'translateX(0)'
+                      }}
+                    >
                       <Users size={12} />
                       {role.users} utenti
                     </span>
-                    <ChevronRight size={14} style={{ color: '#6b7280' }} />
+                    <ChevronRight 
+                      size={14} 
+                      style={{ 
+                        color: '#6b7280',
+                        transition: 'all 0.3s ease'
+                      }} 
+                    />
                   </div>
                 </div>
               ))}
