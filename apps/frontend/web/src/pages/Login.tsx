@@ -80,24 +80,63 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#f8fafc',
+      background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      fontFamily: 'Inter, system-ui, sans-serif'
+      fontFamily: 'Inter, system-ui, sans-serif',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {/* Background Effects */}
+      <div style={{
+        position: 'absolute',
+        top: '15%',
+        left: '10%',
+        width: '120px',
+        height: '120px',
+        background: 'hsla(210, 100%, 85%, 0.3)',
+        borderRadius: '50%',
+        filter: 'blur(40px)',
+        animation: 'float 8s ease-in-out infinite'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '20%',
+        right: '15%',
+        width: '100px',
+        height: '100px',
+        background: 'hsla(220, 60%, 90%, 0.4)',
+        borderRadius: '50%',
+        filter: 'blur(50px)',
+        animation: 'float 10s ease-in-out infinite reverse'
+      }} />
+
       {/* Main Container */}
       <div style={{
         width: '100%',
         maxWidth: '400px',
-        background: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        border: '1px solid #e5e7eb'
+        background: 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(12px) saturate(120%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(120%)',
+        borderRadius: '20px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+        border: '1px solid rgba(255, 255, 255, 0.4)',
+        position: 'relative'
       }}>
+        {/* Inner glow */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+          borderRadius: '20px',
+          pointerEvents: 'none'
+        }} />
         <div style={{ 
-          padding: isMobile ? '32px 24px' : '48px 40px'
+          padding: isMobile ? '32px 24px' : '48px 40px',
+          position: 'relative',
+          zIndex: 2
         }}>
           {/* Header */}
           <div style={{
@@ -170,22 +209,28 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   style={{
                     width: '100%',
                     padding: '12px 16px 12px 44px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    borderRadius: '12px',
                     fontSize: '14px',
-                    color: '#111827',
+                    color: '#1f2937',
                     outline: 'none',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s ease',
                     boxSizing: 'border-box',
-                    background: 'white'
+                    background: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#3b82f6';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)';
                     e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 />
               </div>
@@ -218,22 +263,28 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   style={{
                     width: '100%',
                     padding: '12px 44px 12px 44px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    borderRadius: '12px',
                     fontSize: '14px',
-                    color: '#111827',
+                    color: '#1f2937',
                     outline: 'none',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s ease',
                     boxSizing: 'border-box',
-                    background: 'white'
+                    background: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#3b82f6';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)';
                     e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
@@ -295,8 +346,8 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               }}
               onMouseOver={(e) => {
                 if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 105, 0, 0.3), 0 4px 15px rgba(123, 44, 191, 0.2)';
                 }
               }}
               onMouseOut={(e) => {
@@ -350,6 +401,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
         }
       `}</style>
     </div>
