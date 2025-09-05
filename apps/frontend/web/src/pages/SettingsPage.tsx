@@ -359,7 +359,24 @@ export default function SettingsPage() {
             boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
             transition: 'all 0.2s ease'
           }}
-          onClick={() => setLegalEntityModal({ open: true, data: null })}>
+          onClick={() => {
+            setNewRagioneSociale({
+              codice: '',
+              nome: '',
+              formaGiuridica: 'Srl',
+              pIva: '',
+              codiceFiscale: '',
+              indirizzo: '',
+              citta: '',
+              cap: '',
+              provincia: '',
+              telefono: '',
+              email: '',
+              pec: '',
+              stato: 'Attiva'
+            });
+            setLegalEntityModal({ open: true, data: null });
+          }}>
             <Plus size={16} />
             Nuova Ragione Sociale
           </button>
@@ -1263,6 +1280,56 @@ export default function SettingsPage() {
     stato: 'Attivo'
   });
 
+  // State per il modal ragione sociale
+  const [newRagioneSociale, setNewRagioneSociale] = useState({
+    codice: '',
+    nome: '',
+    formaGiuridica: 'Srl',
+    pIva: '',
+    codiceFiscale: '',
+    indirizzo: '',
+    citta: '',
+    cap: '',
+    provincia: '',
+    telefono: '',
+    email: '',
+    pec: '',
+    stato: 'Attiva'
+  });
+
+  // Handler per salvare la nuova ragione sociale
+  const handleSaveRagioneSociale = () => {
+    const newCode = newRagioneSociale.codice || `80${String(Math.floor(Math.random() * 9999) + 1000).padStart(4, '0')}`;
+    const newItem = {
+      id: ragioneSocialiList.length + 1,
+      codice: newCode,
+      nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
+      formaGiuridica: newRagioneSociale.formaGiuridica,
+      pIva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
+      stato: newRagioneSociale.stato,
+      citta: newRagioneSociale.citta || 'Milano',
+      azioni: 'edit'
+    };
+    setRagioneSocialiList([...ragioneSocialiList, newItem]);
+    setLegalEntityModal({ open: false, data: null });
+    // Reset form
+    setNewRagioneSociale({
+      codice: '',
+      nome: '',
+      formaGiuridica: 'Srl',
+      pIva: '',
+      codiceFiscale: '',
+      indirizzo: '',
+      citta: '',
+      cap: '',
+      provincia: '',
+      telefono: '',
+      email: '',
+      pec: '',
+      stato: 'Attiva'
+    });
+  };
+
   // Handler per salvare il nuovo punto vendita
   const handleSaveStore = () => {
     const newCode = newStore.codice || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
@@ -1296,6 +1363,647 @@ export default function SettingsPage() {
 
   return (
     <>
+      {/* Modal Ragione Sociale */}
+      {legalEntityModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            width: '90%',
+            maxWidth: '700px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+          }}>
+            {/* Header Modal */}
+            <div style={{
+              padding: '24px',
+              borderBottom: '1px solid #e5e7eb',
+              background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+              borderRadius: '24px 24px 0 0'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: '700',
+                color: 'white',
+                margin: 0
+              }}>
+                {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+              </h2>
+            </div>
+
+            {/* Body Modal */}
+            <div style={{ padding: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Codice */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Codice Ragione Sociale
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="80xxxx (auto-generato)"
+                    value={newRagioneSociale.codice}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      fontWeight: '600',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Nome */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Franchising Ltd"
+                    value={newRagioneSociale.nome}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, nome: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Forma Giuridica */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newRagioneSociale.formaGiuridica}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, formaGiuridica: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="Srl">Srl - Società a Responsabilità Limitata</option>
+                    <option value="Spa">SpA - Società per Azioni</option>
+                    <option value="Snc">Snc - Società in Nome Collettivo</option>
+                    <option value="Sas">Sas - Società in Accomandita Semplice</option>
+                    <option value="Sapa">Sapa - Società in Accomandita per Azioni</option>
+                    <option value="Srls">Srls - Società a Responsabilità Limitata Semplificata</option>
+                  </select>
+                </div>
+
+                {/* Partita IVA */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Partita IVA <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="IT12345678901"
+                    value={newRagioneSociale.pIva}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, pIva: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Codice Fiscale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Codice Fiscale
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="RSSMRA80A01H501U"
+                    value={newRagioneSociale.codiceFiscale}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceFiscale: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      textTransform: 'uppercase',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Indirizzo - full width */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Via Roma 123"
+                    value={newRagioneSociale.indirizzo}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, indirizzo: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Città */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Città <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Milano"
+                    value={newRagioneSociale.citta}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, citta: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* CAP */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="20121"
+                    value={newRagioneSociale.cap}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, cap: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Provincia */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MI"
+                    maxLength={2}
+                    value={newRagioneSociale.provincia}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, provincia: e.target.value.toUpperCase() })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      textTransform: 'uppercase',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Telefono */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Telefono
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 02 1234567"
+                    value={newRagioneSociale.telefono}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, telefono: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="info@azienda.it"
+                    value={newRagioneSociale.email}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, email: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* PEC */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    PEC <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="azienda@pec.it"
+                    value={newRagioneSociale.pec}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, pec: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Stato */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Stato
+                  </label>
+                  <select
+                    value={newRagioneSociale.stato}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, stato: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="Attiva">Attiva</option>
+                    <option value="Sospesa">Sospesa</option>
+                    <option value="Bozza">Bozza</option>
+                    <option value="Cessata">Cessata</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Footer Modal */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '24px',
+                paddingTop: '24px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={() => setLegalEntityModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    background: 'white',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleSaveRagioneSociale}
+                  style={{
+                    padding: '10px 20px',
+                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)'
+                  }}
+                >
+                  {legalEntityModal.data ? 'Salva Modifiche' : 'Crea Ragione Sociale'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Punto Vendita */}
       {storeModal.open && (
         <div style={{
