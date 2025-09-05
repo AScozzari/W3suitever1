@@ -675,7 +675,10 @@ export default function WindTreDashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setCurrentModule(item.id)}
+                  onClick={() => {
+                    console.log('Menu clicked:', item.id, item.label);
+                    setCurrentModule(item.id);
+                  }}
                   style={{
                     width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
                     height: leftSidebarCollapsed && !isMobile ? '40px' : 'auto',
