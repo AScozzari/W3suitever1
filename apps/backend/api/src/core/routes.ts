@@ -3,15 +3,25 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupOAuthRoutes, requireAuth, requirePermission } from "./oauth";
 import { dashboardService } from "./dashboard-service";
-import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
+import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Add tenant and RBAC middleware globally
-  app.use('/api', tenantMiddleware, rbacMiddleware);
+  // Apply tenant middleware to all API routes except auth
+  app.use((req, res, next) => {
+    // Skip tenant middleware for auth routes
+    if (req.path.startsWith('/api/auth/')) {
+      return next();
+    }
+    // Apply tenant middleware for other API routes
+    if (req.path.startsWith('/api/')) {
+      return tenantMiddleware(req, res, next);
+    }
+    next();
+  });
   
   // Local authentication for development
   app.post("/api/auth/login", async (req: any, res) => {
@@ -50,7 +60,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mock user endpoint for development
+  // Session endpoint with tenant info
+  app.get('/api/auth/session', async (req: any, res) => {
+    // Check for auth token
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: "Non autenticato" });
+    }
+    
+    try {
+      // Verify JWT token
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      // Mock session data with tenant information
+      const sessionData = {
+        user: {
+          id: decoded.id || 'admin-user',
+          email: decoded.email || 'admin@w3suite.com',
+          firstName: 'Admin',
+          lastName: 'User',
+          tenantId: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
+          tenant: {
+            id: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
+            name: 'Demo Organization',
+            code: 'DEMO001',
+            plan: 'Enterprise',
+            isActive: true
+          },
+          roles: ['admin', 'manager'] // Ruoli dell'utente
+        }
+      };
+      
+      res.json(sessionData);
+    } catch (error) {
+      console.error("Session error:", error);
+      return res.status(401).json({ message: "Token non valido" });
+    }
+  });
+
+  // Keep the old endpoint for backward compatibility
   app.get('/api/auth/user', async (req: any, res) => {
     // Check for auth token
     const authHeader = req.headers.authorization;

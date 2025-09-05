@@ -1,15 +1,28 @@
 import { QueryClient } from "@tanstack/react-query";
 
+// Helper per ottenere il tenant ID corrente
+const getCurrentTenantId = () => {
+  // Prima prova dal localStorage (settato dal TenantContext)
+  const tenantId = localStorage.getItem('currentTenantId');
+  if (tenantId) return tenantId;
+  
+  // Fallback al tenant demo per development
+  return '00000000-0000-0000-0000-000000000001';
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
         const token = localStorage.getItem('auth_token');
+        const tenantId = getCurrentTenantId();
+        
         const res = await fetch(queryKey[0] as string, {
           credentials: "include",
-          headers: token ? {
-            'Authorization': `Bearer ${token}`
-          } : {},
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            'X-Tenant-ID': tenantId, // Header per il tenant ID
+          },
         });
         if (!res.ok) {
           if (res.status === 401) {
@@ -32,11 +45,14 @@ export async function apiRequest(
   options: RequestInit = {}
 ): Promise<any> {
   const token = localStorage.getItem('auth_token');
+  const tenantId = getCurrentTenantId();
+  
   const res = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      'X-Tenant-ID': tenantId, // Header per il tenant ID
       ...options.headers,
     },
     credentials: "include",

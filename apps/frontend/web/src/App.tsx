@@ -6,12 +6,15 @@ import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { TenantProvider } from "./contexts/TenantContext";
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Router />
+        <TenantProvider>
+          <Router />
+        </TenantProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

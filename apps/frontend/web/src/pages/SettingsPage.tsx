@@ -1312,15 +1312,19 @@ export default function SettingsPage() {
     stato: 'Attiva'
   });
 
-  // Tenant ID - in produzione verrà preso dal context utente autenticato
-  const currentTenantId = '00000000-0000-0000-0000-000000000001'; // Demo tenant UUID
+  // Ottieni il tenant ID dal localStorage o usa il demo tenant
+  const getCurrentTenantId = () => {
+    const tenantId = localStorage.getItem('currentTenantId');
+    return tenantId || '00000000-0000-0000-0000-000000000001';
+  };
 
   // Handler per salvare la nuova ragione sociale
   const handleSaveRagioneSociale = () => {
+    const currentTenantId = getCurrentTenantId();
     const newCode = newRagioneSociale.codice || `80${String(Math.floor(Math.random() * 9999) + 1000).padStart(4, '0')}`;
     const newItem = {
       id: ragioneSocialiList.length + 1,
-      tenant_id: currentTenantId, // TENANT ID OBBLIGATORIO
+      tenant_id: currentTenantId, // TENANT ID AUTOMATICO DAL CONTEXT
       codice: newCode,
       nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
       formaGiuridica: newRagioneSociale.formaGiuridica,
@@ -1351,10 +1355,11 @@ export default function SettingsPage() {
 
   // Handler per salvare il nuovo punto vendita
   const handleSaveStore = () => {
+    const currentTenantId = getCurrentTenantId();
     const newCode = newStore.codice || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
     const newItem = {
       id: puntiVenditaList.length + 1,
-      tenant_id: currentTenantId, // TENANT ID OBBLIGATORIO
+      tenant_id: currentTenantId, // TENANT ID AUTOMATICO DAL CONTEXT
       codice: newCode,
       nome: newStore.nome || 'Nuovo Punto Vendita',
       indirizzo: newStore.indirizzo || 'Via Nuova 1',
