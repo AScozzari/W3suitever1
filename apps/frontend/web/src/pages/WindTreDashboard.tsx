@@ -19,6 +19,9 @@ export default function WindTreDashboard() {
   const [leftSidebarTimer, setLeftSidebarTimer] = useState<NodeJS.Timeout | null>(null);
   const [workspaceTimer, setWorkspaceTimer] = useState<NodeJS.Timeout | null>(null);
   const [currentModule, setCurrentModule] = useState('dashboard');
+  
+  // Debug per verificare il currentModule
+  console.log('WindTreDashboard rendered with currentModule:', currentModule);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
@@ -672,6 +675,11 @@ export default function WindTreDashboard() {
               const Icon = item.icon;
               const isActive = currentModule === item.id;
               
+              // Debug specifico per Impostazioni
+              if (item.id === 'impostazioni') {
+                console.log('Rendering Impostazioni button, isActive:', isActive, 'currentModule:', currentModule);
+              }
+              
               return (
                 <button
                   key={item.id}
@@ -1275,6 +1283,53 @@ export default function WindTreDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Debug info e test buttons */}
+          <div style={{ 
+            background: 'rgba(255,0,0,0.3)', 
+            padding: '10px', 
+            marginBottom: '10px', 
+            borderRadius: '8px',
+            color: 'white' 
+          }}>
+            <strong>DEBUG: currentModule = "{currentModule}"</strong>
+            <button 
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid white',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                color: 'white',
+                fontSize: '12px',
+                cursor: 'pointer',
+                marginLeft: '10px'
+              }}
+              onClick={() => {
+                console.log('FORCE TEST: Switching to impostazioni');
+                setCurrentModule('impostazioni');
+              }}
+            >
+              FORCE Settings
+            </button>
+            <button 
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid white',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                color: 'white',
+                fontSize: '12px',
+                cursor: 'pointer',
+                marginLeft: '5px'
+              }}
+              onClick={() => {
+                console.log('FORCE TEST: Switching to dashboard');
+                setCurrentModule('dashboard');
+              }}
+            >
+              FORCE Dashboard
+            </button>
           </div>
 
           {/* Rendering condizionale basato sul modulo selezionato */}
