@@ -1338,30 +1338,47 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ padding: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {/* Codice */}
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
                     Codice Punto Vendita
                   </label>
                   <input
                     type="text"
-                    placeholder="90xxxxxxxx (generato automaticamente)"
+                    placeholder="90xxxxxxxx (auto-generato)"
                     value={newStore.codice}
                     onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      fontWeight: '600',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -1370,12 +1387,14 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    Nome Punto Vendita *
+                    Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1384,10 +1403,23 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -1396,23 +1428,38 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    Ragione Sociale *
+                    Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
                     value={newStore.ragioneSociale}
                     onChange={(e) => setNewStore({ ...newStore, ragioneSociale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
                       fontSize: '14px',
-                      background: 'white'
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   >
                     <option value="">Seleziona...</option>
@@ -1426,23 +1473,38 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    Canale *
+                    Canale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
                     value={newStore.canale}
                     onChange={(e) => setNewStore({ ...newStore, canale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
                       fontSize: '14px',
-                      background: 'white'
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   >
                     <option value="Franchising">Franchising</option>
@@ -1455,12 +1517,14 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    Indirizzo *
+                    Indirizzo <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1469,10 +1533,23 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -1481,12 +1558,14 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    Città *
+                    Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1495,10 +1574,23 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, citta: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -1507,10 +1599,12 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
                     CAP
                   </label>
@@ -1521,10 +1615,23 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -1533,24 +1640,39 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
                     Telefono
                   </label>
                   <input
                     type="tel"
-                    placeholder="es. +39 02 1234567"
+                    placeholder="+39 02 1234567"
                     value={newStore.telefono}
                     onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -1559,24 +1681,39 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
                     Email
                   </label>
                   <input
                     type="email"
-                    placeholder="es. milano.centro@windtre.it"
+                    placeholder="punto.vendita@windtre.it"
                     value={newStore.email}
                     onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      fontSize: '14px'
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -1585,15 +1722,27 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '12px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
-                    Brand Gestiti *
+                    Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', gap: '20px' }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      cursor: 'pointer',
+                      padding: '14px 20px',
+                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f9fafb',
+                      borderRadius: '12px',
+                      border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
+                      transition: 'all 0.2s ease'
+                    }}>
                       <input
                         type="checkbox"
                         checked={newStore.brands.includes('WindTre')}
@@ -1604,18 +1753,33 @@ export default function SettingsPage() {
                             setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
                           }
                         }}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          cursor: 'pointer',
+                          accentColor: '#FF6900'
+                        }}
                       />
                       <span style={{ 
                         fontSize: '14px', 
-                        color: '#FF6900',
+                        color: newStore.brands.includes('WindTre') ? '#FF6900' : '#374151',
                         fontWeight: '600'
                       }}>
                         WindTre
                       </span>
                     </label>
                     
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      cursor: 'pointer',
+                      padding: '14px 20px',
+                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f9fafb',
+                      borderRadius: '12px',
+                      border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
+                      transition: 'all 0.2s ease'
+                    }}>
                       <input
                         type="checkbox"
                         checked={newStore.brands.includes('Very Mobile')}
@@ -1626,11 +1790,16 @@ export default function SettingsPage() {
                             setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
                           }
                         }}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          cursor: 'pointer',
+                          accentColor: '#10b981'
+                        }}
                       />
                       <span style={{ 
                         fontSize: '14px', 
-                        color: '#7B2CBF',
+                        color: newStore.brands.includes('Very Mobile') ? '#10b981' : '#374151',
                         fontWeight: '600'
                       }}>
                         Very Mobile
@@ -1643,10 +1812,12 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '6px'
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>
                     Stato
                   </label>
@@ -1655,11 +1826,24 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      border: '2px solid transparent',
+                      borderRadius: '12px',
                       fontSize: '14px',
-                      background: 'white'
+                      background: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7B2CBF';
+                      e.target.style.background = 'white';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(123, 44, 191, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#f9fafb';
+                      e.target.style.boxShadow = 'none';
                     }}
                   >
                     <option value="Attivo">Attivo</option>
