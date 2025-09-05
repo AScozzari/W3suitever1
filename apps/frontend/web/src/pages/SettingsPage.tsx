@@ -126,10 +126,10 @@ export default function SettingsPage() {
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
       }}>
         <div style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '24px'
+          gap: '16px'
         }}>
           {[
             { icon: Building2, label: 'Ragione Sociale', active: true, color: '#FF6900' },
