@@ -420,11 +420,9 @@ export default function SettingsPage() {
             }}>
               {['Codice', 'Nome', 'Forma Giuridica', 'P.IVA', 'Stato', 'Città', 'Azioni'].map((header, index) => (
                 <div key={index} style={{
-                  fontSize: '12px',
+                  fontSize: '14px',
                   fontWeight: '600',
-                  color: '#6b7280',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  color: '#1f2937'
                 }}>
                   {header}
                 </div>
@@ -456,31 +454,33 @@ export default function SettingsPage() {
               >
                 <div style={{
                   fontSize: '14px',
-                  color: '#111827',
+                  color: '#1f2937',
                   fontWeight: '600',
-                  fontFamily: 'monospace'
+                  fontFamily: 'Inter, system-ui, sans-serif'
                 }}>
                   {item.codice}
                 </div>
                 
                 <div style={{
                   fontSize: '14px',
-                  color: '#111827',
-                  fontWeight: '500'
+                  color: '#1f2937',
+                  fontWeight: '600'
                 }}>
                   {item.nome}
                 </div>
 
                 <div style={{
                   fontSize: '14px',
-                  color: '#6b7280'
+                  color: '#4b5563',
+                  fontWeight: '500'
                 }}>
                   {item.formaGiuridica}
                 </div>
 
                 <div style={{
                   fontSize: '14px',
-                  color: '#6b7280'
+                  color: '#4b5563',
+                  fontWeight: '500'
                 }}>
                   {item.pIva}
                 </div>
@@ -505,7 +505,8 @@ export default function SettingsPage() {
 
                 <div style={{
                   fontSize: '14px',
-                  color: '#6b7280'
+                  color: '#4b5563',
+                  fontWeight: '500'
                 }}>
                   {item.citta}
                 </div>
@@ -609,11 +610,9 @@ export default function SettingsPage() {
             }}>
               {['Codice', 'Nome', 'Indirizzo', 'Canale', 'Stato', 'Azioni'].map((header, index) => (
                 <div key={index} style={{
-                  fontSize: '12px',
+                  fontSize: '14px',
                   fontWeight: '600',
-                  color: '#6b7280',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  color: '#1f2937'
                 }}>
                   {header}
                 </div>
@@ -645,24 +644,25 @@ export default function SettingsPage() {
               >
                 <div style={{
                   fontSize: '14px',
-                  color: '#111827',
+                  color: '#1f2937',
                   fontWeight: '600',
-                  fontFamily: 'monospace'
+                  fontFamily: 'Inter, system-ui, sans-serif'
                 }}>
                   {item.codice}
                 </div>
 
                 <div style={{
                   fontSize: '14px',
-                  color: '#111827',
-                  fontWeight: '500'
+                  color: '#1f2937',
+                  fontWeight: '600'
                 }}>
                   {item.nome}
                 </div>
 
                 <div style={{
                   fontSize: '14px',
-                  color: '#6b7280'
+                  color: '#4b5563',
+                  fontWeight: '500'
                 }}>
                   {item.indirizzo}
                 </div>
