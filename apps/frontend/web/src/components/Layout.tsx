@@ -749,47 +749,127 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 alignItems: 'center',
                 gap: '12px'
               }}>
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
+                <button 
+                  onClick={() => setActiveWorkspaceTab('Tasks')}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    background: activeWorkspaceTab === 'Tasks' 
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      : 'transparent',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: activeWorkspaceTab === 'Tasks' ? 'white' : '#6b7280',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    transition: 'all 0.2s ease'
+                  }}>
                   <Activity size={18} />
+                  {tasks.filter(t => !t.completato).length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      width: '18px',
+                      height: '18px',
+                      background: '#ef4444',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      color: 'white',
+                      border: '2px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                      {tasks.filter(t => !t.completato).length > 9 ? '9+' : tasks.filter(t => !t.completato).length}
+                    </div>
+                  )}
                 </button>
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '12px',
-                  color: '#6b7280',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
+                
+                <button 
+                  onClick={() => setActiveWorkspaceTab('Leads')}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    background: activeWorkspaceTab === 'Leads'
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      : 'transparent',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: activeWorkspaceTab === 'Leads' ? 'white' : '#6b7280',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    transition: 'all 0.2s ease'
+                  }}>
                   <Users size={18} />
+                  {leads.filter(l => !l.letto).length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      width: '18px',
+                      height: '18px',
+                      background: '#10b981',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      color: 'white',
+                      border: '2px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                      {leads.filter(l => !l.letto).length > 9 ? '9+' : leads.filter(l => !l.letto).length}
+                    </div>
+                  )}
                 </button>
-                <button style={{
-                  width: '40px',
-                  height: '40px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '12px',
-                  color: '#6b7280',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
+                
+                <button 
+                  onClick={() => setActiveWorkspaceTab('Calendar')}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    background: activeWorkspaceTab === 'Calendar'
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      : 'transparent',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: activeWorkspaceTab === 'Calendar' ? 'white' : '#6b7280',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    transition: 'all 0.2s ease'
+                  }}>
                   <Calendar size={18} />
+                  {eventiTotali > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      width: '18px',
+                      height: '18px',
+                      background: '#7B2CBF',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      color: 'white',
+                      border: '2px solid rgba(255, 255, 255, 0.2)'
+                    }}>
+                      {eventiTotali > 9 ? '9+' : eventiTotali}
+                    </div>
+                  )}
                 </button>
               </div>
             ) : (
