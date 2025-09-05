@@ -4143,7 +4143,7 @@ export default function SettingsPage() {
             {/* Header Modal */}
             <div style={{
               padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
               position: 'relative',
               overflow: 'hidden'
             }}>
@@ -4157,6 +4157,29 @@ export default function SettingsPage() {
                 background: 'rgba(255, 255, 255, 0.92)',
                 backdropFilter: 'blur(10px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(10px) saturate(180%)'
+              }} />
+              {/* Effetto glow decorativo */}
+              <div style={{
+                position: 'absolute',
+                top: '-50%',
+                right: '-20%',
+                width: '300px',
+                height: '300px',
+                background: 'radial-gradient(circle, rgba(255, 105, 0, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(40px)',
+                pointerEvents: 'none'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '-50%',
+                left: '-20%',
+                width: '250px',
+                height: '250px',
+                background: 'radial-gradient(circle, rgba(123, 44, 191, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(40px)',
+                pointerEvents: 'none'
               }} />
               
               <div style={{
@@ -4179,7 +4202,8 @@ export default function SettingsPage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                      backdropFilter: 'blur(10px)'
                     }}>
                       <User size={20} style={{ color: 'white' }} />
                     </div>
@@ -4239,24 +4263,16 @@ export default function SettingsPage() {
             {/* Body Modal con sezioni */}
             <div style={{ padding: '24px' }}>
               {/* SEZIONE AMBITO OPERATIVO GERARCHICO - PRIMA SEZIONE */}
-              <div style={{
-                marginBottom: '32px',
-                padding: '20px',
-                background: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                borderRadius: '12px',
-                border: '1px solid #f9a8d4'
-              }}>
+              <div style={{ marginBottom: '24px' }}>
                 <h3 style={{
-                  fontSize: '16px',
+                  fontSize: '15px',
                   fontWeight: '600',
-                  color: '#831843',
+                  color: '#111827',
                   marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
+                  borderBottom: '2px solid #e5e7eb',
+                  paddingBottom: '8px'
                 }}>
-                  <Building2 size={18} />
-                  Scope di Applicazione
+                  Ambito Operativo
                 </h3>
                 
                 {/* Selezione tipo scope */}
@@ -4762,23 +4778,15 @@ export default function SettingsPage() {
               </div>
 
               {/* SEZIONE DATI DI ACCESSO */}
-              <div style={{
-                marginBottom: '32px',
-                padding: '20px',
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                borderRadius: '12px',
-                border: '1px solid #bae6fd'
-              }}>
+              <div style={{ marginBottom: '24px' }}>
                 <h3 style={{
-                  fontSize: '16px',
+                  fontSize: '15px',
                   fontWeight: '600',
-                  color: '#0369a1',
+                  color: '#111827',
                   marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
+                  borderBottom: '2px solid #e5e7eb',
+                  paddingBottom: '8px'
                 }}>
-                  <Lock size={18} />
                   Dati di Accesso
                 </h3>
                 
@@ -4904,23 +4912,15 @@ export default function SettingsPage() {
               </div>
 
               {/* SEZIONE INFORMAZIONI PERSONALI */}
-              <div style={{
-                marginBottom: '32px',
-                padding: '20px',
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                borderRadius: '12px',
-                border: '1px solid #fcd34d'
-              }}>
+              <div style={{ marginBottom: '24px' }}>
                 <h3 style={{
-                  fontSize: '16px',
+                  fontSize: '15px',
                   fontWeight: '600',
-                  color: '#92400e',
+                  color: '#111827',
                   marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
+                  borderBottom: '2px solid #e5e7eb',
+                  paddingBottom: '8px'
                 }}>
-                  <User size={18} />
                   Informazioni Personali
                 </h3>
                 
