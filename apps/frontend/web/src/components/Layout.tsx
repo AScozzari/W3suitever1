@@ -1800,10 +1800,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             card.style.transform = 'translateY(0) scale(1)';
                             card.style.boxShadow = 'none';
                             card.style.borderLeftWidth = '3px';
-                            card.style.borderColor = '';
-                            card.style.borderRightColor = '';
-                            card.style.borderTopColor = '';
-                            card.style.borderBottomColor = '';
+                            card.style.borderLeftColor = `${getPriorityColor(lead.priorita)}`;
+                            card.style.borderRightColor = 'rgba(255, 255, 255, 0.06)';
+                            card.style.borderTopColor = 'rgba(255, 255, 255, 0.06)';
+                            card.style.borderBottomColor = 'rgba(255, 255, 255, 0.06)';
                             
                             // Reset name
                             if (name) {
