@@ -23,11 +23,221 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [lastInteraction, setLastInteraction] = useState(Date.now());
   const [leftSidebarTimer, setLeftSidebarTimer] = useState<NodeJS.Timeout | null>(null);
   const [workspaceTimer, setWorkspaceTimer] = useState<NodeJS.Timeout | null>(null);
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
   
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
+  
+  // Tab attiva per workspace
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
+  
+  // Dati tasks dal repository GitHub
+  const [tasks, setTasks] = useState([
+    {
+      id: 1,
+      titolo: 'Follow-up cliente Premium',
+      descrizione: 'Chiamare Mario Rossi per rinnovo contratto Enterprise',
+      priorita: 'Alta',
+      scadenza: 'Oggi 15:00',
+      completato: false,
+      urgente: true,
+      categoria: 'vendite'
+    },
+    {
+      id: 2,
+      titolo: 'Preparare documentazione',
+      descrizione: 'Contratto fibra ottica per Laura Bianchi',
+      priorita: 'Media',
+      scadenza: 'Domani 10:00',
+      completato: false,
+      urgente: false,
+      categoria: 'documentazione'
+    },
+    {
+      id: 3,
+      titolo: 'Verifica pagamento',
+      descrizione: 'Controllo fattura cliente Giuseppe Verde - €2.300',
+      priorita: 'Bassa',
+      scadenza: 'Venerdì 16:00',
+      completato: true,
+      urgente: false,
+      categoria: 'amministrativo'
+    },
+    {
+      id: 4,
+      titolo: 'Attivazione servizi',
+      descrizione: 'Nuovo contratto mobile 5G + fibra 1GB/s',
+      priorita: 'Alta',
+      scadenza: 'Oggi 17:30',
+      completato: false,
+      urgente: true,
+      categoria: 'tecnico'
+    },
+    {
+      id: 5,
+      titolo: 'Demo prodotto WindTre Business',
+      descrizione: 'Presentazione soluzioni per PMI - Azienda Tecno Solutions',
+      priorita: 'Alta',
+      scadenza: 'Lunedì 09:30',
+      completato: false,
+      urgente: false,
+      categoria: 'vendite'
+    }
+  ]);
+  
+  // Dati leads dal repository GitHub
+  const [leads, setLeads] = useState([
+    {
+      id: 1,
+      tipo: 'nuovo_lead',
+      messaggio: 'Lead interessato a Piano Business Pro',
+      cliente: 'Alessandro Martini',
+      azienda: 'Digital Marketing SRL',
+      fonte: 'LinkedIn Ads',
+      priorita: 'Alta',
+      tempo: '2 min fa',
+      letto: false,
+      potenziale: '€15.000/anno',
+      telefono: '+39 349 123 4567'
+    },
+    {
+      id: 2,
+      tipo: 'lead_qualificato',
+      messaggio: 'Lead qualificato pronto per chiamata',
+      cliente: 'Francesca Lombardi',
+      azienda: 'Consulting Express',
+      fonte: 'Campagna Email',
+      priorita: 'Alta',
+      tempo: '8 min fa',
+      letto: false,
+      potenziale: '€25.000/anno',
+      telefono: '+39 335 987 6543'
+    },
+    {
+      id: 3,
+      tipo: 'appuntamento_fissato',
+      messaggio: 'Demo confermata per martedì',
+      cliente: 'Roberto Conti',
+      azienda: 'Startup Innovation Hub',
+      fonte: 'Chiamata diretta',
+      priorita: 'Media',
+      tempo: '45 min fa',
+      letto: true,
+      potenziale: '€8.500/anno',
+      telefono: '+39 347 456 7890'
+    },
+    {
+      id: 4,
+      tipo: 'contratto_in_chiusura',
+      messaggio: 'Contratto in fase di finalizzazione',
+      cliente: 'Maria Ferretti',
+      azienda: 'E-commerce Plus',
+      fonte: 'Referral Partner',
+      priorita: 'Alta',
+      tempo: '1 ora fa',
+      letto: false,
+      potenziale: '€32.000/anno',
+      telefono: '+39 366 234 5678'
+    },
+    {
+      id: 5,
+      tipo: 'follow_up_richiesto',
+      messaggio: 'Richieste info su soluzioni Cloud',
+      cliente: 'Giuseppe Bianchi',
+      azienda: 'Manufacturing Co.',
+      fonte: 'Website Form',
+      priorita: 'Media',
+      tempo: '2 ore fa',
+      letto: true,
+      potenziale: '€18.000/anno',
+      telefono: '+39 328 876 5432'
+    }
+  ]);
+  
+  // Eventi calendario dal repository GitHub
+  const [eventiCalendario, setEventiCalendario] = useState(() => {
+    const oggi = new Date();
+    return [
+      {
+        id: 1,
+        titolo: 'Riunione Team Vendite Q1',
+        ora: '14:30',
+        dataCompleta: new Date(oggi.getTime() + 1 * 24 * 60 * 60 * 1000),
+        tipo: 'meeting',
+        partecipanti: 8,
+        location: 'Sala Conferenze A',
+        colore: 'blue',
+        descrizione: 'Revisione obiettivi Q1 e pianificazione strategie commerciali'
+      },
+      {
+        id: 2,
+        titolo: 'Presentazione Risultati Trimestrali',
+        ora: '16:00',
+        dataCompleta: new Date(oggi.getTime() + 1 * 24 * 60 * 60 * 1000),
+        tipo: 'presentation',
+        partecipanti: 15,
+        location: 'Auditorium Principale',
+        colore: 'purple',
+        descrizione: 'Presentazione KPI e risultati del trimestre agli stakeholder'
+      },
+      {
+        id: 3,
+        titolo: 'Training Nuovo Personale Vendite',
+        ora: '09:00',
+        dataCompleta: new Date(oggi.getTime() + 2 * 24 * 60 * 60 * 1000),
+        tipo: 'training',
+        partecipanti: 6,
+        location: 'Aula Formazione B',
+        colore: 'green',
+        descrizione: 'Formazione su prodotti WindTre Business e tecniche di vendita'
+      },
+      {
+        id: 4,
+        titolo: 'Demo Enterprise per Fortune 500',
+        ora: '11:30',
+        dataCompleta: new Date(oggi.getTime() + 2 * 24 * 60 * 60 * 1000),
+        tipo: 'client',
+        partecipanti: 5,
+        location: 'Ufficio Direzione',
+        colore: 'orange',
+        descrizione: 'Presentazione soluzioni enterprise per cliente multinazionale'
+      },
+      {
+        id: 5,
+        titolo: 'Revisione Budget Marketing',
+        ora: '15:00',
+        dataCompleta: new Date(oggi.getTime() + 3 * 24 * 60 * 60 * 1000),
+        tipo: 'meeting',
+        partecipanti: 4,
+        location: 'Sala Riunioni C',
+        colore: 'red',
+        descrizione: 'Analisi ROI campagne pubblicitarie e allocazione budget 2025'
+      },
+      {
+        id: 6,
+        titolo: 'Call con Cliente Premium',
+        ora: '10:00',
+        dataCompleta: new Date(oggi.getTime() + 4 * 24 * 60 * 60 * 1000),
+        tipo: 'client',
+        partecipanti: 3,
+        location: 'Online - Teams',
+        colore: 'blue',
+        descrizione: 'Follow-up contratto renewal e upselling servizi aggiuntivi'
+      }
+    ];
+  });
+  
+  // Funzioni per gestire tasks
+  const toggleTaskComplete = (taskId: number) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId ? { ...task, completato: !task.completato } : task
+    ));
+  };
+  
+  // Contatori per stats
+  const tasksOggi = tasks.filter(task => task.scadenza.includes('Oggi')).length;
+  const tasksCompletate = tasks.filter(task => task.completato).length;
+  const eventiTotali = eventiCalendario.length;
 
   useEffect(() => {
     const checkDevice = () => {
@@ -39,6 +249,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         setLeftSidebarCollapsed(true);
         setWorkspaceCollapsed(true);
       } else {
+        // Su desktop, inizia con workspace aperta per permettere auto-collapse
         setWorkspaceCollapsed(false);
       }
     };
@@ -48,6 +259,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
+  // Auto-collapse intelligente delle sidebar dopo inattività
   useEffect(() => {
     const handleUserActivity = () => {
       setLastInteraction(Date.now());
@@ -57,17 +269,20 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       const now = Date.now();
       const inactiveTime = now - lastInteraction;
       
+      // Auto-collapse dopo 30 secondi di inattività su desktop
       if (inactiveTime > 30000 && !isMobile && !isTablet) {
         if (!leftSidebarCollapsed) setLeftSidebarCollapsed(true);
         if (!workspaceCollapsed) setWorkspaceCollapsed(true);
       }
     };
 
+    // Eventi per rilevare attività utente
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     events.forEach(event => {
       document.addEventListener(event, handleUserActivity, true);
     });
 
+    // Check inattività ogni 5 secondi
     const inactivityTimer = setInterval(checkInactivity, 5000);
 
     return () => {
@@ -78,6 +293,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     };
   }, [lastInteraction, leftSidebarCollapsed, workspaceCollapsed, isMobile, isTablet]);
 
+  // Cleanup dei timer al dismount del componente
   useEffect(() => {
     return () => {
       if (leftSidebarTimer) clearTimeout(leftSidebarTimer);
@@ -105,6 +321,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     }
   };
 
+  // Menu items dalla sidebar mostrata negli screenshots
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'clienti', label: 'Clienti', icon: Users },
@@ -124,7 +341,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       fontFamily: 'Inter, system-ui, sans-serif',
       position: 'relative'
     }}>
-      {/* Header fisso */}
+      {/* Header fisso - Glassmorphism Enhanced - IDENTICO WindTreDashboard */}
       <header style={{
         position: 'fixed',
         top: 0,
@@ -143,6 +360,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
         borderRadius: '0 0 20px 20px'
       }}>
+        {/* Logo e Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '32px',
@@ -162,6 +380,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           </div>
         </div>
 
+        {/* Barra di ricerca centrale - Hidden on mobile */}
         {!isMobile && (
           <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
             <div style={{ position: 'relative' }}>
@@ -189,6 +408,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           </div>
         )}
         
+        {/* Mobile search button */}
         {isMobile && (
           <button style={{
             background: 'transparent',
@@ -201,7 +421,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           </button>
         )}
 
+        {/* Sezione destra - Responsive */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+          {/* Windtre Milano - Hidden on mobile */}
           {!isMobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
               <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
@@ -209,6 +431,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             </div>
           )}
 
+          {/* Notifiche */}
           <button style={{
             position: 'relative',
             background: 'transparent',
@@ -229,6 +452,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             }}></div>
           </button>
 
+          {/* Avatar utente */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
               width: '32px',
@@ -261,13 +485,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         </div>
       </header>
 
+      {/* Layout principale - Responsive - IDENTICO WindTreDashboard */}
       <div style={{ 
         display: 'flex', 
         paddingTop: isMobile ? '56px' : '64px',
         flexDirection: isMobile ? 'column' : 'row'
       }}>
         
-        {/* Sidebar sinistra */}
+        {/* Sidebar sinistra - mobile toggle */}
         {isMobile && (
           <button
             onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
@@ -291,13 +516,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             <Menu size={16} />
           </button>
         )}
-
+        
+        {/* Sidebar sinistra - Smart Hover Glassmorphism - IDENTICA WindTreDashboard */}
         <aside 
           onMouseEnter={() => {
             if (!isMobile && leftSidebarCollapsed) {
               setLeftSidebarCollapsed(false);
               setLastInteraction(Date.now());
             }
+            // Cancella timer di chiusura se esiste
             if (leftSidebarTimer) {
               clearTimeout(leftSidebarTimer);
               setLeftSidebarTimer(null);
@@ -305,13 +532,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           }}
           onMouseLeave={() => {
             if (!isMobile && !leftSidebarCollapsed) {
+              // Cancella timer precedente
               if (leftSidebarTimer) {
                 clearTimeout(leftSidebarTimer);
               }
+              // Imposta nuovo timer
               const timer = setTimeout(() => {
                 setLeftSidebarCollapsed(true);
                 setLeftSidebarTimer(null);
-              }, 1500);
+              }, 1500); // Delay aumentato per usabilità
               setLeftSidebarTimer(timer);
             }
           }}
@@ -334,6 +563,32 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           padding: isMobile ? '12px' : '0',
           boxShadow: isMobile ? 'none' : '4px 0 24px rgba(0, 0, 0, 0.04)'
         }}>
+          {/* Toggle Button - Mobile hamburger */}
+          {isMobile ? (
+            <button
+              onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+              style={{
+                position: 'fixed',
+                top: '14px',
+                left: '16px',
+                width: '28px',
+                height: '28px',
+                background: 'hsla(0, 0%, 100%, 0.35)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid hsla(0, 0%, 100%, 0.18)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 60
+              }}
+            >
+              <Menu size={16} />
+            </button>
+          ) : null}
+
+          {/* Menu Items - Responsive - IDENTICI WindTreDashboard */}
           <nav style={{ 
             padding: isMobile ? '8px 0' : (leftSidebarCollapsed ? '16px 8px' : '16px'), 
             flexGrow: 1,
@@ -359,6 +614,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     background: isActive 
                       ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
                       : 'transparent',
+                    backdropFilter: 'none',
+                    WebkitBackdropFilter: 'none',
                     border: 'none',
                     borderRadius: leftSidebarCollapsed ? '12px' : '8px',
                     color: isActive ? 'white' : '#374151',
@@ -374,7 +631,20 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start',
                     boxShadow: 'none'
                   }}
+                  onMouseOver={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.transform = leftSidebarCollapsed ? 'scale(1.1)' : 'translateX(4px)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.transform = 'scale(1) translateX(0)';
+                    }
+                  }}
                 >
+                  {/* Icon con effetti speciali per dashboard */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -382,24 +652,41 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     position: 'relative'
                   }}>
                     <Icon size={leftSidebarCollapsed && !isMobile ? 18 : (isMobile ? 16 : 20)} />
+                    {isActive && (
+                      <>
+                        {/* Glow effect base */}
+                        <div style={{
+                          position: 'absolute',
+                          inset: '-6px',
+                          background: 'rgba(255, 105, 0, 0.4)',
+                          borderRadius: '50%',
+                          filter: 'blur(12px)',
+                          zIndex: -1,
+                          animation: leftSidebarCollapsed ? 'none' : 'dashboardPulse 2s ease-in-out infinite'
+                        }} />
+                        {/* Enhanced glow quando aperta */}
+                        {!leftSidebarCollapsed && (
+                          <div style={{
+                            position: 'absolute',
+                            inset: '-10px',
+                            background: 'rgba(255, 105, 0, 0.2)',
+                            borderRadius: '50%',
+                            filter: 'blur(20px)',
+                            zIndex: -2,
+                            animation: 'dashboardGlow 3s ease-in-out infinite alternate'
+                          }} />
+                        )}
+                      </>
+                    )}
                   </div>
-                  {!leftSidebarCollapsed && !isMobile && (
-                    <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
-                  )}
-                  {isMobile && (
-                    <span style={{ 
-                      fontSize: '10px', 
-                      lineHeight: 1.2,
-                      textAlign: 'center' 
-                    }}>{item.label}</span>
-                  )}
+                  {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
             })}
           </nav>
         </aside>
 
-        {/* Main Content */}
+        {/* Main Content - IDENTICO margini WindTreDashboard */}
         <main style={{
           flex: 1,
           marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
@@ -411,7 +698,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           {children}
         </main>
 
-        {/* Workspace Sidebar destra */}
+        {/* Workspace Sidebar destra - IDENTICA WindTreDashboard */}
         {!isMobile && !isTablet && (
           <aside 
             onMouseEnter={() => {
@@ -419,6 +706,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 setWorkspaceCollapsed(false);
                 setLastInteraction(Date.now());
               }
+              // Cancella timer di chiusura se esiste
               if (workspaceTimer) {
                 clearTimeout(workspaceTimer);
                 setWorkspaceTimer(null);
@@ -426,13 +714,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             }}
             onMouseLeave={() => {
               if (!workspaceCollapsed) {
+                // Cancella timer precedente
                 if (workspaceTimer) {
                   clearTimeout(workspaceTimer);
                 }
+                // Imposta nuovo timer
                 const timer = setTimeout(() => {
                   setWorkspaceCollapsed(true);
                   setWorkspaceTimer(null);
-                }, 1500);
+                }, 1500); // Delay aumentato per usabilità
                 setWorkspaceTimer(timer);
               }
             }}
@@ -516,6 +806,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     color: '#1f2937',
                     margin: 0
                   }}>Workspace</h3>
+                  <div style={{
+                    background: '#FF6900',
+                    color: 'white',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: '10px'
+                  }}>{tasksOggi + leads.length}</div>
                 </div>
 
                 <div style={{
@@ -551,14 +849,639 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                  <p style={{ color: '#6b7280', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>
-                    Workspace in sviluppo
-                  </p>
+                  {/* Tab Tasks */}
+                  {activeWorkspaceTab === 'Tasks' && (
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '12px'
+                    }}>
+                      <h4 style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        margin: 0
+                      }}>Tasks</h4>
+                      <span style={{
+                        background: '#FF6900',
+                        color: 'white',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '10px'
+                      }}>{tasks.filter(t => !t.completato).length} attive</span>
+                    </div>
+
+                    {/* Tasks stats */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '6px',
+                      marginBottom: '12px'
+                    }}>
+                      <div style={{
+                        background: 'rgba(255, 105, 0, 0.08)',
+                        borderRadius: '6px',
+                        padding: '8px',
+                        border: '1px solid rgba(255, 105, 0, 0.15)'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: '#FF6900'
+                        }}>{tasksOggi}</div>
+                        <div style={{
+                          fontSize: '8px',
+                          color: '#b45309',
+                          fontWeight: 500
+                        }}>Oggi</div>
+                      </div>
+                      <div style={{
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        borderRadius: '6px',
+                        padding: '8px',
+                        border: '1px solid rgba(16, 185, 129, 0.15)'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: '#10b981'
+                        }}>{tasksCompletate}</div>
+                        <div style={{
+                          fontSize: '8px',
+                          color: '#065f46',
+                          fontWeight: 500
+                        }}>Completate</div>
+                      </div>
+                    </div>
+
+                    {/* Tasks list */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      marginBottom: '16px'
+                    }}>
+                      {tasks.slice(0, 4).map((task) => {
+                        const getPriorityColor = (priorita: string) => {
+                          switch(priorita) {
+                            case 'Alta': return '#ef4444';
+                            case 'Media': return '#f59e0b';
+                            case 'Bassa': return '#10b981';
+                            default: return '#6b7280';
+                          }
+                        };
+                        
+                        return (
+                          <div key={task.id} style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            borderLeft: `3px solid ${getPriorityColor(task.priorita)}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            backdropFilter: 'blur(8px)',
+                            opacity: task.completato ? 0.6 : 1
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = `0 4px 12px ${getPriorityColor(task.priorita)}25`;
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'flex-start',
+                              marginBottom: '6px'
+                            }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  color: '#1f2937',
+                                  marginBottom: '2px',
+                                  lineHeight: 1.3,
+                                  textDecoration: task.completato ? 'line-through' : 'none'
+                                }}>{task.titolo}</div>
+                                <div style={{
+                                  fontSize: '9px',
+                                  color: '#6b7280',
+                                  marginBottom: '4px',
+                                  lineHeight: 1.3
+                                }}>{task.descrizione}</div>
+                              </div>
+                              <button
+                                onClick={() => toggleTaskComplete(task.id)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  marginLeft: '8px'
+                                }}
+                              >
+                                {task.completato ? 
+                                  <CheckCircle size={14} style={{ color: '#10b981' }} /> :
+                                  <div style={{
+                                    width: '14px',
+                                    height: '14px',
+                                    border: '2px solid #6b7280',
+                                    borderRadius: '50%'
+                                  }} />
+                                }
+                              </button>
+                            </div>
+                            
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
+                            }}>
+                              <span style={{
+                                fontSize: '8px',
+                                fontWeight: 600,
+                                color: getPriorityColor(task.priorita),
+                                background: `${getPriorityColor(task.priorita)}20`,
+                                padding: '2px 6px',
+                                borderRadius: '4px'
+                              }}>{task.priorita}</span>
+                              
+                              <div style={{
+                                fontSize: '8px',
+                                color: '#9ca3af',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                padding: '1px 4px',
+                                borderRadius: '4px'
+                              }}>{task.scadenza}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button style={{
+                      width: '100%',
+                      padding: '8px',
+                      background: 'rgba(255, 105, 0, 0.08)',
+                      border: '1px solid rgba(255, 105, 0, 0.15)',
+                      borderRadius: '8px',
+                      color: '#FF6900',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 105, 0, 0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 105, 0, 0.08)';
+                    }}>
+                      Visualizza tutte le tasks
+                    </button>
+                  </div>
+                  )}
+
+                  {/* Tab Leads */}
+                  {activeWorkspaceTab === 'Leads' && (
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '12px'
+                    }}>
+                      <h4 style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        margin: 0
+                      }}>Leads</h4>
+                      <span style={{
+                        background: '#10b981',
+                        color: 'white',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '10px'
+                      }}>{leads.length} attivi</span>
+                    </div>
+
+                    {/* Lead stats */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '6px',
+                      marginBottom: '12px'
+                    }}>
+                      <div style={{
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        borderRadius: '6px',
+                        padding: '8px',
+                        border: '1px solid rgba(16, 185, 129, 0.15)'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: '#10b981'
+                        }}>{leads.filter(l => l.priorita === 'Alta').length}</div>
+                        <div style={{
+                          fontSize: '8px',
+                          color: '#065f46',
+                          fontWeight: 500
+                        }}>Priorità Alta</div>
+                      </div>
+                      <div style={{
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        borderRadius: '6px',
+                        padding: '8px',
+                        border: '1px solid rgba(59, 130, 246, 0.15)'
+                      }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: '#3b82f6'
+                        }}>{leads.length}</div>
+                        <div style={{
+                          fontSize: '8px',
+                          color: '#1e40af',
+                          fontWeight: 500
+                        }}>Contatti Attivi</div>
+                      </div>
+                    </div>
+
+                    {/* Leads list */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      marginBottom: '16px'
+                    }}>
+                      {leads.slice(0, 4).map((lead) => {
+                        const getPriorityColor = (priorita: string) => {
+                          switch(priorita) {
+                            case 'Alta': return '#ef4444';
+                            case 'Media': return '#f59e0b';
+                            case 'Bassa': return '#10b981';
+                            default: return '#6b7280';
+                          }
+                        };
+                        
+                        const getChannelIcon = (fonte: string) => {
+                          switch(fonte) {
+                            case 'LinkedIn Ads': return '💼';
+                            case 'Website': return '🌐';
+                            case 'Email': return '📧';
+                            case 'Telefono': return '📞';
+                            case 'Referral': return '👥';
+                            default: return '📝';
+                          }
+                        };
+                        
+                        return (
+                          <div key={lead.id} style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            borderLeft: `3px solid ${getPriorityColor(lead.priorita)}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            backdropFilter: 'blur(8px)'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = `0 4px 12px ${getPriorityColor(lead.priorita)}25`;
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'flex-start',
+                              marginBottom: '6px'
+                            }}>
+                              <div>
+                                <div style={{
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  color: '#1f2937',
+                                  marginBottom: '2px',
+                                  lineHeight: 1.3
+                                }}>{lead.cliente}</div>
+                                <div style={{
+                                  fontSize: '9px',
+                                  color: '#6b7280',
+                                  marginBottom: '4px'
+                                }}>{lead.azienda}</div>
+                              </div>
+                              <span style={{
+                                fontSize: '8px',
+                                fontWeight: 600,
+                                color: getPriorityColor(lead.priorita),
+                                background: `${getPriorityColor(lead.priorita)}20`,
+                                padding: '2px 6px',
+                                borderRadius: '4px'
+                              }}>{lead.priorita}</span>
+                            </div>
+                            
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                <span style={{ fontSize: '10px' }}>{getChannelIcon(lead.fonte)}</span>
+                                <span style={{
+                                  fontSize: '8px',
+                                  color: '#6b7280'
+                                }}>{lead.fonte}</span>
+                              </div>
+                              
+                              <div style={{
+                                fontSize: '8px',
+                                color: '#9ca3af',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                padding: '1px 4px',
+                                borderRadius: '4px'
+                              }}>{lead.tempo}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button style={{
+                      width: '100%',
+                      padding: '8px',
+                      background: 'rgba(16, 185, 129, 0.08)',
+                      border: '1px solid rgba(16, 185, 129, 0.15)',
+                      borderRadius: '8px',
+                      color: '#10b981',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.08)';
+                    }}>
+                      Gestisci tutti i leads
+                    </button>
+                  </div>
+                  )}
+
+                  {/* Tab Calendar */}
+                  {activeWorkspaceTab === 'Calendar' && (
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '12px'
+                    }}>
+                      <h4 style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        margin: 0
+                      }}>Calendario</h4>
+                      <span style={{
+                        background: '#7B2CBF',
+                        color: 'white',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '10px'
+                      }}>{eventiTotali} eventi</span>
+                    </div>
+
+                    {/* Mini calendario con giorni selezionabili */}
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      marginBottom: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)'
+                    }}>
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        marginBottom: '8px',
+                        textAlign: 'center'
+                      }}>
+                        {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                      </div>
+                      
+                      {/* Giorni della settimana */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(7, 1fr)',
+                        gap: '2px',
+                        marginBottom: '4px'
+                      }}>
+                        {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(day => (
+                          <div key={day} style={{
+                            fontSize: '8px',
+                            color: '#6b7280',
+                            textAlign: 'center',
+                            fontWeight: 500,
+                            padding: '2px'
+                          }}>{day}</div>
+                        ))}
+                      </div>
+                      
+                      {/* Griglia calendario */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(7, 1fr)',
+                        gap: '1px'
+                      }}>
+                        {Array.from({length: 35}, (_, i) => {
+                          const today = new Date();
+                          const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                          const dayOfWeek = (firstDay.getDay() + 6) % 7;
+                          const day = i - dayOfWeek + 1;
+                          const isCurrentMonth = day > 0 && day <= new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                          const isToday = isCurrentMonth && day === today.getDate();
+                          const hasEvent = isCurrentMonth && eventiCalendario.some(evento => {
+                            const eventDate = new Date(evento.dataCompleta);
+                            return eventDate.getDate() === day && 
+                                   eventDate.getMonth() === today.getMonth() && 
+                                   eventDate.getFullYear() === today.getFullYear();
+                          });
+                          
+                          return (
+                            <button key={i} style={{
+                              width: '24px',
+                              height: '24px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '8px',
+                              color: isCurrentMonth ? (isToday ? 'white' : '#374151') : '#9ca3af',
+                              background: isToday ? '#7B2CBF' : (hasEvent ? 'rgba(123, 44, 191, 0.15)' : 'transparent'),
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontWeight: isToday ? 600 : (hasEvent ? 500 : 400),
+                              cursor: isCurrentMonth ? 'pointer' : 'default',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              if (isCurrentMonth && !isToday) {
+                                e.currentTarget.style.background = 'rgba(123, 44, 191, 0.2)';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              if (isCurrentMonth && !isToday) {
+                                e.currentTarget.style.background = hasEvent ? 'rgba(123, 44, 191, 0.15)' : 'transparent';
+                              }
+                            }}>
+                              {isCurrentMonth ? day : ''}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Eventi prossimi */}
+                    <div style={{
+                      marginBottom: '12px'
+                    }}>
+                      <h5 style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        margin: '0 0 8px 0'
+                      }}>Prossimi eventi</h5>
+                      
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
+                        {eventiCalendario.slice(0, 3).map((evento) => (
+                          <div key={evento.id} style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            borderRadius: '8px',
+                            padding: '10px',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            borderLeft: '3px solid #7B2CBF',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            backdropFilter: 'blur(8px)'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(123, 44, 191, 0.15)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}>
+                            <div style={{
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              color: '#1f2937',
+                              marginBottom: '4px',
+                              lineHeight: 1.3
+                            }}>{evento.titolo}</div>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
+                            }}>
+                              <span style={{
+                                fontSize: '9px',
+                                color: '#6b7280'
+                              }}>{evento.ora}</span>
+                              <span style={{
+                                fontSize: '8px',
+                                color: '#9ca3af',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                padding: '1px 4px',
+                                borderRadius: '4px'
+                              }}>{evento.location}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button style={{
+                      width: '100%',
+                      padding: '8px',
+                      background: 'rgba(123, 44, 191, 0.08)',
+                      border: '1px solid rgba(123, 44, 191, 0.15)',
+                      borderRadius: '8px',
+                      color: '#7B2CBF',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'rgba(123, 44, 191, 0.15)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'rgba(123, 44, 191, 0.08)';
+                    }}>
+                      Visualizza calendario completo
+                    </button>
+                  </div>
+                  )}
+
                 </div>
               </div>
             )}
           </aside>
         )}
+
+        {/* CSS Animations per effetti dashboard - IDENTICHE WindTreDashboard */}
+        <style>{`
+          @keyframes dashboardPulse {
+            0%, 100% { 
+              opacity: 0.4;
+              transform: scale(1);
+            }
+            50% { 
+              opacity: 0.7;
+              transform: scale(1.1);
+            }
+          }
+          
+          @keyframes dashboardGlow {
+            0% { 
+              opacity: 0.2;
+              transform: scale(0.8);
+            }
+            100% { 
+              opacity: 0.4;
+              transform: scale(1.2);
+            }
+          }
+        `}</style>
       </div>
     </div>
   );
