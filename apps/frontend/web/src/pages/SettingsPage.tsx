@@ -2117,9 +2117,36 @@ export default function SettingsPage() {
             {/* Header Modal */}
             <div style={{
               padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-              borderBottom: '1px solid #e2e8f0'
+              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.08), rgba(123, 44, 191, 0.05))',
+              backdropFilter: 'blur(20px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+              borderBottom: '1px solid rgba(255, 105, 0, 0.15)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
+              {/* Effetto glow decorativo */}
+              <div style={{
+                position: 'absolute',
+                top: '-50%',
+                right: '-20%',
+                width: '300px',
+                height: '300px',
+                background: 'radial-gradient(circle, rgba(255, 105, 0, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(40px)',
+                pointerEvents: 'none'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '-50%',
+                left: '-20%',
+                width: '250px',
+                height: '250px',
+                background: 'radial-gradient(circle, rgba(123, 44, 191, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(40px)',
+                pointerEvents: 'none'
+              }} />
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -2136,11 +2163,12 @@ export default function SettingsPage() {
                       width: '40px',
                       height: '40px',
                       borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+                      boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+                      backdropFilter: 'blur(10px)'
                     }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -2907,9 +2935,36 @@ export default function SettingsPage() {
             {/* Header Modal */}
             <div style={{
               padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-              borderBottom: '1px solid #e2e8f0'
+              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.08), rgba(123, 44, 191, 0.05))',
+              backdropFilter: 'blur(20px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+              borderBottom: '1px solid rgba(255, 105, 0, 0.15)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
+              {/* Effetto glow decorativo */}
+              <div style={{
+                position: 'absolute',
+                top: '-50%',
+                right: '-20%',
+                width: '300px',
+                height: '300px',
+                background: 'radial-gradient(circle, rgba(255, 105, 0, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(40px)',
+                pointerEvents: 'none'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '-50%',
+                left: '-20%',
+                width: '250px',
+                height: '250px',
+                background: 'radial-gradient(circle, rgba(123, 44, 191, 0.2) 0%, transparent 70%)',
+                borderRadius: '50%',
+                filter: 'blur(40px)',
+                pointerEvents: 'none'
+              }} />
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
