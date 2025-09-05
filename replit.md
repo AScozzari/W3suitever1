@@ -7,6 +7,8 @@ W3 Suite è una piattaforma enterprise multitenant completa per la gestione azie
 - Preferred communication style: Simple, everyday language
 - **CRITICAL**: NO shared/ folder - Schema MUST be in apps/backend/api/src/db/schema/ (exact structure)
 - **NEVER create shared/ folder again** - Use direct imports from backend schema location
+- **UI/UX CONSISTENCY RULE**: Tutte le pagine devono mantenere la struttura dell'app con header e sidebar
+- **PAGE STRUCTURE**: Non creare pagine indipendenti, integrare contenuto nella dashboard esistente
 
 # System Architecture - W3 Suite Enterprise Monorepo
 
