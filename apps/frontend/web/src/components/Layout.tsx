@@ -9,7 +9,7 @@ import {
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
-  LogOut, HelpCircle, MapPin, UserCircle
+  LogOut, HelpCircle, MapPin, UserCircle, Store
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
@@ -29,8 +29,17 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<any>(null);
+  
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
   const [location, navigate] = useLocation();
+
+  // Query per ottenere i punti vendita del tenant corrente
+  const { data: stores } = useQuery({
+    queryKey: ["/api/stores"],
+    enabled: !!user
+  });
   
   // Tab attiva per workspace
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
@@ -305,20 +314,30 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     };
   }, [leftSidebarTimer, workspaceTimer]);
 
-  // Chiudi user menu quando clicchi fuori
+  // Seleziona automaticamente il primo punto vendita quando disponibile
+  useEffect(() => {
+    if (stores && stores.length > 0 && !selectedStore) {
+      setSelectedStore(stores[0]);
+    }
+  }, [stores, selectedStore]);
+
+  // Chiudi menu quando clicchi fuori
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('[data-user-menu]')) {
         setUserMenuOpen(false);
       }
+      if (!target.closest('[data-store-menu]')) {
+        setStoreMenuOpen(false);
+      }
     };
 
-    if (userMenuOpen) {
+    if (userMenuOpen || storeMenuOpen) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [userMenuOpen]);
+  }, [userMenuOpen, storeMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -442,11 +461,168 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
         {/* Sezione destra - Responsive */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
-          {/* Windtre Milano - Hidden on mobile */}
+          {/* Selettore Punto Vendita - Professional */}
           {!isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-              <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
-              <span style={{ fontWeight: 500 }}>Windtre Milano</span>
+            <div style={{ position: 'relative' }} data-store-menu>
+              <button
+                onClick={() => setStoreMenuOpen(!storeMenuOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  background: 'hsla(0, 0%, 100%, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.15)',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  color: 'inherit'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.15)';
+                  e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.25)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.1)';
+                  e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.15)';
+                }}
+              >
+                <Store size={16} style={{ color: '#10b981' }} />
+                <span>{selectedStore?.name || 'Seleziona Punto Vendita'}</span>
+                <ChevronDown size={14} style={{ 
+                  transform: storeMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease'
+                }} />
+              </button>
+
+              {/* Dropdown Menu Punti Vendita */}
+              {storeMenuOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '100%',
+                    marginTop: '8px',
+                    width: '280px',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    background: 'hsla(0, 0%, 100%, 0.95)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid hsla(0, 0%, 100%, 0.2)',
+                    borderRadius: '12px',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    zIndex: 1000,
+                    padding: '8px'
+                  }}
+                >
+                  {/* Header */}
+                  <div style={{
+                    padding: '12px',
+                    borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                      Seleziona Punto Vendita
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      {stores?.length || 0} punti vendita disponibili
+                    </div>
+                  </div>
+
+                  {/* Lista Punti Vendita */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {stores?.map((store: any) => (
+                      <button
+                        key={store.id}
+                        onClick={() => {
+                          setSelectedStore(store);
+                          setStoreMenuOpen(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px',
+                          background: selectedStore?.id === store.id ? 'hsla(120, 61%, 50%, 0.1)' : 'transparent',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'background-color 0.15s ease',
+                          width: '100%'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedStore?.id !== store.id) {
+                            e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedStore?.id !== store.id) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
+                        }}
+                      >
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          background: selectedStore?.id === store.id 
+                            ? 'linear-gradient(135deg, #10b981, #059669)' 
+                            : 'linear-gradient(135deg, #e5e7eb, #d1d5db)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: selectedStore?.id === store.id ? 'white' : '#666',
+                          fontSize: '12px',
+                          fontWeight: 600
+                        }}>
+                          {store.code?.slice(-2) || store.name?.slice(0, 2).toUpperCase()}
+                        </div>
+                        
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ 
+                            fontSize: '14px', 
+                            fontWeight: 500, 
+                            marginBottom: '2px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {store.name}
+                          </div>
+                          <div style={{ 
+                            fontSize: '12px', 
+                            color: '#666',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {store.address || store.code}
+                          </div>
+                        </div>
+
+                        {selectedStore?.id === store.id && (
+                          <CheckCircle size={16} style={{ color: '#10b981' }} />
+                        )}
+                      </button>
+                    ))}
+
+                    {(!stores || stores.length === 0) && (
+                      <div style={{
+                        padding: '20px',
+                        textAlign: 'center',
+                        color: '#666',
+                        fontSize: '14px'
+                      }}>
+                        Nessun punto vendita disponibile
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

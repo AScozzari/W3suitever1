@@ -159,6 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== STORE MANAGEMENT API ====================
   
+  // Get stores for current tenant (automatic via middleware)
+  app.get('/api/stores', async (req: any, res) => {
+    try {
+      const stores = await storage.getStoresByTenant(req.tenantId);
+      res.json(stores);
+    } catch (error) {
+      console.error("Error fetching stores:", error);
+      res.status(500).json({ error: "Failed to fetch stores" });
+    }
+  });
+
   // Get stores for tenant
   app.get('/api/tenants/:tenantId/stores', requireAuth(), requirePermission('store.view'), async (req, res) => {
     try {
