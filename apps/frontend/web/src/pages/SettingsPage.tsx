@@ -869,6 +869,7 @@ export default function SettingsPage() {
                 { code: 'store_specialist', name: 'Store Specialist', description: 'Operazioni quotidiane', users: 45, color: '#8b5cf6' },
                 { code: 'student', name: 'Student', description: 'Accesso limitato formazione', users: 8, color: '#06b6d4' },
                 { code: 'marketing', name: 'Marketing', description: 'Campagne e comunicazione', users: 6, color: '#ec4899' },
+                { code: 'hr_management', name: 'HR Management', description: 'Gestione risorse umane', users: 4, color: '#14b8a6' },
                 { code: 'custom', name: 'Custom', description: 'Ruolo personalizzato', users: 0, color: '#6b7280' }
               ].map((role) => (
                 <div

@@ -474,6 +474,42 @@ export const ROLE_TEMPLATES = {
     ]
   },
 
+  // HR MANAGEMENT - Gestione risorse umane
+  hr_management: {
+    code: 'hr_management',
+    name: 'HR Management',
+    description: 'Gestione completa risorse umane',
+    permissions: [
+      // Dashboard & Analytics
+      PERMISSIONS.dashboard.view,
+      PERMISSIONS.dashboard.analytics,
+      PERMISSIONS.dashboard.export,
+      // HR completo
+      ...Object.values(PERMISSIONS.hr.employees),
+      ...Object.values(PERMISSIONS.hr.payroll),
+      ...Object.values(PERMISSIONS.hr.timesheet),
+      ...Object.values(PERMISSIONS.hr.leave),
+      // CRM per gestione contatti dipendenti
+      PERMISSIONS.crm.customers.view,
+      PERMISSIONS.crm.customers.create,
+      PERMISSIONS.crm.customers.edit,
+      // Finance per stipendi
+      PERMISSIONS.finance.payments.view,
+      PERMISSIONS.finance.payments.process,
+      PERMISSIONS.finance.reports.view,
+      PERMISSIONS.finance.budget.view,
+      // Reports HR
+      ...Object.values(PERMISSIONS.reports),
+      // Settings per gestione utenti
+      PERMISSIONS.settings.view,
+      PERMISSIONS.settings.users.view,
+      PERMISSIONS.settings.users.create,
+      PERMISSIONS.settings.users.edit,
+      PERMISSIONS.settings.users.suspend,
+      PERMISSIONS.settings.organization.view
+    ]
+  },
+
   // CUSTOM - Template vuoto per ruoli personalizzati
   custom: {
     code: 'custom',
