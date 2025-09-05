@@ -1532,10 +1532,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             card.style.transform = 'translateY(0) scale(1)';
                             card.style.boxShadow = 'none';
                             card.style.borderLeftWidth = '3px';
-                            card.style.borderColor = '';
-                            card.style.borderRightColor = '';
-                            card.style.borderTopColor = '';
-                            card.style.borderBottomColor = '';
+                            // Mantieni solo il bordo sinistro colorato
+                            card.style.borderRightColor = 'rgba(255, 255, 255, 0.06)';
+                            card.style.borderTopColor = 'rgba(255, 255, 255, 0.06)';
+                            card.style.borderBottomColor = 'rgba(255, 255, 255, 0.06)';
                             
                             // Reset title
                             if (title) {
@@ -2111,9 +2111,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             card.style.boxShadow = 'none';
                             card.style.borderLeftWidth = '3px';
                             card.style.borderLeftColor = '#7B2CBF';
-                            card.style.borderRightColor = '';
-                            card.style.borderTopColor = '';
-                            card.style.borderBottomColor = '';
+                            card.style.borderRightColor = 'rgba(255, 255, 255, 0.06)';
+                            card.style.borderTopColor = 'rgba(255, 255, 255, 0.06)';
+                            card.style.borderBottomColor = 'rgba(255, 255, 255, 0.06)';
                             
                             // Reset title
                             if (title) {
