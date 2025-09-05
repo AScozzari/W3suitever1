@@ -953,7 +953,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       marginBottom: '12px'
                     }}>
                       <h4 style={{
-                        fontSize: '14px',
+                        fontSize: '15px',
                         fontWeight: 600,
                         color: '#1f2937',
                         margin: 0
@@ -1058,7 +1058,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             }}>
                               <div style={{ flex: 1 }}>
                                 <div style={{
-                                  fontSize: '11px',
+                                  fontSize: '12px',
                                   fontWeight: 600,
                                   color: '#1f2937',
                                   marginBottom: '2px',
@@ -1066,7 +1066,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                                   textDecoration: task.completato ? 'line-through' : 'none'
                                 }}>{task.titolo}</div>
                                 <div style={{
-                                  fontSize: '9px',
+                                  fontSize: '10px',
                                   color: '#6b7280',
                                   marginBottom: '4px',
                                   lineHeight: 1.3
@@ -1099,7 +1099,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               justifyContent: 'space-between'
                             }}>
                               <span style={{
-                                fontSize: '8px',
+                                fontSize: '9px',
                                 fontWeight: 600,
                                 color: getPriorityColor(task.priorita),
                                 background: `${getPriorityColor(task.priorita)}20`,
@@ -1108,7 +1108,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               }}>{task.priorita}</span>
                               
                               <div style={{
-                                fontSize: '8px',
+                                fontSize: '9px',
                                 color: '#9ca3af',
                                 background: 'rgba(255, 255, 255, 0.08)',
                                 padding: '1px 4px',
@@ -1153,7 +1153,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       marginBottom: '12px'
                     }}>
                       <h4 style={{
-                        fontSize: '14px',
+                        fontSize: '15px',
                         fontWeight: 600,
                         color: '#1f2937',
                         margin: 0
@@ -1268,20 +1268,20 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             }}>
                               <div>
                                 <div style={{
-                                  fontSize: '11px',
+                                  fontSize: '12px',
                                   fontWeight: 600,
                                   color: '#1f2937',
                                   marginBottom: '2px',
                                   lineHeight: 1.3
                                 }}>{lead.cliente}</div>
                                 <div style={{
-                                  fontSize: '9px',
+                                  fontSize: '10px',
                                   color: '#6b7280',
                                   marginBottom: '4px'
                                 }}>{lead.azienda}</div>
                               </div>
                               <span style={{
-                                fontSize: '8px',
+                                fontSize: '9px',
                                 fontWeight: 600,
                                 color: getPriorityColor(lead.priorita),
                                 background: `${getPriorityColor(lead.priorita)}20`,
@@ -1302,13 +1302,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               }}>
                                 <span style={{ fontSize: '10px' }}>{getChannelIcon(lead.fonte)}</span>
                                 <span style={{
-                                  fontSize: '8px',
+                                  fontSize: '9px',
                                   color: '#6b7280'
                                 }}>{lead.fonte}</span>
                               </div>
                               
                               <div style={{
-                                fontSize: '8px',
+                                fontSize: '9px',
                                 color: '#9ca3af',
                                 background: 'rgba(255, 255, 255, 0.08)',
                                 padding: '1px 4px',
@@ -1353,7 +1353,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       marginBottom: '12px'
                     }}>
                       <h4 style={{
-                        fontSize: '14px',
+                        fontSize: '15px',
                         fontWeight: 600,
                         color: '#1f2937',
                         margin: 0
@@ -1462,7 +1462,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       marginBottom: '12px'
                     }}>
                       <h5 style={{
-                        fontSize: '11px',
+                        fontSize: '12px',
                         fontWeight: 600,
                         color: '#1f2937',
                         margin: '0 0 8px 0'
@@ -1495,7 +1495,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             e.currentTarget.style.boxShadow = 'none';
                           }}>
                             <div style={{
-                              fontSize: '11px',
+                              fontSize: '12px',
                               fontWeight: 600,
                               color: '#1f2937',
                               marginBottom: '4px',
@@ -1507,11 +1507,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               justifyContent: 'space-between'
                             }}>
                               <span style={{
-                                fontSize: '9px',
+                                fontSize: '10px',
                                 color: '#6b7280'
                               }}>{evento.ora}</span>
                               <span style={{
-                                fontSize: '8px',
+                                fontSize: '9px',
                                 color: '#9ca3af',
                                 background: 'rgba(255, 255, 255, 0.08)',
                                 padding: '1px 4px',
