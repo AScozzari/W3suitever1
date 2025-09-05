@@ -53,6 +53,74 @@ import {
   Save
 } from 'lucide-react';
 
+// Mock data per ragioni sociali - codici iniziano con 80 e hanno almeno 6 cifre
+const mockRagioneSociali = [
+  { 
+    id: 1, 
+    codice: '800001',
+    nome: 'Franchising Ltd', 
+    formaGiuridica: 'Srl', 
+    pIva: 'IT12345678901', 
+    stato: 'Attiva',
+    citta: 'Milano',
+    azioni: 'edit'
+  },
+  { 
+    id: 2, 
+    codice: '800245',
+    nome: 'Digital Operations Snc', 
+    formaGiuridica: 'Snc', 
+    pIva: 'IT09876543210', 
+    stato: 'Attiva',
+    citta: 'Bologna',
+    azioni: 'edit'
+  },
+  { 
+    id: 3, 
+    codice: '801567',
+    nome: 'Tech Solutions Ltd', 
+    formaGiuridica: 'Srl', 
+    pIva: 'IT11122233344', 
+    stato: 'Bozza',
+    citta: 'Roma',
+    azioni: 'edit'
+  }
+];
+
+// Mock data per punti vendita - codici iniziano con 90 e hanno almeno 8 cifre
+const mockPuntiVendita = [
+  { 
+    id: 1, 
+    codice: '90000012', 
+    nome: 'WindTre Milano Centro', 
+    indirizzo: 'Via Montenapoleone 15',
+    citta: 'Milano',
+    canale: 'Franchising', 
+    stato: 'Attivo',
+    ragioneSociale: 'Franchising Ltd'
+  },
+  { 
+    id: 2, 
+    codice: '90001234', 
+    nome: 'WindTre Roma Termini', 
+    indirizzo: 'Via Nazionale 123',
+    citta: 'Roma',
+    canale: 'Top Dealer', 
+    stato: 'Attivo',
+    ragioneSociale: 'Digital Operations Snc'
+  },
+  { 
+    id: 3, 
+    codice: '90002456', 
+    nome: 'WindTre Napoli Centrale', 
+    indirizzo: 'Piazza Garibaldi 45',
+    citta: 'Napoli',
+    canale: 'Franchising', 
+    stato: 'Attivo',
+    ragioneSociale: 'Tech Solutions Ltd'
+  }
+];
+
 export default function SettingsPage() {
   const [currentModule, setCurrentModule] = useState('impostazioni');
   const [activeTab, setActiveTab] = useState('Entity Management');
@@ -93,7 +161,7 @@ export default function SettingsPage() {
     setShowCreateRagioneSociale(false);
   };
   
-  const handleDeleteRagioneSociale = (id) => {
+  const handleDeleteRagioneSociale = (id: number) => {
     setRagioneSocialiList(ragioneSocialiList.filter(item => item.id !== id));
   };
   
@@ -114,7 +182,7 @@ export default function SettingsPage() {
     setShowCreatePuntoVendita(false);
   };
   
-  const handleDeletePuntoVendita = (id) => {
+  const handleDeletePuntoVendita = (id: number) => {
     setPuntiVenditaList(puntiVenditaList.filter(item => item.id !== id));
   };
   
@@ -153,74 +221,6 @@ export default function SettingsPage() {
       setPostalCode(city.postalCode);
     }
   };
-
-  // Mock data per ragioni sociali - codici iniziano con 80 e hanno almeno 6 cifre
-  const mockRagioneSociali = [
-    { 
-      id: 1, 
-      codice: '800001',
-      nome: 'Franchising Ltd', 
-      formaGiuridica: 'Srl', 
-      pIva: 'IT12345678901', 
-      stato: 'Attiva',
-      citta: 'Milano',
-      azioni: 'edit'
-    },
-    { 
-      id: 2, 
-      codice: '800245',
-      nome: 'Digital Operations Snc', 
-      formaGiuridica: 'Snc', 
-      pIva: 'IT09876543210', 
-      stato: 'Attiva',
-      citta: 'Bologna',
-      azioni: 'edit'
-    },
-    { 
-      id: 3, 
-      codice: '801567',
-      nome: 'Tech Solutions Ltd', 
-      formaGiuridica: 'Srl', 
-      pIva: 'IT11122233344', 
-      stato: 'Bozza',
-      citta: 'Roma',
-      azioni: 'edit'
-    }
-  ];
-
-  // Mock data per punti vendita - codici iniziano con 90 e hanno almeno 8 cifre
-  const mockPuntiVendita = [
-    { 
-      id: 1, 
-      codice: '90000012', 
-      nome: 'WindTre Milano Centro', 
-      indirizzo: 'Via Montenapoleone 15',
-      citta: 'Milano',
-      canale: 'Franchising', 
-      stato: 'Attivo',
-      ragioneSociale: 'Franchising Ltd'
-    },
-    { 
-      id: 2, 
-      codice: '90001234', 
-      nome: 'WindTre Roma Termini', 
-      indirizzo: 'Via Nazionale 123',
-      citta: 'Roma',
-      canale: 'Top Dealer', 
-      stato: 'Attivo',
-      ragioneSociale: 'Digital Operations Snc'
-    },
-    { 
-      id: 3, 
-      codice: '90002456', 
-      nome: 'WindTre Napoli Centrale', 
-      indirizzo: 'Piazza Garibaldi 45',
-      citta: 'Napoli',
-      canale: 'Franchising', 
-      stato: 'Attivo',
-      ragioneSociale: 'Tech Solutions Ltd'
-    }
-  ];
 
   const tabs = [
     { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
