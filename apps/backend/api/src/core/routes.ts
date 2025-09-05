@@ -245,6 +245,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== REFERENCE DATA API ====================
+  
+  // Get all legal forms
+  app.get('/api/reference/legal-forms', async (req, res) => {
+    try {
+      const legalForms = await storage.getLegalForms();
+      res.json(legalForms);
+    } catch (error) {
+      console.error("Error fetching legal forms:", error);
+      res.status(500).json({ error: "Failed to fetch legal forms" });
+    }
+  });
+
+  // Get all countries
+  app.get('/api/reference/countries', async (req, res) => {
+    try {
+      const countries = await storage.getCountries();
+      res.json(countries);
+    } catch (error) {
+      console.error("Error fetching countries:", error);
+      res.status(500).json({ error: "Failed to fetch countries" });
+    }
+  });
+
+  // Get Italian cities
+  app.get('/api/reference/italian-cities', async (req, res) => {
+    try {
+      const cities = await storage.getItalianCities();
+      res.json(cities);
+    } catch (error) {
+      console.error("Error fetching Italian cities:", error);
+      res.status(500).json({ error: "Failed to fetch Italian cities" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

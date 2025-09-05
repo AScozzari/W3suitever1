@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import { useQuery } from '@tanstack/react-query';
 import {
   Settings,
   Building2,
@@ -59,6 +60,46 @@ export default function SettingsPage() {
   // Modal states
   const [legalEntityModal, setLegalEntityModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [storeModal, setStoreModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  
+  // Form states
+  const [selectedCity, setSelectedCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+
+  // Load reference data from API
+  const { data: legalForms = [] } = useQuery({
+    queryKey: ['/api/reference/legal-forms'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const { data: countries = [] } = useQuery({
+    queryKey: ['/api/reference/countries'],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: italianCities = [] } = useQuery({
+    queryKey: ['/api/reference/italian-cities'],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Validation functions
+  const validateCodiceFiscale = (cf: string): boolean => {
+    // Basic Italian fiscal code validation
+    const cfRegex = /^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$/;
+    return cfRegex.test(cf.toUpperCase());
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleCityChange = (cityName: string) => {
+    setSelectedCity(cityName);
+    const city = italianCities.find((c: any) => c.name === cityName);
+    if (city) {
+      setPostalCode(city.postalCode);
+    }
+  };
 
   // Mock data per ragioni sociali
   const mockRagioneSociali = [
@@ -861,19 +902,22 @@ export default function SettingsPage() {
                     color: '#374151',
                     marginBottom: '6px'
                   }}>Forma Giuridica</label>
-                  <select style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    background: 'white'
-                  }}>
-                    <option>Selezione Forma Giuridica</option>
-                    <option selected={legalEntityModal.data?.formaGiuridica === 'Srl'}>Srl</option>
-                    <option>Spa</option>
-                    <option>Snc</option>
-                    <option>Sas</option>
+                  <select 
+                    defaultValue={legalEntityModal.data?.formaGiuridica || ''}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white'
+                    }}>
+                    <option value="">Seleziona Forma Giuridica</option>
+                    {legalForms.map((form: any) => (
+                      <option key={form.id} value={form.code}>
+                        {form.name} ({form.code})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -957,17 +1001,25 @@ export default function SettingsPage() {
                     color: '#374151',
                     marginBottom: '6px'
                   }}>Città</label>
-                  <input
-                    type="text"
-                    defaultValue={legalEntityModal.data?.citta || ''}
+                  <select
+                    defaultValue={legalEntityModal.data?.citta || selectedCity}
+                    onChange={(e) => handleCityChange(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '12px',
                       border: '1px solid #d1d5db',
                       borderRadius: '8px',
-                      fontSize: '14px'
+                      fontSize: '14px',
+                      background: 'white'
                     }}
-                  />
+                  >
+                    <option value="">Seleziona Città</option>
+                    {italianCities.map((city: any) => (
+                      <option key={city.id} value={city.name}>
+                        {city.name} ({city.province})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label style={{
@@ -977,14 +1029,21 @@ export default function SettingsPage() {
                     color: '#374151',
                     marginBottom: '6px'
                   }}>Paese</label>
-                  <select style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}>
-                    <option>Italia</option>
+                  <select 
+                    defaultValue="Italia"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white'
+                    }}>
+                    {countries.map((country: any) => (
+                      <option key={country.id} value={country.name} selected={country.isDefault}>
+                        {country.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -997,7 +1056,8 @@ export default function SettingsPage() {
                   }}>CAP</label>
                   <input
                     type="text"
-                    defaultValue="20100"
+                    value={postalCode || legalEntityModal.data?.cap || ''}
+                    onChange={(e) => setPostalCode(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '12px',

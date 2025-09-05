@@ -221,6 +221,61 @@ export const insertUserAssignmentSchema = createInsertSchema(userAssignments).om
 export type InsertUserAssignment = z.infer<typeof insertUserAssignmentSchema>;
 export type UserAssignment = typeof userAssignments.$inferSelect;
 
+// ==================== REFERENCE TABLES ====================
+
+// Forme giuridiche italiane
+export const legalForms = pgTable("legal_forms", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 20 }).unique().notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  minCapital: varchar("min_capital", { length: 50 }),
+  liability: varchar("liability", { length: 50 }), // "limited", "unlimited", "mixed"
+  active: boolean("active").default(true),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertLegalFormSchema = createInsertSchema(legalForms).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertLegalForm = z.infer<typeof insertLegalFormSchema>;
+export type LegalForm = typeof legalForms.$inferSelect;
+
+// Paesi
+export const countries = pgTable("countries", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 3 }).unique().notNull(), // ISO 3166-1
+  name: varchar("name", { length: 100 }).notNull(),
+  active: boolean("active").default(true),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCountrySchema = createInsertSchema(countries).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertCountry = z.infer<typeof insertCountrySchema>;
+export type Country = typeof countries.$inferSelect;
+
+// Città italiane
+export const italianCities = pgTable("italian_cities", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull(),
+  province: varchar("province", { length: 2 }).notNull(), // Codice provincia (MI, RM, etc)
+  provinceName: varchar("province_name", { length: 100 }).notNull(),
+  region: varchar("region", { length: 100 }).notNull(),
+  postalCode: varchar("postal_code", { length: 5 }).notNull(),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_italian_cities_name").on(table.name),
+  index("idx_italian_cities_province").on(table.province),
+  uniqueIndex("italian_cities_unique").on(table.name, table.province),
+]);
+
 export const userExtraPerms = pgTable("user_extra_perms", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   perm: varchar("perm", { length: 255 }).notNull(),

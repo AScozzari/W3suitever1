@@ -5,6 +5,9 @@ import {
   stores,
   roles,
   userAssignments,
+  legalForms,
+  countries,
+  italianCities,
   type User,
   type UpsertUser,
   type Tenant,
@@ -17,6 +20,8 @@ import {
   type InsertUserAssignment,
   type Role,
   type InsertRole,
+  type LegalForm,
+  type Country,
 } from "../db/schema";
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
@@ -49,6 +54,11 @@ export interface IStorage {
   getUserAssignments(userId: string): Promise<UserAssignment[]>;
   getUserTenantAssignments(userId: string, tenantId: string): Promise<UserAssignment[]>;
   createUserAssignment(userAssignment: InsertUserAssignment): Promise<UserAssignment>;
+  
+  // Reference Data Management
+  getLegalForms(): Promise<LegalForm[]>;
+  getCountries(): Promise<Country[]>;
+  getItalianCities(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -155,6 +165,20 @@ export class DatabaseStorage implements IStorage {
   async createUserAssignment(userAssignmentData: InsertUserAssignment): Promise<UserAssignment> {
     const [userAssignment] = await db.insert(userAssignments).values(userAssignmentData).returning();
     return userAssignment;
+  }
+
+  // ==================== REFERENCE DATA MANAGEMENT ====================
+
+  async getLegalForms(): Promise<LegalForm[]> {
+    return await db.select().from(legalForms).where(eq(legalForms.active, true)).orderBy(legalForms.sortOrder);
+  }
+
+  async getCountries(): Promise<Country[]> {
+    return await db.select().from(countries).where(eq(countries.active, true)).orderBy(countries.name);
+  }
+
+  async getItalianCities(): Promise<any[]> {
+    return await db.select().from(italianCities).where(eq(italianCities.active, true)).orderBy(italianCities.name);
   }
 
 }
