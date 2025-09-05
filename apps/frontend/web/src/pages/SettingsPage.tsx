@@ -68,6 +68,56 @@ export default function SettingsPage() {
   // Selected entity tab
   const [selectedEntity, setSelectedEntity] = useState('ragione-sociale');
   
+  // Local state for managing items
+  const [ragioneSocialiList, setRagioneSocialiList] = useState(mockRagioneSociali);
+  const [puntiVenditaList, setPuntiVenditaList] = useState(mockPuntiVendita);
+  
+  // Modal states
+  const [showCreateRagioneSociale, setShowCreateRagioneSociale] = useState(false);
+  const [showCreatePuntoVendita, setShowCreatePuntoVendita] = useState(false);
+  
+  // Handlers per Ragioni Sociali
+  const handleCreateRagioneSociale = () => {
+    const newCode = `80${String(Math.floor(Math.random() * 99999) + 1000).padStart(4, '0')}`;
+    const newItem = {
+      id: ragioneSocialiList.length + 1,
+      codice: newCode,
+      nome: 'Nuova Ragione Sociale',
+      formaGiuridica: 'Srl',
+      pIva: `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
+      stato: 'Bozza',
+      citta: 'Milano',
+      azioni: 'edit'
+    };
+    setRagioneSocialiList([...ragioneSocialiList, newItem]);
+    setShowCreateRagioneSociale(false);
+  };
+  
+  const handleDeleteRagioneSociale = (id) => {
+    setRagioneSocialiList(ragioneSocialiList.filter(item => item.id !== id));
+  };
+  
+  // Handlers per Punti Vendita
+  const handleCreatePuntoVendita = () => {
+    const newCode = `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
+    const newItem = {
+      id: puntiVenditaList.length + 1,
+      codice: newCode,
+      nome: 'Nuovo Punto Vendita',
+      indirizzo: 'Via Nuova 1',
+      citta: 'Milano',
+      canale: 'Franchising',
+      stato: 'Attivo',
+      ragioneSociale: ragioneSocialiList[0]?.nome || 'Default'
+    };
+    setPuntiVenditaList([...puntiVenditaList, newItem]);
+    setShowCreatePuntoVendita(false);
+  };
+  
+  const handleDeletePuntoVendita = (id) => {
+    setPuntiVenditaList(puntiVenditaList.filter(item => item.id !== id));
+  };
+  
   // Load reference data from API
   const { data: legalForms = [] } = useQuery({
     queryKey: ['/api/reference/legal-forms'],
@@ -351,7 +401,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            {mockRagioneSociali.map((item, index) => (
+            {ragioneSocialiList.map((item, index) => (
               <div
                 key={item.id}
                 style={{
@@ -445,7 +495,9 @@ export default function SettingsPage() {
                   }}>
                     <Edit3 size={12} />
                   </button>
-                  <button style={{
+                  <button 
+                    onClick={() => handleDeleteRagioneSociale(item.id)}
+                    style={{
                     background: 'hsla(239, 68, 68, 0.05)',
                     border: '1px solid hsla(239, 68, 68, 0.1)',
                     borderRadius: '6px',
@@ -496,7 +548,7 @@ export default function SettingsPage() {
                 boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
                 transition: 'all 0.2s ease'
               }}
-              onClick={() => setStoreModal({ open: true, data: null })}>
+              onClick={() => handleCreatePuntoVendita()}>
                 <Plus size={16} />
                 Nuovo Punto Vendita
               </button>
@@ -538,7 +590,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            {mockPuntiVendita.map((item, index) => (
+            {puntiVenditaList.map((item, index) => (
               <div
                 key={item.id}
                 style={{
@@ -547,7 +599,7 @@ export default function SettingsPage() {
                   alignItems: 'center',
                   padding: '16px 20px',
                   gap: '16px',
-                  borderBottom: index < mockPuntiVendita.length - 1 
+                  borderBottom: index < puntiVenditaList.length - 1 
                     ? '1px solid hsla(255, 255, 255, 0.06)' 
                     : 'none',
                   transition: 'all 0.2s ease'
@@ -635,6 +687,19 @@ export default function SettingsPage() {
                     transition: 'all 0.2s ease'
                   }}>
                     <Edit3 size={12} />
+                  </button>
+                  <button 
+                    onClick={() => handleDeletePuntoVendita(item.id)}
+                    style={{
+                    background: 'hsla(239, 68, 68, 0.05)',
+                    border: '1px solid hsla(239, 68, 68, 0.1)',
+                    borderRadius: '6px',
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>
