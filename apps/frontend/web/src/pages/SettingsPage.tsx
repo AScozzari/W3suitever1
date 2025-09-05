@@ -55,7 +55,7 @@ import {
 
 export default function SettingsPage() {
   const [currentModule, setCurrentModule] = useState('impostazioni');
-  const [activeTab, setActiveTab] = useState('AI Assistant');
+  const [activeTab, setActiveTab] = useState('Entity Management');
   
   // Modal states
   const [legalEntityModal, setLegalEntityModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
@@ -95,17 +95,449 @@ export default function SettingsPage() {
 
   const handleCityChange = (cityName: string) => {
     setSelectedCity(cityName);
-    const city = italianCities.find((c: any) => c.name === cityName);
+    const city = (italianCities as any[]).find((c: any) => c.name === cityName);
     if (city) {
       setPostalCode(city.postalCode);
     }
   };
 
+  // Mock data per ragioni sociali
+  const mockRagioneSociali = [
+    { 
+      id: 1, 
+      nome: 'Franchising Ltd', 
+      formaGiuridica: 'Srl', 
+      pIva: 'IT12345678901', 
+      stato: 'Attiva',
+      citta: 'Milano',
+      azioni: 'edit'
+    },
+    { 
+      id: 2, 
+      nome: 'Digital Operations Snc', 
+      formaGiuridica: 'Snc', 
+      pIva: 'IT09876543210', 
+      stato: 'Attiva',
+      citta: 'Bologna',
+      azioni: 'edit'
+    },
+    { 
+      id: 3, 
+      nome: 'Tech Solutions Ltd', 
+      formaGiuridica: 'Srl', 
+      pIva: 'IT11122233344', 
+      stato: 'Bozza',
+      citta: 'Roma',
+      azioni: 'edit'
+    }
+  ];
+
+  // Mock data per punti vendita
+  const mockPuntiVendita = [
+    { 
+      id: 1, 
+      codice: 'MI001', 
+      nome: 'WindTre Milano Centro', 
+      indirizzo: 'Via Montenapoleone 15',
+      citta: 'Milano',
+      canale: 'Franchising', 
+      stato: 'Attivo',
+      ragioneSociale: 'Franchising Ltd'
+    },
+    { 
+      id: 2, 
+      codice: 'RM002', 
+      nome: 'WindTre Roma Termini', 
+      indirizzo: 'Via Nazionale 123',
+      citta: 'Roma',
+      canale: 'Top Dealer', 
+      stato: 'Attivo',
+      ragioneSociale: 'Digital Operations Snc'
+    }
+  ];
+
   const tabs = [
+    { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
     { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
     { id: 'Channel Settings', label: 'Channel Settings', icon: Globe },
     { id: 'System Settings', label: 'System Settings', icon: Server }
   ];
+
+  const renderEntityManagement = () => (
+    <div>
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: '#111827',
+          margin: '0 0 4px 0'
+        }}>
+          Configurazione Entità
+        </h2>
+        <p style={{
+          fontSize: '14px',
+          color: '#6b7280',
+          margin: 0
+        }}>
+          Gestisci entità aziendali, ragioni sociali e punti vendita
+        </p>
+      </div>
+
+      {/* Ragioni Sociali Section */}
+      <div style={{ marginBottom: '48px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: 0
+          }}>
+            Ragioni Sociali
+          </h3>
+          <button style={{
+            background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={() => setLegalEntityModal({ open: true, data: null })}>
+            <Plus size={16} />
+            Nuova Ragione Sociale
+          </button>
+        </div>
+
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.05)',
+            borderBottom: '1px solid hsla(255, 255, 255, 0.08)',
+            padding: '0'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1fr 80px',
+              alignItems: 'center',
+              padding: '16px 20px',
+              gap: '16px'
+            }}>
+              {['Nome', 'Forma Giuridica', 'P.IVA', 'Stato', 'Città', 'Azioni'].map((header, index) => (
+                <div key={index} style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#6b7280',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  {header}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            {mockRagioneSociali.map((item, index) => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1fr 80px',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  gap: '16px',
+                  borderBottom: index < mockRagioneSociali.length - 1 
+                    ? '1px solid hsla(255, 255, 255, 0.06)' 
+                    : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <div style={{
+                  fontSize: '14px',
+                  color: '#111827',
+                  fontWeight: '500'
+                }}>
+                  {item.nome}
+                </div>
+
+                <div style={{
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>
+                  {item.formaGiuridica}
+                </div>
+
+                <div style={{
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>
+                  {item.pIva}
+                </div>
+
+                <div>
+                  <span style={{
+                    background: item.stato === 'Attiva' 
+                      ? 'linear-gradient(135deg, #10b981, #059669)'
+                      : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    boxShadow: item.stato === 'Attiva'
+                      ? '0 2px 8px rgba(16, 185, 129, 0.3)'
+                      : '0 2px 8px rgba(245, 158, 11, 0.3)'
+                  }}>
+                    {item.stato}
+                  </span>
+                </div>
+
+                <div style={{
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>
+                  {item.citta}
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '8px'
+                }}>
+                  <button 
+                    onClick={() => setLegalEntityModal({ open: true, data: item })}
+                    style={{
+                    background: 'hsla(59, 130, 246, 0.05)',
+                    border: '1px solid hsla(59, 130, 246, 0.1)',
+                    borderRadius: '6px',
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <Edit3 size={12} />
+                  </button>
+                  <button style={{
+                    background: 'hsla(239, 68, 68, 0.05)',
+                    border: '1px solid hsla(239, 68, 68, 0.1)',
+                    borderRadius: '6px',
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Punti Vendita Section */}
+      <div>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: 0
+          }}>
+            Punti Vendita
+          </h3>
+          <button style={{
+            background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={() => setStoreModal({ open: true, data: null })}>
+            <Plus size={16} />
+            Nuovo Punto Vendita
+          </button>
+        </div>
+
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.05)',
+            borderBottom: '1px solid hsla(255, 255, 255, 0.08)',
+            padding: '0'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '100px 2fr 2fr 1fr 1fr 80px',
+              alignItems: 'center',
+              padding: '16px 20px',
+              gap: '16px'
+            }}>
+              {['Codice', 'Nome', 'Indirizzo', 'Canale', 'Stato', 'Azioni'].map((header, index) => (
+                <div key={index} style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#6b7280',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  {header}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            {mockPuntiVendita.map((item, index) => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '100px 2fr 2fr 1fr 1fr 80px',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  gap: '16px',
+                  borderBottom: index < mockPuntiVendita.length - 1 
+                    ? '1px solid hsla(255, 255, 255, 0.06)' 
+                    : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <div style={{
+                  fontSize: '14px',
+                  color: '#111827',
+                  fontWeight: '600',
+                  fontFamily: 'monospace'
+                }}>
+                  {item.codice}
+                </div>
+
+                <div style={{
+                  fontSize: '14px',
+                  color: '#111827',
+                  fontWeight: '500'
+                }}>
+                  {item.nome}
+                </div>
+
+                <div style={{
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>
+                  {item.indirizzo}
+                </div>
+
+                <div>
+                  <span style={{
+                    background: item.canale === 'Franchising' 
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      : 'linear-gradient(135deg, #7B2CBF, #a855f7)',
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    boxShadow: item.canale === 'Franchising'
+                      ? '0 2px 8px rgba(255, 105, 0, 0.3)'
+                      : '0 2px 8px rgba(123, 44, 191, 0.3)'
+                  }}>
+                    {item.canale}
+                  </span>
+                </div>
+
+                <div>
+                  <span style={{
+                    background: item.stato === 'Attivo' 
+                      ? 'linear-gradient(135deg, #10b981, #059669)'
+                      : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    boxShadow: item.stato === 'Attivo'
+                      ? '0 2px 8px rgba(16, 185, 129, 0.3)'
+                      : '0 2px 8px rgba(245, 158, 11, 0.3)'
+                  }}>
+                    {item.stato}
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '8px'
+                }}>
+                  <button 
+                    onClick={() => setStoreModal({ open: true, data: item })}
+                    style={{
+                    background: 'hsla(123, 44, 191, 0.05)',
+                    border: '1px solid hsla(123, 44, 191, 0.1)',
+                    borderRadius: '6px',
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <Edit3 size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderAIAssistant = () => (
     <div>
@@ -611,6 +1043,8 @@ export default function SettingsPage() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'Entity Management':
+        return renderEntityManagement();
       case 'AI Assistant':
         return renderAIAssistant();
       case 'Channel Settings':
@@ -618,7 +1052,7 @@ export default function SettingsPage() {
       case 'System Settings':
         return renderSystemSettings();
       default:
-        return renderAIAssistant();
+        return renderEntityManagement();
     }
   };
 
