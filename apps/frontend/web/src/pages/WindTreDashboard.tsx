@@ -677,7 +677,7 @@ export default function WindTreDashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => item.id === 'impostazioni' ? window.location.href = '/settings' : setCurrentModule(item.id)}
+                  onClick={() => setCurrentModule(item.id)}
                   style={{
                     width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
                     height: leftSidebarCollapsed && !isMobile ? '40px' : 'auto',
