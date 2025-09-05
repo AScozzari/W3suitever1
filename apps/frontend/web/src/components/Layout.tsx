@@ -601,20 +601,30 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           }}>
             {menuItems.map((item) => {
               const Icon = item.icon;
+              // Controlla se il menu è attivo considerando il tenant nel path
+              const currentPath = window.location.pathname;
+              const pathSegments = currentPath.split('/').filter(Boolean);
+              const isSettingsPath = pathSegments[1] === 'settings';
+              const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
+              
               const isActive = item.id === 'impostazioni' 
-                ? location === '/settings'
+                ? isSettingsPath
                 : item.id === 'dashboard'
-                ? location === '/'
+                ? isDashboardPath
                 : currentModule === item.id;
               
               return (
                 <button
                   key={item.id}
                   onClick={() => {
+                    // Ottieni il tenant corrente dal path
+                    const currentPath = window.location.pathname;
+                    const tenant = currentPath.split('/')[1] || 'staging';
+                    
                     if (item.id === 'impostazioni') {
-                      navigate('/settings');
+                      navigate(`/${tenant}/settings`);
                     } else if (item.id === 'dashboard') {
-                      navigate('/');
+                      navigate(`/${tenant}`);
                     } else {
                       setCurrentModule(item.id);
                     }
