@@ -156,15 +156,15 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-orange-900/20 p-6">
+    <div className="w-full h-full p-0 m-0">
       {/* Header Glass */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-6 mb-8 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-4 mb-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 via-purple-400 to-orange-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 via-purple-400 to-orange-400 bg-clip-text text-transparent">
               Configurazioni Sistema
             </h1>
-            <p className="text-white/70 text-lg mt-2">
+            <p className="text-white/70 text-base mt-1">
               Gestione completa organizzazione e configurazione enterprise
             </p>
           </div>
@@ -175,7 +175,7 @@ export default function Settings() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
           <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-400/30 backdrop-blur-sm">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-300">{systemStats.totalTenants}</div>
@@ -217,7 +217,7 @@ export default function Settings() {
 
       {/* Main Tabs Container */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-2 mb-8">
+        <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-2 mb-4">
           <TabsTrigger 
             value="organization" 
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-xl transition-all duration-300"
@@ -249,7 +249,7 @@ export default function Settings() {
         </TabsList>
 
         {/* Organization Tab */}
-        <TabsContent value="organization" className="space-y-6">
+        <TabsContent value="organization" className="space-y-4">
           <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20">
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -350,7 +350,7 @@ export default function Settings() {
         </TabsContent>
 
         {/* Users & Roles Tab */}
-        <TabsContent value="users" className="space-y-6">
+        <TabsContent value="users" className="space-y-4">
           <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
             <CardTitle className="text-white text-xl mb-4">Gestione Utenti e Ruoli RBAC</CardTitle>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -384,8 +384,8 @@ export default function Settings() {
         </TabsContent>
 
         {/* System Configuration Tab */}
-        <TabsContent value="system" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TabsContent value="system" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
               <CardTitle className="text-white text-xl mb-4">Configurazione Database</CardTitle>
               <div className="space-y-4">
@@ -425,10 +425,10 @@ export default function Settings() {
         </TabsContent>
 
         {/* Security Tab */}
-        <TabsContent value="security" className="space-y-6">
+        <TabsContent value="security" className="space-y-4">
           <Card className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
             <CardTitle className="text-white text-xl mb-4">Configurazione Sicurezza</CardTitle>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-400/30 backdrop-blur-sm">
                 <CardContent className="p-4 text-center">
                   <Shield className="w-8 h-8 mx-auto mb-2 text-red-300" />
