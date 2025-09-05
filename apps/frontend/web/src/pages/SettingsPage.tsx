@@ -31,567 +31,700 @@ import {
   Mail,
   Phone,
   Globe,
-  MapPin
+  MapPin,
+  Database,
+  Cpu,
+  HardDrive,
+  BarChart
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('organizzazione');
-  const [activeSubTab, setActiveSubTab] = useState('generale');
-  const [editMode, setEditMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('Entity Management');
 
-  // Mock data tenant corrente
-  const tenantInfo = {
-    id: 'current-tenant',
-    name: 'WindTre Network Milano',
-    organizationType: 'Franchising',
-    businessCode: 'WT-MLN-001',
-    legalEntitiesCount: 3,
-    storesCount: 12,
-    usersCount: 28,
-    status: 'active'
+  // Mock data per replicare gli esempi
+  const mockRagioneSociali = [
+    { id: 1, name: 'Franchising Ltd', formaGiuridica: 'Srl', pIva: 'IT12345678901', stato: 'Attiva', città: 'Milano' },
+    { id: 2, name: 'Digital Operations Snc', formaGiuridica: 'Snc', pIva: 'IT09876543210', stato: 'Attiva', città: 'Bologna' },
+    { id: 3, name: 'Tech Solutions Ltd', formaGiuridica: 'Srl', pIva: 'IT11122233344', stato: 'Bozza', città: 'Roma' }
+  ];
+
+  const mockSystemStats = {
+    sistema: '174 136 132m',
+    configurazioni: '13%',
+    monitoraggio: '48%',
+    logs: 'Data Corrente'
   };
 
-  const mockLegalEntities = [
-    { id: '1', name: 'WindTre Store Milano Centro Srl', vatNumber: 'IT12345678901', storesCount: 5, status: 'active' },
-    { id: '2', name: 'Very Mobile Point Nord Srl', vatNumber: 'IT98765432109', storesCount: 4, status: 'active' },
-    { id: '3', name: 'Digital Services Milano Srl', vatNumber: 'IT11223344556', storesCount: 3, status: 'pending' }
-  ];
-
-  const mockStores = [
-    { id: '1', name: 'Milano Duomo', address: 'Via del Corso 15, Milano', legalEntity: 'WindTre Store Milano Centro Srl', status: 'active', usersCount: 8 },
-    { id: '2', name: 'Milano Centrale', address: 'P.za Duca d\'Aosta 9, Milano', legalEntity: 'WindTre Store Milano Centro Srl', status: 'active', usersCount: 6 },
-    { id: '3', name: 'Very Mobile Isola', address: 'Via Brera 22, Milano', legalEntity: 'Very Mobile Point Nord Srl', status: 'active', usersCount: 4 }
-  ];
-
-  const mockUsers = [
-    { id: '1', name: 'Marco Rossi', email: 'marco.rossi@windtre.it', role: 'Store Manager', store: 'Milano Duomo', status: 'active', lastAccess: '2024-12-05' },
-    { id: '2', name: 'Laura Bianchi', email: 'laura.bianchi@windtre.it', role: 'Sales Agent', store: 'Milano Centrale', status: 'active', lastAccess: '2024-12-05' },
-    { id: '3', name: 'Giuseppe Verde', email: 'giuseppe.verde@verymobile.it', role: 'Assistant Manager', store: 'Very Mobile Isola', status: 'active', lastAccess: '2024-12-04' }
-  ];
-
-  const mainTabs = [
-    { id: 'organizzazione', label: 'Organizzazione', icon: Building },
-    { id: 'utenti', label: 'Utenti & Ruoli', icon: Users },
-    { id: 'sistema', label: 'Sistema', icon: Server },
-    { id: 'sicurezza', label: 'Sicurezza', icon: Shield }
-  ];
-
-  const subTabs = {
-    organizzazione: [
-      { id: 'generale', label: 'Info Generali', icon: Building },
-      { id: 'ragioni-sociali', label: 'Ragioni Sociali', icon: FileText },
-      { id: 'punti-vendita', label: 'Punti Vendita', icon: Store },
-      { id: 'branding', label: 'Personalizzazione', icon: Palette }
-    ],
-    utenti: [
-      { id: 'gestione', label: 'Gestione Utenti', icon: User },
-      { id: 'ruoli', label: 'Ruoli & Permessi', icon: Key }
-    ],
-    sistema: [
-      { id: 'configurazione', label: 'Configurazione', icon: Server },
-      { id: 'notifiche', label: 'Notifiche', icon: Bell }
-    ],
-    sicurezza: [
-      { id: 'autenticazione', label: 'Autenticazione', icon: Lock },
-      { id: 'sessioni', label: 'Sessioni Attive', icon: Activity },
-      { id: 'audit', label: 'Log Attività', icon: FileText }
+  const mockDatabase = {
+    name: 'windtre_production',
+    dimensione: '1.7 MB',
+    utilizzo: 64,
+    tabelle: [
+      { name: 'Connessione Attiva', performance: '1', connections: '5Rows', usage: '1.7 MB', config: '64%' },
     ]
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: "bg-green-500/20 text-green-300 border-green-500/30",
-      inactive: "bg-gray-500/20 text-gray-300 border-gray-500/30", 
-      pending: "bg-orange-500/20 text-orange-300 border-orange-500/30"
-    };
-    return variants[status as keyof typeof variants] || variants.active;
-  };
+  const tabs = [
+    { id: 'Entity Management', label: 'Entity Management', icon: Building },
+    { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
+    { id: 'Channel Settings', label: 'Channel Settings', icon: SettingsIcon },
+    { id: 'System Settings', label: 'System Settings', icon: Server }
+  ];
 
-  const renderContent = () => {
-    if (activeTab === 'organizzazione' && activeSubTab === 'generale') {
-      return (
-        <div style={{
-          background: 'rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          border: '1px solid rgba(255,255,255,0.2)',
-          padding: '32px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+  const systemTabs = [
+    { id: 'Generali', label: 'Generali', icon: SettingsIcon },
+    { id: 'Contenuto', label: 'Contenuto', icon: FileText },
+    { id: 'Database', label: 'Database', icon: Database },
+    { id: 'Backup', label: 'Backup', icon: Shield },
+    { id: 'Sicurezza', label: 'Sicurezza', icon: Lock },
+    { id: 'Configurazione', label: 'Configurazione', icon: SettingsIcon },
+    { id: 'Utenti e Siti', label: 'Utenti e Siti', icon: Users },
+    { id: 'Commercio', label: 'Commercio', icon: Store },
+    { id: 'Social Network', label: 'Social Network', icon: Globe },
+    { id: 'Analytics', label: 'Analytics', icon: BarChart }
+  ];
+
+  const renderEntityManagement = () => (
+    <div style={{ padding: '24px 0' }}>
+      <h2 style={{
+        fontSize: '18px',
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: '20px'
+      }}>
+        Configurazione Entità
+      </h2>
+
+      {/* Entity Icons Row */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '24px',
+        padding: '12px',
+        background: '#f8f9fa',
+        borderRadius: '8px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2563eb' }}>
+          <Building size={16} />
+          <span style={{ fontSize: '14px', fontWeight: '500' }}>Ragione Sociale</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+          <Users size={16} />
+          <span style={{ fontSize: '14px' }}>Clienti</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+          <Store size={16} />
+          <span style={{ fontSize: '14px' }}>Punti Vendita</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+          <Server size={16} />
+          <span style={{ fontSize: '14px' }}>Smart Automation</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+          <Activity size={16} />
+          <span style={{ fontSize: '14px' }}>Servizi</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+          <FileText size={16} />
+          <span style={{ fontSize: '14px' }}>Auto Reporting</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+          <Shield size={16} />
+          <span style={{ fontSize: '14px' }}>GDPR</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
+          <Bell size={16} />
+          <span style={{ fontSize: '14px' }}>Alert Notifications</span>
+        </div>
+      </div>
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '16px'
+      }}>
+        <h3 style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#333',
+          margin: 0
         }}>
-          {/* Header */}
-          <div style={{ 
-            marginBottom: '32px',
-            paddingBottom: '24px',
-            borderBottom: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-              <div>
-                <h2 style={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  margin: '0 0 8px 0',
-                  background: 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>
-                  Informazioni Organizzazione
-                </h2>
-                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '16px', margin: 0 }}>
-                  Gestione dei dati principali della tua organizzazione
-                </p>
-              </div>
-              <button
-                onClick={() => setEditMode(!editMode)}
-                style={{
-                  background: editMode ? 'linear-gradient(135deg, #7B2CBF 0%, #9D4EDD 100%)' : 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 20px',
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 16px rgba(255,105,0,0.3)'
-                }}
-              >
-                <Edit3 size={16} />
-                {editMode ? 'Annulla' : 'Modifica'}
-              </button>
-            </div>
-          </div>
+          Gestione Ragioni Sociali
+        </h3>
+        <button style={{
+          background: '#2563eb',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          padding: '8px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}>
+          <Plus size={14} />
+          Nuova Ragione Sociale
+        </button>
+      </div>
 
-          {/* Form Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '24px',
-            marginBottom: '32px'
-          }}>
-            <div>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '14px', 
-                fontWeight: '600', 
-                color: 'rgba(255,255,255,0.9)',
-                marginBottom: '8px'
-              }}>
-                Nome Organizzazione
-              </label>
-              <input 
-                type="text"
-                value={tenantInfo.name}
-                disabled={!editMode}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: editMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'all 0.3s ease',
-                  cursor: editMode ? 'text' : 'not-allowed'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '14px', 
-                fontWeight: '600', 
-                color: 'rgba(255,255,255,0.9)',
-                marginBottom: '8px'
-              }}>
-                Codice Business
-              </label>
-              <input 
-                type="text"
-                value={tenantInfo.businessCode}
-                disabled={!editMode}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: editMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '14px',
-                  outline: 'none',
-                  cursor: editMode ? 'text' : 'not-allowed'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '14px', 
-                fontWeight: '600', 
-                color: 'rgba(255,255,255,0.9)',
-                marginBottom: '8px'
-              }}>
-                Tipo Organizzazione
-              </label>
-              <input 
-                type="text"
-                value={tenantInfo.organizationType}
-                disabled={!editMode}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  background: editMode ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '14px',
-                  outline: 'none',
-                  cursor: editMode ? 'text' : 'not-allowed'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '14px', 
-                fontWeight: '600', 
-                color: 'rgba(255,255,255,0.9)',
-                marginBottom: '8px'
-              }}>
-                Stato
-              </label>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                fontSize: '12px',
+      {/* Table */}
+      <div style={{
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: '#f8f9fa' }}>
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '14px',
                 fontWeight: '600',
-                background: 'rgba(34,197,94,0.2)',
-                color: '#4ADE80',
-                border: '1px solid rgba(34,197,94,0.3)'
-              }}>
-                <CheckCircle size={14} style={{ marginRight: '6px' }} />
-                Attivo
-              </span>
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
+              }}>Nome</th>
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
+              }}>Forma Giuridica</th>
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
+              }}>P.IVA</th>
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
+              }}>Stato</th>
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
+              }}>Città</th>
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
+              }}>Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mockRagioneSociali.map((item, index) => (
+              <tr key={item.id} style={{ borderBottom: index < mockRagioneSociali.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                <td style={{
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  color: '#374151'
+                }}>{item.name}</td>
+                <td style={{
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  color: '#374151'
+                }}>{item.formaGiuridica}</td>
+                <td style={{
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  color: '#374151'
+                }}>{item.pIva}</td>
+                <td style={{ padding: '12px 16px' }}>
+                  <span style={{
+                    background: item.stato === 'Attiva' ? '#dcfce7' : '#fef3c7',
+                    color: item.stato === 'Attiva' ? '#16a34a' : '#d97706',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}>
+                    {item.stato}
+                  </span>
+                </td>
+                <td style={{
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  color: '#374151'
+                }}>{item.città}</td>
+                <td style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      padding: '4px'
+                    }}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderSystemSettings = () => (
+    <div style={{ padding: '24px 0' }}>
+      <h2 style={{
+        fontSize: '18px',
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: '20px'
+      }}>
+        Configurazione Sistema
+      </h2>
+
+      {/* System Tabs */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '24px',
+        flexWrap: 'wrap'
+      }}>
+        {systemTabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = tab.id === 'Database'; // Database is active in the example
+          return (
+            <button
+              key={tab.id}
+              style={{
+                background: isActive ? '#2563eb' : '#f8f9fa',
+                color: isActive ? 'white' : '#64748b',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                padding: '8px 12px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Icon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <span style={{
+            background: '#16a34a',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: '500'
+          }}>
+            Algoritmo
+          </span>
+        </div>
+
+        {/* Stats Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '16px',
+          marginBottom: '24px'
+        }}>
+          <div style={{
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'center'
+          }}>
+            <HardDrive size={24} style={{ color: '#16a34a', margin: '0 auto 8px' }} />
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#16a34a', marginBottom: '4px' }}>
+              {mockSystemStats.sistema}
             </div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Sistema</div>
           </div>
 
-          {/* Save Button */}
-          {editMode && (
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              gap: '12px',
-              paddingTop: '24px',
-              borderTop: '1px solid rgba(255,255,255,0.1)'
-            }}>
-              <button
-                onClick={() => setEditMode(false)}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
-                  padding: '12px 20px',
-                  color: 'rgba(255,255,255,0.8)',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Annulla
-              </button>
-              <button
-                style={{
-                  background: 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 20px',
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 16px rgba(255,105,0,0.3)'
-                }}
-              >
-                <Save size={16} />
-                Salva Modifiche
-              </button>
-            </div>
-          )}
-
-          {/* Stats Cards */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '20px',
-            marginTop: '40px'
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'center'
           }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%)',
-              border: '1px solid rgba(34,197,94,0.3)',
-              borderRadius: '16px',
-              padding: '24px',
-              textAlign: 'center'
-            }}>
-              <FileText size={32} style={{ color: '#4ADE80', margin: '0 auto 12px' }} />
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#4ADE80', marginBottom: '4px' }}>
-                {tenantInfo.legalEntitiesCount}
-              </div>
-              <div style={{ fontSize: '14px', color: 'rgba(74,222,128,0.8)' }}>
-                Ragioni Sociali
-              </div>
+            <SettingsIcon size={24} style={{ color: '#2563eb', margin: '0 auto 8px' }} />
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>
+              {mockSystemStats.configurazioni}
             </div>
-            
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%)',
-              border: '1px solid rgba(59,130,246,0.3)',
-              borderRadius: '16px',
-              padding: '24px',
-              textAlign: 'center'
-            }}>
-              <Store size={32} style={{ color: '#60A5FA', margin: '0 auto 12px' }} />
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#60A5FA', marginBottom: '4px' }}>
-                {tenantInfo.storesCount}
-              </div>
-              <div style={{ fontSize: '14px', color: 'rgba(96,165,250,0.8)' }}>
-                Punti Vendita
-              </div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Configurazioni</div>
+          </div>
+
+          <div style={{
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'center'
+          }}>
+            <Activity size={24} style={{ color: '#7c3aed', margin: '0 auto 8px' }} />
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#7c3aed', marginBottom: '4px' }}>
+              {mockSystemStats.monitoraggio}
             </div>
-            
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(168,85,247,0.05) 100%)',
-              border: '1px solid rgba(168,85,247,0.3)',
-              borderRadius: '16px',
-              padding: '24px',
-              textAlign: 'center'
-            }}>
-              <UserCheck size={32} style={{ color: '#A855F7', margin: '0 auto 12px' }} />
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#A855F7', marginBottom: '4px' }}>
-                {tenantInfo.usersCount}
-              </div>
-              <div style={{ fontSize: '14px', color: 'rgba(168,85,247,0.8)' }}>
-                Utenti Attivi
-              </div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Monitoraggio</div>
+          </div>
+
+          <div style={{
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'center'
+          }}>
+            <FileText size={24} style={{ color: '#d97706', margin: '0 auto 8px' }} />
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#d97706', marginBottom: '4px' }}>
+              {mockSystemStats.logs}
             </div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Logs</div>
           </div>
         </div>
-      );
-    }
-
-    // Altri contenuti per altri tab/subtab
-    return (
-      <div style={{
-        background: 'rgba(255,255,255,0.1)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '24px',
-        border: '1px solid rgba(255,255,255,0.2)',
-        padding: '32px',
-        textAlign: 'center'
-      }}>
-        <h3 style={{ color: 'white', fontSize: '24px', marginBottom: '16px' }}>
-          Sezione in Sviluppo
-        </h3>
-        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '16px' }}>
-          Le impostazioni per {activeTab} - {activeSubTab} saranno disponibili presto.
-        </p>
       </div>
-    );
-  };
+
+      {/* Database Configuration Section */}
+      <div style={{
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        padding: '20px',
+        marginBottom: '20px'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginBottom: '16px'
+        }}>
+          <Database size={20} style={{ color: '#2563eb' }} />
+          <h3 style={{
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#333',
+            margin: 0
+          }}>
+            Configurazione Database
+          </h3>
+        </div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: '#f8f9fa' }}>
+              <th style={{
+                padding: '8px 12px',
+                textAlign: 'left',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#374151',
+                border: '1px solid #e5e7eb'
+              }}>Parametro</th>
+              <th style={{
+                padding: '8px 12px',
+                textAlign: 'left',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#374151',
+                border: '1px solid #e5e7eb'
+              }}>Performance</th>
+              <th style={{
+                padding: '8px 12px',
+                textAlign: 'left',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#374151',
+                border: '1px solid #e5e7eb'
+              }}>Utilizzo</th>
+              <th style={{
+                padding: '8px 12px',
+                textAlign: 'left',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#374151',
+                border: '1px solid #e5e7eb'
+              }}>Configurazione</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mockDatabase.tabelle.map((table, index) => (
+              <tr key={index}>
+                <td style={{
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
+                }}>{table.name}</td>
+                <td style={{
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#2563eb' }}>{table.performance}</span>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>Connessione stabile</span>
+                  </div>
+                </td>
+                <td style={{
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#16a34a' }}>{table.usage}</span>
+                    <div style={{
+                      width: '60px',
+                      height: '4px',
+                      background: '#e5e7eb',
+                      borderRadius: '2px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: '70%',
+                        height: '100%',
+                        background: '#16a34a'
+                      }} />
+                    </div>
+                  </div>
+                </td>
+                <td style={{
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#2563eb' }}>{table.config}</span>
+                    <div style={{
+                      width: '60px',
+                      height: '4px',
+                      background: '#e5e7eb',
+                      borderRadius: '2px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${mockDatabase.utilizzo}%`,
+                        height: '100%',
+                        background: '#2563eb'
+                      }} />
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Actions Section */}
+      <div style={{
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        padding: '20px',
+        marginBottom: '20px'
+      }}>
+        <h4 style={{
+          fontSize: '14px',
+          fontWeight: '600',
+          color: '#333',
+          marginBottom: '12px',
+          margin: '0 0 12px 0'
+        }}>
+          Azioni Rapide
+        </h4>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+          <button style={{
+            background: '#2563eb',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '8px 16px',
+            fontSize: '14px',
+            cursor: 'pointer'
+          }}>
+            Esegui Backup
+          </button>
+          <button style={{
+            background: 'white',
+            color: '#374151',
+            border: '1px solid #e5e7eb',
+            borderRadius: '6px',
+            padding: '8px 16px',
+            fontSize: '14px',
+            cursor: 'pointer'
+          }}>
+            Ripristina Database
+          </button>
+        </div>
+      </div>
+
+      {/* Backup Status */}
+      <div style={{
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        padding: '20px'
+      }}>
+        <h4 style={{
+          fontSize: '14px',
+          fontWeight: '600',
+          color: '#333',
+          marginBottom: '12px',
+          margin: '0 0 12px 0'
+        }}>
+          Stato Backup
+        </h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Ultimo Backup</div>
+            <div style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>2024-06-06T01:06:54.0562Z</div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Automatico</div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Antivirus</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Dimensioni Backup</div>
+            <div style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>1.6 MB</div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Ultimo completato</div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>2024-06-06T01:06:54.0562Z</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{
       minHeight: '100vh',
-      width: '100%',
-      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 50%, #FF6900 100%)',
-      backgroundAttachment: 'fixed'
+      background: '#ffffff'
     }}>
-      <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '20px'
+      }}>
         {/* Header */}
         <div style={{
-          background: 'rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          border: '1px solid rgba(255,255,255,0.2)',
-          padding: '32px',
-          marginBottom: '32px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          paddingBottom: '16px',
+          borderBottom: '1px solid #e5e7eb'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <Link href="/">
-                <button style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <ArrowLeft size={20} />
-                </button>
-              </Link>
-              <div>
-                <h1 style={{
-                  fontSize: '36px',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  margin: '0 0 8px 0',
-                  background: 'linear-gradient(135deg, #FFFFFF 0%, #FFB366 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>
-                  Impostazioni Organizzazione
-                </h1>
-                <p style={{ 
-                  color: 'rgba(255,255,255,0.8)', 
-                  fontSize: '18px', 
-                  margin: 0,
-                  fontWeight: '500'
-                }}>
-                  {tenantInfo.name}
-                </p>
-              </div>
-            </div>
-            <div>
-              <span style={{
-                background: 'linear-gradient(135deg, rgba(255,105,0,0.2) 0%, rgba(123,44,191,0.2) 100%)',
-                border: '1px solid rgba(255,105,0,0.3)',
-                borderRadius: '12px',
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#FFB366'
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Link href="/">
+              <button style={{
+                background: 'none',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                padding: '8px',
+                color: '#374151',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center'
               }}>
-                {tenantInfo.organizationType}
-              </span>
-            </div>
+                <ArrowLeft size={16} />
+              </button>
+            </Link>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: '#111827',
+              margin: 0
+            }}>
+              Configurazioni Sistema
+            </h1>
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: '#64748b'
+          }}>
+            Gestione complete per sistema di configurazione e sistema aziendale
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '32px' }}>
-          {/* Sidebar Navigation */}
-          <div style={{ width: '320px', flexShrink: 0 }}>
-            {/* Main Tabs */}
-            <div style={{
-              background: 'rgba(255,255,255,0.1)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: '24px',
-              border: '1px solid rgba(255,255,255,0.2)',
-              padding: '24px',
-              marginBottom: '24px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {mainTabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTab(tab.id);
-                        setActiveSubTab(subTabs[tab.id as keyof typeof subTabs][0].id);
-                      }}
-                      style={{
-                        background: isActive 
-                          ? 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)'
-                          : 'transparent',
-                        border: isActive ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '16px',
-                        padding: '16px 20px',
-                        color: 'white',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        fontSize: '16px',
-                        fontWeight: isActive ? '600' : '500',
-                        transition: 'all 0.3s ease',
-                        boxShadow: isActive ? '0 4px 16px rgba(255,105,0,0.3)' : 'none'
-                      }}
-                    >
-                      <Icon size={20} />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
+        {/* Main Tabs */}
+        <div style={{
+          background: '#f8f9fa',
+          borderRadius: '8px',
+          padding: '4px',
+          marginBottom: '24px',
+          display: 'flex',
+          gap: '4px'
+        }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                background: activeTab === tab.id ? 'white' : 'transparent',
+                color: activeTab === tab.id ? '#111827' : '#64748b',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '10px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: activeTab === tab.id ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content Area */}
+        <div style={{
+          background: '#ffffff',
+          minHeight: '500px'
+        }}>
+          {activeTab === 'Entity Management' && renderEntityManagement()}
+          {activeTab === 'System Settings' && renderSystemSettings()}
+          {activeTab === 'AI Assistant' && (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <Cpu size={48} style={{ color: '#64748b', margin: '0 auto 16px' }} />
+              <h3 style={{ color: '#111827', marginBottom: '8px' }}>AI Assistant</h3>
+              <p style={{ color: '#64748b' }}>Configurazione assistente AI in sviluppo</p>
             </div>
-
-            {/* Sub Tabs */}
-            {subTabs[activeTab as keyof typeof subTabs] && (
-              <div style={{
-                background: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '24px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '24px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
-              }}>
-                <h3 style={{
-                  color: 'white',
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  marginBottom: '16px',
-                  margin: '0 0 16px 0'
-                }}>
-                  Sezioni
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {subTabs[activeTab as keyof typeof subTabs].map((subTab) => {
-                    const Icon = subTab.icon;
-                    const isActive = activeSubTab === subTab.id;
-                    return (
-                      <button
-                        key={subTab.id}
-                        onClick={() => setActiveSubTab(subTab.id)}
-                        style={{
-                          background: isActive 
-                            ? 'rgba(255,255,255,0.2)' 
-                            : 'transparent',
-                          border: isActive ? '1px solid rgba(255,255,255,0.3)' : 'none',
-                          borderRadius: '12px',
-                          padding: '12px 16px',
-                          color: isActive ? 'white' : 'rgba(255,255,255,0.7)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          fontSize: '14px',
-                          fontWeight: isActive ? '600' : '500',
-                          transition: 'all 0.3s ease',
-                          textAlign: 'left'
-                        }}
-                      >
-                        <Icon size={16} />
-                        {subTab.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Main Content */}
-          <div style={{ flex: 1 }}>
-            {renderContent()}
-          </div>
+          )}
+          {activeTab === 'Channel Settings' && (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <SettingsIcon size={48} style={{ color: '#64748b', margin: '0 auto 16px' }} />
+              <h3 style={{ color: '#111827', marginBottom: '8px' }}>Channel Settings</h3>
+              <p style={{ color: '#64748b' }}>Configurazioni canale in sviluppo</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
