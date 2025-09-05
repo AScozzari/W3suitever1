@@ -1556,24 +1556,23 @@ export default function SettingsPage() {
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      outline: 'none',
+                      color: '#111827',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1744,24 +1743,23 @@ export default function SettingsPage() {
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      outline: 'none',
+                      color: '#111827',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1947,24 +1945,23 @@ export default function SettingsPage() {
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      outline: 'none',
+                      color: '#111827',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1989,24 +1986,23 @@ export default function SettingsPage() {
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      outline: 'none',
+                      color: '#111827',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2031,24 +2027,23 @@ export default function SettingsPage() {
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#f9fafb',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      outline: 'none',
+                      color: '#111827',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2292,30 +2287,24 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: 'rgba(255, 255, 255, 0.7)',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                      transition: 'all 0.3s ease',
-                      fontFamily: 'monospace',
-                      fontWeight: '600',
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
                       outline: 'none',
-                      color: '#1f2937'
+                      color: '#111827',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
