@@ -65,6 +65,9 @@ export default function SettingsPage() {
   const [selectedCity, setSelectedCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   
+  // Entity Management sub-tabs
+  const [entitySubTab, setEntitySubTab] = useState('ragioni-sociali');
+  
   // Load reference data from API
   const { data: legalForms = [] } = useQuery({
     queryKey: ['/api/reference/legal-forms'],
@@ -183,7 +186,53 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Ragioni Sociali Section */}
+      {/* Sub-tabs per Entity Management */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        marginBottom: '24px',
+        borderBottom: '1px solid hsla(255, 255, 255, 0.12)'
+      }}>
+        {[
+          { id: 'ragioni-sociali', label: 'Ragioni Sociali', icon: Building2 },
+          { id: 'punti-vendita', label: 'Punti Vendita', icon: Store }
+        ].map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setEntitySubTab(tab.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 16px',
+                background: entitySubTab === tab.id 
+                  ? 'hsla(255, 255, 255, 0.08)' 
+                  : 'transparent',
+                border: entitySubTab === tab.id 
+                  ? '1px solid hsla(255, 255, 255, 0.12)' 
+                  : '1px solid transparent',
+                borderBottom: 'none',
+                borderRadius: '8px 8px 0 0',
+                color: entitySubTab === tab.id ? '#111827' : '#6b7280',
+                fontWeight: entitySubTab === tab.id ? '600' : '500',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Icon size={16} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contenuto condizionale basato su sub-tab selezionato */}
+      {entitySubTab === 'ragioni-sociali' && (
+        <>
+          {/* Ragioni Sociali Section */}
       <div style={{ marginBottom: '48px' }}>
         <div style={{
           display: 'flex',
@@ -359,42 +408,48 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Punti Vendita Section */}
-      <div>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#111827',
-            margin: 0
-          }}>
-            Punti Vendita
-          </h3>
-          <button style={{
-            background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
-            transition: 'all 0.2s ease'
-          }}
-          onClick={() => setStoreModal({ open: true, data: null })}>
-            <Plus size={16} />
-            Nuovo Punto Vendita
-          </button>
-        </div>
+        </>
+      )}
+
+      {/* Contenuto per tab Punti Vendita */}
+      {entitySubTab === 'punti-vendita' && (
+        <>
+          {/* Punti Vendita Section */}
+          <div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: 0
+              }}>
+                Punti Vendita
+              </h3>
+              <button style={{
+                background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={() => setStoreModal({ open: true, data: null })}>
+                <Plus size={16} />
+                Nuovo Punto Vendita
+              </button>
+            </div>
 
         <div style={{
           background: 'hsla(255, 255, 255, 0.08)',
@@ -535,7 +590,9 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 
