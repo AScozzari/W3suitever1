@@ -1646,80 +1646,140 @@ export default function WindTreDashboard() {
                 gap: '16px'
               }}>
                 {/* Icona Calendario */}
-                <button onClick={() => {
-                  setActiveWorkspaceTab('Calendario');
-                  setWorkspaceCollapsed(false);
-                }} style={{
-                  width: '40px',
-                  height: '40px',
-                  background: activeWorkspaceTab === 'Calendario' ? 'rgba(123, 44, 191, 0.2)' : 'transparent',
-                  border: activeWorkspaceTab === 'Calendario' ? '1px solid rgba(123, 44, 191, 0.3)' : 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: activeWorkspaceTab === 'Calendario' ? '#7B2CBF' : '#374151',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#7B2CBF';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = activeWorkspaceTab === 'Calendario' ? 'rgba(123, 44, 191, 0.2)' : 'transparent';
-                  e.currentTarget.style.color = activeWorkspaceTab === 'Calendario' ? '#7B2CBF' : '#374151';
-                }}>
-                  <Calendar size={18} />
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => {
+                    setActiveWorkspaceTab('Calendario');
+                    setWorkspaceCollapsed(false);
+                  }} style={{
+                    width: '40px',
+                    height: '40px',
+                    background: activeWorkspaceTab === 'Calendario' ? 'rgba(123, 44, 191, 0.2)' : 'transparent',
+                    border: activeWorkspaceTab === 'Calendario' ? '1px solid rgba(123, 44, 191, 0.3)' : 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    color: activeWorkspaceTab === 'Calendario' ? '#7B2CBF' : '#374151',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
+                  }} onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
+                    e.currentTarget.style.color = '#7B2CBF';
+                  }} onMouseOut={(e) => {
+                    e.currentTarget.style.background = activeWorkspaceTab === 'Calendario' ? 'rgba(123, 44, 191, 0.2)' : 'transparent';
+                    e.currentTarget.style.color = activeWorkspaceTab === 'Calendario' ? '#7B2CBF' : '#374151';
+                  }}>
+                    <Calendar size={18} />
+                  </button>
+                  {/* Badge Eventi */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    background: '#7B2CBF',
+                    color: 'white',
+                    fontSize: '8px',
+                    fontWeight: 600,
+                    minWidth: '16px',
+                    height: '16px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>{eventiTotali}</div>
+                </div>
                 {/* Icona Tasks */}
-                <button onClick={() => {
-                  setActiveWorkspaceTab('Tasks');
-                  setWorkspaceCollapsed(false);
-                }} style={{
-                  width: '40px',
-                  height: '40px',
-                  background: activeWorkspaceTab === 'Tasks' ? 'rgba(255, 105, 0, 0.2)' : 'transparent',
-                  border: activeWorkspaceTab === 'Tasks' ? '1px solid rgba(255, 105, 0, 0.3)' : 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: activeWorkspaceTab === 'Tasks' ? '#FF6900' : '#374151',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#FF6900';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = activeWorkspaceTab === 'Tasks' ? 'rgba(255, 105, 0, 0.2)' : 'transparent';
-                  e.currentTarget.style.color = activeWorkspaceTab === 'Tasks' ? '#FF6900' : '#374151';
-                }}>
-                  <CheckCircle size={18} />
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => {
+                    setActiveWorkspaceTab('Tasks');
+                    setWorkspaceCollapsed(false);
+                  }} style={{
+                    width: '40px',
+                    height: '40px',
+                    background: activeWorkspaceTab === 'Tasks' ? 'rgba(255, 105, 0, 0.2)' : 'transparent',
+                    border: activeWorkspaceTab === 'Tasks' ? '1px solid rgba(255, 105, 0, 0.3)' : 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    color: activeWorkspaceTab === 'Tasks' ? '#FF6900' : '#374151',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
+                  }} onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
+                    e.currentTarget.style.color = '#FF6900';
+                  }} onMouseOut={(e) => {
+                    e.currentTarget.style.background = activeWorkspaceTab === 'Tasks' ? 'rgba(255, 105, 0, 0.2)' : 'transparent';
+                    e.currentTarget.style.color = activeWorkspaceTab === 'Tasks' ? '#FF6900' : '#374151';
+                  }}>
+                    <CheckCircle size={18} />
+                  </button>
+                  {/* Badge Tasks */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    background: '#FF6900',
+                    color: 'white',
+                    fontSize: '8px',
+                    fontWeight: 600,
+                    minWidth: '16px',
+                    height: '16px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>4</div>
+                </div>
                 {/* Icona Leads */}
-                <button onClick={() => {
-                  setActiveWorkspaceTab('Leads');
-                  setWorkspaceCollapsed(false);
-                }} style={{
-                  width: '40px',
-                  height: '40px',
-                  background: activeWorkspaceTab === 'Leads' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
-                  border: activeWorkspaceTab === 'Leads' ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: activeWorkspaceTab === 'Leads' ? '#10b981' : '#374151',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
-                  e.currentTarget.style.color = '#10b981';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.background = activeWorkspaceTab === 'Leads' ? 'rgba(16, 185, 129, 0.2)' : 'transparent';
-                  e.currentTarget.style.color = activeWorkspaceTab === 'Leads' ? '#10b981' : '#374151';
-                }}>
-                  <Users size={18} />
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => {
+                    setActiveWorkspaceTab('Leads');
+                    setWorkspaceCollapsed(false);
+                  }} style={{
+                    width: '40px',
+                    height: '40px',
+                    background: activeWorkspaceTab === 'Leads' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                    border: activeWorkspaceTab === 'Leads' ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    color: activeWorkspaceTab === 'Leads' ? '#10b981' : '#374151',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
+                  }} onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.15)';
+                    e.currentTarget.style.color = '#10b981';
+                  }} onMouseOut={(e) => {
+                    e.currentTarget.style.background = activeWorkspaceTab === 'Leads' ? 'rgba(16, 185, 129, 0.2)' : 'transparent';
+                    e.currentTarget.style.color = activeWorkspaceTab === 'Leads' ? '#10b981' : '#374151';
+                  }}>
+                    <Users size={18} />
+                  </button>
+                  {/* Badge Leads */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    background: '#10b981',
+                    color: 'white',
+                    fontSize: '8px',
+                    fontWeight: 600,
+                    minWidth: '16px',
+                    height: '16px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>{leads.length}</div>
+                </div>
               </div>
             ) : (
               <div style={{ padding: '24px 16px' }}>
