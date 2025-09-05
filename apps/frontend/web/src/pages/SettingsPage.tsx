@@ -314,8 +314,7 @@ export default function SettingsPage() {
               {/* P.IVA */}
               <div style={{
                 fontSize: '14px',
-                color: '#6b7280',
-                fontFamily: 'monospace'
+                color: '#6b7280'
               }}>
                 {item.pIva}
               </div>
