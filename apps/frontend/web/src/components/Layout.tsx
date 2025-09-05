@@ -69,7 +69,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     const token = localStorage.getItem('auth_token');
     if (!token && user) {
       // Simula login automatico per development con token JWT valido
-      const validJwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLXVzZXIiLCJlbWFpbCI6ImFkbWluQHczc3VpdGUuY29tIiwidGVuYW50SWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJpYXQiOjE3NTcwOTE0ODYsImV4cCI6MTc1NzY5NjI4Nn0.P1EaQBM6Y7C7Au4qgCHRrt8bptuMkVGXXVbe5nzI9iM';
+      const validJwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLXVzZXIiLCJlbWFpbCI6ImFkbWluQHczc3VpdGUuY29tIiwidGVuYW50SWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJpYXQiOjE3NTcwOTE4MjksImV4cCI6MTc1NzY5NjYyOX0.jy2yyRCPaYRDhmtcBiqZiKNzzfs-0s4_jdV_jZxogTI';
       localStorage.setItem('auth_token', validJwtToken);
       console.log('Setting valid JWT token for development');
       // Refresh stores query dopo aver impostato il token
@@ -77,18 +77,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     }
   }, [user]);
 
-  // Debug log per stores
+  // Imposta primo store come selezionato se disponibile
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    console.log('Stores debug:', { 
-      stores, 
-      storesLoading, 
-      storesError, 
-      user, 
-      hasToken: !!token,
-      tenantId: localStorage.getItem('currentTenantId')
-    });
-  }, [stores, storesLoading, storesError, user]);
+    if (stores && stores.length > 0 && !selectedStore) {
+      setSelectedStore(stores[0]);
+    }
+  }, [stores, selectedStore]);
   
   // Tab attiva per workspace
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');

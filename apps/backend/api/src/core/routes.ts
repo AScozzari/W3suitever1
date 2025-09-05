@@ -10,10 +10,10 @@ const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Apply tenant middleware to all API routes except auth
+  // Apply tenant middleware to all API routes except auth and stores
   app.use((req, res, next) => {
-    // Skip tenant middleware for auth routes
-    if (req.path.startsWith('/api/auth/')) {
+    // Skip tenant middleware for auth routes and stores (handled individually)
+    if (req.path.startsWith('/api/auth/') || req.path === '/api/stores') {
       return next();
     }
     // Apply tenant middleware for other API routes
@@ -159,10 +159,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== STORE MANAGEMENT API ====================
   
-  // Get stores for current tenant (automatic via middleware)
-  app.get('/api/stores', requireAuth(), async (req: any, res) => {
+  // Middleware JWT semplice per development
+  const simpleAuth = async (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: "Token richiesto" });
+    }
+    
     try {
-      const stores = await storage.getStoresByTenant(req.tenantId);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      req.user = {
+        id: decoded.id,
+        email: decoded.email,
+        tenantId: decoded.tenantId
+      };
+      next();
+    } catch (error) {
+      return res.status(401).json({ message: "Token non valido" });
+    }
+  };
+
+  // Get stores for current tenant (automatic via middleware)
+  app.get('/api/stores', simpleAuth, async (req: any, res) => {
+    try {
+      // Se c'è un user autenticato, usa il suo tenantId
+      const tenantId = req.user?.tenantId || req.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      const stores = await storage.getStoresByTenant(tenantId);
       res.json(stores);
     } catch (error) {
       console.error("Error fetching stores:", error);
