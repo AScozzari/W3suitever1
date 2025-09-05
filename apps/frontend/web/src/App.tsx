@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
 import { Route, Switch } from "wouter";
 import DashboardPage from "./pages/DashboardPage";
-import ProfessionalLogin from "./pages/ProfessionalLogin";
+import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
@@ -62,7 +62,7 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    return <ProfessionalLogin />;
+    return <Login />;
   }
 
   return (

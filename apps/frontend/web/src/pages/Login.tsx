@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { User, Lock, Eye, EyeOff, ArrowRight, Shield, Zap, Users, CheckCircle, Wifi } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, Zap, CheckCircle } from 'lucide-react';
 
-export default function Login() {
+export default function ProfessionalLogin() {
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -16,8 +16,8 @@ export default function Login() {
   }, []);
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      alert('Inserisci username e password');
+    if (!email || !password) {
+      alert('Inserisci email e password');
       return;
     }
 
@@ -30,8 +30,8 @@ export default function Login() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          username, 
-          password: password === 'admin' ? 'admin123' : password 
+          username: 'admin', 
+          password: password 
         }),
       });
 
@@ -56,12 +56,14 @@ export default function Login() {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))',
       display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       fontFamily: 'Inter, system-ui, sans-serif',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      padding: '20px'
     }}>
-      {/* Background Pattern */}
+      {/* Background Pattern - Enhanced */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -69,529 +71,467 @@ export default function Login() {
         right: 0,
         bottom: 0,
         backgroundImage: `
-          radial-gradient(circle at 20% 80%, rgba(255, 105, 0, 0.08) 0%, transparent 50%),
-          radial-gradient(circle at 80% 20%, rgba(123, 44, 191, 0.08) 0%, transparent 50%),
-          radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.15) 0%, transparent 50%)
+          radial-gradient(circle at 20% 80%, hsla(25, 100%, 50%, 0.12) 0%, transparent 60%),
+          radial-gradient(circle at 80% 20%, hsla(260, 100%, 45%, 0.12) 0%, transparent 60%),
+          radial-gradient(circle at 40% 40%, hsla(255, 255, 255, 0.25) 0%, transparent 50%)
         `,
         zIndex: -1
       }} />
 
-      {/* Left Panel - Hero/Brand (Mobile: Top section) */}
+      {/* Floating Elements */}
       <div style={{
-        flex: isMobile ? 'none' : 1,
-        minHeight: isMobile ? '60vh' : '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: isMobile ? '32px 24px' : '64px',
-        background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-        position: 'relative'
+        position: 'absolute',
+        top: '10%',
+        left: '10%',
+        width: '120px',
+        height: '120px',
+        background: 'hsla(25, 100%, 50%, 0.08)',
+        borderRadius: '50%',
+        filter: 'blur(40px)',
+        animation: 'float 6s ease-in-out infinite'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '10%',
+        right: '10%',
+        width: '200px',
+        height: '200px',
+        background: 'hsla(260, 100%, 45%, 0.06)',
+        borderRadius: '50%',
+        filter: 'blur(50px)',
+        animation: 'float 8s ease-in-out infinite reverse'
+      }} />
+
+      {/* Main Login Container */}
+      <div style={{
+        width: '100%',
+        maxWidth: isMobile ? '380px' : '460px',
+        position: 'relative',
+        zIndex: 10
       }}>
+        {/* Header Section */}
         <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.1)'
-        }} />
-        
-        <div style={{
-          position: 'relative',
-          zIndex: 10,
           textAlign: 'center',
-          color: 'white',
-          maxWidth: isMobile ? '100%' : '500px'
+          marginBottom: '40px'
         }}>
           {/* Logo */}
           <div style={{
-            width: isMobile ? '80px' : '120px',
-            height: isMobile ? '80px' : '120px',
-            background: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(20px)',
-            borderRadius: isMobile ? '20px' : '30px',
+            width: isMobile ? '80px' : '100px',
+            height: isMobile ? '80px' : '100px',
+            background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+            borderRadius: '24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: `0 auto ${isMobile ? '24px' : '40px'} auto`,
-            border: '2px solid rgba(255, 255, 255, 0.2)'
+            margin: '0 auto 32px',
+            position: 'relative',
+            boxShadow: '0 20px 60px rgba(255, 105, 0, 0.25)',
+            backdropFilter: 'blur(20px)'
           }}>
             <span style={{
-              fontSize: isMobile ? '36px' : '48px',
+              fontSize: isMobile ? '36px' : '42px',
               fontWeight: 'bold',
-              background: 'linear-gradient(135deg, #ffffff, #f0f0f0)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
+              color: 'white',
+              textShadow: '0 2px 20px rgba(0, 0, 0, 0.3)'
             }}>W</span>
+            {/* Glow Effect */}
+            <div style={{
+              position: 'absolute',
+              inset: '-4px',
+              background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+              borderRadius: '28px',
+              opacity: 0.3,
+              filter: 'blur(20px)',
+              zIndex: -1
+            }} />
           </div>
 
           <h1 style={{
-            fontSize: isMobile ? '32px' : '48px',
-            fontWeight: 'bold',
-            margin: `0 0 ${isMobile ? '12px' : '16px'} 0`,
-            letterSpacing: '-1px'
+            fontSize: isMobile ? '28px' : '36px',
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            margin: '0 0 12px 0',
+            letterSpacing: '-0.5px'
           }}>WindTre Suite</h1>
-          
           <p style={{
-            fontSize: isMobile ? '16px' : '24px',
-            opacity: 0.9,
-            margin: `0 0 ${isMobile ? '32px' : '48px'} 0`,
-            fontWeight: 300,
-            lineHeight: 1.4,
-            padding: isMobile ? '0 16px' : '0'
-          }}>
-            {isMobile 
-              ? 'Piattaforma enterprise multitenant'
-              : 'La piattaforma enterprise più avanzata per la gestione multitenant'
-            }
-          </p>
-
-          {/* Features - Compact on mobile */}
-          {isMobile ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '16px',
-              maxWidth: '320px',
-              margin: '0 auto'
-            }}>
-              {[
-                { icon: Shield, title: 'Sicurezza' },
-                { icon: Zap, title: 'AI Powered' },
-                { icon: Users, title: 'Multi-Tenant' },
-                { icon: Wifi, title: 'Cloud Native' }
-              ].map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div key={index} style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '12px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(20px)',
-                    padding: '20px 12px',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)'
-                  }}>
-                    <Icon size={24} />
-                    <span style={{
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      textAlign: 'center'
-                    }}>{feature.title}</span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: '24px',
-              textAlign: 'left'
-            }}>
-              {[
-                { icon: Shield, title: 'Sicurezza Enterprise', desc: 'Autenticazione OAuth2 con MFA e crittografia end-to-end' },
-                { icon: Zap, title: 'AI & Machine Learning', desc: 'Analytics predittivi e automazione intelligente' },
-                { icon: Users, title: 'Multi-Tenant Architecture', desc: 'Isolamento completo dei dati con RLS PostgreSQL' },
-                { icon: Wifi, title: 'Cloud Native', desc: 'Scalabilità infinita con architettura microservizi' }
-              ].map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div key={index} style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '20px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(20px)',
-                    padding: '24px',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)'
-                  }}>
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.2)',
-                      padding: '12px',
-                      borderRadius: '12px'
-                    }}>
-                      <Icon size={28} />
-                    </div>
-                    <div>
-                      <h3 style={{
-                        fontSize: '18px',
-                        fontWeight: 600,
-                        margin: '0 0 8px 0'
-                      }}>{feature.title}</h3>
-                      <p style={{
-                        fontSize: '14px',
-                        opacity: 0.8,
-                        margin: 0,
-                        lineHeight: 1.4
-                      }}>{feature.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Right Panel - Login Form (Mobile: Bottom section) */}
-      <div style={{
-        flex: isMobile ? 'none' : '0 0 600px',
-        minHeight: isMobile ? '40vh' : '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: isMobile ? '24px' : '64px',
-        background: 'hsla(0, 0%, 100%, 0.35)',
-        backdropFilter: 'blur(16px)',
-        borderLeft: isMobile ? 'none' : '1px solid hsla(0, 0%, 100%, 0.18)',
-        borderTop: isMobile ? '1px solid hsla(0, 0%, 100%, 0.18)' : 'none'
-      }}>
-        {/* Header Form */}
-        <div style={{ marginBottom: isMobile ? '32px' : '48px' }}>
+            fontSize: isMobile ? '16px' : '18px',
+            color: '#6b7280',
+            margin: '0 0 8px 0',
+            fontWeight: 400
+          }}>Enterprise Management Platform</p>
+          
+          {/* Status Indicator */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            marginBottom: isMobile ? '16px' : '24px',
-            background: 'hsla(0, 0%, 100%, 0.25)',
-            padding: '6px 12px',
-            borderRadius: '12px',
-            border: '1px solid hsla(0, 0%, 100%, 0.18)'
+            background: 'hsla(142, 76%, 36%, 0.1)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            border: '1px solid hsla(142, 76%, 36%, 0.2)',
+            fontSize: '13px',
+            color: '#059669',
+            fontWeight: 500
           }}>
-            <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
-            <span style={{ fontSize: '12px', color: '#374151', fontWeight: 500 }}>Sistema Operativo</span>
+            <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }} />
+            Sistema Operativo
           </div>
-          
-          <h2 style={{
-            fontSize: isMobile ? '24px' : '32px',
-            fontWeight: 700,
-            color: '#1f2937',
-            margin: `0 0 ${isMobile ? '8px' : '12px'} 0`,
-            letterSpacing: '-0.5px'
-          }}>Accesso Sicuro</h2>
-          
-          <p style={{
-            color: '#6b7280',
-            fontSize: isMobile ? '14px' : '18px',
-            margin: 0,
-            lineHeight: 1.5
-          }}>
-            {isMobile 
-              ? 'Inserisci le credenziali per accedere'
-              : 'Inserisci le tue credenziali aziendali per accedere alla dashboard enterprise'
-            }
-          </p>
         </div>
 
-        {/* Login Form */}
+        {/* Login Form Card - Enhanced Glassmorphism */}
         <div style={{
-          background: 'hsla(0, 0%, 100%, 0.4)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '20px',
-          padding: isMobile ? '24px' : '40px',
-          border: '1px solid hsla(0, 0%, 100%, 0.18)',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)'
+          background: 'hsla(255, 255, 255, 0.25)',
+          backdropFilter: 'blur(32px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+          borderRadius: '32px',
+          padding: isMobile ? '32px 24px' : '48px 40px',
+          border: '1px solid hsla(255, 255, 255, 0.3)',
+          boxShadow: '0 32px 80px rgba(0, 0, 0, 0.12), inset 0 1px 0 hsla(255, 255, 255, 0.4)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          {/* Username Field */}
-          <div style={{ marginBottom: isMobile ? '20px' : '28px' }}>
-            <label style={{
-              display: 'block',
-              color: '#374151',
-              fontSize: isMobile ? '14px' : '16px',
-              fontWeight: 600,
-              marginBottom: '8px'
-            }}>
-              Username Aziendale
-            </label>
-            <div style={{ position: 'relative' }}>
-              <div style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#6b7280',
-                zIndex: 10
-              }}>
-                <User size={isMobile ? 18 : 22} />
-              </div>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '16px 16px 16px 48px' : '20px 20px 20px 60px',
-                  background: 'hsla(0, 0%, 100%, 0.6)',
-                  backdropFilter: 'blur(16px)',
-                  border: '2px solid hsla(0, 0%, 100%, 0.3)',
-                  borderRadius: isMobile ? '12px' : '16px',
-                  color: '#1f2937',
-                  fontSize: isMobile ? '14px' : '16px',
-                  outline: 'none',
-                  transition: 'all 0.3s ease',
-                  boxSizing: 'border-box',
-                  fontWeight: 500
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#FF6900';
-                  e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.8)';
-                  e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 105, 0, 0.15)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.3)';
-                  e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.6)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Password Field */}
-          <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
-            <label style={{
-              display: 'block',
-              color: '#374151',
-              fontSize: isMobile ? '14px' : '16px',
-              fontWeight: 600,
-              marginBottom: '8px'
-            }}>
-              Password Sicura
-            </label>
-            <div style={{ position: 'relative' }}>
-              <div style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#6b7280',
-                zIndex: 10
-              }}>
-                <Lock size={isMobile ? 18 : 22} />
-              </div>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="admin"
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '16px 48px 16px 48px' : '20px 60px 20px 60px',
-                  background: 'hsla(0, 0%, 100%, 0.6)',
-                  backdropFilter: 'blur(16px)',
-                  border: '2px solid hsla(0, 0%, 100%, 0.3)',
-                  borderRadius: isMobile ? '12px' : '16px',
-                  color: '#1f2937',
-                  fontSize: isMobile ? '14px' : '16px',
-                  outline: 'none',
-                  transition: 'all 0.3s ease',
-                  boxSizing: 'border-box',
-                  fontWeight: 500
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#FF6900';
-                  e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.8)';
-                  e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 105, 0, 0.15)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.3)';
-                  e.currentTarget.style.background = 'hsla(0, 0%, 100%, 0.6)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleLogin();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#6b7280',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease',
-                  borderRadius: '8px',
-                  minWidth: '40px',
-                  minHeight: '40px'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.color = '#FF6900';
-                  e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.color = '#6b7280';
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                {showPassword ? <EyeOff size={isMobile ? 18 : 22} /> : <Eye size={isMobile ? 18 : 22} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Remember & Security - Mobile optimized */}
+          {/* Inner Glow */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: isMobile ? '24px' : '40px',
-            background: 'hsla(0, 0%, 100%, 0.25)',
-            padding: isMobile ? '12px 16px' : '16px 20px',
-            borderRadius: '12px',
-            border: '1px solid hsla(0, 0%, 100%, 0.18)',
-            flexWrap: isMobile ? 'wrap' : 'nowrap',
-            gap: isMobile ? '12px' : '0'
-          }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: '#6b7280',
-              fontSize: isMobile ? '13px' : '15px',
-              cursor: 'pointer',
-              fontWeight: 500
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(135deg, hsla(255, 255, 255, 0.1) 0%, hsla(255, 255, 255, 0.05) 100%)',
+            borderRadius: '32px',
+            pointerEvents: 'none'
+          }} />
+
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            {/* Email Field */}
+            <div style={{ marginBottom: '28px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: '12px',
+                letterSpacing: '0.025em'
+              }}>Email Aziendale</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@w3suite.com"
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '16px 20px' : '18px 24px',
+                    background: 'hsla(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '2px solid hsla(255, 255, 255, 0.3)',
+                    borderRadius: '16px',
+                    fontSize: '16px',
+                    color: '#1f2937',
+                    outline: 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxSizing: 'border-box',
+                    fontWeight: 500,
+                    letterSpacing: '0.025em'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#FF6900';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.6)';
+                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 105, 0, 0.15), 0 8px 32px rgba(255, 105, 0, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div style={{ marginBottom: '36px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#374151',
+                marginBottom: '12px',
+                letterSpacing: '0.025em'
+              }}>Password Sicura</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '16px 60px 16px 20px' : '18px 70px 18px 24px',
+                    background: 'hsla(255, 255, 255, 0.4)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '2px solid hsla(255, 255, 255, 0.3)',
+                    borderRadius: '16px',
+                    fontSize: '16px',
+                    color: '#1f2937',
+                    outline: 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxSizing: 'border-box',
+                    fontWeight: 500,
+                    letterSpacing: '0.1em'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = '#FF6900';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.6)';
+                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(255, 105, 0, 0.15), 0 8px 32px rgba(255, 105, 0, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.3)';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleLogin();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'hsla(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1px solid hsla(255, 255, 255, 0.3)',
+                    borderRadius: '12px',
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    width: '44px',
+                    height: '44px'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.color = '#FF6900';
+                    e.currentTarget.style.background = 'hsla(25, 100%, 50%, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-50%) scale(1.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.color = '#6b7280';
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                  }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Security Features */}
+            <div style={{
+              background: 'hsla(142, 76%, 36%, 0.08)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              borderRadius: '16px',
+              padding: '20px',
+              marginBottom: '32px',
+              border: '1px solid hsla(142, 76%, 36%, 0.2)'
             }}>
-              <input
-                type="checkbox"
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  accentColor: '#FF6900',
-                  borderRadius: '4px'
-                }}
-              />
-              {isMobile ? 'Ricordami' : 'Mantieni accesso per 30 giorni'}
-            </label>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '12px'
+              }}>
+                <Shield size={20} style={{ color: '#059669' }} />
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#059669'
+                }}>Accesso Protetto</span>
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: '12px',
+                fontSize: '12px',
+                color: '#6b7280'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle size={14} style={{ color: '#10b981' }} />
+                  <span>Crittografia SSL/TLS</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle size={14} style={{ color: '#10b981' }} />
+                  <span>Autenticazione MFA</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={14} style={{ color: '#f59e0b' }} />
+                  <span>Session Management</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={14} style={{ color: '#f59e0b' }} />
+                  <span>Audit Logging</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Login Button */}
+            <button
+              onClick={handleLogin}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: isMobile ? '18px 24px' : '20px 32px',
+                background: isLoading 
+                  ? 'linear-gradient(135deg, #d1d5db, #9ca3af)' 
+                  : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                color: 'white',
+                fontSize: isMobile ? '16px' : '18px',
+                fontWeight: 700,
+                border: 'none',
+                borderRadius: '16px',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                marginBottom: '24px',
+                boxShadow: isLoading 
+                  ? 'none' 
+                  : '0 20px 60px rgba(255, 105, 0, 0.3), 0 8px 32px rgba(123, 44, 191, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                letterSpacing: '0.025em',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseOver={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 32px 80px rgba(255, 105, 0, 0.4), 0 16px 48px rgba(123, 44, 191, 0.3)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 20px 60px rgba(255, 105, 0, 0.3), 0 8px 32px rgba(123, 44, 191, 0.2)';
+                }
+              }}
+              onTouchStart={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }
+              }}
+              onTouchEnd={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              {/* Button Glow */}
+              {!isLoading && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+                  borderRadius: '16px',
+                  pointerEvents: 'none'
+                }} />
+              )}
+              
+              <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {isLoading ? (
+                  <>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    Autenticazione...
+                  </>
+                ) : (
+                  <>
+                    Accedi al Workspace
+                    <ArrowRight size={20} />
+                  </>
+                )}
+              </div>
+            </button>
+
+            {/* Help Links */}
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: '#10b981',
-              fontSize: isMobile ? '12px' : '14px',
-              fontWeight: 500
-            }}>
-              <CheckCircle size={14} />
-              Sicura
-            </div>
-          </div>
-
-          {/* Login Button - Touch optimized */}
-          <button
-            onClick={handleLogin}
-            disabled={isLoading}
-            style={{
-              width: '100%',
-              padding: isMobile ? '18px 24px' : '20px 32px',
-              background: isLoading 
-                ? 'linear-gradient(135deg, #d1d5db, #9ca3af)' 
-                : 'linear-gradient(135deg, #FF6900, #ff8533)',
-              color: 'white',
-              fontSize: isMobile ? '16px' : '18px',
-              fontWeight: 700,
-              textAlign: 'center',
-              borderRadius: isMobile ? '14px' : '16px',
-              border: 'none',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s ease',
-              marginBottom: isMobile ? '16px' : '24px',
-              boxShadow: isLoading 
-                ? 'none' 
-                : '0 16px 40px rgba(255, 105, 0, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px',
-              minHeight: isMobile ? '56px' : 'auto'
-            }}
-            onMouseOver={(e) => {
-              if (!isLoading && !isMobile) {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 20px 50px rgba(255, 105, 0, 0.4)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (!isLoading && !isMobile) {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 16px 40px rgba(255, 105, 0, 0.3)';
-              }
-            }}
-            onTouchStart={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.transform = 'scale(0.98)';
-              }
-            }}
-            onTouchEnd={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.transform = 'scale(1)';
-              }
-            }}
-          >
-            {isLoading ? (
-              <>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  borderTop: '2px solid white',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
-                {isMobile ? 'Accesso...' : 'Autenticazione in corso...'}
-              </>
-            ) : (
-              <>
-                {isMobile ? 'Accedi' : 'Accedi al Workspace Enterprise'}
-                <ArrowRight size={isMobile ? 18 : 22} />
-              </>
-            )}
-          </button>
-
-          {/* Help Links - Mobile optimized */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: isMobile ? '24px' : '32px',
-            flexWrap: 'wrap'
-          }}>
-            <a href="#" style={{ 
-              color: '#FF6900', 
-              fontSize: isMobile ? '14px' : '15px', 
-              textDecoration: 'none',
-              fontWeight: 500,
-              padding: isMobile ? '8px' : '0'
+              gap: isMobile ? '20px' : '32px',
+              flexWrap: 'wrap'
             }}>
-              Password dimenticata?
-            </a>
-            <a href="#" style={{ 
-              color: '#6b7280', 
-              fontSize: isMobile ? '14px' : '15px', 
-              textDecoration: 'none',
-              fontWeight: 500,
-              padding: isMobile ? '8px' : '0'
-            }}>
-              Supporto IT
-            </a>
+              <button style={{ 
+                background: 'transparent',
+                border: 'none',
+                color: '#FF6900', 
+                fontSize: '14px', 
+                fontWeight: 500,
+                cursor: 'pointer',
+                padding: '8px 0',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.textDecoration = 'underline';
+                e.currentTarget.style.color = '#e55800';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.textDecoration = 'none';
+                e.currentTarget.style.color = '#FF6900';
+              }}>
+                Password dimenticata?
+              </button>
+              <button style={{ 
+                background: 'transparent',
+                border: 'none',
+                color: '#6b7280', 
+                fontSize: '14px', 
+                fontWeight: 500,
+                cursor: 'pointer',
+                padding: '8px 0',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.textDecoration = 'underline';
+                e.currentTarget.style.color = '#374151';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.textDecoration = 'none';
+                e.currentTarget.style.color = '#6b7280';
+              }}>
+                Supporto IT
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
         <div style={{
-          marginTop: isMobile ? '24px' : '40px',
           textAlign: 'center',
-          color: '#9ca3af',
-          fontSize: isMobile ? '12px' : '14px'
+          marginTop: '32px',
+          fontSize: '12px',
+          color: '#9ca3af'
         }}>
           <p style={{ margin: '0 0 4px 0' }}>© 2025 WindTre Business Solutions</p>
           <p style={{ margin: 0 }}>Enterprise Resource Planning Platform v2.0</p>
@@ -602,6 +542,11 @@ export default function Login() {
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
           }
           
           @media (max-width: 768px) {
