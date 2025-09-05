@@ -10,6 +10,41 @@ declare global {
   }
 }
 
+// Mapping sottodomini -> tenant IDs
+const TENANT_SUBDOMAIN_MAP: Record<string, { id: string, name: string }> = {
+  'demo': { 
+    id: '00000000-0000-0000-0000-000000000001', 
+    name: 'Demo Organization' 
+  },
+  'acme': { 
+    id: '11111111-1111-1111-1111-111111111111', 
+    name: 'Acme Corporation' 
+  },
+  'tech': { 
+    id: '22222222-2222-2222-2222-222222222222', 
+    name: 'Tech Solutions Ltd' 
+  }
+};
+
+// Helper per estrarre il sottodominio dall'hostname
+const extractSubdomain = (hostname: string): string | null => {
+  // In produzione: acme.w3suite.com -> 'acme'
+  // In development: localhost:5000 -> usa header di test
+  
+  // Se siamo in localhost, cerca l'header di test
+  if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+    return null; // Useremo l'header X-Tenant-Subdomain per testing
+  }
+  
+  // Estrai il primo segmento del dominio
+  const parts = hostname.split('.');
+  if (parts.length >= 3) { // es: acme.w3suite.com
+    return parts[0];
+  }
+  
+  return null;
+};
+
 // Middleware per estrarre e validare il tenant ID
 export const tenantMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -19,7 +54,29 @@ export const tenantMiddleware = (req: Request, res: Response, next: NextFunction
       return next();
     }
 
-    // 2. Poi controlla l'header X-Tenant-ID
+    // 2. Estrai il sottodominio dall'hostname
+    const subdomain = extractSubdomain(req.hostname);
+    
+    // 3. In development, permetti override tramite header per testing
+    const testSubdomain = req.headers['x-tenant-subdomain'] as string;
+    const finalSubdomain = subdomain || testSubdomain;
+    
+    if (finalSubdomain) {
+      const tenant = TENANT_SUBDOMAIN_MAP[finalSubdomain.toLowerCase()];
+      if (tenant) {
+        req.tenantId = tenant.id;
+        // Aggiungi anche info tenant alla request
+        (req as any).tenantInfo = tenant;
+        return next();
+      } else {
+        return res.status(404).json({ 
+          error: 'Tenant not found',
+          message: `Organization '${finalSubdomain}' not found. Please check your URL.`
+        });
+      }
+    }
+
+    // 4. Fallback: controlla l'header X-Tenant-ID (per backward compatibility)
     const tenantIdHeader = req.headers['x-tenant-id'] as string;
     if (tenantIdHeader) {
       // Valida che sia un UUID valido
