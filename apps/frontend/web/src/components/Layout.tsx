@@ -900,14 +900,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     color: '#1f2937',
                     margin: 0
                   }}>Workspace</h3>
-                  <div style={{
-                    background: '#FF6900',
-                    color: 'white',
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    padding: '2px 8px',
-                    borderRadius: '10px'
-                  }}>{tasksOggi + leads.length}</div>
                 </div>
 
                 <div style={{
