@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { setTenantContext } from '../core/db';
 
 // Extend Express Request type to include tenant
 declare global {
@@ -50,11 +51,26 @@ const extractSubdomain = (hostname: string): string | null => {
 };
 
 // Middleware per estrarre e validare il tenant ID
-export const tenantMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // 1. Prima controlla se l'utente è autenticato e ha un tenant
+    // 1. Estrazione tenant ID da URL path (es: /staging/dashboard)
+    const pathSegments = req.path.split('/').filter(Boolean);
+    const pathTenant = pathSegments[0]; // primo segmento del path
+    
+    if (pathTenant && TENANT_SUBDOMAIN_MAP[pathTenant.toLowerCase()]) {
+      const tenant = TENANT_SUBDOMAIN_MAP[pathTenant.toLowerCase()];
+      req.tenantId = tenant.id;
+      (req as any).tenantInfo = tenant;
+      
+      // Imposta il context del database per RLS
+      await setTenantContext(tenant.id);
+      return next();
+    }
+
+    // 2. Prima controlla se l'utente è autenticato e ha un tenant
     if (req.user && req.user.tenantId) {
       req.tenantId = req.user.tenantId;
+      await setTenantContext(req.user.tenantId);
       return next();
     }
 
