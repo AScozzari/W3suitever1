@@ -60,24 +60,55 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   }, [location]);
 
   // Query per ottenere i punti vendita del tenant corrente
-  const { data: stores = [], isLoading: storesLoading, error: storesError } = useQuery({
+  const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
     queryKey: ["/api/stores"],
     enabled: !!user,
     retry: 2
   });
 
+  // Ensure stores is always an array
+  const stores = Array.isArray(storesResponse) ? storesResponse : [];
+
   // Auto-login per development se non c'è token
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
-    if (!token && user) {
-      // Simula login automatico per development con token JWT valido
-      const validJwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLXVzZXIiLCJlbWFpbCI6ImFkbWluQHczc3VpdGUuY29tIiwidGVuYW50SWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJpYXQiOjE3NTcwOTIwMTYsImV4cCI6MTc1NzY5NjgxNn0.-YyFQ05KOSn4Ts48p92BBUl19G_GBD70s_1npIAErzM';
-      localStorage.setItem('auth_token', validJwtToken);
-      console.log('Setting valid JWT token for development');
-      // Refresh stores query dopo aver impostato il token
-      queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+    if (!token) {
+      // Effettua login automatico per development
+      performAutoLogin();
     }
-  }, [user]);
+  }, []);
+
+  // Funzione per effettuare login automatico e ottenere token valido
+  const performAutoLogin = async () => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          tenantCode: 'staging',
+          username: 'admin', 
+          password: 'admin123' 
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
+        console.log('Auto-login successful for development');
+        
+        // Refresh user and stores query dopo aver impostato il token
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
+      } else {
+        console.error('Auto-login failed');
+      }
+    } catch (error) {
+      console.error('Auto-login error:', error);
+    }
+  };
 
   // Imposta primo store come selezionato se disponibile
   useEffect(() => {
@@ -386,26 +417,18 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
+      // Pulisci sempre i dati locali indipendentemente dalla risposta del server
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('currentTenantId');
       
-      if (response.ok) {
-        // Rimuovi il token e invalida la cache
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('currentTenantId');
-        
-        // Invalida tutte le query di autenticazione
-        queryClient.removeQueries({ queryKey: ['/api/auth/user'] });
-        queryClient.clear();
-        
-        // Reindirizza alla pagina di login del tenant corrente
-        const currentTenant = localStorage.getItem('currentTenant') || 'staging';
-        window.location.href = `/${currentTenant}`;
-      }
+      // Invalida tutte le query di autenticazione
+      queryClient.removeQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.clear();
+      
+      // Reindirizza alla pagina di login del tenant corrente
+      const currentTenant = localStorage.getItem('currentTenant') || 'staging';
+      window.location.href = `/${currentTenant}`;
+      
     } catch (error) {
       console.error('Logout error:', error);
       // Anche in caso di errore, pulisci tutto e reindirizza
