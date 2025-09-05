@@ -1049,32 +1049,139 @@ export default function SettingsPage() {
                       justifyContent: 'space-between'
                     }}>
                       {cat.category}
-                      <input
-                        type="checkbox"
-                        defaultChecked={selectedRole === 'admin'}
-                        style={{ cursor: 'pointer' }}
-                      />
+                      {/* Switch Toggle */}
+                      <label style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        width: '44px',
+                        height: '24px',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          defaultChecked={selectedRole === 'admin'}
+                          style={{
+                            opacity: 0,
+                            width: 0,
+                            height: 0
+                          }}
+                          onChange={(e) => {
+                            const slider = e.target.nextSibling as HTMLElement;
+                            if (e.target.checked) {
+                              slider.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
+                              (slider.firstChild as HTMLElement).style.transform = 'translateX(20px)';
+                            } else {
+                              slider.style.background = '#e5e7eb';
+                              (slider.firstChild as HTMLElement).style.transform = 'translateX(2px)';
+                            }
+                          }}
+                        />
+                        <span style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: selectedRole === 'admin' ? 'linear-gradient(135deg, #FF6900, #ff8533)' : '#e5e7eb',
+                          borderRadius: '24px',
+                          transition: 'all 0.3s ease',
+                          boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.12)'
+                        }}>
+                          <span style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '18px',
+                            width: '18px',
+                            left: '3px',
+                            bottom: '3px',
+                            backgroundColor: 'white',
+                            borderRadius: '50%',
+                            transition: 'all 0.3s ease',
+                            transform: selectedRole === 'admin' ? 'translateX(20px)' : 'translateX(0)',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                          }} />
+                        </span>
+                      </label>
                     </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {cat.permissions.map((perm) => (
-                        <label
+                        <div
                           key={perm}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '13px',
-                            color: '#6b7280',
-                            cursor: 'pointer'
+                            justifyContent: 'space-between',
+                            padding: '8px 12px',
+                            background: 'hsla(255, 255, 255, 0.03)',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'hsla(255, 255, 255, 0.06)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'hsla(255, 255, 255, 0.03)';
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            defaultChecked={selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')}
-                            style={{ cursor: 'pointer' }}
-                          />
-                          {perm}
-                        </label>
+                          <span style={{
+                            fontSize: '13px',
+                            color: '#6b7280'
+                          }}>
+                            {perm}
+                          </span>
+                          {/* Mini Switch Toggle */}
+                          <label style={{
+                            position: 'relative',
+                            display: 'inline-block',
+                            width: '36px',
+                            height: '20px',
+                            cursor: 'pointer'
+                          }}>
+                            <input
+                              type="checkbox"
+                              defaultChecked={selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')}
+                              style={{
+                                opacity: 0,
+                                width: 0,
+                                height: 0
+                              }}
+                              onChange={(e) => {
+                                const slider = e.target.nextSibling as HTMLElement;
+                                if (e.target.checked) {
+                                  slider.style.background = '#10b981';
+                                  (slider.firstChild as HTMLElement).style.transform = 'translateX(16px)';
+                                } else {
+                                  slider.style.background = '#e5e7eb';
+                                  (slider.firstChild as HTMLElement).style.transform = 'translateX(2px)';
+                                }
+                              }}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: (selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')) ? '#10b981' : '#e5e7eb',
+                              borderRadius: '20px',
+                              transition: 'all 0.2s ease'
+                            }}>
+                              <span style={{
+                                position: 'absolute',
+                                content: '""',
+                                height: '14px',
+                                width: '14px',
+                                left: '3px',
+                                bottom: '3px',
+                                backgroundColor: 'white',
+                                borderRadius: '50%',
+                                transition: 'all 0.2s ease',
+                                transform: (selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')) ? 'translateX(16px)' : 'translateX(0)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
+                              }} />
+                            </span>
+                          </label>
+                        </div>
                       ))}
                     </div>
                   </div>
