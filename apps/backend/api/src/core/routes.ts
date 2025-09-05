@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupOAuthRoutes, requireAuth, requirePermission } from "./oauth";
+import { dashboardService } from "./dashboard-service";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
@@ -24,7 +25,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: 'admin@w3suite.com',
           firstName: 'Admin',
           lastName: 'User',
-          tenantId: 'demo-tenant',
+          tenantId: '927b5ed6-413e-4a55-b8e5-fd2af0c52398', // W3 Demo tenant UUID
           username: 'admin'
         };
         
@@ -63,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: decoded.email || 'admin@w3suite.com',
         firstName: 'Admin',
         lastName: 'User',
-        tenantId: decoded.tenantId || 'demo-tenant'
+        tenantId: decoded.tenantId || '927b5ed6-413e-4a55-b8e5-fd2af0c52398'
       };
       
       res.json(mockUser);
@@ -154,7 +155,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== ENTERPRISE API ENDPOINTS ====================
 
-  // Dashboard data
+  // Dashboard stats (main dashboard data)
+  app.get('/api/dashboard/stats', async (req: any, res) => {
+    try {
+      // Get tenant ID from user if authenticated
+      let tenantId = null;
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
+      
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          tenantId = decoded.tenantId;
+        } catch (error) {
+          // Continue without tenant context
+        }
+      }
+      
+      const stats = await dashboardService.getStats(tenantId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Dashboard metrics (detailed metrics)
   app.get('/api/dashboard/metrics', requireAuth(), requirePermission('dashboard.view'), async (req, res) => {
     try {
       // TODO: Implement dashboard metrics
