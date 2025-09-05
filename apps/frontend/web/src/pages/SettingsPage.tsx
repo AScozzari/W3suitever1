@@ -546,7 +546,7 @@ export default function SettingsPage() {
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div style={{ 
-        backgroundColor: '#ffffff', 
+        background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))', 
         minHeight: 'calc(100vh - 48px)',
         position: 'relative',
         width: 'calc(100% + 48px)',
