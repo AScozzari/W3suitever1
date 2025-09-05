@@ -10,6 +10,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench
 } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -27,6 +28,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
+  const [location, navigate] = useLocation();
   
   // Tab attiva per workspace
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
@@ -599,12 +601,20 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           }}>
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentModule === item.id;
+              const isActive = item.id === 'impostazioni' 
+                ? location === '/settings'
+                : currentModule === item.id;
               
               return (
                 <button
                   key={item.id}
-                  onClick={() => setCurrentModule(item.id)}
+                  onClick={() => {
+                    if (item.id === 'impostazioni') {
+                      navigate('/settings');
+                    } else {
+                      setCurrentModule(item.id);
+                    }
+                  }}
                   style={{
                     width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
                     height: leftSidebarCollapsed && !isMobile ? '40px' : 'auto',
