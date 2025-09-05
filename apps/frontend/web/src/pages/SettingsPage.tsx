@@ -56,6 +56,28 @@ import {
 // Tenant ID demo per tutti i mock data
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
+// Types for reference data
+interface LegalForm {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  minCapital?: string;
+  liability?: string;
+  active: boolean;
+  sortOrder: number;
+}
+
+interface ItalianCity {
+  id: string;
+  name: string;
+  province: string;
+  provinceName: string;
+  region: string;
+  postalCode: string;
+  active: boolean;
+}
+
 // Mock data per ragioni sociali - codici iniziano con 80 e hanno almeno 6 cifre
 const mockRagioneSociali = [
   { 
@@ -155,6 +177,10 @@ export default function SettingsPage() {
   // Modal states
   const [showCreateRagioneSociale, setShowCreateRagioneSociale] = useState(false);
   const [showCreatePuntoVendita, setShowCreatePuntoVendita] = useState(false);
+  const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
+  
+  // Role management states
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   
   // Handlers per Ragioni Sociali
   const handleCreateRagioneSociale = () => {
@@ -202,7 +228,7 @@ export default function SettingsPage() {
   };
   
   // Load reference data from API
-  const { data: legalForms = [] } = useQuery({
+  const { data: legalForms = [] } = useQuery<LegalForm[]>({
     queryKey: ['/api/reference/legal-forms'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -212,7 +238,7 @@ export default function SettingsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: italianCities = [] } = useQuery({
+  const { data: italianCities = [] } = useQuery<ItalianCity[]>({
     queryKey: ['/api/reference/italian-cities'],
     staleTime: 5 * 60 * 1000,
   });
@@ -231,7 +257,7 @@ export default function SettingsPage() {
 
   const handleCityChange = (cityName: string) => {
     setSelectedCity(cityName);
-    const city = (italianCities as any[]).find((c: any) => c.name === cityName);
+    const city = italianCities.find((c) => c.name === cityName);
     if (city) {
       setPostalCode(city.postalCode);
     }
@@ -285,6 +311,7 @@ export default function SettingsPage() {
             { id: 'ragione-sociale', icon: Building2, label: 'Ragione Sociale', color: '#FF6900' },
             { id: 'punti-vendita', icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
+            { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
             { id: 'smart-automation', icon: Server, label: 'Smart Automation', color: '#10b981' },
             { id: 'servizi', icon: Activity, label: 'Servizi', color: '#f59e0b' },
             { id: 'auto-reporting', icon: FileText, label: 'Auto Reporting', color: '#ef4444' },
@@ -747,6 +774,339 @@ export default function SettingsPage() {
           <Users size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Gestione Utenti</h3>
           <p>Questa sezione sarà disponibile a breve</p>
+        </div>
+      )}
+      
+      {/* Gestione Ruoli */}
+      {selectedEntity === 'gestione-ruoli' && (
+        <div>
+          {/* Header sezione */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '32px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #8339ff, #6b2cbf)',
+                  borderRadius: '12px',
+                  padding: '10px',
+                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)'
+                }}>
+                  <UserCog size={20} style={{ color: 'white' }} />
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: 0
+                  }}>
+                    Gestione Ruoli e Permessi
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: '4px 0 0 0'
+                  }}>
+                    Configura template di ruoli e gestisci capability per tenant
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCreateRoleModal(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #8339ff, #6b2cbf)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(131, 57, 255, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(131, 57, 255, 0.3)';
+                }}
+              >
+                <Plus size={16} />
+                Crea Ruolo Custom
+              </button>
+            </div>
+            
+            {/* Template di Ruoli */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: '16px'
+            }}>
+              {[
+                { code: 'admin', name: 'Admin', description: 'Accesso completo', users: 2, color: '#ef4444' },
+                { code: 'finance', name: 'Finance', description: 'Gestione finanziaria', users: 5, color: '#10b981' },
+                { code: 'direttore', name: 'Direttore', description: 'Supervisione strategica', users: 3, color: '#3b82f6' },
+                { code: 'store_manager', name: 'Store Manager', description: 'Gestione punto vendita', users: 12, color: '#f59e0b' },
+                { code: 'store_specialist', name: 'Store Specialist', description: 'Operazioni quotidiane', users: 45, color: '#8b5cf6' },
+                { code: 'student', name: 'Student', description: 'Accesso limitato formazione', users: 8, color: '#06b6d4' },
+                { code: 'marketing', name: 'Marketing', description: 'Campagne e comunicazione', users: 6, color: '#ec4899' },
+                { code: 'custom', name: 'Custom', description: 'Ruolo personalizzato', users: 0, color: '#6b7280' }
+              ].map((role) => (
+                <div
+                  key={role.code}
+                  style={{
+                    background: 'hsla(255, 255, 255, 0.05)',
+                    border: '1px solid hsla(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onClick={() => setSelectedRole(role.code)}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = `linear-gradient(135deg, ${role.color}10, ${role.color}05)`;
+                    e.currentTarget.style.borderColor = `${role.color}30`;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                    e.currentTarget.style.borderColor = 'hsla(255, 255, 255, 0.08)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: role.color
+                  }} />
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    marginBottom: '12px'
+                  }}>
+                    <div>
+                      <h4 style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#111827',
+                        margin: '0 0 4px 0'
+                      }}>
+                        {role.name}
+                      </h4>
+                      <p style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        margin: 0
+                      }}>
+                        {role.description}
+                      </p>
+                    </div>
+                    {role.code === 'admin' && (
+                      <Star size={16} style={{ color: role.color }} />
+                    )}
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{
+                      fontSize: '12px',
+                      color: '#6b7280',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <Users size={12} />
+                      {role.users} utenti
+                    </span>
+                    <ChevronRight size={14} style={{ color: '#6b7280' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Dettaglio Ruolo Selezionato */}
+          {selectedRole && (
+            <div style={{
+              background: 'hsla(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(24px) saturate(140%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px'
+              }}>
+                <h4 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: 0
+                }}>
+                  Permessi del Ruolo: {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1).replace('_', ' ')}
+                </h4>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    style={{
+                      padding: '8px 16px',
+                      background: 'transparent',
+                      color: '#6b7280',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Duplica
+                  </button>
+                  <button
+                    style={{
+                      padding: '8px 16px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Salva Modifiche
+                  </button>
+                </div>
+              </div>
+              
+              {/* Categorie di Permessi */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '20px'
+              }}>
+                {[
+                  { category: 'Dashboard', permissions: ['View', 'Analytics', 'Export'] },
+                  { category: 'CRM', permissions: ['Leads View', 'Leads Edit', 'Customers View', 'Customers Edit', 'Deals'] },
+                  { category: 'Cassa', permissions: ['Transactions', 'Refund', 'Shifts', 'Drawer'] },
+                  { category: 'Magazzino', permissions: ['Products View', 'Stock Adjust', 'Orders'] },
+                  { category: 'Finance', permissions: ['Invoices', 'Payments', 'Reports', 'Budget'] },
+                  { category: 'Settings', permissions: ['Organization', 'Users', 'Roles', 'Integrations'] }
+                ].map((cat) => (
+                  <div
+                    key={cat.category}
+                    style={{
+                      background: 'hsla(255, 255, 255, 0.05)',
+                      border: '1px solid hsla(255, 255, 255, 0.08)',
+                      borderRadius: '8px',
+                      padding: '16px'
+                    }}
+                  >
+                    <h5 style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      {cat.category}
+                      <input
+                        type="checkbox"
+                        defaultChecked={selectedRole === 'admin'}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </h5>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {cat.permissions.map((perm) => (
+                        <label
+                          key={perm}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '13px',
+                            color: '#6b7280',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            defaultChecked={selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          {perm}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Scope del Ruolo */}
+              <div style={{
+                marginTop: '24px',
+                padding: '16px',
+                background: 'hsla(123, 43%, 76%, 0.1)',
+                border: '1px solid hsla(123, 43%, 76%, 0.2)',
+                borderRadius: '8px'
+              }}>
+                <h5 style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '12px'
+                }}>
+                  Scope di Applicazione
+                </h5>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                    <input type="radio" name="scope" value="tenant" defaultChecked /> Intero Tenant
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                    <input type="radio" name="scope" value="legal" /> Ragioni Sociali Specifiche
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                    <input type="radio" name="scope" value="store" /> Punti Vendita Specifici
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
       
