@@ -547,16 +547,11 @@ export default function SettingsPage() {
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div style={{ 
         backgroundColor: '#ffffff', 
-        minHeight: '100vh',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        minHeight: 'calc(100vh - 48px)',
+        position: 'relative',
         width: '100%',
-        margin: 0,
-        padding: 0,
-        overflow: 'auto'
+        margin: '-24px',
+        padding: 0
       }}>
         {/* CSS Animations */}
         <style>{`
