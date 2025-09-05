@@ -548,7 +548,7 @@ export default function SettingsPage() {
                 boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)',
                 transition: 'all 0.2s ease'
               }}
-              onClick={() => handleCreatePuntoVendita()}>
+              onClick={() => setStoreModal({ open: true, data: null })}>
                 <Plus size={16} />
                 Nuovo Punto Vendita
               </button>
@@ -1248,8 +1248,474 @@ export default function SettingsPage() {
     }
   };
 
+  // State per il nuovo modal punto vendita
+  const [newStore, setNewStore] = useState({
+    codice: '',
+    nome: '',
+    indirizzo: '',
+    citta: '',
+    cap: '',
+    telefono: '',
+    email: '',
+    ragioneSociale: '',
+    canale: 'Franchising',
+    brands: [] as string[],
+    stato: 'Attivo'
+  });
+
+  // Handler per salvare il nuovo punto vendita
+  const handleSaveStore = () => {
+    const newCode = newStore.codice || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
+    const newItem = {
+      id: puntiVenditaList.length + 1,
+      codice: newCode,
+      nome: newStore.nome || 'Nuovo Punto Vendita',
+      indirizzo: newStore.indirizzo || 'Via Nuova 1',
+      citta: newStore.citta || 'Milano',
+      canale: newStore.canale,
+      stato: newStore.stato,
+      ragioneSociale: newStore.ragioneSociale || ragioneSocialiList[0]?.nome || 'Default'
+    };
+    setPuntiVenditaList([...puntiVenditaList, newItem]);
+    setStoreModal({ open: false, data: null });
+    // Reset form
+    setNewStore({
+      codice: '',
+      nome: '',
+      indirizzo: '',
+      citta: '',
+      cap: '',
+      telefono: '',
+      email: '',
+      ragioneSociale: '',
+      canale: 'Franchising',
+      brands: [],
+      stato: 'Attivo'
+    });
+  };
+
   return (
-    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+    <>
+      {/* Modal Punto Vendita */}
+      {storeModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            width: '90%',
+            maxWidth: '700px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+          }}>
+            {/* Header Modal */}
+            <div style={{
+              padding: '24px',
+              borderBottom: '1px solid #e5e7eb',
+              background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+              borderRadius: '24px 24px 0 0'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: '700',
+                color: 'white',
+                margin: 0
+              }}>
+                {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
+              </h2>
+            </div>
+
+            {/* Body Modal */}
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {/* Codice */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Codice Punto Vendita
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="90xxxxxxxx (generato automaticamente)"
+                    value={newStore.codice}
+                    onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Nome */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Nome Punto Vendita *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. WindTre Milano Centro"
+                    value={newStore.nome}
+                    onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Ragione Sociale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Ragione Sociale *
+                  </label>
+                  <select
+                    value={newStore.ragioneSociale}
+                    onChange={(e) => setNewStore({ ...newStore, ragioneSociale: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="">Seleziona...</option>
+                    {ragioneSocialiList.map(rs => (
+                      <option key={rs.id} value={rs.nome}>{rs.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Canale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Canale *
+                  </label>
+                  <select
+                    value={newStore.canale}
+                    onChange={(e) => setNewStore({ ...newStore, canale: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="Franchising">Franchising</option>
+                    <option value="Top Dealer">Top Dealer</option>
+                    <option value="Dealer">Dealer</option>
+                  </select>
+                </div>
+
+                {/* Indirizzo - full width */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Indirizzo *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Via Roma 123"
+                    value={newStore.indirizzo}
+                    onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Città */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Città *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Milano"
+                    value={newStore.citta}
+                    onChange={(e) => setNewStore({ ...newStore, citta: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* CAP */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. 20121"
+                    value={newStore.cap}
+                    onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Telefono */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Telefono
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="es. +39 02 1234567"
+                    value={newStore.telefono}
+                    onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="es. milano.centro@windtre.it"
+                    value={newStore.email}
+                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                {/* Brand - Multi-select */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Brand Gestiti *
+                  </label>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={newStore.brands.includes('WindTre')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStore({ ...newStore, brands: [...newStore.brands, 'WindTre'] });
+                          } else {
+                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
+                          }
+                        }}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: '#FF6900',
+                        fontWeight: '600'
+                      }}>
+                        WindTre
+                      </span>
+                    </label>
+                    
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={newStore.brands.includes('Very Mobile')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStore({ ...newStore, brands: [...newStore.brands, 'Very Mobile'] });
+                          } else {
+                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
+                          }
+                        }}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: '#7B2CBF',
+                        fontWeight: '600'
+                      }}>
+                        Very Mobile
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Stato */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Stato
+                  </label>
+                  <select
+                    value={newStore.stato}
+                    onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white'
+                    }}
+                  >
+                    <option value="Attivo">Attivo</option>
+                    <option value="Sospeso">Sospeso</option>
+                    <option value="Chiuso">Chiuso</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Footer Modal */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '24px',
+                paddingTop: '24px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={() => setStoreModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    background: 'white',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleSaveStore}
+                  style={{
+                    padding: '10px 20px',
+                    background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)'
+                  }}
+                >
+                  {storeModal.data ? 'Salva Modifiche' : 'Crea Punto Vendita'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div style={{
         background: 'hsla(255, 255, 255, 0.08)',
         backdropFilter: 'blur(24px) saturate(140%)',
@@ -1357,5 +1823,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </Layout>
+    </>
   );
 }
