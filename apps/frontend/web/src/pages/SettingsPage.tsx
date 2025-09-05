@@ -36,14 +36,16 @@ import {
   X,
   AlertTriangle,
   ArrowLeft,
-  Home
+  Home,
+  RefreshCw,
+  BarChart3,
+  Wifi,
+  HelpCircle
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const [currentModule, setCurrentModule] = useState('impostazioni');
-  const [activeView, setActiveView] = useState('overview'); // overview, category, section
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('Entity Management');
 
   // Mock data enterprise
   const mockTenants = [
@@ -82,675 +84,622 @@ export default function SettingsPage() {
     }
   ];
 
-  const settingsCategories = [
-    {
-      id: 'organization',
-      label: 'Gestione Organizzazione',
-      icon: Building2,
-      color: '#FF6900',
-      description: 'Configurazione entità enterprise e gerarchia organizzativa',
-      sections: [
-        { id: 'tenants', label: 'Tenant (Organizzazioni)', icon: Building2, description: 'Gestione delle organizzazioni enterprise', count: mockTenants.length },
-        { id: 'legal-entities', label: 'Ragioni Sociali', icon: FileText, description: 'Entità giuridiche per ogni tenant', count: 6 },
-        { id: 'stores', label: 'Punti Vendita', icon: Store, description: 'Store fisici e virtuali', count: 23 },
-        { id: 'users', label: 'Risorse (Utenti)', icon: Users, description: 'Dipendenti e permessi enterprise', count: 85 }
-      ]
-    },
-    {
-      id: 'business',
-      label: 'Configurazione Business',
-      icon: Zap,
-      color: '#7B2CBF',
-      description: 'Driver business e configurazioni operative',
-      sections: [
-        { id: 'channels', label: 'Canali e Brand', icon: Globe, description: 'WindTre, Very Mobile, configurazioni brand', count: 4 },
-        { id: 'products', label: 'Catalogo Prodotti', icon: CreditCard, description: 'Gestione prodotti e servizi', count: 156 },
-        { id: 'campaigns', label: 'Campagne Marketing', icon: Bell, description: 'Gestione campagne pubblicitarie', count: 12 },
-        { id: 'pricing', label: 'Listini e Prezzi', icon: FileText, description: 'Override pricing per tenant', count: 8 }
-      ]
-    },
-    {
-      id: 'system',
-      label: 'Configurazioni Sistema',
-      icon: Server,
-      color: '#10b981',
-      description: 'Impostazioni tecniche e infrastruttura',
-      sections: [
-        { id: 'database', label: 'Database PostgreSQL', icon: Database, description: 'Monitoring connessioni e RLS', status: 'Connesso', count: undefined },
-        { id: 'security', label: 'Sicurezza & OAuth', icon: Shield, description: 'Configurazione OAuth2/OIDC enterprise', status: 'Configurato', count: undefined },
-        { id: 'integrations', label: 'Integrazioni API', icon: Activity, description: 'Gestione API esterne', count: 8, status: undefined },
-        { id: 'logs', label: 'Log e Monitoring', icon: FileText, description: 'System health e audit trails', status: 'Attivo', count: undefined }
-      ]
-    },
-    {
-      id: 'preferences',
-      label: 'Preferenze Utente',
-      icon: Palette,
-      color: '#f59e0b',
-      description: 'Temi, localizzazione e impostazioni utente',
-      sections: [
-        { id: 'appearance', label: 'Aspetto e Tema', icon: Palette, description: 'Personalizzazione interfaccia', count: undefined, status: undefined },
-        { id: 'localization', label: 'Localizzazione', icon: Languages, description: 'Lingua e formati regionali', count: undefined, status: undefined },
-        { id: 'notifications', label: 'Notifiche', icon: Bell, description: 'Configurazione alert e notifiche', count: undefined, status: undefined },
-        { id: 'timezone', label: 'Fuso Orario', icon: Clock, description: 'Impostazioni temporali', count: undefined, status: undefined }
-      ]
-    }
+  const tabs = [
+    { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
+    { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
+    { id: 'Channel Settings', label: 'Channel Settings', icon: Globe },
+    { id: 'System Settings', label: 'System Settings', icon: Server }
   ];
 
-  const renderBreadcrumb = () => {
-    const items = [
-      { label: 'Configurazioni', onClick: () => setActiveView('overview') }
-    ];
-
-    if (selectedCategory) {
-      const category = settingsCategories.find(c => c.id === selectedCategory);
-      if (category) {
-        items.push({ label: category.label, onClick: () => setActiveView('category') });
-      }
-    }
-
-    if (selectedSection) {
-      const category = settingsCategories.find(c => c.id === selectedCategory);
-      const section = category?.sections.find(s => s.id === selectedSection);
-      if (section) {
-        items.push({ label: section.label, onClick: undefined });
-      }
-    }
-
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '16px 0',
-        borderBottom: '1px solid #e5e7eb',
-        marginBottom: '24px'
-      }}>
-        <Home size={16} style={{ color: '#6b7280' }} />
-        {items.map((item, index) => (
-          <React.Fragment key={index}>
-            {index > 0 && <ChevronRight size={14} style={{ color: '#d1d5db' }} />}
-            <button
-              onClick={item.onClick || (() => {})}
-              disabled={!item.onClick}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: item.onClick ? '#3b82f6' : '#111827',
-                fontSize: '14px',
-                fontWeight: item.onClick ? '500' : '600',
-                cursor: item.onClick ? 'pointer' : 'default',
-                textDecoration: 'none'
-              }}
-            >
-              {item.label}
-            </button>
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  };
-
-  const renderOverview = () => (
+  const renderEntityManagement = () => (
     <div>
+      {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{
-          fontSize: '32px',
+        <h2 style={{
+          fontSize: '28px',
           fontWeight: '700',
           color: '#111827',
           margin: '0 0 8px 0'
         }}>
-          Configurazioni W3 Suite
-        </h1>
+          Configurazione Sistema
+        </h2>
         <p style={{
           fontSize: '16px',
           color: '#6b7280',
           margin: 0
         }}>
-          Gestione completa dell'architettura enterprise multitenant
+          Gestisci le impostazioni generali del sistema e dei servizi
         </p>
       </div>
 
+      {/* First Row - Quick Actions */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '24px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: '16px',
+        marginBottom: '32px'
       }}>
-        {settingsCategories.map((category) => {
-          const Icon = category.icon;
+        {[
+          { icon: Calendar, label: 'Calendario' },
+          { icon: Database, label: 'Database' },
+          { icon: FileText, label: 'Fatture' },
+          { icon: Bell, label: 'Notifiche' },
+          { icon: Globe, label: 'Internet' }
+        ].map((item, index) => {
+          const Icon = item.icon;
           return (
-            <div
-              key={category.id}
-              onClick={() => {
-                setSelectedCategory(category.id);
-                setActiveView('category');
-              }}
+            <button
+              key={index}
               style={{
                 background: '#ffffff',
                 border: '1px solid #e5e7eb',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: '12px',
+                padding: '20px 16px',
                 cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
                 transition: 'all 0.2s ease',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = `0 8px 25px ${category.color}20`;
-                e.currentTarget.style.borderColor = category.color + '40';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-                e.currentTarget.style.borderColor = '#e5e7eb';
               }}
             >
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  background: category.color + '15',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px'
-                }}>
-                  <Icon size={24} style={{ color: category.color }} />
-                </div>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#111827',
-                  margin: '0 0 8px 0'
-                }}>
-                  {category.label}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#6b7280',
-                  margin: '0 0 16px 0',
-                  lineHeight: 1.5
-                }}>
-                  {category.description}
-                </p>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingTop: '16px',
-                borderTop: '1px solid #f3f4f6'
+              <Icon size={24} style={{ color: '#6b7280' }} />
+              <span style={{
+                fontSize: '14px',
+                color: '#374151',
+                fontWeight: '500',
+                textAlign: 'center'
               }}>
-                <span style={{
-                  fontSize: '14px',
-                  color: '#6b7280',
-                  fontWeight: '500'
-                }}>
-                  {category.sections.length} sezioni
-                </span>
-                <ChevronRight size={16} style={{ color: category.color }} />
-              </div>
-            </div>
+                {item.label}
+              </span>
+            </button>
           );
         })}
       </div>
-    </div>
-  );
 
-  const renderCategoryView = () => {
-    const category = settingsCategories.find(c => c.id === selectedCategory);
-    if (!category) return null;
+      {/* Aggiorna Button */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginBottom: '24px'
+      }}>
+        <button style={{
+          background: '#f8f9fa',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          padding: '8px 16px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '14px',
+          color: '#374151',
+          fontWeight: '500'
+        }}>
+          <RefreshCw size={14} />
+          Aggiorna
+        </button>
+      </div>
 
-    const CategoryIcon = category.icon;
+      {/* System Tabs */}
+      <div style={{
+        display: 'flex',
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: '12px',
+        padding: '4px',
+        marginBottom: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        {[
+          { id: 'sistema', label: 'Sistema', icon: Server, active: true },
+          { id: 'configurazioni', label: 'Configurazioni', icon: Settings },
+          { id: 'monitoraggio', label: 'Monitoraggio', icon: BarChart3 },
+          { id: 'logs', label: 'Logs', icon: FileText }
+        ].map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              style={{
+                flex: 1,
+                background: tab.active ? '#ffffff' : 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                fontSize: '14px',
+                fontWeight: tab.active ? '600' : '500',
+                color: tab.active ? '#111827' : '#6b7280',
+                transition: 'all 0.2s ease',
+                boxShadow: tab.active ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
+            >
+              <Icon size={16} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-    return (
-      <div>
-        <div style={{ marginBottom: '32px' }}>
-          <button
-            onClick={() => setActiveView('overview')}
-            style={{
-              background: 'transparent',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '24px',
-              fontSize: '14px',
-              color: '#6b7280'
-            }}
-          >
-            <ArrowLeft size={14} />
-            Torna alle configurazioni
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+      {/* System Status Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '20px'
+      }}>
+        {/* Uptime Card */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px'
+          }}>
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Uptime
+            </h3>
             <div style={{
-              width: '56px',
-              height: '56px',
-              background: category.color + '15',
-              borderRadius: '16px',
+              width: '32px',
+              height: '32px',
+              background: '#dcfce7',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <CategoryIcon size={28} style={{ color: category.color }} />
-            </div>
-            <div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: '700',
-                color: '#111827',
-                margin: '0 0 4px 0'
-              }}>
-                {category.label}
-              </h1>
-              <p style={{
-                fontSize: '16px',
-                color: '#6b7280',
-                margin: 0
-              }}>
-                {category.description}
-              </p>
+              <Clock size={16} style={{ color: '#16a34a' }} />
             </div>
           </div>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '20px'
-        }}>
-          {category.sections.map((section) => {
-            const SectionIcon = section.icon;
-            return (
-              <div
-                key={section.id}
-                onClick={() => {
-                  setSelectedSection(section.id);
-                  setActiveView('section');
-                }}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                  e.currentTarget.style.borderColor = category.color + '40';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-                  e.currentTarget.style.borderColor = '#e5e7eb';
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    background: category.color + '15',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <SectionIcon size={20} style={{ color: category.color }} />
-                  </div>
-                  {(section.count || section.status) && (
-                    <div style={{
-                      background: section.status ? '#10b981' : category.color,
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      padding: '4px 8px',
-                      borderRadius: '6px'
-                    }}>
-                      {section.count || section.status}
-                    </div>
-                  )}
-                </div>
-
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#111827',
-                  margin: '0 0 8px 0'
-                }}>
-                  {section.label}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#6b7280',
-                  margin: '0 0 16px 0',
-                  lineHeight: 1.4
-                }}>
-                  {section.description}
-                </p>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingTop: '12px',
-                  borderTop: '1px solid #f3f4f6'
-                }}>
-                  <span style={{
-                    fontSize: '12px',
-                    color: category.color,
-                    fontWeight: '500'
-                  }}>
-                    Configura
-                  </span>
-                  <ChevronRight size={14} style={{ color: category.color }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderTenantManagement = () => (
-    <div>
-      <div style={{ marginBottom: '32px' }}>
-        <button
-          onClick={() => setActiveView('category')}
-          style={{
-            background: 'transparent',
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '24px',
+          <div style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#16a34a',
+            marginBottom: '4px'
+          }}>
+            17d 14h 45m
+          </div>
+          <div style={{
             fontSize: '14px',
             color: '#6b7280'
-          }}
-        >
-          <ArrowLeft size={14} />
-          Torna a Gestione Organizzazione
-        </button>
-
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '32px'
-        }}>
-          <div>
-            <h2 style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              color: '#111827',
-              margin: '0 0 8px 0'
-            }}>
-              Gestione Tenant (Organizzazioni)
-            </h2>
-            <p style={{
-              fontSize: '16px',
-              color: '#6b7280',
-              margin: 0
-            }}>
-              Configurazione delle organizzazioni enterprise con isolamento Row Level Security (RLS)
-            </p>
+          }}>
+            Sistema operativo senza interruzioni
           </div>
-          <button style={{
-            background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '14px 24px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
+        </div>
+
+        {/* Memory Card */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
-            transition: 'all 0.2s ease'
+            justifyContent: 'space-between',
+            marginBottom: '16px'
           }}>
-            <Plus size={16} />
-            Nuovo Tenant
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '20px',
-        marginBottom: '32px'
-      }}>
-        {[
-          { label: 'Tenant Attivi', value: mockTenants.filter(t => t.status === 'active').length, color: '#10b981', icon: Building2 },
-          { label: 'Ragioni Sociali', value: mockTenants.reduce((acc, t) => acc + t.legalEntities, 0), color: '#FF6900', icon: FileText },
-          { label: 'Punti Vendita', value: mockTenants.reduce((acc, t) => acc + t.stores, 0), color: '#7B2CBF', icon: Store },
-          { label: 'Utenti Totali', value: mockTenants.reduce((acc, t) => acc + t.users, 0), color: '#3b82f6', icon: Users }
-        ].map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} style={{
-              background: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '12px',
-              padding: '20px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                <Icon size={20} style={{ color: stat.color }} />
-                <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>{stat.label}</span>
-              </div>
-              <div style={{
-                fontSize: '28px',
-                fontWeight: '700',
-                color: stat.color
-              }}>
-                {stat.value}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Tenants List */}
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{
-          background: '#f8f9fa',
-          padding: '16px 20px',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h3 style={{
-            fontSize: '16px',
-            fontWeight: '600',
-            color: '#111827',
-            margin: 0
-          }}>
-            Tenant Configurati ({mockTenants.length})
-          </h3>
-        </div>
-
-        <div>
-          {mockTenants.map((tenant, index) => (
-            <div key={tenant.id} style={{
-              padding: '20px',
-              borderBottom: index < mockTenants.length - 1 ? '1px solid #f3f4f6' : 'none',
+              Memoria
+            </h3>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              background: '#dbeafe',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'center'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  background: `linear-gradient(135deg, ${tenant.type === 'Franchising' ? '#FF6900' : tenant.type === 'Top Dealer' ? '#7B2CBF' : '#10b981'}, ${tenant.type === 'Franchising' ? '#ff8533' : tenant.type === 'Top Dealer' ? '#9333ea' : '#059669'})`,
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: '700',
-                  fontSize: '16px'
-                }}>
-                  {tenant.name.charAt(0)}
-                </div>
-                
-                <div style={{ flex: 1 }}>
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#111827',
-                    marginBottom: '4px'
-                  }}>
-                    {tenant.name}
-                  </div>
-                  <div style={{
-                    fontSize: '14px',
-                    color: '#6b7280',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px'
-                  }}>
-                    <span>{tenant.type}</span>
-                    <span>•</span>
-                    <span>{tenant.legalEntities} RS</span>
-                    <span>•</span>
-                    <span>{tenant.stores} PV</span>
-                    <span>•</span>
-                    <span>{tenant.users} Utenti</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{
-                background: tenant.status === 'active' ? '#dcfce7' : '#fef3c7',
-                color: tenant.status === 'active' ? '#16a34a' : '#d97706',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '500'
-              }}>
-                {tenant.status === 'active' ? 'Attivo' : 'Bozza'}
-              </div>
+              <HardDrive size={16} style={{ color: '#3b82f6' }} />
             </div>
-          ))}
+          </div>
+          <div style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#3b82f6',
+            marginBottom: '4px'
+          }}>
+            13%
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '12px'
+          }}>
+            1.04 GB / 7.75 GB
+          </div>
+          <div style={{
+            width: '100%',
+            height: '6px',
+            background: '#e5e7eb',
+            borderRadius: '3px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: '13%',
+              height: '100%',
+              background: '#3b82f6',
+              borderRadius: '3px'
+            }} />
+          </div>
+        </div>
+
+        {/* CPU Card */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px'
+          }}>
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              CPU
+            </h3>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              background: '#fef3c7',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Cpu size={16} style={{ color: '#f59e0b' }} />
+            </div>
+          </div>
+          <div style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#f59e0b',
+            marginBottom: '4px'
+          }}>
+            24%
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '12px'
+          }}>
+            Utilizzo processore
+          </div>
+          <div style={{
+            width: '100%',
+            height: '6px',
+            background: '#e5e7eb',
+            borderRadius: '3px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: '24%',
+              height: '100%',
+              background: '#f59e0b',
+              borderRadius: '3px'
+            }} />
+          </div>
+        </div>
+
+        {/* Network Card */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px'
+          }}>
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Rete
+            </h3>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              background: '#f3e8ff',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Wifi size={16} style={{ color: '#8b5cf6' }} />
+            </div>
+          </div>
+          <div style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#8b5cf6',
+            marginBottom: '4px'
+          }}>
+            Online
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: '#6b7280'
+          }}>
+            Connessione stabile
+          </div>
+        </div>
+
+        {/* Database Card */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px'
+          }}>
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Database
+            </h3>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              background: '#dcfce7',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Database size={16} style={{ color: '#16a34a' }} />
+            </div>
+          </div>
+          <div style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#16a34a',
+            marginBottom: '4px'
+          }}>
+            PostgreSQL
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: '#6b7280'
+          }}>
+            Connesso e operativo
+          </div>
+        </div>
+
+        {/* Tenant Stats Card */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px'
+          }}>
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Tenant Attivi
+            </h3>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              background: '#fff7ed',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Building2 size={16} style={{ color: '#FF6900' }} />
+            </div>
+          </div>
+          <div style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#FF6900',
+            marginBottom: '4px'
+          }}>
+            {mockTenants.filter(t => t.status === 'active').length}
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: '#6b7280'
+          }}>
+            Organizzazioni enterprise
+          </div>
         </div>
       </div>
     </div>
   );
 
-  const renderSectionContent = () => {
-    if (selectedCategory === 'organization' && selectedSection === 'tenants') {
-      return renderTenantManagement();
-    }
-    
-    // Placeholder per altre sezioni
-    const category = settingsCategories.find(c => c.id === selectedCategory);
-    const section = category?.sections.find(s => s.id === selectedSection);
-    
-    return (
-      <div style={{ padding: '80px 0', textAlign: 'center' }}>
-        <button
-          onClick={() => setActiveView('category')}
-          style={{
-            background: 'transparent',
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            margin: '0 auto 32px',
-            fontSize: '14px',
-            color: '#6b7280'
-          }}
-        >
-          <ArrowLeft size={14} />
-          Torna a {category?.label}
-        </button>
-        
-        {section && (
-          <>
-            <section.icon size={64} style={{ color: category?.color, margin: '0 auto 24px' }} />
-            <h3 style={{
-              fontSize: '24px',
-              fontWeight: '700',
-              color: '#111827',
-              marginBottom: '12px'
-            }}>
-              {section.label}
-            </h3>
-            <p style={{
-              fontSize: '16px',
-              color: '#6b7280',
-              marginBottom: '24px',
-              maxWidth: '500px',
-              margin: '0 auto 24px'
-            }}>
-              {section.description}
-            </p>
-            <div style={{
-              background: '#f3f4f6',
-              color: '#6b7280',
-              padding: '12px 20px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              display: 'inline-block'
-            }}>
-              Sezione in sviluppo - Prossimamente disponibile
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
+  const renderAIAssistant = () => (
+    <div style={{ padding: '60px 0', textAlign: 'center' }}>
+      <Cpu size={64} style={{ color: '#6b7280', margin: '0 auto 24px' }} />
+      <h3 style={{ color: '#111827', fontSize: '24px', marginBottom: '12px', fontWeight: '600' }}>
+        AI Assistant
+      </h3>
+      <p style={{ color: '#6b7280', fontSize: '16px' }}>
+        Configurazione assistente AI in sviluppo
+      </p>
+    </div>
+  );
+
+  const renderChannelSettings = () => (
+    <div style={{ padding: '60px 0', textAlign: 'center' }}>
+      <Globe size={64} style={{ color: '#6b7280', margin: '0 auto 24px' }} />
+      <h3 style={{ color: '#111827', fontSize: '24px', marginBottom: '12px', fontWeight: '600' }}>
+        Channel Settings
+      </h3>
+      <p style={{ color: '#6b7280', fontSize: '16px' }}>
+        Configurazione canali di comunicazione in sviluppo
+      </p>
+    </div>
+  );
+
+  const renderSystemSettings = () => (
+    <div style={{ padding: '60px 0', textAlign: 'center' }}>
+      <Server size={64} style={{ color: '#6b7280', margin: '0 auto 24px' }} />
+      <h3 style={{ color: '#111827', fontSize: '24px', marginBottom: '12px', fontWeight: '600' }}>
+        System Settings
+      </h3>
+      <p style={{ color: '#6b7280', fontSize: '16px' }}>
+        Configurazioni avanzate sistema in sviluppo
+      </p>
+    </div>
+  );
 
   const renderContent = () => {
-    switch (activeView) {
-      case 'overview':
-        return renderOverview();
-      case 'category':
-        return renderCategoryView();
-      case 'section':
-        return renderSectionContent();
+    switch (activeTab) {
+      case 'Entity Management':
+        return renderEntityManagement();
+      case 'AI Assistant':
+        return renderAIAssistant();
+      case 'Channel Settings':
+        return renderChannelSettings();
+      case 'System Settings':
+        return renderSystemSettings();
       default:
-        return renderOverview();
+        return renderEntityManagement();
     }
   };
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div style={{ 
-        backgroundColor: '#ffffff', 
-        minHeight: 'calc(100vh - 120px)',
-        padding: '32px'
-      }}>
-        {renderBreadcrumb()}
-        {renderContent()}
+      <div style={{ backgroundColor: '#ffffff', minHeight: 'calc(100vh - 120px)' }}>
+        {/* Header con titolo e descrizione */}
+        <div style={{
+          padding: '32px 32px 24px 32px',
+          borderBottom: '1px solid #f3f4f6'
+        }}>
+          <h1 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#111827',
+            margin: '0 0 8px 0'
+          }}>
+            Configurazioni Sistema
+          </h1>
+          <p style={{
+            fontSize: '16px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Gestisci entità, AI, canali di comunicazione, backup e configurazioni
+          </p>
+        </div>
+
+        {/* Tabs orizzontali - Identico al design dello screenshot */}
+        <div style={{
+          padding: '24px 32px',
+          borderBottom: '1px solid #f3f4f6'
+        }}>
+          <div style={{
+            display: 'flex',
+            background: '#f1f3f4',
+            borderRadius: '12px',
+            padding: '4px',
+            gap: '4px'
+          }}>
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    flex: 1,
+                    background: isActive ? '#ffffff' : 'transparent',
+                    color: isActive ? '#111827' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    fontWeight: isActive ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    textAlign: 'center'
+                  }}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div style={{ padding: '32px' }}>
+          {renderContent()}
+        </div>
       </div>
     </Layout>
   );
