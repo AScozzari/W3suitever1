@@ -10,6 +10,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench
 } from 'lucide-react';
+import SettingsPage from './Settings';
 
 export default function WindTreDashboard() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
@@ -1271,13 +1272,18 @@ export default function WindTreDashboard() {
             </div>
           </div>
 
-          {/* Metriche Performance come da screenshot */}
-          <div style={{
-            display: 'grid',
-            gap: '24px',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-            marginBottom: '32px'
-          }}>
+          {/* Rendering condizionale basato sul modulo selezionato */}
+          {currentModule === 'impostazioni' ? (
+            <SettingsPage />
+          ) : (
+            <>
+              {/* Metriche Performance come da screenshot */}
+              <div style={{
+                display: 'grid',
+                gap: '24px',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                marginBottom: '32px'
+              }}>
             {/* Performance Rete */}
             <div style={{
               background: 'hsla(0, 0%, 100%, 0.6)',
@@ -1591,6 +1597,8 @@ export default function WindTreDashboard() {
               </div>
             </div>
           </div>
+            </>
+          )}
         </main>
 
         {/* Workspace Sidebar destra - Smart Hover Glassmorphism */}
