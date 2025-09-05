@@ -1158,7 +1158,7 @@ export default function SettingsPage() {
                       marginBottom: '12px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      gap: '12px'
                     }}>
                       {cat.category}
                       {/* Switch Toggle */}
