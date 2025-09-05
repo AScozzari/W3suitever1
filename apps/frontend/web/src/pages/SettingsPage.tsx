@@ -65,9 +65,6 @@ export default function SettingsPage() {
   const [selectedCity, setSelectedCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   
-  // Entity Management sub-tabs
-  const [entitySubTab, setEntitySubTab] = useState('ragioni-sociali');
-  
   // Load reference data from API
   const { data: legalForms = [] } = useQuery({
     queryKey: ['/api/reference/legal-forms'],
@@ -186,53 +183,84 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Sub-tabs per Entity Management */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '12px', 
-        marginBottom: '24px',
-        borderBottom: '1px solid hsla(255, 255, 255, 0.12)'
+      {/* Sezione Icone Configurazione - Barra con tutte le entità */}
+      <div style={{
+        background: 'hsla(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(24px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+        border: '1px solid hsla(255, 255, 255, 0.12)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '32px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
       }}>
-        {[
-          { id: 'ragioni-sociali', label: 'Ragioni Sociali', icon: Building2 },
-          { id: 'punti-vendita', label: 'Punti Vendita', icon: Store }
-        ].map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setEntitySubTab(tab.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 16px',
-                background: entitySubTab === tab.id 
-                  ? 'hsla(255, 255, 255, 0.08)' 
-                  : 'transparent',
-                border: entitySubTab === tab.id 
-                  ? '1px solid hsla(255, 255, 255, 0.12)' 
-                  : '1px solid transparent',
-                borderBottom: 'none',
-                borderRadius: '8px 8px 0 0',
-                color: entitySubTab === tab.id ? '#111827' : '#6b7280',
-                fontWeight: entitySubTab === tab.id ? '600' : '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          );
-        })}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          {[
+            { icon: Building2, label: 'Ragione Sociale', active: true, color: '#FF6900' },
+            { icon: Users, label: 'Clienti', color: '#3b82f6' },
+            { icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
+            { icon: Server, label: 'Smart Automation', color: '#10b981' },
+            { icon: Activity, label: 'Servizi', color: '#f59e0b' },
+            { icon: FileText, label: 'Auto Reporting', color: '#ef4444' },
+            { icon: Shield, label: 'GDPR', color: '#8b5cf6' },
+            { icon: Bell, label: 'Alert Notifications', color: '#06b6d4' }
+          ].map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={index}
+                style={{
+                  background: item.active 
+                    ? `linear-gradient(135deg, ${item.color}15, ${item.color}08)`
+                    : 'transparent',
+                  border: item.active 
+                    ? `1px solid ${item.color}30`
+                    : '1px solid transparent',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)'
+                }}
+                onMouseOver={(e) => {
+                  if (!item.active) {
+                    e.currentTarget.style.background = `${item.color}10`;
+                    e.currentTarget.style.borderColor = `${item.color}20`;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!item.active) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
+              >
+                <Icon size={16} style={{ color: item.active ? item.color : '#6b7280' }} />
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: item.active ? '600' : '500',
+                  color: item.active ? item.color : '#6b7280'
+                }}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Contenuto condizionale basato su sub-tab selezionato */}
-      {entitySubTab === 'ragioni-sociali' && (
-        <>
-          {/* Ragioni Sociali Section */}
+      {/* Ragioni Sociali Section */}
       <div style={{ marginBottom: '48px' }}>
         <div style={{
           display: 'flex',
@@ -408,14 +436,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
-        </>
-      )}
-
-      {/* Contenuto per tab Punti Vendita */}
-      {entitySubTab === 'punti-vendita' && (
-        <>
-          {/* Punti Vendita Section */}
-          <div>
+      
+      {/* Punti Vendita Section */}
+      <div>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -590,9 +613,7 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
-          </div>
-        </>
-      )}
+      </div>
     </div>
   );
 
