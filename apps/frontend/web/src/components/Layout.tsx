@@ -13,6 +13,7 @@ import {
   LogOut, HelpCircle, MapPin, UserCircle, Store
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import LoginModal from './LoginModal';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -32,6 +33,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<any>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
   const [location, navigate] = useLocation();
@@ -823,6 +825,31 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
                   {/* Divider */}
                   <div style={{ height: '1px', background: 'hsla(0, 0%, 0%, 0.1)', margin: '8px 0' }}></div>
+
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setLoginModalOpen(true);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#FF6900',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(25, 100%, 50%, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <User size={16} />
+                    <span>Cambia Utente</span>
+                  </button>
 
                   <button
                     onClick={() => {
@@ -1947,6 +1974,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           }
         `}</style>
       </div>
+
+      {/* Modal di Login */}
+      <LoginModal 
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        tenantCode={localStorage.getItem('currentTenant') || 'staging'}
+      />
     </div>
   );
 }
