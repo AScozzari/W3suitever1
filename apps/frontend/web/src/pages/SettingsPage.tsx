@@ -1514,23 +1514,26 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#ffffff',
-                      transition: 'all 0.15s ease',
+                      padding: '14px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#111827',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      lineHeight: '1.5'
+                      color: '#1f2937',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '500',
+                      lineHeight: '1.4'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#f8fafc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1555,23 +1558,26 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#ffffff',
-                      transition: 'all 0.15s ease',
+                      padding: '14px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#111827',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      lineHeight: '1.5'
+                      color: '#1f2937',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '500',
+                      lineHeight: '1.4'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#f8fafc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1742,23 +1748,26 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#ffffff',
-                      transition: 'all 0.15s ease',
+                      padding: '14px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#111827',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      lineHeight: '1.5'
+                      color: '#1f2937',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '500',
+                      lineHeight: '1.4'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#f8fafc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1859,7 +1868,7 @@ export default function SettingsPage() {
                       border: '2px solid transparent',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: italianCities.length > 0 && newRagioneSociale.cap ? '#f8fafc' : '#ffffff',
+                      background: '#f8fafc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
                       cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
@@ -1873,7 +1882,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = 'transparent';
-                      e.target.style.background = italianCities.length > 0 && newRagioneSociale.cap ? '#f8fafc' : '#ffffff';
+                      e.target.style.background = '#ffffff';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1904,7 +1913,7 @@ export default function SettingsPage() {
                       border: '2px solid transparent',
                       borderRadius: '12px',
                       fontSize: '14px',
-                      background: italianCities.length > 0 && newRagioneSociale.provincia ? '#f8fafc' : '#ffffff',
+                      background: '#f8fafc',
                       transition: 'all 0.2s ease',
                       textTransform: 'uppercase',
                       outline: 'none',
@@ -1919,7 +1928,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = 'transparent';
-                      e.target.style.background = italianCities.length > 0 && newRagioneSociale.provincia ? '#f8fafc' : '#ffffff';
+                      e.target.style.background = '#ffffff';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1944,23 +1953,26 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, telefono: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#ffffff',
-                      transition: 'all 0.15s ease',
+                      padding: '14px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#111827',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      lineHeight: '1.5'
+                      color: '#1f2937',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '500',
+                      lineHeight: '1.4'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#f8fafc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1985,23 +1997,26 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, email: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#ffffff',
-                      transition: 'all 0.15s ease',
+                      padding: '14px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#111827',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      lineHeight: '1.5'
+                      color: '#1f2937',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '500',
+                      lineHeight: '1.4'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#f8fafc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -2026,23 +2041,26 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, pec: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#ffffff',
-                      transition: 'all 0.15s ease',
+                      padding: '14px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#111827',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      lineHeight: '1.5'
+                      color: '#1f2937',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '500',
+                      lineHeight: '1.4'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#f8fafc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -2287,23 +2305,26 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#ffffff',
-                      transition: 'all 0.15s ease',
+                      padding: '14px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '15px',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#111827',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      lineHeight: '1.5'
+                      color: '#1f2937',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '500',
+                      lineHeight: '1.4'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#f8fafc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -2573,7 +2594,7 @@ export default function SettingsPage() {
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      background: italianCities.length > 0 && newStore.cap ? '#f8fafc' : '#ffffff',
+                      background: '#f8fafc',
                       transition: 'all 0.15s ease',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
@@ -2697,7 +2718,7 @@ export default function SettingsPage() {
                       gap: '12px', 
                       cursor: 'pointer',
                       padding: '14px 20px',
-                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#ffffff',
+                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
                       borderRadius: '12px',
                       border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
                       transition: 'all 0.2s ease'
@@ -2734,7 +2755,7 @@ export default function SettingsPage() {
                       gap: '12px', 
                       cursor: 'pointer',
                       padding: '14px 20px',
-                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#ffffff',
+                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
                       borderRadius: '12px',
                       border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
                       transition: 'all 0.2s ease'
