@@ -17,7 +17,7 @@ import {
   type InsertUserAssignment,
   type Role,
   type InsertRole,
-} from "../db/schema";
+} from "../../../../../shared/schema";
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
 
