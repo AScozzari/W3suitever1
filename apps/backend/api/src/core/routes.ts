@@ -29,7 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: 'admin@w3suite.com',
           firstName: 'Admin',
           lastName: 'User',
-          tenantId: '927b5ed6-413e-4a55-b8e5-fd2af0c52398', // W3 Demo tenant UUID
+          tenantId: '00000000-0000-0000-0000-000000000001', // Demo tenant UUID
           username: 'admin'
         };
         
@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: decoded.email || 'admin@w3suite.com',
         firstName: 'Admin',
         lastName: 'User',
-        tenantId: decoded.tenantId || '927b5ed6-413e-4a55-b8e5-fd2af0c52398'
+        tenantId: decoded.tenantId || '00000000-0000-0000-0000-000000000001'
       };
       
       res.json(mockUser);

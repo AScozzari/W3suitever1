@@ -390,7 +390,7 @@ export function setupOAuthRoutes(app: Express) {
           given_name: 'Admin',
           family_name: 'User',
           roles: ['super_admin'],
-          tenant_id: 'w3-demo-tenant'
+          tenant_id: '00000000-0000-0000-0000-000000000001'
         };
         
         tokenSet = {
