@@ -549,7 +549,7 @@ export default function SettingsPage() {
         backgroundColor: '#ffffff', 
         minHeight: 'calc(100vh - 48px)',
         position: 'relative',
-        width: '100%',
+        width: 'calc(100% + 48px)',
         margin: '-24px',
         padding: 0
       }}>
