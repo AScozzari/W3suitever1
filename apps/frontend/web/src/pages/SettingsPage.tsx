@@ -606,153 +606,135 @@ export default function SettingsPage() {
         </div>
 
         <div style={{
-          background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-          border: '1px solid hsla(255, 255, 255, 0.12)',
+          background: 'white',
           borderRadius: '16px',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          border: '1px solid #e5e7eb'
         }}>
-          <div style={{
-            background: 'hsla(255, 255, 255, 0.05)',
-            borderBottom: '1px solid hsla(255, 255, 255, 0.08)',
-            padding: '0'
-          }}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 2fr 1fr 1.5fr 1fr 1fr 80px',
-              alignItems: 'center',
-              padding: '16px 20px',
-              gap: '16px'
-            }}>
-              {['Codice', 'Nome', 'Forma Giuridica', 'P.IVA', 'Stato', 'Città', 'Azioni'].map((header, index) => (
-                <div key={index} style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#1f2937'
-                }}>
-                  {header}
-                </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ragione Sociale</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Forma Giuridica</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ragioneSocialiList.map((item, index) => (
+                <tr key={item.id} style={{ 
+                  borderBottom: '1px solid #f3f4f6',
+                  transition: 'background 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+                      }}>
+                        {item.codice.substring(0, 2)}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.formaGiuridica}</td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280', fontFamily: 'monospace' }}>{item.pIva}</td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.citta}</td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 12px',
+                      background: item.stato === 'Attiva' 
+                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                        : 'linear-gradient(135deg, #94a3b8, #64748b)',
+                      color: 'white',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      <div style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'white'
+                      }} />
+                      {item.stato}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button
+                        onClick={() => setLegalEntityModal({ open: true, data: item })}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#f3f4f6';
+                          e.currentTarget.style.borderColor = '#9ca3af';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}>
+                        <Edit3 size={14} style={{ color: '#6b7280' }} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRagioneSociale(item.id)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fee2e2';
+                          e.currentTarget.style.borderColor = '#fca5a5';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}>
+                        <Trash2 size={14} style={{ color: '#ef4444' }} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
-
-          <div>
-            {ragioneSocialiList.map((item, index) => (
-              <div
-                key={item.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '100px 2fr 1fr 1.5fr 1fr 1fr 80px',
-                  alignItems: 'center',
-                  padding: '16px 20px',
-                  gap: '16px',
-                  borderBottom: index < mockRagioneSociali.length - 1 
-                    ? '1px solid hsla(255, 255, 255, 0.06)' 
-                    : 'none',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <div style={{
-                  fontSize: '14px',
-                  color: '#1f2937',
-                  fontWeight: '600',
-                  fontFamily: 'Inter, system-ui, sans-serif'
-                }}>
-                  {item.codice}
-                </div>
-                
-                <div style={{
-                  fontSize: '14px',
-                  color: '#1f2937',
-                  fontWeight: '600'
-                }}>
-                  {item.nome}
-                </div>
-
-                <div style={{
-                  fontSize: '14px',
-                  color: '#4b5563',
-                  fontWeight: '500'
-                }}>
-                  {item.formaGiuridica}
-                </div>
-
-                <div style={{
-                  fontSize: '14px',
-                  color: '#4b5563',
-                  fontWeight: '500'
-                }}>
-                  {item.pIva}
-                </div>
-
-                <div>
-                  <span style={{
-                    background: item.stato === 'Attiva' 
-                      ? 'linear-gradient(135deg, #10b981, #059669)'
-                      : 'linear-gradient(135deg, #f59e0b, #d97706)',
-                    color: 'white',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    boxShadow: item.stato === 'Attiva'
-                      ? '0 2px 8px rgba(16, 185, 129, 0.3)'
-                      : '0 2px 8px rgba(245, 158, 11, 0.3)'
-                  }}>
-                    {item.stato}
-                  </span>
-                </div>
-
-                <div style={{
-                  fontSize: '14px',
-                  color: '#4b5563',
-                  fontWeight: '500'
-                }}>
-                  {item.citta}
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  gap: '8px'
-                }}>
-                  <button 
-                    onClick={() => setLegalEntityModal({ open: true, data: item })}
-                    style={{
-                    background: 'hsla(59, 130, 246, 0.05)',
-                    border: '1px solid hsla(59, 130, 246, 0.1)',
-                    borderRadius: '6px',
-                    color: '#6b7280',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <Edit3 size={12} />
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteRagioneSociale(item.id)}
-                    style={{
-                    background: 'hsla(239, 68, 68, 0.05)',
-                    border: '1px solid hsla(239, 68, 68, 0.1)',
-                    borderRadius: '6px',
-                    color: '#6b7280',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
       )}
@@ -796,155 +778,156 @@ export default function SettingsPage() {
             </div>
 
         <div style={{
-          background: 'hsla(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-          border: '1px solid hsla(255, 255, 255, 0.12)',
+          background: 'white',
           borderRadius: '16px',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          border: '1px solid #e5e7eb'
         }}>
-          <div style={{
-            background: 'hsla(255, 255, 255, 0.05)',
-            borderBottom: '1px solid hsla(255, 255, 255, 0.08)',
-            padding: '0'
-          }}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '100px 2fr 2fr 1fr 1fr 80px',
-              alignItems: 'center',
-              padding: '16px 20px',
-              gap: '16px'
-            }}>
-              {['Codice', 'Nome', 'Indirizzo', 'Canale', 'Stato', 'Azioni'].map((header, index) => (
-                <div key={index} style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#1f2937'
-                }}>
-                  {header}
-                </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Punto Vendita</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Canale</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {puntiVenditaList.map((item, index) => (
+                <tr key={item.id} style={{ 
+                  borderBottom: '1px solid #f3f4f6',
+                  transition: 'background 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 8px rgba(123, 44, 191, 0.3)'
+                      }}>
+                        {item.codice.substring(0, 2)}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.indirizzo}</td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 12px',
+                      background: item.canale === 'Franchising' 
+                        ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                        : 'linear-gradient(135deg, #7B2CBF, #a855f7)',
+                      color: 'white',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      <div style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'white'
+                      }} />
+                      {item.canale}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 12px',
+                      background: item.stato === 'Attivo' 
+                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                        : 'linear-gradient(135deg, #94a3b8, #64748b)',
+                      color: 'white',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      <div style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'white'
+                      }} />
+                      {item.stato}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <button
+                        onClick={() => setStoreModal({ open: true, data: item })}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#f3f4f6';
+                          e.currentTarget.style.borderColor = '#9ca3af';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}>
+                        <Edit3 size={14} style={{ color: '#6b7280' }} />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePuntoVendita(item.id)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fee2e2';
+                          e.currentTarget.style.borderColor = '#fca5a5';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}>
+                        <Trash2 size={14} style={{ color: '#ef4444' }} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
-
-          <div>
-            {puntiVenditaList.map((item, index) => (
-              <div
-                key={item.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '100px 2fr 2fr 1fr 1fr 80px',
-                  alignItems: 'center',
-                  padding: '16px 20px',
-                  gap: '16px',
-                  borderBottom: index < puntiVenditaList.length - 1 
-                    ? '1px solid hsla(255, 255, 255, 0.06)' 
-                    : 'none',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <div style={{
-                  fontSize: '14px',
-                  color: '#1f2937',
-                  fontWeight: '600',
-                  fontFamily: 'Inter, system-ui, sans-serif'
-                }}>
-                  {item.codice}
-                </div>
-
-                <div style={{
-                  fontSize: '14px',
-                  color: '#1f2937',
-                  fontWeight: '600'
-                }}>
-                  {item.nome}
-                </div>
-
-                <div style={{
-                  fontSize: '14px',
-                  color: '#4b5563',
-                  fontWeight: '500'
-                }}>
-                  {item.indirizzo}
-                </div>
-
-                <div>
-                  <span style={{
-                    background: item.canale === 'Franchising' 
-                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
-                      : 'linear-gradient(135deg, #7B2CBF, #a855f7)',
-                    color: 'white',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    boxShadow: item.canale === 'Franchising'
-                      ? '0 2px 8px rgba(255, 105, 0, 0.3)'
-                      : '0 2px 8px rgba(123, 44, 191, 0.3)'
-                  }}>
-                    {item.canale}
-                  </span>
-                </div>
-
-                <div>
-                  <span style={{
-                    background: item.stato === 'Attivo' 
-                      ? 'linear-gradient(135deg, #10b981, #059669)'
-                      : 'linear-gradient(135deg, #f59e0b, #d97706)',
-                    color: 'white',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    boxShadow: item.stato === 'Attivo'
-                      ? '0 2px 8px rgba(16, 185, 129, 0.3)'
-                      : '0 2px 8px rgba(245, 158, 11, 0.3)'
-                  }}>
-                    {item.stato}
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  gap: '8px'
-                }}>
-                  <button 
-                    onClick={() => setStoreModal({ open: true, data: item })}
-                    style={{
-                    background: 'hsla(123, 44, 191, 0.05)',
-                    border: '1px solid hsla(123, 44, 191, 0.1)',
-                    borderRadius: '6px',
-                    color: '#6b7280',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <Edit3 size={12} />
-                  </button>
-                  <button 
-                    onClick={() => handleDeletePuntoVendita(item.id)}
-                    style={{
-                    background: 'hsla(239, 68, 68, 0.05)',
-                    border: '1px solid hsla(239, 68, 68, 0.1)',
-                    borderRadius: '6px',
-                    color: '#6b7280',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
       )}
@@ -2394,6 +2377,11 @@ export default function SettingsPage() {
     ruolo: '',
     cambioPasswordObbligatorio: true,
     
+    // Scope gerarchico
+    scopeLevel: 'organizzazione',
+    selectedLegalEntities: [],
+    selectedStores: [],
+    
     // Informazioni personali
     nome: '',
     cognome: '',
@@ -2415,11 +2403,6 @@ export default function SettingsPage() {
     cap: '',
     provincia: '',
     paese: 'Italia',
-    
-    // Ambito operativo - GERARCHICO PIRAMIDALE
-    scopeLevel: 'organizzazione', // organizzazione | ragioni_sociali | punti_vendita
-    selectedLegalEntities: [] as number[],
-    selectedStores: [] as number[],
     
     // Documenti
     tipoDocumento: 'Carta Identità',
