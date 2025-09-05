@@ -490,8 +490,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   e.currentTarget.style.borderColor = 'hsla(0, 0%, 100%, 0.15)';
                 }}
               >
-                <Store size={16} style={{ color: '#10b981' }} />
-                <span>{selectedStore?.name || 'Seleziona Punto Vendita'}</span>
+                <Store size={16} style={{ color: '#6b7280' }} />
+                <span style={{ fontWeight: 400 }}>{selectedStore?.name || 'Seleziona Punto Vendita'}</span>
                 <ChevronDown size={14} style={{ 
                   transform: storeMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                   transition: 'transform 0.2s ease'
@@ -605,7 +605,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         </div>
 
                         {selectedStore?.id === store.id && (
-                          <CheckCircle size={16} style={{ color: '#10b981' }} />
+                          <CheckCircle size={16} style={{ color: '#6b7280' }} />
                         )}
                       </button>
                     ))}
