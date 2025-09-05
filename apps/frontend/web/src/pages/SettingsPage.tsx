@@ -56,6 +56,182 @@ import {
 // Tenant ID demo per tutti i mock data
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
+// Mock data per utenti
+const mockUtenti = [
+  {
+    id: 1,
+    tenant_id: DEMO_TENANT_ID,
+    username: 'mario.rossi',
+    nome: 'Mario',
+    cognome: 'Rossi',
+    email: 'mario.rossi@windtre.it',
+    telefono: '+39 333 1234567',
+    ruolo: 'Store Manager',
+    ambito: 'WindTre Milano Centro',
+    stato: 'Attivo',
+    ultimoAccesso: '2024-01-28 09:15',
+    createdAt: '2023-01-15'
+  },
+  {
+    id: 2,
+    tenant_id: DEMO_TENANT_ID,
+    username: 'anna.bianchi',
+    nome: 'Anna',
+    cognome: 'Bianchi',
+    email: 'anna.bianchi@windtre.it',
+    telefono: '+39 333 9876543',
+    ruolo: 'Salesperson',
+    ambito: 'WindTre Roma Termini',
+    stato: 'Attivo',
+    ultimoAccesso: '2024-01-28 10:30',
+    createdAt: '2023-06-20'
+  },
+  {
+    id: 3,
+    tenant_id: DEMO_TENANT_ID,
+    username: 'luca.verdi',
+    nome: 'Luca',
+    cognome: 'Verdi',
+    email: 'luca.verdi@windtre.it',
+    telefono: '+39 333 5551234',
+    ruolo: 'Regional Manager',
+    ambito: 'Organizzazione',
+    stato: 'Attivo',
+    ultimoAccesso: '2024-01-27 18:45',
+    createdAt: '2022-11-10'
+  }
+];
+
+// Lista di ruoli disponibili
+const availableRoles = [
+  'Super Admin',
+  'Regional Manager',
+  'District Manager',
+  'Store Manager',
+  'Assistant Manager',
+  'Senior Salesperson',
+  'Salesperson',
+  'Trainee',
+  'Accountant',
+  'HR Manager',
+  'Marketing Manager',
+  'IT Support',
+  'Customer Service',
+  'Warehouse Manager',
+  'Logistics Coordinator'
+];
+
+// Lista di province italiane
+const italianProvinces = [
+  { code: 'AG', name: 'Agrigento' },
+  { code: 'AL', name: 'Alessandria' },
+  { code: 'AN', name: 'Ancona' },
+  { code: 'AO', name: 'Aosta' },
+  { code: 'AR', name: 'Arezzo' },
+  { code: 'AP', name: 'Ascoli Piceno' },
+  { code: 'AT', name: 'Asti' },
+  { code: 'AV', name: 'Avellino' },
+  { code: 'BA', name: 'Bari' },
+  { code: 'BT', name: 'Barletta-Andria-Trani' },
+  { code: 'BL', name: 'Belluno' },
+  { code: 'BN', name: 'Benevento' },
+  { code: 'BG', name: 'Bergamo' },
+  { code: 'BI', name: 'Biella' },
+  { code: 'BO', name: 'Bologna' },
+  { code: 'BZ', name: 'Bolzano' },
+  { code: 'BS', name: 'Brescia' },
+  { code: 'BR', name: 'Brindisi' },
+  { code: 'CA', name: 'Cagliari' },
+  { code: 'CL', name: 'Caltanissetta' },
+  { code: 'CB', name: 'Campobasso' },
+  { code: 'CE', name: 'Caserta' },
+  { code: 'CT', name: 'Catania' },
+  { code: 'CZ', name: 'Catanzaro' },
+  { code: 'CH', name: 'Chieti' },
+  { code: 'CO', name: 'Como' },
+  { code: 'CS', name: 'Cosenza' },
+  { code: 'CR', name: 'Cremona' },
+  { code: 'KR', name: 'Crotone' },
+  { code: 'CN', name: 'Cuneo' },
+  { code: 'EN', name: 'Enna' },
+  { code: 'FM', name: 'Fermo' },
+  { code: 'FE', name: 'Ferrara' },
+  { code: 'FI', name: 'Firenze' },
+  { code: 'FG', name: 'Foggia' },
+  { code: 'FC', name: 'Forlì-Cesena' },
+  { code: 'FR', name: 'Frosinone' },
+  { code: 'GE', name: 'Genova' },
+  { code: 'GO', name: 'Gorizia' },
+  { code: 'GR', name: 'Grosseto' },
+  { code: 'IM', name: 'Imperia' },
+  { code: 'IS', name: 'Isernia' },
+  { code: 'AQ', name: "L'Aquila" },
+  { code: 'SP', name: 'La Spezia' },
+  { code: 'LT', name: 'Latina' },
+  { code: 'LE', name: 'Lecce' },
+  { code: 'LC', name: 'Lecco' },
+  { code: 'LI', name: 'Livorno' },
+  { code: 'LO', name: 'Lodi' },
+  { code: 'LU', name: 'Lucca' },
+  { code: 'MC', name: 'Macerata' },
+  { code: 'MN', name: 'Mantova' },
+  { code: 'MS', name: 'Massa-Carrara' },
+  { code: 'MT', name: 'Matera' },
+  { code: 'ME', name: 'Messina' },
+  { code: 'MI', name: 'Milano' },
+  { code: 'MO', name: 'Modena' },
+  { code: 'MB', name: 'Monza e Brianza' },
+  { code: 'NA', name: 'Napoli' },
+  { code: 'NO', name: 'Novara' },
+  { code: 'NU', name: 'Nuoro' },
+  { code: 'OR', name: 'Oristano' },
+  { code: 'PD', name: 'Padova' },
+  { code: 'PA', name: 'Palermo' },
+  { code: 'PR', name: 'Parma' },
+  { code: 'PV', name: 'Pavia' },
+  { code: 'PG', name: 'Perugia' },
+  { code: 'PU', name: 'Pesaro e Urbino' },
+  { code: 'PE', name: 'Pescara' },
+  { code: 'PC', name: 'Piacenza' },
+  { code: 'PI', name: 'Pisa' },
+  { code: 'PT', name: 'Pistoia' },
+  { code: 'PN', name: 'Pordenone' },
+  { code: 'PZ', name: 'Potenza' },
+  { code: 'PO', name: 'Prato' },
+  { code: 'RG', name: 'Ragusa' },
+  { code: 'RA', name: 'Ravenna' },
+  { code: 'RC', name: 'Reggio Calabria' },
+  { code: 'RE', name: 'Reggio Emilia' },
+  { code: 'RI', name: 'Rieti' },
+  { code: 'RN', name: 'Rimini' },
+  { code: 'RM', name: 'Roma' },
+  { code: 'RO', name: 'Rovigo' },
+  { code: 'SA', name: 'Salerno' },
+  { code: 'SS', name: 'Sassari' },
+  { code: 'SV', name: 'Savona' },
+  { code: 'SI', name: 'Siena' },
+  { code: 'SR', name: 'Siracusa' },
+  { code: 'SO', name: 'Sondrio' },
+  { code: 'SU', name: 'Sud Sardegna' },
+  { code: 'TA', name: 'Taranto' },
+  { code: 'TE', name: 'Teramo' },
+  { code: 'TR', name: 'Terni' },
+  { code: 'TO', name: 'Torino' },
+  { code: 'TP', name: 'Trapani' },
+  { code: 'TN', name: 'Trento' },
+  { code: 'TV', name: 'Treviso' },
+  { code: 'TS', name: 'Trieste' },
+  { code: 'UD', name: 'Udine' },
+  { code: 'VA', name: 'Varese' },
+  { code: 'VE', name: 'Venezia' },
+  { code: 'VB', name: 'Verbano-Cusio-Ossola' },
+  { code: 'VC', name: 'Vercelli' },
+  { code: 'VR', name: 'Verona' },
+  { code: 'VV', name: 'Vibo Valentia' },
+  { code: 'VI', name: 'Vicenza' },
+  { code: 'VT', name: 'Viterbo' }
+];
+
 // Types for reference data
 interface LegalForm {
   id: string;
@@ -162,6 +338,7 @@ export default function SettingsPage() {
   // Modal states
   const [legalEntityModal, setLegalEntityModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [storeModal, setStoreModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  const [userModal, setUserModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   
   // Form states
   const [selectedCity, setSelectedCity] = useState('');
@@ -173,6 +350,7 @@ export default function SettingsPage() {
   // Local state for managing items
   const [ragioneSocialiList, setRagioneSocialiList] = useState(mockRagioneSociali);
   const [puntiVenditaList, setPuntiVenditaList] = useState(mockPuntiVendita);
+  const [utentiList, setUtentiList] = useState(mockUtenti);
   
   // Modal states
   const [showCreateRagioneSociale, setShowCreateRagioneSociale] = useState(false);
@@ -773,10 +951,222 @@ export default function SettingsPage() {
       
       {/* Placeholder per altre sezioni */}
       {selectedEntity === 'utenti' && (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-          <Users size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Gestione Utenti</h3>
-          <p>Questa sezione sarà disponibile a breve</p>
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Utenti e Risorse
+            </h3>
+            <button style={{
+              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onClick={() => {
+              setNewUser({
+                username: '',
+                password: '',
+                confirmPassword: '',
+                ruolo: '',
+                cambioPasswordObbligatorio: true,
+                nome: '',
+                cognome: '',
+                codiceFiscale: '',
+                dataNascita: '',
+                luogoNascita: '',
+                sesso: 'M',
+                email: '',
+                emailPersonale: '',
+                telefono: '',
+                telefonoAziendale: '',
+                via: '',
+                civico: '',
+                citta: '',
+                cap: '',
+                provincia: '',
+                paese: 'Italia',
+                ambito: 'organizzazione',
+                selectedOrganization: '',
+                selectedLegalEntities: [],
+                selectedStores: [],
+                tipoDocumento: 'Carta Identità',
+                numeroDocumento: '',
+                dataScadenzaDocumento: '',
+                stato: 'Attivo',
+                dataInizioValidita: '',
+                dataFineValidita: '',
+                notificheEmail: true,
+                notificheSMS: false,
+                lingua: 'it',
+                fuso: 'Europe/Rome',
+                tipoContratto: 'Indeterminato',
+                dataAssunzione: '',
+                livello: '',
+                ccnl: 'Commercio',
+                oreLavoro: '40',
+                note: ''
+              });
+              setUserModal({ open: true, data: null });
+            }}>
+              <Plus size={16} />
+              Nuovo Utente
+            </button>
+          </div>
+
+          {/* Tabella Utenti */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid #e5e7eb'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Username</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Completo</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Email</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ruolo</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ambito</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ultimo Accesso</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {utentiList.map((user, index) => (
+                  <tr key={user.id} style={{ 
+                    borderBottom: '1px solid #f3f4f6',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}>
+                          {user.nome.charAt(0)}{user.cognome.charAt(0)}
+                        </div>
+                        {user.username}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
+                      {user.nome} {user.cognome}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
+                      {user.email}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '14px' }}>
+                      <span style={{
+                        background: user.ruolo.includes('Manager') ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'linear-gradient(135deg, #10b981, #059669)',
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        {user.ruolo}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
+                      {user.ambito}
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <span style={{
+                        background: user.stato === 'Attivo' ? '#dcfce7' : '#fee2e2',
+                        color: user.stato === 'Attivo' ? '#15803d' : '#b91c1c',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        {user.stato}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                      {user.ultimoAccesso}
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#f3f4f6';
+                          e.currentTarget.style.borderColor = '#9ca3af';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}>
+                          <Edit3 size={14} style={{ color: '#6b7280' }} />
+                        </button>
+                        <button style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fee2e2';
+                          e.currentTarget.style.borderColor = '#fca5a5';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}>
+                          <Trash2 size={14} style={{ color: '#ef4444' }} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       
@@ -1994,6 +2384,68 @@ export default function SettingsPage() {
     canale: 'Franchising',
     brands: [] as string[],
     stato: 'Attivo'
+  });
+
+  // State per il nuovo utente
+  const [newUser, setNewUser] = useState({
+    // Dati di accesso
+    username: '',
+    password: '',
+    confirmPassword: '',
+    ruolo: '',
+    cambioPasswordObbligatorio: true,
+    
+    // Informazioni personali
+    nome: '',
+    cognome: '',
+    codiceFiscale: '',
+    dataNascita: '',
+    luogoNascita: '',
+    sesso: 'M',
+    
+    // Contatti
+    email: '',
+    emailPersonale: '',
+    telefono: '',
+    telefonoAziendale: '',
+    
+    // Indirizzo residenza
+    via: '',
+    civico: '',
+    citta: '',
+    cap: '',
+    provincia: '',
+    paese: 'Italia',
+    
+    // Ambito operativo
+    ambito: 'organizzazione', // organizzazione | ragioni_sociali | punti_vendita
+    selectedOrganization: '',
+    selectedLegalEntities: [] as number[],
+    selectedStores: [] as number[],
+    
+    // Documenti
+    tipoDocumento: 'Carta Identità',
+    numeroDocumento: '',
+    dataScadenzaDocumento: '',
+    
+    // Impostazioni account
+    stato: 'Attivo',
+    dataInizioValidita: '',
+    dataFineValidita: '',
+    notificheEmail: true,
+    notificheSMS: false,
+    lingua: 'it',
+    fuso: 'Europe/Rome',
+    
+    // Informazioni contrattuali
+    tipoContratto: 'Indeterminato',
+    dataAssunzione: '',
+    livello: '',
+    ccnl: 'Commercio',
+    oreLavoro: '40',
+    
+    // Note
+    note: ''
   });
 
   // State per il modal ragione sociale
