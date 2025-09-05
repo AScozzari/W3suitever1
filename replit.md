@@ -78,6 +78,57 @@ Preferred communication style: Simple, everyday language.
 - **Billing**: Override billing per tenant, flags feature
 - **Branding**: Logo/colori personalizzabili per tenant
 
+## 🏗️ ARCHITETTURA ORGANIZZATIVA ENTERPRISE
+
+### Gerarchia Entità Piramidale
+```
+TENANT (Organizzazione)
+├── RAGIONI SOCIALI (1+)
+    ├── PUNTI VENDITA 
+        ├── RISORSE (Dipendenti)
+```
+
+### 🏢 TENANT (Organizzazione)
+- **Livello**: Root dell'organizzazione
+- **Contenuto**: Una o più Ragioni Sociali
+- **Permessi**: Isolamento completo RLS PostgreSQL
+
+### 🏛️ RAGIONI SOCIALI  
+- **Livello**: Entità giuridiche all'interno del Tenant
+- **Relazione**: Molte-a-Uno con Tenant
+- **Contenuto**: Punti vendita associati
+
+### 🏪 PUNTI VENDITA
+- **Livello**: Unità operative fisiche/virtuali
+- **Relazione**: Molte-a-Uno con Ragioni Sociali
+- **Attributi Base**: Nome, indirizzo, codice, stato operativo
+- **Brand Association**: WindTre e/o Very Mobile
+- **Canale**: Franchising | Top Dealer | Dealer
+- **Clusterizzazione**: Per potenziale su driver business:
+  - Fisso (fibra, ADSL)
+  - Mobile (contratti, ricariche)
+  - Energia (gas, luce)  
+  - Protezione (antivirus, backup)
+  - Assicurazione (auto, casa, vita)
+
+### 👥 RISORSE (Dipendenti)
+- **Livello**: Persone che lavorano nell'organizzazione
+- **Abilitazioni Cascading**:
+  - **Tenant-wide**: Accesso completo organizzazione
+  - **Ragione Sociale**: Una o più RS specifiche
+  - **Punto Vendita**: Uno o più PV specifici
+- **Permessi**: Sistema RBAC granulare
+
+### 🎯 BRAND INTERFACE - SUPER ADMIN
+- **Ruolo**: Super Admin centralizzato
+- **Scope**: Cross-tenant operations
+- **Funzionalità**:
+  - Creazione Campagne (globali/specifiche per organizzazione)
+  - Gestione Listini prezzi
+  - Definizione nuovi Asset Business "Driver"
+  - Deploy selettivo: tutte le organizzazioni OR organizzazione specifica
+- **Propagazione**: Sistema eventi BullMQ → workers per deployment
+
 # External Dependencies
 
 ## Database Services
