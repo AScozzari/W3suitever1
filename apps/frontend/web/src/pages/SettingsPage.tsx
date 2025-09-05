@@ -2362,7 +2362,7 @@ export default function SettingsPage() {
     cap: '',
     telefono: '',
     email: '',
-    ragioneSociale: '',
+    ragioneSociale_id: null as number | null,  // Obbligatorio
     canale: 'Franchising',
     brands: [] as string[],
     stato: 'Attivo'
@@ -2376,6 +2376,11 @@ export default function SettingsPage() {
     confirmPassword: '',
     ruolo: '',
     cambioPasswordObbligatorio: true,
+    
+    // Relazioni obbligatorie
+    ragioneSociale_id: null as number | null,  // Obbligatorio
+    puntiVendita_ids: [] as number[],  // Almeno uno obbligatorio
+    puntoVenditaPreferito_id: null as number | null,  // Obbligatorio se più PdV
     
     // Scope gerarchico
     scopeLevel: 'organizzazione',
@@ -3601,8 +3606,8 @@ export default function SettingsPage() {
                     Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
-                    value={newStore.ragioneSociale}
-                    onChange={(e) => setNewStore({ ...newStore, ragioneSociale: e.target.value })}
+                    value={newStore.ragioneSociale_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, ragioneSociale_id: e.target.value ? Number(e.target.value) : null })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -3626,9 +3631,11 @@ export default function SettingsPage() {
                       e.target.style.boxShadow = 'none';
                     }}
                   >
-                    <option value="">Seleziona...</option>
+                    <option value="">Seleziona ragione sociale...</option>
                     {ragioneSocialiList.map(rs => (
-                      <option key={rs.id} value={rs.nome}>{rs.nome}</option>
+                      <option key={rs.id} value={rs.id}>
+                        {rs.nome} ({rs.codice})
+                      </option>
                     ))}
                   </select>
                 </div>
