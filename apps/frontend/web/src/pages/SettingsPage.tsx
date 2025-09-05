@@ -86,22 +86,17 @@ export default function SettingsPage() {
 
   const renderEntityManagement = () => (
     <div style={{
-      background: 'rgba(255,255,255,0.1)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderRadius: '24px',
-      border: '1px solid rgba(255,255,255,0.2)',
+      background: '#ffffff',
+      borderRadius: '12px',
+      border: '1px solid #e5e7eb',
       padding: '32px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
     }}>
       <h2 style={{
         fontSize: '24px',
         fontWeight: '700',
-        color: 'white',
-        marginBottom: '24px',
-        background: 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent'
+        color: '#111827',
+        marginBottom: '24px'
       }}>
         Configurazione Entità
       </h2>
@@ -113,39 +108,39 @@ export default function SettingsPage() {
         gap: '12px',
         marginBottom: '24px',
         padding: '16px',
-        background: 'rgba(255,255,255,0.1)',
-        borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.2)'
+        background: '#f8f9fa',
+        borderRadius: '8px',
+        border: '1px solid #e5e7eb'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#60A5FA' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2563eb' }}>
           <Building size={16} />
           <span style={{ fontSize: '14px', fontWeight: '500' }}>Ragione Sociale</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
           <Users size={16} />
           <span style={{ fontSize: '14px' }}>Clienti</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
           <Store size={16} />
           <span style={{ fontSize: '14px' }}>Punti Vendita</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
           <Server size={16} />
           <span style={{ fontSize: '14px' }}>Smart Automation</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
           <Activity size={16} />
           <span style={{ fontSize: '14px' }}>Servizi</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
           <FileText size={16} />
           <span style={{ fontSize: '14px' }}>Auto Reporting</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
           <Shield size={16} />
           <span style={{ fontSize: '14px' }}>GDPR</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
           <Bell size={16} />
           <span style={{ fontSize: '14px' }}>Alert Notifications</span>
         </div>
@@ -160,16 +155,16 @@ export default function SettingsPage() {
         <h3 style={{
           fontSize: '20px',
           fontWeight: '600',
-          color: 'white',
+          color: '#111827',
           margin: 0
         }}>
           Gestione Ragioni Sociali
         </h3>
         <button style={{
-          background: 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)',
+          background: '#2563eb',
           color: 'white',
           border: 'none',
-          borderRadius: '12px',
+          borderRadius: '8px',
           padding: '12px 20px',
           fontSize: '14px',
           fontWeight: '600',
@@ -177,8 +172,8 @@ export default function SettingsPage() {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          boxShadow: '0 4px 16px rgba(255,105,0,0.3)',
-          transition: 'all 0.3s ease'
+          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+          transition: 'all 0.2s ease'
         }}>
           <Plus size={16} />
           Nuova Ragione Sociale
@@ -187,73 +182,72 @@ export default function SettingsPage() {
 
       {/* Table */}
       <div style={{
-        background: 'rgba(255,255,255,0.1)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        backdropFilter: 'blur(20px)'
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        overflow: 'hidden'
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
+            <tr style={{ background: '#f8f9fa' }}>
               <th style={{
                 padding: '16px 20px',
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: 'rgba(255,255,255,0.9)',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
               }}>Nome</th>
               <th style={{
                 padding: '16px 20px',
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: 'rgba(255,255,255,0.9)',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
               }}>Forma Giuridica</th>
               <th style={{
                 padding: '16px 20px',
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: 'rgba(255,255,255,0.9)',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
               }}>P.IVA</th>
               <th style={{
                 padding: '16px 20px',
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: 'rgba(255,255,255,0.9)',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
               }}>Stato</th>
               <th style={{
                 padding: '16px 20px',
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: 'rgba(255,255,255,0.9)',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
               }}>Città</th>
               <th style={{
                 padding: '16px 20px',
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: 'rgba(255,255,255,0.9)',
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                color: '#374151',
+                borderBottom: '1px solid #e5e7eb'
               }}>Azioni</th>
             </tr>
           </thead>
           <tbody>
             {mockRagioneSociali.map((item, index) => (
               <tr key={item.id} style={{ 
-                borderBottom: index < mockRagioneSociali.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                transition: 'background 0.3s ease'
+                borderBottom: index < mockRagioneSociali.length - 1 ? '1px solid #f3f4f6' : 'none',
+                transition: 'background 0.2s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                e.currentTarget.style.background = '#f8f9fa';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'transparent';
@@ -261,27 +255,28 @@ export default function SettingsPage() {
                 <td style={{
                   padding: '16px 20px',
                   fontSize: '14px',
-                  color: 'rgba(255,255,255,0.9)'
+                  color: '#111827',
+                  fontWeight: '500'
                 }}>{item.name}</td>
                 <td style={{
                   padding: '16px 20px',
                   fontSize: '14px',
-                  color: 'rgba(255,255,255,0.7)'
+                  color: '#6b7280'
                 }}>{item.formaGiuridica}</td>
                 <td style={{
                   padding: '16px 20px',
                   fontSize: '14px',
-                  color: 'rgba(255,255,255,0.7)'
+                  color: '#6b7280'
                 }}>{item.pIva}</td>
                 <td style={{ padding: '16px 20px' }}>
                   <span style={{
-                    background: item.stato === 'Attiva' ? 'rgba(34,197,94,0.2)' : 'rgba(245,158,11,0.2)',
-                    color: item.stato === 'Attiva' ? '#4ADE80' : '#F59E0B',
-                    border: `1px solid ${item.stato === 'Attiva' ? 'rgba(34,197,94,0.3)' : 'rgba(245,158,11,0.3)'}`,
-                    padding: '6px 12px',
-                    borderRadius: '8px',
+                    background: item.stato === 'Attiva' ? '#dcfce7' : '#fef3c7',
+                    color: item.stato === 'Attiva' ? '#16a34a' : '#d97706',
+                    border: `1px solid ${item.stato === 'Attiva' ? '#bbf7d0' : '#fde68a'}`,
+                    padding: '4px 8px',
+                    borderRadius: '6px',
                     fontSize: '12px',
-                    fontWeight: '600'
+                    fontWeight: '500'
                   }}>
                     {item.stato}
                   </span>
@@ -289,20 +284,20 @@ export default function SettingsPage() {
                 <td style={{
                   padding: '16px 20px',
                   fontSize: '14px',
-                  color: 'rgba(255,255,255,0.7)'
+                  color: '#6b7280'
                 }}>{item.città}</td>
                 <td style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <button style={{
-                      background: 'rgba(239,68,68,0.2)',
-                      border: '1px solid rgba(239,68,68,0.3)',
-                      borderRadius: '8px',
-                      color: '#F87171',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      color: '#dc2626',
                       cursor: 'pointer',
-                      padding: '8px',
-                      transition: 'all 0.3s ease'
+                      padding: '6px',
+                      transition: 'all 0.2s ease'
                     }}>
-                      <Trash2 size={16} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </td>
@@ -316,22 +311,17 @@ export default function SettingsPage() {
 
   const renderSystemSettings = () => (
     <div style={{
-      background: 'rgba(255,255,255,0.1)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderRadius: '24px',
-      border: '1px solid rgba(255,255,255,0.2)',
+      background: '#ffffff',
+      borderRadius: '12px',
+      border: '1px solid #e5e7eb',
       padding: '32px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
     }}>
       <h2 style={{
         fontSize: '24px',
         fontWeight: '700',
-        color: 'white',
-        marginBottom: '24px',
-        background: 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent'
+        color: '#111827',
+        marginBottom: '24px'
       }}>
         Configurazione Sistema
       </h2>
@@ -345,23 +335,23 @@ export default function SettingsPage() {
       }}>
         {systemTabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = tab.id === 'Database'; // Database is active in the example
+          const isActive = tab.id === 'Database';
           return (
             <button
               key={tab.id}
               style={{
-                background: isActive ? 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)' : 'rgba(255,255,255,0.1)',
-                color: isActive ? 'white' : 'rgba(255,255,255,0.7)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '12px',
-                padding: '10px 16px',
+                background: isActive ? '#2563eb' : '#f8f9fa',
+                color: isActive ? 'white' : '#6b7280',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                padding: '8px 12px',
                 fontSize: '14px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s ease',
-                fontWeight: isActive ? '600' : '500'
+                gap: '6px',
+                transition: 'all 0.2s ease',
+                fontWeight: isActive ? '500' : '400'
               }}
             >
               <Icon size={14} />
@@ -379,70 +369,74 @@ export default function SettingsPage() {
         marginBottom: '32px'
       }}>
         <div style={{
-          background: 'linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%)',
-          border: '1px solid rgba(34,197,94,0.3)',
-          borderRadius: '16px',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
           padding: '20px',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
         }}>
-          <HardDrive size={28} style={{ color: '#4ADE80', margin: '0 auto 12px' }} />
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#4ADE80', marginBottom: '4px' }}>
+          <HardDrive size={28} style={{ color: '#16a34a', margin: '0 auto 12px' }} />
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#16a34a', marginBottom: '4px' }}>
             {mockSystemStats.sistema}
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(74,222,128,0.8)' }}>Sistema</div>
+          <div style={{ fontSize: '12px', color: '#6b7280' }}>Sistema</div>
         </div>
 
         <div style={{
-          background: 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%)',
-          border: '1px solid rgba(59,130,246,0.3)',
-          borderRadius: '16px',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
           padding: '20px',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
         }}>
-          <SettingsIcon size={28} style={{ color: '#60A5FA', margin: '0 auto 12px' }} />
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#60A5FA', marginBottom: '4px' }}>
+          <SettingsIcon size={28} style={{ color: '#2563eb', margin: '0 auto 12px' }} />
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>
             {mockSystemStats.configurazioni}
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(96,165,250,0.8)' }}>Configurazioni</div>
+          <div style={{ fontSize: '12px', color: '#6b7280' }}>Configurazioni</div>
         </div>
 
         <div style={{
-          background: 'linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(168,85,247,0.05) 100%)',
-          border: '1px solid rgba(168,85,247,0.3)',
-          borderRadius: '16px',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
           padding: '20px',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
         }}>
-          <Activity size={28} style={{ color: '#A855F7', margin: '0 auto 12px' }} />
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#A855F7', marginBottom: '4px' }}>
+          <Activity size={28} style={{ color: '#7c3aed', margin: '0 auto 12px' }} />
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#7c3aed', marginBottom: '4px' }}>
             {mockSystemStats.monitoraggio}
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(168,85,247,0.8)' }}>Monitoraggio</div>
+          <div style={{ fontSize: '12px', color: '#6b7280' }}>Monitoraggio</div>
         </div>
 
         <div style={{
-          background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.05) 100%)',
-          border: '1px solid rgba(245,158,11,0.3)',
-          borderRadius: '16px',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
           padding: '20px',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
         }}>
-          <FileText size={28} style={{ color: '#F59E0B', margin: '0 auto 12px' }} />
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#F59E0B', marginBottom: '4px' }}>
+          <FileText size={28} style={{ color: '#d97706', margin: '0 auto 12px' }} />
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#d97706', marginBottom: '4px' }}>
             {mockSystemStats.logs}
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(245,158,11,0.8)' }}>Logs</div>
+          <div style={{ fontSize: '12px', color: '#6b7280' }}>Logs</div>
         </div>
       </div>
 
-      {/* Database Configuration - Glassmorphism Style */}
+      {/* Database Configuration */}
       <div style={{
-        background: 'rgba(255,255,255,0.1)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        borderRadius: '16px',
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
         padding: '24px',
         marginBottom: '24px',
-        backdropFilter: 'blur(20px)'
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
       }}>
         <div style={{
           display: 'flex',
@@ -450,58 +444,57 @@ export default function SettingsPage() {
           gap: '12px',
           marginBottom: '20px'
         }}>
-          <Database size={24} style={{ color: '#60A5FA' }} />
+          <Database size={24} style={{ color: '#2563eb' }} />
           <h3 style={{
             fontSize: '18px',
             fontWeight: '600',
-            color: 'white',
+            color: '#111827',
             margin: 0
           }}>
             Configurazione Database
           </h3>
         </div>
 
-        {/* Database Table with glassmorphism */}
         <div style={{
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '12px',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
           overflow: 'hidden'
         }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
+              <tr style={{ background: '#f8f9fa' }}>
                 <th style={{
                   padding: '12px 16px',
                   textAlign: 'left',
                   fontSize: '14px',
                   fontWeight: '600',
-                  color: 'rgba(255,255,255,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)'
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
                 }}>Parametro</th>
                 <th style={{
                   padding: '12px 16px',
                   textAlign: 'left',
                   fontSize: '14px',
                   fontWeight: '600',
-                  color: 'rgba(255,255,255,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)'
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
                 }}>Performance</th>
                 <th style={{
                   padding: '12px 16px',
                   textAlign: 'left',
                   fontSize: '14px',
                   fontWeight: '600',
-                  color: 'rgba(255,255,255,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)'
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
                 }}>Utilizzo</th>
                 <th style={{
                   padding: '12px 16px',
                   textAlign: 'left',
                   fontSize: '14px',
                   fontWeight: '600',
-                  color: 'rgba(255,255,255,0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)'
+                  color: '#374151',
+                  border: '1px solid #e5e7eb'
                 }}>Configurazione</th>
               </tr>
             </thead>
@@ -511,32 +504,32 @@ export default function SettingsPage() {
                   <td style={{
                     padding: '12px 16px',
                     fontSize: '14px',
-                    color: 'rgba(255,255,255,0.8)',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    color: '#374151',
+                    border: '1px solid #e5e7eb'
                   }}>{table.name}</td>
                   <td style={{
                     padding: '12px 16px',
                     fontSize: '14px',
-                    color: 'rgba(255,255,255,0.8)',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    color: '#374151',
+                    border: '1px solid #e5e7eb'
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#60A5FA' }}>{table.performance}</span>
-                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Connessione stabile</span>
+                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{table.performance}</span>
+                      <span style={{ fontSize: '12px', color: '#6b7280' }}>Connessione stabile</span>
                     </div>
                   </td>
                   <td style={{
                     padding: '12px 16px',
                     fontSize: '14px',
-                    color: 'rgba(255,255,255,0.8)',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    color: '#374151',
+                    border: '1px solid #e5e7eb'
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#4ADE80' }}>{table.usage}</span>
+                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#16a34a' }}>{table.usage}</span>
                       <div style={{
                         width: '80px',
                         height: '6px',
-                        background: 'rgba(255,255,255,0.2)',
+                        background: '#e5e7eb',
                         borderRadius: '3px',
                         overflow: 'hidden',
                         marginTop: '4px'
@@ -544,7 +537,7 @@ export default function SettingsPage() {
                         <div style={{
                           width: '70%',
                           height: '100%',
-                          background: '#4ADE80'
+                          background: '#16a34a'
                         }} />
                       </div>
                     </div>
@@ -552,15 +545,15 @@ export default function SettingsPage() {
                   <td style={{
                     padding: '12px 16px',
                     fontSize: '14px',
-                    color: 'rgba(255,255,255,0.8)',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    color: '#374151',
+                    border: '1px solid #e5e7eb'
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#60A5FA' }}>{table.config}</span>
+                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>{table.config}</span>
                       <div style={{
                         width: '80px',
                         height: '6px',
-                        background: 'rgba(255,255,255,0.2)',
+                        background: '#e5e7eb',
                         borderRadius: '3px',
                         overflow: 'hidden',
                         marginTop: '4px'
@@ -568,7 +561,7 @@ export default function SettingsPage() {
                         <div style={{
                           width: `${mockDatabase.utilizzo}%`,
                           height: '100%',
-                          background: '#60A5FA'
+                          background: '#2563eb'
                         }} />
                       </div>
                     </div>
@@ -586,56 +579,48 @@ export default function SettingsPage() {
     <div style={{
       minHeight: '100vh',
       width: '100%',
-      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 50%, #FF6900 100%)',
-      backgroundAttachment: 'fixed'
+      background: '#ffffff'
     }}>
       <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header con back button */}
+        {/* Header */}
         <div style={{
-          background: 'rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          border: '1px solid rgba(255,255,255,0.2)',
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb',
           padding: '32px',
           marginBottom: '32px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <Link href="/">
                 <button style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '12px',
+                  background: '#f8f9fa',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
                   padding: '12px',
-                  color: 'white',
+                  color: '#6b7280',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  transition: 'all 0.3s ease',
-                  backdropFilter: 'blur(20px)'
+                  transition: 'all 0.2s ease'
                 }}>
                   <ArrowLeft size={20} />
                 </button>
               </Link>
               <div>
                 <h1 style={{
-                  fontSize: '36px',
-                  fontWeight: 'bold',
-                  color: 'white',
-                  margin: '0 0 8px 0',
-                  background: 'linear-gradient(135deg, #FFFFFF 0%, #FFB366 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
+                  fontSize: '32px',
+                  fontWeight: '700',
+                  color: '#111827',
+                  margin: '0 0 8px 0'
                 }}>
                   Configurazioni Sistema
                 </h1>
                 <p style={{ 
-                  color: 'rgba(255,255,255,0.8)', 
-                  fontSize: '18px', 
-                  margin: 0,
-                  fontWeight: '500'
+                  color: '#6b7280', 
+                  fontSize: '16px', 
+                  margin: 0
                 }}>
                   Gestione completa per sistema di configurazione e sistema aziendale
                 </p>
@@ -646,31 +631,29 @@ export default function SettingsPage() {
 
         {/* Main Tabs */}
         <div style={{
-          background: 'rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          border: '1px solid rgba(255,255,255,0.2)',
-          padding: '8px',
+          background: '#f8f9fa',
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb',
+          padding: '4px',
           marginBottom: '32px',
           display: 'flex',
-          gap: '8px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+          gap: '4px'
         }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                background: activeTab === tab.id ? 'linear-gradient(135deg, #FF6900 0%, #FFB366 100%)' : 'transparent',
-                color: activeTab === tab.id ? 'white' : 'rgba(255,255,255,0.7)',
+                background: activeTab === tab.id ? '#ffffff' : 'transparent',
+                color: activeTab === tab.id ? '#111827' : '#6b7280',
                 border: 'none',
-                borderRadius: '16px',
-                padding: '16px 24px',
-                fontSize: '16px',
-                fontWeight: activeTab === tab.id ? '600' : '500',
+                borderRadius: '6px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: activeTab === tab.id ? '500' : '400',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: activeTab === tab.id ? '0 4px 16px rgba(255,105,0,0.3)' : 'none',
+                transition: 'all 0.2s ease',
+                boxShadow: activeTab === tab.id ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
                 flex: 1,
                 display: 'flex',
                 alignItems: 'center',
@@ -678,7 +661,7 @@ export default function SettingsPage() {
                 gap: '8px'
               }}
             >
-              <tab.icon size={18} />
+              <tab.icon size={16} />
               {tab.label}
             </button>
           ))}
@@ -690,32 +673,30 @@ export default function SettingsPage() {
           {activeTab === 'System Settings' && renderSystemSettings()}
           {activeTab === 'AI Assistant' && (
             <div style={{
-              background: 'rgba(255,255,255,0.1)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: '24px',
-              border: '1px solid rgba(255,255,255,0.2)',
+              background: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb',
               padding: '60px',
               textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
-              <Cpu size={64} style={{ color: 'rgba(255,255,255,0.6)', margin: '0 auto 24px' }} />
-              <h3 style={{ color: 'white', fontSize: '24px', marginBottom: '12px', fontWeight: '600' }}>AI Assistant</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '16px' }}>Configurazione assistente AI in sviluppo</p>
+              <Cpu size={64} style={{ color: '#6b7280', margin: '0 auto 24px' }} />
+              <h3 style={{ color: '#111827', fontSize: '24px', marginBottom: '12px', fontWeight: '600' }}>AI Assistant</h3>
+              <p style={{ color: '#6b7280', fontSize: '16px' }}>Configurazione assistente AI in sviluppo</p>
             </div>
           )}
           {activeTab === 'Channel Settings' && (
             <div style={{
-              background: 'rgba(255,255,255,0.1)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: '24px',
-              border: '1px solid rgba(255,255,255,0.2)',
+              background: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb',
               padding: '60px',
               textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
-              <SettingsIcon size={64} style={{ color: 'rgba(255,255,255,0.6)', margin: '0 auto 24px' }} />
-              <h3 style={{ color: 'white', fontSize: '24px', marginBottom: '12px', fontWeight: '600' }}>Channel Settings</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '16px' }}>Configurazioni canale in sviluppo</p>
+              <SettingsIcon size={64} style={{ color: '#6b7280', margin: '0 auto 24px' }} />
+              <h3 style={{ color: '#111827', fontSize: '24px', marginBottom: '12px', fontWeight: '600' }}>Channel Settings</h3>
+              <p style={{ color: '#6b7280', fontSize: '16px' }}>Configurazioni canale in sviluppo</p>
             </div>
           )}
         </div>
