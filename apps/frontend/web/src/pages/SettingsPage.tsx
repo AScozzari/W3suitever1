@@ -1415,40 +1415,76 @@ export default function SettingsPage() {
           }}>
             {/* Header Modal */}
             <div style={{
-              padding: '24px 24px 0 24px',
-              borderBottom: '1px solid #f1f5f9'
+              padding: '32px 32px 24px 32px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderBottom: '1px solid #e2e8f0'
             }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '24px'
+                alignItems: 'flex-start'
               }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  color: '#111827',
-                  margin: 0,
-                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                }}>
-                  {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
-                </h2>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+                    }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h2 style={{
+                      fontSize: '22px',
+                      fontWeight: '700',
+                      color: '#1e293b',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    {legalEntityModal.data ? 'Modifica i dati dell\'entità giuridica' : 'Inserisci i dati della nuova entità giuridica'}
+                  </p>
+                </div>
                 <button
                   onClick={() => setLegalEntityModal({ open: false, data: null })}
                   style={{
-                    background: 'transparent',
-                    border: 'none',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '8px',
                     cursor: 'pointer',
                     padding: '8px',
-                    borderRadius: '8px',
-                    transition: 'all 0.2s ease',
-                    color: '#64748b'
+                    transition: 'all 0.15s ease',
+                    color: '#64748b',
+                    backdropFilter: 'blur(8px)'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
+                    e.currentTarget.style.color = '#374151';
+                    e.currentTarget.style.transform = 'scale(1.05)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.transform = 'scale(1)';
                   }}
                 >
                   <X size={18} />
@@ -2156,40 +2192,77 @@ export default function SettingsPage() {
           }}>
             {/* Header Modal */}
             <div style={{
-              padding: '24px 24px 0 24px',
-              borderBottom: '1px solid #f1f5f9'
+              padding: '32px 32px 24px 32px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderBottom: '1px solid #e2e8f0'
             }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '24px'
+                alignItems: 'flex-start'
               }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  color: '#111827',
-                  margin: 0,
-                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                }}>
-                  {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
-                </h2>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                    }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 22V12h6v10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h2 style={{
+                      fontSize: '22px',
+                      fontWeight: '700',
+                      color: '#1e293b',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#64748b',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    {storeModal.data ? 'Modifica i dati del punto vendita' : 'Configura i dettagli del nuovo punto vendita'}
+                  </p>
+                </div>
                 <button
                   onClick={() => setStoreModal({ open: false, data: null })}
                   style={{
-                    background: 'transparent',
-                    border: 'none',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '8px',
                     cursor: 'pointer',
                     padding: '8px',
-                    borderRadius: '8px',
-                    transition: 'all 0.2s ease',
-                    color: '#64748b'
+                    transition: 'all 0.15s ease',
+                    color: '#64748b',
+                    backdropFilter: 'blur(8px)'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
+                    e.currentTarget.style.color = '#374151';
+                    e.currentTarget.style.transform = 'scale(1.05)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.transform = 'scale(1)';
                   }}
                 >
                   <X size={18} />
