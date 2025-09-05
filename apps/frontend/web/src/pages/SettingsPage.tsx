@@ -2138,7 +2138,7 @@ export default function SettingsPage() {
                   onClick={handleSaveRagioneSociale}
                   style={{
                     padding: '10px 24px',
-                    background: '#6366f1',
+                    background: '#FF6900',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
@@ -2147,18 +2147,18 @@ export default function SettingsPage() {
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 1px 3px 0 rgba(255, 105, 0, 0.3)'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#4f46e5';
-                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(0, 0, 0, 0.15)';
+                    e.currentTarget.style.background = '#e55a00';
+                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#6366f1';
-                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.background = '#FF6900';
+                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(255, 105, 0, 0.3)';
                   }}
                 >
-                  {legalEntityModal.data ? 'Salva' : 'Crea'}
+                  Salva
                 </button>
               </div>
             </div>
@@ -2339,28 +2339,24 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: 'rgba(255, 255, 255, 0.7)',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                      transition: 'all 0.3s ease',
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2481,28 +2477,24 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: 'rgba(255, 255, 255, 0.7)',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                      transition: 'all 0.3s ease',
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2643,28 +2635,24 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: 'rgba(255, 255, 255, 0.7)',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                      transition: 'all 0.3s ease',
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2688,28 +2676,24 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       fontSize: '14px',
-                      background: 'rgba(255, 255, 255, 0.7)',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                      transition: 'all 0.3s ease',
+                      background: '#ffffff',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#d1d5db';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -2853,83 +2837,66 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Footer Modal con stile uniforme */}
+              {/* Footer Modal */}
               <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '32px',
-                paddingTop: '24px',
-                borderTop: '1px solid rgba(255, 105, 0, 0.1)'
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '24px',
+                paddingTop: '20px',
+                borderTop: '1px solid #e5e7eb'
               }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: '#6b7280',
-                  fontSize: '13px'
-                }}>
-                  <span style={{
-                    display: 'inline-block',
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: '#10b981'
-                  }} />
-                  Tutti i campi con * sono obbligatori
-                </div>
-                
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => setStoreModal({ open: false, data: null })}
-                    style={{
-                      padding: '12px 24px',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '12px',
-                      background: 'white',
-                      color: '#6b7280',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = '#FF6900';
-                      e.currentTarget.style.color = '#FF6900';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = '#e5e7eb';
-                      e.currentTarget.style.color = '#6b7280';
-                    }}
-                  >
-                    Annulla
-                  </button>
-                  <button
-                    onClick={handleSaveStore}
-                    style={{
-                      padding: '12px 32px',
-                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 105, 0, 0.4)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
-                    }}
-                  >
-                    {storeModal.data ? 'Salva Modifiche' : 'Crea Punto Vendita'}
-                  </button>
-                </div>
+                <button
+                  onClick={() => setStoreModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#9ca3af';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#ffffff';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleSaveStore}
+                  style={{
+                    padding: '10px 24px',
+                    background: '#FF6900',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 1px 3px 0 rgba(255, 105, 0, 0.3)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#e55a00';
+                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#FF6900';
+                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(255, 105, 0, 0.3)';
+                  }}
+                >
+                  Salva
+                </button>
               </div>
             </div>
           </div>
