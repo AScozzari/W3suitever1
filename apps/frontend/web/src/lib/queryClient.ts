@@ -2,11 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 
 // Helper per ottenere il tenant ID corrente
 const getCurrentTenantId = () => {
-  // Prima prova dal localStorage (settato dal TenantContext)
-  const tenantId = localStorage.getItem('currentTenantId');
-  if (tenantId) return tenantId;
-  
-  // Fallback al tenant demo per development
+  // Sempre usa l'UUID corretto per development
   return '00000000-0000-0000-0000-000000000001';
 };
 

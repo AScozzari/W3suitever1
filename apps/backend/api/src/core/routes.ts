@@ -184,12 +184,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get stores for current tenant (automatic via middleware)
   app.get('/api/stores', simpleAuth, async (req: any, res) => {
     try {
+      // Debug: Log tutto quello che riceviamo
+      console.log("DEBUG /api/stores - Headers:", {
+        authorization: req.headers.authorization ? 'Bearer [TOKEN]' : 'missing',
+        'x-tenant-id': req.headers['x-tenant-id']
+      });
+      console.log("DEBUG /api/stores - User:", req.user);
+      console.log("DEBUG /api/stores - Tenant ID sources:", {
+        userTenantId: req.user?.tenantId,
+        reqTenantId: req.tenantId,
+        headerTenantId: req.headers['x-tenant-id']
+      });
+      
       // Se c'è un user autenticato, usa il suo tenantId
-      const tenantId = req.user?.tenantId || req.tenantId;
+      const tenantId = req.user?.tenantId || req.tenantId || req.headers['x-tenant-id'];
       
       if (!tenantId) {
         return res.status(400).json({ error: "No tenant ID available" });
       }
+      
+      console.log("DEBUG /api/stores - Final tenant ID:", tenantId);
       
       // Valida che il tenantId sia un UUID valido
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -199,6 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const stores = await storage.getStoresByTenant(tenantId);
+      console.log("DEBUG /api/stores - Found stores:", stores.length);
       res.json(stores);
     } catch (error) {
       console.error("Error fetching stores:", error);
