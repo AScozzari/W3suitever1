@@ -8,7 +8,8 @@ import {
   Plus, Filter, Download, Phone, Wifi, Smartphone, 
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
-  Folder, UserX, Star, Home, Building, Briefcase, Wrench
+  Folder, UserX, Star, Home, Building, Briefcase, Wrench,
+  LogOut, HelpCircle, MapPin, UserCircle
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
@@ -27,6 +28,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
   const [location, navigate] = useLocation();
   
@@ -303,6 +305,21 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     };
   }, [leftSidebarTimer, workspaceTimer]);
 
+  // Chiudi user menu quando clicchi fuori
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-user-menu]')) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [userMenuOpen]);
+
   const handleLogout = async () => {
     try {
       const response = await fetch('/api/auth/logout', {
@@ -454,34 +471,166 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             }}></div>
           </button>
 
-          {/* Avatar utente */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              background: 'linear-gradient(135deg, #7B2CBF, #a855f7)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: 600
-            }}>
+          {/* Avatar utente con dropdown menu */}
+          <div style={{ position: 'relative' }} data-user-menu>
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              style={{
+                width: '32px',
+                height: '32px',
+                background: 'linear-gradient(135deg, #7B2CBF, #a855f7)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
               {(user as any)?.email?.[0]?.toUpperCase() || 'A'}
-            </div>
-            {!isMobile && (
-              <button
-                onClick={handleLogout}
+            </button>
+
+            {/* Dropdown Menu */}
+            {userMenuOpen && (
+              <div
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px'
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  marginTop: '8px',
+                  width: '220px',
+                  background: 'hsla(0, 0%, 100%, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.2)',
+                  borderRadius: '12px',
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  zIndex: 1000,
+                  padding: '8px'
                 }}
               >
-                <Settings size={16} />
-              </button>
+                {/* Header utente */}
+                <div style={{
+                  padding: '12px',
+                  borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                    {(user as any)?.name || 'Utente'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>
+                    {(user as any)?.email || 'admin@w3suite.com'}
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      // TODO: Navigate to profile
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <UserCircle size={16} />
+                    <span>Profilo Account</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      // TODO: Open support ticket
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <HelpCircle size={16} />
+                    <span>Apri Ticket</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      // TODO: Clock in/out functionality
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <MapPin size={16} />
+                    <span>Timbratura</span>
+                  </button>
+
+                  {/* Divider */}
+                  <div style={{ height: '1px', background: 'hsla(0, 0%, 0%, 0.1)', margin: '8px 0' }}></div>
+
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      handleLogout();
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#ef4444',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(239, 84%, 67%, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>
