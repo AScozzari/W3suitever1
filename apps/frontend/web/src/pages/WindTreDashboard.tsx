@@ -677,7 +677,9 @@ export default function WindTreDashboard() {
                   key={item.id}
                   onClick={() => {
                     console.log('Menu clicked:', item.id, item.label);
+                    console.log('Current module before:', currentModule);
                     setCurrentModule(item.id);
+                    console.log('Current module after:', item.id);
                   }}
                   style={{
                     width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
