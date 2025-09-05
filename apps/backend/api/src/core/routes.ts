@@ -160,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== STORE MANAGEMENT API ====================
   
   // Get stores for current tenant (automatic via middleware)
-  app.get('/api/stores', async (req: any, res) => {
+  app.get('/api/stores', requireAuth(), async (req: any, res) => {
     try {
       const stores = await storage.getStoresByTenant(req.tenantId);
       res.json(stores);
