@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, ArrowRight, Shield, Zap, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, User, Lock } from 'lucide-react';
 
 interface LoginProps {
   tenantCode?: string;
 }
 
-export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginProps = {}) {
+export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +14,7 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
   
   // Mappa dei tenant disponibili
   const tenantInfo: Record<string, { name: string, color: string }> = {
-    'staging': { name: 'Staging Environment - W3 Suite', color: '#7B2CBF' },
+    'staging': { name: 'Staging Environment', color: '#7B2CBF' },
     'demo': { name: 'Demo Organization', color: '#FF6900' },
     'acme': { name: 'Acme Corporation', color: '#0066CC' },
     'tech': { name: 'Tech Solutions Ltd', color: '#10B981' }
@@ -31,17 +31,14 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert('Inserisci email e password');
+      alert('Inserisci nome utente e password');
       return;
     }
     
-    // Il tenant viene dal path URL
     const tenantFromPath = propTenantCode || 'staging';
-
     setIsLoading(true);
     
     try {
-      // Mappa il codice tenant all'ID UUID  
       const tenantMapping: Record<string, string> = {
         'staging': '00000000-0000-0000-0000-000000000001',
         'demo': '99999999-9999-9999-9999-999999999999',
@@ -65,7 +62,6 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
 
       if (response.ok) {
         const data = await response.json();
-        // Salva sia il token che il tenant ID
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('currentTenantId', tenantId);
         window.location.reload();
@@ -84,226 +80,111 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))',
+      background: '#f8fafc',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      position: 'relative',
-      overflow: 'hidden',
-      padding: '20px'
+      padding: '24px',
+      fontFamily: 'Inter, system-ui, sans-serif'
     }}>
-      {/* Background Pattern - Enhanced */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: `
-          radial-gradient(circle at 20% 80%, hsla(25, 100%, 50%, 0.12) 0%, transparent 60%),
-          radial-gradient(circle at 80% 20%, hsla(260, 100%, 45%, 0.12) 0%, transparent 60%),
-          radial-gradient(circle at 40% 40%, hsla(255, 255, 255, 0.25) 0%, transparent 50%)
-        `,
-        zIndex: -1
-      }} />
-
-      {/* Floating Elements */}
-      <div style={{
-        position: 'absolute',
-        top: '10%',
-        left: '10%',
-        width: '120px',
-        height: '120px',
-        background: 'hsla(25, 100%, 50%, 0.08)',
-        borderRadius: '50%',
-        filter: 'blur(40px)',
-        animation: 'float 6s ease-in-out infinite'
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '10%',
-        right: '10%',
-        width: '200px',
-        height: '200px',
-        background: 'hsla(260, 100%, 45%, 0.06)',
-        borderRadius: '50%',
-        filter: 'blur(50px)',
-        animation: 'float 8s ease-in-out infinite reverse'
-      }} />
-
-      {/* Main Login Container */}
+      {/* Main Container */}
       <div style={{
         width: '100%',
-        maxWidth: isMobile ? '380px' : '460px',
-        position: 'relative',
-        zIndex: 10
+        maxWidth: '400px',
+        background: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        border: '1px solid #e5e7eb'
       }}>
-        {/* Header Section */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '40px'
+        <div style={{ 
+          padding: isMobile ? '32px 24px' : '48px 40px'
         }}>
-          {/* Logo */}
+          {/* Header */}
           <div style={{
-            width: isMobile ? '80px' : '100px',
-            height: isMobile ? '80px' : '100px',
-            background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-            borderRadius: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 32px',
-            position: 'relative',
-            boxShadow: '0 20px 60px rgba(255, 105, 0, 0.25)',
-            backdropFilter: 'blur(20px)'
+            textAlign: 'center',
+            marginBottom: '32px'
           }}>
-            <span style={{
-              fontSize: isMobile ? '36px' : '42px',
-              fontWeight: 'bold',
-              color: 'white',
-              textShadow: '0 2px 20px rgba(0, 0, 0, 0.3)'
-            }}>W</span>
-            {/* Glow Effect */}
+            {/* Logo */}
             <div style={{
-              position: 'absolute',
-              inset: '-4px',
+              width: '64px',
+              height: '64px',
               background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-              borderRadius: '28px',
-              opacity: 0.3,
-              filter: 'blur(20px)',
-              zIndex: -1
-            }} />
-          </div>
-
-          <h1 style={{
-            fontSize: isMobile ? '28px' : '36px',
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            margin: '0 0 12px 0',
-            letterSpacing: '-0.5px'
-          }}>W3 Suite</h1>
-          <p style={{
-            fontSize: isMobile ? '16px' : '18px',
-            color: currentTenant.color,
-            margin: '0 0 8px 0',
-            fontWeight: 600
-          }}>{currentTenant.name}</p>
-          <p style={{
-            fontSize: isMobile ? '14px' : '16px',
-            color: '#6b7280',
-            margin: '0 0 8px 0',
-            fontWeight: 400
-          }}>Enterprise Management Platform</p>
-          
-          {/* Status Indicator */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'hsla(142, 76%, 36%, 0.1)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            border: '1px solid hsla(142, 76%, 36%, 0.2)',
-            fontSize: '13px',
-            color: '#059669',
-            fontWeight: 500
-          }}>
-            <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }} />
-            Sistema Operativo
-          </div>
-        </div>
-
-        {/* Login Form Card - Enhanced Glassmorphism */}
-        <div style={{
-          background: 'hsla(255, 255, 255, 0.25)',
-          backdropFilter: 'blur(32px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-          borderRadius: '32px',
-          padding: isMobile ? '32px 24px' : '48px 40px',
-          border: '1px solid hsla(255, 255, 255, 0.3)',
-          boxShadow: '0 32px 80px rgba(0, 0, 0, 0.12), inset 0 1px 0 hsla(255, 255, 255, 0.4)',
-          position: 'relative',
-          overflow: 'hidden',
-          maxWidth: isMobile ? '400px' : '480px',
-          margin: '0 auto'
-        }}>
-          {/* Inner Glow */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(135deg, hsla(255, 255, 255, 0.1) 0%, hsla(255, 255, 255, 0.05) 100%)',
-            borderRadius: '32px',
-            pointerEvents: 'none'
-          }} />
-
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            {/* Modal Container per Form Fields */}
-            <div style={{
-              background: 'hsla(255, 255, 255, 0.4)',
-              backdropFilter: 'blur(20px) saturate(120%)',
-              WebkitBackdropFilter: 'blur(20px) saturate(120%)',
-              borderRadius: '20px',
-              padding: isMobile ? '24px 16px' : '28px 24px',
-              border: '1px solid hsla(255, 255, 255, 0.2)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 hsla(255, 255, 255, 0.3)',
-              marginBottom: '24px',
-              position: 'relative'
+              borderRadius: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px',
+              color: 'white',
+              fontSize: '24px',
+              fontWeight: 'bold'
             }}>
-              {/* Inner Modal Glow */}
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(135deg, hsla(255, 255, 255, 0.2) 0%, hsla(255, 255, 255, 0.1) 100%)',
-                borderRadius: '24px',
-                pointerEvents: 'none'
-              }} />
+              W3
+            </div>
 
-              <div style={{ position: 'relative', zIndex: 3 }}>
-                {/* Email Field */}
-                <div style={{ marginBottom: '28px' }}>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: 600,
+              color: '#111827',
+              margin: '0 0 8px 0'
+            }}>Accedi a W3 Suite</h1>
+            
+            <p style={{
+              fontSize: '14px',
+              color: '#6b7280',
+              margin: '0 0 4px 0'
+            }}>{currentTenant.name}</p>
+            
+            <p style={{
+              fontSize: '12px',
+              color: '#9ca3af',
+              margin: 0
+            }}>Inserisci le tue credenziali per continuare</p>
+          </div>
+
+          {/* Form */}
+          <div style={{ marginBottom: '24px' }}>
+            {/* Username Field */}
+            <div style={{ marginBottom: '20px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '14px',
-                fontWeight: 600,
+                fontWeight: 500,
                 color: '#374151',
-                marginBottom: '12px',
-                letterSpacing: '0.025em'
+                marginBottom: '6px'
               }}>Nome Utente</label>
               <div style={{ position: 'relative' }}>
+                <div style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#9ca3af'
+                }}>
+                  <User size={18} />
+                </div>
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@w3suite.com"
+                  placeholder="admin"
                   style={{
                     width: '100%',
-                    padding: isMobile ? '12px 16px' : '14px 20px',
-                    background: 'hsla(255, 255, 255, 0.25)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    color: '#1f2937',
+                    padding: '12px 16px 12px 44px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: '#111827',
                     outline: 'none',
                     transition: 'all 0.2s ease',
                     boxSizing: 'border-box',
-                    fontWeight: 500,
-                    letterSpacing: '0.025em'
+                    background: 'white'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#d1d5db';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e5e7eb';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.25)';
+                    e.currentTarget.style.borderColor = '#d1d5db';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 />
@@ -311,45 +192,47 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
             </div>
 
             {/* Password Field */}
-            <div style={{ marginBottom: '36px' }}>
+            <div style={{ marginBottom: '24px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '14px',
-                fontWeight: 600,
+                fontWeight: 500,
                 color: '#374151',
-                marginBottom: '12px',
-                letterSpacing: '0.025em'
+                marginBottom: '6px'
               }}>Password</label>
               <div style={{ position: 'relative' }}>
+                <div style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#9ca3af'
+                }}>
+                  <Lock size={18} />
+                </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="••••••••"
                   style={{
                     width: '100%',
-                    padding: isMobile ? '12px 50px 12px 16px' : '14px 60px 14px 20px',
-                    background: 'hsla(255, 255, 255, 0.25)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    color: '#1f2937',
+                    padding: '12px 44px 12px 44px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: '#111827',
                     outline: 'none',
                     transition: 'all 0.2s ease',
                     boxSizing: 'border-box',
-                    fontWeight: 500,
-                    letterSpacing: '0.05em'
+                    background: 'white'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#d1d5db';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.4)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e5e7eb';
-                    e.currentTarget.style.background = 'hsla(255, 255, 255, 0.25)';
+                    e.currentTarget.style.borderColor = '#d1d5db';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                   onKeyPress={(e) => {
@@ -363,79 +246,28 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
                     position: 'absolute',
-                    right: '16px',
+                    right: '12px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'transparent',
                     border: 'none',
-                    color: '#6b7280',
+                    color: '#9ca3af',
                     cursor: 'pointer',
-                    padding: '8px',
+                    padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'color 0.2s ease'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.color = '#FF6900';
-                  }}
-                  onMouseOut={(e) => {
                     e.currentTarget.style.color = '#6b7280';
                   }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.color = '#9ca3af';
+                  }}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
-              </div>
-            </div>
-              </div>
-            </div>
-
-            {/* Security Features */}
-            <div style={{
-              background: 'hsla(142, 76%, 36%, 0.08)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              borderRadius: '16px',
-              padding: '20px',
-              marginBottom: '32px',
-              border: '1px solid hsla(142, 76%, 36%, 0.2)'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '12px'
-              }}>
-                <Shield size={20} style={{ color: '#059669' }} />
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#059669'
-                }}>Accesso Protetto</span>
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: '12px',
-                fontSize: '12px',
-                color: '#6b7280'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CheckCircle size={14} style={{ color: '#10b981' }} />
-                  <span>Crittografia SSL/TLS</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CheckCircle size={14} style={{ color: '#10b981' }} />
-                  <span>Autenticazione MFA</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Zap size={14} style={{ color: '#f59e0b' }} />
-                  <span>Session Management</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Zap size={14} style={{ color: '#f59e0b' }} />
-                  <span>Audit Logging</span>
-                </div>
               </div>
             </div>
 
@@ -445,166 +277,81 @@ export default function ProfessionalLogin({ tenantCode: propTenantCode }: LoginP
               disabled={isLoading}
               style={{
                 width: '100%',
-                padding: isMobile ? '18px 24px' : '20px 32px',
+                padding: '12px 16px',
                 background: isLoading 
-                  ? 'linear-gradient(135deg, #d1d5db, #9ca3af)' 
+                  ? '#9ca3af' 
                   : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
                 color: 'white',
-                fontSize: isMobile ? '16px' : '18px',
-                fontWeight: 700,
+                fontSize: '14px',
+                fontWeight: 600,
                 border: 'none',
-                borderRadius: '16px',
+                borderRadius: '8px',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                marginBottom: '24px',
-                boxShadow: isLoading 
-                  ? 'none' 
-                  : '0 20px 60px rgba(255, 105, 0, 0.3), 0 8px 32px rgba(123, 44, 191, 0.2)',
+                transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '12px',
-                letterSpacing: '0.025em',
-                position: 'relative',
-                overflow: 'hidden'
+                gap: '8px'
               }}
               onMouseOver={(e) => {
                 if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 32px 80px rgba(255, 105, 0, 0.4), 0 16px 48px rgba(123, 44, 191, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
                 }
               }}
               onMouseOut={(e) => {
                 if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                  e.currentTarget.style.boxShadow = '0 20px 60px rgba(255, 105, 0, 0.3), 0 8px 32px rgba(123, 44, 191, 0.2)';
-                }
-              }}
-              onTouchStart={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'scale(0.98)';
-                }
-              }}
-              onTouchEnd={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }
               }}
             >
-              {/* Button Glow */}
-              {!isLoading && (
-                <div style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
-                  borderRadius: '16px',
-                  pointerEvents: 'none'
-                }} />
+              {isLoading ? (
+                <>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Accesso in corso...
+                </>
+              ) : (
+                'Accedi'
               )}
-              
-              <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {isLoading ? (
-                  <>
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTop: '2px solid white',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    Autenticazione...
-                  </>
-                ) : (
-                  <>
-                    Accedi al Workspace
-                    <ArrowRight size={20} />
-                  </>
-                )}
-              </div>
             </button>
+          </div>
 
-            {/* Help Links */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: isMobile ? '20px' : '32px',
-              flexWrap: 'wrap'
-            }}>
-              <button style={{ 
-                background: 'transparent',
-                border: 'none',
-                color: '#FF6900', 
-                fontSize: '14px', 
-                fontWeight: 500,
-                cursor: 'pointer',
-                padding: '8px 0',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.textDecoration = 'underline';
-                e.currentTarget.style.color = '#e55800';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.textDecoration = 'none';
-                e.currentTarget.style.color = '#FF6900';
-              }}>
-                Password dimenticata?
-              </button>
-              <button style={{ 
-                background: 'transparent',
-                border: 'none',
-                color: '#6b7280', 
-                fontSize: '14px', 
-                fontWeight: 500,
-                cursor: 'pointer',
-                padding: '8px 0',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.textDecoration = 'underline';
-                e.currentTarget.style.color = '#374151';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.textDecoration = 'none';
-                e.currentTarget.style.color = '#6b7280';
-              }}>
-                Supporto IT
-              </button>
-            </div>
+          {/* Footer Links */}
+          <div style={{
+            textAlign: 'center',
+            borderTop: '1px solid #f3f4f6',
+            paddingTop: '20px'
+          }}>
+            <a href="#" style={{
+              color: '#6b7280',
+              fontSize: '12px',
+              textDecoration: 'none',
+              marginRight: '16px'
+            }}>Password dimenticata?</a>
+            <a href="#" style={{
+              color: '#6b7280',
+              fontSize: '12px',
+              textDecoration: 'none'
+            }}>Supporto</a>
           </div>
         </div>
-
-        {/* Footer */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: '32px',
-          fontSize: '12px',
-          color: '#9ca3af'
-        }}>
-          <p style={{ margin: '0 0 4px 0' }}>© 2025 WindTre Business Solutions</p>
-          <p style={{ margin: 0 }}>Enterprise Resource Planning Platform v2.0</p>
-        </div>
-
-        {/* CSS Animations */}
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          
-          @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-          }
-          
-          @media (max-width: 768px) {
-            input:focus {
-              font-size: 16px !important;
-            }
-          }
-        `}</style>
       </div>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
