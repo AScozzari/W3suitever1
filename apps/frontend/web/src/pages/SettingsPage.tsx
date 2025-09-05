@@ -2117,13 +2117,21 @@ export default function SettingsPage() {
             {/* Header Modal */}
             <div style={{
               padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.08), rgba(123, 44, 191, 0.05))',
-              backdropFilter: 'blur(20px) saturate(150%)',
-              WebkitBackdropFilter: 'blur(20px) saturate(150%)',
-              borderBottom: '1px solid rgba(255, 105, 0, 0.15)',
+              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
               position: 'relative',
               overflow: 'hidden'
             }}>
+              {/* Glassmorphism overlay */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(255, 255, 255, 0.75)',
+                backdropFilter: 'blur(10px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(10px) saturate(180%)'
+              }} />
               {/* Effetto glow decorativo */}
               <div style={{
                 position: 'absolute',
@@ -2935,13 +2943,21 @@ export default function SettingsPage() {
             {/* Header Modal */}
             <div style={{
               padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.08), rgba(123, 44, 191, 0.05))',
-              backdropFilter: 'blur(20px) saturate(150%)',
-              WebkitBackdropFilter: 'blur(20px) saturate(150%)',
-              borderBottom: '1px solid rgba(255, 105, 0, 0.15)',
+              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
               position: 'relative',
               overflow: 'hidden'
             }}>
+              {/* Glassmorphism overlay */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(255, 255, 255, 0.75)',
+                backdropFilter: 'blur(10px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(10px) saturate(180%)'
+              }} />
               {/* Effetto glow decorativo */}
               <div style={{
                 position: 'absolute',
