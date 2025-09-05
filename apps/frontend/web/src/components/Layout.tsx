@@ -75,6 +75,26 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     if (!token) {
       // Effettua login automatico per development
       performAutoLogin();
+    } else {
+      // Verifica che il token sia valido e contenga il tenant ID corretto
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          // Se il token contiene "demo-tenant" invece di UUID, rifai il login
+          if (payload.tenantId === 'demo-tenant' || !payload.tenantId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+            console.log('Detected invalid tenant ID in token, refreshing...');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('currentTenantId');
+            performAutoLogin();
+          }
+        }
+      } catch (e) {
+        // Token invalido, rifai login
+        console.log('Invalid token, refreshing...');
+        localStorage.removeItem('auth_token');
+        performAutoLogin();
+      }
     }
   }, []);
 
