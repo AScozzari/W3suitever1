@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./core/routes";
-import { setupVite, serveStatic, log } from "./core/vite";
-import { initializeOAuth } from "./core/oauth";
+import { registerRoutes } from "./apps/backend/api/src/core/routes";
+import { setupVite, serveStatic, log } from "./apps/backend/api/src/core/vite";
+import { initializeOAuth } from "./apps/backend/api/src/core/oauth";
 
 const app = express();
 app.use(express.json());

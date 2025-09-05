@@ -1,3 +1,2 @@
-// Entry point per W3 Suite monorepo
-// Importa il server dal percorso corretto dell'architettura
-import '../apps/backend/api/src/main.js';
+// Entry point compatibilità package.json - punta al server nella struttura corretta  
+import '../server';

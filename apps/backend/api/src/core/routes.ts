@@ -3,11 +3,15 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupOAuthRoutes, requireAuth, requirePermission } from "./oauth";
 import { dashboardService } from "./dashboard-service";
+import { tenantMiddleware, rbacMiddleware } from "../middleware/tenant";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Add tenant and RBAC middleware globally
+  app.use('/api', tenantMiddleware, rbacMiddleware);
   
   // Local authentication for development
   app.post("/api/auth/login", async (req: any, res) => {
