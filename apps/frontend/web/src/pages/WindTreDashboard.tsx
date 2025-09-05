@@ -10,7 +10,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench
 } from 'lucide-react';
-import SettingsPage from './Settings';
+import { Link } from 'wouter';
 
 export default function WindTreDashboard() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
@@ -677,7 +677,7 @@ export default function WindTreDashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setCurrentModule(item.id)}
+                  onClick={() => item.id === 'impostazioni' ? window.location.href = '/settings' : setCurrentModule(item.id)}
                   style={{
                     width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
                     height: leftSidebarCollapsed && !isMobile ? '40px' : 'auto',
@@ -1275,10 +1275,8 @@ export default function WindTreDashboard() {
           </div>
 
 
-          {/* Rendering condizionale basato sul modulo selezionato */}
-          {currentModule === 'impostazioni' ? (
-            <SettingsPage />
-          ) : (
+          {/* Contenuto principale della dashboard */}
+          {(
             <>
               {/* Metriche Performance come da screenshot */}
               <div style={{

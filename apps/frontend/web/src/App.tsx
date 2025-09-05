@@ -1,8 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
+import { Route, Switch } from "wouter";
 import WindTreDashboard from "./pages/WindTreDashboard";
 import ProfessionalLogin from "./pages/ProfessionalLogin";
+import SettingsPage from "./pages/SettingsPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 export default function App() {
@@ -63,5 +65,10 @@ function Router() {
     return <ProfessionalLogin />;
   }
 
-  return <WindTreDashboard />;
+  return (
+    <Switch>
+      <Route path="/settings" component={SettingsPage} />
+      <Route path="/" component={WindTreDashboard} />
+    </Switch>
+  );
 }
