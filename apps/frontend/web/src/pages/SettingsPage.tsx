@@ -1406,78 +1406,66 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '24px',
+            borderRadius: '16px',
             width: '90%',
-            maxWidth: '700px',
+            maxWidth: '600px',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
           }}>
-            {/* Header Modal con stile uniforme */}
+            {/* Header Modal */}
             <div style={{
-              padding: '32px 32px 0 32px'
+              padding: '24px 24px 0 24px',
+              borderBottom: '1px solid #f1f5f9'
             }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '32px',
-                paddingBottom: '20px',
-                borderBottom: '1px solid rgba(255, 105, 0, 0.1)'
+                marginBottom: '24px'
               }}>
-                <div>
-                  <h2 style={{
-                    fontSize: '28px',
-                    fontWeight: '700',
-                    background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    marginBottom: '8px'
-                  }}>
-                    {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
-                  </h2>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#6b7280'
-                  }}>
-                    Inserisci i dati della nuova entità giuridica
-                  </p>
-                </div>
+                <h2 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  margin: 0
+                }}>
+                  {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                </h2>
                 <button
                   onClick={() => setLegalEntityModal({ open: false, data: null })}
                   style={{
-                    background: 'rgba(255, 105, 0, 0.1)',
+                    background: 'transparent',
                     border: 'none',
-                    borderRadius: '12px',
                     cursor: 'pointer',
-                    padding: '12px',
-                    transition: 'all 0.2s ease'
+                    padding: '8px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s ease',
+                    color: '#64748b'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.2)';
-                    e.currentTarget.style.transform = 'rotate(90deg)';
+                    e.currentTarget.style.background = '#f1f5f9';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)';
-                    e.currentTarget.style.transform = 'rotate(0deg)';
+                    e.currentTarget.style.background = 'transparent';
                   }}
                 >
-                  <X size={20} style={{ color: '#FF6900' }} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '0 32px 32px 32px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 {/* Codice */}
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Codice Ragione Sociale
                   </label>
@@ -1488,27 +1476,22 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
                       fontSize: '14px',
-                      background: '#f9fafb',
+                      background: '#ffffff',
                       transition: 'all 0.2s ease',
-                      fontFamily: 'monospace',
-                      fontWeight: '600',
-                      outline: 'none'
+                      outline: 'none',
+                      color: '#1e293b'
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
-                      e.target.style.transform = 'translateY(-1px)';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.borderColor = '#e2e8f0';
                       e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
@@ -1517,10 +1500,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1558,10 +1541,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1616,10 +1599,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Partita IVA <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1658,10 +1641,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Codice Fiscale
                   </label>
@@ -1701,10 +1684,10 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1742,10 +1725,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -1812,10 +1795,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     CAP
                   </label>
@@ -1855,10 +1838,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Provincia
                   </label>
@@ -1900,10 +1883,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Telefono
                   </label>
@@ -1941,10 +1924,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Email
                   </label>
@@ -1982,10 +1965,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     PEC <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2023,10 +2006,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Stato
                   </label>
@@ -2168,78 +2151,66 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '24px',
+            borderRadius: '16px',
             width: '90%',
-            maxWidth: '700px',
+            maxWidth: '600px',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
           }}>
-            {/* Header Modal con stile uniforme */}
+            {/* Header Modal */}
             <div style={{
-              padding: '32px 32px 0 32px'
+              padding: '24px 24px 0 24px',
+              borderBottom: '1px solid #f1f5f9'
             }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '32px',
-                paddingBottom: '20px',
-                borderBottom: '1px solid rgba(255, 105, 0, 0.1)'
+                marginBottom: '24px'
               }}>
-                <div>
-                  <h2 style={{
-                    fontSize: '28px',
-                    fontWeight: '700',
-                    background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    marginBottom: '8px'
-                  }}>
-                    {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
-                  </h2>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#6b7280'
-                  }}>
-                    Configura i dettagli del punto vendita
-                  </p>
-                </div>
+                <h2 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  margin: 0
+                }}>
+                  {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
+                </h2>
                 <button
                   onClick={() => setStoreModal({ open: false, data: null })}
                   style={{
-                    background: 'rgba(255, 105, 0, 0.1)',
+                    background: 'transparent',
                     border: 'none',
-                    borderRadius: '12px',
                     cursor: 'pointer',
-                    padding: '12px',
-                    transition: 'all 0.2s ease'
+                    padding: '8px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s ease',
+                    color: '#64748b'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.2)';
-                    e.currentTarget.style.transform = 'rotate(90deg)';
+                    e.currentTarget.style.background = '#f1f5f9';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.1)';
-                    e.currentTarget.style.transform = 'rotate(0deg)';
+                    e.currentTarget.style.background = 'transparent';
                   }}
                 >
-                  <X size={20} style={{ color: '#FF6900' }} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '0 32px 32px 32px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 {/* Codice */}
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Codice Punto Vendita
                   </label>
@@ -2282,10 +2253,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2326,10 +2297,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2374,10 +2345,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Canale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2421,10 +2392,10 @@ export default function SettingsPage() {
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Indirizzo <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2465,10 +2436,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
@@ -2537,10 +2508,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     CAP
                   </label>
@@ -2580,10 +2551,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Telefono
                   </label>
@@ -2624,10 +2595,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Email
                   </label>
@@ -2758,10 +2729,10 @@ export default function SettingsPage() {
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#475569',
+                    marginBottom: '6px'
                   }}>
                     Stato
                   </label>
