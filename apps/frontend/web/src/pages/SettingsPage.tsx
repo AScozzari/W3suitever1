@@ -547,8 +547,9 @@ export default function SettingsPage() {
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div style={{ 
         backgroundColor: '#ffffff', 
-        minHeight: 'calc(100vh - 120px)',
-        position: 'relative'
+        minHeight: '100vh',
+        position: 'relative',
+        width: '100%'
       }}>
         {/* CSS Animations */}
         <style>{`
@@ -565,7 +566,7 @@ export default function SettingsPage() {
 
         {/* Header con titolo e descrizione */}
         <div style={{
-          padding: '32px 32px 20px 32px',
+          padding: '24px',
           borderBottom: '1px solid hsla(255, 255, 255, 0.12)'
         }}>
           <h1 style={{
@@ -587,7 +588,7 @@ export default function SettingsPage() {
 
         {/* Tabs orizzontali con glassmorphism moderno */}
         <div style={{
-          padding: '20px 32px',
+          padding: '20px 24px',
           borderBottom: '1px solid hsla(255, 255, 255, 0.08)'
         }}>
           <div style={{
@@ -656,7 +657,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content Area */}
-        <div style={{ padding: '32px' }}>
+        <div style={{ padding: '24px' }}>
           {renderContent()}
         </div>
       </div>
