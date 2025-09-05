@@ -1,10 +1,2 @@
-import express from "express";
-import { registerRoutes } from "../apps/backend/api/src/core/routes.js";
-
-const app = express();
-app.use(express.json());
-
-// Registra tutte le routes (include già middleware)
-const server = await registerRoutes(app);
-
-console.log("W3 Suite server running on port 5000");
+// Proxy definitivo per compatibilità package.json
+import '../apps/backend/api/src/index.js';
