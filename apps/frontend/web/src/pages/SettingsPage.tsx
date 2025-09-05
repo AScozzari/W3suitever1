@@ -104,10 +104,11 @@ export default function SettingsPage() {
     }
   };
 
-  // Mock data per ragioni sociali
+  // Mock data per ragioni sociali - codici iniziano con 80 e hanno almeno 6 cifre
   const mockRagioneSociali = [
     { 
       id: 1, 
+      codice: '800001',
       nome: 'Franchising Ltd', 
       formaGiuridica: 'Srl', 
       pIva: 'IT12345678901', 
@@ -117,6 +118,7 @@ export default function SettingsPage() {
     },
     { 
       id: 2, 
+      codice: '800245',
       nome: 'Digital Operations Snc', 
       formaGiuridica: 'Snc', 
       pIva: 'IT09876543210', 
@@ -126,6 +128,7 @@ export default function SettingsPage() {
     },
     { 
       id: 3, 
+      codice: '801567',
       nome: 'Tech Solutions Ltd', 
       formaGiuridica: 'Srl', 
       pIva: 'IT11122233344', 
@@ -135,11 +138,11 @@ export default function SettingsPage() {
     }
   ];
 
-  // Mock data per punti vendita
+  // Mock data per punti vendita - codici iniziano con 90 e hanno almeno 8 cifre
   const mockPuntiVendita = [
     { 
       id: 1, 
-      codice: 'MI001', 
+      codice: '90000012', 
       nome: 'WindTre Milano Centro', 
       indirizzo: 'Via Montenapoleone 15',
       citta: 'Milano',
@@ -149,13 +152,23 @@ export default function SettingsPage() {
     },
     { 
       id: 2, 
-      codice: 'RM002', 
+      codice: '90001234', 
       nome: 'WindTre Roma Termini', 
       indirizzo: 'Via Nazionale 123',
       citta: 'Roma',
       canale: 'Top Dealer', 
       stato: 'Attivo',
       ragioneSociale: 'Digital Operations Snc'
+    },
+    { 
+      id: 3, 
+      codice: '90002456', 
+      nome: 'WindTre Napoli Centrale', 
+      indirizzo: 'Piazza Garibaldi 45',
+      citta: 'Napoli',
+      canale: 'Franchising', 
+      stato: 'Attivo',
+      ragioneSociale: 'Tech Solutions Ltd'
     }
   ];
 
@@ -318,12 +331,12 @@ export default function SettingsPage() {
           }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1fr 80px',
+              gridTemplateColumns: '100px 2fr 1fr 1.5fr 1fr 1fr 80px',
               alignItems: 'center',
               padding: '16px 20px',
               gap: '16px'
             }}>
-              {['Nome', 'Forma Giuridica', 'P.IVA', 'Stato', 'Città', 'Azioni'].map((header, index) => (
+              {['Codice', 'Nome', 'Forma Giuridica', 'P.IVA', 'Stato', 'Città', 'Azioni'].map((header, index) => (
                 <div key={index} style={{
                   fontSize: '12px',
                   fontWeight: '600',
@@ -343,7 +356,7 @@ export default function SettingsPage() {
                 key={item.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 1fr 1.5fr 1fr 1fr 80px',
+                  gridTemplateColumns: '100px 2fr 1fr 1.5fr 1fr 1fr 80px',
                   alignItems: 'center',
                   padding: '16px 20px',
                   gap: '16px',
@@ -359,6 +372,15 @@ export default function SettingsPage() {
                   e.currentTarget.style.background = 'transparent';
                 }}
               >
+                <div style={{
+                  fontSize: '14px',
+                  color: '#111827',
+                  fontWeight: '600',
+                  fontFamily: 'monospace'
+                }}>
+                  {item.codice}
+                </div>
+                
                 <div style={{
                   fontSize: '14px',
                   color: '#111827',
