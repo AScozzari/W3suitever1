@@ -548,8 +548,15 @@ export default function SettingsPage() {
       <div style={{ 
         backgroundColor: '#ffffff', 
         minHeight: '100vh',
-        position: 'relative',
-        width: '100%'
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        margin: 0,
+        padding: 0,
+        overflow: 'auto'
       }}>
         {/* CSS Animations */}
         <style>{`
