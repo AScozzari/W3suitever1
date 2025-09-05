@@ -181,6 +181,9 @@ export default function SettingsPage() {
   
   // Role management states
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedScope, setSelectedScope] = useState<string>('organization');
+  const [selectedLegalEntities, setSelectedLegalEntities] = useState<number[]>([]);
+  const [selectedStores, setSelectedStores] = useState<number[]>([]);
   
   // Handlers per Ragioni Sociali
   const handleCreateRagioneSociale = () => {
@@ -1094,16 +1097,179 @@ export default function SettingsPage() {
                 }}>
                   Scope di Applicazione
                 </h5>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
-                    <input type="radio" name="scope" value="tenant" defaultChecked /> Intero Tenant
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
-                    <input type="radio" name="scope" value="legal" /> Ragioni Sociali Specifiche
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
-                    <input type="radio" name="scope" value="store" /> Punti Vendita Specifici
-                  </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                      <input 
+                        type="radio" 
+                        name="scope" 
+                        value="organization" 
+                        checked={selectedScope === 'organization'} 
+                        onChange={() => setSelectedScope('organization')}
+                      /> 
+                      Organizzazione
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                      <input 
+                        type="radio" 
+                        name="scope" 
+                        value="legal" 
+                        checked={selectedScope === 'legal'}
+                        onChange={() => setSelectedScope('legal')}
+                      /> 
+                      Ragioni Sociali Specifiche
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                      <input 
+                        type="radio" 
+                        name="scope" 
+                        value="store" 
+                        checked={selectedScope === 'store'}
+                        onChange={() => setSelectedScope('store')}
+                      /> 
+                      Punti Vendita Specifici
+                    </label>
+                  </div>
+                  
+                  {/* Multiselect per Ragioni Sociali */}
+                  {selectedScope === 'legal' && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '12px',
+                      background: 'hsla(255, 255, 255, 0.05)',
+                      borderRadius: '6px',
+                      border: '1px solid hsla(255, 255, 255, 0.1)'
+                    }}>
+                      <label style={{
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        display: 'block',
+                        marginBottom: '8px'
+                      }}>
+                        Seleziona Ragioni Sociali:
+                      </label>
+                      <div style={{
+                        maxHeight: '150px',
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
+                        {ragioneSocialiList.map((rs) => (
+                          <label
+                            key={rs.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '6px 8px',
+                              background: selectedLegalEntities.includes(rs.id) ? 'hsla(255, 105, 0, 0.1)' : 'transparent',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              color: '#6b7280',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              if (!selectedLegalEntities.includes(rs.id)) {
+                                e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              if (!selectedLegalEntities.includes(rs.id)) {
+                                e.currentTarget.style.background = 'transparent';
+                              }
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedLegalEntities.includes(rs.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedLegalEntities([...selectedLegalEntities, rs.id]);
+                                } else {
+                                  setSelectedLegalEntities(selectedLegalEntities.filter(id => id !== rs.id));
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            <span>{rs.nome} ({rs.codice})</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Multiselect per Punti Vendita */}
+                  {selectedScope === 'store' && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '12px',
+                      background: 'hsla(255, 255, 255, 0.05)',
+                      borderRadius: '6px',
+                      border: '1px solid hsla(255, 255, 255, 0.1)'
+                    }}>
+                      <label style={{
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        display: 'block',
+                        marginBottom: '8px'
+                      }}>
+                        Seleziona Punti Vendita:
+                      </label>
+                      <div style={{
+                        maxHeight: '150px',
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
+                        {puntiVenditaList.map((pv) => (
+                          <label
+                            key={pv.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '6px 8px',
+                              background: selectedStores.includes(pv.id) ? 'hsla(123, 43%, 60%, 0.1)' : 'transparent',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              color: '#6b7280',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              if (!selectedStores.includes(pv.id)) {
+                                e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              if (!selectedStores.includes(pv.id)) {
+                                e.currentTarget.style.background = 'transparent';
+                              }
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedStores.includes(pv.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedStores([...selectedStores, pv.id]);
+                                } else {
+                                  setSelectedStores(selectedStores.filter(id => id !== pv.id));
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            <span>{pv.nome} - {pv.citta} ({pv.codice})</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
