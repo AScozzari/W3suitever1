@@ -1514,17 +1514,17 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      fontSize: '15px',
-                      background: '#f8fafc',
+                      fontSize: '14px',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#1f2937',
+                      color: '#374151',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '500',
-                      lineHeight: '1.4'
+                      fontWeight: '400',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
@@ -1533,7 +1533,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.background = '#fafbfc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1558,17 +1558,17 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      fontSize: '15px',
-                      background: '#f8fafc',
+                      fontSize: '14px',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#1f2937',
+                      color: '#374151',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '500',
-                      lineHeight: '1.4'
+                      fontWeight: '400',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
@@ -1577,7 +1577,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.background = '#fafbfc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1600,9 +1600,9 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, formaGiuridica: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
                       fontSize: '14px',
                       background: '#ffffff',
                       transition: 'all 0.2s ease',
@@ -1661,9 +1661,9 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, pIva: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
                       fontSize: '14px',
                       background: '#ffffff',
                       transition: 'all 0.2s ease',
@@ -1704,9 +1704,9 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceFiscale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
                       fontSize: '14px',
                       background: '#ffffff',
                       transition: 'all 0.2s ease',
@@ -1748,17 +1748,17 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      fontSize: '15px',
-                      background: '#f8fafc',
+                      fontSize: '14px',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#1f2937',
+                      color: '#374151',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '500',
-                      lineHeight: '1.4'
+                      fontWeight: '400',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
@@ -1767,7 +1767,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.background = '#fafbfc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1802,9 +1802,9 @@ export default function SettingsPage() {
                     }}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
                       fontSize: '14px',
                       background: '#ffffff',
                       transition: 'all 0.2s ease',
@@ -1864,11 +1864,11 @@ export default function SettingsPage() {
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
                       fontSize: '14px',
-                      background: '#f8fafc',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
                       cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
@@ -1909,11 +1909,11 @@ export default function SettingsPage() {
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
                       fontSize: '14px',
-                      background: '#f8fafc',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       textTransform: 'uppercase',
                       outline: 'none',
@@ -1953,17 +1953,17 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, telefono: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      fontSize: '15px',
-                      background: '#f8fafc',
+                      fontSize: '14px',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#1f2937',
+                      color: '#374151',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '500',
-                      lineHeight: '1.4'
+                      fontWeight: '400',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
@@ -1972,7 +1972,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.background = '#fafbfc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -1997,17 +1997,17 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, email: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      fontSize: '15px',
-                      background: '#f8fafc',
+                      fontSize: '14px',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#1f2937',
+                      color: '#374151',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '500',
-                      lineHeight: '1.4'
+                      fontWeight: '400',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
@@ -2016,7 +2016,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.background = '#fafbfc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -2041,17 +2041,17 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, pec: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      fontSize: '15px',
-                      background: '#f8fafc',
+                      fontSize: '14px',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#1f2937',
+                      color: '#374151',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '500',
-                      lineHeight: '1.4'
+                      fontWeight: '400',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
@@ -2060,7 +2060,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.background = '#fafbfc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -2083,9 +2083,9 @@ export default function SettingsPage() {
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, stato: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid transparent',
-                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
                       fontSize: '14px',
                       background: '#ffffff',
                       transition: 'all 0.2s ease',
@@ -2305,17 +2305,17 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '14px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      fontSize: '15px',
-                      background: '#f8fafc',
+                      fontSize: '14px',
+                      background: '#fafbfc',
                       transition: 'all 0.2s ease',
                       outline: 'none',
-                      color: '#1f2937',
+                      color: '#374151',
                       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '500',
-                      lineHeight: '1.4'
+                      fontWeight: '400',
+                      lineHeight: '1.5'
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#3b82f6';
@@ -2324,7 +2324,7 @@ export default function SettingsPage() {
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#f8fafc';
+                      e.target.style.background = '#fafbfc';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -2349,7 +2349,7 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -2388,7 +2388,7 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, ragioneSociale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -2433,7 +2433,7 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, canale: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -2479,7 +2479,7 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -2529,7 +2529,7 @@ export default function SettingsPage() {
                     }}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -2590,11 +2590,11 @@ export default function SettingsPage() {
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
-                      background: '#f8fafc',
+                      background: '#fafbfc',
                       transition: 'all 0.15s ease',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
@@ -2636,7 +2636,7 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -2677,7 +2677,7 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -2717,9 +2717,9 @@ export default function SettingsPage() {
                       alignItems: 'center', 
                       gap: '12px', 
                       cursor: 'pointer',
-                      padding: '14px 20px',
+                      padding: '10px 14px',
                       background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
-                      borderRadius: '12px',
+                      borderRadius: '8px',
                       border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
                       transition: 'all 0.2s ease'
                     }}>
@@ -2754,9 +2754,9 @@ export default function SettingsPage() {
                       alignItems: 'center', 
                       gap: '12px', 
                       cursor: 'pointer',
-                      padding: '14px 20px',
+                      padding: '10px 14px',
                       background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
-                      borderRadius: '12px',
+                      borderRadius: '8px',
                       border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
                       transition: 'all 0.2s ease'
                     }}>
@@ -2805,7 +2805,7 @@ export default function SettingsPage() {
                     onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       border: '1px solid #d1d5db',
                       borderRadius: '6px',
                       fontSize: '14px',
