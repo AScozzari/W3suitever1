@@ -80,63 +80,24 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+      background: '#f8fafc',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      position: 'relative',
-      overflow: 'hidden'
+      fontFamily: 'Inter, system-ui, sans-serif'
     }}>
-      {/* Background Elements */}
-      <div style={{
-        position: 'absolute',
-        top: '10%',
-        left: '10%',
-        width: '200px',
-        height: '200px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: '50%',
-        filter: 'blur(40px)',
-        animation: 'float 6s ease-in-out infinite'
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '10%',
-        right: '15%',
-        width: '150px',
-        height: '150px',
-        background: 'rgba(255, 255, 255, 0.08)',
-        borderRadius: '50%',
-        filter: 'blur(60px)',
-        animation: 'float 8s ease-in-out infinite reverse'
-      }} />
-
       {/* Main Container */}
       <div style={{
         width: '100%',
         maxWidth: '400px',
-        background: 'rgba(255, 255, 255, 0.25)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderRadius: '20px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        position: 'relative'
+        background: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        border: '1px solid #e5e7eb'
       }}>
-        {/* Inner glow */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
-          borderRadius: '20px',
-          pointerEvents: 'none'
-        }} />
         <div style={{ 
-          padding: isMobile ? '32px 24px' : '48px 40px',
-          position: 'relative',
-          zIndex: 2
+          padding: isMobile ? '32px 24px' : '48px 40px'
         }}>
           {/* Header */}
           <div style={{
@@ -163,20 +124,19 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             <h1 style={{
               fontSize: '24px',
               fontWeight: 600,
-              color: 'white',
-              margin: '0 0 8px 0',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              color: '#111827',
+              margin: '0 0 8px 0'
             }}>Accedi a W3 Suite</h1>
             
             <p style={{
               fontSize: '14px',
-              color: 'rgba(255, 255, 255, 0.9)',
+              color: '#6b7280',
               margin: '0 0 4px 0'
             }}>{currentTenant.name}</p>
             
             <p style={{
               fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: '#9ca3af',
               margin: 0
             }}>Inserisci le tue credenziali per continuare</p>
           </div>
@@ -189,7 +149,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                 display: 'block',
                 fontSize: '14px',
                 fontWeight: 500,
-                color: 'rgba(255, 255, 255, 0.9)',
+                color: '#374151',
                 marginBottom: '6px'
               }}>Nome Utente</label>
               <div style={{ position: 'relative' }}>
@@ -210,25 +170,21 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   style={{
                     width: '100%',
                     padding: '12px 16px 12px 44px',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#1f2937',
+                    color: '#111827',
                     outline: 'none',
                     transition: 'all 0.2s ease',
                     boxSizing: 'border-box',
-                    background: 'rgba(255, 255, 255, 0.5)',
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)'
+                    background: 'white'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.borderColor = '#d1d5db';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 />
@@ -241,7 +197,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                 display: 'block',
                 fontSize: '14px',
                 fontWeight: 500,
-                color: 'rgba(255, 255, 255, 0.9)',
+                color: '#374151',
                 marginBottom: '6px'
               }}>Password</label>
               <div style={{ position: 'relative' }}>
@@ -262,25 +218,21 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   style={{
                     width: '100%',
                     padding: '12px 44px 12px 44px',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
                     fontSize: '14px',
-                    color: '#1f2937',
+                    color: '#111827',
                     outline: 'none',
                     transition: 'all 0.2s ease',
                     boxSizing: 'border-box',
-                    background: 'rgba(255, 255, 255, 0.5)',
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)'
+                    background: 'white'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.borderColor = '#3b82f6';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                    e.currentTarget.style.borderColor = '#d1d5db';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                   onKeyPress={(e) => {
@@ -375,17 +327,17 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           {/* Footer Links */}
           <div style={{
             textAlign: 'center',
-            borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+            borderTop: '1px solid #f3f4f6',
             paddingTop: '20px'
           }}>
             <a href="#" style={{
-              color: 'rgba(255, 255, 255, 0.8)',
+              color: '#6b7280',
               fontSize: '12px',
               textDecoration: 'none',
               marginRight: '16px'
             }}>Password dimenticata?</a>
             <a href="#" style={{
-              color: 'rgba(255, 255, 255, 0.8)',
+              color: '#6b7280',
               fontSize: '12px',
               textDecoration: 'none'
             }}>Supporto</a>
@@ -398,11 +350,6 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
         }
       `}</style>
     </div>
