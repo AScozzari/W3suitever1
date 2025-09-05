@@ -1103,85 +1103,40 @@ export default function SettingsPage() {
                         </span>
                       </label>
                     </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {cat.permissions.map((perm) => (
-                        <div
+                        <label
                           key={perm}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '8px 12px',
-                            background: 'hsla(255, 255, 255, 0.03)',
-                            borderRadius: '6px',
+                            gap: '10px',
+                            padding: '6px 8px',
+                            fontSize: '13px',
+                            color: '#6b7280',
+                            cursor: 'pointer',
+                            borderRadius: '4px',
                             transition: 'all 0.2s ease'
                           }}
                           onMouseOver={(e) => {
-                            e.currentTarget.style.background = 'hsla(255, 255, 255, 0.06)';
+                            e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
                           }}
                           onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'hsla(255, 255, 255, 0.03)';
+                            e.currentTarget.style.background = 'transparent';
                           }}
                         >
-                          <span style={{
-                            fontSize: '13px',
-                            color: '#6b7280'
-                          }}>
-                            {perm}
-                          </span>
-                          {/* Mini Switch Toggle */}
-                          <label style={{
-                            position: 'relative',
-                            display: 'inline-block',
-                            width: '36px',
-                            height: '20px',
-                            cursor: 'pointer'
-                          }}>
-                            <input
-                              type="checkbox"
-                              defaultChecked={selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')}
-                              style={{
-                                opacity: 0,
-                                width: 0,
-                                height: 0
-                              }}
-                              onChange={(e) => {
-                                const slider = e.target.nextSibling as HTMLElement;
-                                if (e.target.checked) {
-                                  slider.style.background = '#10b981';
-                                  (slider.firstChild as HTMLElement).style.transform = 'translateX(16px)';
-                                } else {
-                                  slider.style.background = '#e5e7eb';
-                                  (slider.firstChild as HTMLElement).style.transform = 'translateX(2px)';
-                                }
-                              }}
-                            />
-                            <span style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              background: (selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')) ? '#10b981' : '#e5e7eb',
-                              borderRadius: '20px',
-                              transition: 'all 0.2s ease'
-                            }}>
-                              <span style={{
-                                position: 'absolute',
-                                content: '""',
-                                height: '14px',
-                                width: '14px',
-                                left: '3px',
-                                bottom: '3px',
-                                backgroundColor: 'white',
-                                borderRadius: '50%',
-                                transition: 'all 0.2s ease',
-                                transform: (selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')) ? 'translateX(16px)' : 'translateX(0)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
-                              }} />
-                            </span>
-                          </label>
-                        </div>
+                          <input
+                            type="checkbox"
+                            defaultChecked={selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')}
+                            style={{ 
+                              cursor: 'pointer',
+                              width: '16px',
+                              height: '16px',
+                              accentColor: '#FF6900'
+                            }}
+                          />
+                          {perm}
+                        </label>
                       ))}
                     </div>
                   </div>
