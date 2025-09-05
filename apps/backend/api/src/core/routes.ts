@@ -133,8 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user roles
   app.get('/api/users/:userId/roles', requireAuth(), requirePermission('user.view'), async (req, res) => {
     try {
-      const roles = await storage.getUserTenantRoles(req.params.userId);
-      res.json(roles);
+      const assignments = await storage.getUserAssignments(req.params.userId);
+      res.json(assignments);
     } catch (error) {
       console.error("Error fetching user roles:", error);
       res.status(500).json({ error: "Failed to fetch user roles" });
@@ -144,9 +144,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Assign user role
   app.post('/api/users/:userId/roles', requireAuth(), requirePermission('user.manage'), async (req, res) => {
     try {
-      const roleData = { ...req.body, userId: req.params.userId };
-      const role = await storage.createUserTenantRole(roleData);
-      res.status(201).json(role);
+      const assignmentData = { ...req.body, userId: req.params.userId };
+      const assignment = await storage.createUserAssignment(assignmentData);
+      res.status(201).json(assignment);
     } catch (error) {
       console.error("Error assigning user role:", error);
       res.status(500).json({ error: "Failed to assign user role" });
