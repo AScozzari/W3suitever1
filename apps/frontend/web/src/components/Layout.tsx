@@ -1495,15 +1495,47 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             backdropFilter: 'blur(8px)',
                             opacity: task.completato ? 0.6 : 1
                           }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = `0 4px 12px ${getPriorityColor(task.priorita)}25`;
+                          onMouseEnter={(e) => {
+                            const card = e.currentTarget;
+                            const title = card.querySelector('.task-title') as HTMLElement;
+                            const priority = card.querySelector('.task-priority') as HTMLElement;
+                            
+                            // Card animations
+                            card.style.background = 'rgba(255, 255, 255, 0.12)';
+                            card.style.transform = 'translateY(-4px) scale(1.02) rotateX(-2deg)';
+                            card.style.boxShadow = `0 12px 24px ${getPriorityColor(task.priorita)}35, 0 4px 8px rgba(0, 0, 0, 0.1)`;
+                            card.style.borderLeftWidth = '4px';
+                            
+                            // Title animation
+                            if (title) {
+                              title.style.color = '#FF6900';
+                            }
+                            
+                            // Priority badge animation
+                            if (priority) {
+                              priority.style.transform = 'scale(1.1)';
+                            }
                           }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
+                          onMouseLeave={(e) => {
+                            const card = e.currentTarget;
+                            const title = card.querySelector('.task-title') as HTMLElement;
+                            const priority = card.querySelector('.task-priority') as HTMLElement;
+                            
+                            // Reset card
+                            card.style.background = 'rgba(255, 255, 255, 0.03)';
+                            card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                            card.style.boxShadow = 'none';
+                            card.style.borderLeftWidth = '3px';
+                            
+                            // Reset title
+                            if (title) {
+                              title.style.color = '#1f2937';
+                            }
+                            
+                            // Reset priority
+                            if (priority) {
+                              priority.style.transform = 'scale(1)';
+                            }
                           }}>
                             <div style={{
                               display: 'flex',
@@ -1512,13 +1544,16 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               marginBottom: '6px'
                             }}>
                               <div style={{ flex: 1 }}>
-                                <div style={{
+                                <div 
+                                  className="task-title"
+                                  style={{
                                   fontSize: '12px',
                                   fontWeight: 600,
                                   color: '#1f2937',
                                   marginBottom: '2px',
                                   lineHeight: 1.3,
-                                  textDecoration: task.completato ? 'line-through' : 'none'
+                                  textDecoration: task.completato ? 'line-through' : 'none',
+                                  transition: 'color 0.3s ease'
                                 }}>{task.titolo}</div>
                                 <div style={{
                                   fontSize: '10px',
@@ -1553,13 +1588,17 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               alignItems: 'center',
                               justifyContent: 'space-between'
                             }}>
-                              <span style={{
+                              <span 
+                                className="task-priority"
+                                style={{
                                 fontSize: '9px',
                                 fontWeight: 600,
                                 color: getPriorityColor(task.priorita),
                                 background: `${getPriorityColor(task.priorita)}20`,
                                 padding: '2px 6px',
-                                borderRadius: '4px'
+                                borderRadius: '4px',
+                                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                display: 'inline-block'
                               }}>{task.priorita}</span>
                               
                               <div style={{
@@ -1705,15 +1744,61 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             backdropFilter: 'blur(8px)'
                           }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = `0 4px 12px ${getPriorityColor(lead.priorita)}25`;
+                          onMouseEnter={(e) => {
+                            const card = e.currentTarget;
+                            const name = card.querySelector('.lead-name') as HTMLElement;
+                            const icon = card.querySelector('.lead-icon') as HTMLElement;
+                            const priority = card.querySelector('.lead-priority') as HTMLElement;
+                            
+                            // Card animations
+                            card.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08))';
+                            card.style.transform = 'translateY(-4px) scale(1.02) rotateX(-2deg)';
+                            card.style.boxShadow = `0 12px 24px ${getPriorityColor(lead.priorita)}35, 0 4px 8px rgba(0, 0, 0, 0.1)`;
+                            card.style.borderLeftWidth = '4px';
+                            
+                            // Name animation
+                            if (name) {
+                              name.style.color = '#10b981';
+                              name.style.transform = 'translateX(2px)';
+                            }
+                            
+                            // Icon animation
+                            if (icon) {
+                              icon.style.transform = 'rotate(360deg) scale(1.2)';
+                            }
+                            
+                            // Priority animation
+                            if (priority) {
+                              priority.style.transform = 'scale(1.1) translateX(-2px)';
+                            }
                           }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
+                          onMouseLeave={(e) => {
+                            const card = e.currentTarget;
+                            const name = card.querySelector('.lead-name') as HTMLElement;
+                            const icon = card.querySelector('.lead-icon') as HTMLElement;
+                            const priority = card.querySelector('.lead-priority') as HTMLElement;
+                            
+                            // Reset card
+                            card.style.background = 'rgba(255, 255, 255, 0.03)';
+                            card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                            card.style.boxShadow = 'none';
+                            card.style.borderLeftWidth = '3px';
+                            
+                            // Reset name
+                            if (name) {
+                              name.style.color = '#1f2937';
+                              name.style.transform = 'translateX(0)';
+                            }
+                            
+                            // Reset icon
+                            if (icon) {
+                              icon.style.transform = 'rotate(0deg) scale(1)';
+                            }
+                            
+                            // Reset priority
+                            if (priority) {
+                              priority.style.transform = 'scale(1) translateX(0)';
+                            }
                           }}>
                             <div style={{
                               display: 'flex',
@@ -1722,12 +1807,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               marginBottom: '6px'
                             }}>
                               <div>
-                                <div style={{
+                                <div 
+                                  className="lead-name"
+                                  style={{
                                   fontSize: '12px',
                                   fontWeight: 600,
                                   color: '#1f2937',
                                   marginBottom: '2px',
-                                  lineHeight: 1.3
+                                  lineHeight: 1.3,
+                                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}>{lead.cliente}</div>
                                 <div style={{
                                   fontSize: '10px',
@@ -1735,13 +1823,17 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                                   marginBottom: '4px'
                                 }}>{lead.azienda}</div>
                               </div>
-                              <span style={{
+                              <span 
+                                className="lead-priority"
+                                style={{
                                 fontSize: '9px',
                                 fontWeight: 600,
                                 color: getPriorityColor(lead.priorita),
                                 background: `${getPriorityColor(lead.priorita)}20`,
                                 padding: '2px 6px',
-                                borderRadius: '4px'
+                                borderRadius: '4px',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                display: 'inline-block'
                               }}>{lead.priorita}</span>
                             </div>
                             
@@ -1755,7 +1847,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                                 alignItems: 'center',
                                 gap: '4px'
                               }}>
-                                <span style={{ fontSize: '10px' }}>{getChannelIcon(lead.fonte)}</span>
+                                <span 
+                                  className="lead-icon"
+                                  style={{ 
+                                    fontSize: '10px',
+                                    display: 'inline-block',
+                                    transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                                  }}>{getChannelIcon(lead.fonte)}</span>
                                 <span style={{
                                   fontSize: '9px',
                                   color: '#6b7280'
@@ -1939,38 +2037,102 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             backdropFilter: 'blur(8px)'
                           }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(123, 44, 191, 0.15)';
+                          onMouseEnter={(e) => {
+                            const card = e.currentTarget;
+                            const title = card.querySelector('.event-title') as HTMLElement;
+                            const time = card.querySelector('.event-time') as HTMLElement;
+                            const location = card.querySelector('.event-location') as HTMLElement;
+                            
+                            // Card animations with purple theme
+                            card.style.background = 'linear-gradient(135deg, rgba(123, 44, 191, 0.12), rgba(123, 44, 191, 0.06))';
+                            card.style.transform = 'translateY(-4px) scale(1.02) rotateX(-2deg)';
+                            card.style.boxShadow = '0 12px 24px rgba(123, 44, 191, 0.25), 0 4px 8px rgba(0, 0, 0, 0.1)';
+                            card.style.borderLeftWidth = '4px';
+                            card.style.borderLeftColor = '#8339ff';
+                            
+                            // Title animation
+                            if (title) {
+                              title.style.color = '#7B2CBF';
+                              title.style.transform = 'translateX(2px)';
+                            }
+                            
+                            // Time animation
+                            if (time) {
+                              time.style.color = '#8339ff';
+                              time.style.fontWeight = '600';
+                            }
+                            
+                            // Location badge animation
+                            if (location) {
+                              location.style.background = 'rgba(123, 44, 191, 0.15)';
+                              location.style.color = '#7B2CBF';
+                              location.style.transform = 'scale(1.05)';
+                            }
                           }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
+                          onMouseLeave={(e) => {
+                            const card = e.currentTarget;
+                            const title = card.querySelector('.event-title') as HTMLElement;
+                            const time = card.querySelector('.event-time') as HTMLElement;
+                            const location = card.querySelector('.event-location') as HTMLElement;
+                            
+                            // Reset card
+                            card.style.background = 'rgba(255, 255, 255, 0.03)';
+                            card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                            card.style.boxShadow = 'none';
+                            card.style.borderLeftWidth = '3px';
+                            card.style.borderLeftColor = '#7B2CBF';
+                            
+                            // Reset title
+                            if (title) {
+                              title.style.color = '#1f2937';
+                              title.style.transform = 'translateX(0)';
+                            }
+                            
+                            // Reset time
+                            if (time) {
+                              time.style.color = '#6b7280';
+                              time.style.fontWeight = '400';
+                            }
+                            
+                            // Reset location
+                            if (location) {
+                              location.style.background = 'rgba(255, 255, 255, 0.08)';
+                              location.style.color = '#9ca3af';
+                              location.style.transform = 'scale(1)';
+                            }
                           }}>
-                            <div style={{
+                            <div 
+                              className="event-title"
+                              style={{
                               fontSize: '12px',
                               fontWeight: 600,
                               color: '#1f2937',
                               marginBottom: '4px',
-                              lineHeight: 1.3
+                              lineHeight: 1.3,
+                              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                             }}>{evento.titolo}</div>
                             <div style={{
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between'
                             }}>
-                              <span style={{
+                              <span 
+                                className="event-time"
+                                style={{
                                 fontSize: '10px',
-                                color: '#6b7280'
+                                color: '#6b7280',
+                                transition: 'all 0.3s ease'
                               }}>{evento.ora}</span>
-                              <span style={{
+                              <span 
+                                className="event-location"
+                                style={{
                                 fontSize: '9px',
                                 color: '#9ca3af',
                                 background: 'rgba(255, 255, 255, 0.08)',
                                 padding: '1px 4px',
-                                borderRadius: '4px'
+                                borderRadius: '4px',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                display: 'inline-block'
                               }}>{evento.location}</span>
                             </div>
                           </div>
