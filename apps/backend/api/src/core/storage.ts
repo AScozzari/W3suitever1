@@ -121,9 +121,13 @@ export class DatabaseStorage implements IStorage {
         hireDate: users.hireDate,
         contractType: users.contractType,
         store_name: stores.name,
+        role_name: roles.name,
+        role_description: roles.description,
       })
       .from(users)
       .leftJoin(stores, eq(users.storeId, stores.id))
+      .leftJoin(userAssignments, eq(users.id, userAssignments.userId))
+      .leftJoin(roles, eq(userAssignments.roleId, roles.id))
       .where(eq(users.tenantId, tenantId));
   }
 

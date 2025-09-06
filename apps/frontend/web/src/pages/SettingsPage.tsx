@@ -1008,15 +1008,15 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px' }}>
                       <span style={{
-                        background: user.role?.includes('Manager') ? '#e0e7ff' : (user.role?.includes('Admin') ? '#fee2e2' : '#f3f4f6'),
-                        color: user.role?.includes('Manager') ? '#3730a3' : (user.role?.includes('Admin') ? '#991b1b' : '#059669'),
+                        background: user.role_name?.includes('Manager') ? '#e0e7ff' : (user.role_name?.includes('Amministratore') ? '#fee2e2' : '#f3f4f6'),
+                        color: user.role_name?.includes('Manager') ? '#3730a3' : (user.role_name?.includes('Amministratore') ? '#991b1b' : '#059669'),
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
                         fontWeight: '600',
-                        border: `1px solid ${user.role?.includes('Manager') ? '#c7d2fe' : (user.role?.includes('Admin') ? '#fecaca' : '#d1fae5')}`
+                        border: `1px solid ${user.role_name?.includes('Manager') ? '#c7d2fe' : (user.role_name?.includes('Amministratore') ? '#fecaca' : '#d1fae5')}`
                       }}>
-                        {user.role || 'Operator'}
+                        {user.role_name || user.role || 'Operatore'}
                       </span>
                     </td>
                     <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
