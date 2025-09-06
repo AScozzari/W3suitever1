@@ -25,18 +25,15 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     let lastError: Error | null = null;
-    console.log(`📡 ApiService: Calling ${endpoint}`);
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         const response = await apiRequest<T>(endpoint, options);
-        console.log(`✅ ApiService: ${endpoint} returned data`);
         return {
           success: true,
           data: response
         };
       } catch (error: any) {
-        console.error(`❌ ApiService: ${endpoint} failed on attempt ${attempt}:`, error.message);
         lastError = error;
         
         // Se è un errore 401, non fare retry - serve nuova autenticazione
@@ -69,24 +66,15 @@ class ApiService {
    * API Endpoints per Settings Page
    */
   async getLegalEntities() {
-    console.log('🔄 Getting legal entities...');
-    const result = await this.makeRequest<any[]>('/api/legal-entities');
-    console.log('✅ Legal entities result:', result);
-    return result;
+    return this.makeRequest<any[]>('/api/legal-entities');
   }
 
   async getUsers() {
-    console.log('🔄 Getting users...');
-    const result = await this.makeRequest<any[]>('/api/users');
-    console.log('✅ Users result:', result);
-    return result;
+    return this.makeRequest<any[]>('/api/users');
   }
 
   async getStores() {
-    console.log('🔄 Getting stores...');
-    const result = await this.makeRequest<any[]>('/api/stores');
-    console.log('✅ Stores result:', result);
-    return result;
+    return this.makeRequest<any[]>('/api/stores');
   }
 
   async getCommercialAreas() {
@@ -103,26 +91,10 @@ class ApiService {
    */
   async loadSettingsData() {
     // Enterprise pattern: Graceful degradation with individual error handling
-    console.log('🔍 ApiService: Starting to load all settings data...');
-    
-    // Create promises without awaiting them immediately
-    const legalEntitiesPromise = this.getLegalEntities()
-      .then(r => { console.log('✅ Legal entities call completed'); return r; })
-      .catch(e => { console.error('❌ Legal entities failed:', e); return { success: false, error: e.message }; });
-    
-    const usersPromise = this.getUsers()
-      .then(r => { console.log('✅ Users call completed'); return r; })
-      .catch(e => { console.error('❌ Users failed:', e); return { success: false, error: e.message }; });
-    
-    const storesPromise = this.getStores()
-      .then(r => { console.log('✅ Stores call completed'); return r; })
-      .catch(e => { console.error('❌ Stores failed:', e); return { success: false, error: e.message }; });
-    
-    // Now wait for all promises to settle
     const apiCalls = await Promise.allSettled([
-      legalEntitiesPromise,
-      usersPromise, 
-      storesPromise
+      this.getLegalEntities(),
+      this.getUsers(), 
+      this.getStores()
     ]);
 
     const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
