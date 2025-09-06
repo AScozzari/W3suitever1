@@ -11,7 +11,7 @@ export const legalEntities = pgTable('legal_entities', {
   name: varchar('name', { length: 255 }).notNull(),
   vat: varchar('vat', { length: 50 }),
   billingProfileId: uuid('billing_profile_id'),
-  status: varchar('status', { length: 50 }).default('active'),
+  status: varchar('status', { length: 50 }).default('Attiva').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
   archivedAt: timestamp('archived_at'),
@@ -82,7 +82,7 @@ export const stores = pgTable('stores', {
   cap: varchar('cap', { length: 10 }),
   region: varchar('region', { length: 100 }),
   geo: jsonb('geo'),
-  status: varchar('status', { length: 50 }).default('active'),
+  status: varchar('status', { length: 50 }).default('Attivo').notNull(),
   openedAt: date('opened_at'),
   closedAt: date('closed_at'),
   billingOverrideId: uuid('billing_override_id'),
@@ -121,3 +121,26 @@ export const storeDriverPotential = pgTable('store_driver_potential', {
 }, (table) => ({
   pk: primaryKey({ columns: [table.storeId, table.driverId] }),
 }));
+
+// ==================== ENTITY LOGS ====================
+export const entityLogs = pgTable('entity_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'legal_entity', 'store', 'user'
+  entityId: uuid('entity_id').notNull(),
+  action: varchar('action', { length: 50 }).notNull(), // 'created', 'status_changed', 'updated', 'deleted'
+  previousStatus: varchar('previous_status', { length: 50 }),
+  newStatus: varchar('new_status', { length: 50 }),
+  changes: jsonb('changes'), // JSON con tutti i cambiamenti
+  userId: uuid('user_id'), // Chi ha fatto il cambio
+  userEmail: varchar('user_email', { length: 255 }),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const insertEntityLogSchema = createInsertSchema(entityLogs).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertEntityLog = z.infer<typeof insertEntityLogSchema>;
+export type EntityLog = typeof entityLogs.$inferSelect;

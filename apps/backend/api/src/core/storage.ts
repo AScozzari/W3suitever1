@@ -9,6 +9,7 @@ import {
   legalForms,
   countries,
   italianCities,
+  entityLogs,
   type User,
   type UpsertUser,
   type Tenant,
@@ -25,6 +26,8 @@ import {
   type InsertRole,
   type LegalForm,
   type Country,
+  type EntityLog,
+  type InsertEntityLog,
 } from "../db/schema";
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
@@ -64,6 +67,10 @@ export interface IStorage {
   getItalianCities(): Promise<any[]>;
   getCommercialAreas(): Promise<CommercialArea[]>;
   createCommercialArea(areaData: InsertCommercialArea): Promise<CommercialArea>;
+  
+  // Entity Logs Management
+  logEntityChange(log: InsertEntityLog): Promise<EntityLog>;
+  getEntityLogs(tenantId: string, entityType?: string, entityId?: string): Promise<EntityLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -222,6 +229,27 @@ export class DatabaseStorage implements IStorage {
   async createCommercialArea(areaData: InsertCommercialArea): Promise<CommercialArea> {
     const [area] = await db.insert(commercialAreas).values(areaData).returning();
     return area;
+  }
+
+  // ==================== ENTITY LOGS MANAGEMENT ====================
+
+  async logEntityChange(logData: InsertEntityLog): Promise<EntityLog> {
+    const [log] = await db.insert(entityLogs).values(logData).returning();
+    return log;
+  }
+
+  async getEntityLogs(tenantId: string, entityType?: string, entityId?: string): Promise<EntityLog[]> {
+    let query = db.select().from(entityLogs).where(eq(entityLogs.tenantId, tenantId));
+    
+    if (entityType) {
+      query = query.where(eq(entityLogs.entityType, entityType));
+    }
+    
+    if (entityId) {
+      query = query.where(eq(entityLogs.entityId, entityId));
+    }
+    
+    return await query.orderBy(entityLogs.createdAt);
   }
 
 }

@@ -69,7 +69,7 @@ const mockUtenti = [
     telefono: '+39 333 1234567',
     ruolo: 'Store Manager',
     ambito: 'WindTre Milano Centro',
-    stato: 'Attivo',
+    stato: 'Operativo',
     ultimoAccesso: '2024-01-28 09:15',
     createdAt: '2023-01-15'
   },
@@ -83,7 +83,7 @@ const mockUtenti = [
     telefono: '+39 333 9876543',
     ruolo: 'Salesperson',
     ambito: 'WindTre Roma Termini',
-    stato: 'Attivo',
+    stato: 'Operativo',
     ultimoAccesso: '2024-01-28 10:30',
     createdAt: '2023-06-20'
   },
@@ -97,7 +97,7 @@ const mockUtenti = [
     telefono: '+39 333 5551234',
     ruolo: 'Regional Manager',
     ambito: 'Organizzazione',
-    stato: 'Attivo',
+    stato: 'Operativo',
     ultimoAccesso: '2024-01-27 18:45',
     createdAt: '2022-11-10'
   }
@@ -270,7 +270,7 @@ const mockRagioneSociali = [
     nome: 'Tech Solutions Ltd', 
     formaGiuridica: 'Srl', 
     pIva: 'IT11122233344', 
-    stato: 'Bozza',
+    stato: 'Sospesa',
     citta: 'Roma',
     azioni: 'edit'
   }
@@ -1212,8 +1212,9 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span style={{
-                        background: user.stato === 'Attivo' ? '#dcfce7' : '#fee2e2',
-                        color: user.stato === 'Attivo' ? '#15803d' : '#b91c1c',
+                        background: user.stato === 'Operativo' ? '#dcfce7' : (user.stato === 'Sospeso' ? '#fef3c7' : '#f3f4f6'),
+                        color: user.stato === 'Operativo' ? '#15803d' : (user.stato === 'Sospeso' ? '#92400e' : '#6b7280'),
+                        border: `1px solid ${user.stato === 'Operativo' ? '#bbf7d0' : (user.stato === 'Sospeso' ? '#fde68a' : '#e5e7eb')}`,
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',

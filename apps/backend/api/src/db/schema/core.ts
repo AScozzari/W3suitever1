@@ -40,7 +40,7 @@ export const users = pgTable('users', {
   isSystemAdmin: boolean('is_system_admin').default(false),
   lastLoginAt: timestamp('last_login_at'),
   tenantId: uuid('tenant_id').references(() => tenants.id),
-  status: varchar('status', { length: 50 }).default('active'),
+  status: varchar('status', { length: 50 }).default('Operativo').notNull(),
   mfaEnabled: boolean('mfa_enabled').default(false),
 });
 
