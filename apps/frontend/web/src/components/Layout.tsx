@@ -398,9 +398,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       if (width < 1024) {
         setLeftSidebarCollapsed(true);
         setWorkspaceCollapsed(true);
-      } else {
-        // Su desktop, inizia con workspace aperta per permettere auto-collapse
-        setWorkspaceCollapsed(false);
       }
     };
     
@@ -1251,7 +1248,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             background: 'hsla(255, 255, 255, 0.08)',
             backdropFilter: 'blur(24px) saturate(140%)',
             WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            borderLeft: '1px solid hsla(255, 255, 255, 0.18)',
+            borderLeft: '1px solid hsla(255, 255, 255, 0.12)',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 40,
             boxShadow: '4px 0 24px rgba(0, 0, 0, 0.04)',
