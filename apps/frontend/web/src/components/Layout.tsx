@@ -149,6 +149,37 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   
   // Tab attiva per workspace
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (leftSidebarTimer) {
+        clearTimeout(leftSidebarTimer);
+      }
+      if (workspaceTimer) {
+        clearTimeout(workspaceTimer);
+      }
+    };
+  }, [leftSidebarTimer, workspaceTimer]);
+
+  // Helper function to handle workspace tab click with auto-collapse
+  const handleWorkspaceTabClick = (tab: string) => {
+    setActiveWorkspaceTab(tab);
+    // Se il workspace era collapsed, espandilo e avvia timer per auto-collapse
+    if (workspaceCollapsed) {
+      setWorkspaceCollapsed(false);
+    }
+    // Cancella timer precedente
+    if (workspaceTimer) {
+      clearTimeout(workspaceTimer);
+    }
+    // Avvia nuovo timer per auto-collapse dopo interazione
+    const timer = setTimeout(() => {
+      setWorkspaceCollapsed(true);
+      setWorkspaceTimer(null);
+    }, 3000); // 3 secondi dopo il click
+    setWorkspaceTimer(timer);
+  };
   
   // Dati tasks dal repository GitHub
   const [tasks, setTasks] = useState([
@@ -1236,7 +1267,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 gap: '12px'
               }}>
                 <button 
-                  onClick={() => setActiveWorkspaceTab('Tasks')}
+                  onClick={() => handleWorkspaceTabClick('Tasks')}
                   style={{
                     width: '40px',
                     height: '40px',
@@ -1277,7 +1308,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 </button>
                 
                 <button 
-                  onClick={() => setActiveWorkspaceTab('Leads')}
+                  onClick={() => handleWorkspaceTabClick('Leads')}
                   style={{
                     width: '40px',
                     height: '40px',
@@ -1318,7 +1349,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 </button>
                 
                 <button 
-                  onClick={() => setActiveWorkspaceTab('Calendar')}
+                  onClick={() => handleWorkspaceTabClick('Calendar')}
                   style={{
                     width: '40px',
                     height: '40px',
@@ -1385,7 +1416,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   {['Tasks', 'Leads', 'Calendar'].map((tab) => (
                     <button
                       key={tab}
-                      onClick={() => setActiveWorkspaceTab(tab)}
+                      onClick={() => handleWorkspaceTabClick(tab)}
                       style={{
                         flex: 1,
                         padding: '8px 12px',
