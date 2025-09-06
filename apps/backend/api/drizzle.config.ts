@@ -11,4 +11,11 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
+  // Configure non-interactive mode
+  introspect: {
+    casing: "camel"
+  },
+  // Push settings for non-interactive operation
+  verbose: true,
+  strict: false
 });
