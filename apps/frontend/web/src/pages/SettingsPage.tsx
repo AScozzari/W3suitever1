@@ -618,13 +618,13 @@ export default function SettingsPage() {
                   <td style={{ padding: '16px' }}>
                     <div>
                       <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formaGiuridica}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formagiuridica || item.formaGiuridica}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     <div>
-                      <div>P.IVA: {item.pIva}</div>
-                      <div>C.F.: {item.codiceFiscale}</div>
+                      <div>P.IVA: {item.piva || item.pIva}</div>
+                      <div>C.F.: {item.codicefiscale || item.codiceFiscale}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
