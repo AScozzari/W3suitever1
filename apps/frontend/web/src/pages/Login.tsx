@@ -109,15 +109,20 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           if (tokenResponse.ok) {
             const tokenData = await tokenResponse.json();
             
-            // Store OAuth2 tokens
-            localStorage.setItem('auth_token', tokenData.access_token);
-            if (tokenData.refresh_token) {
-              localStorage.setItem('refresh_token', tokenData.refresh_token);
-            }
+            // Add expires_at timestamp for OAuth2Client compatibility
+            const expiresAt = Date.now() + (tokenData.expires_in * 1000);
+            const tokensWithExpiry = {
+              ...tokenData,
+              expires_at: expiresAt
+            };
+            
+            // Store OAuth2 tokens using OAuth2Client format
+            localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
             
             console.log('✅ OAuth2 Enterprise Login Successful:', {
               tokenType: tokenData.token_type,
               expiresIn: tokenData.expires_in,
+              expiresAt: new Date(expiresAt).toLocaleString(),
               scope: tokenData.scope
             });
             
