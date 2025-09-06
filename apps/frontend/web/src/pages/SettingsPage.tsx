@@ -578,22 +578,22 @@ export default function SettingsPage() {
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
-                    {item.codice || 'N/A'}
+                    {item.codice}
                   </td>
                   <td style={{ padding: '16px' }}>
                     <div>
                       <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formaGiuridica || 'N/A'}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formaGiuridica}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     <div>
-                      <div>P.IVA: {item.pIva || 'N/A'}</div>
-                      <div>C.F.: {item.codiceFiscale || 'N/A'}</div>
+                      <div>P.IVA: {item.pIva}</div>
+                      <div>C.F.: {item.codiceFiscale}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    {item.citta || 'N/A'} ({item.provincia || 'N/A'})
+                    {item.citta} ({item.provincia})
                   </td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
@@ -811,7 +811,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.channelName || item.canale || 'N/A'}
+                      {item.canale}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
