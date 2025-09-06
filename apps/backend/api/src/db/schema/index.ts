@@ -80,7 +80,7 @@ export const legalEntities = pgTable("legal_entities", {
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   codice: varchar("codice", { length: 20 }).notNull().unique(),
   nome: varchar("nome", { length: 255 }).notNull(),
-  pIva: varchar("p_iva", { length: 50 }),
+  pIva: varchar("piva", { length: 50 }),
   billingProfileId: uuid("billing_profile_id"),
   stato: varchar("stato", { length: 50 }).default("Attiva"),
   createdAt: timestamp("created_at").defaultNow(),

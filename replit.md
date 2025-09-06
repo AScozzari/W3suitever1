@@ -114,17 +114,20 @@ TENANT (Organizzazione)
 
 ### 🏪 PUNTI VENDITA
 - **Livello**: Unità operative fisiche/virtuali
-- **Relazione**: Molte-a-Uno OBBLIGATORIA con Ragioni Sociali (1:1 verso ragione sociale)
+- **Relazione OBBLIGATORIA**: Molte-a-Uno con Ragioni Sociali (1:1 verso ragione sociale)
+- **Relazione CANALE**: 1:1 OBBLIGATORIA con Canale (deve scegliere un canale)
+- **Relazione BRAND**: 1:N OBBLIGATORIA con Brand (almeno un brand, può avere più brand)
 - **Codice**: UNIVOCO GLOBALE cross-tenant
 - **Attributi Base**: Nome, indirizzo, codice, stato operativo
-- **Brand Association**: WindTre e/o Very Mobile
-- **Canale**: Franchising | Top Dealer | Dealer
+- **Canali Disponibili**: Franchising | Top Dealer | Dealer
+- **Brand Disponibili**: WindTre e/o Very Mobile (multiselect)
 - **Clusterizzazione**: Per potenziale su driver business:
   - Fisso (fibra, ADSL)
   - Mobile (contratti, ricariche)
   - Energia (gas, luce)  
   - Protezione (antivirus, backup)
   - Assicurazione (auto, casa, vita)
+- **CAMPI OBBLIGATORI NEI MODAL**: Tutti i campi relazionali sono obbligatori
 
 ### 👥 RISORSE (Dipendenti/Utenti)
 - **Livello**: Persone che lavorano nell'organizzazione
