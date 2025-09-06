@@ -271,6 +271,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to create legal entity" });
     }
   });
+  
+  // Delete legal entity
+  app.delete('/api/legal-entities/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const legalEntityId = req.params.id;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      await storage.deleteLegalEntity(legalEntityId, tenantId);
+      res.status(200).json({ message: "Legal entity deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting legal entity:", error);
+      res.status(500).json({ error: "Failed to delete legal entity" });
+    }
+  });
 
   // ==================== USER MANAGEMENT API ====================
   

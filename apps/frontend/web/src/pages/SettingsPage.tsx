@@ -251,6 +251,18 @@ export default function SettingsPage() {
 
     loadData();
   }, []);
+
+  // Funzione per ricaricare i dati delle ragioni sociali
+  const refetchLegalEntities = async () => {
+    try {
+      const result = await apiService.loadSettingsData();
+      if (result.success && result.data) {
+        setRagioneSocialiList(result.data.legalEntities);
+      }
+    } catch (error) {
+      console.error('Error refetching legal entities:', error);
+    }
+  };
   
   // Roles loading function - kept separate as it's not in the main service
   const fetchRoles = async () => {
@@ -319,8 +331,31 @@ export default function SettingsPage() {
     setShowCreateRagioneSociale(false);
   };
   
-  const handleDeleteRagioneSociale = (id: number) => {
-    setRagioneSocialiList(ragioneSocialiList.filter(item => item.id !== id));
+  // Handler per eliminare una ragione sociale - USA API REALE
+  const handleDeleteRagioneSociale = async (legalEntityId: string) => {
+    try {
+      const currentTenantId = getCurrentTenantId();
+      
+      const response = await fetch(`/api/legal-entities/${legalEntityId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-Tenant-ID': currentTenantId
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete legal entity: ${response.statusText}`);
+      }
+
+      console.log('✅ Legal entity deleted successfully');
+      
+      // Refresh the list dopo l'eliminazione
+      await refetchLegalEntities();
+      
+    } catch (error) {
+      console.error('❌ Error deleting legal entity:', error);
+      alert('Errore nell\'eliminazione della ragione sociale. Riprova.');
+    }
   };
   
   // Handlers per Punti Vendita
@@ -2505,53 +2540,100 @@ export default function SettingsPage() {
     return tenantId || '00000000-0000-0000-0000-000000000001';
   };
 
-  // Handler per salvare la nuova ragione sociale
-  const handleSaveRagioneSociale = () => {
-    const currentTenantId = getCurrentTenantId();
-    const newCode = newRagioneSociale.codice || `80${String(Math.floor(Math.random() * 9999) + 1000).padStart(4, '0')}`;
-    const newItem = {
-      id: ragioneSocialiList.length + 1,
-      tenant_id: currentTenantId, // TENANT ID AUTOMATICO DAL CONTEXT
-      codice: newCode,
-      nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
-      formaGiuridica: newRagioneSociale.formaGiuridica,
-      pIva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
-      stato: newRagioneSociale.stato,
-      citta: newRagioneSociale.citta || 'Milano',
-      azioni: 'edit'
-    };
-    setRagioneSocialiList([...ragioneSocialiList, newItem]);
-    setLegalEntityModal({ open: false, data: null });
-    // Reset form
-    setNewRagioneSociale({
-      codice: '',
-      nome: '',
-      formaGiuridica: 'Srl',
-      pIva: '',
-      codiceFiscale: '',
-      indirizzo: '',
-      citta: '',
-      cap: '',
-      provincia: '',
-      telefono: '',
-      email: '',
-      pec: '',
-      stato: 'Attiva',
-      // New enterprise fields
-      logo: '',
-      codiceSDI: '',
-      // Administrative contact section
-      refAmminNome: '',
-      refAmminCognome: '',
-      refAmminEmail: '',
-      refAmminCodiceFiscale: '',
-      refAmminIndirizzo: '',
-      refAmminCitta: '',
-      refAmminCap: '',
-      refAmminPaese: '',
-      // Notes field
-      note: ''
-    });
+  // Handler per salvare la nuova ragione sociale - USA API REALE
+  const handleSaveRagioneSociale = async () => {
+    try {
+      const currentTenantId = getCurrentTenantId();
+      const newCode = newRagioneSociale.codice || `80${String(Math.floor(Math.random() * 9999) + 1000).padStart(4, '0')}`;
+      
+      // Prepara i dati per l'API con tutti i nuovi campi enterprise
+      const legalEntityData = {
+        tenantId: currentTenantId,
+        codice: newCode,
+        nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
+        formaGiuridica: newRagioneSociale.formaGiuridica,
+        pIva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
+        codiceFiscale: newRagioneSociale.codiceFiscale,
+        stato: newRagioneSociale.stato,
+        indirizzo: newRagioneSociale.indirizzo,
+        citta: newRagioneSociale.citta || 'Milano',
+        cap: newRagioneSociale.cap,
+        provincia: newRagioneSociale.provincia,
+        telefono: newRagioneSociale.telefono,
+        email: newRagioneSociale.email,
+        pec: newRagioneSociale.pec,
+        // New enterprise fields
+        logo: newRagioneSociale.logo,
+        codiceSDI: newRagioneSociale.codiceSDI,
+        // Administrative contact section
+        refAmminNome: newRagioneSociale.refAmminNome,
+        refAmminCognome: newRagioneSociale.refAmminCognome,
+        refAmminEmail: newRagioneSociale.refAmminEmail,
+        refAmminCodiceFiscale: newRagioneSociale.refAmminCodiceFiscale,
+        refAmminIndirizzo: newRagioneSociale.refAmminIndirizzo,
+        refAmminCitta: newRagioneSociale.refAmminCitta,
+        refAmminCap: newRagioneSociale.refAmminCap,
+        refAmminPaese: newRagioneSociale.refAmminPaese,
+        // Notes field
+        note: newRagioneSociale.note
+      };
+
+      // Chiamata API per creare la ragione sociale
+      const response = await fetch('/api/legal-entities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': currentTenantId
+        },
+        body: JSON.stringify(legalEntityData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create legal entity: ${response.statusText}`);
+      }
+
+      const newLegalEntity = await response.json();
+      console.log('✅ Legal entity created:', newLegalEntity);
+
+      // Refresh the list dopo la creazione
+      await refetchLegalEntities();
+      
+      setLegalEntityModal({ open: false, data: null });
+      
+      // Reset form
+      setNewRagioneSociale({
+        codice: '',
+        nome: '',
+        formaGiuridica: 'Srl',
+        pIva: '',
+        codiceFiscale: '',
+        indirizzo: '',
+        citta: '',
+        cap: '',
+        provincia: '',
+        telefono: '',
+        email: '',
+        pec: '',
+        stato: 'Attiva',
+        // New enterprise fields
+        logo: '',
+        codiceSDI: '',
+        // Administrative contact section
+        refAmminNome: '',
+        refAmminCognome: '',
+        refAmminEmail: '',
+        refAmminCodiceFiscale: '',
+        refAmminIndirizzo: '',
+        refAmminCitta: '',
+        refAmminCap: '',
+        refAmminPaese: '',
+        // Notes field
+        note: ''
+      });
+    } catch (error) {
+      console.error('❌ Error creating legal entity:', error);
+      alert('Errore nella creazione della ragione sociale. Riprova.');
+    }
   };
 
   // Handler per salvare il nuovo punto vendita
