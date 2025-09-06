@@ -228,7 +228,7 @@ export default function SettingsPage() {
     try {
       const response = await fetch('/api/roles', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json'
         }
       });
@@ -257,7 +257,7 @@ export default function SettingsPage() {
     try {
       const response = await fetch('/api/legal-entities', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json',
           'X-Tenant-ID': getCurrentTenantId()
         }
@@ -278,7 +278,7 @@ export default function SettingsPage() {
     try {
       const response = await fetch('/api/stores', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json',
           'X-Tenant-ID': getCurrentTenantId()
         }
@@ -299,7 +299,7 @@ export default function SettingsPage() {
     try {
       const response = await fetch('/api/users', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json',
           'X-Tenant-ID': getCurrentTenantId()
         }
