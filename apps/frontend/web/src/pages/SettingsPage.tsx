@@ -603,9 +603,31 @@ export default function SettingsPage() {
                       padding: '4px 12px',
                       background: item.stato === 'Attiva' 
                         ? '#dcfce7'
+                        : item.stato === 'Sospesa'
+                        ? '#fef3c7'
+                        : item.stato === 'Bozza'
+                        ? '#e0e7ff'
+                        : item.stato === 'Cessata'
+                        ? '#fecaca'
                         : '#f1f5f9',
-                      color: item.stato === 'Attiva' ? '#15803d' : '#475569',
-                      border: `1px solid ${item.stato === 'Attiva' ? '#bbf7d0' : '#e2e8f0'}`,
+                      color: item.stato === 'Attiva' 
+                        ? '#15803d' 
+                        : item.stato === 'Sospesa'
+                        ? '#d97706'
+                        : item.stato === 'Bozza'
+                        ? '#4338ca'
+                        : item.stato === 'Cessata'
+                        ? '#dc2626'
+                        : '#475569',
+                      border: `1px solid ${item.stato === 'Attiva' 
+                        ? '#bbf7d0' 
+                        : item.stato === 'Sospesa'
+                        ? '#fcd34d'
+                        : item.stato === 'Bozza'
+                        ? '#c7d2fe'
+                        : item.stato === 'Cessata'
+                        ? '#fca5a5'
+                        : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -617,7 +639,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.stato || 'Inattiva'}
+                      {item.stato}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -800,9 +822,31 @@ export default function SettingsPage() {
                       padding: '4px 12px',
                       background: item.stato === 'Attiva' 
                         ? '#dcfce7'
+                        : item.stato === 'Sospesa'
+                        ? '#fef3c7'
+                        : item.stato === 'Bozza'
+                        ? '#e0e7ff'
+                        : item.stato === 'Cessata'
+                        ? '#fecaca'
                         : '#f1f5f9',
-                      color: item.stato === 'Attiva' ? '#15803d' : '#475569',
-                      border: `1px solid ${item.stato === 'Attiva' ? '#bbf7d0' : '#e2e8f0'}`,
+                      color: item.stato === 'Attiva' 
+                        ? '#15803d' 
+                        : item.stato === 'Sospesa'
+                        ? '#d97706'
+                        : item.stato === 'Bozza'
+                        ? '#4338ca'
+                        : item.stato === 'Cessata'
+                        ? '#dc2626'
+                        : '#475569',
+                      border: `1px solid ${item.stato === 'Attiva' 
+                        ? '#bbf7d0' 
+                        : item.stato === 'Sospesa'
+                        ? '#fcd34d'
+                        : item.stato === 'Bozza'
+                        ? '#c7d2fe'
+                        : item.stato === 'Cessata'
+                        ? '#fca5a5'
+                        : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -814,7 +858,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.stato || 'Inattiva'}
+                      {item.stato}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
