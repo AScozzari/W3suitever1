@@ -740,14 +740,13 @@ export default function SettingsPage() {
                         width: '40px',
                         height: '40px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                        background: '#f3f4f6',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#111827',
+                        color: '#6b7280',
                         fontSize: '14px',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+                        fontWeight: '600'
                       }}>
                         {item.codice.substring(0, 2)}
                       </div>
@@ -767,9 +766,10 @@ export default function SettingsPage() {
                       gap: '6px',
                       padding: '4px 12px',
                       background: item.stato === 'Attiva' 
-                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-                        : 'linear-gradient(135deg, #94a3b8, #64748b)',
-                      color: '#111827',
+                        ? '#dcfce7'
+                        : '#f1f5f9',
+                      color: item.stato === 'Attiva' ? '#15803d' : '#475569',
+                      border: `1px solid ${item.stato === 'Attiva' ? '#bbf7d0' : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -912,14 +912,13 @@ export default function SettingsPage() {
                         width: '40px',
                         height: '40px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+                        background: '#f3f4f6',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#111827',
+                        color: '#6b7280',
                         fontSize: '14px',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 8px rgba(123, 44, 191, 0.3)'
+                        fontWeight: '600'
                       }}>
                         {item.codice.substring(0, 2)}
                       </div>
@@ -936,11 +935,12 @@ export default function SettingsPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '4px 12px',
-                      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                      color: 'white',
+                      background: '#f0f9ff',
+                      color: '#0369a1',
                       borderRadius: '20px',
                       fontSize: '12px',
-                      fontWeight: '600'
+                      fontWeight: '600',
+                      border: '1px solid #e0f2fe'
                     }}>
                       {item.commercialAreaId ? 
                         (commercialAreas as any[]).find((area: any) => area.id === item.commercialAreaId)?.name || 'N/A'
@@ -954,9 +954,10 @@ export default function SettingsPage() {
                       gap: '6px',
                       padding: '4px 12px',
                       background: item.canale === 'Franchising' 
-                        ? 'linear-gradient(135deg, #FF6900, #ff8533)'
-                        : 'linear-gradient(135deg, #7B2CBF, #a855f7)',
-                      color: '#111827',
+                        ? '#fef3f0'
+                        : '#faf5ff',
+                      color: item.canale === 'Franchising' ? '#ea580c' : '#7c3aed',
+                      border: `1px solid ${item.canale === 'Franchising' ? '#fed7aa' : '#e9d5ff'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -978,9 +979,10 @@ export default function SettingsPage() {
                       gap: '6px',
                       padding: '4px 12px',
                       background: item.stato === 'Attivo' 
-                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-                        : 'linear-gradient(135deg, #94a3b8, #64748b)',
-                      color: '#111827',
+                        ? '#dcfce7'
+                        : '#f1f5f9',
+                      color: item.stato === 'Attivo' ? '#15803d' : '#475569',
+                      border: `1px solid ${item.stato === 'Attivo' ? '#bbf7d0' : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -1173,11 +1175,11 @@ export default function SettingsPage() {
                           width: '32px',
                           height: '32px',
                           borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                          background: '#f3f4f6',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#111827',
+                          color: '#6b7280',
                           fontSize: '12px',
                           fontWeight: '600'
                         }}>
@@ -1194,12 +1196,13 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px' }}>
                       <span style={{
-                        background: user.ruolo.includes('Manager') ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'linear-gradient(135deg, #10b981, #059669)',
-                        color: '#111827',
+                        background: user.ruolo.includes('Manager') ? '#f3f4f6' : '#f3f4f6',
+                        color: user.ruolo.includes('Manager') ? '#7c3aed' : '#059669',
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
-                        fontWeight: '600'
+                        fontWeight: '600',
+                        border: `1px solid ${user.ruolo.includes('Manager') ? '#e9d5ff' : '#d1fae5'}`
                       }}>
                         {user.ruolo}
                       </span>
