@@ -4155,24 +4155,25 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setUserModal({ open: false, data: null })}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.8)',
-                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    background: 'transparent',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '8px',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     cursor: 'pointer',
-                    padding: '8px',
-                    transition: 'all 0.15s ease',
-                    color: '#64748b',
-                    backdropFilter: 'blur(8px)'
+                    transition: 'all 0.2s ease',
+                    color: '#6b7280'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
-                    e.currentTarget.style.color = '#374151';
-                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.background = '#f3f4f6';
+                    e.currentTarget.style.borderColor = '#d1d5db';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
-                    e.currentTarget.style.color = '#64748b';
-                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
                   }}
                 >
                   <X size={18} />
@@ -4182,49 +4183,60 @@ export default function SettingsPage() {
 
             {/* Body Modal con sezioni */}
             <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
-              {/* SEZIONE AMBITO OPERATIVO GERARCHICO - PRIMA SEZIONE */}
-              <div style={{ marginBottom: '24px' }}>
+              {/* SEZIONE AMBITO OPERATIVO */}
+              <div style={{ marginBottom: '28px' }}>
                 <h3 style={{
-                  fontSize: '15px',
+                  fontSize: '14px',
                   fontWeight: '600',
                   color: '#111827',
                   marginBottom: '16px',
-                  borderBottom: '2px solid #e5e7eb',
-                  paddingBottom: '8px'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
-                  Ambito Operativo
+                  Livello di Accesso
                 </h3>
                 
-                {/* Selezione tipo scope */}
+                {/* Selezione tipo scope - Più chiaro */}
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '12px'
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '8px',
+                    padding: '16px',
+                    background: '#f9fafb',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb'
                   }}>
-                    Livello di Accesso <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '12px' }}>
                     {[
-                      { value: 'organizzazione', label: 'Organizzazione', color: '#8b5cf6', icon: '🏢' },
-                      { value: 'ragioni_sociali', label: 'Ragioni Sociali Specifiche', color: '#f59e0b', icon: '📋' },
-                      { value: 'punti_vendita', label: 'Punti Vendita Specifici', color: '#10b981', icon: '🏪' }
+                      { 
+                        value: 'organizzazione', 
+                        label: 'Accesso Completo', 
+                        description: 'Accesso a tutta l\'organizzazione',
+                        icon: <Building2 size={18} />
+                      },
+                      { 
+                        value: 'ragioni_sociali', 
+                        label: 'Ragioni Sociali', 
+                        description: 'Accesso limitato a specifiche ragioni sociali',
+                        icon: <FileText size={18} />
+                      },
+                      { 
+                        value: 'punti_vendita', 
+                        label: 'Punti Vendita', 
+                        description: 'Accesso limitato a specifici punti vendita',
+                        icon: <Store size={18} />
+                      }
                     ].map(option => (
                       <label key={option.value} style={{
-                        flex: 1,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        padding: '14px',
-                        background: newUser.scopeLevel === option.value ? `${option.color}10` : '#ffffff',
-                        border: `2px solid ${newUser.scopeLevel === option.value ? option.color : '#e5e7eb'}`,
-                        borderRadius: '10px',
+                        gap: '12px',
+                        padding: '12px',
+                        background: newUser.scopeLevel === option.value ? '#ffffff' : 'transparent',
+                        border: `2px solid ${newUser.scopeLevel === option.value ? '#FF6900' : 'transparent'}`,
+                        borderRadius: '8px',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        transform: newUser.scopeLevel === option.value ? 'scale(1.02)' : 'scale(1)',
-                        boxShadow: newUser.scopeLevel === option.value ? `0 4px 12px ${option.color}30` : 'none'
+                        transition: 'all 0.2s ease'
                       }}>
                         <input
                           type="radio"
@@ -4235,7 +4247,6 @@ export default function SettingsPage() {
                             setNewUser({ 
                               ...newUser, 
                               scopeLevel: e.target.value,
-                              // Reset selections when changing scope level
                               selectedLegalEntities: [],
                               selectedStores: []
                             });
@@ -4246,30 +4257,48 @@ export default function SettingsPage() {
                           width: '20px',
                           height: '20px',
                           borderRadius: '50%',
-                          border: `2px solid ${newUser.scopeLevel === option.value ? option.color : '#d1d5db'}`,
-                          background: newUser.scopeLevel === option.value ? option.color : 'transparent',
+                          border: `2px solid ${newUser.scopeLevel === option.value ? '#FF6900' : '#d1d5db'}`,
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'all 0.3s ease'
+                          justifyContent: 'center'
                         }}>
                           {newUser.scopeLevel === option.value && (
                             <div style={{
-                              width: '8px',
-                              height: '8px',
+                              width: '10px',
+                              height: '10px',
                               borderRadius: '50%',
-                              background: 'white'
+                              background: '#FF6900'
                             }} />
                           )}
                         </div>
-                        <span style={{
-                          fontSize: '14px',
-                          fontWeight: newUser.scopeLevel === option.value ? '600' : '500',
-                          color: newUser.scopeLevel === option.value ? option.color : '#6b7280'
+                        <div style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '8px',
+                          background: newUser.scopeLevel === option.value ? 'linear-gradient(135deg, #FF6900, #7B2CBF)' : '#f3f4f6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: newUser.scopeLevel === option.value ? '#ffffff' : '#6b7280'
                         }}>
-                          <span style={{ fontSize: '16px', marginRight: '4px' }}>{option.icon}</span>
-                          {option.label}
-                        </span>
+                          {option.icon}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#111827',
+                            marginBottom: '2px'
+                          }}>
+                            {option.label}
+                          </div>
+                          <div style={{
+                            fontSize: '13px',
+                            color: '#6b7280'
+                          }}>
+                            {option.description}
+                          </div>
+                        </div>
                       </label>
                     ))}
                   </div>
@@ -4278,22 +4307,22 @@ export default function SettingsPage() {
                 {/* Messaggio informativo per Organizzazione */}
                 {newUser.scopeLevel === 'organizzazione' && (
                   <div style={{
-                    background: '#f0fdf4',
-                    border: '1px solid #86efac',
+                    background: '#fef3c7',
+                    border: '1px solid #fbbf24',
                     borderRadius: '8px',
                     padding: '12px',
-                    marginTop: '16px'
+                    marginTop: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}>
+                    <AlertCircle size={16} style={{ color: '#f59e0b' }} />
                     <p style={{
-                      fontSize: '14px',
-                      color: '#166534',
-                      margin: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
+                      fontSize: '13px',
+                      color: '#92400e',
+                      margin: 0
                     }}>
-                      <Check size={16} />
-                      L'utente avrà accesso completo a tutta l'organizzazione
+                      L'utente avrà accesso completo a tutte le entità dell'organizzazione
                     </p>
                   </div>
                 )}
@@ -4327,7 +4356,7 @@ export default function SettingsPage() {
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                       padding: '8px',
-                      background: '#fafafa'
+                      background: '#f9fafb'
                     }}>
                       {ragioneSocialiList.map(rs => (
                         <label key={rs.id} style={{
@@ -4429,7 +4458,7 @@ export default function SettingsPage() {
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                       padding: '8px',
-                      background: '#fafafa'
+                      background: '#f9fafb'
                     }}>
                       {ragioneSocialiList
                         .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
@@ -4438,7 +4467,7 @@ export default function SettingsPage() {
                             <div style={{
                               fontSize: '13px',
                               fontWeight: '600',
-                              color: '#4b5563',
+                              color: '#374151',
                               padding: '8px',
                               background: '#f9fafb',
                               borderBottom: '1px solid #e5e7eb',
@@ -4546,7 +4575,7 @@ export default function SettingsPage() {
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px',
                       padding: '8px',
-                      background: '#fafafa'
+                      background: '#f9fafb'
                     }}>
                       {ragioneSocialiList
                         .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
@@ -4555,7 +4584,7 @@ export default function SettingsPage() {
                             <div style={{
                               fontSize: '13px',
                               fontWeight: '600',
-                              color: '#4b5563',
+                              color: '#374151',
                               padding: '8px',
                               background: '#f9fafb',
                               borderBottom: '1px solid #e5e7eb',
@@ -4589,8 +4618,8 @@ export default function SettingsPage() {
                                 style={{
                                   fontSize: '11px',
                                   padding: '4px 8px',
-                                  background: '#3b82f6',
-                                  color: '#111827',
+                                  background: '#FF6900',
+                                  color: 'white',
                                   border: 'none',
                                   borderRadius: '4px',
                                   cursor: 'pointer'
@@ -4700,12 +4729,12 @@ export default function SettingsPage() {
               {/* SEZIONE DATI DI ACCESSO */}
               <div style={{ marginBottom: '24px' }}>
                 <h3 style={{
-                  fontSize: '15px',
+                  fontSize: '14px',
                   fontWeight: '600',
                   color: '#111827',
                   marginBottom: '16px',
-                  borderBottom: '2px solid #e5e7eb',
-                  paddingBottom: '8px'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
                   Dati di Accesso
                 </h3>
@@ -4729,9 +4758,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
@@ -4755,9 +4784,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, ruolo: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
@@ -4790,9 +4819,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
@@ -4818,9 +4847,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
@@ -4834,12 +4863,12 @@ export default function SettingsPage() {
               {/* SEZIONE INFORMAZIONI PERSONALI */}
               <div style={{ marginBottom: '24px' }}>
                 <h3 style={{
-                  fontSize: '15px',
+                  fontSize: '14px',
                   fontWeight: '600',
                   color: '#111827',
                   marginBottom: '16px',
-                  borderBottom: '2px solid #e5e7eb',
-                  paddingBottom: '8px'
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
                   Informazioni Personali
                 </h3>
@@ -4862,9 +4891,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
@@ -4890,9 +4919,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, cognome: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
@@ -4918,9 +4947,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
@@ -4946,9 +4975,9 @@ export default function SettingsPage() {
                       onChange={(e) => setNewUser({ ...newUser, telefono: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '6px 10px',
+                        padding: '10px 12px',
                         border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontSize: '14px',
                         background: '#ffffff',
                         transition: 'all 0.2s ease',
