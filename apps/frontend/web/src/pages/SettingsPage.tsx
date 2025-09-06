@@ -219,10 +219,26 @@ export default function SettingsPage() {
   useEffect(() => {
     console.log('Loading data from database...');
     console.log('Auth token present:', !!localStorage.getItem('auth_token'));
-    fetchRoles();
-    fetchLegalEntities();
-    fetchStores();
-    fetchUsers();
+    
+    // Delay per assicurarsi che il token sia disponibile e valido
+    const loadData = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('No token available, skipping data load');
+        return;
+      }
+      
+      console.log('Starting data fetch with token:', token.substring(0, 20) + '...');
+      
+      // Carica i dati in sequenza per evitare race conditions
+      await fetchRoles();
+      await fetchLegalEntities();  
+      await fetchStores();
+      await fetchUsers();
+    };
+    
+    // Delay di 100ms per assicurarsi che tutto sia pronto
+    setTimeout(loadData, 100);
   }, []);
   
   const fetchRoles = async () => {
@@ -256,9 +272,15 @@ export default function SettingsPage() {
   
   const fetchLegalEntities = async () => {
     try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('No auth token available for legal entities');
+        return;
+      }
+      
       const response = await fetch('/api/legal-entities', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'X-Tenant-ID': getCurrentTenantId()
         }
@@ -268,7 +290,10 @@ export default function SettingsPage() {
         console.log('Legal entities loaded:', data);
         setRagioneSocialiList(data);
       } else {
-        console.error('Failed to fetch legal entities:', response.status);
+        console.error('Failed to fetch legal entities:', response.status, response.statusText);
+        if (response.status === 401) {
+          console.log('Token expired for legal entities - user needs to re-login');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch legal entities:', error);
@@ -298,9 +323,15 @@ export default function SettingsPage() {
   
   const fetchUsers = async () => {
     try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('No auth token available for users');
+        return;
+      }
+      
       const response = await fetch('/api/users', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'X-Tenant-ID': getCurrentTenantId()
         }
@@ -310,7 +341,10 @@ export default function SettingsPage() {
         console.log('Users loaded:', data);
         setUtentiList(data);
       } else {
-        console.error('Failed to fetch users:', response.status);
+        console.error('Failed to fetch users:', response.status, response.statusText);
+        if (response.status === 401) {
+          console.log('Token expired for users - user needs to re-login');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
