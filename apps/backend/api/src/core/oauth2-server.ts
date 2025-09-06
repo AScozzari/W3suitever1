@@ -34,7 +34,7 @@ const OAUTH2_CONFIG = {
   tokenEndpointAuthMethods: ['client_secret_basic', 'client_secret_post', 'none']
 };
 
-const JWT_SECRET = process.env.JWT_SECRET || 'w3suite-oauth2-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'w3suite-secret-key-2025';
 
 // OAuth2 Client Registry (In produzione: database)
 interface OAuth2Client {

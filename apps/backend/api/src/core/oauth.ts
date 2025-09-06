@@ -89,7 +89,7 @@ const config: OAuthConfig = {
   scopes: ['openid', 'profile', 'email', 'roles', 'tenant_access']
 };
 
-const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET || 'w3suite-jwt-secret-development-key');
+const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET || 'w3suite-secret-key-2025');
 
 export async function initializeOAuth() {
   try {
