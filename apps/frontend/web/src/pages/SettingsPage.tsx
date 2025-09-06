@@ -538,6 +538,10 @@ export default function SettingsPage() {
               telefono: '',
               email: '',
               pec: '',
+              capitaleSociale: '',
+              dataCostituzione: '',
+              rea: '',
+              registroImprese: '',
               stato: 'Attiva'
             });
             setLegalEntityModal({ open: true, data: null });
@@ -574,22 +578,22 @@ export default function SettingsPage() {
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
-                    {item.code || 'N/A'}
+                    {item.codice || 'N/A'}
                   </td>
                   <td style={{ padding: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.name || item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.forma_giuridica || item.formaGiuridica || 'N/A'}</div>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formaGiuridica || 'N/A'}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     <div>
-                      <div>P.IVA: {item.vat || item.pIva || 'N/A'}</div>
-                      <div>C.F.: {item.codice_fiscale || item.codiceFiscale || 'N/A'}</div>
+                      <div>P.IVA: {item.pIva || 'N/A'}</div>
+                      <div>C.F.: {item.codiceFiscale || 'N/A'}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    {item.city || item.citta || 'N/A'} ({item.province || 'N/A'})
+                    {item.citta || 'N/A'} ({item.provincia || 'N/A'})
                   </td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
@@ -597,11 +601,11 @@ export default function SettingsPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '4px 12px',
-                      background: item.status === 'active' 
+                      background: item.stato === 'Attiva' 
                         ? '#dcfce7'
                         : '#f1f5f9',
-                      color: item.status === 'active' ? '#15803d' : '#475569',
-                      border: `1px solid ${item.status === 'active' ? '#bbf7d0' : '#e2e8f0'}`,
+                      color: item.stato === 'Attiva' ? '#15803d' : '#475569',
+                      border: `1px solid ${item.stato === 'Attiva' ? '#bbf7d0' : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -613,7 +617,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.status === 'active' ? 'Attiva' : 'Inattiva'}
+                      {item.stato || 'Inattiva'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -794,11 +798,11 @@ export default function SettingsPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '4px 12px',
-                      background: item.status === 'active' 
+                      background: item.stato === 'Attiva' 
                         ? '#dcfce7'
                         : '#f1f5f9',
-                      color: item.status === 'active' ? '#15803d' : '#475569',
-                      border: `1px solid ${item.status === 'active' ? '#bbf7d0' : '#e2e8f0'}`,
+                      color: item.stato === 'Attiva' ? '#15803d' : '#475569',
+                      border: `1px solid ${item.stato === 'Attiva' ? '#bbf7d0' : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -810,7 +814,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.status === 'active' ? 'Attiva' : 'Inattiva'}
+                      {item.stato || 'Inattiva'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>

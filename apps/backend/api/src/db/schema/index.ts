@@ -78,11 +78,11 @@ export type Tenant = typeof tenants.$inferSelect;
 export const legalEntities = pgTable("legal_entities", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  code: varchar("code", { length: 20 }).notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  vat: varchar("vat", { length: 50 }),
+  codice: varchar("codice", { length: 20 }).notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  pIva: varchar("p_iva", { length: 50 }),
   billingProfileId: uuid("billing_profile_id"),
-  status: varchar("status", { length: 50 }).default("active"),
+  stato: varchar("stato", { length: 50 }).default("Attiva"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   archivedAt: timestamp("archived_at"),
@@ -91,17 +91,17 @@ export const legalEntities = pgTable("legal_entities", {
   formaGiuridica: varchar("forma_giuridica", { length: 100 }),
   capitaleSociale: varchar("capitale_sociale", { length: 50 }),
   dataCostituzione: date("data_costituzione"),
-  address: text("address"),
-  city: varchar("city", { length: 100 }),
-  province: varchar("province", { length: 10 }),
+  indirizzo: text("indirizzo"),
+  citta: varchar("citta", { length: 100 }),
+  provincia: varchar("provincia", { length: 10 }),
   cap: varchar("cap", { length: 10 }),
-  phone: varchar("phone", { length: 50 }),
+  telefono: varchar("telefono", { length: 50 }),
   email: varchar("email", { length: 255 }),
   pec: varchar("pec", { length: 255 }),
   rea: varchar("rea", { length: 100 }),
   registroImprese: varchar("registro_imprese", { length: 255 }),
 }, (table) => [
-  uniqueIndex("legal_entities_tenant_code_unique").on(table.tenantId, table.code),
+  uniqueIndex("legal_entities_tenant_code_unique").on(table.tenantId, table.codice),
 ]);
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
