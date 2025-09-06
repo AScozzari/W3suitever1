@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupOAuthRoutes, requireAuth, requirePermission } from "./oauth";
+import { setupOAuth2Server } from "./oauth2-server";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
 import jwt from "jsonwebtoken";
@@ -9,6 +10,9 @@ const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Setup OAuth2 Authorization Server (Enterprise)
+  setupOAuth2Server(app);
   
   // Apply tenant middleware to all API routes except auth and stores
   app.use((req, res, next) => {
@@ -214,15 +218,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Enterprise JWT verification with full error handling
+      // Enterprise JWT verification with OAuth2 standard support
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       
-      // Validate token structure and expiration
-      if (!decoded.userId && !decoded.sub) {
+      // OAuth2 standard: use 'sub' field for user identification
+      if (!decoded.sub && !decoded.userId) {
         return res.status(401).json({ 
           error: 'invalid_token',
-          message: 'Invalid token structure',
-          loginUrl: '/api/auth/login'
+          message: 'Invalid token structure - missing subject',
+          loginUrl: '/oauth2/authorize'
         });
       }
       
@@ -236,15 +240,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Set enterprise user context
+      // Set enterprise user context with OAuth2 standard fields
       req.user = {
-        id: decoded.userId || decoded.sub,
+        id: decoded.sub || decoded.userId, // OAuth2 standard: 'sub' first
         email: decoded.email,
-        tenantId: decoded.tenantId,
+        tenantId: decoded.tenant_id || decoded.tenantId, // OAuth2 uses snake_case
+        clientId: decoded.client_id,
+        audience: decoded.aud,
+        issuer: decoded.iss,
         roles: decoded.roles || [],
         permissions: decoded.permissions || [],
         capabilities: decoded.capabilities || [],
-        scope: decoded.scope
+        scope: decoded.scope // OAuth2 scope string
       };
       
       // Enterprise logging for audit
