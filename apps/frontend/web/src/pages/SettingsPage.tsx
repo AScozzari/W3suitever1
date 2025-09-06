@@ -4514,8 +4514,8 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {/* Selezione Punti Vendita - Solo se selezionate ragioni sociali */}
-                {newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length > 0 && (
+                {/* Selezione Punti Vendita - Sempre visibile ma disabilitata se nessuna RS */}
+                {newUser.scopeLevel === 'punti_vendita' && (
                   <div style={{ marginTop: '20px' }}>
                     <label style={{
                       display: 'block',
@@ -4525,26 +4525,54 @@ export default function SettingsPage() {
                       marginBottom: '8px'
                     }}>
                       Seleziona Punti Vendita <span style={{ color: '#ef4444' }}>*</span>
-                      <span style={{ 
-                        fontSize: '12px', 
-                        fontWeight: '400', 
-                        color: '#6b7280',
-                        marginLeft: '8px'
-                      }}>
-                        (Solo punti vendita delle ragioni sociali selezionate)
-                      </span>
+                      {newUser.selectedLegalEntities.length > 0 ? (
+                        <span style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '400', 
+                          color: '#6b7280',
+                          marginLeft: '8px'
+                        }}>
+                          (Disponibili {puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id)).length} punti vendita)
+                        </span>
+                      ) : (
+                        <span style={{ 
+                          fontSize: '12px', 
+                          fontWeight: '400', 
+                          color: '#ef4444',
+                          marginLeft: '8px'
+                        }}>
+                          (Prima seleziona almeno una ragione sociale)
+                        </span>
+                      )}
                     </label>
                     <div style={{
                       maxHeight: '200px',
                       overflowY: 'auto',
-                      border: '1px solid #e5e7eb',
+                      border: `1px solid ${newUser.selectedLegalEntities.length === 0 ? '#fca5a5' : '#e5e7eb'}`,
                       borderRadius: '8px',
                       padding: '8px',
-                      background: '#f9fafb'
+                      background: newUser.selectedLegalEntities.length === 0 ? '#fef2f2' : '#f9fafb',
+                      opacity: newUser.selectedLegalEntities.length === 0 ? 0.5 : 1,
+                      pointerEvents: newUser.selectedLegalEntities.length === 0 ? 'none' : 'auto',
+                      minHeight: '100px'
                     }}>
-                      {ragioneSocialiList
-                        .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
-                        .map(rs => (
+                      {newUser.selectedLegalEntities.length === 0 ? (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '100px',
+                          color: '#991b1b',
+                          fontSize: '13px',
+                          gap: '8px'
+                        }}>
+                          <Lock size={16} />
+                          Seleziona prima una ragione sociale
+                        </div>
+                      ) : (
+                        ragioneSocialiList
+                          .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
+                          .map(rs => (
                           <div key={rs.id} style={{ marginBottom: '16px' }}>
                             <div style={{
                               fontSize: '13px',
@@ -4626,7 +4654,8 @@ export default function SettingsPage() {
                                 </label>
                               ))}
                           </div>
-                        ))}
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
