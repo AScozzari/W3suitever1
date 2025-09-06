@@ -218,6 +218,7 @@ export default function SettingsPage() {
   // Carica i dati dal database all'avvio
   useEffect(() => {
     console.log('Loading data from database...');
+    console.log('Auth token present:', !!localStorage.getItem('auth_token'));
     fetchRoles();
     fetchLegalEntities();
     fetchStores();

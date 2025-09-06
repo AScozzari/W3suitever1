@@ -107,12 +107,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Ensure stores is always an array
   const stores = Array.isArray(storesResponse) ? storesResponse : [];
 
-  // Auto-login per development se non c'è token
+  // Check token validity se non c'è token
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      // Effettua login automatico per development
-      performAutoLogin();
+      // NO AUTO-LOGIN - Force manual login
+      console.log('No auth token found - login required');
     } else {
       // Verifica che il token sia valido e contenga il tenant ID corretto
       try {
@@ -121,17 +121,18 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           const payload = JSON.parse(atob(tokenParts[1]));
           // Se il token contiene "demo-tenant" invece di UUID, rifai il login
           if (payload.tenantId === 'demo-tenant' || !payload.tenantId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-            console.log('Detected invalid tenant ID in token, refreshing...');
+            console.log('Detected invalid tenant ID in token, clearing...');
             localStorage.removeItem('auth_token');
             localStorage.removeItem('currentTenantId');
-            performAutoLogin();
+            // Force re-login instead of auto-login
           }
         }
       } catch (e) {
-        // Token invalido, rifai login
-        console.log('Invalid token, refreshing...');
+        // Token invalido, clear storage
+        console.log('Invalid token, clearing...');
         localStorage.removeItem('auth_token');
-        performAutoLogin();
+        localStorage.removeItem('currentTenantId');
+        // Force re-login instead of auto-login
       }
     }
   }, []);

@@ -24,6 +24,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
   
+  // Logout endpoint to clear localStorage
+  app.post("/api/auth/logout", async (req: any, res) => {
+    res.json({ message: "Logout successful" });
+  });
+
   // Local authentication for development
   app.post("/api/auth/login", async (req: any, res) => {
     try {
