@@ -131,13 +131,13 @@ TENANT (Organizzazione)
 
 ### 👥 RISORSE (Dipendenti/Utenti)
 - **Livello**: Persone che lavorano nell'organizzazione
-- **Relazione OBBLIGATORIA**: 1:1 con Ragione Sociale (verso ragione sociale)
+- **Relazione OBBLIGATORIA**: 1:N con Ragioni Sociali (possono scegliere più ragioni sociali)
 - **Relazione MULTIPLA**: N:M con Punti Vendita (possono scegliere più PV)
 - **Punto Vendita Default**: UNO dei PV selezionati come preferenza default (modificabile)
 - **Utilizzo Futuro**: Il PV default verrà usato per funzioni automatiche
 - **Abilitazioni Cascading**:
   - **Tenant-wide**: Accesso completo organizzazione
-  - **Ragione Sociale**: Una o più RS specifiche  
+  - **Ragione Sociale**: Una o più RS specifiche (con obbligo di scelta)
   - **Punto Vendita**: Uno o più PV specifici (con default)
 - **Permessi**: Sistema RBAC granulare
 
