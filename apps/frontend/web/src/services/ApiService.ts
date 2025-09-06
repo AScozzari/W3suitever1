@@ -25,15 +25,18 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     let lastError: Error | null = null;
+    console.log(`📡 ApiService: Calling ${endpoint}`);
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         const response = await apiRequest<T>(endpoint, options);
+        console.log(`✅ ApiService: ${endpoint} returned data`);
         return {
           success: true,
           data: response
         };
       } catch (error: any) {
+        console.error(`❌ ApiService: ${endpoint} failed on attempt ${attempt}:`, error.message);
         lastError = error;
         
         // Se è un errore 401, non fare retry - serve nuova autenticazione
@@ -91,10 +94,12 @@ class ApiService {
    */
   async loadSettingsData() {
     // Enterprise pattern: Graceful degradation with individual error handling
+    console.log('🔍 ApiService: Starting to load all settings data...');
+    
     const apiCalls = await Promise.allSettled([
-      this.getLegalEntities(),
-      this.getUsers(), 
-      this.getStores()
+      this.getLegalEntities().then(r => { console.log('✅ Legal entities call completed'); return r; }),
+      this.getUsers().then(r => { console.log('✅ Users call completed'); return r; }), 
+      this.getStores().then(r => { console.log('✅ Stores call completed'); return r; })
     ]);
 
     const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
