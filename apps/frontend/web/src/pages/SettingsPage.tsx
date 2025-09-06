@@ -257,25 +257,32 @@ export default function SettingsPage() {
     loadData();
   }, []);
   
+  // Roles loading function - kept separate as it's not in the main service
   const fetchRoles = async () => {
     try {
-      const response = await fetch('/api/roles', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        const roles = await response.json();
-        setAvailableRoles(roles.map((role: any) => role.name));
+      const result = await apiService.getRoles();
+      if (result.success && result.data) {
+        setAvailableRoles(result.data.map((role: any) => role.name));
+      } else {
+        // Fallback ai ruoli di default se l'API fallisce
+        setAvailableRoles([
+          'Amministratore',
+          'Store Manager', 
+          'Area Manager',
+          'Finance',
+          'HR Manager',
+          'Sales Agent',
+          'Cassiere',
+          'Magazziniere',
+          'Marketing'
+        ]);
       }
     } catch (error) {
       console.error('Error fetching roles:', error);
-      // Fallback ai ruoli di default se l'API fallisce
       setAvailableRoles([
         'Amministratore',
         'Store Manager',
-        'Area Manager',
+        'Area Manager', 
         'Finance',
         'HR Manager',
         'Sales Agent',
@@ -283,87 +290,6 @@ export default function SettingsPage() {
         'Magazziniere',
         'Marketing'
       ]);
-    }
-  };
-  
-  const fetchLegalEntities = async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.error('No auth token available for legal entities');
-        return;
-      }
-      
-      const response = await fetch('/api/legal-entities', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': getCurrentTenantId()
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Legal entities loaded:', data);
-        setRagioneSocialiList(data);
-      } else {
-        console.error('Failed to fetch legal entities:', response.status, response.statusText);
-        if (response.status === 401) {
-          console.log('Token expired for legal entities - user needs to re-login');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch legal entities:', error);
-    }
-  };
-  
-  const fetchStores = async () => {
-    try {
-      const response = await fetch('/api/stores', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': getCurrentTenantId()
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Stores loaded:', data);
-        setPuntiVenditaList(data);
-      } else {
-        console.error('Failed to fetch stores:', response.status);
-      }
-    } catch (error) {
-      console.error('Failed to fetch stores:', error);
-    }
-  };
-  
-  const fetchUsers = async () => {
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.error('No auth token available for users');
-        return;
-      }
-      
-      const response = await fetch('/api/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': getCurrentTenantId()
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Users loaded:', data);
-        setUtentiList(data);
-      } else {
-        console.error('Failed to fetch users:', response.status, response.statusText);
-        if (response.status === 401) {
-          console.log('Token expired for users - user needs to re-login');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
     }
   };
   

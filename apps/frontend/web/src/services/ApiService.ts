@@ -81,6 +81,10 @@ class ApiService {
     return this.makeRequest<any[]>('/api/commercial-areas');
   }
 
+  async getRoles() {
+    return this.makeRequest<any[]>('/api/roles');
+  }
+
   /**
    * Carica tutti i dati per Settings Page in parallelo
    * Con gestione enterprise robusta
