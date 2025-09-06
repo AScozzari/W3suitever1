@@ -62,11 +62,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: 'admin'
         };
         
-        // Create JWT token
+        // Create JWT token (enterprise security: short-lived access token)
         const token = jwt.sign(
           { id: mockUser.id, email: mockUser.email, tenantId: mockUser.tenantId },
           JWT_SECRET,
-          { expiresIn: "7d" }
+          { expiresIn: "30m" } // 30 minuti per sicurezza enterprise
         );
         
         return res.json({ user: mockUser, token });

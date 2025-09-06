@@ -22,8 +22,11 @@ export const queryClient = new QueryClient({
         });
         if (!res.ok) {
           if (res.status === 401) {
-            // Clear invalid token
+            // Clear expired/invalid token and redirect to login
             localStorage.removeItem('auth_token');
+            localStorage.removeItem('currentTenantId');
+            console.log('Token expired or invalid - redirecting to login');
+            window.location.reload(); // Force re-authentication
             throw new Error(`401: Unauthorized`);
           }
           throw new Error(`${res.status}: ${res.statusText}`);
@@ -56,6 +59,11 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
+      // Clear expired/invalid token and redirect to login
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('currentTenantId');
+      console.log('Token expired or invalid - redirecting to login');
+      window.location.reload(); // Force re-authentication
       throw new Error(`401: Unauthorized`);
     }
     throw new Error(`${res.status}: ${res.statusText}`);
