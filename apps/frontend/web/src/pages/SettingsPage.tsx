@@ -2636,12 +2636,13 @@ export default function SettingsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.3)',
+          background: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 9999
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
             background: 'white',
@@ -2650,9 +2651,10 @@ export default function SettingsPage() {
             maxWidth: '600px',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
             borderTop: '3px solid transparent',
-            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
             {/* Header Modal - Clean Design */}
             <div style={{
@@ -3432,12 +3434,13 @@ export default function SettingsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.3)',
+          background: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 9999
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
             background: 'white',
@@ -3446,9 +3449,10 @@ export default function SettingsPage() {
             maxWidth: '600px',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
             borderTop: '3px solid transparent',
-            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
             {/* Header Modal - Clean Design */}
             <div style={{
@@ -4160,12 +4164,13 @@ export default function SettingsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.3)',
+          background: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 9999
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
             background: 'white',
