@@ -51,6 +51,22 @@ export const drivers = pgTable('drivers', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// ==================== COMMERCIAL AREAS ====================
+export const commercialAreas = pgTable('commercial_areas', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  code: varchar('code', { length: 20 }).unique().notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const insertCommercialAreaSchema = createInsertSchema(commercialAreas).omit({ 
+  id: true, 
+  createdAt: true
+});
+export type InsertCommercialArea = z.infer<typeof insertCommercialAreaSchema>;
+export type CommercialArea = typeof commercialAreas.$inferSelect;
+
 // ==================== STORES ====================
 export const stores = pgTable('stores', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -59,9 +75,11 @@ export const stores = pgTable('stores', {
   code: varchar('code', { length: 50 }).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   channelId: uuid('channel_id').notNull().references(() => channels.id),
+  commercialAreaId: uuid('commercial_area_id').references(() => commercialAreas.id),
   address: text('address'),
   city: varchar('city', { length: 100 }),
   province: varchar('province', { length: 10 }),
+  cap: varchar('cap', { length: 10 }),
   region: varchar('region', { length: 100 }),
   geo: jsonb('geo'),
   status: varchar('status', { length: 50 }).default('active'),

@@ -181,6 +181,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Get commercial areas (reference data)
+  app.get('/api/commercial-areas', simpleAuth, async (req: any, res) => {
+    try {
+      const areas = await storage.getCommercialAreas();
+      res.json(areas);
+    } catch (error) {
+      console.error("Error fetching commercial areas:", error);
+      res.status(500).json({ error: "Failed to fetch commercial areas" });
+    }
+  });
+
   // Get stores for current tenant (automatic via middleware)
   app.get('/api/stores', simpleAuth, async (req: any, res) => {
     try {

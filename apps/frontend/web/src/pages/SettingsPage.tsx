@@ -522,6 +522,11 @@ export default function SettingsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: commercialAreas = [] } = useQuery({
+    queryKey: ['/api/commercial-areas'],
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Validation functions
   const validateCodiceFiscale = (cf: string): boolean => {
     // Basic Italian fiscal code validation
@@ -2464,6 +2469,7 @@ export default function SettingsPage() {
     telefono: '',
     email: '',
     ragioneSociale_id: null as number | null,  // Obbligatorio
+    commercialAreaId: null as string | null,  // Area commerciale
     canale: 'Franchising',
     brands: [] as string[],
     stato: 'Attivo'
@@ -2620,6 +2626,7 @@ export default function SettingsPage() {
       telefono: '',
       email: '',
       ragioneSociale_id: null,
+      commercialAreaId: null,
       canale: 'Franchising',
       brands: [],
       stato: 'Attivo'
@@ -3714,6 +3721,53 @@ export default function SettingsPage() {
                     <option value="Franchising">Franchising</option>
                     <option value="Top Dealer">Top Dealer</option>
                     <option value="Dealer">Dealer</option>
+                  </select>
+                </div>
+
+                {/* Area Commerciale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newStore.commercialAreaId || ''}
+                    onChange={(e) => setNewStore({ ...newStore, commercialAreaId: e.target.value || null })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="">Seleziona area...</option>
+                    {(commercialAreas as any[]).map((area: any) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name} - {area.description}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

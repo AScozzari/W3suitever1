@@ -3,6 +3,7 @@ import {
   tenants,
   legalEntities,
   stores,
+  commercialAreas,
   roles,
   userAssignments,
   legalForms,
@@ -16,6 +17,8 @@ import {
   type InsertLegalEntity,
   type Store,
   type InsertStore,
+  type CommercialArea,
+  type InsertCommercialArea,
   type UserAssignment,
   type InsertUserAssignment,
   type Role,
@@ -59,6 +62,8 @@ export interface IStorage {
   getLegalForms(): Promise<LegalForm[]>;
   getCountries(): Promise<Country[]>;
   getItalianCities(): Promise<any[]>;
+  getCommercialAreas(): Promise<CommercialArea[]>;
+  createCommercialArea(areaData: InsertCommercialArea): Promise<CommercialArea>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -208,6 +213,15 @@ export class DatabaseStorage implements IStorage {
 
   async getItalianCities(): Promise<any[]> {
     return await db.select().from(italianCities).where(eq(italianCities.active, true)).orderBy(italianCities.name);
+  }
+
+  async getCommercialAreas(): Promise<CommercialArea[]> {
+    return await db.select().from(commercialAreas).orderBy(commercialAreas.name);
+  }
+
+  async createCommercialArea(areaData: InsertCommercialArea): Promise<CommercialArea> {
+    const [area] = await db.insert(commercialAreas).values(areaData).returning();
+    return area;
   }
 
 }
