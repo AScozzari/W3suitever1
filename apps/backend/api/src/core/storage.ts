@@ -121,7 +121,7 @@ export class DatabaseStorage implements IStorage {
         department: users.department,
         hireDate: users.hireDate,
         contractType: users.contractType,
-        store_name: stores.name,
+        store_name: stores.nome,
         role_name: roles.name,
         role_description: roles.description,
       })
