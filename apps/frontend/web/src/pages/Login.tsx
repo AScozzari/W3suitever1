@@ -18,13 +18,13 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
-    'staging': { name: 'Staging Environment', color: '#7B2CBF' },
+    'w3suite': { name: 'W3 Suite Enterprise', color: '#FF6900' },
     'demo': { name: 'Demo Organization', color: '#FF6900' },
     'acme': { name: 'Acme Corporation', color: '#0066CC' },
     'tech': { name: 'Tech Solutions Ltd', color: '#10B981' }
   };
   
-  const currentTenant = tenantInfo[propTenantCode || 'staging'] || tenantInfo['staging'];
+  const currentTenant = tenantInfo[propTenantCode || 'w3suite'] || tenantInfo['w3suite'];
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -145,6 +145,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       minHeight: '100vh',
       background: '#ffffff',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
@@ -397,41 +398,6 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{ 
-        textAlign: 'center', 
-        marginTop: '24px'
-      }}>
-        <p style={{
-          fontSize: '13px',
-          color: '#6b7280',
-          margin: 0
-        }}>
-          Powered by{' '}
-          <a 
-            href="https://www.easydigitalgroup.it" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            style={{
-              color: '#FF6900',
-              textDecoration: 'none',
-              fontWeight: '600',
-              transition: 'color 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.color = '#7B2CBF';
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.color = '#FF6900';
-              e.currentTarget.style.textDecoration = 'none';
-            }}
-          >
-            EasyDigitalGroup
-          </a>
-        </p>
       </div>
     </div>
   );
