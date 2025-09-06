@@ -61,8 +61,8 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, currentModule, setCurrentModule }: LayoutProps) {
-  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
-  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(false);
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true);
+  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
   const [lastInteraction, setLastInteraction] = useState(Date.now());
   const [leftSidebarTimer, setLeftSidebarTimer] = useState<NodeJS.Timeout | null>(null);
   const [workspaceTimer, setWorkspaceTimer] = useState<NodeJS.Timeout | null>(null);
