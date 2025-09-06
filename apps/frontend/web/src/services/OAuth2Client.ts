@@ -21,6 +21,7 @@ interface TokenResponse {
   expires_in: number;
   refresh_token?: string;
   scope: string;
+  expires_at?: number; // Timestamp when token expires (added by client)
 }
 
 interface UserInfo {
@@ -166,9 +167,15 @@ class OAuth2Client {
       // Exchange code for tokens
       const tokenResponse = await this.exchangeCodeForTokens(code, codeVerifier);
       
+      // Add expiry timestamp to tokens for proper expiration checking
+      const tokensWithExpiry = {
+        ...tokenResponse,
+        expires_at: Date.now() + (tokenResponse.expires_in * 1000) // Convert seconds to milliseconds
+      };
+      
       // Store tokens securely
-      this.currentTokens = tokenResponse;
-      localStorage.setItem('oauth2_tokens', JSON.stringify(tokenResponse));
+      this.currentTokens = tokensWithExpiry;
+      localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
       
       // Clear temporary storage
       sessionStorage.removeItem('oauth2_code_verifier');
@@ -229,9 +236,22 @@ class OAuth2Client {
         return null;
       }
 
-      // Check if token needs refresh
-      // Note: We should store token expiry time and check it properly
-      // For simplicity, we'll try to use the token and refresh if it fails
+      // Check if token is expired (with 5 minute buffer for safety)
+      if (this.currentTokens.expires_at) {
+        const expiryTime = this.currentTokens.expires_at;
+        const now = Date.now();
+        const fiveMinutesBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
+        
+        if (now >= (expiryTime - fiveMinutesBuffer)) {
+          console.log('🔄 Access token expired, attempting refresh...');
+          const refreshedTokens = await this.refreshToken();
+          if (!refreshedTokens) {
+            console.log('🚫 Refresh failed, user needs to re-login');
+            return null;
+          }
+          return refreshedTokens.access_token;
+        }
+      }
 
       return this.currentTokens.access_token;
     } catch (error) {
@@ -276,11 +296,17 @@ class OAuth2Client {
         newTokens.refresh_token = this.currentTokens.refresh_token;
       }
 
-      this.currentTokens = newTokens;
-      localStorage.setItem('oauth2_tokens', JSON.stringify(newTokens));
+      // Add expiry timestamp to refreshed tokens
+      const refreshedTokensWithExpiry = {
+        ...newTokens,
+        expires_at: Date.now() + (newTokens.expires_in * 1000) // Convert seconds to milliseconds
+      };
+
+      this.currentTokens = refreshedTokensWithExpiry;
+      localStorage.setItem('oauth2_tokens', JSON.stringify(refreshedTokensWithExpiry));
 
       console.log('✅ OAuth2 tokens refreshed');
-      return newTokens;
+      return refreshedTokensWithExpiry;
     } catch (error) {
       console.error('❌ Token refresh failed:', error);
       await this.logout();
