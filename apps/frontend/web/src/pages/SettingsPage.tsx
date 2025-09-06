@@ -610,11 +610,11 @@ export default function SettingsPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '4px 12px',
-                      background: item.stato === 'Attiva' 
+                      background: item.status === 'active' 
                         ? '#dcfce7'
                         : '#f1f5f9',
-                      color: item.stato === 'Attiva' ? '#15803d' : '#475569',
-                      border: `1px solid ${item.stato === 'Attiva' ? '#bbf7d0' : '#e2e8f0'}`,
+                      color: item.status === 'active' ? '#15803d' : '#475569',
+                      border: `1px solid ${item.status === 'active' ? '#bbf7d0' : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -626,7 +626,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.status || item.stato || 'Attivo'}
+                      {item.status === 'active' ? 'Attiva' : 'Inattiva'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -807,11 +807,11 @@ export default function SettingsPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '4px 12px',
-                      background: item.stato === 'Attivo' 
+                      background: item.status === 'active' 
                         ? '#dcfce7'
                         : '#f1f5f9',
-                      color: item.stato === 'Attivo' ? '#15803d' : '#475569',
-                      border: `1px solid ${item.stato === 'Attivo' ? '#bbf7d0' : '#e2e8f0'}`,
+                      color: item.status === 'active' ? '#15803d' : '#475569',
+                      border: `1px solid ${item.status === 'active' ? '#bbf7d0' : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -823,7 +823,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.status || item.stato || 'Attivo'}
+                      {item.status === 'active' ? 'Attiva' : 'Inattiva'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -1001,7 +1001,7 @@ export default function SettingsPage() {
                   onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
-                      {user.first_name || user.nome || ''} {user.last_name || user.cognome || ''}
+                      {user.firstName || user.first_name || ''} {user.lastName || user.last_name || ''}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
                       {user.email || 'N/A'}
