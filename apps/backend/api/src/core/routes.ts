@@ -345,6 +345,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== REFERENCE DATA ENDPOINTS ====================
+  
+  // Get Italian cities
+  app.get('/api/italian-cities', async (req, res) => {
+    try {
+      const cities = await storage.getItalianCities();
+      res.json(cities);
+    } catch (error) {
+      console.error("Error fetching Italian cities:", error);
+      res.status(500).json({ error: "Failed to fetch Italian cities" });
+    }
+  });
+
   // ==================== ENTERPRISE API ENDPOINTS ====================
 
   // Dashboard stats (main dashboard data)

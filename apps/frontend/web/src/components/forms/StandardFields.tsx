@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useItalianCities, type ItalianCity } from '../../hooks/useItalianCities';
 
 // ==================== VALIDATION UTILITIES ====================
 
@@ -54,20 +55,7 @@ export const validatePartitaIVA = (piva: string): boolean => {
 };
 
 // ==================== ITALIAN CITIES DATA ====================
-
-export const ITALIAN_CITIES = [
-  { name: 'Roma', provincia: 'RM', cap: '00100' },
-  { name: 'Milano', provincia: 'MI', cap: '20100' },
-  { name: 'Napoli', provincia: 'NA', cap: '80100' },
-  { name: 'Torino', provincia: 'TO', cap: '10100' },
-  { name: 'Palermo', provincia: 'PA', cap: '90100' },
-  { name: 'Genova', provincia: 'GE', cap: '16100' },
-  { name: 'Bologna', provincia: 'BO', cap: '40100' },
-  { name: 'Firenze', provincia: 'FI', cap: '50100' },
-  { name: 'Bari', provincia: 'BA', cap: '70100' },
-  { name: 'Catania', provincia: 'CT', cap: '95100' },
-  // Aggiungere tutti i comuni italiani dal database
-];
+// Dati vengono recuperati dinamicamente dal database tramite useItalianCities hook
 
 // ==================== STANDARD FIELD COMPONENTS ====================
 
@@ -137,23 +125,24 @@ export const StandardCityField: React.FC<StandardFieldProps & {
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filteredCities, setFilteredCities] = useState(ITALIAN_CITIES);
+  const [filteredCities, setFilteredCities] = useState<ItalianCity[]>([]);
+  const { data: cities = [], isLoading, error: citiesError } = useItalianCities();
 
   useEffect(() => {
-    if (value) {
-      const filtered = ITALIAN_CITIES.filter(city => 
+    if (value && cities.length > 0) {
+      const filtered = cities.filter(city => 
         city.name.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredCities(filtered);
     } else {
-      setFilteredCities(ITALIAN_CITIES);
+      setFilteredCities(cities);
     }
-  }, [value]);
+  }, [value, cities]);
 
-  const handleCitySelect = (city: typeof ITALIAN_CITIES[0]) => {
+  const handleCitySelect = (city: ItalianCity) => {
     onChange(city.name);
-    onCapChange?.(city.cap);
-    onProvinciaChange?.(city.provincia);
+    onCapChange?.(city.postalCode);
+    onProvinciaChange?.(city.province);
     setIsOpen(false);
   };
 
@@ -168,7 +157,7 @@ export const StandardCityField: React.FC<StandardFieldProps & {
         }}
         onFocus={() => setIsOpen(true)}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-        placeholder="Seleziona città..."
+        placeholder={isLoading ? "Caricamento città..." : "Seleziona città..."}
         required={required}
         disabled={disabled}
         style={{
@@ -212,7 +201,7 @@ export const StandardCityField: React.FC<StandardFieldProps & {
             >
               <div style={{ fontWeight: '500', color: '#111827' }}>{city.name}</div>
               <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                {city.provincia} - CAP {city.cap}
+                {city.province} ({city.provinceName}) - CAP {city.postalCode}
               </div>
             </div>
           ))}
