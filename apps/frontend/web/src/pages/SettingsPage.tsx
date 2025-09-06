@@ -657,7 +657,7 @@ export default function SettingsPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
+                        color: '#111827',
                         fontSize: '14px',
                         fontWeight: '600',
                         boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
@@ -682,7 +682,7 @@ export default function SettingsPage() {
                       background: item.stato === 'Attiva' 
                         ? 'linear-gradient(135deg, #22c55e, #16a34a)'
                         : 'linear-gradient(135deg, #94a3b8, #64748b)',
-                      color: 'white',
+                      color: '#111827',
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -828,7 +828,7 @@ export default function SettingsPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
+                        color: '#111827',
                         fontSize: '14px',
                         fontWeight: '600',
                         boxShadow: '0 2px 8px rgba(123, 44, 191, 0.3)'
@@ -851,7 +851,7 @@ export default function SettingsPage() {
                       background: item.canale === 'Franchising' 
                         ? 'linear-gradient(135deg, #FF6900, #ff8533)'
                         : 'linear-gradient(135deg, #7B2CBF, #a855f7)',
-                      color: 'white',
+                      color: '#111827',
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -875,7 +875,7 @@ export default function SettingsPage() {
                       background: item.stato === 'Attivo' 
                         ? 'linear-gradient(135deg, #22c55e, #16a34a)'
                         : 'linear-gradient(135deg, #94a3b8, #64748b)',
-                      color: 'white',
+                      color: '#111827',
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -1036,7 +1036,7 @@ export default function SettingsPage() {
           {/* Tabella Utenti */}
           <div style={{
             background: 'white',
-            borderRadius: '16px',
+            borderRadius: '12px',
             overflow: 'hidden',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
             border: '1px solid #e5e7eb'
@@ -1068,11 +1068,11 @@ export default function SettingsPage() {
                           width: '32px',
                           height: '32px',
                           borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                          background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: 'white',
+                          color: '#111827',
                           fontSize: '12px',
                           fontWeight: '600'
                         }}>
@@ -1090,7 +1090,7 @@ export default function SettingsPage() {
                     <td style={{ padding: '16px', fontSize: '14px' }}>
                       <span style={{
                         background: user.ruolo.includes('Manager') ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'linear-gradient(135deg, #10b981, #059669)',
-                        color: 'white',
+                        color: '#111827',
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
@@ -1180,7 +1180,7 @@ export default function SettingsPage() {
             backdropFilter: 'blur(24px) saturate(140%)',
             WebkitBackdropFilter: 'blur(24px) saturate(140%)',
             border: '1px solid hsla(255, 255, 255, 0.12)',
-            borderRadius: '16px',
+            borderRadius: '12px',
             padding: '24px',
             marginBottom: '32px',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
@@ -1400,7 +1400,7 @@ export default function SettingsPage() {
                       <h4 style={{
                         fontSize: '16px',
                         fontWeight: '600',
-                        color: 'white',
+                        color: '#111827',
                         margin: '0 0 4px 0'
                       }}>
                         {role.name}
@@ -1468,7 +1468,7 @@ export default function SettingsPage() {
               backdropFilter: 'blur(24px) saturate(140%)',
               WebkitBackdropFilter: 'blur(24px) saturate(140%)',
               border: '1px solid hsla(255, 255, 255, 0.12)',
-              borderRadius: '16px',
+              borderRadius: '12px',
               padding: '24px',
               boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
             }}>
@@ -1505,7 +1505,7 @@ export default function SettingsPage() {
                     style={{
                       padding: '8px 16px',
                       background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                      color: 'white',
+                      color: '#111827',
                       border: 'none',
                       borderRadius: '6px',
                       fontSize: '14px',
@@ -1545,7 +1545,7 @@ export default function SettingsPage() {
                     <h5 style={{
                       fontSize: '14px',
                       fontWeight: '600',
-                      color: 'white',
+                      color: '#111827',
                       marginBottom: '12px',
                       display: 'flex',
                       alignItems: 'center',
@@ -2554,7 +2554,7 @@ export default function SettingsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.3)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
@@ -2563,18 +2563,20 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '16px',
+            borderRadius: '12px',
             width: '90%',
             maxWidth: '600px',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
           }}>
-            {/* Header Modal */}
+            {/* Header Modal - Clean Design */}
             <div style={{
-              padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              position: 'relative'
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
             }}>
               <div style={{
                 display: 'flex',
@@ -2596,29 +2598,28 @@ export default function SettingsPage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
-                      backdropFilter: 'blur(10px)'
+                      boxShadow: 'none'
                     }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
                     <h2 style={{
-                      fontSize: '22px',
-                      fontWeight: '700',
-                      color: 'white',
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       position: 'relative',
                       zIndex: 1,
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                      textShadow: 'none'
                     }}>
                       {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    color: '#6b7280',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                     fontWeight: 500
@@ -3349,7 +3350,7 @@ export default function SettingsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.3)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
@@ -3358,18 +3359,20 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '16px',
+            borderRadius: '12px',
             width: '90%',
             maxWidth: '600px',
             maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
           }}>
-            {/* Header Modal */}
+            {/* Header Modal - Clean Design */}
             <div style={{
-              padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              position: 'relative'
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
             }}>
               <div style={{
                 display: 'flex',
@@ -3399,21 +3402,21 @@ export default function SettingsPage() {
                       </svg>
                     </div>
                     <h2 style={{
-                      fontSize: '22px',
-                      fontWeight: '700',
-                      color: 'white',
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       position: 'relative',
                       zIndex: 1,
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                      textShadow: 'none'
                     }}>
                       {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    color: '#6b7280',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                     fontWeight: 500
@@ -4075,7 +4078,7 @@ export default function SettingsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.3)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
@@ -4084,18 +4087,22 @@ export default function SettingsPage() {
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '16px',
+            borderRadius: '12px',
             width: '90%',
             maxWidth: '900px',
             maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
           }}>
-            {/* Header Modal */}
+            {/* Header Modal - Clean Design */}
             <div style={{
-              padding: '32px 32px 24px 32px',
-              background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-              position: 'relative'
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
             }}>
               
               <div style={{
@@ -4114,31 +4121,30 @@ export default function SettingsPage() {
                       width: '40px',
                       height: '40px',
                       borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                      background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                      backdropFilter: 'blur(10px)'
+                      boxShadow: 'none'
                     }}>
                       <User size={20} style={{ color: 'white' }} />
                     </div>
                     <h2 style={{
-                      fontSize: '22px',
-                      fontWeight: '700',
-                      color: 'white',
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
                       margin: 0,
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       position: 'relative',
                       zIndex: 1,
-                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                      textShadow: 'none'
                     }}>
                       {userModal.data ? 'Modifica Utente' : 'Nuovo Utente'}
                     </h2>
                   </div>
                   <p style={{
                     fontSize: '14px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    color: '#6b7280',
                     margin: 0,
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                     fontWeight: 500
@@ -4584,7 +4590,7 @@ export default function SettingsPage() {
                                   fontSize: '11px',
                                   padding: '4px 8px',
                                   background: '#3b82f6',
-                                  color: 'white',
+                                  color: '#111827',
                                   border: 'none',
                                   borderRadius: '4px',
                                   cursor: 'pointer'
@@ -5103,7 +5109,7 @@ export default function SettingsPage() {
             backdropFilter: 'blur(24px) saturate(140%)',
             WebkitBackdropFilter: 'blur(24px) saturate(140%)',
             border: '1px solid hsla(255, 255, 255, 0.12)',
-            borderRadius: '16px',
+            borderRadius: '12px',
             padding: '6px',
             gap: '4px',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
