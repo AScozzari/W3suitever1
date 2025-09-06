@@ -464,7 +464,10 @@ export default function SettingsPage() {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('Legal entities loaded:', data);
         setRagioneSocialiList(data);
+      } else {
+        console.error('Failed to fetch legal entities:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch legal entities:', error);
@@ -482,7 +485,10 @@ export default function SettingsPage() {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('Stores loaded:', data);
         setPuntiVenditaList(data);
+      } else {
+        console.error('Failed to fetch stores:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch stores:', error);
@@ -500,7 +506,10 @@ export default function SettingsPage() {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('Users loaded:', data);
         setUtentiList(data);
+      } else {
+        console.error('Failed to fetch users:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
