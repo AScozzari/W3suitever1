@@ -2551,9 +2551,9 @@ export default function SettingsPage() {
         tenantId: currentTenantId,
         codice: newCode,
         nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
-        formaGiuridica: newRagioneSociale.formaGiuridica,
-        pIva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
-        codiceFiscale: newRagioneSociale.codiceFiscale,
+        formagiuridica: newRagioneSociale.formaGiuridica,
+        piva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
+        codicefiscale: newRagioneSociale.codiceFiscale,
         stato: newRagioneSociale.stato,
         indirizzo: newRagioneSociale.indirizzo,
         citta: newRagioneSociale.citta || 'Milano',
@@ -2562,18 +2562,18 @@ export default function SettingsPage() {
         telefono: newRagioneSociale.telefono,
         email: newRagioneSociale.email,
         pec: newRagioneSociale.pec,
-        // New enterprise fields
+        // New enterprise fields - using database column names
         logo: newRagioneSociale.logo,
-        codiceSDI: newRagioneSociale.codiceSDI,
+        codicesdi: newRagioneSociale.codiceSDI,
         // Administrative contact section
-        refAmminNome: newRagioneSociale.refAmminNome,
-        refAmminCognome: newRagioneSociale.refAmminCognome,
-        refAmminEmail: newRagioneSociale.refAmminEmail,
-        refAmminCodiceFiscale: newRagioneSociale.refAmminCodiceFiscale,
-        refAmminIndirizzo: newRagioneSociale.refAmminIndirizzo,
-        refAmminCitta: newRagioneSociale.refAmminCitta,
-        refAmminCap: newRagioneSociale.refAmminCap,
-        refAmminPaese: newRagioneSociale.refAmminPaese,
+        refammin_nome: newRagioneSociale.refAmminNome,
+        refammin_cognome: newRagioneSociale.refAmminCognome,
+        refammin_email: newRagioneSociale.refAmminEmail,
+        refammin_codicefiscale: newRagioneSociale.refAmminCodiceFiscale,
+        refammin_indirizzo: newRagioneSociale.refAmminIndirizzo,
+        refammin_citta: newRagioneSociale.refAmminCitta,
+        refammin_cap: newRagioneSociale.refAmminCap,
+        refammin_paese: newRagioneSociale.refAmminPaese,
         // Notes field
         note: newRagioneSociale.note
       };
