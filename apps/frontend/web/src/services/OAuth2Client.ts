@@ -242,6 +242,8 @@ class OAuth2Client {
         const now = Date.now();
         const fiveMinutesBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
         
+        console.log(`🔍 Token expiry check: Current time: ${new Date(now).toLocaleTimeString()}, Token expires: ${new Date(expiryTime).toLocaleTimeString()}`);
+        
         if (now >= (expiryTime - fiveMinutesBuffer)) {
           console.log('🔄 Access token expired, attempting refresh...');
           const refreshedTokens = await this.refreshToken();
@@ -405,6 +407,18 @@ class OAuth2Client {
     sessionStorage.removeItem('oauth2_state');
 
     console.log('✅ OAuth2 logout completed');
+  }
+
+  /**
+   * Debug function: Force expire current token for testing
+   */
+  async forceExpireToken(): Promise<void> {
+    if (this.currentTokens && this.currentTokens.expires_at) {
+      // Set expiry to 1 minute ago to force expiration
+      this.currentTokens.expires_at = Date.now() - 60000;
+      localStorage.setItem('oauth2_tokens', JSON.stringify(this.currentTokens));
+      console.log('⚠️ DEBUG: Token force-expired for testing');
+    }
   }
 }
 
