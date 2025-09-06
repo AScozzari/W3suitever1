@@ -145,6 +145,8 @@ async function getUserByCredentials(username: string, password: string) {
 }
 
 export function setupOAuth2Server(app: express.Application) {
+  // Middleware for form parsing (required for OAuth2 flows)
+  app.use(express.urlencoded({ extended: true }));
   // ==================== DISCOVERY ENDPOINT ====================
   app.get('/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -264,6 +266,9 @@ export function setupOAuth2Server(app: express.Application) {
 
   // ==================== AUTHORIZATION PROCESSING ====================
   app.post('/oauth2/authorize', async (req: Request, res: Response) => {
+    console.log('📥 OAuth2 Authorization POST - Body:', req.body);
+    console.log('📥 OAuth2 Authorization POST - Headers:', req.headers['content-type']);
+    
     const {
       client_id,
       redirect_uri,
@@ -276,9 +281,13 @@ export function setupOAuth2Server(app: express.Application) {
       password
     } = req.body;
 
+    console.log(`🔐 Attempting login with username: ${username}, password: ${password ? '[PROVIDED]' : '[MISSING]'}`);
+
     try {
       // Authenticate user
       const user = await getUserByCredentials(username, password);
+      console.log('👤 User authentication result:', user ? 'SUCCESS' : 'FAILED');
+      
       if (!user) {
         return res.status(401).send('Invalid credentials');
       }

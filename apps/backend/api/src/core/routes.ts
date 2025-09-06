@@ -14,10 +14,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup OAuth2 Authorization Server (Enterprise)
   setupOAuth2Server(app);
   
-  // Apply tenant middleware to all API routes except auth and stores
+  // Apply tenant middleware to all API routes except auth, oauth2 and stores
   app.use((req, res, next) => {
-    // Skip tenant middleware for auth routes and stores (handled individually)
-    if (req.path.startsWith('/api/auth/') || req.path === '/api/stores') {
+    // Skip tenant middleware for auth routes, OAuth2 routes and stores (handled individually)
+    if (req.path.startsWith('/api/auth/') || 
+        req.path.startsWith('/oauth2/') || 
+        req.path.startsWith('/.well-known/') ||
+        req.path === '/api/stores') {
       return next();
     }
     // Apply tenant middleware for other API routes
