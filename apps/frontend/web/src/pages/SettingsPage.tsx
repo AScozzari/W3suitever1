@@ -2482,7 +2482,21 @@ export default function SettingsPage() {
     telefono: '',
     email: '',
     pec: '',
-    stato: 'Attiva'
+    stato: 'Attiva',
+    // New enterprise fields
+    logo: '',
+    codiceSDI: '',
+    // Administrative contact section
+    refAmminNome: '',
+    refAmminCognome: '',
+    refAmminEmail: '',
+    refAmminCodiceFiscale: '',
+    refAmminIndirizzo: '',
+    refAmminCitta: '',
+    refAmminCap: '',
+    refAmminPaese: '',
+    // Notes field
+    note: ''
   });
 
   // Ottieni il tenant ID dal localStorage o usa il demo tenant
@@ -2522,7 +2536,21 @@ export default function SettingsPage() {
       telefono: '',
       email: '',
       pec: '',
-      stato: 'Attiva'
+      stato: 'Attiva',
+      // New enterprise fields
+      logo: '',
+      codiceSDI: '',
+      // Administrative contact section
+      refAmminNome: '',
+      refAmminCognome: '',
+      refAmminEmail: '',
+      refAmminCodiceFiscale: '',
+      refAmminIndirizzo: '',
+      refAmminCitta: '',
+      refAmminCap: '',
+      refAmminPaese: '',
+      // Notes field
+      note: ''
     });
   };
 
@@ -2883,6 +2911,112 @@ export default function SettingsPage() {
                     placeholder="RSSMRA80A01H501U"
                     value={newRagioneSociale.codiceFiscale}
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceFiscale: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      textTransform: 'uppercase',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  />
+                </div>
+
+                {/* Logo Aziendale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Logo Aziendale 
+                    <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px', cursor: 'help' }} 
+                          title="File PNG, dimensioni consigliate: 300x150px, max 2MB">
+                      ⓘ
+                    </span>
+                  </label>
+                  <input
+                    type="file"
+                    accept=".png"
+                    data-testid="input-logo"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Convert to base64 or handle file upload
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setNewRagioneSociale({ ...newRagioneSociale, logo: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Codice SDI */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Codice SDI
+                    <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px' }}>
+                      (Sistema di Interscambio)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="A4707H7"
+                    data-testid="input-codice-sdi"
+                    value={newRagioneSociale.codiceSDI}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceSDI: e.target.value.toUpperCase() })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -3291,6 +3425,428 @@ export default function SettingsPage() {
                     <option value="Bozza">Bozza</option>
                     <option value="Cessata">Cessata</option>
                   </select>
+                </div>
+
+                {/* Sezione Referente Amministrativo */}
+                <div style={{ gridColumn: 'span 2', marginTop: '24px' }}>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    marginBottom: '16px',
+                    paddingBottom: '8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Referente Amministrativo
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {/* Nome Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Nome <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="es. Mario"
+                        data-testid="input-ref-nome"
+                        value={newRagioneSociale.refAmminNome}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminNome: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    {/* Cognome Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Cognome <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="es. Rossi"
+                        data-testid="input-ref-cognome"
+                        value={newRagioneSociale.refAmminCognome}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCognome: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    {/* Email Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Email <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="mario.rossi@azienda.it"
+                        data-testid="input-ref-email"
+                        value={newRagioneSociale.refAmminEmail}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminEmail: e.target.value })}
+                        onBlur={(e) => {
+                          const isValid = validateEmail(e.target.value);
+                          if (e.target.value && !isValid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                      />
+                    </div>
+
+                    {/* Codice Fiscale Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Codice Fiscale <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="RSSMRA80A01H501U"
+                        data-testid="input-ref-codicefiscale"
+                        value={newRagioneSociale.refAmminCodiceFiscale}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCodiceFiscale: e.target.value.toUpperCase() })}
+                        onBlur={(e) => {
+                          const isValid = validateCodiceFiscale(e.target.value);
+                          if (e.target.value && !isValid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          fontFamily: 'monospace',
+                          textTransform: 'uppercase',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#FF6900';
+                          e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                          e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                        }}
+                      />
+                    </div>
+
+                    {/* Indirizzo Referente - full width */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Indirizzo
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="es. Via Verdi 456"
+                        data-testid="input-ref-indirizzo"
+                        value={newRagioneSociale.refAmminIndirizzo}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminIndirizzo: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    {/* Città Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Città
+                      </label>
+                      <select
+                        value={newRagioneSociale.refAmminCitta}
+                        data-testid="select-ref-citta"
+                        onChange={(e) => {
+                          const cityName = e.target.value;
+                          setNewRagioneSociale({ ...newRagioneSociale, refAmminCitta: cityName });
+                          // Auto-popola CAP
+                          const city = (italianCities as any[]).find((c: any) => c.name === cityName);
+                          if (city) {
+                            setNewRagioneSociale(prev => ({
+                              ...prev,
+                              refAmminCap: city.postalCode || ''
+                            }));
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="">Seleziona città...</option>
+                        {italianCities.length > 0 ? (
+                          (italianCities as any[]).map((city: any) => (
+                            <option key={city.id} value={city.name}>
+                              {city.name} ({city.province})
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="Milano">Milano</option>
+                            <option value="Roma">Roma</option>
+                            <option value="Napoli">Napoli</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+
+                    {/* CAP Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        CAP
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="20121"
+                        data-testid="input-ref-cap"
+                        value={newRagioneSociale.refAmminCap}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCap: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          fontFamily: 'monospace'
+                        }}
+                      />
+                    </div>
+
+                    {/* Paese Referente */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Paese
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Italia"
+                        data-testid="input-ref-paese"
+                        value={newRagioneSociale.refAmminPaese}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminPaese: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Campo Note - full width */}
+                <div style={{ gridColumn: 'span 2', marginTop: '16px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Note
+                  </label>
+                  <textarea
+                    placeholder="Inserisci eventuali note..."
+                    data-testid="textarea-note"
+                    value={newRagioneSociale.note}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, note: e.target.value })}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5',
+                      resize: 'vertical'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
                 </div>
               </div>
 
