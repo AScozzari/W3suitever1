@@ -137,37 +137,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     }
   }, []);
 
-  // Funzione per effettuare login automatico e ottenere token valido
-  const performAutoLogin = async () => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          tenantCode: 'staging',
-          username: 'admin', 
-          password: 'admin123' 
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('auth_token', data.token);
-        localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
-        console.log('Auto-login successful for development');
-        
-        // Refresh user and stores query dopo aver impostato il token
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/stores"] });
-      } else {
-        console.error('Auto-login failed');
-      }
-    } catch (error) {
-      console.error('Auto-login error:', error);
-    }
-  };
+  // Auto-login removed - manual login required
 
   // Imposta primo store come selezionato se disponibile
   useEffect(() => {

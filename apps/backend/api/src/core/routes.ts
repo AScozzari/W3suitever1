@@ -29,6 +29,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Logout successful" });
   });
 
+  // Debug endpoint to check auth status
+  app.get("/api/auth/debug", async (req: any, res) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    const tenantId = req.headers['x-tenant-id'];
+    
+    res.json({ 
+      hasToken: !!token, 
+      tenantId: tenantId,
+      tokenPreview: token ? token.substring(0, 20) + '...' : null
+    });
+  });
+
   // Local authentication for development
   app.post("/api/auth/login", async (req: any, res) => {
     try {
