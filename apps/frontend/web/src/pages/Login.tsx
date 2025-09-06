@@ -143,8 +143,9 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
+      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
@@ -152,80 +153,126 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Background Effects */}
+      {/* Background Effects WindTre */}
       <div style={{
         position: 'absolute',
-        top: '15%',
+        top: '10%',
         left: '10%',
-        width: '120px',
-        height: '120px',
-        background: 'rgba(255, 105, 0, 0.1)',
+        width: '200px',
+        height: '200px',
+        background: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: '50%',
+        filter: 'blur(60px)'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '15%',
+        right: '15%',
+        width: '150px',
+        height: '150px',
+        background: 'rgba(255, 255, 255, 0.08)',
         borderRadius: '50%',
         filter: 'blur(40px)'
       }} />
       <div style={{
         position: 'absolute',
-        bottom: '20%',
-        right: '15%',
+        top: '60%',
+        left: '5%',
         width: '100px',
         height: '100px',
-        background: 'rgba(123, 44, 191, 0.08)',
+        background: 'rgba(255, 255, 255, 0.05)',
         borderRadius: '50%',
-        filter: 'blur(35px)'
+        filter: 'blur(30px)'
       }} />
       
-      {/* Main Container */}
+      {/* Main Login Container */}
       <div style={{
         width: '100%',
-        maxWidth: '400px',
-        background: 'hsla(0, 0%, 100%, 0.7)',
+        maxWidth: '420px',
+        background: 'rgba(255, 255, 255, 0.12)',
         backdropFilter: 'blur(20px)',
-        borderRadius: '20px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        position: 'relative'
+        borderRadius: '24px',
+        boxShadow: '0 32px 64px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
+        {/* Header Section */}
         <div style={{ 
-          padding: isMobile ? '32px 24px' : '48px 40px',
-          position: 'relative',
-          zIndex: 1
+          padding: isMobile ? '40px 32px 32px' : '48px 40px 40px',
+          textAlign: 'center'
         }}>
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <h1 style={{
-              fontSize: isMobile ? '28px' : '32px',
-              fontWeight: '700',
-              color: '#1f2937',
-              marginBottom: '8px'
-            }}>
-              W3 Suite
-            </h1>
-            <p style={{
-              fontSize: '16px',
-              color: '#6b7280',
-              margin: 0
-            }}>
-              OAuth2 Enterprise Login
-            </p>
-            <p style={{
-              fontSize: '14px',
-              color: currentTenant.color,
-              margin: '8px 0 0 0',
-              fontWeight: '500'
-            }}>
-              {currentTenant.name}
-            </p>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1))',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <div style={{
+              fontSize: '28px',
+              fontWeight: '900',
+              color: 'white',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+            }}>W3</div>
           </div>
+          
+          <h1 style={{
+            fontSize: isMobile ? '32px' : '36px',
+            fontWeight: '800',
+            color: 'white',
+            marginBottom: '8px',
+            textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            letterSpacing: '-0.5px'
+          }}>
+            W3 Suite Enterprise
+          </h1>
+          <p style={{
+            fontSize: '16px',
+            color: 'rgba(255, 255, 255, 0.85)',
+            margin: '0 0 8px 0',
+            fontWeight: '500'
+          }}>
+            Piattaforma Multi-Tenant Avanzata
+          </p>
+          <div style={{
+            display: 'inline-block',
+            background: 'rgba(255, 255, 255, 0.15)',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            fontSize: '13px',
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontWeight: '600',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            {currentTenant.name}
+          </div>
+        </div>
 
-          {/* Login Form */}
+        {/* Login Form */}
+        <div style={{ 
+          padding: isMobile ? '0 32px 32px' : '0 40px 40px'
+        }}>
           <div style={{ marginBottom: '32px' }}>
-            {/* Username */}
+            {/* Username Field */}
             <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '8px'
+              }}>Username</label>
               <div style={{
                 position: 'relative',
-                background: 'rgba(255, 255, 255, 0.8)',
+                background: 'rgba(255, 255, 255, 0.15)',
                 borderRadius: '12px',
-                border: '1px solid rgba(0, 0, 0, 0.1)'
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                transition: 'all 0.3s ease'
               }}>
                 <User style={{
                   position: 'absolute',
@@ -234,11 +281,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   transform: 'translateY(-50%)',
                   width: '20px',
                   height: '20px',
-                  color: '#6b7280'
+                  color: 'rgba(255, 255, 255, 0.7)'
                 }} />
                 <input
                   type="text"
-                  placeholder="Username"
+                  placeholder="Inserisci il tuo username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={isLoading}
@@ -249,20 +296,28 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     border: 'none',
                     borderRadius: '12px',
                     fontSize: '16px',
-                    color: '#1f2937',
-                    outline: 'none'
+                    color: 'white',
+                    outline: 'none',
+                    fontWeight: '500'
                   }}
                 />
               </div>
             </div>
 
-            {/* Password */}
-            <div style={{ marginBottom: '24px' }}>
+            {/* Password Field */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '8px'
+              }}>Password</label>
               <div style={{
                 position: 'relative',
-                background: 'rgba(255, 255, 255, 0.8)',
+                background: 'rgba(255, 255, 255, 0.15)',
                 borderRadius: '12px',
-                border: '1px solid rgba(0, 0, 0, 0.1)'
+                border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
                 <Lock style={{
                   position: 'absolute',
@@ -271,11 +326,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   transform: 'translateY(-50%)',
                   width: '20px',
                   height: '20px',
-                  color: '#6b7280'
+                  color: 'rgba(255, 255, 255, 0.7)'
                 }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
+                  placeholder="Inserisci la tua password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -286,8 +341,9 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     border: 'none',
                     borderRadius: '12px',
                     fontSize: '16px',
-                    color: '#1f2937',
-                    outline: 'none'
+                    color: 'white',
+                    outline: 'none',
+                    fontWeight: '500'
                   }}
                 />
                 <button
@@ -304,16 +360,44 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    borderRadius: '4px',
+                    transition: 'background 0.2s ease'
                   }}
                 >
                   {showPassword ? (
-                    <EyeOff style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+                    <EyeOff style={{ width: '20px', height: '20px', color: 'rgba(255, 255, 255, 0.7)' }} />
                   ) : (
-                    <Eye style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+                    <Eye style={{ width: '20px', height: '20px', color: 'rgba(255, 255, 255, 0.7)' }} />
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Forgot Password Link */}
+            <div style={{ textAlign: 'right', marginBottom: '32px' }}>
+              <a 
+                href="#forgot-password"
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert('Contatta l\'amministratore per il reset della password');
+                }}
+                style={{
+                  fontSize: '14px',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  textDecoration: 'none',
+                  fontWeight: '500',
+                  transition: 'color 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+                }}
+              >
+                Password dimenticata?
+              </a>
             </div>
 
             {/* Login Button */}
@@ -322,34 +406,105 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               disabled={isLoading}
               style={{
                 width: '100%',
-                padding: '16px',
-                background: isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.2)',
+                padding: '18px',
+                background: isLoading 
+                  ? 'rgba(255, 255, 255, 0.2)' 
+                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15))',
                 backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
                 borderRadius: '12px',
                 fontSize: '16px',
-                fontWeight: '600',
+                fontWeight: '700',
                 color: 'white',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                transition: 'all 0.3s ease',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+                boxShadow: isLoading ? 'none' : '0 4px 16px rgba(0, 0, 0, 0.15)',
+                transform: isLoading ? 'scale(0.98)' : 'scale(1)',
+                letterSpacing: '0.5px'
+              }}
+              onMouseOver={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2))';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15))';
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.15)';
+                }
               }}
             >
-              {isLoading ? 'Autenticazione OAuth2...' : 'Accedi con OAuth2'}
+              {isLoading ? '🔄 Autenticazione in corso...' : '🚀 Accedi alla Suite'}
             </button>
           </div>
 
-          {/* Footer */}
-          <div style={{ textAlign: 'center' }}>
+          {/* Security Info */}
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '16px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
             <p style={{
               fontSize: '12px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              margin: '0 0 4px 0',
+              fontWeight: '500'
+            }}>
+              🔐 Autenticazione OAuth2 Enterprise
+            </p>
+            <p style={{
+              fontSize: '11px',
               color: 'rgba(255, 255, 255, 0.6)',
               margin: 0
             }}>
-              Powered by OAuth2 Enterprise • RFC 6749 + PKCE
+              RFC 6749 • PKCE • Multi-Tenant Security
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginTop: '32px',
+        padding: '0 24px'
+      }}>
+        <p style={{
+          fontSize: '14px',
+          color: 'rgba(255, 255, 255, 0.8)',
+          margin: 0,
+          fontWeight: '500'
+        }}>
+          Crafted by{' '}
+          <a 
+            href="https://www.easydigitalgroup.it" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{
+              color: 'white',
+              textDecoration: 'none',
+              fontWeight: '700',
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.textDecoration = 'underline';
+              e.currentTarget.style.textShadow = '0 2px 4px rgba(0, 0, 0, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.textDecoration = 'none';
+              e.currentTarget.style.textShadow = '0 1px 2px rgba(0, 0, 0, 0.3)';
+            }}
+          >
+            EasyDigitalGroup
+          </a>
+        </p>
       </div>
     </div>
   );
