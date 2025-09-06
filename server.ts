@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./apps/backend/api/src/core/routes";
 import { setupVite, serveStatic, log } from "./apps/backend/api/src/core/vite";
-import { initializeOAuth } from "./apps/backend/api/src/core/oauth";
+import { setupOAuth2Server } from "./apps/backend/api/src/core/oauth2-server";
 
 const app = express();
 app.use(express.json());
@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 
 (async () => {
   // Initialize OAuth2/OIDC
-  await initializeOAuth();
+  setupOAuth2Server(app);
   
   const server = await registerRoutes(app);
 

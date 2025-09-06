@@ -69,21 +69,20 @@ class OAuth2Client {
   /**
    * Generate PKCE challenge for security
    */
-  private generatePKCEChallenge(): { codeVerifier: string; codeChallenge: string } {
+  private async generatePKCEChallenge(): Promise<{ codeVerifier: string; codeChallenge: string }> {
     const codeVerifier = this.generateRandomString(128);
     const encoder = new TextEncoder();
     const data = encoder.encode(codeVerifier);
     
-    return crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashBase64 = btoa(String.fromCharCode.apply(null, hashArray));
-      const codeChallenge = hashBase64
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
-      
-      return { codeVerifier, codeChallenge };
-    });
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashBase64 = btoa(String.fromCharCode.apply(null, hashArray));
+    const codeChallenge = hashBase64
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+    
+    return { codeVerifier, codeChallenge };
   }
 
   private generateRandomString(length: number): string {
