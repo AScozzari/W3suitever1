@@ -584,21 +584,21 @@ export default function SettingsPage() {
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>{item.forma_giuridica || item.formaGiuridica || 'N/A'}</td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    <div style={{ fontFamily: 'monospace' }}>
+                    <div>
                       <div>P.IVA: {item.vat || item.pIva || 'N/A'}</div>
                       <div>C.F.: {item.codice_fiscale || item.codiceFiscale || 'N/A'}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '12px', color: '#6b7280' }}>
+                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     {item.address ? item.address.substring(0, 30) + '...' : 'N/A'}
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     {item.city || item.citta || 'N/A'} ({item.province || 'N/A'})
                   </td>
-                  <td style={{ padding: '16px', fontSize: '12px', color: '#6b7280' }}>
+                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     <div>
-                      <div>📞 {item.phone || item.telefono || 'N/A'}</div>
-                      <div>📧 {item.email ? item.email.substring(0, 20) + '...' : 'N/A'}</div>
+                      <div>Tel: {item.phone || item.telefono || 'N/A'}</div>
+                      <div>Email: {item.email ? item.email.substring(0, 20) + '...' : 'N/A'}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
