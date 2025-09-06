@@ -618,13 +618,13 @@ export default function SettingsPage() {
                   <td style={{ padding: '16px' }}>
                     <div>
                       <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formagiuridica || item.formaGiuridica}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.formaGiuridica}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     <div>
-                      <div>P.IVA: {item.piva || item.pIva}</div>
-                      <div>C.F.: {item.codicefiscale || item.codiceFiscale}</div>
+                      <div>P.IVA: {item.pIva}</div>
+                      <div>C.F.: {item.codiceFiscale}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
@@ -2551,9 +2551,9 @@ export default function SettingsPage() {
         tenantId: currentTenantId,
         codice: newCode,
         nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
-        formagiuridica: newRagioneSociale.formaGiuridica,
-        piva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
-        codicefiscale: newRagioneSociale.codiceFiscale,
+        formaGiuridica: newRagioneSociale.formaGiuridica,
+        pIva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
+        codiceFiscale: newRagioneSociale.codiceFiscale,
         stato: newRagioneSociale.stato,
         indirizzo: newRagioneSociale.indirizzo,
         citta: newRagioneSociale.citta || 'Milano',
@@ -2562,18 +2562,18 @@ export default function SettingsPage() {
         telefono: newRagioneSociale.telefono,
         email: newRagioneSociale.email,
         pec: newRagioneSociale.pec,
-        // New enterprise fields - using database column names
+        // New enterprise fields - using camelCase
         logo: newRagioneSociale.logo,
-        codicesdi: newRagioneSociale.codiceSDI,
+        codiceSDI: newRagioneSociale.codiceSDI,
         // Administrative contact section
-        refammin_nome: newRagioneSociale.refAmminNome,
-        refammin_cognome: newRagioneSociale.refAmminCognome,
-        refammin_email: newRagioneSociale.refAmminEmail,
-        refammin_codicefiscale: newRagioneSociale.refAmminCodiceFiscale,
-        refammin_indirizzo: newRagioneSociale.refAmminIndirizzo,
-        refammin_citta: newRagioneSociale.refAmminCitta,
-        refammin_cap: newRagioneSociale.refAmminCap,
-        refammin_paese: newRagioneSociale.refAmminPaese,
+        refAmminNome: newRagioneSociale.refAmminNome,
+        refAmminCognome: newRagioneSociale.refAmminCognome,
+        refAmminEmail: newRagioneSociale.refAmminEmail,
+        refAmminCodiceFiscale: newRagioneSociale.refAmminCodiceFiscale,
+        refAmminIndirizzo: newRagioneSociale.refAmminIndirizzo,
+        refAmminCitta: newRagioneSociale.refAmminCitta,
+        refAmminCap: newRagioneSociale.refAmminCap,
+        refAmminPaese: newRagioneSociale.refAmminPaese,
         // Notes field
         note: newRagioneSociale.note
       };
