@@ -559,8 +559,11 @@ export default function SettingsPage() {
               <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ragione Sociale</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Forma Giuridica</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Contatti</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Capitale</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
                 <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
               </tr>
@@ -576,12 +579,31 @@ export default function SettingsPage() {
                   <td style={{ padding: '16px' }}>
                     <div>
                       <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.name || item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.code || item.codice || 'N/A'}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>REA: {item.rea || 'N/A'}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.formaGiuridica}</td>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280', fontFamily: 'monospace' }}>{item.pIva}</td>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.citta}</td>
+                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>{item.forma_giuridica || item.formaGiuridica || 'N/A'}</td>
+                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                    <div style={{ fontFamily: 'monospace' }}>
+                      <div>P.IVA: {item.vat || item.pIva || 'N/A'}</div>
+                      <div>C.F.: {item.codice_fiscale || item.codiceFiscale || 'N/A'}</div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '12px', color: '#6b7280' }}>
+                    {item.address ? item.address.substring(0, 30) + '...' : 'N/A'}
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                    {item.city || item.citta || 'N/A'} ({item.province || 'N/A'})
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '12px', color: '#6b7280' }}>
+                    <div>
+                      <div>📞 {item.phone || item.telefono || 'N/A'}</div>
+                      <div>📧 {item.email ? item.email.substring(0, 20) + '...' : 'N/A'}</div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                    {item.capitale_sociale || item.capitaleSociale || 'N/A'}
+                  </td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
                       display: 'inline-flex',
@@ -959,12 +981,14 @@ export default function SettingsPage() {
               <thead>
                 <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Completo</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Username</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Email</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ruolo</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ambito</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Posizione</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Dipartimento</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Punto Vendita</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Telefono</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Contratto</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ultimo Accesso</th>
                   <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
                 </tr>
               </thead>
@@ -979,43 +1003,49 @@ export default function SettingsPage() {
                     <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
                       {user.first_name || user.nome || ''} {user.last_name || user.cognome || ''}
                     </td>
-                    <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
-                      {user.username || user.email?.split('@')[0] || 'N/A'}
-                    </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
                       {user.email || 'N/A'}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px' }}>
                       <span style={{
-                        background: user.ruolo?.includes('Manager') ? '#f3f4f6' : '#f3f4f6',
-                        color: user.ruolo?.includes('Manager') ? '#7c3aed' : '#059669',
+                        background: user.role?.includes('Manager') ? '#e0e7ff' : (user.role?.includes('Admin') ? '#fee2e2' : '#f3f4f6'),
+                        color: user.role?.includes('Manager') ? '#3730a3' : (user.role?.includes('Admin') ? '#991b1b' : '#059669'),
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
                         fontWeight: '600',
-                        border: `1px solid ${user.ruolo?.includes('Manager') ? '#e9d5ff' : '#d1fae5'}`
+                        border: `1px solid ${user.role?.includes('Manager') ? '#c7d2fe' : (user.role?.includes('Admin') ? '#fecaca' : '#d1fae5')}`
                       }}>
-                        {user.ruolo || user.role || 'Operatore'}
+                        {user.role || 'Operator'}
                       </span>
                     </td>
-                    <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
-                      {user.ambito || user.scope || 'Organizzazione'}
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                      {user.position || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                      {user.department || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                      {user.store_name || 'Sede Centrale'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                      {user.phone || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                      {user.contract_type || 'N/A'}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span style={{
-                        background: (user.status === 'active' || user.status === 'Operativo') ? '#dcfce7' : (user.status === 'Sospeso' ? '#fef3c7' : '#f3f4f6'),
-                        color: (user.status === 'active' || user.status === 'Operativo') ? '#15803d' : (user.status === 'Sospeso' ? '#92400e' : '#6b7280'),
-                        border: `1px solid ${(user.status === 'active' || user.status === 'Operativo') ? '#bbf7d0' : (user.status === 'Sospeso' ? '#fde68a' : '#e5e7eb')}`,
+                        background: user.status === 'Active' ? '#dcfce7' : (user.status === 'Suspended' ? '#fef3c7' : '#f3f4f6'),
+                        color: user.status === 'Active' ? '#15803d' : (user.status === 'Suspended' ? '#92400e' : '#6b7280'),
+                        border: `1px solid ${user.status === 'Active' ? '#bbf7d0' : (user.status === 'Suspended' ? '#fde68a' : '#e5e7eb')}`,
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
                         fontWeight: '600'
                       }}>
-                        {user.status === 'active' ? 'Operativo' : (user.status || user.stato || 'Operativo')}
+                        {user.status === 'Active' ? 'Attivo' : (user.status === 'Suspended' ? 'Sospeso' : user.status || 'Inattivo')}
                       </span>
-                    </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                      {user.last_login_at ? new Date(user.last_login_at).toLocaleDateString('it-IT') : user.ultimoAccesso || 'Mai'}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>

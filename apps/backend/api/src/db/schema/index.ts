@@ -35,6 +35,14 @@ export const users = pgTable("users", {
   tenantId: uuid("tenant_id").references(() => tenants.id),
   status: varchar("status", { length: 50 }).default("active"),
   mfaEnabled: boolean("mfa_enabled").default(false),
+  // Extended enterprise fields
+  role: varchar("role", { length: 50 }),
+  storeId: uuid("store_id").references(() => stores.id),
+  phone: varchar("phone", { length: 20 }),
+  position: varchar("position", { length: 100 }),
+  department: varchar("department", { length: 100 }),
+  hireDate: date("hire_date"),
+  contractType: varchar("contract_type", { length: 50 }),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
@@ -77,6 +85,20 @@ export const legalEntities = pgTable("legal_entities", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   archivedAt: timestamp("archived_at"),
+  // Extended enterprise fields
+  codiceFiscale: varchar("codice_fiscale", { length: 50 }),
+  formaGiuridica: varchar("forma_giuridica", { length: 100 }),
+  capitaleSociale: varchar("capitale_sociale", { length: 50 }),
+  dataCostituzione: date("data_costituzione"),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  province: varchar("province", { length: 10 }),
+  cap: varchar("cap", { length: 10 }),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
+  pec: varchar("pec", { length: 255 }),
+  rea: varchar("rea", { length: 100 }),
+  registroImprese: varchar("registro_imprese", { length: 255 }),
 });
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
@@ -151,6 +173,9 @@ export const stores = pgTable("stores", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   archivedAt: timestamp("archived_at"),
+  // Contact fields
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
 }, (table) => [
   uniqueIndex("stores_tenant_code_unique").on(table.tenantId, table.code),
 ]);

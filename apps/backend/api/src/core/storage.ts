@@ -37,7 +37,7 @@ export interface IStorage {
   // User operations (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  getUsersByTenant(tenantId: string): Promise<User[]>;
+  getUsersByTenant(tenantId: string): Promise<any[]>;
   
   // Tenant Management
   getTenant(id: string): Promise<Tenant | undefined>;
@@ -98,8 +98,33 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
-  async getUsersByTenant(tenantId: string): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.tenantId, tenantId));
+  async getUsersByTenant(tenantId: string): Promise<any[]> {
+    return await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        isSystemAdmin: users.isSystemAdmin,
+        lastLoginAt: users.lastLoginAt,
+        tenantId: users.tenantId,
+        status: users.status,
+        mfaEnabled: users.mfaEnabled,
+        role: users.role,
+        storeId: users.storeId,
+        phone: users.phone,
+        position: users.position,
+        department: users.department,
+        hireDate: users.hireDate,
+        contractType: users.contractType,
+        store_name: stores.name,
+      })
+      .from(users)
+      .leftJoin(stores, eq(users.storeId, stores.id))
+      .where(eq(users.tenantId, tenantId));
   }
 
   // ==================== TENANT MANAGEMENT ====================
