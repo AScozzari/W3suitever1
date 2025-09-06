@@ -303,3 +303,26 @@ export const userExtraPerms = pgTable("user_extra_perms", {
 }, (table) => [
   primaryKey({ columns: [table.userId, table.perm] }),
 ]);
+
+// ==================== ENTITY LOGS ====================
+export const entityLogs = pgTable('entity_logs', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'legal_entity', 'store', 'user'
+  entityId: uuid('entity_id').notNull(),
+  action: varchar('action', { length: 50 }).notNull(), // 'created', 'status_changed', 'updated', 'deleted'
+  previousStatus: varchar('previous_status', { length: 50 }),
+  newStatus: varchar('new_status', { length: 50 }),
+  changes: jsonb('changes'), // JSON con tutti i cambiamenti
+  userId: uuid('user_id'), // Chi ha fatto il cambio
+  userEmail: varchar('user_email', { length: 255 }),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const insertEntityLogSchema = createInsertSchema(entityLogs).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertEntityLog = z.infer<typeof insertEntityLogSchema>;
+export type EntityLog = typeof entityLogs.$inferSelect;
