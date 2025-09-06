@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import { oauth2Client } from '../services/OAuth2Client';
 import { 
   User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
@@ -73,7 +74,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   
-  const { data: user } = useQuery({ queryKey: ["/api/auth/user"] });
+  const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
   const [location, navigate] = useLocation();
 
   // Estrai tenant dal path URL per il context
@@ -446,28 +447,26 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
   const handleLogout = async () => {
     try {
-      // Pulisci sempre i dati locali indipendentemente dalla risposta del server
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('currentTenantId');
+      console.log('🚪 Logging out via OAuth2...');
       
-      // Invalida tutte le query di autenticazione
-      queryClient.removeQueries({ queryKey: ['/api/auth/user'] });
+      // Use OAuth2 logout (clears tokens and revokes on server)
+      await oauth2Client.logout();
+      
+      // Clear React Query cache
+      queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
       
-      // Reindirizza alla pagina di login del tenant corrente
-      const currentTenant = localStorage.getItem('currentTenant') || 'staging';
-      window.location.href = `/${currentTenant}`;
+      console.log('✅ OAuth2 logout completed');
+      
+      // Redirect to login page
+      window.location.href = '/login';
       
     } catch (error) {
-      console.error('Logout error:', error);
-      // Anche in caso di errore, pulisci tutto e reindirizza
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('currentTenantId');
-      queryClient.removeQueries({ queryKey: ['/api/auth/user'] });
+      console.error('❌ Logout error:', error);
+      // Fallback: force logout even if server call fails
+      await oauth2Client.logout();
       queryClient.clear();
-      
-      const currentTenant = localStorage.getItem('currentTenant') || 'staging';
-      window.location.href = `/${currentTenant}`;
+      window.location.href = '/login';
     }
   };
 

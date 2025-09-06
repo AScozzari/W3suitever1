@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { oauth2Client } from '../services/OAuth2Client';
 
 // Helper per ottenere il tenant ID corrente
 const getCurrentTenantId = () => {
@@ -10,7 +11,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
-        const token = localStorage.getItem('auth_token');
+        const token = await oauth2Client.getAccessToken();
         const tenantId = getCurrentTenantId();
         
         const res = await fetch(queryKey[0] as string, {
@@ -22,17 +23,10 @@ export const queryClient = new QueryClient({
         });
         if (!res.ok) {
           if (res.status === 401) {
-            // Clear expired/invalid token and redirect to login
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('currentTenantId');
-            
-            // Avoid infinite reload loop if already on login page
-            if (window.location.pathname.includes('/login') || !localStorage.getItem('auth_token')) {
-              console.log('Already on login page or no token - skipping reload');
-            } else {
-              console.log('Token expired or invalid - redirecting to login');
-              window.location.reload(); // Force re-authentication
-            }
+            console.log('❌ 401 Unauthorized - redirecting to login');
+            // Use OAuth2 logout instead of manual token clearing
+            await oauth2Client.logout();
+            window.location.href = '/login';
             throw new Error(`401: Unauthorized`);
           }
           throw new Error(`${res.status}: ${res.statusText}`);
@@ -49,7 +43,7 @@ export async function apiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const token = localStorage.getItem('auth_token');
+  const token = await oauth2Client.getAccessToken();
   const tenantId = getCurrentTenantId();
   
   const res = await fetch(url, {
@@ -65,17 +59,10 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
-      // Clear expired/invalid token and redirect to login
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('currentTenantId');
-      
-      // Avoid infinite reload loop if already on login page
-      if (window.location.pathname.includes('/login') || !localStorage.getItem('auth_token')) {
-        console.log('Already on login page or no token - skipping reload');
-      } else {
-        console.log('Token expired or invalid - redirecting to login');
-        window.location.reload(); // Force re-authentication
-      }
+      console.log('❌ 401 Unauthorized in apiRequest - redirecting to login');
+      // Use OAuth2 logout instead of manual token clearing
+      await oauth2Client.logout();
+      window.location.href = '/login';
       throw new Error(`401: Unauthorized`);
     }
     throw new Error(`${res.status}: ${res.statusText}`);
