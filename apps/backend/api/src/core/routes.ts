@@ -162,6 +162,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Middleware JWT semplice per development
   const simpleAuth = async (req: any, res: any, next: any) => {
+    // Per demo, accetta richieste con X-Tenant-ID senza token
+    const tenantIdHeader = req.headers['x-tenant-id'];
+    const demoTenantId = '00000000-0000-0000-0000-000000000001';
+    
+    if (tenantIdHeader === demoTenantId) {
+      // Demo mode - no auth required
+      req.user = {
+        id: 'demo-user',
+        email: 'demo@w3suite.com',
+        tenantId: demoTenantId
+      };
+      return next();
+    }
+    
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(' ')[1];
     
