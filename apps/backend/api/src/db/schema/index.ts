@@ -21,20 +21,9 @@ import { z } from "zod";
 export const scopeTypeEnum = pgEnum('scope_type', ['tenant', 'legal_entity', 'store']);
 export const permModeEnum = pgEnum('perm_mode', ['grant', 'revoke']);
 
-// ==================== SESSIONS TABLE (Replit Auth) ====================
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
-
-// ==================== USERS TABLE (Replit Auth) ====================
+// ==================== USERS TABLE (OAuth2 Enterprise) ====================
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey(), // varchar per compatibilità Replit Auth
+  id: varchar("id").primaryKey(), // OAuth2 standard sub field
   email: varchar("email", { length: 255 }).unique(),
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),

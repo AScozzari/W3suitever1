@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupOAuthRoutes, requireAuth, requirePermission } from "./oauth";
+// OAuth legacy system removed - using only OAuth2 enterprise
 import { setupOAuth2Server } from "./oauth2-server";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
@@ -30,81 +30,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
   
-  // Logout endpoint to clear localStorage
-  app.post("/api/auth/logout", async (req: any, res) => {
-    res.json({ message: "Logout successful" });
-  });
+  // Only OAuth2 endpoints are available - legacy auth endpoints removed
 
-  // Debug endpoint to check auth status
-  app.get("/api/auth/debug", async (req: any, res) => {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-    const tenantId = req.headers['x-tenant-id'];
-    
-    res.json({ 
-      hasToken: !!token, 
-      tenantId: tenantId,
-      tokenPreview: token ? token.substring(0, 20) + '...' : null
-    });
-  });
-
-  // Development OAuth2-style authentication (local mock)
-  app.post("/api/auth/login", async (req: any, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username e password richiesti" });
-      }
-      
-      // Per development, accetta admin/admin123 con OAuth2 enterprise structure
-      if (username === 'admin' && password === 'admin123') {
-        const expirationTime = Math.floor(Date.now() / 1000) + (30 * 60); // 30 minuti
-        
-        // Enterprise OAuth2 session structure compatible with enterpriseAuth
-        const oauthSession = {
-          userId: 'admin-user',
-          email: 'admin@w3suite.com',
-          tenantId: '00000000-0000-0000-0000-000000000001',
-          roles: ['super_admin', 'tenant_admin'],
-          permissions: ['*'], // All permissions
-          capabilities: ['*'],
-          scope: 'tenant', // Enterprise scope
-          expiresAt: expirationTime,
-          issuedAt: Math.floor(Date.now() / 1000),
-          issuer: 'w3suite-dev'
-        };
-        
-        // Create enterprise JWT token using jsonwebtoken (consistent with enterpriseAuth)
-        const token = jwt.sign(oauthSession, JWT_SECRET, { 
-          expiresIn: "30m",
-          issuer: 'w3suite-dev',
-          audience: 'w3suite-frontend'
-        });
-        
-        // OAuth2 response structure
-        return res.json({ 
-          access_token: token,
-          token_type: 'Bearer',
-          expires_in: 1800, // 30 minutes
-          scope: 'openid profile email tenant_access',
-          user: {
-            id: 'admin-user',
-            email: 'admin@w3suite.com',
-            firstName: 'Admin',
-            lastName: 'User',
-            tenantId: '00000000-0000-0000-0000-000000000001',
-            roles: ['super_admin', 'tenant_admin']
-          }
-        });
-      }
-      
-      return res.status(401).json({ message: "Credenziali non valide" });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Errore durante il login" });
-    }
-  });
 
   // Session endpoint with tenant info
   app.get('/api/auth/session', async (req: any, res) => {
@@ -146,40 +73,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Keep the old endpoint for backward compatibility
-  app.get('/api/auth/user', async (req: any, res) => {
-    // Check for auth token
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: "Non autenticato" });
-    }
-    
-    try {
-      // Verify JWT token
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const mockUser = {
-        id: decoded.id || 'admin-user', 
-        email: decoded.email || 'admin@w3suite.com',
-        firstName: 'Admin',
-        lastName: 'User',
-        tenantId: decoded.tenantId || '00000000-0000-0000-0000-000000000001'
-      };
-      
-      res.json(mockUser);
-    } catch (error) {
-      return res.status(401).json({ message: "Token non valido" });
-    }
-  });
-  
-  // Setup OAuth2/OIDC authentication
-  setupOAuthRoutes(app);
 
   // ==================== TENANT MANAGEMENT API ====================
   
   // Get tenant info
-  app.get('/api/tenants/:id', requireAuth(), requirePermission('tenant.view'), async (req, res) => {
+  app.get('/api/tenants/:id', enterpriseAuth, async (req, res) => {
     try {
       const tenant = await storage.getTenant(req.params.id);
       if (!tenant) {
@@ -193,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create tenant
-  app.post('/api/tenants', requireAuth(), requirePermission('tenant.create'), async (req, res) => {
+  app.post('/api/tenants', enterpriseAuth, async (req, res) => {
     try {
       const tenant = await storage.createTenant(req.body);
       res.status(201).json(tenant);
@@ -217,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ 
           error: 'unauthorized',
           message: 'No authentication token provided',
-          loginUrl: '/api/auth/login'
+          loginUrl: '/oauth2/authorize'
         });
       }
       
@@ -239,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ 
           error: 'token_expired',
           message: 'Token has expired',
-          loginUrl: '/api/auth/login'
+          loginUrl: '/oauth2/authorize'
         });
       }
       
@@ -269,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ 
           error: 'token_expired',
           message: 'Token has expired',
-          loginUrl: '/api/auth/login'
+          loginUrl: '/oauth2/authorize'
         });
       }
       
@@ -318,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get stores for tenant
-  app.get('/api/tenants/:tenantId/stores', requireAuth(), requirePermission('store.view'), async (req, res) => {
+  app.get('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
     try {
       const stores = await storage.getStoresByTenant(req.params.tenantId);
       res.json(stores);
@@ -329,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create store
-  app.post('/api/tenants/:tenantId/stores', requireAuth(), requirePermission('store.create'), async (req, res) => {
+  app.post('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
     try {
       const storeData = { ...req.body, tenantId: req.params.tenantId };
       const store = await storage.createStore(storeData);
@@ -405,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user roles
-  app.get('/api/users/:userId/roles', requireAuth(), requirePermission('user.view'), async (req, res) => {
+  app.get('/api/users/:userId/roles', enterpriseAuth, async (req, res) => {
     try {
       const assignments = await storage.getUserAssignments(req.params.userId);
       res.json(assignments);
@@ -416,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assign user role
-  app.post('/api/users/:userId/roles', requireAuth(), requirePermission('user.manage'), async (req, res) => {
+  app.post('/api/users/:userId/roles', enterpriseAuth, async (req, res) => {
     try {
       const assignmentData = { ...req.body, userId: req.params.userId };
       const assignment = await storage.createUserAssignment(assignmentData);
@@ -455,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard metrics (detailed metrics)
-  app.get('/api/dashboard/metrics', requireAuth(), requirePermission('dashboard.view'), async (req, res) => {
+  app.get('/api/dashboard/metrics', enterpriseAuth, async (req, res) => {
     try {
       // TODO: Implement dashboard metrics
       const metrics = {
@@ -472,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRM endpoints
-  app.get('/api/crm/customers', requireAuth(), requirePermission('crm.view'), async (req, res) => {
+  app.get('/api/crm/customers', enterpriseAuth, async (req, res) => {
     try {
       // TODO: Implement CRM customer management
       res.json({ customers: [], total: 0 });
@@ -483,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POS endpoints  
-  app.get('/api/pos/transactions', requireAuth(), requirePermission('pos.view'), async (req, res) => {
+  app.get('/api/pos/transactions', enterpriseAuth, async (req, res) => {
     try {
       // TODO: Implement POS transaction management
       res.json({ transactions: [], total: 0 });
@@ -494,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Inventory endpoints
-  app.get('/api/inventory/products', requireAuth(), requirePermission('inventory.view'), async (req, res) => {
+  app.get('/api/inventory/products', enterpriseAuth, async (req, res) => {
     try {
       // TODO: Implement inventory management
       res.json({ products: [], total: 0 });
@@ -505,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics endpoints
-  app.get('/api/analytics/reports', requireAuth(), requirePermission('analytics.view'), async (req, res) => {
+  app.get('/api/analytics/reports', enterpriseAuth, async (req, res) => {
     try {
       // TODO: Implement analytics and reporting
       res.json({ reports: [], total: 0 });
