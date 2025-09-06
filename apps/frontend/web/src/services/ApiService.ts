@@ -90,15 +90,24 @@ class ApiService {
    * Con gestione enterprise robusta
    */
   async loadSettingsData() {
+    console.log('🔄 ApiService: Starting loadSettingsData...');
+    
     const [legalEntities, users, stores] = await Promise.all([
       this.getLegalEntities(),
       this.getUsers(),
       this.getStores()
     ]);
 
+    console.log('📊 ApiService: API responses received:', {
+      legalEntities: { success: legalEntities.success, count: legalEntities.data?.length || 0, error: legalEntities.error },
+      users: { success: users.success, count: users.data?.length || 0, error: users.error },
+      stores: { success: stores.success, count: stores.data?.length || 0, error: stores.error }
+    });
+
     // Controlla se qualche chiamata ha fallito per problemi di auth
     const authRequired = [legalEntities, users, stores].some(result => result.needsAuth);
     if (authRequired) {
+      console.error('❌ ApiService: Authentication required');
       return {
         success: false,
         error: 'Authentication required',
@@ -114,13 +123,14 @@ class ApiService {
         .map(result => result.error)
         .join(', ');
       
+      console.error('❌ ApiService: Some API calls failed:', errors);
       return {
         success: false,
         error: `Failed to load data: ${errors}`
       };
     }
 
-    return {
+    const result = {
       success: true,
       data: {
         legalEntities: legalEntities.data || [],
@@ -128,6 +138,14 @@ class ApiService {
         stores: stores.data || []
       }
     };
+    
+    console.log('✅ ApiService: loadSettingsData completed successfully:', {
+      legalEntitiesCount: result.data.legalEntities.length,
+      usersCount: result.data.users.length,
+      storesCount: result.data.stores.length
+    });
+    
+    return result;
   }
 }
 
