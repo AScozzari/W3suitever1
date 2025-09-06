@@ -69,15 +69,24 @@ class ApiService {
    * API Endpoints per Settings Page
    */
   async getLegalEntities() {
-    return this.makeRequest<any[]>('/api/legal-entities');
+    console.log('🔄 Getting legal entities...');
+    const result = await this.makeRequest<any[]>('/api/legal-entities');
+    console.log('✅ Legal entities result:', result);
+    return result;
   }
 
   async getUsers() {
-    return this.makeRequest<any[]>('/api/users');
+    console.log('🔄 Getting users...');
+    const result = await this.makeRequest<any[]>('/api/users');
+    console.log('✅ Users result:', result);
+    return result;
   }
 
   async getStores() {
-    return this.makeRequest<any[]>('/api/stores');
+    console.log('🔄 Getting stores...');
+    const result = await this.makeRequest<any[]>('/api/stores');
+    console.log('✅ Stores result:', result);
+    return result;
   }
 
   async getCommercialAreas() {
