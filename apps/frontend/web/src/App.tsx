@@ -5,6 +5,7 @@ import { Route, Switch, useParams, Redirect } from "wouter";
 import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
+import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -28,6 +29,9 @@ function Router() {
       {/* Route con tenant nel path */}
       <Route path="/:tenant/settings">
         {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/demo-fields">
+        {(params) => <TenantWrapper params={params}><StandardFieldsDemo /></TenantWrapper>}
       </Route>
       <Route path="/:tenant">
         {(params) => <TenantWrapper params={params}><MainApp /></TenantWrapper>}

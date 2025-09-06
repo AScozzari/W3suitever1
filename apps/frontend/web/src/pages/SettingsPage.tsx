@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
+import {
+  StandardEmailField,
+  StandardCityField,
+  StandardCapField,
+  StandardCodiceFiscaleField,
+  StandardPartitaIVAField,
+  StandardPaeseField
+} from '../components/forms/StandardFields';
 
 // Tenant ID per staging environment
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
