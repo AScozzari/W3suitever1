@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Local authentication for development
+  // Development OAuth2-style authentication (local mock)
   app.post("/api/auth/login", async (req: any, res) => {
     try {
       const { username, password } = req.body;
@@ -51,25 +51,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username e password richiesti" });
       }
       
-      // Per development, accetta admin/admin123
+      // Per development, accetta admin/admin123 con OAuth2 enterprise structure
       if (username === 'admin' && password === 'admin123') {
-        const mockUser = {
-          id: 'admin-user',
+        const expirationTime = Math.floor(Date.now() / 1000) + (30 * 60); // 30 minuti
+        
+        // OAuth2 enterprise session structure
+        const oauthSession = {
+          sub: 'admin-user', // OAuth2 standard "subject" field
           email: 'admin@w3suite.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          tenantId: '00000000-0000-0000-0000-000000000001', // Demo tenant UUID
-          username: 'admin'
+          tenantId: '00000000-0000-0000-0000-000000000001',
+          scope: 'tenant.admin', // Enterprise scope
+          roles: ['super_admin', 'tenant_admin'],
+          permissions: ['*'], // All permissions
+          capabilities: ['*'],
+          expiresAt: expirationTime,
+          issuedAt: Math.floor(Date.now() / 1000),
+          issuer: 'w3suite-dev',
+          mfaRequired: false,
+          mfaVerified: true,
+          lastMfaAt: Date.now()
         };
         
-        // Create JWT token (enterprise security: short-lived access token)
-        const token = jwt.sign(
-          { id: mockUser.id, email: mockUser.email, tenantId: mockUser.tenantId },
-          JWT_SECRET,
-          { expiresIn: "30m" } // 30 minuti per sicurezza enterprise
-        );
+        // Create OAuth2-style JWT token
+        const token = jwt.sign(oauthSession, JWT_SECRET, { 
+          expiresIn: "30m",
+          issuer: 'w3suite-dev',
+          audience: 'w3suite-frontend'
+        });
         
-        return res.json({ user: mockUser, token });
+        // OAuth2 response structure
+        return res.json({ 
+          access_token: token,
+          token_type: 'Bearer',
+          expires_in: 1800, // 30 minutes
+          scope: 'openid profile email tenant_access',
+          user: {
+            id: 'admin-user',
+            email: 'admin@w3suite.com',
+            firstName: 'Admin',
+            lastName: 'User',
+            tenantId: '00000000-0000-0000-0000-000000000001',
+            roles: ['super_admin', 'tenant_admin']
+          }
+        });
       }
       
       return res.status(401).json({ message: "Credenziali non valide" });

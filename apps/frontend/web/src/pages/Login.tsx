@@ -62,8 +62,15 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('auth_token', data.token);
+        // OAuth2 response structure - handle both access_token (OAuth2) and token (legacy)
+        localStorage.setItem('auth_token', data.access_token || data.token);
         localStorage.setItem('currentTenantId', tenantId);
+        console.log('OAuth2 login successful:', {
+          tokenType: data.token_type,
+          expiresIn: data.expires_in,
+          scope: data.scope,
+          user: data.user
+        });
         window.location.reload();
       } else {
         const error = await response.json();
