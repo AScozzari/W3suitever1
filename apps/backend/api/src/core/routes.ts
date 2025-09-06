@@ -214,9 +214,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       req.user = {
-        id: decoded.id,
+        id: decoded.sub || decoded.id, // OAuth2 uses 'sub', legacy uses 'id'
         email: decoded.email,
-        tenantId: decoded.tenantId
+        tenantId: decoded.tenantId,
+        roles: decoded.roles || [],
+        permissions: decoded.permissions || [],
+        capabilities: decoded.capabilities || []
       };
       next();
     } catch (error) {
