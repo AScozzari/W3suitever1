@@ -87,10 +87,10 @@ export const legalEntities = pgTable("legal_entities", {
   updatedAt: timestamp("updated_at").defaultNow(),
   archivedAt: timestamp("archived_at"),
   // Extended enterprise fields
-  codiceFiscale: varchar("codicefiscale", { length: 50 }),
-  formaGiuridica: varchar("formagiuridica", { length: 100 }),
-  capitaleSociale: varchar("capitalesociale", { length: 50 }),
-  dataCostituzione: date("datacostituzione"),
+  codiceFiscale: varchar("codiceFiscale", { length: 50 }),
+  formaGiuridica: varchar("formaGiuridica", { length: 100 }),
+  capitaleSociale: varchar("capitaleSociale", { length: 50 }),
+  dataCostituzione: date("dataCostituzione"),
   indirizzo: text("indirizzo"),
   citta: varchar("citta", { length: 100 }),
   provincia: varchar("provincia", { length: 10 }),
@@ -99,19 +99,19 @@ export const legalEntities = pgTable("legal_entities", {
   email: varchar("email", { length: 255 }),
   pec: varchar("pec", { length: 255 }),
   rea: varchar("rea", { length: 100 }),
-  registroImprese: varchar("registroimprese", { length: 255 }),
+  registroImprese: varchar("registroImprese", { length: 255 }),
   // New enterprise fields for enhanced functionality
   logo: text("logo"), // PNG file path or base64
-  codiceSDI: varchar("codicesdi", { length: 10 }),
-  // Administrative contact section
-  refAmminNome: varchar("refammin_nome", { length: 100 }),
-  refAmminCognome: varchar("refammin_cognome", { length: 100 }),
-  refAmminEmail: varchar("refammin_email", { length: 255 }),
-  refAmminCodiceFiscale: varchar("refammin_codicefiscale", { length: 16 }),
-  refAmminIndirizzo: text("refammin_indirizzo"),
-  refAmminCitta: varchar("refammin_citta", { length: 100 }),
-  refAmminCap: varchar("refammin_cap", { length: 10 }),
-  refAmminPaese: varchar("refammin_paese", { length: 100 }),
+  codiceSDI: varchar("codiceSDI", { length: 10 }),
+  // Administrative contact section - using camelCase column names
+  refAmminNome: varchar("refAmminNome", { length: 100 }),
+  refAmminCognome: varchar("refAmminCognome", { length: 100 }),
+  refAmminEmail: varchar("refAmminEmail", { length: 255 }),
+  refAmminCodiceFiscale: varchar("refAmminCodiceFiscale", { length: 16 }),
+  refAmminIndirizzo: text("refAmminIndirizzo"),
+  refAmminCitta: varchar("refAmminCitta", { length: 100 }),
+  refAmminCap: varchar("refAmminCap", { length: 10 }),
+  refAmminPaese: varchar("refAmminPaese", { length: 100 }),
   // Dynamic notes field
   note: text("note"),
 });
