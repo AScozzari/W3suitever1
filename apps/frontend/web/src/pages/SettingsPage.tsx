@@ -2656,7 +2656,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '24px' }}>
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 {/* Codice */}
                 <div>
@@ -3281,7 +3281,7 @@ export default function SettingsPage() {
                 display: 'flex',
                 justifyContent: 'flex-end',
                 gap: '12px',
-                marginTop: '24px',
+                marginTop: '32px',
                 paddingTop: '20px',
                 borderTop: '1px solid #e5e7eb'
               }}>
@@ -3453,7 +3453,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal */}
-            <div style={{ padding: '24px' }}>
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 {/* Codice */}
                 <div>
@@ -4009,7 +4009,7 @@ export default function SettingsPage() {
                 display: 'flex',
                 justifyContent: 'flex-end',
                 gap: '12px',
-                marginTop: '24px',
+                marginTop: '32px',
                 paddingTop: '20px',
                 borderTop: '1px solid #e5e7eb'
               }}>
@@ -4181,7 +4181,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Body Modal con sezioni */}
-            <div style={{ padding: '24px' }}>
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
               {/* SEZIONE AMBITO OPERATIVO GERARCHICO - PRIMA SEZIONE */}
               <div style={{ marginBottom: '24px' }}>
                 <h3 style={{
