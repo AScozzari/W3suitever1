@@ -78,7 +78,7 @@ export type Tenant = typeof tenants.$inferSelect;
 export const legalEntities = pgTable("legal_entities", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  codice: varchar("codice", { length: 20 }).notNull(),
+  codice: varchar("codice", { length: 20 }).notNull().unique(),
   nome: varchar("nome", { length: 255 }).notNull(),
   pIva: varchar("p_iva", { length: 50 }),
   billingProfileId: uuid("billing_profile_id"),
@@ -100,9 +100,7 @@ export const legalEntities = pgTable("legal_entities", {
   pec: varchar("pec", { length: 255 }),
   rea: varchar("rea", { length: 100 }),
   registroImprese: varchar("registro_imprese", { length: 255 }),
-}, (table) => [
-  uniqueIndex("legal_entities_tenant_code_unique").on(table.tenantId, table.codice),
-]);
+});
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
   id: true, 
@@ -159,7 +157,7 @@ export const stores = pgTable("stores", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   legalEntityId: uuid("legal_entity_id").notNull().references(() => legalEntities.id),
-  code: varchar("code", { length: 50 }).notNull(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   channelId: uuid("channel_id").notNull().references(() => channels.id),
   commercialAreaId: uuid("commercial_area_id").references(() => commercialAreas.id),
@@ -179,9 +177,7 @@ export const stores = pgTable("stores", {
   // Contact fields
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
-}, (table) => [
-  uniqueIndex("stores_tenant_code_unique").on(table.tenantId, table.code),
-]);
+});
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ 
   id: true, 
