@@ -1254,9 +1254,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             borderLeft: '1px solid hsla(255, 255, 255, 0.12)',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 40,
-            boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.04)',
-            overflow: 'visible',
-            clipPath: 'inset(0 -20px 0 0)'
+            boxShadow: '4px 0 24px rgba(0, 0, 0, 0.04)',
+            overflow: 'visible'
           }}>
             {workspaceCollapsed ? (
               <div style={{
