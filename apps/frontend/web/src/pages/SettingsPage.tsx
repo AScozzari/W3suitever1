@@ -4472,7 +4472,7 @@ export default function SettingsPage() {
                                   selectedLegalEntities: [...newUser.selectedLegalEntities, rs.id]
                                 });
                               } else {
-                                // When unchecking a legal entity, remove its stores too
+                                // Quando deseleziono una RS, rimuovo anche i suoi PDV selezionati
                                 const storesOfThisLegalEntity = puntiVenditaList
                                   .filter(pv => pv.ragioneSociale_id === rs.id)
                                   .map(pv => pv.id);
@@ -4583,10 +4583,22 @@ export default function SettingsPage() {
                               borderBottom: '1px solid #e5e7eb',
                               marginBottom: '8px'
                             }}>
-                              {rs.nome}
+                              {rs.nome} ({puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id).length} punti vendita)
                             </div>
                             {puntiVenditaList
-                              .filter(pv => pv.ragioneSociale_id === rs.id)
+                              .filter(pv => pv.ragioneSociale_id === rs.id).length === 0 ? (
+                              <div style={{
+                                padding: '10px',
+                                paddingLeft: '20px',
+                                fontSize: '13px',
+                                color: '#9ca3af',
+                                fontStyle: 'italic'
+                              }}>
+                                Nessun punto vendita per questa ragione sociale
+                              </div>
+                            ) : (
+                              puntiVenditaList
+                                .filter(pv => pv.ragioneSociale_id === rs.id)
                               .map(pv => (
                                 <label key={pv.id} style={{
                                   display: 'flex',
@@ -4652,7 +4664,8 @@ export default function SettingsPage() {
                                     <Check size={16} style={{ color: '#16a34a' }} />
                                   )}
                                 </label>
-                              ))}
+                              ))
+                            )}
                           </div>
                         ))
                       )}
