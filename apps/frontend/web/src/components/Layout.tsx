@@ -15,6 +15,44 @@ import {
 import { useLocation } from 'wouter';
 import LoginModal from './LoginModal';
 
+// Palette colori W3 Suite - Coerente e Professionale
+const COLORS = {
+  // Colori primari brand WindTre
+  primary: {
+    orange: '#FF6900',      // Arancione WindTre
+    orangeLight: '#ff8533', // Arancione chiaro
+    purple: '#7B2CBF',      // Viola WindTre
+    purpleLight: '#9747ff', // Viola chiaro
+  },
+  // Colori semantici per stati e feedback
+  semantic: {
+    success: '#10b981',     // Verde successo
+    warning: '#f59e0b',     // Arancione warning
+    error: '#ef4444',       // Rosso errore
+    info: '#3b82f6',        // Blu info
+  },
+  // Priorità tasks e leads
+  priority: {
+    high: '#ef4444',        // Rosso alta priorità
+    medium: '#f59e0b',      // Arancione media
+    low: '#10b981',         // Verde bassa
+  },
+  // Grigi per UI neutrale
+  neutral: {
+    dark: '#1f2937',        // Testo principale
+    medium: '#6b7280',      // Testo secondario
+    light: '#9ca3af',       // Testo disabilitato
+    lighter: '#e5e7eb',     // Bordi
+    lightest: '#f9fafb',    // Sfondi
+  },
+  // Sfondi glassmorphism
+  glass: {
+    white: 'rgba(255, 255, 255, 0.08)',
+    whiteLight: 'rgba(255, 255, 255, 0.03)',
+    whiteMedium: 'rgba(255, 255, 255, 0.12)',
+  }
+};
+
 interface LayoutProps {
   children: React.ReactNode;
   currentModule: string;
@@ -1216,7 +1254,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: 40,
             boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.04)',
-            overflow: 'hidden'
+            overflow: 'visible',
+            clipPath: 'inset(0 -20px 0 0)'
           }}>
             {workspaceCollapsed ? (
               <div style={{
@@ -1397,7 +1436,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   ))}
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div style={{ 
+                  flex: 1, 
+                  overflowY: 'auto',
+                  overflowX: 'visible',
+                  paddingRight: '8px',
+                  marginRight: '-8px'
+                }}>
                   {/* Tab Tasks */}
                   {activeWorkspaceTab === 'Tasks' && (
                   <div>
