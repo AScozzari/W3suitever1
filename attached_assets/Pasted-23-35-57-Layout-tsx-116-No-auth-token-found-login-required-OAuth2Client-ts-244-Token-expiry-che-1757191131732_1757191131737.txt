@@ -1,0 +1,2994 @@
+23:35:57
+Layout.tsx:116 No auth token found - login required
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:35:58, Token expires: 23:35:57
+Layout.tsx:116 No auth token found - login required
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:00, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:02, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:06, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/dashboard/stats 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=1b2f80bc:553
+flush @ @tanstack_react-query.js?v=1b2f80bc:567
+batch @ @tanstack_react-query.js?v=1b2f80bc:585
+dispatch_fn @ @tanstack_react-query.js?v=1b2f80bc:994
+setData @ @tanstack_react-query.js?v=1b2f80bc:694
+onSuccess @ @tanstack_react-query.js?v=1b2f80bc:895
+resolve @ @tanstack_react-query.js?v=1b2f80bc:454
+Promise.then
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+setOptions @ @tanstack_react-query.js?v=1b2f80bc:1953
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3030
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:19326
+workLoop @ chunk-JGHIWHLF.js?v=1b2f80bc:195
+flushWork @ chunk-JGHIWHLF.js?v=1b2f80bc:174
+performWorkUntilDeadline @ chunk-JGHIWHLF.js?v=1b2f80bc:382Understand this error
+Layout.tsx:116 No auth token found - login required
+ApiService.ts?t=1757190886891:66 🔍 ApiService: Starting to load all settings data...
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/legal-entities
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:24, Token expires: 23:35:57
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/users
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:24, Token expires: 23:35:57
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/stores
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:24, Token expires: 23:35:57
+4OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:24, Token expires: 23:35:57
+Layout.tsx:116 No auth token found - login required
+ApiService.ts?t=1757190886891:66 🔍 ApiService: Starting to load all settings data...
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/legal-entities
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:24, Token expires: 23:35:57
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/users
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:24, Token expires: 23:35:57
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/stores
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:24, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/legal-entities failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/users failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:16 ✅ ApiService: /api/stores returned data
+ApiService.ts?t=1757190886891:77 ✅ Stores call completed
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/users failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/legal-entities failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:16 ✅ ApiService: /api/stores returned data
+ApiService.ts?t=1757190886891:77 ✅ Stores call completed
+3OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:26, Token expires: 23:35:57
+3OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:26, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:26, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:26, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/legal-entities failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/users failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/users failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/legal-entities failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/users failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:73 ✅ Users call completed
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/legal-entities failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:69 ✅ Legal entities call completed
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/roles
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/users failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getUsers @ ApiService.ts?t=1757190886891:50
+loadSettingsData @ ApiService.ts?t=1757190886891:72
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:73 ✅ Users call completed
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/roles failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/legal-entities failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getLegalEntities @ ApiService.ts?t=1757190886891:47
+loadSettingsData @ ApiService.ts?t=1757190886891:68
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:69 ✅ Legal entities call completed
+ApiService.ts?t=1757190886891:12 📡 ApiService: Calling /api/roles
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:28, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/roles failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:29, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/roles failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/roles failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:31, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:32, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/roles failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts?t=1757190886891:15
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts?t=1757190886891:22 ❌ ApiService: /api/roles failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts?t=1757190886891:22
+await in makeRequest
+getRoles @ ApiService.ts?t=1757190886891:59
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+invokePassiveEffectMountInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:18322
+invokeEffectsInDev @ chunk-JGHIWHLF.js?v=1b2f80bc:19699
+commitDoubleInvokeEffectsInDEV @ chunk-JGHIWHLF.js?v=1b2f80bc:19684
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19501
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+4OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:36:32, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+(anonymous) @ chunk-JGHIWHLF.js?v=1b2f80bc:18625Understand this error
+ApiService.ts:106 🔍 ApiService: Starting to load all settings data...
+ApiService.ts:72 🔄 Getting legal entities...
+ApiService.ts:28 📡 ApiService: Calling /api/legal-entities
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:05, Token expires: 23:35:57
+ApiService.ts:79 🔄 Getting users...
+ApiService.ts:28 📡 ApiService: Calling /api/users
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:05, Token expires: 23:35:57
+ApiService.ts:86 🔄 Getting stores...
+ApiService.ts:28 📡 ApiService: Calling /api/stores
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:05, Token expires: 23:35:57
+4OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:05, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+getUsers @ ApiService.ts:80
+loadSettingsData @ ApiService.ts:110
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/users failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getUsers @ ApiService.ts:80
+loadSettingsData @ ApiService.ts:110
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+getLegalEntities @ ApiService.ts:73
+loadSettingsData @ ApiService.ts:109
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/legal-entities failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getLegalEntities @ ApiService.ts:73
+loadSettingsData @ ApiService.ts:109
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:06, Token expires: 23:35:57
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:06, Token expires: 23:35:57
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:07, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+await in makeRequest
+getUsers @ ApiService.ts:80
+loadSettingsData @ ApiService.ts:110
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/users failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getUsers @ ApiService.ts:80
+loadSettingsData @ ApiService.ts:110
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+await in makeRequest
+getLegalEntities @ ApiService.ts:73
+loadSettingsData @ ApiService.ts:109
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/legal-entities failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getLegalEntities @ ApiService.ts:73
+loadSettingsData @ ApiService.ts:109
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:33 ✅ ApiService: /api/stores returned data
+ApiService.ts:88 ✅ Stores result: {success: true, data: Array(18)}
+ApiService.ts:111 ✅ Stores call completed
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:09, Token expires: 23:35:57
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:09, Token expires: 23:35:57
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:09, Token expires: 23:35:57
+2OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:09, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/users 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+await in makeRequest
+getUsers @ ApiService.ts:80
+loadSettingsData @ ApiService.ts:110
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/users failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getUsers @ ApiService.ts:80
+loadSettingsData @ ApiService.ts:110
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:81 ✅ Users result: {success: false, error: '404: Not Found', needsAuth: false}
+ApiService.ts:110 ✅ Users call completed
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/legal-entities 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+await in makeRequest
+getLegalEntities @ ApiService.ts:73
+loadSettingsData @ ApiService.ts:109
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/legal-entities failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getLegalEntities @ ApiService.ts:73
+loadSettingsData @ ApiService.ts:109
+loadData @ SettingsPage.tsx:226
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:74 ✅ Legal entities result: {success: false, error: '404: Not Found', needsAuth: false}
+ApiService.ts:109 ✅ Legal entities call completed
+ApiService.ts:28 📡 ApiService: Calling /api/roles
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:09, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+getRoles @ ApiService.ts:97
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/roles failed on attempt 1: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getRoles @ ApiService.ts:97
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:10, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+await in makeRequest
+getRoles @ ApiService.ts:97
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/roles failed on attempt 2: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getRoles @ ApiService.ts:97
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:12, Token expires: 23:35:57
+queryClient.ts:49  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/roles 404 (Not Found)
+apiRequest @ queryClient.ts:49
+await in apiRequest
+makeRequest @ ApiService.ts:32
+await in makeRequest
+getRoles @ ApiService.ts:97
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+ApiService.ts:39 ❌ ApiService: /api/roles failed on attempt 3: 404: Not Found
+overrideMethod @ hook.js:608
+makeRequest @ ApiService.ts:39
+await in makeRequest
+getRoles @ ApiService.ts:97
+fetchRoles @ SettingsPage.tsx:258
+loadData @ SettingsPage.tsx:245
+await in loadData
+(anonymous) @ SettingsPage.tsx:252
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+4OAuth2Client.ts:244 🔍 Token expiry check: Current time: 22:38:13, Token expires: 23:35:57
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error
+queryClient.ts:17  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:17
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=1b2f80bc:838
+run @ @tanstack_react-query.js?v=1b2f80bc:492
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:517
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:513
+Promise.catch
+run @ @tanstack_react-query.js?v=1b2f80bc:496
+start @ @tanstack_react-query.js?v=1b2f80bc:534
+fetch @ @tanstack_react-query.js?v=1b2f80bc:924
+executeFetch_fn @ @tanstack_react-query.js?v=1b2f80bc:2209
+onSubscribe @ @tanstack_react-query.js?v=1b2f80bc:1896
+subscribe @ @tanstack_react-query.js?v=1b2f80bc:22
+(anonymous) @ @tanstack_react-query.js?v=1b2f80bc:3020
+subscribeToStore @ chunk-JGHIWHLF.js?v=1b2f80bc:11982
+commitHookEffectListMount @ chunk-JGHIWHLF.js?v=1b2f80bc:16913
+commitPassiveMountOnFiber @ chunk-JGHIWHLF.js?v=1b2f80bc:18154
+commitPassiveMountEffects_complete @ chunk-JGHIWHLF.js?v=1b2f80bc:18127
+commitPassiveMountEffects_begin @ chunk-JGHIWHLF.js?v=1b2f80bc:18117
+commitPassiveMountEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:18107
+flushPassiveEffectsImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19488
+flushPassiveEffects @ chunk-JGHIWHLF.js?v=1b2f80bc:19445
+commitRootImpl @ chunk-JGHIWHLF.js?v=1b2f80bc:19414
+commitRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:19275
+performSyncWorkOnRoot @ chunk-JGHIWHLF.js?v=1b2f80bc:18893
+flushSyncCallbacks @ chunk-JGHIWHLF.js?v=1b2f80bc:9117
+flushSync @ chunk-JGHIWHLF.js?v=1b2f80bc:18957
+scheduleRefresh @ chunk-JGHIWHLF.js?v=1b2f80bc:20002
+p.scheduleRefresh @ renderer.js:994
+(anonymous) @ @react-refresh:267
+performReactRefresh @ @react-refresh:256
+(anonymous) @ @react-refresh:677
+setTimeout
+(anonymous) @ @react-refresh:666
+validateRefreshBoundaryAndEnqueueUpdate @ @react-refresh:728
+(anonymous) @ SettingsPage.tsx:201
+(anonymous) @ client:34
+(anonymous) @ client:218
+(anonymous) @ client:193
+queueUpdate @ client:193
+await in queueUpdate
+(anonymous) @ client:642
+handleMessage @ client:640
+(anonymous) @ client:550Understand this error

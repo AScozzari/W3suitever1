@@ -105,10 +105,24 @@ class ApiService {
     // Enterprise pattern: Graceful degradation with individual error handling
     console.log('🔍 ApiService: Starting to load all settings data...');
     
+    // Create promises without awaiting them immediately
+    const legalEntitiesPromise = this.getLegalEntities()
+      .then(r => { console.log('✅ Legal entities call completed'); return r; })
+      .catch(e => { console.error('❌ Legal entities failed:', e); return { success: false, error: e.message }; });
+    
+    const usersPromise = this.getUsers()
+      .then(r => { console.log('✅ Users call completed'); return r; })
+      .catch(e => { console.error('❌ Users failed:', e); return { success: false, error: e.message }; });
+    
+    const storesPromise = this.getStores()
+      .then(r => { console.log('✅ Stores call completed'); return r; })
+      .catch(e => { console.error('❌ Stores failed:', e); return { success: false, error: e.message }; });
+    
+    // Now wait for all promises to settle
     const apiCalls = await Promise.allSettled([
-      this.getLegalEntities().then(r => { console.log('✅ Legal entities call completed'); return r; }),
-      this.getUsers().then(r => { console.log('✅ Users call completed'); return r; }), 
-      this.getStores().then(r => { console.log('✅ Stores call completed'); return r; })
+      legalEntitiesPromise,
+      usersPromise, 
+      storesPromise
     ]);
 
     const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
