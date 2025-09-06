@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 
 interface LoginProps {
   tenantCode?: string;
 }
 
 export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
@@ -29,49 +28,52 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
+  const handleOAuth2Login = async () => {
+    if (!username || !password) {
       alert('Inserisci nome utente e password');
       return;
     }
     
-    const tenantFromPath = propTenantCode || 'staging';
     setIsLoading(true);
     
     try {
-      const tenantMapping: Record<string, string> = {
-        'staging': '00000000-0000-0000-0000-000000000001',
-        'demo': '99999999-9999-9999-9999-999999999999',
-        'acme': '11111111-1111-1111-1111-111111111111',
-        'tech': '22222222-2222-2222-2222-222222222222'
-      };
+      // OAuth2 Authorization Code Flow con PKCE
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
       
-      const tenantId = tenantMapping[tenantFromPath] || '00000000-0000-0000-0000-000000000001';
+      // Salva il code verifier per il token exchange
+      localStorage.setItem('oauth2_code_verifier', codeVerifier);
       
-      const response = await fetch('/api/auth/login', {
+      // Effettua la richiesta OAuth2 authorization
+      const authResponse = await fetch('/oauth2/authorize', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({ 
-          tenantCode: tenantFromPath,
-          username: email.split('@')[0] || 'admin', 
-          password: password 
+        body: new URLSearchParams({
+          client_id: 'w3suite-frontend',
+          redirect_uri: `${window.location.origin}/auth/callback`,
+          response_type: 'code',
+          scope: 'openid profile email tenant_access',
+          code_challenge: codeChallenge,
+          code_challenge_method: 'S256',
+          username: username,
+          password: password
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // OAuth2 response structure - handle both access_token (OAuth2) and token (legacy)
-        localStorage.setItem('auth_token', data.access_token || data.token);
-        localStorage.setItem('currentTenantId', tenantId);
-        console.log('OAuth2 login successful:', {
-          tokenType: data.token_type,
-          expiresIn: data.expires_in,
-          scope: data.scope,
-          user: data.user
-        });
-        window.location.reload();
+      if (authResponse.ok) {
+        // Parse redirect URL per estrarre il code
+        const redirectUrl = authResponse.url;
+        const urlParams = new URLSearchParams(redirectUrl.split('?')[1]);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+          // Exchange authorization code per access token
+          await exchangeCodeForToken(authCode, codeVerifier);
+        } else {
+          throw new Error('No authorization code received');
+        }
       } else {
         const error = await response.json();
         alert(error.message || 'Credenziali non valide');

@@ -32,77 +32,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Only OAuth2 endpoints are available - legacy auth endpoints removed
 
-
-  // Session endpoint with tenant info
-  app.get('/api/auth/session', async (req: any, res) => {
-    // Check for auth token
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: "Non autenticato" });
-    }
-    
-    try {
-      // Verify JWT token
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      
-      // Mock session data with tenant information
-      const sessionData = {
-        user: {
-          id: decoded.id || 'admin-user',
-          email: decoded.email || 'admin@w3suite.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          tenantId: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
-          tenant: {
-            id: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
-            name: 'Demo Organization',
-            code: 'DEMO001',
-            plan: 'Enterprise',
-            isActive: true
-          },
-          roles: ['admin', 'manager'] // Ruoli dell'utente
-        }
-      };
-      
-      res.json(sessionData);
-    } catch (error) {
-      console.error("Session error:", error);
-      return res.status(401).json({ message: "Token non valido" });
-    }
-  });
-
-
-  // ==================== TENANT MANAGEMENT API ====================
-  
-  // Get tenant info
-  app.get('/api/tenants/:id', enterpriseAuth, async (req, res) => {
-    try {
-      const tenant = await storage.getTenant(req.params.id);
-      if (!tenant) {
-        return res.status(404).json({ error: 'tenant_not_found' });
-      }
-      res.json(tenant);
-    } catch (error) {
-      console.error("Error fetching tenant:", error);
-      res.status(500).json({ error: "Failed to fetch tenant" });
-    }
-  });
-
-  // Create tenant
-  app.post('/api/tenants', enterpriseAuth, async (req, res) => {
-    try {
-      const tenant = await storage.createTenant(req.body);
-      res.status(201).json(tenant);
-    } catch (error) {
-      console.error("Error creating tenant:", error);
-      res.status(500).json({ error: "Failed to create tenant" });
-    }
-  });
-
-  // ==================== STORE MANAGEMENT API ====================
-  
   // Enterprise JWT Authentication Middleware with OAuth2 compatibility
   const enterpriseAuth = async (req: any, res: any, next: any) => {
     const startTime = Date.now();
@@ -174,10 +103,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ 
         error: 'invalid_token',
         message: 'Invalid token',
-        loginUrl: '/api/auth/login'
+        loginUrl: '/oauth2/authorize'
       });
     }
   };
+
+  // Session endpoint with tenant info
+  app.get('/api/auth/session', async (req: any, res) => {
+    // Check for auth token
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: "Non autenticato" });
+    }
+    
+    try {
+      // Verify JWT token
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      // Mock session data with tenant information
+      const sessionData = {
+        user: {
+          id: decoded.id || 'admin-user',
+          email: decoded.email || 'admin@w3suite.com',
+          firstName: 'Admin',
+          lastName: 'User',
+          tenantId: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
+          tenant: {
+            id: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
+            name: 'Demo Organization',
+            code: 'DEMO001',
+            plan: 'Enterprise',
+            isActive: true
+          },
+          roles: ['admin', 'manager'] // Ruoli dell'utente
+        }
+      };
+      
+      res.json(sessionData);
+    } catch (error) {
+      console.error("Session error:", error);
+      return res.status(401).json({ message: "Token non valido" });
+    }
+  });
+
+
+  // ==================== TENANT MANAGEMENT API ====================
+  
+  // Get tenant info
+  app.get('/api/tenants/:id', enterpriseAuth, async (req, res) => {
+    try {
+      const tenant = await storage.getTenant(req.params.id);
+      if (!tenant) {
+        return res.status(404).json({ error: 'tenant_not_found' });
+      }
+      res.json(tenant);
+    } catch (error) {
+      console.error("Error fetching tenant:", error);
+      res.status(500).json({ error: "Failed to fetch tenant" });
+    }
+  });
+
+  // Create tenant
+  app.post('/api/tenants', enterpriseAuth, async (req, res) => {
+    try {
+      const tenant = await storage.createTenant(req.body);
+      res.status(201).json(tenant);
+    } catch (error) {
+      console.error("Error creating tenant:", error);
+      res.status(500).json({ error: "Failed to create tenant" });
+    }
+  });
+
+  // ==================== STORE MANAGEMENT API ====================
 
   // Get commercial areas (reference data)
   app.get('/api/commercial-areas', enterpriseAuth, async (req: any, res) => {
