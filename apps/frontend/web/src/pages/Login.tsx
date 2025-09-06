@@ -69,6 +69,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       // Step 1: Get authorization code
       const authResponse = await fetch('/oauth2/authorize', {
         method: 'POST',
+        redirect: 'manual', // Important: don't follow redirects automatically
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -84,55 +85,65 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         }),
       });
 
-      if (authResponse.redirected || authResponse.status === 302) {
-        // Parse redirect URL to extract the code
-        const redirectUrl = authResponse.url;
-        const urlParams = new URLSearchParams(redirectUrl.split('?')[1]);
-        const authCode = urlParams.get('code');
-        
-        if (authCode) {
-          // Step 2: Exchange authorization code for access token
-          const tokenResponse = await fetch('/oauth2/token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code: authCode,
-              redirect_uri: `${window.location.origin}/auth/callback`,
-              client_id: 'w3suite-frontend',
-              code_verifier: codeVerifier
-            }),
-          });
+      console.log('🔍 Auth Response Status:', authResponse.status);
+      console.log('🔍 Auth Response Headers:', Object.fromEntries(authResponse.headers.entries()));
 
-          if (tokenResponse.ok) {
-            const tokenData = await tokenResponse.json();
-            
-            // Add expires_at timestamp for OAuth2Client compatibility
-            const expiresAt = Date.now() + (tokenData.expires_in * 1000);
-            const tokensWithExpiry = {
-              ...tokenData,
-              expires_at: expiresAt
-            };
-            
-            // Store OAuth2 tokens using OAuth2Client format
-            localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
-            
-            console.log('✅ OAuth2 Enterprise Login Successful:', {
-              tokenType: tokenData.token_type,
-              expiresIn: tokenData.expires_in,
-              expiresAt: new Date(expiresAt).toLocaleString(),
-              scope: tokenData.scope
-            });
-            
-            window.location.reload();
+      if (authResponse.status === 302 || authResponse.status === 301) {
+        // Get redirect location from header
+        const location = authResponse.headers.get('location');
+        console.log('📍 Redirect location:', location);
+        
+        if (location) {
+          const urlParams = new URLSearchParams(location.split('?')[1]);
+          const authCode = urlParams.get('code');
+          console.log('🔑 Authorization code extracted:', authCode ? 'YES' : 'NO');
+          
+            if (authCode) {
+              // Step 2: Exchange authorization code for access token
+              const tokenResponse = await fetch('/oauth2/token', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                  grant_type: 'authorization_code',
+                  code: authCode,
+                  redirect_uri: `${window.location.origin}/auth/callback`,
+                  client_id: 'w3suite-frontend',
+                  code_verifier: codeVerifier
+                }),
+              });
+
+              if (tokenResponse.ok) {
+                const tokenData = await tokenResponse.json();
+                
+                // Add expires_at timestamp for OAuth2Client compatibility
+                const expiresAt = Date.now() + (tokenData.expires_in * 1000);
+                const tokensWithExpiry = {
+                  ...tokenData,
+                  expires_at: expiresAt
+                };
+                
+                // Store OAuth2 tokens using OAuth2Client format
+                localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
+                
+                console.log('✅ OAuth2 Enterprise Login Successful:', {
+                  tokenType: tokenData.token_type,
+                  expiresIn: tokenData.expires_in,
+                  expiresAt: new Date(expiresAt).toLocaleString(),
+                  scope: tokenData.scope
+                });
+                
+                window.location.reload();
+              } else {
+                throw new Error('Token exchange failed');
+              }
+            } else {
+              throw new Error('No authorization code received');
+            }
           } else {
-            throw new Error('Token exchange failed');
+            throw new Error('No redirect location in response');
           }
-        } else {
-          throw new Error('No authorization code received');
-        }
       } else {
         const error = await authResponse.json();
         alert(error.message || 'Credenziali non valide');
