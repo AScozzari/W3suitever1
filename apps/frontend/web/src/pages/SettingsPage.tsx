@@ -221,53 +221,24 @@ export default function SettingsPage() {
   
   // Caricamento dati enterprise con service layer
   useEffect(() => {
-    // Debug visibile nel DOM
-    document.title = '🔥 LOADING DATA - ' + new Date().toLocaleTimeString();
-    console.log('🔥 SettingsPage: useEffect starting - about to load data!');
     const loadData = async () => {
       try {
-        console.log('🔥 SettingsPage: Loading settings data via enterprise service...');
-        
         const result = await apiService.loadSettingsData();
-        
-        // Debug più visibile per errori
-        document.title = '🔍 API RESULT: ' + (result.success ? 'SUCCESS' : 'FAILED');
         
         if (!result.success) {
           if (result.needsAuth) {
-            console.error('Authentication required - redirecting to login');
-            document.title = '❌ AUTH REQUIRED';
             // Qui dovremmo gestire il redirect al login
             return;
           }
           console.error('Failed to load settings data:', result.error);
-          document.title = '❌ API ERROR: ' + (result.error || 'Unknown');
           return;
         }
 
         // Dati caricati con successo - aggiorna state
         if (result.data) {
-          // Debug visibile nel DOM
-          document.title = '✅ DATA LOADED: ' + result.data.legalEntities.length + '/' + result.data.users.length + '/' + result.data.stores.length;
-          
           setRagioneSocialiList(result.data.legalEntities);
           setUtentiList(result.data.users);
           setPuntiVenditaList(result.data.stores);
-          console.log('🔥 SettingsPage: Enterprise data loaded successfully:', {
-            legalEntities: result.data.legalEntities.length,
-            users: result.data.users.length,
-            stores: result.data.stores.length
-          });
-          console.log('🔥 SettingsPage: Data samples:', {
-            firstLegalEntity: result.data.legalEntities[0],
-            firstUser: result.data.users[0],
-            firstStore: result.data.stores[0]
-          });
-          console.log('🔥 SettingsPage: Raw data arrays:', {
-            legalEntitiesArray: result.data.legalEntities,
-            usersArray: result.data.users,
-            storesArray: result.data.stores
-          });
         }
 
         // Carica anche i ruoli
@@ -275,7 +246,6 @@ export default function SettingsPage() {
 
       } catch (error) {
         console.error('Enterprise service error:', error);
-        document.title = '💥 CATCH ERROR: ' + (error instanceof Error ? error.message : 'Unknown');
       }
     };
 

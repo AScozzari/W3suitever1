@@ -90,24 +90,28 @@ class ApiService {
    * Con gestione enterprise robusta
    */
   async loadSettingsData() {
-    console.log('🔄 ApiService: Starting loadSettingsData...');
-    
-    const [legalEntities, users, stores] = await Promise.all([
+    // Enterprise pattern: Graceful degradation with individual error handling
+    const apiCalls = await Promise.allSettled([
       this.getLegalEntities(),
-      this.getUsers(),
+      this.getUsers(), 
       this.getStores()
     ]);
 
-    console.log('📊 ApiService: API responses received:', {
-      legalEntities: { success: legalEntities.success, count: legalEntities.data?.length || 0, error: legalEntities.error },
-      users: { success: users.success, count: users.data?.length || 0, error: users.error },
-      stores: { success: stores.success, count: stores.data?.length || 0, error: stores.error }
-    });
+    const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
 
-    // Controlla se qualche chiamata ha fallito per problemi di auth
+    // Extract successful results, fallback to empty arrays for failures
+    const legalEntities = legalEntitiesResult.status === 'fulfilled' && legalEntitiesResult.value.success 
+      ? legalEntitiesResult.value : { success: false, data: [], error: 'API unavailable' };
+    
+    const users = usersResult.status === 'fulfilled' && usersResult.value.success 
+      ? usersResult.value : { success: false, data: [], error: 'API unavailable' };
+    
+    const stores = storesResult.status === 'fulfilled' && storesResult.value.success 
+      ? storesResult.value : { success: false, data: [], error: 'API unavailable' };
+
+    // Check for authentication requirements
     const authRequired = [legalEntities, users, stores].some(result => result.needsAuth);
     if (authRequired) {
-      console.error('❌ ApiService: Authentication required');
       return {
         success: false,
         error: 'Authentication required',
@@ -115,37 +119,24 @@ class ApiService {
       };
     }
 
-    // Controlla se tutte le chiamate sono riuscite
-    const allSuccess = [legalEntities, users, stores].every(result => result.success);
-    if (!allSuccess) {
-      const errors = [legalEntities, users, stores]
-        .filter(result => !result.success)
-        .map(result => result.error)
-        .join(', ');
-      
-      console.error('❌ ApiService: Some API calls failed:', errors);
-      return {
-        success: false,
-        error: `Failed to load data: ${errors}`
-      };
-    }
-
-    const result = {
-      success: true,
-      data: {
-        legalEntities: legalEntities.data || [],
-        users: users.data || [],
-        stores: stores.data || []
-      }
+    // Return available data even if some APIs failed (graceful degradation)
+    const data = {
+      legalEntities: legalEntities.data || [],
+      users: users.data || [],
+      stores: stores.data || []
     };
-    
-    console.log('✅ ApiService: loadSettingsData completed successfully:', {
-      legalEntitiesCount: result.data.legalEntities.length,
-      usersCount: result.data.users.length,
-      storesCount: result.data.stores.length
-    });
-    
-    return result;
+
+    const hasAnyData = data.legalEntities.length > 0 || data.users.length > 0 || data.stores.length > 0;
+
+    return {
+      success: hasAnyData,
+      data,
+      warnings: [
+        !legalEntities.success ? 'Legal entities service unavailable' : null,
+        !users.success ? 'Users service unavailable' : null,
+        !stores.success ? 'Stores service unavailable' : null
+      ].filter(Boolean)
+    };
   }
 }
 

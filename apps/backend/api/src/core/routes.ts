@@ -207,8 +207,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const stores = await storage.getStoresByTenant(tenantId);
-      console.log('🔍 Backend: Stores result for tenant', tenantId, ':', stores.length, 'items');
-      console.log('🔍 Backend: First store:', stores[0]);
       res.json(stores);
     } catch (error) {
       console.error("Error fetching stores:", error);
@@ -251,8 +249,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const legalEntities = await storage.getLegalEntitiesByTenant(tenantId);
-      console.log('🔍 Backend: Legal entities result for tenant', tenantId, ':', legalEntities.length, 'items');
-      console.log('🔍 Backend: First legal entity:', legalEntities[0]);
       res.json(legalEntities);
     } catch (error) {
       console.error("Error fetching legal entities:", error);
@@ -285,8 +281,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const users = await storage.getUsersByTenant(tenantId);
-      console.log('🔍 Backend: Users result for tenant', tenantId, ':', users.length, 'items');
-      console.log('🔍 Backend: First user:', users[0]);
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
