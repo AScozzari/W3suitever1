@@ -2719,7 +2719,7 @@ export default function SettingsPage() {
                     borderRadius: '8px',
                     cursor: 'pointer',
                     padding: '8px',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     color: '#64748b',
                     backdropFilter: 'blur(8px)'
                   }}
@@ -3380,7 +3380,7 @@ export default function SettingsPage() {
                     fontSize: '14px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}
                   onMouseOver={(e) => {
@@ -3405,7 +3405,7 @@ export default function SettingsPage() {
                     fontSize: '14px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                     boxShadow: '0 1px 3px 0 rgba(255, 105, 0, 0.3)'
                   }}
@@ -3518,7 +3518,7 @@ export default function SettingsPage() {
                     borderRadius: '8px',
                     cursor: 'pointer',
                     padding: '8px',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     color: '#64748b',
                     backdropFilter: 'blur(8px)'
                   }}
@@ -3609,7 +3609,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       outline: 'none',
@@ -3648,7 +3648,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       cursor: 'pointer',
@@ -3695,7 +3695,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       cursor: 'pointer',
@@ -3741,7 +3741,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       outline: 'none',
@@ -3791,7 +3791,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       cursor: 'pointer',
@@ -3852,7 +3852,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       outline: 'none',
@@ -3898,7 +3898,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       outline: 'none',
@@ -3939,7 +3939,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       outline: 'none',
@@ -4067,7 +4067,7 @@ export default function SettingsPage() {
                       borderRadius: '6px',
                       fontSize: '14px',
                       background: '#fafbfc',
-                      transition: 'all 0.15s ease',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       cursor: 'pointer',
@@ -4110,7 +4110,7 @@ export default function SettingsPage() {
                     fontSize: '14px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}
                   onMouseOver={(e) => {
@@ -4135,7 +4135,7 @@ export default function SettingsPage() {
                     fontSize: '14px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                     boxShadow: '0 1px 3px 0 rgba(255, 105, 0, 0.3)'
                   }}
@@ -5137,7 +5137,7 @@ export default function SettingsPage() {
                     fontSize: '14px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}
                   onMouseOver={(e) => {
@@ -5196,24 +5196,28 @@ export default function SettingsPage() {
                   }}
                   style={{
                     padding: '10px 24px',
-                    background: '#3b82f6',
+                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
                     fontSize: '14px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    boxShadow: '0 1px 3px 0 rgba(59, 130, 246, 0.3)'
+                    boxShadow: '0 4px 15px -3px rgba(255, 105, 0, 0.3)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#2563eb';
-                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(59, 130, 246, 0.4)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #ff7a1f, #ff9547)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(255, 105, 0, 0.4)';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#3b82f6';
-                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(59, 130, 246, 0.3)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px -3px rgba(255, 105, 0, 0.3)';
                   }}
                 >
                   Salva Utente
