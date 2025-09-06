@@ -5,13 +5,17 @@ interface LoginProps {
   tenantCode?: string;
 }
 
+/**
+ * W3 Suite OAuth2 Enterprise Login
+ * Direct integration with OAuth2 Authorization Server
+ */
 export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  // Mappa dei tenant disponibili
+  // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
     'staging': { name: 'Staging Environment', color: '#7B2CBF' },
     'demo': { name: 'Demo Organization', color: '#FF6900' },
@@ -28,6 +32,26 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // OAuth2 PKCE helpers
+  const generateCodeVerifier = (): string => {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return btoa(String.fromCharCode.apply(null, Array.from(array)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  };
+
+  const generateCodeChallenge = async (verifier: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(digest))))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  };
+
   const handleOAuth2Login = async () => {
     if (!username || !password) {
       alert('Inserisci nome utente e password');
@@ -37,14 +61,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     setIsLoading(true);
     
     try {
-      // OAuth2 Authorization Code Flow con PKCE
+      // OAuth2 Authorization Code Flow with PKCE
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = await generateCodeChallenge(codeVerifier);
       
-      // Salva il code verifier per il token exchange
-      localStorage.setItem('oauth2_code_verifier', codeVerifier);
-      
-      // Effettua la richiesta OAuth2 authorization
+      // Step 1: Get authorization code
       const authResponse = await fetch('/oauth2/authorize', {
         method: 'POST',
         headers: {
@@ -62,25 +83,57 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         }),
       });
 
-      if (authResponse.ok) {
-        // Parse redirect URL per estrarre il code
+      if (authResponse.redirected || authResponse.status === 302) {
+        // Parse redirect URL to extract the code
         const redirectUrl = authResponse.url;
         const urlParams = new URLSearchParams(redirectUrl.split('?')[1]);
         const authCode = urlParams.get('code');
         
         if (authCode) {
-          // Exchange authorization code per access token
-          await exchangeCodeForToken(authCode, codeVerifier);
+          // Step 2: Exchange authorization code for access token
+          const tokenResponse = await fetch('/oauth2/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              code: authCode,
+              redirect_uri: `${window.location.origin}/auth/callback`,
+              client_id: 'w3suite-frontend',
+              code_verifier: codeVerifier
+            }),
+          });
+
+          if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            
+            // Store OAuth2 tokens
+            localStorage.setItem('auth_token', tokenData.access_token);
+            if (tokenData.refresh_token) {
+              localStorage.setItem('refresh_token', tokenData.refresh_token);
+            }
+            
+            console.log('✅ OAuth2 Enterprise Login Successful:', {
+              tokenType: tokenData.token_type,
+              expiresIn: tokenData.expires_in,
+              scope: tokenData.scope
+            });
+            
+            window.location.reload();
+          } else {
+            throw new Error('Token exchange failed');
+          }
         } else {
           throw new Error('No authorization code received');
         }
       } else {
-        const error = await response.json();
+        const error = await authResponse.json();
         alert(error.message || 'Credenziali non valide');
         setIsLoading(false);
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('OAuth2 Login error:', error);
       alert('Errore durante il login. Riprova.');
       setIsLoading(false);
     }
@@ -89,7 +142,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))',
+      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -105,318 +158,166 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         left: '10%',
         width: '120px',
         height: '120px',
-        background: 'hsla(210, 100%, 85%, 0.3)',
+        background: 'rgba(255, 255, 255, 0.1)',
         borderRadius: '50%',
-        filter: 'blur(40px)',
-        animation: 'float 8s ease-in-out infinite'
+        filter: 'blur(40px)'
       }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '20%',
-        right: '15%',
-        width: '100px',
-        height: '100px',
-        background: 'hsla(220, 60%, 90%, 0.4)',
-        borderRadius: '50%',
-        filter: 'blur(50px)',
-        animation: 'float 10s ease-in-out infinite reverse'
-      }} />
-
+      
       {/* Main Container */}
       <div style={{
         width: '100%',
         maxWidth: '400px',
-        background: 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(12px) saturate(120%)',
-        WebkitBackdropFilter: 'blur(12px) saturate(120%)',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
         borderRadius: '20px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
-        border: '1px solid rgba(255, 255, 255, 0.4)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
         position: 'relative'
       }}>
-        {/* Inner glow */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
-          borderRadius: '20px',
-          pointerEvents: 'none'
-        }} />
         <div style={{ 
           padding: isMobile ? '32px 24px' : '48px 40px',
           position: 'relative',
-          zIndex: 2
+          zIndex: 1
         }}>
           {/* Header */}
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '32px'
-          }}>
-            {/* Logo */}
-            <div style={{
-              width: '64px',
-              height: '64px',
-              background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-              borderRadius: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px',
-              color: 'white',
-              fontSize: '24px',
-              fontWeight: 'bold'
-            }}>
-              W3
-            </div>
-
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h1 style={{
-              fontSize: '24px',
-              fontWeight: 600,
-              color: '#111827',
-              margin: '0 0 8px 0'
-            }}>Accedi a W3 Suite</h1>
-            
+              fontSize: isMobile ? '28px' : '32px',
+              fontWeight: '700',
+              color: 'white',
+              marginBottom: '8px',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+            }}>
+              W3 Suite
+            </h1>
+            <p style={{
+              fontSize: '16px',
+              color: 'rgba(255, 255, 255, 0.8)',
+              margin: 0
+            }}>
+              OAuth2 Enterprise Login
+            </p>
             <p style={{
               fontSize: '14px',
-              color: '#6b7280',
-              margin: '0 0 4px 0'
-            }}>{currentTenant.name}</p>
-            
-            <p style={{
-              fontSize: '12px',
-              color: '#9ca3af',
-              margin: 0
-            }}>Inserisci le tue credenziali per continuare</p>
+              color: currentTenant.color,
+              margin: '8px 0 0 0',
+              fontWeight: '500'
+            }}>
+              {currentTenant.name}
+            </p>
           </div>
 
-          {/* Form */}
-          <div style={{ marginBottom: '24px' }}>
-            {/* Username Field */}
+          {/* Login Form */}
+          <div style={{ marginBottom: '32px' }}>
+            {/* Username */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '6px'
-              }}>Nome Utente</label>
-              <div style={{ position: 'relative' }}>
-                <div style={{
+              <div style={{
+                position: 'relative',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <User style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '16px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}>
-                  <User size={18} />
-                </div>
+                  width: '20px',
+                  height: '20px',
+                  color: 'rgba(255, 255, 255, 0.7)'
+                }} />
                 <input
                   type="text"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isLoading}
                   style={{
                     width: '100%',
-                    padding: '12px 16px 12px 44px',
-                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    padding: '16px 16px 16px 48px',
+                    background: 'transparent',
+                    border: 'none',
                     borderRadius: '12px',
-                    fontSize: '14px',
-                    color: '#1f2937',
-                    outline: 'none',
-                    transition: 'all 0.3s ease',
-                    boxSizing: 'border-box',
-                    background: 'rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.transform = 'translateY(0)';
+                    fontSize: '16px',
+                    color: 'white',
+                    outline: 'none'
                   }}
                 />
               </div>
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '6px'
-              }}>Password</label>
-              <div style={{ position: 'relative' }}>
-                <div style={{
+              <div style={{
+                position: 'relative',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <Lock style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '16px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}>
-                  <Lock size={18} />
-                </div>
+                  width: '20px',
+                  height: '20px',
+                  color: 'rgba(255, 255, 255, 0.7)'
+                }} />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type="password"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  disabled={isLoading}
                   style={{
                     width: '100%',
-                    padding: '12px 44px 12px 44px',
-                    border: '1px solid rgba(255, 255, 255, 0.6)',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    color: '#1f2937',
-                    outline: 'none',
-                    transition: 'all 0.3s ease',
-                    boxSizing: 'border-box',
-                    background: 'rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)'
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleLogin();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
+                    padding: '16px 16px 16px 48px',
                     background: 'transparent',
                     border: 'none',
-                    color: '#9ca3af',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'color 0.2s ease'
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    color: 'white',
+                    outline: 'none'
                   }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.color = '#6b7280';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.color = '#9ca3af';
-                  }}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                />
               </div>
             </div>
 
             {/* Login Button */}
             <button
-              onClick={handleLogin}
+              onClick={handleOAuth2Login}
               disabled={isLoading}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                background: isLoading 
-                  ? '#9ca3af' 
-                  : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                padding: '16px',
+                background: isLoading ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: '600',
                 color: 'white',
-                fontSize: '14px',
-                fontWeight: 600,
-                border: 'none',
-                borderRadius: '8px',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-              onMouseOver={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(255, 105, 0, 0.3), 0 4px 15px rgba(123, 44, 191, 0.2)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
               }}
             >
-              {isLoading ? (
-                <>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }} />
-                  Accesso in corso...
-                </>
-              ) : (
-                'Accedi'
-              )}
+              {isLoading ? 'Autenticazione OAuth2...' : 'Accedi con OAuth2'}
             </button>
           </div>
 
-          {/* Footer Links */}
-          <div style={{
-            textAlign: 'center',
-            borderTop: '1px solid #f3f4f6',
-            paddingTop: '20px'
-          }}>
-            <a href="#" style={{
-              color: '#6b7280',
+          {/* Footer */}
+          <div style={{ textAlign: 'center' }}>
+            <p style={{
               fontSize: '12px',
-              textDecoration: 'none',
-              marginRight: '16px'
-            }}>Password dimenticata?</a>
-            <a href="#" style={{
-              color: '#6b7280',
-              fontSize: '12px',
-              textDecoration: 'none'
-            }}>Supporto</a>
+              color: 'rgba(255, 255, 255, 0.6)',
+              margin: 0
+            }}>
+              Powered by OAuth2 Enterprise • RFC 6749 + PKCE
+            </p>
           </div>
         </div>
       </div>
-
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-15px); }
-        }
-      `}</style>
     </div>
   );
 }
