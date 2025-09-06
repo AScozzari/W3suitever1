@@ -794,8 +794,8 @@ export default function SettingsPage() {
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.name || item.nome}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.code || item.codice || 'N/A'}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.formaGiuridica}</td>
@@ -823,7 +823,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.stato}
+                      {item.status || item.stato || 'Attivo'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -950,11 +950,11 @@ export default function SettingsPage() {
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.name || item.nome}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.code || item.codice || 'N/A'}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.indirizzo}</td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.address || item.indirizzo || 'N/A'}</td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
                       display: 'inline-flex',
@@ -995,7 +995,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.canale}
+                      {item.channelName || item.canale || 'N/A'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -1020,7 +1020,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.stato}
+                      {item.status || item.stato || 'Attivo'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
@@ -1196,13 +1196,13 @@ export default function SettingsPage() {
                   onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
-                      {user.nome} {user.cognome}
+                      {user.firstName || user.nome} {user.lastName || user.cognome}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
-                      {user.username}
+                      {user.username || user.email?.split('@')[0] || 'N/A'}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
-                      {user.email}
+                      {user.email || 'N/A'}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px' }}>
                       <span style={{
@@ -1214,11 +1214,11 @@ export default function SettingsPage() {
                         fontWeight: '600',
                         border: `1px solid ${user.ruolo.includes('Manager') ? '#e9d5ff' : '#d1fae5'}`
                       }}>
-                        {user.ruolo}
+                        {user.ruolo || 'Operatore'}
                       </span>
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
-                      {user.ambito}
+                      {user.ambito || 'Organizzazione'}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span style={{
@@ -1230,11 +1230,11 @@ export default function SettingsPage() {
                         fontSize: '12px',
                         fontWeight: '600'
                       }}>
-                        {user.stato}
+                        {user.status || user.stato || 'Operativo'}
                       </span>
                     </td>
                     <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                      {user.ultimoAccesso}
+                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('it-IT') : user.ultimoAccesso || 'Mai'}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
