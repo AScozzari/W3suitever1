@@ -544,7 +544,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           <div style={{
             width: '32px',
             height: '32px',
-            background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+            background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
             borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
@@ -1127,7 +1127,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     padding: isMobile ? '12px' : (leftSidebarCollapsed ? '12px' : '12px 16px'),
                     marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
                     background: isActive 
-                      ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
+                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
                       : 'transparent',
                     backdropFilter: 'none',
                     WebkitBackdropFilter: 'none',
@@ -1271,7 +1271,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     width: '40px',
                     height: '40px',
                     background: activeWorkspaceTab === 'Tasks' 
-                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
                       : 'transparent',
                     border: 'none',
                     borderRadius: '12px',
@@ -1312,7 +1312,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     width: '40px',
                     height: '40px',
                     background: activeWorkspaceTab === 'Leads'
-                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
                       : 'transparent',
                     border: 'none',
                     borderRadius: '12px',
@@ -1353,7 +1353,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     width: '40px',
                     height: '40px',
                     background: activeWorkspaceTab === 'Calendar'
-                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
                       : 'transparent',
                     border: 'none',
                     borderRadius: '12px',
@@ -1420,7 +1420,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         flex: 1,
                         padding: '8px 12px',
                         background: activeWorkspaceTab === tab 
-                          ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
+                          ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
                           : 'transparent',
                         color: activeWorkspaceTab === tab ? 'white' : '#6b7280',
                         border: 'none',
@@ -1459,7 +1459,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         margin: 0
                       }}>Tasks</h4>
                       <span style={{
-                        background: '#FF6900',
+                        background: COLORS.primary.orange,
                         color: 'white',
                         fontSize: '10px',
                         fontWeight: 600,
@@ -1484,7 +1484,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         <div style={{
                           fontSize: '14px',
                           fontWeight: 700,
-                          color: '#FF6900'
+                          color: COLORS.primary.orange
                         }}>{tasksOggi}</div>
                         <div style={{
                           fontSize: '8px',
@@ -1501,7 +1501,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         <div style={{
                           fontSize: '14px',
                           fontWeight: 700,
-                          color: '#10b981'
+                          color: COLORS.semantic.success
                         }}>{tasksCompletate}</div>
                         <div style={{
                           fontSize: '8px',
@@ -1521,10 +1521,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       {tasks.slice(0, 4).map((task) => {
                         const getPriorityColor = (priorita: string) => {
                           switch(priorita) {
-                            case 'Alta': return '#ef4444';
-                            case 'Media': return '#f59e0b';
-                            case 'Bassa': return '#10b981';
-                            default: return '#6b7280';
+                            case 'Alta': return COLORS.priority.high;
+                            case 'Media': return COLORS.priority.medium;
+                            case 'Bassa': return COLORS.priority.low;
+                            default: return COLORS.neutral.medium;
                           }
                         };
                         
@@ -1546,7 +1546,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             const priority = card.querySelector('.task-priority') as HTMLElement;
                             
                             // Card animations - più evidenti
-                            card.style.background = 'rgba(255, 105, 0, 0.08)';
+                            card.style.background = `rgba(255, 105, 0, 0.08)`;
                             card.style.transform = 'translateY(-2px) scale(1.01)';
                             card.style.boxShadow = `0 8px 16px ${getPriorityColor(task.priorita)}30, 0 4px 8px rgba(0, 0, 0, 0.12)`;
                             card.style.borderLeftWidth = '4px';
@@ -1557,7 +1557,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             
                             // Title animation
                             if (title) {
-                              title.style.color = '#FF6900';
+                              title.style.color = COLORS.primary.orange;
                               title.style.fontWeight = '700';
                             }
                             
@@ -1772,10 +1772,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       {leads.slice(0, 4).map((lead) => {
                         const getPriorityColor = (priorita: string) => {
                           switch(priorita) {
-                            case 'Alta': return '#ef4444';
-                            case 'Media': return '#f59e0b';
-                            case 'Bassa': return '#10b981';
-                            default: return '#6b7280';
+                            case 'Alta': return COLORS.priority.high;
+                            case 'Media': return COLORS.priority.medium;
+                            case 'Bassa': return COLORS.priority.low;
+                            default: return COLORS.neutral.medium;
                           }
                         };
                         
