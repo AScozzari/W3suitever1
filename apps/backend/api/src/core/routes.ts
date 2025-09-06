@@ -202,33 +202,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== STORE MANAGEMENT API ====================
   
-  // Middleware JWT semplice per development
-  const simpleAuth = async (req: any, res: any, next: any) => {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ message: "Token richiesto" });
-    }
-    
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      req.user = {
-        id: decoded.sub || decoded.id, // OAuth2 uses 'sub', legacy uses 'id'
-        email: decoded.email,
-        tenantId: decoded.tenantId,
-        roles: decoded.roles || [],
-        permissions: decoded.permissions || [],
-        capabilities: decoded.capabilities || []
-      };
-      next();
-    } catch (error) {
-      return res.status(401).json({ message: "Token non valido" });
-    }
-  };
+  // OAuth2 Enterprise Authentication - usando requireAuth() da oauth.ts
 
   // Get commercial areas (reference data)
-  app.get('/api/commercial-areas', simpleAuth, async (req: any, res) => {
+  app.get('/api/commercial-areas', requireAuth(), async (req: any, res) => {
     try {
       const areas = await storage.getCommercialAreas();
       res.json(areas);
@@ -239,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get stores for current tenant (automatic via middleware)
-  app.get('/api/stores', simpleAuth, async (req: any, res) => {
+  app.get('/api/stores', requireAuth(), async (req: any, res) => {
     try {
       // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
@@ -289,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== LEGAL ENTITIES API ====================
   
   // Get legal entities for current tenant
-  app.get('/api/legal-entities', simpleAuth, async (req: any, res) => {
+  app.get('/api/legal-entities', requireAuth(), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -321,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== USER MANAGEMENT API ====================
   
   // Get users for current tenant
-  app.get('/api/users', simpleAuth, async (req: any, res) => {
+  app.get('/api/users', requireAuth(), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
