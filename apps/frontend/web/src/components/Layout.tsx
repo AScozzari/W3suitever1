@@ -478,7 +478,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, hsl(210, 25%, 97%), hsl(210, 30%, 95%))',
+      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
       fontFamily: 'Inter, system-ui, sans-serif',
       position: 'relative'
     }}>
