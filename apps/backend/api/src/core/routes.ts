@@ -5,7 +5,6 @@ import { setupOAuthRoutes, requireAuth, requirePermission } from "./oauth";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
 import jwt from "jsonwebtoken";
-
 const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -55,24 +54,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (username === 'admin' && password === 'admin123') {
         const expirationTime = Math.floor(Date.now() / 1000) + (30 * 60); // 30 minuti
         
-        // OAuth2 enterprise session structure
+        // Enterprise OAuth2 session structure compatible with enterpriseAuth
         const oauthSession = {
-          sub: 'admin-user', // OAuth2 standard "subject" field
+          userId: 'admin-user',
           email: 'admin@w3suite.com',
           tenantId: '00000000-0000-0000-0000-000000000001',
-          scope: 'tenant.admin', // Enterprise scope
           roles: ['super_admin', 'tenant_admin'],
           permissions: ['*'], // All permissions
           capabilities: ['*'],
+          scope: 'tenant', // Enterprise scope
           expiresAt: expirationTime,
           issuedAt: Math.floor(Date.now() / 1000),
-          issuer: 'w3suite-dev',
-          mfaRequired: false,
-          mfaVerified: true,
-          lastMfaAt: Date.now()
+          issuer: 'w3suite-dev'
         };
         
-        // Create OAuth2-style JWT token
+        // Create enterprise JWT token using jsonwebtoken (consistent with enterpriseAuth)
         const token = jwt.sign(oauthSession, JWT_SECRET, { 
           expiresIn: "30m",
           issuer: 'w3suite-dev',
@@ -202,10 +198,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== STORE MANAGEMENT API ====================
   
-  // OAuth2 Enterprise Authentication - usando requireAuth() da oauth.ts
+  // Enterprise JWT Authentication Middleware with OAuth2 compatibility
+  const enterpriseAuth = async (req: any, res: any, next: any) => {
+    const startTime = Date.now();
+    
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
+      
+      if (!token) {
+        return res.status(401).json({ 
+          error: 'unauthorized',
+          message: 'No authentication token provided',
+          loginUrl: '/api/auth/login'
+        });
+      }
+      
+      // Enterprise JWT verification with full error handling
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      // Validate token structure and expiration
+      if (!decoded.userId && !decoded.sub) {
+        return res.status(401).json({ 
+          error: 'invalid_token',
+          message: 'Invalid token structure',
+          loginUrl: '/api/auth/login'
+        });
+      }
+      
+      // Check token expiration (enterprise standard)
+      const now = Math.floor(Date.now() / 1000);
+      if (decoded.exp && now >= decoded.exp) {
+        return res.status(401).json({ 
+          error: 'token_expired',
+          message: 'Token has expired',
+          loginUrl: '/api/auth/login'
+        });
+      }
+      
+      // Set enterprise user context
+      req.user = {
+        id: decoded.userId || decoded.sub,
+        email: decoded.email,
+        tenantId: decoded.tenantId,
+        roles: decoded.roles || [],
+        permissions: decoded.permissions || [],
+        capabilities: decoded.capabilities || [],
+        scope: decoded.scope
+      };
+      
+      // Enterprise logging for audit
+      console.log(`[AUTH] ${req.method} ${req.path} - User: ${req.user.id} - Tenant: ${req.user.tenantId} - Duration: ${Date.now() - startTime}ms`);
+      
+      next();
+    } catch (error: any) {
+      // Enterprise error handling with detailed logging
+      console.error(`[AUTH ERROR] ${req.method} ${req.path} - Error: ${error.message} - Duration: ${Date.now() - startTime}ms`);
+      
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ 
+          error: 'token_expired',
+          message: 'Token has expired',
+          loginUrl: '/api/auth/login'
+        });
+      }
+      
+      return res.status(401).json({ 
+        error: 'invalid_token',
+        message: 'Invalid token',
+        loginUrl: '/api/auth/login'
+      });
+    }
+  };
 
   // Get commercial areas (reference data)
-  app.get('/api/commercial-areas', requireAuth(), async (req: any, res) => {
+  app.get('/api/commercial-areas', enterpriseAuth, async (req: any, res) => {
     try {
       const areas = await storage.getCommercialAreas();
       res.json(areas);
@@ -216,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get stores for current tenant (automatic via middleware)
-  app.get('/api/stores', requireAuth(), async (req: any, res) => {
+  app.get('/api/stores', enterpriseAuth, async (req: any, res) => {
     try {
       // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
@@ -266,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== LEGAL ENTITIES API ====================
   
   // Get legal entities for current tenant
-  app.get('/api/legal-entities', requireAuth(), async (req: any, res) => {
+  app.get('/api/legal-entities', enterpriseAuth, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -283,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create legal entity
-  app.post('/api/legal-entities', requireAuth(), async (req: any, res) => {
+  app.post('/api/legal-entities', enterpriseAuth, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const legalEntityData = { ...req.body, tenantId };
@@ -298,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== USER MANAGEMENT API ====================
   
   // Get users for current tenant
-  app.get('/api/users', requireAuth(), async (req: any, res) => {
+  app.get('/api/users', enterpriseAuth, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -315,7 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create user
-  app.post('/api/users', requireAuth(), async (req: any, res) => {
+  app.post('/api/users', enterpriseAuth, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userData = { ...req.body, tenantId, id: `user-${Date.now()}` };
