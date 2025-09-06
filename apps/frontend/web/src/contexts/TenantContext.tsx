@@ -50,9 +50,12 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Fetch user and tenant data from authenticated session
+  // Only fetch user and tenant data if we have a token
+  const hasToken = typeof window !== 'undefined' && localStorage.getItem('auth_token');
+  
   const { data: sessionData, isLoading, error } = useQuery({
     queryKey: ['/api/auth/session'],
+    enabled: !!hasToken, // Only run query if we have a token
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

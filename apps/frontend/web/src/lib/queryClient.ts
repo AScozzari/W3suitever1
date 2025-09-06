@@ -25,8 +25,14 @@ export const queryClient = new QueryClient({
             // Clear expired/invalid token and redirect to login
             localStorage.removeItem('auth_token');
             localStorage.removeItem('currentTenantId');
-            console.log('Token expired or invalid - redirecting to login');
-            window.location.reload(); // Force re-authentication
+            
+            // Avoid infinite reload loop if already on login page
+            if (window.location.pathname.includes('/login') || !localStorage.getItem('auth_token')) {
+              console.log('Already on login page or no token - skipping reload');
+            } else {
+              console.log('Token expired or invalid - redirecting to login');
+              window.location.reload(); // Force re-authentication
+            }
             throw new Error(`401: Unauthorized`);
           }
           throw new Error(`${res.status}: ${res.statusText}`);
@@ -62,8 +68,14 @@ export async function apiRequest(
       // Clear expired/invalid token and redirect to login
       localStorage.removeItem('auth_token');
       localStorage.removeItem('currentTenantId');
-      console.log('Token expired or invalid - redirecting to login');
-      window.location.reload(); // Force re-authentication
+      
+      // Avoid infinite reload loop if already on login page
+      if (window.location.pathname.includes('/login') || !localStorage.getItem('auth_token')) {
+        console.log('Already on login page or no token - skipping reload');
+      } else {
+        console.log('Token expired or invalid - redirecting to login');
+        window.location.reload(); // Force re-authentication
+      }
       throw new Error(`401: Unauthorized`);
     }
     throw new Error(`${res.status}: ${res.statusText}`);
