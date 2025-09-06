@@ -278,37 +278,119 @@ const mockRagioneSociali = [
 
 // Mock data per punti vendita - codici iniziano con 90 e hanno almeno 8 cifre
 const mockPuntiVendita = [
+  // Punti vendita per Marketing Solutions Spa (id: 1)
   { 
     id: 1,
-    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
-    ragioneSociale_id: 1, // FK alla ragione sociale
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 1,
     codice: '90000012', 
-    nome: 'WindTre Milano Centro', 
-    indirizzo: 'Via Montenapoleone 15',
+    nome: 'Milano Duomo', 
+    indirizzo: 'Piazza Duomo 1',
+    citta: 'Milano',
+    canale: 'Flagship', 
+    stato: 'Attivo'
+  },
+  { 
+    id: 2,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 1,
+    codice: '90000013', 
+    nome: 'Milano Centrale', 
+    indirizzo: 'Via Vittor Pisani 10',
+    citta: 'Milano',
+    canale: 'Store', 
+    stato: 'Attivo'
+  },
+  { 
+    id: 3,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 1,
+    codice: '90000014', 
+    nome: 'Milano Porta Romana', 
+    indirizzo: 'Corso Lodi 47',
     citta: 'Milano',
     canale: 'Franchising', 
     stato: 'Attivo'
   },
   { 
-    id: 2,
-    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
-    ragioneSociale_id: 2, // FK alla ragione sociale
-    codice: '90001234', 
-    nome: 'WindTre Roma Termini', 
-    indirizzo: 'Via Nazionale 123',
+    id: 4,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 1,
+    codice: '90000015', 
+    nome: 'Roma Termini', 
+    indirizzo: 'Via Marsala 25',
     citta: 'Roma',
+    canale: 'Store', 
+    stato: 'Attivo'
+  },
+  
+  // Punti vendita per Digital Operations Snc (id: 2)
+  { 
+    id: 5,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 2,
+    codice: '90001234', 
+    nome: 'Bologna Centrale', 
+    indirizzo: 'Via Indipendenza 12',
+    citta: 'Bologna',
     canale: 'Top Dealer', 
     stato: 'Attivo'
   },
   { 
-    id: 3,
-    tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
-    ragioneSociale_id: 3, // FK alla ragione sociale
+    id: 6,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 2,
+    codice: '90001235', 
+    nome: 'Bologna Fiera', 
+    indirizzo: 'Via Stalingrado 45',
+    citta: 'Bologna',
+    canale: 'Dealer', 
+    stato: 'Attivo'
+  },
+  { 
+    id: 7,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 2,
+    codice: '90001236', 
+    nome: 'Torino Centro', 
+    indirizzo: 'Via Roma 320',
+    citta: 'Torino',
+    canale: 'Store', 
+    stato: 'Attivo'
+  },
+  
+  // Punti vendita per Tech Solutions Ltd (id: 3)
+  { 
+    id: 8,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 3,
     codice: '90002456', 
-    nome: 'WindTre Napoli Centrale', 
-    indirizzo: 'Piazza Garibaldi 45',
+    nome: 'Napoli Centro', 
+    indirizzo: 'Via Toledo 100',
     citta: 'Napoli',
     canale: 'Franchising', 
+    stato: 'Attivo'
+  },
+  { 
+    id: 9,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 3,
+    codice: '90002457', 
+    nome: 'Napoli Vomero', 
+    indirizzo: 'Via Scarlatti 98',
+    citta: 'Napoli',
+    canale: 'Dealer', 
+    stato: 'Attivo'
+  },
+  { 
+    id: 10,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: 3,
+    codice: '90002458', 
+    nome: 'Firenze Centro', 
+    indirizzo: 'Via Calzaiuoli 89',
+    citta: 'Firenze',
+    canale: 'Store', 
     stato: 'Attivo'
   }
 ];
@@ -4759,10 +4841,10 @@ export default function SettingsPage() {
                       style={{
                         width: '100%',
                         padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #d1d5db',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
                       }}
@@ -4820,10 +4902,10 @@ export default function SettingsPage() {
                       style={{
                         width: '100%',
                         padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #d1d5db',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
                       }}
@@ -4848,10 +4930,10 @@ export default function SettingsPage() {
                       style={{
                         width: '100%',
                         padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #d1d5db',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
                       }}
@@ -4892,10 +4974,10 @@ export default function SettingsPage() {
                       style={{
                         width: '100%',
                         padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #d1d5db',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
                       }}
@@ -4920,10 +5002,10 @@ export default function SettingsPage() {
                       style={{
                         width: '100%',
                         padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #d1d5db',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
                       }}
@@ -4948,10 +5030,10 @@ export default function SettingsPage() {
                       style={{
                         width: '100%',
                         padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #d1d5db',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
                       }}
@@ -4976,10 +5058,10 @@ export default function SettingsPage() {
                       style={{
                         width: '100%',
                         padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
+                        border: '1px solid #d1d5db',
                         borderRadius: '6px',
                         fontSize: '14px',
-                        background: '#ffffff',
+                        background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
                       }}
