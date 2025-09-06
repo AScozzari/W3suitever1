@@ -977,7 +977,7 @@ export default function SettingsPage() {
                   onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
-                      {user.firstName || user.nome} {user.lastName || user.cognome}
+                      {user.first_name || user.nome || ''} {user.last_name || user.cognome || ''}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
                       {user.username || user.email?.split('@')[0] || 'N/A'}
@@ -987,35 +987,35 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px' }}>
                       <span style={{
-                        background: user.ruolo.includes('Manager') ? '#f3f4f6' : '#f3f4f6',
-                        color: user.ruolo.includes('Manager') ? '#7c3aed' : '#059669',
+                        background: user.ruolo?.includes('Manager') ? '#f3f4f6' : '#f3f4f6',
+                        color: user.ruolo?.includes('Manager') ? '#7c3aed' : '#059669',
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
                         fontWeight: '600',
-                        border: `1px solid ${user.ruolo.includes('Manager') ? '#e9d5ff' : '#d1fae5'}`
+                        border: `1px solid ${user.ruolo?.includes('Manager') ? '#e9d5ff' : '#d1fae5'}`
                       }}>
-                        {user.ruolo || 'Operatore'}
+                        {user.ruolo || user.role || 'Operatore'}
                       </span>
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
-                      {user.ambito || 'Organizzazione'}
+                      {user.ambito || user.scope || 'Organizzazione'}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span style={{
-                        background: user.stato === 'Operativo' ? '#dcfce7' : (user.stato === 'Sospeso' ? '#fef3c7' : '#f3f4f6'),
-                        color: user.stato === 'Operativo' ? '#15803d' : (user.stato === 'Sospeso' ? '#92400e' : '#6b7280'),
-                        border: `1px solid ${user.stato === 'Operativo' ? '#bbf7d0' : (user.stato === 'Sospeso' ? '#fde68a' : '#e5e7eb')}`,
+                        background: (user.status === 'active' || user.status === 'Operativo') ? '#dcfce7' : (user.status === 'Sospeso' ? '#fef3c7' : '#f3f4f6'),
+                        color: (user.status === 'active' || user.status === 'Operativo') ? '#15803d' : (user.status === 'Sospeso' ? '#92400e' : '#6b7280'),
+                        border: `1px solid ${(user.status === 'active' || user.status === 'Operativo') ? '#bbf7d0' : (user.status === 'Sospeso' ? '#fde68a' : '#e5e7eb')}`,
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
                         fontWeight: '600'
                       }}>
-                        {user.status || user.stato || 'Operativo'}
+                        {user.status === 'active' ? 'Operativo' : (user.status || user.stato || 'Operativo')}
                       </span>
                     </td>
                     <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                      {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('it-IT') : user.ultimoAccesso || 'Mai'}
+                      {user.last_login_at ? new Date(user.last_login_at).toLocaleDateString('it-IT') : user.ultimoAccesso || 'Mai'}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
