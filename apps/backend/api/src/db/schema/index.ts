@@ -78,6 +78,7 @@ export type Tenant = typeof tenants.$inferSelect;
 export const legalEntities = pgTable("legal_entities", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   vat: varchar("vat", { length: 50 }),
   billingProfileId: uuid("billing_profile_id"),
@@ -99,7 +100,9 @@ export const legalEntities = pgTable("legal_entities", {
   pec: varchar("pec", { length: 255 }),
   rea: varchar("rea", { length: 100 }),
   registroImprese: varchar("registro_imprese", { length: 255 }),
-});
+}, (table) => [
+  uniqueIndex("legal_entities_tenant_code_unique").on(table.tenantId, table.code),
+]);
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
   id: true, 

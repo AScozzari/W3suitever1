@@ -557,13 +557,10 @@ export default function SettingsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ragione Sociale</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Forma Giuridica</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Contatti</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Capitale</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
                 <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
               </tr>
@@ -576,13 +573,15 @@ export default function SettingsPage() {
                 }}
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+                    {item.code || 'N/A'}
+                  </td>
                   <td style={{ padding: '16px' }}>
                     <div>
                       <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.name || item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>REA: {item.rea || 'N/A'}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.forma_giuridica || item.formaGiuridica || 'N/A'}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>{item.forma_giuridica || item.formaGiuridica || 'N/A'}</td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     <div>
                       <div>P.IVA: {item.vat || item.pIva || 'N/A'}</div>
@@ -590,19 +589,7 @@ export default function SettingsPage() {
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    {item.address ? item.address.substring(0, 30) + '...' : 'N/A'}
-                  </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
                     {item.city || item.citta || 'N/A'} ({item.province || 'N/A'})
-                  </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    <div>
-                      <div>Tel: {item.phone || item.telefono || 'N/A'}</div>
-                      <div>Email: {item.email ? item.email.substring(0, 20) + '...' : 'N/A'}</div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
-                    {item.capitale_sociale || item.capitaleSociale || 'N/A'}
                   </td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
