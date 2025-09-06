@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';
-import { oauth2Client } from '../services/OAuth2Client';
 import {
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
   Target, Zap, Shield, Calendar, Clock,
@@ -227,25 +226,6 @@ export default function DashboardPage() {
               }}>
                 <Plus size={16} />
                 Nuovo Cliente
-              </button>
-              {/* DEBUG: Token expiry test button */}
-              <button 
-                onClick={async () => {
-                  await oauth2Client.forceExpireToken();
-                  console.log('Token forced to expire - next API call will trigger refresh');
-                  alert('Token expires in pochi secondi - controlla la console per i log!');
-                }}
-                style={{
-                  background: 'rgba(255, 0, 0, 0.7)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '12px 20px',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}>
-                🔥 DEBUG: Expire Token
               </button>
             </div>
           </div>
