@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Lock } from 'lucide-react';
+import { User, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
   tenantCode?: string;
@@ -14,6 +14,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
@@ -142,7 +143,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
+      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -158,20 +159,30 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         left: '10%',
         width: '120px',
         height: '120px',
-        background: 'rgba(255, 255, 255, 0.1)',
+        background: 'rgba(255, 105, 0, 0.1)',
         borderRadius: '50%',
         filter: 'blur(40px)'
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '20%',
+        right: '15%',
+        width: '100px',
+        height: '100px',
+        background: 'rgba(123, 44, 191, 0.08)',
+        borderRadius: '50%',
+        filter: 'blur(35px)'
       }} />
       
       {/* Main Container */}
       <div style={{
         width: '100%',
         maxWidth: '400px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)',
+        background: 'hsla(0, 0%, 100%, 0.7)',
+        backdropFilter: 'blur(20px)',
         borderRadius: '20px',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
+        border: '1px solid rgba(255, 255, 255, 0.3)',
         position: 'relative'
       }}>
         <div style={{ 
@@ -184,15 +195,14 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             <h1 style={{
               fontSize: isMobile ? '28px' : '32px',
               fontWeight: '700',
-              color: 'white',
-              marginBottom: '8px',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              color: '#1f2937',
+              marginBottom: '8px'
             }}>
               W3 Suite
             </h1>
             <p style={{
               fontSize: '16px',
-              color: 'rgba(255, 255, 255, 0.8)',
+              color: '#6b7280',
               margin: 0
             }}>
               OAuth2 Enterprise Login
@@ -213,9 +223,9 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             <div style={{ marginBottom: '20px' }}>
               <div style={{
                 position: 'relative',
-                background: 'rgba(255, 255, 255, 0.1)',
+                background: 'rgba(255, 255, 255, 0.8)',
                 borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
+                border: '1px solid rgba(0, 0, 0, 0.1)'
               }}>
                 <User style={{
                   position: 'absolute',
@@ -224,7 +234,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   transform: 'translateY(-50%)',
                   width: '20px',
                   height: '20px',
-                  color: 'rgba(255, 255, 255, 0.7)'
+                  color: '#6b7280'
                 }} />
                 <input
                   type="text"
@@ -239,7 +249,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     border: 'none',
                     borderRadius: '12px',
                     fontSize: '16px',
-                    color: 'white',
+                    color: '#1f2937',
                     outline: 'none'
                   }}
                 />
@@ -250,9 +260,9 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             <div style={{ marginBottom: '24px' }}>
               <div style={{
                 position: 'relative',
-                background: 'rgba(255, 255, 255, 0.1)',
+                background: 'rgba(255, 255, 255, 0.8)',
                 borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
+                border: '1px solid rgba(0, 0, 0, 0.1)'
               }}>
                 <Lock style={{
                   position: 'absolute',
@@ -261,25 +271,48 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                   transform: 'translateY(-50%)',
                   width: '20px',
                   height: '20px',
-                  color: 'rgba(255, 255, 255, 0.7)'
+                  color: '#6b7280'
                 }} />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                   style={{
                     width: '100%',
-                    padding: '16px 16px 16px 48px',
+                    padding: '16px 48px 16px 48px',
                     background: 'transparent',
                     border: 'none',
                     borderRadius: '12px',
                     fontSize: '16px',
-                    color: 'white',
+                    color: '#1f2937',
                     outline: 'none'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {showPassword ? (
+                    <EyeOff style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+                  ) : (
+                    <Eye style={{ width: '20px', height: '20px', color: '#6b7280' }} />
+                  )}
+                </button>
               </div>
             </div>
 
