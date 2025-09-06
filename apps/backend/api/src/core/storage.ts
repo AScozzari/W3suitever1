@@ -125,7 +125,36 @@ export class DatabaseStorage implements IStorage {
   // ==================== ROLE MANAGEMENT ====================
 
   async getRolesByTenant(tenantId: string): Promise<Role[]> {
-    return await db.select().from(roles).where(eq(roles.tenantId, tenantId));
+    // First check if roles exist for this tenant
+    const existingRoles = await db.select().from(roles).where(eq(roles.tenantId, tenantId));
+    
+    // If no roles exist, initialize default roles
+    if (existingRoles.length === 0) {
+      const defaultRoles = [
+        { name: 'Amministratore', description: 'Accesso completo a tutte le funzionalità', isSystem: true },
+        { name: 'Store Manager', description: 'Gestione completa del punto vendita', isSystem: true },
+        { name: 'Area Manager', description: 'Supervisione di più punti vendita', isSystem: true },
+        { name: 'Finance', description: 'Gestione finanziaria e reportistica', isSystem: true },
+        { name: 'HR Manager', description: 'Gestione risorse umane', isSystem: true },
+        { name: 'Sales Agent', description: 'Agente di vendita', isSystem: false },
+        { name: 'Cassiere', description: 'Gestione cassa e vendite', isSystem: false },
+        { name: 'Magazziniere', description: 'Gestione magazzino e inventario', isSystem: false },
+        { name: 'Marketing', description: 'Gestione campagne e promozioni', isSystem: false }
+      ];
+      
+      const insertedRoles = await Promise.all(
+        defaultRoles.map(roleData => 
+          db.insert(roles).values({
+            tenantId,
+            ...roleData
+          }).returning()
+        )
+      );
+      
+      return insertedRoles.map(([role]) => role);
+    }
+    
+    return existingRoles;
   }
 
   async createRole(roleData: InsertRole): Promise<Role> {

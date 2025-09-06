@@ -377,6 +377,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all roles for the current tenant
+  app.get('/api/roles', async (req: any, res) => {
+    try {
+      // Get tenant from token or use demo tenant
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
+      let tenantId = '00000000-0000-0000-0000-000000000001'; // Default demo tenant
+      
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          tenantId = decoded.tenantId || tenantId;
+        } catch (error) {
+          console.log("Using default tenant for roles");
+        }
+      }
+      
+      const roles = await storage.getRolesByTenant(tenantId);
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

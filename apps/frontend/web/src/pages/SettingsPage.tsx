@@ -104,23 +104,7 @@ const mockUtenti = [
 ];
 
 // Lista di ruoli disponibili
-const availableRoles = [
-  'Super Admin',
-  'Regional Manager',
-  'District Manager',
-  'Store Manager',
-  'Assistant Manager',
-  'Senior Salesperson',
-  'Salesperson',
-  'Trainee',
-  'Accountant',
-  'HR Manager',
-  'Marketing Manager',
-  'IT Support',
-  'Customer Service',
-  'Warehouse Manager',
-  'Logistics Coordinator'
-];
+// Ruoli verranno caricati dall'API
 
 // Lista di province italiane
 const italianProvinces = [
@@ -331,6 +315,7 @@ const mockPuntiVendita = [
 
 export default function SettingsPage() {
   const [currentModule, setCurrentModule] = useState('impostazioni');
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('Entity Management');
   
   // Modal states
@@ -348,6 +333,40 @@ export default function SettingsPage() {
   // Local state for managing items
   const [ragioneSocialiList, setRagioneSocialiList] = useState(mockRagioneSociali);
   const [puntiVenditaList, setPuntiVenditaList] = useState(mockPuntiVendita);
+  
+  // Carica i ruoli dal database all'avvio
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+  
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch('/api/roles', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const roles = await response.json();
+        setAvailableRoles(roles.map((role: any) => role.name));
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      // Fallback ai ruoli di default se l'API fallisce
+      setAvailableRoles([
+        'Amministratore',
+        'Store Manager',
+        'Area Manager',
+        'Finance',
+        'HR Manager',
+        'Sales Agent',
+        'Cassiere',
+        'Magazziniere',
+        'Marketing'
+      ]);
+    }
+  };
   const [utentiList, setUtentiList] = useState(mockUtenti);
   
   // Modal states
