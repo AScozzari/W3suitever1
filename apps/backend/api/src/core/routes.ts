@@ -7,6 +7,7 @@ import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../midd
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
+const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -240,7 +241,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== LEGAL ENTITIES API ====================
+  
+  // Get legal entities for current tenant
+  app.get('/api/legal-entities', simpleAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      const legalEntities = await storage.getLegalEntitiesByTenant(tenantId);
+      res.json(legalEntities);
+    } catch (error) {
+      console.error("Error fetching legal entities:", error);
+      res.status(500).json({ error: "Failed to fetch legal entities" });
+    }
+  });
+  
+  // Create legal entity
+  app.post('/api/legal-entities', simpleAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const legalEntityData = { ...req.body, tenantId };
+      const legalEntity = await storage.createLegalEntity(legalEntityData);
+      res.status(201).json(legalEntity);
+    } catch (error) {
+      console.error("Error creating legal entity:", error);
+      res.status(500).json({ error: "Failed to create legal entity" });
+    }
+  });
+
   // ==================== USER MANAGEMENT API ====================
+  
+  // Get users for current tenant
+  app.get('/api/users', simpleAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      const users = await storage.getUsersByTenant(tenantId);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  // Create user
+  app.post('/api/users', simpleAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userData = { ...req.body, tenantId, id: `user-${Date.now()}` };
+      const user = await storage.upsertUser(userData);
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
 
   // Get user roles
   app.get('/api/users/:userId/roles', requireAuth(), requirePermission('user.view'), async (req, res) => {

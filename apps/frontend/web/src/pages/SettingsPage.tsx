@@ -412,13 +412,16 @@ export default function SettingsPage() {
   // Selected entity tab
   const [selectedEntity, setSelectedEntity] = useState('ragione-sociale');
   
-  // Local state for managing items
-  const [ragioneSocialiList, setRagioneSocialiList] = useState(mockRagioneSociali);
-  const [puntiVenditaList, setPuntiVenditaList] = useState(mockPuntiVendita);
+  // Local state for managing items - inizializzati vuoti, caricati dal DB
+  const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
+  const [puntiVenditaList, setPuntiVenditaList] = useState<any[]>([]);
   
-  // Carica i ruoli dal database all'avvio
+  // Carica i dati dal database all'avvio
   useEffect(() => {
     fetchRoles();
+    fetchLegalEntities();
+    fetchStores();
+    fetchUsers();
   }, []);
   
   const fetchRoles = async () => {
@@ -449,7 +452,62 @@ export default function SettingsPage() {
       ]);
     }
   };
-  const [utentiList, setUtentiList] = useState(mockUtenti);
+  
+  const fetchLegalEntities = async () => {
+    try {
+      const response = await fetch('/api/legal-entities', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': getCurrentTenantId()
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRagioneSocialiList(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch legal entities:', error);
+    }
+  };
+  
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/stores', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': getCurrentTenantId()
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPuntiVenditaList(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stores:', error);
+    }
+  };
+  
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/users', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': getCurrentTenantId()
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUtentiList(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+  
+  const [utentiList, setUtentiList] = useState<any[]>([]);
   
   // Modal states
   const [showCreateRagioneSociale, setShowCreateRagioneSociale] = useState(false);

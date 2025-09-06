@@ -37,6 +37,7 @@ export interface IStorage {
   // User operations (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  getUsersByTenant(tenantId: string): Promise<User[]>;
   
   // Tenant Management
   getTenant(id: string): Promise<Tenant | undefined>;
@@ -95,6 +96,10 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+  
+  async getUsersByTenant(tenantId: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.tenantId, tenantId));
   }
 
   // ==================== TENANT MANAGEMENT ====================
