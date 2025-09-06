@@ -5207,22 +5207,12 @@ export default function SettingsPage() {
       )}
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div style={{
-        background: 'hsla(255, 255, 255, 0.08)',
-        backdropFilter: 'blur(24px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-        border: '1px solid hsla(255, 255, 255, 0.12)',
-        borderRadius: '24px',
-        overflow: 'hidden',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
-      }}>
-        {/* Header */}
+        {/* Header - Direttamente sullo sfondo */}
         <div style={{
-          padding: '24px',
-          borderBottom: '1px solid hsla(255, 255, 255, 0.12)'
+          marginBottom: '24px'
         }}>
           <h1 style={{
-            fontSize: '24px',
+            fontSize: '28px',
             fontWeight: '700',
             color: '#111827',
             margin: '0 0 8px 0'
@@ -5230,7 +5220,7 @@ export default function SettingsPage() {
             Configurazioni Sistema
           </h1>
           <p style={{
-            fontSize: '14px',
+            fontSize: '15px',
             color: '#6b7280',
             margin: 0
           }}>
@@ -5238,21 +5228,22 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs Container */}
         <div style={{
-          padding: '20px 24px',
-          borderBottom: '1px solid hsla(255, 255, 255, 0.08)'
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
         }}>
           <div style={{
             display: 'flex',
-            background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            border: '1px solid hsla(255, 255, 255, 0.12)',
+            background: 'rgba(243, 244, 246, 0.5)',
             borderRadius: '12px',
-            padding: '6px',
-            gap: '4px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+            padding: '4px',
+            gap: '4px'
           }}>
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -5308,12 +5299,11 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Content Area */}
-        <div style={{ padding: '24px' }}>
+        {/* Content Area - Direttamente sullo sfondo */}
+        <div>
           {renderContent()}
         </div>
-      </div>
-    </Layout>
+      </Layout>
     </>
   );
 }
