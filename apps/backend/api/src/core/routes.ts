@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create legal entity
-  app.post('/api/legal-entities', simpleAuth, async (req: any, res) => {
+  app.post('/api/legal-entities', requireAuth(), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const legalEntityData = { ...req.body, tenantId };
@@ -315,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create user
-  app.post('/api/users', simpleAuth, async (req: any, res) => {
+  app.post('/api/users', requireAuth(), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userData = { ...req.body, tenantId, id: `user-${Date.now()}` };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -215,30 +216,45 @@ export default function SettingsPage() {
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
   const [puntiVenditaList, setPuntiVenditaList] = useState<any[]>([]);
   
-  // Carica i dati dal database all'avvio
+  // Caricamento dati enterprise con service layer
   useEffect(() => {
-    console.log('Loading data from database...');
-    console.log('Auth token present:', !!localStorage.getItem('auth_token'));
-    
-    // Delay per assicurarsi che il token sia disponibile e valido
     const loadData = async () => {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        console.log('No token available, skipping data load');
-        return;
+      try {
+        console.log('Loading settings data via enterprise service...');
+        
+        const result = await apiService.loadSettingsData();
+        
+        if (!result.success) {
+          if (result.needsAuth) {
+            console.error('Authentication required - redirecting to login');
+            // Qui dovremmo gestire il redirect al login
+            return;
+          }
+          console.error('Failed to load settings data:', result.error);
+          return;
+        }
+
+        // Dati caricati con successo - aggiorna state
+        if (result.data) {
+          setRagioneSocialiList(result.data.legalEntities);
+          setUtentiList(result.data.users);
+          setPuntiVenditaList(result.data.stores);
+          console.log('Enterprise data loaded successfully:', {
+            legalEntities: result.data.legalEntities.length,
+            users: result.data.users.length,
+            stores: result.data.stores.length
+          });
+        }
+
+        // Carica anche i ruoli
+        await fetchRoles();
+
+      } catch (error) {
+        console.error('Enterprise service error:', error);
       }
-      
-      console.log('Starting data fetch with token:', token.substring(0, 20) + '...');
-      
-      // Carica i dati in sequenza per evitare race conditions
-      await fetchRoles();
-      await fetchLegalEntities();  
-      await fetchStores();
-      await fetchUsers();
     };
-    
-    // Delay di 100ms per assicurarsi che tutto sia pronto
-    setTimeout(loadData, 100);
+
+    loadData();
   }, []);
   
   const fetchRoles = async () => {
