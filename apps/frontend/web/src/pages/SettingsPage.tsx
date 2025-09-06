@@ -735,25 +735,9 @@ export default function SettingsPage() {
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: '#f3f4f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#6b7280',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}>
-                        {item.codice.substring(0, 2)}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                        <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
-                      </div>
+                    <div>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.formaGiuridica}</td>
@@ -907,25 +891,9 @@ export default function SettingsPage() {
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: '#f3f4f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#6b7280',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}>
-                        {item.codice.substring(0, 2)}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                        <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
-                      </div>
+                    <div>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
                     </div>
                   </td>
                   <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.indirizzo}</td>
@@ -1151,8 +1119,8 @@ export default function SettingsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Username</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Completo</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Username</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Email</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ruolo</th>
                   <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ambito</th>
@@ -1170,26 +1138,10 @@ export default function SettingsPage() {
                   onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          background: '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#6b7280',
-                          fontSize: '12px',
-                          fontWeight: '600'
-                        }}>
-                          {user.nome.charAt(0)}{user.cognome.charAt(0)}
-                        </div>
-                        {user.username}
-                      </div>
+                      {user.nome} {user.cognome}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#374151' }}>
-                      {user.nome} {user.cognome}
+                      {user.username}
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
                       {user.email}
