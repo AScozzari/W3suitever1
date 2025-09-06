@@ -1775,7 +1775,10 @@ export default function SettingsPage() {
                         name="scope" 
                         value="organization" 
                         checked={selectedScope === 'organization'} 
-                        onChange={() => setSelectedScope('organization')}
+                        onChange={() => {
+                          setSelectedScope('organization');
+                          // Non azzeriamo le selezioni
+                        }}
                       /> 
                       Organizzazione
                     </label>
@@ -1785,7 +1788,11 @@ export default function SettingsPage() {
                         name="scope" 
                         value="legal" 
                         checked={selectedScope === 'legal'}
-                        onChange={() => setSelectedScope('legal')}
+                        onChange={() => {
+                          setSelectedScope('legal');
+                          // Manteniamo le RS selezionate, azzeriamo solo i PV
+                          setSelectedStores([]);
+                        }}
                       /> 
                       Ragioni Sociali Specifiche
                     </label>
@@ -1795,14 +1802,17 @@ export default function SettingsPage() {
                         name="scope" 
                         value="store" 
                         checked={selectedScope === 'store'}
-                        onChange={() => setSelectedScope('store')}
+                        onChange={() => {
+                          setSelectedScope('store');
+                          // Manteniamo tutto selezionato
+                        }}
                       /> 
                       Punti Vendita Specifici
                     </label>
                   </div>
                   
-                  {/* Multiselect per Ragioni Sociali */}
-                  {selectedScope === 'legal' && (
+                  {/* Selezione Gerarchica Unificata per Ragioni Sociali */}
+                  {(selectedScope === 'legal' || selectedScope === 'store') && (
                     <div style={{
                       marginTop: '12px',
                       padding: '12px',
@@ -1818,6 +1828,11 @@ export default function SettingsPage() {
                         marginBottom: '8px'
                       }}>
                         Seleziona Ragioni Sociali:
+                        {selectedScope === 'store' && (
+                          <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>
+                            (Richiesto per selezionare i punti vendita)
+                          </span>
+                        )}
                       </label>
                       <div style={{
                         maxHeight: '150px',
@@ -1859,7 +1874,12 @@ export default function SettingsPage() {
                                 if (e.target.checked) {
                                   setSelectedLegalEntities([...selectedLegalEntities, rs.id]);
                                 } else {
+                                  // Quando deseleziono una RS, rimuovo anche i suoi PDV
+                                  const storesOfThisRS = puntiVenditaList
+                                    .filter(pv => pv.ragioneSociale_id === rs.id)
+                                    .map(pv => pv.id);
                                   setSelectedLegalEntities(selectedLegalEntities.filter(id => id !== rs.id));
+                                  setSelectedStores(selectedStores.filter(id => !storesOfThisRS.includes(id)));
                                 }
                               }}
                               style={{ cursor: 'pointer' }}
@@ -1871,14 +1891,16 @@ export default function SettingsPage() {
                     </div>
                   )}
                   
-                  {/* Multiselect per Punti Vendita */}
+                  {/* Selezione Punti Vendita - Solo se scope è 'store' e almeno una RS selezionata */}
                   {selectedScope === 'store' && (
                     <div style={{
                       marginTop: '12px',
                       padding: '12px',
-                      background: 'hsla(255, 255, 255, 0.05)',
+                      background: selectedLegalEntities.length === 0 ? 'hsla(0, 100%, 50%, 0.05)' : 'hsla(255, 255, 255, 0.05)',
                       borderRadius: '6px',
-                      border: '1px solid hsla(255, 255, 255, 0.1)'
+                      border: `1px solid ${selectedLegalEntities.length === 0 ? 'hsla(0, 100%, 50%, 0.2)' : 'hsla(255, 255, 255, 0.1)'}`,
+                      opacity: selectedLegalEntities.length === 0 ? 0.7 : 1,
+                      pointerEvents: selectedLegalEntities.length === 0 ? 'none' : 'auto'
                     }}>
                       <label style={{
                         fontSize: '13px',
@@ -1888,56 +1910,83 @@ export default function SettingsPage() {
                         marginBottom: '8px'
                       }}>
                         Seleziona Punti Vendita:
+                        {selectedLegalEntities.length > 0 && (
+                          <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '8px' }}>
+                            ({puntiVenditaList.filter(pv => selectedLegalEntities.includes(pv.ragioneSociale_id)).length} disponibili)
+                          </span>
+                        )}
                       </label>
-                      <div style={{
-                        maxHeight: '150px',
-                        overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px'
-                      }}>
-                        {puntiVenditaList.map((pv) => (
-                          <label
-                            key={pv.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '6px 8px',
-                              background: selectedStores.includes(pv.id) ? 'hsla(123, 43%, 60%, 0.1)' : 'transparent',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '13px',
-                              color: '#6b7280',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseOver={(e) => {
-                              if (!selectedStores.includes(pv.id)) {
-                                e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
-                              }
-                            }}
-                            onMouseOut={(e) => {
-                              if (!selectedStores.includes(pv.id)) {
-                                e.currentTarget.style.background = 'transparent';
-                              }
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedStores.includes(pv.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedStores([...selectedStores, pv.id]);
-                                } else {
-                                  setSelectedStores(selectedStores.filter(id => id !== pv.id));
-                                }
-                              }}
-                              style={{ cursor: 'pointer' }}
-                            />
-                            <span>{pv.nome} - {pv.citta} ({pv.codice})</span>
-                          </label>
-                        ))}
-                      </div>
+                      {selectedLegalEntities.length === 0 ? (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '20px',
+                          color: '#991b1b',
+                          fontSize: '13px'
+                        }}>
+                          Seleziona prima almeno una ragione sociale
+                        </div>
+                      ) : (
+                        <div style={{
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px'
+                        }}>
+                          {puntiVenditaList
+                            .filter(pv => selectedLegalEntities.includes(pv.ragioneSociale_id))
+                            .map((pv) => {
+                              const rs = ragioneSocialiList.find(r => r.id === pv.ragioneSociale_id);
+                              return (
+                                <label
+                                  key={pv.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px',
+                                    background: selectedStores.includes(pv.id) ? 'hsla(123, 43%, 60%, 0.1)' : 'transparent',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    color: '#6b7280',
+                                    transition: 'all 0.2s ease',
+                                    border: selectedStores.includes(pv.id) ? '1px solid hsla(123, 43%, 60%, 0.3)' : '1px solid transparent'
+                                  }}
+                                  onMouseOver={(e) => {
+                                    if (!selectedStores.includes(pv.id)) {
+                                      e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                                    }
+                                  }}
+                                  onMouseOut={(e) => {
+                                    if (!selectedStores.includes(pv.id)) {
+                                      e.currentTarget.style.background = 'transparent';
+                                    }
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedStores.includes(pv.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedStores([...selectedStores, pv.id]);
+                                      } else {
+                                        setSelectedStores(selectedStores.filter(id => id !== pv.id));
+                                      }
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                  />
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: '500' }}>{pv.nome}</div>
+                                    <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                      {rs?.nome} • {pv.codice} • {pv.citta}
+                                    </div>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
