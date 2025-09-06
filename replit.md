@@ -93,19 +93,29 @@ TENANT (Organizzazione)
         ├── RISORSE (Dipendenti)
 ```
 
+## 🔒 UNICITÀ GLOBALE CODICI ENTERPRISE
+- **✅ IMPLEMENTATA**: Vincoli UNIQUE globali per tutti i codici cross-tenant
+- **Codici Ragioni Sociali**: Univoci in tutto il progetto (tutti i tenant)
+- **Codici Punti Vendita**: Univoci in tutto il progetto (tutti i tenant)  
+- **Codici Tenant**: Univoci globalmente
+- **Database**: Constraints attivi impediscono duplicati automaticamente
+
 ### 🏢 TENANT (Organizzazione)
 - **Livello**: Root dell'organizzazione
-- **Contenuto**: Una o più Ragioni Sociali
+- **Contenuto**: Una o più Ragioni Sociali (relazione 1:N OBBLIGATORIA)
+- **Codice**: UNIVOCO GLOBALE cross-tenant
 - **Permessi**: Isolamento completo RLS PostgreSQL
 
 ### 🏛️ RAGIONI SOCIALI  
 - **Livello**: Entità giuridiche all'interno del Tenant
-- **Relazione**: Molte-a-Uno con Tenant
-- **Contenuto**: Punti vendita associati
+- **Relazione**: Molte-a-Uno OBBLIGATORIA con Tenant (1:1 verso organizzazione)
+- **Codice**: UNIVOCO GLOBALE cross-tenant  
+- **Contenuto**: Punti vendita associati (relazione 1:N)
 
 ### 🏪 PUNTI VENDITA
 - **Livello**: Unità operative fisiche/virtuali
-- **Relazione**: Molte-a-Uno con Ragioni Sociali
+- **Relazione**: Molte-a-Uno OBBLIGATORIA con Ragioni Sociali (1:1 verso ragione sociale)
+- **Codice**: UNIVOCO GLOBALE cross-tenant
 - **Attributi Base**: Nome, indirizzo, codice, stato operativo
 - **Brand Association**: WindTre e/o Very Mobile
 - **Canale**: Franchising | Top Dealer | Dealer
@@ -116,12 +126,16 @@ TENANT (Organizzazione)
   - Protezione (antivirus, backup)
   - Assicurazione (auto, casa, vita)
 
-### 👥 RISORSE (Dipendenti)
+### 👥 RISORSE (Dipendenti/Utenti)
 - **Livello**: Persone che lavorano nell'organizzazione
+- **Relazione OBBLIGATORIA**: 1:1 con Ragione Sociale (verso ragione sociale)
+- **Relazione MULTIPLA**: N:M con Punti Vendita (possono scegliere più PV)
+- **Punto Vendita Default**: UNO dei PV selezionati come preferenza default (modificabile)
+- **Utilizzo Futuro**: Il PV default verrà usato per funzioni automatiche
 - **Abilitazioni Cascading**:
   - **Tenant-wide**: Accesso completo organizzazione
-  - **Ragione Sociale**: Una o più RS specifiche
-  - **Punto Vendita**: Uno o più PV specifici
+  - **Ragione Sociale**: Una o più RS specifiche  
+  - **Punto Vendita**: Uno o più PV specifici (con default)
 - **Permessi**: Sistema RBAC granulare
 
 ### 🎯 BRAND INTERFACE - SUPER ADMIN
