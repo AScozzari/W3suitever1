@@ -4331,12 +4331,31 @@ export default function SettingsPage() {
                           value={option.value}
                           checked={newUser.scopeLevel === option.value}
                           onChange={(e) => {
-                            setNewUser({ 
-                              ...newUser, 
-                              scopeLevel: e.target.value,
-                              selectedLegalEntities: [],
-                              selectedStores: []
-                            });
+                            const newScope = e.target.value;
+                            // Se passiamo a organizzazione, azzeriamo tutto
+                            if (newScope === 'organizzazione') {
+                              setNewUser({ 
+                                ...newUser, 
+                                scopeLevel: newScope,
+                                selectedLegalEntities: [],
+                                selectedStores: []
+                              });
+                            } 
+                            // Se passiamo a ragioni_sociali, manteniamo le RS ma azzeriamo i PV
+                            else if (newScope === 'ragioni_sociali') {
+                              setNewUser({ 
+                                ...newUser, 
+                                scopeLevel: newScope,
+                                selectedStores: []
+                              });
+                            }
+                            // Se passiamo a punti_vendita, manteniamo tutto
+                            else {
+                              setNewUser({ 
+                                ...newUser, 
+                                scopeLevel: newScope
+                              });
+                            }
                           }}
                           style={{ display: 'none' }}
                         />
@@ -4519,7 +4538,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {/* Selezione Punti Vendita - Sempre visibile ma disabilitata se nessuna RS */}
+                {/* Selezione Punti Vendita - UI semplificata e user-friendly */}
                 {newUser.scopeLevel === 'punti_vendita' && (
                   <div style={{ marginTop: '20px' }}>
                     <label style={{
@@ -4530,34 +4549,25 @@ export default function SettingsPage() {
                       marginBottom: '8px'
                     }}>
                       Seleziona Punti Vendita <span style={{ color: '#ef4444' }}>*</span>
-                      {newUser.selectedLegalEntities.length > 0 ? (
+                      {newUser.selectedLegalEntities.length > 0 && (
                         <span style={{ 
                           fontSize: '12px', 
                           fontWeight: '400', 
                           color: '#6b7280',
                           marginLeft: '8px'
                         }}>
-                          (Disponibili {puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id)).length} punti vendita)
-                        </span>
-                      ) : (
-                        <span style={{ 
-                          fontSize: '12px', 
-                          fontWeight: '400', 
-                          color: '#ef4444',
-                          marginLeft: '8px'
-                        }}>
-                          (Prima seleziona almeno una ragione sociale)
+                          ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id)).length} disponibili)
                         </span>
                       )}
                     </label>
                     <div style={{
-                      maxHeight: '200px',
+                      maxHeight: '300px',
                       overflowY: 'auto',
                       border: `1px solid ${newUser.selectedLegalEntities.length === 0 ? '#fca5a5' : '#e5e7eb'}`,
                       borderRadius: '8px',
                       padding: '8px',
-                      background: newUser.selectedLegalEntities.length === 0 ? '#fef2f2' : '#f9fafb',
-                      opacity: newUser.selectedLegalEntities.length === 0 ? 0.5 : 1,
+                      background: newUser.selectedLegalEntities.length === 0 ? '#fef2f2' : '#ffffff',
+                      opacity: newUser.selectedLegalEntities.length === 0 ? 0.7 : 1,
                       pointerEvents: newUser.selectedLegalEntities.length === 0 ? 'none' : 'auto',
                       minHeight: '100px'
                     }}>
@@ -4575,56 +4585,34 @@ export default function SettingsPage() {
                           Seleziona prima una ragione sociale
                         </div>
                       ) : (
-                        ragioneSocialiList
-                          .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
-                          .map(rs => (
-                          <div key={rs.id} style={{ marginBottom: '16px' }}>
-                            <div style={{
-                              fontSize: '13px',
-                              fontWeight: '600',
-                              color: '#374151',
-                              padding: '8px',
-                              background: '#f9fafb',
-                              borderBottom: '1px solid #e5e7eb',
-                              marginBottom: '8px'
-                            }}>
-                              {rs.nome} ({puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id).length} punti vendita)
-                            </div>
-                            {puntiVenditaList
-                              .filter(pv => pv.ragioneSociale_id === rs.id).length === 0 ? (
-                              <div style={{
-                                padding: '10px',
-                                paddingLeft: '20px',
-                                fontSize: '13px',
-                                color: '#9ca3af',
-                                fontStyle: 'italic'
-                              }}>
-                                Nessun punto vendita per questa ragione sociale
-                              </div>
-                            ) : (
-                              puntiVenditaList
-                                .filter(pv => pv.ragioneSociale_id === rs.id)
-                              .map(pv => (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {/* Lista semplice e pulita dei punti vendita filtrati */}
+                          {puntiVenditaList
+                            .filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id))
+                            .map(pv => {
+                              const ragioneSociale = ragioneSocialiList.find(rs => rs.id === pv.ragioneSociale_id);
+                              return (
                                 <label key={pv.id} style={{
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '8px',
-                                  padding: '10px',
-                                  paddingLeft: '20px',
+                                  gap: '12px',
+                                  padding: '12px',
                                   cursor: 'pointer',
                                   borderRadius: '6px',
                                   transition: 'all 0.2s ease',
-                                  background: newUser.selectedStores.includes(pv.id) ? '#dcfce7' : 'transparent',
-                                  border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#86efac' : 'transparent'}`
+                                  background: newUser.selectedStores.includes(pv.id) ? '#fef3c7' : '#ffffff',
+                                  border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#fbbf24' : '#e5e7eb'}`
                                 }}
                                 onMouseOver={(e) => {
                                   if (!newUser.selectedStores.includes(pv.id)) {
-                                    e.currentTarget.style.background = '#f3f4f6';
+                                    e.currentTarget.style.background = '#f9fafb';
+                                    e.currentTarget.style.borderColor = '#d1d5db';
                                   }
                                 }}
                                 onMouseOut={(e) => {
                                   if (!newUser.selectedStores.includes(pv.id)) {
-                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.background = '#ffffff';
+                                    e.currentTarget.style.borderColor = '#e5e7eb';
                                   }
                                 }}>
                                   <input
@@ -4645,34 +4633,34 @@ export default function SettingsPage() {
                                     }}
                                     style={{ 
                                       cursor: 'pointer',
-                                      width: '16px',
-                                      height: '16px'
+                                      width: '18px',
+                                      height: '18px',
+                                      accentColor: '#FF6900'
                                     }}
                                   />
                                   <div style={{ flex: 1 }}>
-                                    <span style={{ 
+                                    <div style={{ 
                                       fontSize: '14px', 
-                                      color: '#374151',
-                                      fontWeight: newUser.selectedStores.includes(pv.id) ? '600' : '400'
+                                      color: '#111827',
+                                      fontWeight: newUser.selectedStores.includes(pv.id) ? '600' : '500'
                                     }}>
                                       {pv.nome}
-                                    </span>
-                                    <span style={{ 
-                                      fontSize: '12px', 
+                                    </div>
+                                    <div style={{
+                                      fontSize: '12px',
                                       color: '#6b7280',
-                                      marginLeft: '8px'
+                                      marginTop: '2px'
                                     }}>
-                                      ({pv.codice}) - {pv.citta}
-                                    </span>
+                                      {ragioneSociale?.nome} • {pv.codice} • {pv.citta}
+                                    </div>
                                   </div>
                                   {newUser.selectedStores.includes(pv.id) && (
-                                    <Check size={16} style={{ color: '#16a34a' }} />
+                                    <Check size={18} style={{ color: '#FF6900' }} />
                                   )}
                                 </label>
-                              ))
-                            )}
-                          </div>
-                        ))
+                              );
+                            })}
+                        </div>
                       )}
                     </div>
                   </div>
