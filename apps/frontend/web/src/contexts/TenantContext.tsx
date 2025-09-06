@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
+interface SessionData {
+  user: User;
+}
+
 interface Tenant {
   id: string;
   name: string;
@@ -50,10 +54,10 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Only fetch user and tenant data if we have a token
-  const hasToken = typeof window !== 'undefined' && localStorage.getItem('auth_token');
+  // Only fetch user and tenant data if we have OAuth2 tokens
+  const hasToken = typeof window !== 'undefined' && localStorage.getItem('oauth2_tokens');
   
-  const { data: sessionData, isLoading, error } = useQuery({
+  const { data: sessionData, isLoading, error } = useQuery<SessionData>({
     queryKey: ['/api/auth/session'],
     enabled: !!hasToken, // Only run query if we have a token
     retry: false,
@@ -61,7 +65,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   });
 
   useEffect(() => {
-    if (sessionData) {
+    if (sessionData && sessionData.user) {
       // Session includes user with tenant info
       setCurrentUser(sessionData.user);
       setCurrentTenant(sessionData.user.tenant);

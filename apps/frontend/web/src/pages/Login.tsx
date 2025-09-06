@@ -69,7 +69,6 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       // Step 1: Get authorization code
       const authResponse = await fetch('/oauth2/authorize', {
         method: 'POST',
-        redirect: 'manual', // Important: don't follow redirects automatically
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -86,71 +85,83 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       });
 
       console.log('🔍 Auth Response Status:', authResponse.status);
-      console.log('🔍 Auth Response Headers:', Object.fromEntries(authResponse.headers.entries()));
+      console.log('🔍 Auth Response URL:', authResponse.url);
 
-      if (authResponse.status === 302 || authResponse.status === 301) {
-        // Get redirect location from header
-        const location = authResponse.headers.get('location');
-        console.log('📍 Redirect location:', location);
+      if (authResponse.ok && authResponse.redirected) {
+        // The server redirected us to the callback URL with the authorization code
+        const redirectUrl = new URL(authResponse.url);
+        const authCode = redirectUrl.searchParams.get('code');
+        console.log('🔑 Authorization code from redirect:', authCode ? 'YES' : 'NO');
         
-        if (location) {
-          const urlParams = new URLSearchParams(location.split('?')[1]);
-          const authCode = urlParams.get('code');
-          console.log('🔑 Authorization code extracted:', authCode ? 'YES' : 'NO');
-          
-            if (authCode) {
-              // Step 2: Exchange authorization code for access token
-              const tokenResponse = await fetch('/oauth2/token', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                  grant_type: 'authorization_code',
-                  code: authCode,
-                  redirect_uri: `${window.location.origin}/auth/callback`,
-                  client_id: 'w3suite-frontend',
-                  code_verifier: codeVerifier
-                }),
-              });
+        if (authCode) {
+          // Step 2: Exchange authorization code for access token
+          const tokenResponse = await fetch('/oauth2/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              code: authCode,
+              redirect_uri: `${window.location.origin}/auth/callback`,
+              client_id: 'w3suite-frontend',
+              code_verifier: codeVerifier
+            }),
+          });
 
-              if (tokenResponse.ok) {
-                const tokenData = await tokenResponse.json();
-                
-                // Add expires_at timestamp for OAuth2Client compatibility
-                const expiresAt = Date.now() + (tokenData.expires_in * 1000);
-                const tokensWithExpiry = {
-                  ...tokenData,
-                  expires_at: expiresAt
-                };
-                
-                // Store OAuth2 tokens using OAuth2Client format
-                localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
-                
-                console.log('✅ OAuth2 Enterprise Login Successful:', {
-                  tokenType: tokenData.token_type,
-                  expiresIn: tokenData.expires_in,
-                  expiresAt: new Date(expiresAt).toLocaleString(),
-                  scope: tokenData.scope
-                });
-                
-                window.location.reload();
-              } else {
-                throw new Error('Token exchange failed');
-              }
-            } else {
-              throw new Error('No authorization code received');
-            }
+          console.log('🎫 Token Response Status:', tokenResponse.status);
+          
+          if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            console.log('🎫 Token Data:', tokenData);
+            
+            // Add expires_at timestamp for OAuth2Client compatibility
+            const expiresAt = Date.now() + (tokenData.expires_in * 1000);
+            const tokensWithExpiry = {
+              ...tokenData,
+              expires_at: expiresAt
+            };
+            
+            // Store OAuth2 tokens using OAuth2Client format
+            localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
+            console.log('💾 Tokens stored in localStorage');
+            
+            console.log('✅ OAuth2 Enterprise Login Successful:', {
+              tokenType: tokenData.token_type,
+              expiresIn: tokenData.expires_in,
+              expiresAt: new Date(expiresAt).toLocaleString(),
+              scope: tokenData.scope
+            });
+            
+            console.log('🔄 Reloading page...');
+            window.location.reload();
           } else {
-            throw new Error('No redirect location in response');
+            const errorData = await tokenResponse.json();
+            console.error('Token exchange failed:', errorData);
+            throw new Error(`Token exchange failed: ${errorData.error || 'Unknown error'}`);
           }
+        } else {
+          throw new Error('No authorization code received in redirect');
+        }
       } else {
-        const error = await authResponse.json();
-        alert(error.message || 'Credenziali non valide');
+        // Handle different error cases
+        if (authResponse.status === 0) {
+          console.error('Network error or CORS issue');
+          alert('Errore di rete. Verifica la connessione.');
+        } else {
+          try {
+            const error = await authResponse.json();
+            alert(error.message || 'Credenziali non valide');
+          } catch (e) {
+            console.error('Error parsing response:', e);
+            alert(`Errore del server (${authResponse.status})`);
+          }
+        }
         setIsLoading(false);
       }
     } catch (error) {
       console.error('OAuth2 Login error:', error);
+      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
       alert('Errore durante il login. Riprova.');
       setIsLoading(false);
     }

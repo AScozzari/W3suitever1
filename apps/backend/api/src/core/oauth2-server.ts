@@ -54,7 +54,8 @@ const registeredClients: Map<string, OAuth2Client> = new Map([
     clientSecret: undefined, // Public client (SPA)
     redirectUris: [
       'http://localhost:5000/auth/callback',
-      'https://*.w3suite.com/auth/callback'
+      'https://*.w3suite.com/auth/callback',
+      'https://*.replit.dev/auth/callback'
     ],
     grantTypes: ['authorization_code', 'refresh_token'],
     responseTypes: ['code'],
