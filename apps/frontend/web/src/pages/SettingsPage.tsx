@@ -766,11 +766,11 @@ export default function SettingsPage() {
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.name || item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.code || item.codice || 'N/A'}</div>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
                     </div>
                   </td>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.address || item.indirizzo || 'N/A'}</td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.indirizzo}</td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
                       display: 'inline-flex',
