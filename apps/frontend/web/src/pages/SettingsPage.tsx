@@ -418,6 +418,7 @@ export default function SettingsPage() {
   
   // Carica i dati dal database all'avvio
   useEffect(() => {
+    console.log('Loading data from database...');
     fetchRoles();
     fetchLegalEntities();
     fetchStores();
