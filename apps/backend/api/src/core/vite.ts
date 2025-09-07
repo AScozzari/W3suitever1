@@ -62,7 +62,15 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   // Brand Interface middleware for /brandinterface path
-  app.use("/brandinterface", brandVite.middlewares);
+  app.use("/brandinterface", (req, res, next) => {
+    // Rewrite URL to serve assets correctly
+    if (req.url.startsWith('/@vite/') || req.url.startsWith('/@react-refresh') || req.url.endsWith('.tsx') || req.url.endsWith('.css') || req.url.endsWith('.js')) {
+      req.url = req.url;
+      req.originalUrl = req.originalUrl;
+    }
+    next();
+  }, brandVite.middlewares);
+  
   app.use("/brandinterface*", async (req, res, next) => {
     const url = req.originalUrl;
 
@@ -85,7 +93,7 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const page = await brandVite.transformIndexHtml(url, template);
+      const page = await brandVite.transformIndexHtml("/", template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       brandVite.ssrFixStacktrace(e as Error);

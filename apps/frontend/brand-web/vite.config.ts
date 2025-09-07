@@ -12,7 +12,6 @@ export default defineConfig({
       "@sdk": path.resolve(import.meta.dirname, "..", "..", "packages", "sdk"),
     },
   },
-  base: "/brandinterface/",
   server: {
     port: 5001,
     host: "0.0.0.0",
