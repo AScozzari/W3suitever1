@@ -191,6 +191,14 @@ export const stores = pgTable("stores", {
   // Contact fields
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
+  // Social and digital contact fields
+  whatsapp1: varchar("whatsapp1", { length: 20 }),
+  whatsapp2: varchar("whatsapp2", { length: 20 }),
+  facebook: varchar("facebook", { length: 255 }),
+  instagram: varchar("instagram", { length: 255 }),
+  tiktok: varchar("tiktok", { length: 255 }),
+  googleMapsUrl: text("google_maps_url"),
+  telegram: varchar("telegram", { length: 255 }),
 });
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ 

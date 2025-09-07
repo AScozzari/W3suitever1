@@ -2466,6 +2466,13 @@ export default function SettingsPage() {
     provincia: '',
     telefono: '',
     email: '',
+    whatsapp1: '',
+    whatsapp2: '',
+    facebook: '',
+    instagram: '',
+    tiktok: '',
+    googleMapsUrl: '',
+    telegram: '',
     ragioneSociale_id: null as number | null,  // Obbligatorio
     commercialAreaId: null as string | null,  // Area commerciale
     canale: 'Franchising',
@@ -2713,6 +2720,13 @@ export default function SettingsPage() {
       provincia: '',
       telefono: '',
       email: '',
+      whatsapp1: '',
+      whatsapp2: '',
+      facebook: '',
+      instagram: '',
+      tiktok: '',
+      googleMapsUrl: '',
+      telegram: '',
       ragioneSociale_id: null,
       commercialAreaId: null,
       canale: 'Franchising',
@@ -4709,6 +4723,314 @@ export default function SettingsPage() {
                     onFocus={(e) => {
                       e.target.style.borderColor = '#6366f1';
                       e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* WhatsApp 1 */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
+                    WhatsApp 1
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 333 1234567"
+                    value={newStore.whatsapp1}
+                    onChange={(e) => setNewStore({ ...newStore, whatsapp1: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#25D366';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* WhatsApp 2 */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
+                    WhatsApp 2
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 333 7654321"
+                    value={newStore.whatsapp2}
+                    onChange={(e) => setNewStore({ ...newStore, whatsapp2: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#25D366';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Facebook */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#1877F2', fontSize: '16px' }}>👤</span>
+                    Facebook
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="facebook.com/windtrestore"
+                    value={newStore.facebook}
+                    onChange={(e) => setNewStore({ ...newStore, facebook: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#1877F2';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(24, 119, 242, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Instagram */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#E4405F', fontSize: '16px' }}>📷</span>
+                    Instagram
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="instagram.com/windtrestore"
+                    value={newStore.instagram}
+                    onChange={(e) => setNewStore({ ...newStore, instagram: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#E4405F';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(228, 64, 95, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* TikTok */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#FF0050', fontSize: '16px' }}>🎵</span>
+                    TikTok
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="tiktok.com/@windtrestore"
+                    value={newStore.tiktok}
+                    onChange={(e) => setNewStore({ ...newStore, tiktok: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF0050';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 0, 80, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Google Maps URL */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#4285F4', fontSize: '16px' }}>🗺️</span>
+                    Google Maps
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://maps.google.com/..."
+                    value={newStore.googleMapsUrl}
+                    onChange={(e) => setNewStore({ ...newStore, googleMapsUrl: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4285F4';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Telegram */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#0088CC', fontSize: '16px' }}>✈️</span>
+                    Telegram
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="t.me/windtrestore"
+                    value={newStore.telegram}
+                    onChange={(e) => setNewStore({ ...newStore, telegram: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#0088CC';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 136, 204, 0.1)';
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor = '#d1d5db';
