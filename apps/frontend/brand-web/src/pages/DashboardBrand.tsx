@@ -6,7 +6,7 @@ import SalesWorkspace from '../components/workspaces/SalesWorkspace';
 import OperationsWorkspace from '../components/workspaces/OperationsWorkspace';
 import AdminWorkspace from '../components/workspaces/AdminWorkspace';
 
-export default function Dashboard() {
+export default function DashboardBrand() {
   const { isAuthenticated, workspace } = useBrandAuth();
 
   // Redirect to login if not authenticated

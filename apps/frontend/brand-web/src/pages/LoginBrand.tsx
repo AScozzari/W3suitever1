@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
-export default function Login() {
+export default function LoginBrand() {
   const { login } = useBrandAuth();
   const [credentials, setCredentials] = useState({
     username: '',
