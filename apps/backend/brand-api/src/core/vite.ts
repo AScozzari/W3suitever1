@@ -3,7 +3,9 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-// Import basic vite config for brand-web
+import { nanoid } from "nanoid";
+
+// Basic vite config for brand-web
 const brandViteConfig = {
   plugins: [],
   resolve: {
@@ -12,7 +14,6 @@ const brandViteConfig = {
     },
   },
 };
-import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
 
@@ -78,7 +79,7 @@ export async function setupBrandVite(app: Express, server: Server) {
       let template = await fs.promises.readFile(brandTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"
+        `src="/src/main.tsx?v=${nanoid()}`
       );
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
@@ -89,21 +90,4 @@ export async function setupBrandVite(app: Express, server: Server) {
   });
 
   console.log("✅ Brand Interface Vite setup completed");
-}
-
-export function serveBrandStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
-
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the Brand build directory: ${distPath}, make sure to build the brand client first`,
-    );
-  }
-
-  app.use(express.static(distPath));
-
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
-  });
 }
