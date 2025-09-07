@@ -69,6 +69,26 @@ class ApiService {
     return this.makeRequest<any[]>('/api/legal-entities');
   }
 
+  async createLegalEntity(legalEntityData: any) {
+    return this.makeRequest<any>('/api/legal-entities', {
+      method: 'POST',
+      body: JSON.stringify(legalEntityData)
+    });
+  }
+
+  async updateLegalEntity(id: string, legalEntityData: any) {
+    return this.makeRequest<any>(`/api/legal-entities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(legalEntityData)
+    });
+  }
+
+  async deleteLegalEntity(id: string) {
+    return this.makeRequest<void>(`/api/legal-entities/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
   async getUsers() {
     return this.makeRequest<any[]>('/api/users');
   }

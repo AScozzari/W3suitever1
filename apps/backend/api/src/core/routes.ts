@@ -320,6 +320,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to create legal entity" });
     }
   });
+
+  // Update legal entity
+  app.put('/api/legal-entities/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const legalEntity = await storage.updateLegalEntity(req.params.id, req.body);
+      res.json(legalEntity);
+    } catch (error: any) {
+      console.error("Error updating legal entity:", error);
+      if (error.message?.includes('not found')) {
+        res.status(404).json({ error: "Legal entity not found" });
+      } else {
+        res.status(500).json({ error: "Failed to update legal entity" });
+      }
+    }
+  });
   
   // Delete legal entity
   app.delete('/api/legal-entities/:id', enterpriseAuth, async (req: any, res) => {

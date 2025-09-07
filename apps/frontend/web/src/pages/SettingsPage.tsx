@@ -323,21 +323,8 @@ export default function SettingsPage() {
   
   // Handlers per Ragioni Sociali
   const handleCreateRagioneSociale = () => {
-    // Genera codice RS: inizia con 8, almeno 7 cifre totali
-    const newCode = `8${String(Date.now()).slice(-6)}`;
-    const newItem = {
-      id: ragioneSocialiList.length + 1,
-      tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
-      codice: newCode,
-      nome: 'Nuova Ragione Sociale',
-      formaGiuridica: 'Srl',
-      pIva: `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
-      stato: 'Bozza',
-      citta: 'Milano',
-      azioni: 'edit'
-    };
-    setRagioneSocialiList([...ragioneSocialiList, newItem]);
-    setShowCreateRagioneSociale(false);
+    // Apri il modal invece di creare dati mock
+    setLegalEntityModal({ open: true, data: null });
   };
   
   // Handler per eliminare una ragione sociale - USA API REALE

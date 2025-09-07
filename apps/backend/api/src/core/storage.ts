@@ -49,6 +49,7 @@ export interface IStorage {
   // Legal Entity Management
   getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]>;
   createLegalEntity(legalEntity: InsertLegalEntity): Promise<LegalEntity>;
+  updateLegalEntity(id: string, legalEntity: Partial<InsertLegalEntity>): Promise<LegalEntity>;
   deleteLegalEntity(legalEntityId: string, tenantId: string): Promise<void>;
   
   // Role Management
@@ -169,6 +170,20 @@ export class DatabaseStorage implements IStorage {
 
   async createLegalEntity(legalEntityData: InsertLegalEntity): Promise<LegalEntity> {
     const [legalEntity] = await db.insert(legalEntities).values(legalEntityData).returning();
+    return legalEntity;
+  }
+
+  async updateLegalEntity(id: string, legalEntityData: Partial<InsertLegalEntity>): Promise<LegalEntity> {
+    const [legalEntity] = await db
+      .update(legalEntities)
+      .set({ ...legalEntityData, updatedAt: new Date() })
+      .where(eq(legalEntities.id, id))
+      .returning();
+    
+    if (!legalEntity) {
+      throw new Error(`Legal entity with id ${id} not found`);
+    }
+    
     return legalEntity;
   }
 
