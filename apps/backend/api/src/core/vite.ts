@@ -41,12 +41,66 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
+  // Setup Brand Interface routes
+  const brandVite = await createViteServer({
+    ...viteConfig,
+    configFile: false,
+    root: path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web"),
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      },
+    },
+    server: serverOptions,
+    appType: "custom",
+  });
+
+  // Brand Interface middleware for /brandinterface path
+  app.use("/brandinterface", brandVite.middlewares);
+  app.use("/brandinterface*", async (req, res, next) => {
+    const url = req.originalUrl;
+
+    try {
+      const brandTemplate = path.resolve(
+        import.meta.dirname,
+        "..",
+        "..",
+        "..",
+        "..",
+        "..",
+        "apps",
+        "frontend",
+        "brand-web",
+        "index.html",
+      );
+
+      let template = await fs.promises.readFile(brandTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`,
+      );
+      const page = await brandVite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      brandVite.ssrFixStacktrace(e as Error);
+      next(e);
+    }
+  });
+
+  // Main W3 Suite middleware  
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
     // Skip API routes - let them be handled by the API router
     if (url.startsWith('/api/')) {
+      return next();
+    }
+
+    // Skip Brand Interface routes
+    if (url.startsWith('/brandinterface')) {
       return next();
     }
 
