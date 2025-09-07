@@ -5424,21 +5424,457 @@ export default function SettingsPage() {
           }}>
             {/* Header Modal - Clean Design */}
             <div style={{
-                  <input
-                    type="text"
-                    placeholder="MI"
-                    value={newStore.provincia}
-                    onChange={(e) => setNewStore({ ...newStore, provincia: e.target.value })}
-                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
+              padding: '24px 32px 16px',
+              borderBottom: '1px solid #e5e7eb',
+              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.05) 0%, rgba(123, 44, 191, 0.05) 100%)'
+            }}>
+              <h2 style={{
+                margin: 0,
+                fontSize: '24px',
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+              }}>
+                Nuovo Utente
+              </h2>
+              <p style={{
+                margin: '8px 0 0',
+                fontSize: '14px',
+                color: '#6b7280',
+                fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+              }}>
+                Aggiungi un nuovo utente al sistema selezionando ragioni sociali e punti vendita
+              </p>
+            </div>
+
+            {/* Content Modal */}
+            <div style={{
+              padding: '32px',
+              overflowY: 'auto',
+              maxHeight: '60vh'
+            }}>
+              {/* Form Content */}
+              <div style={{
+                display: 'grid',
+                gap: '24px'
+              }}>
+                {/* Info Utente Base */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '20px'
+                }}>
+                  {/* Nome */}
+                  <div>
+                    <label style={{
+                      display: 'block',
                       fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Nome Completo <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Mario Rossi"
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Email <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="mario.rossi@windtre.it"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Selezione Ragioni Sociali */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    color: '#1f2937',
+                    marginBottom: '16px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Ragioni Sociali <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{
+                    background: '#f8fafc',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}>
+                    {legalEntities.map(legalEntity => (
+                      <label key={legalEntity.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px',
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        transition: 'all 0.2s ease',
+                        background: newUser.ragioneSocialeIds.includes(legalEntity.id) ? '#e0f2fe' : 'transparent',
+                        border: newUser.ragioneSocialeIds.includes(legalEntity.id) ? '2px solid #0ea5e9' : '2px solid transparent'
+                      }}
+                      onMouseOver={(e) => {
+                        if (!newUser.ragioneSocialeIds.includes(legalEntity.id)) {
+                          e.currentTarget.style.background = '#f1f5f9';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!newUser.ragioneSocialeIds.includes(legalEntity.id)) {
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={newUser.ragioneSocialeIds.includes(legalEntity.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewUser({
+                                ...newUser,
+                                ragioneSocialeIds: [...newUser.ragioneSocialeIds, legalEntity.id]
+                              });
+                            } else {
+                              setNewUser({
+                                ...newUser,
+                                ragioneSocialeIds: newUser.ragioneSocialeIds.filter(id => id !== legalEntity.id),
+                                puntoVenditaIds: newUser.puntoVenditaIds.filter(pvId => 
+                                  !stores.find(s => s.id === pvId && s.ragioneSocialeId === legalEntity.id)
+                                ),
+                                defaultPuntoVenditaId: stores.find(s => s.id === newUser.defaultPuntoVenditaId && s.ragioneSocialeId === legalEntity.id) 
+                                  ? '' : newUser.defaultPuntoVenditaId
+                              });
+                            }
+                          }}
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            cursor: 'pointer',
+                            accentColor: '#0ea5e9'
+                          }}
+                        />
+                        <div>
+                          <div style={{
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#1f2937',
+                            fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                          }}>
+                            {legalEntity.ragioneSociale}
+                          </div>
+                          <div style={{
+                            fontSize: '13px',
+                            color: '#6b7280',
+                            fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                          }}>
+                            Codice: {legalEntity.codice}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selezione Punti Vendita */}
+                {newUser.ragioneSocialeIds.length > 0 && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '16px',
+                      fontWeight: '700',
+                      color: '#1f2937',
+                      marginBottom: '16px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Punti Vendita Associati
+                    </label>
+                    <div style={{
+                      background: '#f8fafc',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      maxHeight: '250px',
+                      overflowY: 'auto'
+                    }}>
+                      {newUser.ragioneSocialeIds.map(rsId => {
+                        const ragioneSociale = legalEntities.find(rs => rs.id === rsId);
+                        const associatedStores = stores.filter(store => store.ragioneSocialeId === rsId);
+                        
+                        return (
+                          <div key={rsId} style={{ marginBottom: '24px' }}>
+                            <h4 style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#374151',
+                              marginBottom: '12px',
+                              fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                            }}>
+                              {ragioneSociale?.ragioneSociale}
+                            </h4>
+                            {associatedStores.map(store => (
+                              <label key={store.id} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                borderRadius: '6px',
+                                transition: 'all 0.2s ease',
+                                background: newUser.puntoVenditaIds.includes(store.id) ? '#e0f2fe' : 'transparent',
+                                border: newUser.puntoVenditaIds.includes(store.id) ? '1px solid #0ea5e9' : '1px solid transparent',
+                                marginBottom: '4px'
+                              }}
+                              onMouseOver={(e) => {
+                                if (!newUser.puntoVenditaIds.includes(store.id)) {
+                                  e.currentTarget.style.background = '#f1f5f9';
+                                }
+                              }}
+                              onMouseOut={(e) => {
+                                if (!newUser.puntoVenditaIds.includes(store.id)) {
+                                  e.currentTarget.style.background = 'transparent';
+                                }
+                              }}>
+                                <input
+                                  type="checkbox"
+                                  checked={newUser.puntoVenditaIds.includes(store.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setNewUser({
+                                        ...newUser,
+                                        puntoVenditaIds: [...newUser.puntoVenditaIds, store.id]
+                                      });
+                                    } else {
+                                      setNewUser({
+                                        ...newUser,
+                                        puntoVenditaIds: newUser.puntoVenditaIds.filter(id => id !== store.id),
+                                        defaultPuntoVenditaId: newUser.defaultPuntoVenditaId === store.id ? '' : newUser.defaultPuntoVenditaId
+                                      });
+                                    }
+                                  }}
+                                  style={{
+                                    width: '18px',
+                                    height: '18px',
+                                    cursor: 'pointer',
+                                    accentColor: '#0ea5e9'
+                                  }}
+                                />
+                                <div style={{ flex: 1 }}>
+                                  <div style={{
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    color: '#1f2937',
+                                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                                  }}>
+                                    {store.nome}
+                                  </div>
+                                  <div style={{
+                                    fontSize: '12px',
+                                    color: '#6b7280',
+                                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                                  }}>
+                                    {store.codice} • {store.canale}
+                                  </div>
+                                </div>
+                                
+                                {/* Radio per Default PV */}
+                                {newUser.puntoVenditaIds.includes(store.id) && (
+                                  <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                  }}>
+                                    <input
+                                      type="radio"
+                                      name="defaultPV"
+                                      checked={newUser.defaultPuntoVenditaId === store.id}
+                                      onChange={() => setNewUser({ ...newUser, defaultPuntoVenditaId: store.id })}
+                                      style={{
+                                        width: '16px',
+                                        height: '16px',
+                                        cursor: 'pointer',
+                                        accentColor: '#FF6900'
+                                      }}
+                                    />
+                                    <span style={{
+                                      fontSize: '12px',
+                                      color: '#FF6900',
+                                      fontWeight: '600',
+                                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                                    }}>
+                                      Default
+                                    </span>
+                                  </div>
+                                )}
+                              </label>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Info punto vendita default */}
+                    {newUser.puntoVenditaIds.length > 0 && (
+                      <div style={{
+                        marginTop: '12px',
+                        padding: '12px',
+                        background: 'rgba(255, 105, 0, 0.05)',
+                        border: '1px solid rgba(255, 105, 0, 0.2)',
+                        borderRadius: '8px'
+                      }}>
+                        <p style={{
+                          margin: 0,
+                          fontSize: '13px',
+                          color: '#FF6900',
+                          fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                        }}>
+                          💡 Seleziona un punto vendita come "Default" - verrà usato nelle operazioni automatiche del sistema
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Modal */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              padding: '20px 32px',
+              borderTop: '1px solid #e5e7eb',
+              background: '#fafbfc'
+            }}>
+              <button
+                onClick={() => setUserModal({ open: false, data: null })}
+                style={{
+                  padding: '10px 20px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: '#ffffff',
+                  color: '#6b7280',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f9fafb';
+                  e.currentTarget.style.borderColor = '#9ca3af';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = '#ffffff';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleSaveUser}
+                disabled={!newUser.name || !newUser.email || newUser.ragioneSocialeIds.length === 0}
+                style={{
+                  padding: '10px 24px',
+                  background: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? '#FF6900' : '#d1d5db',
+                  color: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? 'white' : '#9ca3af',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  boxShadow: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? '0 1px 3px 0 rgba(255, 105, 0, 0.3)' : 'none'
+                }}
+                onMouseOver={(e) => {
+                  if (newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0) {
+                    e.currentTarget.style.background = '#e55a00';
+                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0) {
+                    e.currentTarget.style.background = '#FF6900';
+                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(255, 105, 0, 0.3)';
+                  }
+                }}
+              >
+                Salva Utente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937',
