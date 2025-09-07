@@ -1,0 +1,164 @@
+Grande Antonio—qui c’è un “fix pack” rapido per far partire il componente senza crash e con dati coerenti. I problemi principali erano:
+
+useQuery senza queryFn → TanStack lancia “Missing queryFn”.
+
+Funzioni/stati mancanti → getCurrentTenantId, setNewRagioneSociale, setNewUser.
+
+Mismatch dei campi tra ciò che crei e ciò che renderizzi nei PDV (codice vs code, indirizzo vs address, canale vs channel_name, stato vs status).
+
+Tipo id inconsistente in handleDeleteRagioneSociale (string/number).
+
+Alcune import non usate (ok tenerle, ma non causano errori).
+
+Sotto trovi patch minimali e sicure da incollare: risolvono gli errori runtime e allineano i nomi campo.
+
+Patch mirata
+1) Utility mancanti + stati modali “nuovo”
+
+Aggiungi subito sotto le useState iniziali:
+
+// Helper per tenant id con fallback
+const getCurrentTenantId = () =>
+  (apiService?.getTenantId?.() as string) ||
+  localStorage.getItem('tenant_id') ||
+  DEMO_TENANT_ID;
+
+// Stati per form "nuovo"
+const [newRagioneSociale, setNewRagioneSociale] = useState<any>(null);
+const [newUser, setNewUser] = useState<any>(null);
+
+2) useQuery: aggiungi i queryFn
+
+Sostituisci i quattro useQuery così:
+
+const { data: legalForms = [] } = useQuery<LegalForm[]>({
+  queryKey: ['/api/reference/legal-forms'],
+  queryFn: async () => (await apiService.getLegalForms())?.data ?? [],
+  staleTime: 5 * 60 * 1000,
+});
+
+const { data: countries = [] } = useQuery({
+  queryKey: ['/api/reference/countries'],
+  queryFn: async () => (await apiService.getCountries())?.data ?? [],
+  staleTime: 5 * 60 * 1000,
+});
+
+const { data: italianCities = [] } = useQuery<ItalianCity[]>({
+  queryKey: ['/api/reference/italian-cities'],
+  queryFn: async () => (await apiService.getItalianCities())?.data ?? [],
+  staleTime: 5 * 60 * 1000,
+});
+
+const { data: commercialAreas = [] } = useQuery({
+  queryKey: ['/api/commercial-areas'],
+  queryFn: async () => (await apiService.getCommercialAreas())?.data ?? [],
+  staleTime: 5 * 60 * 1000,
+});
+
+
+Se il tuo apiService non ha esattamente quei metodi, crea dei wrapper che chiamano le tue API reali e restituiscono { data }.
+
+3) Allinea i campi nei Punti Vendita (render)
+
+Nel tbody dei PDV cambia i riferimenti:
+
+<td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+  {item.codice}
+</td>
+
+<td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
+  {item.indirizzo}
+</td>
+
+{/* Area commerciale: lascia com'è se in item c'è commercial_area_id; ok */}
+
+<td style={{ padding: '16px' }}>
+  <span ...>
+    {/* prima era item.channel_name */}
+    {item.canale || 'N/A'}
+  </span>
+</td>
+
+<td style={{ padding: '16px' }}>
+  <span ...>
+    {/* normalizza stato */}
+    {(() => {
+      const stato = (item.stato || '').toLowerCase();
+      if (stato === 'active' || stato === 'attivo') return 'Attivo';
+      if (stato === 'sospeso' || stato === 'suspended') return 'Sospeso';
+      if (stato === 'bozza') return 'Bozza';
+      if (stato === 'cessato') return 'Cessato';
+      if (stato === 'trasferito') return 'Trasferito';
+      return item.stato || 'N/D';
+    })()}
+  </span>
+</td>
+
+
+In alternativa, rinomina i campi quando salvi in state per usare sempre gli stessi nomi (codice/indirizzo/canale/stato).
+
+4) Creazione PDV coerente coi campi renderizzati
+
+Nel tuo handler “nuovo PDV” lascialo così (già ok con i nomi che ora rendi):
+
+const handleCreatePuntoVendita = () => {
+  const newCode = `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
+  const newItem = {
+    id: puntiVenditaList.length + 1,
+    tenant_id: DEMO_TENANT_ID,
+    ragioneSociale_id: ragioneSocialiList[0]?.id || 1,
+    codice: newCode,
+    nome: 'Nuovo Punto Vendita',
+    indirizzo: 'Via Nuova 1',
+    citta: 'Milano',
+    canale: 'Franchising',
+    stato: 'Attivo'
+  };
+  setPuntiVenditaList([...puntiVenditaList, newItem]);
+  setShowCreatePuntoVendita(false);
+};
+
+5) Delete ragione sociale: id number/string + header
+
+Rendi l’argomento più permissivo e usa il tenant id helper:
+
+const handleDeleteRagioneSociale = async (legalEntityId: string | number) => {
+  try {
+    const currentTenantId = getCurrentTenantId();
+    const response = await fetch(`/api/legal-entities/${legalEntityId}`, {
+      method: 'DELETE',
+      headers: {
+        'X-Tenant-ID': currentTenantId,
+        'Content-Type': 'application/json',
+        ...(apiService.getAuthHeader?.() ?? {}), // se hai un bearer
+      },
+    });
+    if (!response.ok) throw new Error(`Failed to delete legal entity: ${response.statusText}`);
+    await refetchLegalEntities();
+  } catch (error) {
+    console.error('❌ Error deleting legal entity:', error);
+    alert("Errore nell'eliminazione della ragione sociale. Riprova.");
+  }
+};
+
+6) handleCityChange: safe-guard
+
+Se italianCities è async, il default [] evita crash; aggiungi un ritorno difensivo:
+
+const handleCityChange = (cityName: string) => {
+  setSelectedCity(cityName);
+  const city = (italianCities || []).find((c: any) => c.name === cityName);
+  setPostalCode(city?.postalCode ?? '');
+};
+
+Extra (non bloccanti ma consigliati)
+
+Layout e gli Standard*Field sono importati ma non usati: o usali o rimuovi l’import per pulizia.
+
+currentModule, activeTab, selectedScope, selectedLegalEntities, selectedStores non sono usati nel render → valuta se servono o rimuovili.
+
+Le modali (legalEntityModal, storeModal, userModal) sono gestite a stato ma non monti i componenti: ok per ora, ma ricorda di aggiungerli o disattivare i pulsanti.
+
+Tipizza ragioneSocialiList, puntiVenditaList, utentiList con interfacce per evitare any nella fase successiva.
+
+Se incolli queste patch, spariscono l’errore “Missing queryFn”, le reference a funzioni/stati mancanti, e i PDV visualizzano i dati corretti. Vuoi che ti generi anche i wrapper apiService (getLegalForms/getCountries/getItalianCities/getCommercialAreas) pronti per le tue API REST?

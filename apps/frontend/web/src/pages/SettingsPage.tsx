@@ -207,6 +207,16 @@ interface ItalianCity {
 // Dati caricati dal database
 
 export default function SettingsPage() {
+  // Helper per tenant id con fallback
+  const getCurrentTenantId = () =>
+    (apiService?.getTenantId?.() as string) ||
+    localStorage.getItem('tenant_id') ||
+    DEMO_TENANT_ID;
+
+  // Stati per form "nuovo"
+  const [newRagioneSociale, setNewRagioneSociale] = useState<any>(null);
+  const [newUser, setNewUser] = useState<any>(null);
+
   const [currentModule, setCurrentModule] = useState('impostazioni');
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('Entity Management');
@@ -391,21 +401,25 @@ export default function SettingsPage() {
   // Load reference data from API
   const { data: legalForms = [] } = useQuery<LegalForm[]>({
     queryKey: ['/api/reference/legal-forms'],
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: async () => (await apiService.getLegalForms())?.data ?? [],
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: countries = [] } = useQuery({
     queryKey: ['/api/reference/countries'],
+    queryFn: async () => (await apiService.getCountries())?.data ?? [],
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: italianCities = [] } = useQuery<ItalianCity[]>({
     queryKey: ['/api/reference/italian-cities'],
+    queryFn: async () => (await apiService.getItalianCities())?.data ?? [],
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: commercialAreas = [] } = useQuery({
     queryKey: ['/api/commercial-areas'],
+    queryFn: async () => (await apiService.getCommercialAreas())?.data ?? [],
     staleTime: 5 * 60 * 1000,
   });
 
