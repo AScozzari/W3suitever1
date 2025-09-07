@@ -11,6 +11,7 @@ import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
 
 export default function App() {
+  console.log('App rendering');
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -23,38 +24,35 @@ export default function App() {
 }
 
 
+// ROUTER COMPLETAMENTE STATICO PER DEBUG - IGNORA TUTTO IL ROUTING
 function Router() {
-  console.log('Router rendering');
+  console.log('Static Router rendering');
+  
+  // IGNORO COMPLETAMENTE WOUTER E MOSTRO CONTENUTO STATICO
   return (
-    <Switch>
-      {/* Route con tenant nel path */}
-      <Route path="/:tenant/login">
-        {(params) => {
-          console.log('Login route matched:', params);
-          return <TenantWrapper params={params}><Login tenantCode={params.tenant} /></TenantWrapper>;
-        }}
-      </Route>
-      <Route path="/:tenant/settings">
-        {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
-      </Route>
-      <Route path="/:tenant/demo-fields">
-        {(params) => <TenantWrapper params={params}><StandardFieldsDemo /></TenantWrapper>}
-      </Route>
-      <Route path="/:tenant">
-        {(params) => {
-          console.log('Main route matched:', params);
-          return <TenantWrapper params={params}><MainApp /></TenantWrapper>;
-        }}
-      </Route>
-      {/* Fallback - redirect a staging */}
-      <Route>
-        {() => {
-          console.log('Fallback route triggered');
-          window.location.href = '/staging';
-          return null;
-        }}
-      </Route>
-    </Switch>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
+    }}>
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '32px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        textAlign: 'center'
+      }}>
+        <h1 style={{ color: 'white', fontSize: '24px', marginBottom: '16px' }}>
+          W3 Suite - STATIC TEST
+        </h1>
+        <p style={{ color: 'white', opacity: 0.8 }}>
+          Se vedi questo senza loop, il problema è nel routing
+        </p>
+      </div>
+    </div>
   );
 }
 
