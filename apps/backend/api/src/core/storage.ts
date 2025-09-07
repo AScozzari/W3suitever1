@@ -57,7 +57,7 @@ export interface IStorage {
   createRole(role: InsertRole): Promise<Role>;
   
   // Store Management
-  getStoresByTenant(tenantId: string): Promise<Store[]>;
+  getStoresByTenant(tenantId: string): Promise<any[]>;
   createStore(store: InsertStore): Promise<Store>;
   updateStore(id: string, store: Partial<InsertStore>): Promise<Store>;
   deleteStore(id: string): Promise<void>;
@@ -234,7 +234,7 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== STORE MANAGEMENT ====================
 
-  async getStoresByTenant(tenantId: string): Promise<Store[]> {
+  async getStoresByTenant(tenantId: string): Promise<any[]> {
     return await db
       .select({
         id: stores.id,
@@ -257,19 +257,25 @@ export class DatabaseStorage implements IStorage {
         tiktok: stores.tiktok,
         googleMapsUrl: stores.googleMapsUrl,
         telegram: stores.telegram,
-        commercialAreaId: stores.commercialAreaId,
-        commercial_area_name: commercialAreas.name,
+        // Relazioni con i nomi delle entità correlate
         channelId: stores.channelId,
         channel_name: channels.name,
+        commercialAreaId: stores.commercialAreaId,  
+        commercial_area_name: commercialAreas.name,
+        ragioneSociale_id: stores.legalEntityId,
+        ragioneSociale_name: legalEntities.nome,
         status: stores.status,
         openedAt: stores.openedAt,
         closedAt: stores.closedAt,
+        billingOverrideId: stores.billingOverrideId,
+        archivedAt: stores.archivedAt,
         createdAt: stores.createdAt,
         updatedAt: stores.updatedAt
       })
       .from(stores)
       .leftJoin(commercialAreas, eq(stores.commercialAreaId, commercialAreas.id))
       .leftJoin(channels, eq(stores.channelId, channels.id))
+      .leftJoin(legalEntities, eq(stores.legalEntityId, legalEntities.id))
       .where(eq(stores.tenantId, tenantId));
   }
 
