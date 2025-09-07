@@ -14,7 +14,13 @@ export const useItalianCities = () => {
   return useQuery({
     queryKey: ['/api/reference/italian-cities'],
     queryFn: async (): Promise<ItalianCity[]> => {
-      const response = await fetch('/api/reference/italian-cities');
+      const tenantId = localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001';
+      const response = await fetch('/api/reference/italian-cities', {
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch Italian cities');
       }
