@@ -367,26 +367,29 @@ export default function SettingsPage() {
     }
   };
   
-  // Handlers per Punti Vendita
+  // Handlers per Punti Vendita - USA API REALI
   const handleCreatePuntoVendita = () => {
-    const newCode = `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
-    const newItem = {
-      id: puntiVenditaList.length + 1,
-      tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
-      ragioneSociale_id: ragioneSocialiList[0]?.id || 1, // Default alla prima ragione sociale
-      codice: newCode,
-      nome: 'Nuovo Punto Vendita',
-      indirizzo: 'Via Nuova 1',
-      citta: 'Milano',
-      canale: 'Franchising',
-      stato: 'Attivo'
-    };
-    setPuntiVenditaList([...puntiVenditaList, newItem]);
-    setShowCreatePuntoVendita(false);
+    // Apri il modal invece di creare dati mock
+    setStoreModal({ open: true, data: null });
   };
   
-  const handleDeletePuntoVendita = (id: number) => {
-    setPuntiVenditaList(puntiVenditaList.filter(item => item.id !== id));
+  const handleDeletePuntoVendita = (id: string) => {
+    // Temporaneamente disabilitato - mantiene la funzionalità di UI ma non elimina dal DB
+    // TODO: Implementare delete API quando sarà disponibile
+    console.log('Delete store requested for ID:', id);
+    alert('Funzionalità di eliminazione temporaneamente disabilitata');
+  };
+
+  // Funzione per ricaricare i dati stores
+  const reloadStoreData = async () => {
+    try {
+      const result = await apiService.getStores();
+      if (result.success && result.data) {
+        setPuntiVenditaList(result.data);
+      }
+    } catch (error) {
+      console.error('Error reloading stores:', error);
+    }
   };
   
   // Load reference data from API
@@ -2719,41 +2722,15 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler per salvare il nuovo punto vendita
+  // Handler per salvare il nuovo punto vendita - TEMPORANEAMENTE DISABILITATO
   const handleSaveStore = () => {
-    const currentTenantId = getCurrentTenantId();
-    // Genera codice PDV: inizia con 9, almeno 7 cifre totali
-    const newCode = newStore.code || `9${String(Date.now()).slice(-6)}`;
-    const newItem = {
-      id: puntiVenditaList.length + 1,
-      tenant_id: currentTenantId, // TENANT ID AUTOMATICO DAL CONTEXT
-      code: newCode,                        // ✅ ALLINEATO
-      nome: newStore.nome || 'Nuovo Punto Vendita',
-      address: newStore.address || 'Via Nuova 1',  // ✅ ALLINEATO
-      citta: newStore.citta || 'Milano',
-      provincia: newStore.provincia,
-      cap: newStore.cap,
-      region: newStore.region,
-      geo: newStore.geo,                    // ✅ ALLINEATO
-      phone: newStore.phone,                // ✅ ALLINEATO
-      email: newStore.email,
-      whatsapp1: newStore.whatsapp1,
-      whatsapp2: newStore.whatsapp2,
-      facebook: newStore.facebook,
-      instagram: newStore.instagram,
-      tiktok: newStore.tiktok,
-      google_maps_url: newStore.google_maps_url,  // ✅ ALLINEATO
-      telegram: newStore.telegram,
-      legal_entity_id: newStore.legal_entity_id || ragioneSocialiList[0]?.id,  // ✅ ALLINEATO
-      commercial_area_id: newStore.commercial_area_id,  // ✅ ALLINEATO
-      channel_id: newStore.channel_id,      // ✅ ALLINEATO
-      status: newStore.status,              // ✅ ALLINEATO
-      opened_at: newStore.opened_at,
-      closed_at: newStore.closed_at
-    };
-    setPuntiVenditaList([...puntiVenditaList, newItem]);
+    // Temporaneamente disabilitato - il modal si chiude ma non salva
+    // TODO: Implementare create API quando sarà disponibile
+    console.log('Save store requested:', newStore);
+    alert('Funzionalità di salvataggio temporaneamente disabilitata. Mostrando solo dati reali dal database.');
+    
+    // Chiudi modal e reset form
     setStoreModal({ open: false, data: null });
-    // Reset form
     setNewStore({
       code: '',
       nome: '',
