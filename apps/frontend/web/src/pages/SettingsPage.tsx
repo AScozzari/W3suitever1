@@ -4540,6 +4540,139 @@ export default function SettingsPage() {
                   </select>
                 </div>
 
+                {/* Brand - Multi-select */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '20px' }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      cursor: 'pointer',
+                      padding: '6px 10px',
+                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
+                      borderRadius: '8px',
+                      border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={newStore.brands.includes('WindTre')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStore({ ...newStore, brands: [...newStore.brands, 'WindTre'] });
+                          } else {
+                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
+                          }
+                        }}
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          cursor: 'pointer',
+                          accentColor: '#FF6900'
+                        }}
+                      />
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newStore.brands.includes('WindTre') ? '#FF6900' : '#374151',
+                        fontWeight: '600'
+                      }}>
+                        WindTre
+                      </span>
+                    </label>
+                    
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      cursor: 'pointer',
+                      padding: '6px 10px',
+                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
+                      borderRadius: '8px',
+                      border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={newStore.brands.includes('Very Mobile')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStore({ ...newStore, brands: [...newStore.brands, 'Very Mobile'] });
+                          } else {
+                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
+                          }
+                        }}
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          cursor: 'pointer',
+                          accentColor: '#10b981'
+                        }}
+                      />
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newStore.brands.includes('Very Mobile') ? '#10b981' : '#374151',
+                        fontWeight: '600'
+                      }}>
+                        Very Mobile
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Stato */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Stato
+                  </label>
+                  <select
+                    value={newStore.status}
+                    onChange={(e) => setNewStore({ ...newStore, status: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="Attivo">Attivo</option>
+                    <option value="Sospeso">Sospeso</option>
+                    <option value="Chiuso">Chiuso</option>
+                  </select>
+                </div>
+
                 {/* Indirizzo - full width */}
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
@@ -5187,139 +5320,6 @@ export default function SettingsPage() {
                       e.target.style.boxShadow = 'none';
                     }}
                   />
-                </div>
-
-                {/* Brand - Multi-select */}
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '20px' }}>
-                    <label style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
-                      borderRadius: '8px',
-                      border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={newStore.brands.includes('WindTre')}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewStore({ ...newStore, brands: [...newStore.brands, 'WindTre'] });
-                          } else {
-                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
-                          }
-                        }}
-                        style={{ 
-                          width: '20px', 
-                          height: '20px', 
-                          cursor: 'pointer',
-                          accentColor: '#FF6900'
-                        }}
-                      />
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newStore.brands.includes('WindTre') ? '#FF6900' : '#374151',
-                        fontWeight: '600'
-                      }}>
-                        WindTre
-                      </span>
-                    </label>
-                    
-                    <label style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
-                      borderRadius: '8px',
-                      border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={newStore.brands.includes('Very Mobile')}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewStore({ ...newStore, brands: [...newStore.brands, 'Very Mobile'] });
-                          } else {
-                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
-                          }
-                        }}
-                        style={{ 
-                          width: '20px', 
-                          height: '20px', 
-                          cursor: 'pointer',
-                          accentColor: '#10b981'
-                        }}
-                      />
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newStore.brands.includes('Very Mobile') ? '#10b981' : '#374151',
-                        fontWeight: '600'
-                      }}>
-                        Very Mobile
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Stato */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Stato
-                  </label>
-                  <select
-                    value={newStore.status}
-                    onChange={(e) => setNewStore({ ...newStore, status: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option value="Attivo">Attivo</option>
-                    <option value="Sospeso">Sospeso</option>
-                    <option value="Chiuso">Chiuso</option>
-                  </select>
                 </div>
               </div>
 
