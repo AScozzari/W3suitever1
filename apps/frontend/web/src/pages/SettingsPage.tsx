@@ -2463,6 +2463,7 @@ export default function SettingsPage() {
     indirizzo: '',
     citta: '',
     cap: '',
+    provincia: '',
     telefono: '',
     email: '',
     ragioneSociale_id: null as number | null,  // Obbligatorio
@@ -2709,6 +2710,7 @@ export default function SettingsPage() {
       indirizzo: '',
       citta: '',
       cap: '',
+      provincia: '',
       telefono: '',
       email: '',
       ragioneSociale_id: null,
@@ -4534,6 +4536,7 @@ export default function SettingsPage() {
                     value={newStore.citta}
                     onChange={(cityName) => setNewStore({ ...newStore, citta: cityName })}
                     onCapChange={(cap) => setNewStore(prev => ({ ...prev, cap }))}
+                    onProvinciaChange={(provincia) => setNewStore(prev => ({ ...prev, provincia }))}
                     required={true}
                   />
                 </div>
@@ -4555,6 +4558,53 @@ export default function SettingsPage() {
                     placeholder="20121"
                     value={newStore.cap}
                     onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                    }}
+                    onFocus={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Provincia */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MI"
+                    value={newStore.provincia}
+                    onChange={(e) => setNewStore({ ...newStore, provincia: e.target.value })}
                     readOnly={italianCities.length > 0} // Auto-popolato dalla città
                     style={{
                       width: '100%',
