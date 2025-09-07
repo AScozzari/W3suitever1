@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
 import { Route, Switch, useParams, Redirect } from "wouter";
 import DashboardPage from "./pages/DashboardPage";
-import Login from "./pages/Login";
+import LoginSimple from "./pages/LoginSimple";
 import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 import { ThemeProvider } from "./contexts/ThemeContext";
