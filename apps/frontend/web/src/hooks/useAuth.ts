@@ -8,10 +8,11 @@ export function useAuth() {
 
   // Check for OAuth2 tokens and initialize client
   useEffect(() => {
-    const checkTokens = async () => {
+    const checkTokens = () => {
       try {
         // Simple check for stored tokens without async calls that might cause loops
         const storedTokens = localStorage.getItem('oauth2_tokens');
+        console.log('useAuth: stored tokens check:', !!storedTokens);
         setHasToken(!!storedTokens);
       } catch (error) {
         console.error('Error checking tokens:', error);
@@ -24,11 +25,15 @@ export function useAuth() {
     checkTokens();
   }, []);
   
+  // Per ora semplifichiamo: se non ci sono token, non facciamo query
+  // Questo evita chiamate API che potrebbero causare errori o loop
+  const shouldFetchUserInfo = hasToken && !isInitializing;
+  
   const { data: userInfo, isLoading: isUserInfoLoading, error } = useQuery({
-    queryKey: ["/oauth2/userinfo"], // OAuth2 standard userinfo endpoint
-    enabled: hasToken, // Only run query if we have a token
+    queryKey: ["/oauth2/userinfo"],
+    enabled: shouldFetchUserInfo,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -41,9 +46,20 @@ export function useAuth() {
     }
   }, [error, hasToken]);
 
+  const isAuthenticated = hasToken && !!userInfo && !error;
+  
+  console.log('useAuth state:', { 
+    hasToken, 
+    isInitializing, 
+    isUserInfoLoading, 
+    isAuthenticated,
+    hasUserInfo: !!userInfo,
+    hasError: !!error 
+  });
+
   return {
     user: userInfo,
-    isLoading: isInitializing || (hasToken ? isUserInfoLoading : false),
-    isAuthenticated: !!userInfo && !error,
+    isLoading: isInitializing || (shouldFetchUserInfo ? isUserInfoLoading : false),
+    isAuthenticated,
   };
 }
