@@ -27,6 +27,9 @@ function Router() {
   return (
     <Switch>
       {/* Route con tenant nel path */}
+      <Route path="/:tenant/login">
+        {(params) => <TenantWrapper params={params}><Login tenantCode={params.tenant} /></TenantWrapper>}
+      </Route>
       <Route path="/:tenant/settings">
         {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
       </Route>
@@ -100,7 +103,9 @@ function MainApp() {
   }
 
   if (!isAuthenticated) {
-    return <Login tenantCode={tenant} />;
+    // Redirect to explicit login page
+    window.location.href = `/${tenant}/login`;
+    return null;
   }
 
   return <DashboardPage />;
