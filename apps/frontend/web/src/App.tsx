@@ -80,6 +80,8 @@ function MainApp() {
   const params = useParams();
   const tenant = (params as any).tenant;
   
+  console.log('MainApp render:', { isAuthenticated, isLoading, tenant });
+  
   if (isLoading) {
     return (
       <div style={{
@@ -103,8 +105,9 @@ function MainApp() {
   }
 
   if (!isAuthenticated) {
-    // Use Redirect component instead of window.location to avoid loops
-    return <Redirect to={`/${tenant}/login`} />;
+    console.log('Not authenticated, redirecting to login');
+    // Per ora mostra direttamente la pagina di login invece del redirect per debug
+    return <Login tenantCode={tenant} />;
   }
 
   return <DashboardPage />;
