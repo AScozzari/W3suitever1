@@ -3190,63 +3190,13 @@ export default function SettingsPage() {
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <select
+                  <StandardCityField
                     value={newRagioneSociale.citta}
-                    onChange={(e) => {
-                      const cityName = e.target.value;
-                      setNewRagioneSociale({ ...newRagioneSociale, citta: cityName });
-                      // Auto-popola CAP e Provincia dalla tabella città
-                      const city = (italianCities as any[]).find((c: any) => c.name === cityName);
-                      if (city) {
-                        setNewRagioneSociale(prev => ({
-                          ...prev,
-                          cap: city.postalCode || '',
-                          provincia: city.province || ''
-                        }));
-                      }
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s ease',
-                      cursor: 'pointer',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#FF6900';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
-                      e.target.style.transform = 'translateY(-1px)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
-                      e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    <option value="">Seleziona città...</option>
-                    {italianCities.length > 0 ? (
-                      (italianCities as any[]).map((city: any) => (
-                        <option key={city.id} value={city.name}>
-                          {city.name} ({city.province})
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Milano">Milano</option>
-                        <option value="Roma">Roma</option>
-                        <option value="Napoli">Napoli</option>
-                        <option value="Torino">Torino</option>
-                        <option value="Bologna">Bologna</option>
-                        <option value="Firenze">Firenze</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(cityName) => setNewRagioneSociale({ ...newRagioneSociale, citta: cityName })}
+                    onCapChange={(cap) => setNewRagioneSociale(prev => ({ ...prev, cap }))}
+                    onProvinciaChange={(provincia) => setNewRagioneSociale(prev => ({ ...prev, provincia }))}
+                    required={true}
+                  />
                 </div>
 
                 {/* CAP */}
@@ -4397,61 +4347,12 @@ export default function SettingsPage() {
                   }}>
                     Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <select
+                  <StandardCityField
                     value={newStore.citta}
-                    onChange={(e) => {
-                      const cityName = e.target.value;
-                      setNewStore({ ...newStore, citta: cityName });
-                      // Auto-popola CAP dalla tabella città
-                      const city = (italianCities as any[]).find((c: any) => c.name === cityName);
-                      if (city) {
-                        setNewStore(prev => ({
-                          ...prev,
-                          cap: city.postalCode || ''
-                        }));
-                      }
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option value="">Seleziona città...</option>
-                    {italianCities.length > 0 ? (
-                      (italianCities as any[]).map((city: any) => (
-                        <option key={city.id} value={city.name}>
-                          {city.name} ({city.province})
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Milano">Milano</option>
-                        <option value="Roma">Roma</option>
-                        <option value="Napoli">Napoli</option>
-                        <option value="Torino">Torino</option>
-                        <option value="Bologna">Bologna</option>
-                        <option value="Firenze">Firenze</option>
-                      </>
-                    )}
-                  </select>
+                    onChange={(cityName) => setNewStore({ ...newStore, citta: cityName })}
+                    onCapChange={(cap) => setNewStore(prev => ({ ...prev, cap }))}
+                    required={true}
+                  />
                 </div>
 
                 {/* CAP */}
