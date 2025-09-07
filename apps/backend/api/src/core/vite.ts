@@ -4,6 +4,7 @@ import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../../../../../apps/frontend/web/vite.config";
+import brandViteConfig from "../../../../../apps/frontend/brand-web/vite.config";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -43,7 +44,7 @@ export async function setupVite(app: Express, server: Server) {
 
   // Setup Brand Interface routes
   const brandVite = await createViteServer({
-    ...viteConfig,
+    ...brandViteConfig,
     configFile: false,
     root: path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web"),
     customLogger: {
@@ -53,7 +54,10 @@ export async function setupVite(app: Express, server: Server) {
         process.exit(1);
       },
     },
-    server: serverOptions,
+    server: {
+      ...serverOptions,
+      port: undefined, // Don't conflict with main server
+    },
     appType: "custom",
   });
 
