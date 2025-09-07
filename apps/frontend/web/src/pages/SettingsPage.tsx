@@ -4315,24 +4315,20 @@ export default function SettingsPage() {
             {/* Body Modal */}
             <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
               
-              {/* SEZIONE 1: Info Generali */}
-              <div style={{
-                marginBottom: '32px',
-                padding: '16px',
-                background: '#f8fafc',
-                borderRadius: '8px',
-                border: '1px solid #e2e8f0'
-              }}>
+              {/* ========================= SEZIONE 1: INFO GENERALI ========================= */}
+              <div style={{ marginBottom: '32px' }}>
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#374151',
+                  color: '#111827',
                   marginBottom: '16px',
-                  marginTop: 0,
+                  paddingBottom: '8px',
+                  borderBottom: '2px solid #e5e7eb',
                   fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                }}>📋 Informazioni Generali</h3>
+                }}>
+                  📝 Informazioni Generali
+                </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                
                 {/* Codice */}
                 <div>
                   <label style={{
@@ -4417,53 +4413,6 @@ export default function SettingsPage() {
                     }}
                   />
                 </div>
-                
-                {/* Canale */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <select
-                    value={newStore.ragioneSociale_id || ''}
-                    onChange={(e) => setNewStore({ ...newStore, ragioneSociale_id: e.target.value ? Number(e.target.value) : null })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option value="">Seleziona ragione sociale...</option>
-                    {ragioneSocialiList.map(rs => (
-                      <option key={rs.id} value={rs.id}>
-                        {rs.nome} ({rs.codice})
-                      </option>
-                    ))}
-                  </select>
-                </div>
 
                 {/* Canale */}
                 <div>
@@ -4508,7 +4457,7 @@ export default function SettingsPage() {
                     <option value="Dealer">Dealer</option>
                   </select>
                 </div>
-                
+
                 {/* Indirizzo - full width */}
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
@@ -4664,8 +4613,8 @@ export default function SettingsPage() {
                     }}
                   />
                 </div>
-                
-                {/* Brand - Multi-select */}
+
+                {/* Brand - Multi-select - full width */}
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
@@ -4753,28 +4702,24 @@ export default function SettingsPage() {
                     </label>
                   </div>
                 </div>
-                
                 </div>
               </div>
-              
-              {/* SEZIONE 2: Campi Relazionali */}
-              <div style={{
-                marginBottom: '32px',
-                padding: '16px',
-                background: '#f0f9ff',
-                borderRadius: '8px',
-                border: '1px solid #e0f2fe'
-              }}>
+
+              {/* ========================= SEZIONE 2: CAMPI RELAZIONALI ========================= */}
+              <div style={{ marginBottom: '32px' }}>
                 <h3 style={{
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#374151',
+                  color: '#111827',
                   marginBottom: '16px',
-                  marginTop: 0,
+                  paddingBottom: '8px',
+                  borderBottom: '2px solid #e5e7eb',
                   fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                }}>🔗 Campi Relazionali</h3>
+                }}>
+                  🏢 Campi Relazionali
+                </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                
+
                 {/* Ragione Sociale */}
                 <div>
                   <label style={{
@@ -4813,15 +4758,15 @@ export default function SettingsPage() {
                       e.target.style.boxShadow = 'none';
                     }}
                   >
-                    <option value="">Seleziona una ragione sociale</option>
-                    {legalEntities.map(entity => (
-                      <option key={entity.id} value={entity.id}>
-                        {entity.codice} - {entity.ragioneSociale}
+                    <option value="">Seleziona ragione sociale...</option>
+                    {ragioneSocialiList.map(rs => (
+                      <option key={rs.id} value={rs.id}>
+                        {rs.nome} ({rs.codice})
                       </option>
                     ))}
                   </select>
                 </div>
-                
+
                 {/* Area Commerciale */}
                 <div>
                   <label style={{
@@ -4869,8 +4814,8 @@ export default function SettingsPage() {
                   </select>
                 </div>
 
-                {/* Stato */}
-                <div>
+                {/* Indirizzo - full width */}
+                <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
                     display: 'block',
                     fontSize: '14px',
@@ -4879,119 +4824,13 @@ export default function SettingsPage() {
                     marginBottom: '8px',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
-                    Stato
-                  </label>
-                  <select
-                    value={newStore.stato}
-                    onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option value="Attivo">Attivo</option>
-                    <option value="Sospeso">Sospeso</option>
-                    <option value="Chiuso">Chiuso</option>
-                  </select>
-                </div>
-                
-                </div>
-              </div>
-
-              {/* SEZIONE 3: Contatti */}
-              <div style={{
-                marginBottom: '32px',
-                padding: '16px',
-                background: '#f0fdf4',
-                borderRadius: '8px',
-                border: '1px solid #dcfce7'
-              }}>
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '16px',
-                  marginTop: 0,
-                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                }}>📞 Contatti e Social</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-
-                {/* Telefono */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Telefono
+                    Indirizzo <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
-                    type="tel"
-                    placeholder="+39 02 12345678"
-                    value={newStore.telefono}
-                    onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="punto.vendita@windtre.it"
-                    value={newStore.email}
-                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                    type="text"
+                    placeholder="es. Via Roma 123"
+                    value={newStore.indirizzo}
+                    onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -5016,865 +4855,101 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                {/* WhatsApp 1 */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
-                    WhatsApp 1
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+39 333 1234567"
-                    value={newStore.whatsapp1}
-                    onChange={(e) => setNewStore({ ...newStore, whatsapp1: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#25D366';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* WhatsApp 2 */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
-                    WhatsApp 2
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+39 333 7654321"
-                    value={newStore.whatsapp2}
-                    onChange={(e) => setNewStore({ ...newStore, whatsapp2: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#25D366';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Facebook */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#1877F2', fontSize: '16px' }}>👤</span>
-                    Facebook
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="facebook.com/windtrestore"
-                    value={newStore.facebook}
-                    onChange={(e) => setNewStore({ ...newStore, facebook: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#1877F2';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(24, 119, 242, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Instagram */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#E4405F', fontSize: '16px' }}>📷</span>
-                    Instagram
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="instagram.com/windtrestore"
-                    value={newStore.instagram}
-                    onChange={(e) => setNewStore({ ...newStore, instagram: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#E4405F';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(228, 64, 95, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* TikTok */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#FF0050', fontSize: '16px' }}>🎵</span>
-                    TikTok
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="tiktok.com/@windtrestore"
-                    value={newStore.tiktok}
-                    onChange={(e) => setNewStore({ ...newStore, tiktok: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#FF0050';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 0, 80, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Google Maps URL */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#4285F4', fontSize: '16px' }}>🗺️</span>
-                    Google Maps
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://maps.google.com/..."
-                    value={newStore.googleMapsUrl}
-                    onChange={(e) => setNewStore({ ...newStore, googleMapsUrl: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#4285F4';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Telegram */}
-                <div>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    <span style={{ color: '#0088CC', fontSize: '16px' }}>✈️</span>
-                    Telegram
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="t.me/windtrestore"
-                    value={newStore.telegram}
-                    onChange={(e) => setNewStore({ ...newStore, telegram: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0088CC';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 136, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-                
-                </div>
-              </div>
-
-              {/* Footer Modal */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px',
-                marginTop: '32px',
-                paddingTop: '20px',
-                borderTop: '1px solid #e5e7eb'
-              }}>
-                <button
-                  onClick={() => setStoreModal({ open: false, data: null })}
-                  style={{
-                    padding: '10px 20px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    background: '#ffffff',
-                    color: '#6b7280',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#f9fafb';
-                    e.currentTarget.style.borderColor = '#9ca3af';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#ffffff';
-                    e.currentTarget.style.borderColor = '#d1d5db';
-                  }}
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={handleSaveStore}
-                  style={{
-                    padding: '10px 24px',
-                    background: '#FF6900',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    boxShadow: '0 1px 3px 0 rgba(255, 105, 0, 0.3)'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#e55a00';
-                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#FF6900';
-                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(255, 105, 0, 0.3)';
-                  }}
-                >
-                  Salva
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Nuovo Utente con Selezione Gerarchica */}
-      {userModal.open && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            width: '90%',
-            maxWidth: '900px',
-            maxHeight: '90vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            borderTop: '3px solid transparent',
-            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
-          }}>
-            {/* Header Modal - Clean Design */}
-            <div style={{
-              padding: '24px 32px 16px',
-              borderBottom: '1px solid #e5e7eb',
-              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.05) 0%, rgba(123, 44, 191, 0.05) 100%)'
-            }}>
-              <h2 style={{
-                margin: 0,
-                fontSize: '24px',
-                fontWeight: '700',
-                background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-              }}>
-                Nuovo Utente
-              </h2>
-              <p style={{
-                margin: '8px 0 0',
-                fontSize: '14px',
-                color: '#6b7280',
-                fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-              }}>
-                Aggiungi un nuovo utente al sistema selezionando ragioni sociali e punti vendita
-              </p>
-            </div>
-
-            {/* Content Modal */}
-            <div style={{
-              padding: '32px',
-              overflowY: 'auto',
-              maxHeight: '60vh'
-            }}>
-              {/* Form Content */}
-              <div style={{
-                display: 'grid',
-                gap: '24px'
-              }}>
-                {/* Info Utente Base */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '20px'
-                }}>
-                  {/* Nome */}
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '8px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      Nome Completo <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Mario Rossi"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '6px 10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        background: '#fafbfc',
-                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                        fontWeight: '400',
-                        outline: 'none',
-                        color: '#1f2937'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#d1d5db';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '8px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      Email <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="mario.rossi@windtre.it"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '6px 10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        background: '#fafbfc',
-                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                        fontWeight: '400',
-                        outline: 'none',
-                        color: '#1f2937'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#d1d5db';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Selezione Ragioni Sociali */}
+                {/* Città */}
                 <div>
                   <label style={{
                     display: 'block',
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    color: '#1f2937',
-                    marginBottom: '16px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
-                    Ragioni Sociali <span style={{ color: '#ef4444' }}>*</span>
+                    Città <span style={{ color: '#ef4444' }}>*</span>
                   </label>
-                  <div style={{
-                    background: '#f8fafc',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    maxHeight: '200px',
-                    overflowY: 'auto'
-                  }}>
-                    {legalEntities.map(legalEntity => (
-                      <label key={legalEntity.id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px',
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        transition: 'all 0.2s ease',
-                        background: newUser.ragioneSocialeIds.includes(legalEntity.id) ? '#e0f2fe' : 'transparent',
-                        border: newUser.ragioneSocialeIds.includes(legalEntity.id) ? '2px solid #0ea5e9' : '2px solid transparent'
-                      }}
-                      onMouseOver={(e) => {
-                        if (!newUser.ragioneSocialeIds.includes(legalEntity.id)) {
-                          e.currentTarget.style.background = '#f1f5f9';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (!newUser.ragioneSocialeIds.includes(legalEntity.id)) {
-                          e.currentTarget.style.background = 'transparent';
-                        }
-                      }}>
-                        <input
-                          type="checkbox"
-                          checked={newUser.ragioneSocialeIds.includes(legalEntity.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewUser({
-                                ...newUser,
-                                ragioneSocialeIds: [...newUser.ragioneSocialeIds, legalEntity.id]
-                              });
-                            } else {
-                              setNewUser({
-                                ...newUser,
-                                ragioneSocialeIds: newUser.ragioneSocialeIds.filter(id => id !== legalEntity.id),
-                                puntoVenditaIds: newUser.puntoVenditaIds.filter(pvId => 
-                                  !stores.find(s => s.id === pvId && s.ragioneSocialeId === legalEntity.id)
-                                ),
-                                defaultPuntoVenditaId: stores.find(s => s.id === newUser.defaultPuntoVenditaId && s.ragioneSocialeId === legalEntity.id) 
-                                  ? '' : newUser.defaultPuntoVenditaId
-                              });
-                            }
-                          }}
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            cursor: 'pointer',
-                            accentColor: '#0ea5e9'
-                          }}
-                        />
-                        <div>
-                          <div style={{
-                            fontSize: '16px',
-                            fontWeight: '600',
-                            color: '#1f2937',
-                            fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                          }}>
-                            {legalEntity.ragioneSociale}
-                          </div>
-                          <div style={{
-                            fontSize: '13px',
-                            color: '#6b7280',
-                            fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                          }}>
-                            Codice: {legalEntity.codice}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
+                  <StandardCityField
+                    value={newStore.citta}
+                    onChange={(cityName) => setNewStore({ ...newStore, citta: cityName })}
+                    onCapChange={(cap) => setNewStore(prev => ({ ...prev, cap }))}
+                    onProvinciaChange={(provincia) => setNewStore(prev => ({ ...prev, provincia }))}
+                    required={true}
+                  />
                 </div>
 
-                {/* Selezione Punti Vendita */}
-                {newUser.ragioneSocialeIds.length > 0 && (
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '16px',
-                      fontWeight: '700',
+                {/* CAP */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="20121"
+                    value={newStore.cap}
+                    onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
                       color: '#1f2937',
-                      marginBottom: '16px',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                    }}>
-                      Punti Vendita Associati
-                    </label>
-                    <div style={{
-                      background: '#f8fafc',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      maxHeight: '250px',
-                      overflowY: 'auto'
-                    }}>
-                      {newUser.ragioneSocialeIds.map(rsId => {
-                        const ragioneSociale = legalEntities.find(rs => rs.id === rsId);
-                        const associatedStores = stores.filter(store => store.ragioneSocialeId === rsId);
-                        
-                        return (
-                          <div key={rsId} style={{ marginBottom: '24px' }}>
-                            <h4 style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              color: '#374151',
-                              marginBottom: '12px',
-                              fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                            }}>
-                              {ragioneSociale?.ragioneSociale}
-                            </h4>
-                            {associatedStores.map(store => (
-                              <label key={store.id} style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                padding: '8px 12px',
-                                cursor: 'pointer',
-                                borderRadius: '6px',
-                                transition: 'all 0.2s ease',
-                                background: newUser.puntoVenditaIds.includes(store.id) ? '#e0f2fe' : 'transparent',
-                                border: newUser.puntoVenditaIds.includes(store.id) ? '1px solid #0ea5e9' : '1px solid transparent',
-                                marginBottom: '4px'
-                              }}
-                              onMouseOver={(e) => {
-                                if (!newUser.puntoVenditaIds.includes(store.id)) {
-                                  e.currentTarget.style.background = '#f1f5f9';
-                                }
-                              }}
-                              onMouseOut={(e) => {
-                                if (!newUser.puntoVenditaIds.includes(store.id)) {
-                                  e.currentTarget.style.background = 'transparent';
-                                }
-                              }}>
-                                <input
-                                  type="checkbox"
-                                  checked={newUser.puntoVenditaIds.includes(store.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setNewUser({
-                                        ...newUser,
-                                        puntoVenditaIds: [...newUser.puntoVenditaIds, store.id]
-                                      });
-                                    } else {
-                                      setNewUser({
-                                        ...newUser,
-                                        puntoVenditaIds: newUser.puntoVenditaIds.filter(id => id !== store.id),
-                                        defaultPuntoVenditaId: newUser.defaultPuntoVenditaId === store.id ? '' : newUser.defaultPuntoVenditaId
-                                      });
-                                    }
-                                  }}
-                                  style={{
-                                    width: '18px',
-                                    height: '18px',
-                                    cursor: 'pointer',
-                                    accentColor: '#0ea5e9'
-                                  }}
-                                />
-                                <div style={{ flex: 1 }}>
-                                  <div style={{
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    color: '#1f2937',
-                                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                                  }}>
-                                    {store.nome}
-                                  </div>
-                                  <div style={{
-                                    fontSize: '12px',
-                                    color: '#6b7280',
-                                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                                  }}>
-                                    {store.codice} • {store.canale}
-                                  </div>
-                                </div>
-                                
-                                {/* Radio per Default PV */}
-                                {newUser.puntoVenditaIds.includes(store.id) && (
-                                  <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                  }}>
-                                    <input
-                                      type="radio"
-                                      name="defaultPV"
-                                      checked={newUser.defaultPuntoVenditaId === store.id}
-                                      onChange={() => setNewUser({ ...newUser, defaultPuntoVenditaId: store.id })}
-                                      style={{
-                                        width: '16px',
-                                        height: '16px',
-                                        cursor: 'pointer',
-                                        accentColor: '#FF6900'
-                                      }}
-                                    />
-                                    <span style={{
-                                      fontSize: '12px',
-                                      color: '#FF6900',
-                                      fontWeight: '600',
-                                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                                    }}>
-                                      Default
-                                    </span>
-                                  </div>
-                                )}
-                              </label>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Info punto vendita default */}
-                    {newUser.puntoVenditaIds.length > 0 && (
-                      <div style={{
-                        marginTop: '12px',
-                        padding: '12px',
-                        background: 'rgba(255, 105, 0, 0.05)',
-                        border: '1px solid rgba(255, 105, 0, 0.2)',
-                        borderRadius: '8px'
-                      }}>
-                        <p style={{
-                          margin: 0,
-                          fontSize: '13px',
-                          color: '#FF6900',
-                          fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                        }}>
-                          💡 Seleziona un punto vendita come "Default" - verrà usato nelle operazioni automatiche del sistema
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                    }}
+                    onFocus={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }
+                    }}
+                  />
+                </div>
 
-            {/* Footer Modal */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '12px',
-              padding: '20px 32px',
-              borderTop: '1px solid #e5e7eb',
-              background: '#fafbfc'
-            }}>
-              <button
-                onClick={() => setUserModal({ open: false, data: null })}
-                style={{
-                  padding: '10px 20px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  background: '#ffffff',
-                  color: '#6b7280',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f9fafb';
-                  e.currentTarget.style.borderColor = '#9ca3af';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = '#ffffff';
-                  e.currentTarget.style.borderColor = '#d1d5db';
-                }}
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleSaveUser}
-                disabled={!newUser.name || !newUser.email || newUser.ragioneSocialeIds.length === 0}
-                style={{
-                  padding: '10px 24px',
-                  background: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? '#FF6900' : '#d1d5db',
-                  color: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? 'white' : '#9ca3af',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                  boxShadow: newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0 ? '0 1px 3px 0 rgba(255, 105, 0, 0.3)' : 'none'
-                }}
-                onMouseOver={(e) => {
-                  if (newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0) {
-                    e.currentTarget.style.background = '#e55a00';
-                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (newUser.name && newUser.email && newUser.ragioneSocialeIds.length > 0) {
-                    e.currentTarget.style.background = '#FF6900';
-                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(255, 105, 0, 0.3)';
-                  }
-                }}
-              >
-                Salva Utente
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+                {/* Provincia */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MI"
+                    value={newStore.provincia}
+                    onChange={(e) => setNewStore({ ...newStore, provincia: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937',
@@ -7641,6 +6716,7 @@ export default function SettingsPage() {
         {/* Content Area - Direttamente sullo sfondo */}
         <div>
           {renderContent()}
+        </div>
         </div>
       </Layout>
     </>
