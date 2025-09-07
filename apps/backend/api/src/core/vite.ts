@@ -64,29 +64,19 @@ export async function setupVite(app: Express, server: Server) {
   // Brand Interface specific route handling - serve SPA for all Brand Interface routes
   app.get("/brandinterface*", async (req, res) => {
     try {
-      const brandTemplate = path.resolve(
-        import.meta.dirname,
-        "..",
-        "..",
-        "..",
-        "..",
-        "..",
-        "apps",
-        "frontend",
-        "brand-web",
-        "index.html",
-      );
+      const brandTemplate = path.resolve(process.cwd(), "apps", "frontend", "brand-web", "index.html");
 
       let template = await fs.promises.readFile(brandTemplate, "utf-8");
+      
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const page = await brandVite.transformIndexHtml("/", template);
+      const page = await brandVite.transformIndexHtml("/brandinterface", template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
-      console.error('Brand Interface error:', e);
-      res.status(500).send('Brand Interface loading error');
+      console.error('❌ Brand Interface error:', e);
+      res.status(500).send('Brand Interface loading error: ' + e.message);
     }
   });
 

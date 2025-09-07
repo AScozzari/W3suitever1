@@ -103,14 +103,8 @@ function MainApp() {
   }
 
   if (!isAuthenticated) {
-    // Check if we're already on login page to avoid loops
-    if (window.location.pathname.endsWith('/login')) {
-      return <Login tenantCode={tenant} />;
-    } else {
-      // Redirect to explicit login page only if not already there
-      window.location.href = `/${tenant}/login`;
-      return null;
-    }
+    // Use Redirect component instead of window.location to avoid loops
+    return <Redirect to={`/${tenant}/login`} />;
   }
 
   return <DashboardPage />;
