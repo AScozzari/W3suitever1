@@ -5258,7 +5258,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Modal Nuovo Utente con Selezione Gerarchica */}
+      {/* Modal Nuovo Utente - Da implementare */}
       {userModal.open && (
         <div style={{
           position: 'fixed',
@@ -5268,6 +5268,29 @@ export default function SettingsPage() {
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '32px',
+            borderRadius: '12px',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h2>Modal Utente</h2>
+            <p>Da implementare</p>
+            <button onClick={() => setUserModal({ open: false, data: null })}>
+              Chiudi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs Container */}
+      <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -5495,7 +5518,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Modal Nuovo Utente con Selezione Gerarchica */}
+      {/* Modal Nuovo Utente - Da implementare */}
       {userModal.open && (
         <div style={{
           position: 'fixed',
@@ -5505,6 +5528,29 @@ export default function SettingsPage() {
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '32px',
+            borderRadius: '12px',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h2>Modal Utente</h2>
+            <p>Da implementare</p>
+            <button onClick={() => setUserModal({ open: false, data: null })}>
+              Chiudi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs Container */}
+      <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
