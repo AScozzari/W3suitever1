@@ -5291,10 +5291,19 @@ export default function SettingsPage() {
 
       {/* Tabs Container */}
       <div style={{
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
+          background: 'rgba(243, 244, 246, 0.5)',
+          borderRadius: '12px',
+          padding: '4px',
           animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
@@ -5551,10 +5560,19 @@ export default function SettingsPage() {
 
       {/* Tabs Container */}
       <div style={{
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
+          background: 'rgba(243, 244, 246, 0.5)',
+          borderRadius: '12px',
+          padding: '4px',
           animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
