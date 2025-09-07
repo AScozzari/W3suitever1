@@ -323,7 +323,8 @@ export default function SettingsPage() {
   
   // Handlers per Ragioni Sociali
   const handleCreateRagioneSociale = () => {
-    const newCode = `80${String(Math.floor(Math.random() * 99999) + 1000).padStart(4, '0')}`;
+    // Genera codice RS: inizia con 8, almeno 7 cifre totali
+    const newCode = `8${String(Date.now()).slice(-6)}`;
     const newItem = {
       id: ragioneSocialiList.length + 1,
       tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
@@ -2615,7 +2616,8 @@ export default function SettingsPage() {
   const handleSaveRagioneSociale = async () => {
     try {
       const currentTenantId = getCurrentTenantId();
-      const newCode = newRagioneSociale.codice || `80${String(Math.floor(Math.random() * 9999) + 1000).padStart(4, '0')}`;
+      // Genera codice RS: inizia con 8, almeno 7 cifre totali  
+      const newCode = newRagioneSociale.codice || `8${String(Date.now()).slice(-6)}`;
       
       // Prepara i dati per l'API con tutti i nuovi campi enterprise
       const legalEntityData = {
@@ -2719,7 +2721,8 @@ export default function SettingsPage() {
   // Handler per salvare il nuovo punto vendita
   const handleSaveStore = () => {
     const currentTenantId = getCurrentTenantId();
-    const newCode = newStore.code || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
+    // Genera codice PDV: inizia con 9, almeno 7 cifre totali
+    const newCode = newStore.code || `9${String(Date.now()).slice(-6)}`;
     const newItem = {
       id: puntiVenditaList.length + 1,
       tenant_id: currentTenantId, // TENANT ID AUTOMATICO DAL CONTEXT
@@ -2906,7 +2909,7 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="80xxxx (auto-generato)"
+                    placeholder="8xxxxxxx (auto-generato, min. 7 cifre)"
                     value={newRagioneSociale.codice}
                     onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
                     style={{
@@ -4325,7 +4328,7 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="90xxxxxxxx (auto-generato)"
+                    placeholder="9xxxxxxx (auto-generato, min. 7 cifre)"
                     value={newStore.code}
                     onChange={(e) => setNewStore({ ...newStore, code: e.target.value })}
                     style={{
