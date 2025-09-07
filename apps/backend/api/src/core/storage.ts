@@ -4,6 +4,7 @@ import {
   legalEntities,
   stores,
   commercialAreas,
+  channels,
   roles,
   userAssignments,
   legalForms,
@@ -219,7 +220,42 @@ export class DatabaseStorage implements IStorage {
   // ==================== STORE MANAGEMENT ====================
 
   async getStoresByTenant(tenantId: string): Promise<Store[]> {
-    return await db.select().from(stores).where(eq(stores.tenantId, tenantId));
+    return await db
+      .select({
+        id: stores.id,
+        tenantId: stores.tenantId,
+        legalEntityId: stores.legalEntityId,
+        code: stores.code,
+        nome: stores.nome,
+        address: stores.address,
+        citta: stores.citta,
+        provincia: stores.provincia,
+        cap: stores.cap,
+        region: stores.region,
+        geo: stores.geo,
+        phone: stores.phone,
+        email: stores.email,
+        whatsapp1: stores.whatsapp1,
+        whatsapp2: stores.whatsapp2,
+        facebook: stores.facebook,
+        instagram: stores.instagram,
+        tiktok: stores.tiktok,
+        googleMapsUrl: stores.googleMapsUrl,
+        telegram: stores.telegram,
+        commercialAreaId: stores.commercialAreaId,
+        commercial_area_name: commercialAreas.name,
+        channelId: stores.channelId,
+        channel_name: channels.name,
+        status: stores.status,
+        openedAt: stores.openedAt,
+        closedAt: stores.closedAt,
+        createdAt: stores.createdAt,
+        updatedAt: stores.updatedAt
+      })
+      .from(stores)
+      .leftJoin(commercialAreas, eq(stores.commercialAreaId, commercialAreas.id))
+      .leftJoin(channels, eq(stores.channelId, channels.id))
+      .where(eq(stores.tenantId, tenantId));
   }
 
 

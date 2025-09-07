@@ -252,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const store = await storage.updateStore(req.params.id, req.body);
       res.json(store);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating store:", error);
       if (error.message?.includes('not found')) {
         res.status(404).json({ error: "Store not found" });
@@ -267,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       await storage.deleteStore(req.params.id);
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting store:", error);
       if (error.message?.includes('not found')) {
         res.status(404).json({ error: "Store not found" });

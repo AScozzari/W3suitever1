@@ -2517,6 +2517,68 @@ export default function SettingsPage() {
     closed_at: null as string | null       // Database: closed_at
   });
 
+  // Precompila i campi del modal quando è in modalità edit
+  useEffect(() => {
+    if (storeModal.open && storeModal.data) {
+      // Modalità EDIT - precompila i campi con i dati esistenti
+      const item = storeModal.data;
+      setNewStore({
+        code: item.code || '',
+        nome: item.nome || '',
+        address: item.address || '',
+        citta: item.citta || '',
+        provincia: item.provincia || '',
+        cap: item.cap || '',
+        region: item.region || '',
+        geo: item.geo || { lat: null, lng: null },
+        phone: item.phone || '',
+        email: item.email || '',
+        whatsapp1: item.whatsapp1 || '',
+        whatsapp2: item.whatsapp2 || '',
+        facebook: item.facebook || '',
+        instagram: item.instagram || '',
+        tiktok: item.tiktok || '',
+        google_maps_url: item.googleMapsUrl || item.google_maps_url || '',
+        telegram: item.telegram || '',
+        legal_entity_id: item.legalEntityId || item.legal_entity_id || null,
+        commercial_area_id: item.commercialAreaId || item.commercial_area_id || null,
+        channel_id: item.channelId || item.channel_id || null,
+        status: item.status || 'active',
+        brands: item.brands || [],
+        opened_at: item.openedAt || item.opened_at || null,
+        closed_at: item.closedAt || item.closed_at || null
+      });
+    } else if (storeModal.open && !storeModal.data) {
+      // Modalità CREATE - resetta i campi
+      setNewStore({
+        code: '',
+        nome: '',
+        address: '',
+        citta: '',
+        provincia: '',
+        cap: '',
+        region: '',
+        geo: { lat: null, lng: null },
+        phone: '',
+        email: '',
+        whatsapp1: '',
+        whatsapp2: '',
+        facebook: '',
+        instagram: '',
+        tiktok: '',
+        google_maps_url: '',
+        telegram: '',
+        legal_entity_id: null,
+        commercial_area_id: null,
+        channel_id: null,
+        status: 'active',
+        brands: [],
+        opened_at: null,
+        closed_at: null
+      });
+    }
+  }, [storeModal.open, storeModal.data]);
+
   // State per il nuovo utente
   const [newUser, setNewUser] = useState({
     // Dati di accesso
@@ -2731,12 +2793,14 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler per salvare il nuovo punto vendita - USA API REALE
+  // Handler per salvare/aggiornare punto vendita - USA API REALE
   const handleSaveStore = async () => {
     try {
       const currentTenantId = getCurrentTenantId();
-      // Genera codice PDV: inizia con 9, almeno 7 cifre totali
-      const newCode = newStore.code || `9${String(Date.now()).slice(-6)}`;
+      const isEdit = Boolean(storeModal.data);
+      
+      // Genera codice PDV: inizia con 9, almeno 7 cifre totali (solo per creazione)
+      const newCode = newStore.code || (isEdit ? storeModal.data.code : `9${String(Date.now()).slice(-6)}`);
       
       const storeData = {
         tenantId: currentTenantId,
@@ -2765,7 +2829,14 @@ export default function SettingsPage() {
         closedAt: newStore.closed_at
       };
 
-      const result = await apiService.createStore(storeData);
+      let result;
+      if (isEdit) {
+        // Modalità UPDATE
+        result = await apiService.updateStore(storeModal.data.id, storeData);
+      } else {
+        // Modalità CREATE
+        result = await apiService.createStore(storeData);
+      }
       
       if (result.success) {
         // Chiudi modal e reset form
@@ -2797,16 +2868,16 @@ export default function SettingsPage() {
           closed_at: null
         });
 
-        // Ricarica i dati per mostrare il nuovo store
+        // Ricarica i dati per mostrare le modifiche
         await reloadStoreData();
         
       } else {
-        console.error('❌ Error creating store:', result.error);
-        alert('Errore nella creazione del punto vendita. Riprova.');
+        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} store:`, result.error);
+        alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
       }
     } catch (error) {
-      console.error('❌ Error creating store:', error);
-      alert('Errore nella creazione del punto vendita. Riprova.');
+      console.error(`❌ Error ${storeModal.data ? 'updating' : 'creating'} store:`, error);
+      alert(`Errore nella ${storeModal.data ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
     }
   };
 

@@ -28,7 +28,7 @@ class ApiService {
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        const response = await apiRequest<T>(endpoint, options);
+        const response = await apiRequest(endpoint, options);
         return {
           success: true,
           data: response
