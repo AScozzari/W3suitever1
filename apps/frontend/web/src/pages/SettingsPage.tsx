@@ -3925,48 +3925,13 @@ export default function SettingsPage() {
                       }}>
                         Città
                       </label>
-                      <select
+                      <StandardCityField
                         value={newRagioneSociale.refAmminCitta}
-                        data-testid="select-ref-citta"
-                        onChange={(e) => {
-                          const cityName = e.target.value;
-                          setNewRagioneSociale({ ...newRagioneSociale, refAmminCitta: cityName });
-                          // Auto-popola CAP
-                          const city = (italianCities as any[]).find((c: any) => c.name === cityName);
-                          if (city) {
-                            setNewRagioneSociale(prev => ({
-                              ...prev,
-                              refAmminCap: city.postalCode || ''
-                            }));
-                          }
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '6px 10px',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          background: '#fafbfc',
-                          transition: 'all 0.2s ease',
-                          cursor: 'pointer',
-                          outline: 'none'
-                        }}
-                      >
-                        <option value="">Seleziona città...</option>
-                        {italianCities.length > 0 ? (
-                          (italianCities as any[]).map((city: any) => (
-                            <option key={city.id} value={city.name}>
-                              {city.name} ({city.province})
-                            </option>
-                          ))
-                        ) : (
-                          <>
-                            <option value="Milano">Milano</option>
-                            <option value="Roma">Roma</option>
-                            <option value="Napoli">Napoli</option>
-                          </>
-                        )}
-                      </select>
+                        onChange={(cityName) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCitta: cityName })}
+                        onCapChange={(cap) => setNewRagioneSociale(prev => ({ ...prev, refAmminCap: cap }))}
+                        onProvinciaChange={() => {}} // Il referente non ha campo provincia
+                        required={false}
+                      />
                     </div>
 
                     {/* CAP Referente */}
