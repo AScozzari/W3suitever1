@@ -8,7 +8,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret';
 // Seed super admin user (for development)
 const SUPER_ADMIN = {
   id: 'brand-super-admin',
-  email: 'admin@w3suite.com',
+  username: 'sadminbrand',
+  email: 'sadminbrand@w3suite.com',
   name: 'Super Administrator', 
   role: 'super-admin',
   passwordHash: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' // "admin123"
@@ -20,18 +21,18 @@ const SUPER_ADMIN = {
  */
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
     
-    if (!email || !password) {
+    if (!username || !password) {
       return res.status(400).json({ 
         error: 'Missing credentials',
-        message: 'Email and password are required' 
+        message: 'Username and password are required' 
       });
     }
 
     // For now, use seed super admin
     // TODO: Replace with actual user lookup from brand_users table
-    if (email !== SUPER_ADMIN.email) {
+    if (username !== SUPER_ADMIN.username) {
       return res.status(401).json({ 
         error: 'Invalid credentials',
         message: 'User not found' 

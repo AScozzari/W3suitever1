@@ -125,9 +125,9 @@ export const requirePermission = (permission: string) => {
 };
 
 /**
- * Check if user has access to specific workspace
+ * Check if user has access to specific resource/functionality
  */
-export const requireWorkspace = (workspace: string) => {
+export const requireResource = (resource: string, action: string = 'read') => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.brandUser;
     
@@ -135,17 +135,24 @@ export const requireWorkspace = (workspace: string) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    // Super admin has all workspace access
+    // Super admin has all permissions
     if (user.permissions.includes('*')) {
       return next();
     }
     
-    // Check workspace access
-    if (user.workspace && user.workspace !== workspace) {
+    // Check specific resource.action permission
+    const requiredPermission = `${resource}.${action}`;
+    const hasPermission = user.permissions.some(perm => 
+      perm === requiredPermission || 
+      perm === `${resource}.*` ||
+      perm.endsWith('.*')
+    );
+    
+    if (!hasPermission) {
       return res.status(403).json({ 
-        error: 'Workspace access denied',
-        required: workspace,
-        current: user.workspace 
+        error: 'Insufficient permissions',
+        required: requiredPermission,
+        available: user.permissions 
       });
     }
     
