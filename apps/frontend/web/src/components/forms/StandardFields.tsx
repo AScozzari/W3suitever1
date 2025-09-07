@@ -111,7 +111,7 @@ export const StandardEmailField: React.FC<StandardFieldProps> = ({
   );
 };
 
-// Campo Città con auto-completamento CAP
+// Campo Città con select dropdown
 export const StandardCityField: React.FC<StandardFieldProps & { 
   onCapChange?: (cap: string) => void;
   onProvinciaChange?: (provincia: string) => void;
@@ -124,40 +124,64 @@ export const StandardCityField: React.FC<StandardFieldProps & {
   required = false,
   disabled = false
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [filteredCities, setFilteredCities] = useState<ItalianCity[]>([]);
   const { data: cities = [], isLoading, error: citiesError } = useItalianCities();
 
-  useEffect(() => {
-    if (value && cities.length > 0) {
-      const filtered = cities.filter(city => 
-        city.name.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredCities(filtered);
-    } else {
-      setFilteredCities(cities);
+  const handleCitySelect = (cityName: string) => {
+    const selectedCity = cities.find(city => city.name === cityName);
+    if (selectedCity) {
+      onChange(selectedCity.name);
+      onCapChange?.(selectedCity.postalCode);
+      onProvinciaChange?.(selectedCity.province);
     }
-  }, [value, cities]);
-
-  const handleCitySelect = (city: ItalianCity) => {
-    onChange(city.name);
-    onCapChange?.(city.postalCode);
-    onProvinciaChange?.(city.province);
-    setIsOpen(false);
   };
 
+  if (isLoading) {
+    return (
+      <div style={{ marginBottom: '16px' }}>
+        <select 
+          disabled
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            background: '#f9fafb',
+            outline: 'none'
+          }}
+        >
+          <option>Caricamento città...</option>
+        </select>
+      </div>
+    );
+  }
+
+  if (citiesError) {
+    return (
+      <div style={{ marginBottom: '16px' }}>
+        <select 
+          disabled
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '2px solid #ef4444',
+            borderRadius: '8px',
+            fontSize: '14px',
+            background: '#fef2f2',
+            outline: 'none'
+          }}
+        >
+          <option>Errore nel caricamento città</option>
+        </select>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ position: 'relative', marginBottom: '16px' }}>
-      <input
-        type="text"
+    <div style={{ marginBottom: '16px' }}>
+      <select
         value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setIsOpen(true);
-        }}
-        onFocus={() => setIsOpen(true)}
-        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-        placeholder={isLoading ? "Caricamento città..." : "Seleziona città..."}
+        onChange={(e) => handleCitySelect(e.target.value)}
         required={required}
         disabled={disabled}
         style={{
@@ -168,46 +192,25 @@ export const StandardCityField: React.FC<StandardFieldProps & {
           fontSize: '14px',
           background: disabled ? '#f9fafb' : 'white',
           outline: 'none',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
+          cursor: disabled ? 'not-allowed' : 'pointer'
         }}
-      />
-      
-      {isOpen && filteredCities.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          background: 'white',
-          border: '2px solid #e5e7eb',
-          borderRadius: '8px',
-          maxHeight: '200px',
-          overflowY: 'auto',
-          zIndex: 1000,
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-        }}>
-          {filteredCities.slice(0, 10).map((city, index) => (
-            <div
-              key={index}
-              onClick={() => handleCitySelect(city)}
-              style={{
-                padding: '12px 16px',
-                cursor: 'pointer',
-                borderBottom: index < Math.min(filteredCities.length, 10) - 1 ? '1px solid #f3f4f6' : 'none',
-                transition: 'background 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-            >
-              <div style={{ fontWeight: '500', color: '#111827' }}>{city.name}</div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                {city.province} ({city.provinceName}) - CAP {city.postalCode}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      
+        onFocus={(e) => {
+          e.target.style.borderColor = '#3b82f6';
+          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = error ? '#ef4444' : '#e5e7eb';
+          e.target.style.boxShadow = 'none';
+        }}
+      >
+        <option value="">Seleziona una città...</option>
+        {cities.map((city) => (
+          <option key={city.id} value={city.name}>
+            {city.name} ({city.province}) - {city.postalCode}
+          </option>
+        ))}
+      </select>
       {error && (
         <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
           {error}
