@@ -5260,8 +5260,143 @@ export default function SettingsPage() {
 
       {/* Modal Nuovo Utente con Selezione Gerarchica */}
       {userModal.open && (
-                  </label>
-                  <select
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
+          }}>
+            {/* Header Modal - Clean Design */}
+            <div style={{
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'none'
+                    }}>
+                      <User size={20} style={{ color: 'white' }} />
+                    </div>
+                    <h2 style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: 'none'
+                    }}>
+                      {userModal.data ? 'Modifica Utente' : 'Nuovo Utente'}
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500
+                  }}>
+                    {userModal.data ? 'Modifica i dati dell\'utente' : 'Completa tutte le informazioni per creare un nuovo utente'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setUserModal({ open: false, data: null })}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    color: '#6b7280'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f3f4f6';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Body Modal con Selezione Gerarchica */}
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              
+              {/* Selezione Ragione Sociale */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '12px',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                }}>
+                  🏢 Seleziona Ragione Sociale
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
                     value={newStore.stato}
                     onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
                     style={{
