@@ -667,6 +667,8 @@ export default function SettingsPage() {
                         ? '#e0e7ff'
                         : item.stato === 'Cessata'
                         ? '#fecaca'
+                        : item.stato === 'Trasferita'
+                        ? '#fed7aa'
                         : '#f1f5f9',
                       color: item.stato === 'Attiva' 
                         ? '#15803d' 
@@ -676,6 +678,8 @@ export default function SettingsPage() {
                         ? '#4338ca'
                         : item.stato === 'Cessata'
                         ? '#dc2626'
+                        : item.stato === 'Trasferita'
+                        ? '#ea580c'
                         : '#475569',
                       border: `1px solid ${item.stato === 'Attiva' 
                         ? '#bbf7d0' 
@@ -685,6 +689,8 @@ export default function SettingsPage() {
                         ? '#c7d2fe'
                         : item.stato === 'Cessata'
                         ? '#fca5a5'
+                        : item.stato === 'Trasferita'
+                        ? '#fdba74'
                         : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
@@ -886,6 +892,8 @@ export default function SettingsPage() {
                         ? '#e0e7ff'
                         : item.stato === 'Cessata'
                         ? '#fecaca'
+                        : item.stato === 'Trasferita'
+                        ? '#fed7aa'
                         : '#f1f5f9',
                       color: item.stato === 'Attiva' 
                         ? '#15803d' 
@@ -895,6 +903,8 @@ export default function SettingsPage() {
                         ? '#4338ca'
                         : item.stato === 'Cessata'
                         ? '#dc2626'
+                        : item.stato === 'Trasferita'
+                        ? '#ea580c'
                         : '#475569',
                       border: `1px solid ${item.stato === 'Attiva' 
                         ? '#bbf7d0' 
@@ -904,6 +914,8 @@ export default function SettingsPage() {
                         ? '#c7d2fe'
                         : item.stato === 'Cessata'
                         ? '#fca5a5'
+                        : item.stato === 'Trasferita'
+                        ? '#fdba74'
                         : '#e2e8f0'}`,
                       borderRadius: '20px',
                       fontSize: '12px',
@@ -3668,6 +3680,7 @@ export default function SettingsPage() {
                     <option value="Sospesa">Sospesa</option>
                     <option value="Bozza">Bozza</option>
                     <option value="Cessata">Cessata</option>
+                    <option value="Trasferita">Trasferita</option>
                   </select>
                 </div>
 
