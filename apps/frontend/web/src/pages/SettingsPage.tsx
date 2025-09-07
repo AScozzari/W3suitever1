@@ -2484,6 +2484,7 @@ export default function SettingsPage() {
     provincia: '',                         // Database: provincia
     cap: '',                               // Database: cap
     region: '',                            // Database: region
+    geo: { lat: null, lng: null } as { lat: number | null, lng: number | null }, // Database: geo (jsonb)
     phone: '',                             // Database: phone
     email: '',                             // Database: email
     whatsapp1: '',                         // Database: whatsapp1
@@ -2733,6 +2734,7 @@ export default function SettingsPage() {
       provincia: newStore.provincia,
       cap: newStore.cap,
       region: newStore.region,
+      geo: newStore.geo,                    // ✅ ALLINEATO
       phone: newStore.phone,                // ✅ ALLINEATO
       email: newStore.email,
       whatsapp1: newStore.whatsapp1,
@@ -2760,6 +2762,7 @@ export default function SettingsPage() {
       provincia: '',
       cap: '',
       region: '',
+      geo: { lat: null, lng: null },
       phone: '',
       email: '',
       whatsapp1: '',
@@ -4691,6 +4694,109 @@ export default function SettingsPage() {
                       }
                     }}
                   />
+                </div>
+
+                {/* 🗺️ Coordinate Geografiche */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1fr 1fr', 
+                  gap: '16px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                  marginBottom: '24px'
+                }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      🌐 Latitudine
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      placeholder="45.464211"
+                      data-testid="input-latitude"
+                      value={newStore.geo.lat || ''}
+                      onChange={(e) => setNewStore({ ...newStore, geo: { ...newStore.geo, lat: e.target.value ? parseFloat(e.target.value) : null } })}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        background: '#ffffff',
+                        color: '#374151',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      🌐 Longitudine
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      placeholder="9.190347"
+                      data-testid="input-longitude"
+                      value={newStore.geo.lng || ''}
+                      onChange={(e) => setNewStore({ ...newStore, geo: { ...newStore.geo, lng: e.target.value ? parseFloat(e.target.value) : null } })}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        background: '#ffffff',
+                        color: '#374151',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                  <div style={{ 
+                    gridColumn: '1 / -1',
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginTop: '8px'
+                  }}>
+                    <span>💡</span>
+                    <span>Puoi trovare le coordinate su <a href="https://www.google.com/maps" target="_blank" style={{ color: '#FF6900', textDecoration: 'underline' }}>Google Maps</a> cliccando destro sul punto vendita</span>
+                  </div>
                 </div>
 
                 {/* Telefono */}
