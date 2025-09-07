@@ -10,11 +10,9 @@ export function useAuth() {
   useEffect(() => {
     const checkTokens = async () => {
       try {
-        // Check for OAuth2 tokens
+        // Simple check for stored tokens without async calls that might cause loops
         const storedTokens = localStorage.getItem('oauth2_tokens');
-        const accessToken = await oauth2Client.getAccessToken();
-        
-        setHasToken(!!storedTokens && !!accessToken);
+        setHasToken(!!storedTokens);
       } catch (error) {
         console.error('Error checking tokens:', error);
         setHasToken(false);
@@ -26,15 +24,26 @@ export function useAuth() {
     checkTokens();
   }, []);
   
-  const { data: userInfo, isLoading: isUserInfoLoading } = useQuery({
+  const { data: userInfo, isLoading: isUserInfoLoading, error } = useQuery({
     queryKey: ["/oauth2/userinfo"], // OAuth2 standard userinfo endpoint
     enabled: hasToken, // Only run query if we have a token
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
+
+  // If there's an auth error, clear tokens to avoid loops
+  useEffect(() => {
+    if (error && hasToken) {
+      console.log('Auth error, clearing tokens:', error);
+      localStorage.removeItem('oauth2_tokens');
+      setHasToken(false);
+    }
+  }, [error, hasToken]);
 
   return {
     user: userInfo,
     isLoading: isInitializing || (hasToken ? isUserInfoLoading : false),
-    isAuthenticated: !!userInfo,
+    isAuthenticated: !!userInfo && !error,
   };
 }

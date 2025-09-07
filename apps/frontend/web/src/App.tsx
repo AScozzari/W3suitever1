@@ -103,9 +103,14 @@ function MainApp() {
   }
 
   if (!isAuthenticated) {
-    // Redirect to explicit login page
-    window.location.href = `/${tenant}/login`;
-    return null;
+    // Check if we're already on login page to avoid loops
+    if (window.location.pathname.endsWith('/login')) {
+      return <Login tenantCode={tenant} />;
+    } else {
+      // Redirect to explicit login page only if not already there
+      window.location.href = `/${tenant}/login`;
+      return null;
+    }
   }
 
   return <DashboardPage />;
