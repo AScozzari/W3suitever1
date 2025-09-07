@@ -816,6 +816,7 @@ export default function SettingsPage() {
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Area</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Canale</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
                 <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
               </tr>
@@ -851,6 +852,47 @@ export default function SettingsPage() {
                       {item.commercial_area_id ? 
                         (commercialAreas as any[]).find((area: any) => area.id === item.commercial_area_id)?.name || 'N/A'
                         : 'Non assegnata'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 12px',
+                      background: item.channel_name === 'Franchising' 
+                        ? '#fef3f0'
+                        : item.channel_name === 'Top Dealer'
+                        ? '#f0f9ff'
+                        : item.channel_name === 'Dealer'
+                        ? '#faf5ff'
+                        : '#f1f5f9',
+                      color: item.channel_name === 'Franchising' 
+                        ? '#ea580c' 
+                        : item.channel_name === 'Top Dealer'
+                        ? '#0369a1'
+                        : item.channel_name === 'Dealer'
+                        ? '#7c3aed'
+                        : '#475569',
+                      border: `1px solid ${item.channel_name === 'Franchising' 
+                        ? '#fed7aa' 
+                        : item.channel_name === 'Top Dealer'
+                        ? '#e0f2fe'
+                        : item.channel_name === 'Dealer'
+                        ? '#e9d5ff'
+                        : '#e2e8f0'}`,
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      <div style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'white'
+                      }} />
+                      {item.channel_name || 'N/A'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
