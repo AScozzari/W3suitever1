@@ -2648,7 +2648,11 @@ export default function SettingsPage() {
         email: '',
         pec: '',
         stato: 'Attiva',
-        // New enterprise fields
+        // Enterprise fields
+        capitaleSociale: '',
+        dataCostituzione: '',
+        rea: '',
+        registroImprese: '',
         logo: '',
         codiceSDI: '',
         // Administrative contact section
