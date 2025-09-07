@@ -133,8 +133,10 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               scope: tokenData.scope
             });
             
-            console.log('🔄 Reloading page...');
-            window.location.reload();
+            console.log('🔄 Redirecting to dashboard...');
+            // Redirect alla dashboard del tenant dopo login
+            const tenantCode = propTenantCode || 'staging';
+            window.location.href = `/${tenantCode}/dashboard`;
           } else {
             const errorData = await tokenResponse.json();
             console.error('Token exchange failed:', errorData);

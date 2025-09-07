@@ -26,16 +26,27 @@ export default function App() {
 function Router() {
   return (
     <Switch>
-      {/* Route con tenant nel path */}
+      {/* Route dedicate per login */}
+      <Route path="/:tenant/login">
+        {(params) => <TenantWrapper params={params}><LoginPage /></TenantWrapper>}
+      </Route>
+      
+      {/* Route con tenant nel path - richiedono autenticazione */}
       <Route path="/:tenant/settings">
-        {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/demo-fields">
-        {(params) => <TenantWrapper params={params}><StandardFieldsDemo /></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><StandardFieldsDemo /></AuthenticatedApp></TenantWrapper>}
       </Route>
+      <Route path="/:tenant/dashboard">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      
+      {/* Route root tenant - redirect basato su auth */}
       <Route path="/:tenant">
-        {(params) => <TenantWrapper params={params}><MainApp /></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><TenantRoot /></TenantWrapper>}
       </Route>
+      
       {/* Fallback - redirect a staging */}
       <Route>
         {() => {
@@ -71,8 +82,55 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
   return <>{children}</>;
 }
 
-// Main app component che gestisce autenticazione
-function MainApp() {
+// Componente per gestire il redirect dal root tenant
+function TenantRoot() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const params = useParams();
+  const tenant = (params as any).tenant;
+  
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        // Se autenticato, vai alla dashboard
+        window.location.href = `/${tenant}/dashboard`;
+      } else {
+        // Se non autenticato, vai al login
+        window.location.href = `/${tenant}/login`;
+      }
+    }
+  }, [isAuthenticated, isLoading, tenant]);
+
+  // Loading screen durante il check
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
+    }}>
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '32px',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
+      }}>
+        <h2 style={{ color: 'white', fontSize: '24px' }}>Caricamento W3 Suite...</h2>
+      </div>
+    </div>
+  );
+}
+
+// Pagina login dedicata
+function LoginPage() {
+  const params = useParams();
+  const tenant = (params as any).tenant;
+  return <Login tenantCode={tenant} />;
+}
+
+// Wrapper per pagine che richiedono autenticazione
+function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
@@ -100,8 +158,10 @@ function MainApp() {
   }
 
   if (!isAuthenticated) {
-    return <Login tenantCode={tenant} />;
+    // Redirect a login se non autenticato
+    window.location.href = `/${tenant}/login`;
+    return null;
   }
 
-  return <DashboardPage />;
+  return <>{children}</>;
 }

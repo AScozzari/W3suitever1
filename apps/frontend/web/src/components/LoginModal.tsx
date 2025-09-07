@@ -91,7 +91,8 @@ export default function LoginModal({ isOpen, onClose, tenantCode: propTenantCode
         const data = await response.json();
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('currentTenantId', tenantId);
-        window.location.reload();
+        // Redirect alla dashboard dopo login
+        window.location.href = `/${tenantFromPath}/dashboard`;
       } else {
         const error = await response.json();
         alert(error.message || 'Credenziali non valide');
