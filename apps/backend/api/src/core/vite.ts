@@ -61,19 +61,8 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  // Brand Interface middleware for /brandinterface path
-  app.use("/brandinterface", (req, res, next) => {
-    // Rewrite URL to serve assets correctly
-    if (req.url.startsWith('/@vite/') || req.url.startsWith('/@react-refresh') || req.url.endsWith('.tsx') || req.url.endsWith('.css') || req.url.endsWith('.js')) {
-      req.url = req.url;
-      req.originalUrl = req.originalUrl;
-    }
-    next();
-  }, brandVite.middlewares);
-  
-  app.use("/brandinterface*", async (req, res, next) => {
-    const url = req.originalUrl;
-
+  // Brand Interface specific route handling
+  app.get("/brandinterface", async (req, res) => {
     try {
       const brandTemplate = path.resolve(
         import.meta.dirname,
@@ -96,10 +85,13 @@ export async function setupVite(app: Express, server: Server) {
       const page = await brandVite.transformIndexHtml("/", template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
-      brandVite.ssrFixStacktrace(e as Error);
-      next(e);
+      console.error('Brand Interface error:', e);
+      res.status(500).send('Brand Interface loading error');
     }
   });
+
+  // Brand Interface assets and API middleware
+  app.use("/brandinterface", brandVite.middlewares);
 
   // Main W3 Suite middleware  
   app.use(vite.middlewares);
