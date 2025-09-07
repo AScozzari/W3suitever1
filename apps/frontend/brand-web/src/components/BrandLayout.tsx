@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
+import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useTheme } from '../contexts/ThemeContext';
 import {
   User, Bell, Settings, Menu, ChevronLeft, ChevronRight,
@@ -14,6 +15,7 @@ interface BrandLayoutProps {
 
 export default function BrandLayout({ children }: BrandLayoutProps) {
   const { user, logout, workspace, setWorkspace } = useBrandAuth();
+  const { currentTenant, currentTenantId, isCrossTenant, switchTenant } = useBrandTenant();
   const { isDark, toggleTheme } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -80,6 +82,45 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           >
             {sidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
           </button>
+        </div>
+
+        {/* Tenant Context Indicator */}
+        <div className="p-4 border-b border-white/10">
+          {!sidebarCollapsed && (
+            <div className="mb-3">
+              <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-2">
+                Contesto Tenant
+              </p>
+            </div>
+          )}
+          
+          <div className={`glass-button rounded-lg p-3 ${sidebarCollapsed ? 'px-3' : ''}`}
+               style={{ background: isCrossTenant ? '#10b98120' : '#FF690020' }}>
+            <div className="flex items-center space-x-3">
+              <Globe 
+                className="w-5 h-5 flex-shrink-0"
+                style={{ color: isCrossTenant ? '#10b981' : '#FF6900' }} 
+              />
+              {!sidebarCollapsed && (
+                <div className="flex-1">
+                  <p className="text-white font-medium text-sm">
+                    {isCrossTenant ? 'Cross-Tenant' : currentTenant}
+                  </p>
+                  <p className="text-white/60 text-xs">
+                    {isCrossTenant ? 'Tutti i tenant' : `ID: ${currentTenantId?.substring(0, 8)}...`}
+                  </p>
+                  {!isCrossTenant && (
+                    <button
+                      onClick={() => switchTenant(null)}
+                      className="mt-2 text-xs text-white/70 hover:text-white transition-colors"
+                    >
+                      → Modalità Cross-Tenant
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Workspace Switcher */}

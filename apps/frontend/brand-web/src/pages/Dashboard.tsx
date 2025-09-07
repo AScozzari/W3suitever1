@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
+import { useBrandTenant } from '../contexts/BrandTenantContext';
 import BrandLayout from '../components/BrandLayout';
 import MarketingWorkspace from '../components/workspaces/MarketingWorkspace';
 import SalesWorkspace from '../components/workspaces/SalesWorkspace';
@@ -8,6 +9,7 @@ import AdminWorkspace from '../components/workspaces/AdminWorkspace';
 
 export default function Dashboard() {
   const { isAuthenticated, workspace } = useBrandAuth();
+  const { currentTenant, currentTenantId, isCrossTenant, switchTenant } = useBrandTenant();
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
