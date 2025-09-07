@@ -323,7 +323,8 @@ export default function SettingsPage() {
   
   // Handlers per Ragioni Sociali
   const handleCreateRagioneSociale = () => {
-    const newCode = `80${String(Math.floor(Math.random() * 99999) + 1000).padStart(4, '0')}`;
+    // Ragioni Sociali: iniziano con "8" + minimo 7 caratteri numerici totali (8XXXXXX)
+    const newCode = `8${String(Math.floor(Math.random() * 9999999) + 1000000).padStart(7, '0')}`;
     const newItem = {
       id: ragioneSocialiList.length + 1,
       tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
@@ -368,7 +369,8 @@ export default function SettingsPage() {
   
   // Handlers per Punti Vendita
   const handleCreatePuntoVendita = () => {
-    const newCode = `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
+    // PDV: iniziano con "9" + minimo 7 caratteri numerici totali (9XXXXXX)
+    const newCode = `9${String(Math.floor(Math.random() * 9999999) + 1000000).padStart(7, '0')}`;
     const newItem = {
       id: puntiVenditaList.length + 1,
       tenant_id: DEMO_TENANT_ID, // TENANT ID OBBLIGATORIO
@@ -2609,7 +2611,14 @@ export default function SettingsPage() {
   const handleSaveRagioneSociale = async () => {
     try {
       const currentTenantId = getCurrentTenantId();
-      const newCode = newRagioneSociale.codice || `80${String(Math.floor(Math.random() * 9999) + 1000).padStart(4, '0')}`;
+      // Ragioni Sociali: iniziano con "8" + minimo 7 caratteri numerici totali (8XXXXXX)
+      const newCode = newRagioneSociale.codice || `8${String(Math.floor(Math.random() * 9999999) + 1000000).padStart(7, '0')}`;
+      
+      // Validazione codice Ragione Sociale
+      if (newRagioneSociale.codice && !validateLegalEntityCode(newRagioneSociale.codice)) {
+        alert('Codice Ragione Sociale non valido. Deve iniziare con "8" e avere almeno 7 caratteri numerici (es: 8123456)');
+        return;
+      }
       
       // Prepara i dati per l'API con tutti i nuovi campi enterprise
       const legalEntityData = {
@@ -2710,10 +2719,29 @@ export default function SettingsPage() {
     }
   };
 
+  // Funzioni di validazione per i codici
+  const validatePDVCode = (code: string): boolean => {
+    // PDV: iniziano con "9" + minimo 7 caratteri numerici totali
+    return /^9[0-9]{6,}$/.test(code);
+  };
+
+  const validateLegalEntityCode = (code: string): boolean => {
+    // Ragioni Sociali: iniziano con "8" + minimo 7 caratteri numerici totali
+    return /^8[0-9]{6,}$/.test(code);
+  };
+
   // Handler per salvare il nuovo punto vendita
   const handleSaveStore = () => {
     const currentTenantId = getCurrentTenantId();
-    const newCode = newStore.codice || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
+    // PDV: iniziano con "9" + minimo 7 caratteri numerici totali (9XXXXXX)  
+    const newCode = newStore.codice || `9${String(Math.floor(Math.random() * 9999999) + 1000000).padStart(7, '0')}`;
+    
+    // Validazione codice PDV
+    if (newStore.codice && !validatePDVCode(newStore.codice)) {
+      alert('Codice PDV non valido. Deve iniziare con "9" e avere almeno 7 caratteri numerici (es: 9123456)');
+      return;
+    }
+    
     const newItem = {
       id: puntiVenditaList.length + 1,
       tenant_id: currentTenantId, // TENANT ID AUTOMATICO DAL CONTEXT
