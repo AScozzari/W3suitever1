@@ -410,12 +410,13 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       
       {/* Footer */}
       <div style={{
-        marginTop: '24px',
+        marginTop: '40px',
         textAlign: 'center'
       }}>
         <span style={{
           fontSize: '13px',
-          color: '#6b7280'
+          color: '#6b7280',
+          fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
         }}>
           Powered by{' '}
         </span>
@@ -425,20 +426,21 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           rel="noopener noreferrer"
           style={{
             fontSize: '13px',
-            color: '#7B2CBF',
+            color: '#3B82F6',
             textDecoration: 'none',
-            fontWeight: '600',
-            fontStyle: 'italic',
+            fontWeight: '500',
+            fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+            letterSpacing: '0.5px',
             transition: 'color 0.2s ease'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.color = '#5B21B6';
+            e.currentTarget.style.color = '#1D4ED8';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.color = '#7B2CBF';
+            e.currentTarget.style.color = '#3B82F6';
           }}
         >
-          Easydigitalgroup
+          Easydigitalgroup srl
         </a>
       </div>
     </div>
