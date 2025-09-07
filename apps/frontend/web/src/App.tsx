@@ -24,11 +24,15 @@ export default function App() {
 
 
 function Router() {
+  console.log('Router rendering');
   return (
     <Switch>
       {/* Route con tenant nel path */}
       <Route path="/:tenant/login">
-        {(params) => <TenantWrapper params={params}><Login tenantCode={params.tenant} /></TenantWrapper>}
+        {(params) => {
+          console.log('Login route matched:', params);
+          return <TenantWrapper params={params}><Login tenantCode={params.tenant} /></TenantWrapper>;
+        }}
       </Route>
       <Route path="/:tenant/settings">
         {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
@@ -37,11 +41,15 @@ function Router() {
         {(params) => <TenantWrapper params={params}><StandardFieldsDemo /></TenantWrapper>}
       </Route>
       <Route path="/:tenant">
-        {(params) => <TenantWrapper params={params}><MainApp /></TenantWrapper>}
+        {(params) => {
+          console.log('Main route matched:', params);
+          return <TenantWrapper params={params}><MainApp /></TenantWrapper>;
+        }}
       </Route>
       {/* Fallback - redirect a staging */}
       <Route>
         {() => {
+          console.log('Fallback route triggered');
           window.location.href = '/staging';
           return null;
         }}
@@ -50,61 +58,25 @@ function Router() {
   );
 }
 
-// Component wrapper per gestire il tenant
+// Component wrapper per gestire il tenant - SEMPLIFICATO PER DEBUG
 function TenantWrapper({ params, children }: { params: any, children: React.ReactNode }) {
   const tenant = params.tenant;
+  console.log('TenantWrapper rendering for tenant:', tenant);
   
-  useEffect(() => {
-    // Salva il tenant corrente
-    if (tenant) {
-      localStorage.setItem('currentTenant', tenant);
-      
-      const tenantMapping: Record<string, string> = {
-        'staging': '00000000-0000-0000-0000-000000000001',
-        'demo': '99999999-9999-9999-9999-999999999999',
-        'acme': '11111111-1111-1111-1111-111111111111',
-        'tech': '22222222-2222-2222-2222-222222222222'
-      };
-      
-      const tenantId = tenantMapping[tenant] || tenantMapping['staging'];
-      localStorage.setItem('currentTenantId', tenantId);
-    }
-  }, [tenant]);
+  // RIMUOVO TEMPORANEAMENTE useEffect che potrebbe causare loop
   
   return <>{children}</>;
 }
 
-// Main app component che gestisce autenticazione
+// Main app component che gestisce autenticazione - DEBUG COMPLETO
 function MainApp() {
-  const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
+  console.log('MainApp rendering for tenant:', tenant);
   
-  if (isLoading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '16px',
-          padding: '32px',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
-          <h2 style={{ color: 'white', fontSize: '24px' }}>Caricamento W3 Suite...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Login tenantCode={tenant} />;
-  }
-
-  return <DashboardPage />;
+  // TEMPORANEAMENTE IGNORO L'AUTENTICAZIONE PER ISOLARE IL LOOP
+  // const { isAuthenticated, isLoading } = useAuth();
+  
+  console.log('MainApp: showing login directly');
+  return <Login tenantCode={tenant} />;
 }
