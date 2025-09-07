@@ -198,19 +198,12 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
           <h1 style={{
             fontSize: '28px',
             fontWeight: '700',
-            color: '#111827',
-            marginBottom: '8px',
+            color: '#FF6900',
+            marginBottom: '20px',
             letterSpacing: '-0.5px'
           }}>
             W3 Suite
           </h1>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: '0 0 12px 0'
-          }}>
-            Enterprise Multi-Tenant Platform
-          </p>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -425,6 +418,32 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             </p>
           </div>
         </div>
+      </div>
+      
+      {/* Footer */}
+      <div style={{
+        marginTop: '24px',
+        textAlign: 'center'
+      }}>
+        <a 
+          href="https://www.easydigitalgroup.it" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{
+            fontSize: '13px',
+            color: '#6b7280',
+            textDecoration: 'none',
+            transition: 'color 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.color = '#FF6900';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.color = '#6b7280';
+          }}
+        >
+          Powered by Easydigital group
+        </a>
       </div>
     </div>
   );
