@@ -361,3 +361,6 @@ export const insertEntityLogSchema = createInsertSchema(entityLogs).omit({
 });
 export type InsertEntityLog = z.infer<typeof insertEntityLogSchema>;
 export type EntityLog = typeof entityLogs.$inferSelect;
+
+// ==================== EXPORTS FOR BRAND SCHEMA ====================
+export * from './brand';
