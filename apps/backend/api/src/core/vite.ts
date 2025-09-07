@@ -61,8 +61,8 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  // Brand Interface specific route handling
-  app.get("/brandinterface", async (req, res) => {
+  // Brand Interface specific route handling - serve SPA for all Brand Interface routes
+  app.get("/brandinterface*", async (req, res) => {
     try {
       const brandTemplate = path.resolve(
         import.meta.dirname,
