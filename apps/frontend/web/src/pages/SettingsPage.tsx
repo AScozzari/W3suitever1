@@ -5189,107 +5189,77 @@ export default function SettingsPage() {
                     }}
                   />
                 </div>
+              </div>
+            </div>
 
-                {/* Brand - Multi-select */}
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '20px' }}>
-                    <label style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
-                      borderRadius: '8px',
-                      border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={newStore.brands.includes('WindTre')}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewStore({ ...newStore, brands: [...newStore.brands, 'WindTre'] });
-                          } else {
-                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
-                          }
-                        }}
-                        style={{ 
-                          width: '20px', 
-                          height: '20px', 
-                          cursor: 'pointer',
-                          accentColor: '#FF6900'
-                        }}
-                      />
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newStore.brands.includes('WindTre') ? '#FF6900' : '#374151',
-                        fontWeight: '600'
-                      }}>
-                        WindTre
-                      </span>
-                    </label>
-                    
-                    <label style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
-                      borderRadius: '8px',
-                      border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={newStore.brands.includes('Very Mobile')}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewStore({ ...newStore, brands: [...newStore.brands, 'Very Mobile'] });
-                          } else {
-                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
-                          }
-                        }}
-                        style={{ 
-                          width: '20px', 
-                          height: '20px', 
-                          cursor: 'pointer',
-                          accentColor: '#10b981'
-                        }}
-                      />
-                      <span style={{ 
-                        fontSize: '14px', 
-                        color: newStore.brands.includes('Very Mobile') ? '#10b981' : '#374151',
-                        fontWeight: '600'
-                      }}>
-                        Very Mobile
-                      </span>
-                    </label>
-                  </div>
-                </div>
+            {/* Footer Modal */}
+            <div style={{
+              padding: '20px 32px',
+              borderTop: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              background: '#f8fafc'
+            }}>
+              <button
+                onClick={() => setIsStoreModalOpen(false)}
+                style={{
+                  padding: '8px 20px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleCreateStore}
+                disabled={!newStore.nome || !newStore.indirizzo || !newStore.ragioneSociale_id || newStore.brands.length === 0}
+                style={{
+                  padding: '8px 20px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: newStore.nome && newStore.indirizzo && newStore.ragioneSociale_id && newStore.brands.length > 0 ? 'pointer' : 'not-allowed',
+                  opacity: newStore.nome && newStore.indirizzo && newStore.ragioneSociale_id && newStore.brands.length > 0 ? 1 : 0.5,
+                  transition: 'all 0.2s ease',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                }}
+                onMouseOver={(e) => {
+                  if (!e.target.disabled) {
+                    e.target.style.backgroundColor = '#2563eb';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!e.target.disabled) {
+                    e.target.style.backgroundColor = '#3b82f6';
+                  }
+                }}
+              >
+                Salva Punto Vendita
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                {/* Stato */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Stato
+      {/* Modal Nuovo Utente con Selezione Gerarchica */}
+      {userModal.open && (
                   </label>
                   <select
                     value={newStore.stato}
