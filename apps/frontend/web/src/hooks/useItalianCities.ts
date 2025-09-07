@@ -12,9 +12,9 @@ export interface ItalianCity {
 
 export const useItalianCities = () => {
   return useQuery({
-    queryKey: ['/api/italian-cities'],
+    queryKey: ['/api/reference/italian-cities'],
     queryFn: async (): Promise<ItalianCity[]> => {
-      const response = await fetch('/api/italian-cities');
+      const response = await fetch('/api/reference/italian-cities');
       if (!response.ok) {
         throw new Error('Failed to fetch Italian cities');
       }
