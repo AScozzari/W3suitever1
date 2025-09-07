@@ -2475,26 +2475,32 @@ export default function SettingsPage() {
 
   // State per il nuovo modal punto vendita
   const [newStore, setNewStore] = useState({
-    codice: '',
-    nome: '',
-    indirizzo: '',
-    citta: '',
-    cap: '',
-    provincia: '',
-    telefono: '',
-    email: '',
-    whatsapp1: '',
-    whatsapp2: '',
-    facebook: '',
-    instagram: '',
-    tiktok: '',
-    googleMapsUrl: '',
-    telegram: '',
-    ragioneSociale_id: null as number | null,  // Obbligatorio
-    commercialAreaId: null as string | null,  // Area commerciale
-    canale: 'Franchising',
-    brands: [] as string[],
-    stato: 'Attivo'
+    // ⭐ CAMPI ALLINEATI AL DATABASE SCHEMA
+    code: '',                              // Database: code
+    nome: '',                              // Database: nome  
+    address: '',                           // Database: address
+    citta: '',                             // Database: citta
+    provincia: '',                         // Database: provincia
+    cap: '',                               // Database: cap
+    region: '',                            // Database: region
+    phone: '',                             // Database: phone
+    email: '',                             // Database: email
+    whatsapp1: '',                         // Database: whatsapp1
+    whatsapp2: '',                         // Database: whatsapp2
+    facebook: '',                          // Database: facebook
+    instagram: '',                         // Database: instagram
+    tiktok: '',                            // Database: tiktok
+    google_maps_url: '',                   // Database: google_maps_url
+    telegram: '',                          // Database: telegram
+    legal_entity_id: null as string | null,  // Database: legal_entity_id (UUID)
+    commercial_area_id: null as string | null, // Database: commercial_area_id (UUID)
+    channel_id: null as string | null,     // Database: channel_id (UUID)
+    status: 'active',                      // Database: status (default 'active')
+    // 🔧 CAMPI BUSINESS
+    brands: [] as string[],                // Relazione M:N con store_brands
+    // 🗓️ CAMPI DATE (opzionali per UI)
+    opened_at: null as string | null,      // Database: opened_at
+    closed_at: null as string | null       // Database: closed_at
   });
 
   // State per il nuovo utente
@@ -2713,42 +2719,60 @@ export default function SettingsPage() {
   // Handler per salvare il nuovo punto vendita
   const handleSaveStore = () => {
     const currentTenantId = getCurrentTenantId();
-    const newCode = newStore.codice || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
+    const newCode = newStore.code || `90${String(Math.floor(Math.random() * 999999) + 100000).padStart(6, '0')}`;
     const newItem = {
       id: puntiVenditaList.length + 1,
       tenant_id: currentTenantId, // TENANT ID AUTOMATICO DAL CONTEXT
-      codice: newCode,
+      code: newCode,                        // ✅ ALLINEATO
       nome: newStore.nome || 'Nuovo Punto Vendita',
-      indirizzo: newStore.indirizzo || 'Via Nuova 1',
+      address: newStore.address || 'Via Nuova 1',  // ✅ ALLINEATO
       citta: newStore.citta || 'Milano',
-      canale: newStore.canale,
-      stato: newStore.stato,
-      ragioneSociale_id: newStore.ragioneSociale_id || ragioneSocialiList[0]?.id || 1
+      provincia: newStore.provincia,
+      cap: newStore.cap,
+      region: newStore.region,
+      phone: newStore.phone,                // ✅ ALLINEATO
+      email: newStore.email,
+      whatsapp1: newStore.whatsapp1,
+      whatsapp2: newStore.whatsapp2,
+      facebook: newStore.facebook,
+      instagram: newStore.instagram,
+      tiktok: newStore.tiktok,
+      google_maps_url: newStore.google_maps_url,  // ✅ ALLINEATO
+      telegram: newStore.telegram,
+      legal_entity_id: newStore.legal_entity_id || ragioneSocialiList[0]?.id,  // ✅ ALLINEATO
+      commercial_area_id: newStore.commercial_area_id,  // ✅ ALLINEATO
+      channel_id: newStore.channel_id,      // ✅ ALLINEATO
+      status: newStore.status,              // ✅ ALLINEATO
+      opened_at: newStore.opened_at,
+      closed_at: newStore.closed_at
     };
     setPuntiVenditaList([...puntiVenditaList, newItem]);
     setStoreModal({ open: false, data: null });
     // Reset form
     setNewStore({
-      codice: '',
+      code: '',
       nome: '',
-      indirizzo: '',
+      address: '',
       citta: '',
-      cap: '',
       provincia: '',
-      telefono: '',
+      cap: '',
+      region: '',
+      phone: '',
       email: '',
       whatsapp1: '',
       whatsapp2: '',
       facebook: '',
       instagram: '',
       tiktok: '',
-      googleMapsUrl: '',
+      google_maps_url: '',
       telegram: '',
-      ragioneSociale_id: null,
-      commercialAreaId: null,
-      canale: 'Franchising',
+      legal_entity_id: null,
+      commercial_area_id: null,
+      channel_id: null,
+      status: 'active',
       brands: [],
-      stato: 'Attivo'
+      opened_at: null,
+      closed_at: null
     });
   };
 
@@ -4302,8 +4326,8 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="90xxxxxxxx (auto-generato)"
-                    value={newStore.codice}
-                    onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
+                    value={newStore.code}
+                    onChange={(e) => setNewStore({ ...newStore, code: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -4385,8 +4409,8 @@ export default function SettingsPage() {
                     Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
-                    value={newStore.ragioneSociale_id || ''}
-                    onChange={(e) => setNewStore({ ...newStore, ragioneSociale_id: e.target.value ? Number(e.target.value) : null })}
+                    value={newStore.legal_entity_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, legal_entity_id: e.target.value || null })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -4432,8 +4456,8 @@ export default function SettingsPage() {
                     Canale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
-                    value={newStore.canale}
-                    onChange={(e) => setNewStore({ ...newStore, canale: e.target.value })}
+                    value={newStore.channel_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, channel_id: e.target.value || null })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -4476,8 +4500,8 @@ export default function SettingsPage() {
                     Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
-                    value={newStore.commercialAreaId || ''}
-                    onChange={(e) => setNewStore({ ...newStore, commercialAreaId: e.target.value || null })}
+                    value={newStore.commercial_area_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, commercial_area_id: e.target.value || null })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -4525,8 +4549,8 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="es. Via Roma 123"
-                    value={newStore.indirizzo}
-                    onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
+                    value={newStore.address}
+                    onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -4681,8 +4705,8 @@ export default function SettingsPage() {
                   <input
                     type="tel"
                     placeholder="+39 02 1234567"
-                    value={newStore.telefono}
-                    onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
+                    value={newStore.phone}
+                    onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -4986,8 +5010,8 @@ export default function SettingsPage() {
                   <input
                     type="url"
                     placeholder="https://maps.google.com/..."
-                    value={newStore.googleMapsUrl}
-                    onChange={(e) => setNewStore({ ...newStore, googleMapsUrl: e.target.value })}
+                    value={newStore.google_maps_url}
+                    onChange={(e) => setNewStore({ ...newStore, google_maps_url: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -5158,8 +5182,8 @@ export default function SettingsPage() {
                     Stato
                   </label>
                   <select
-                    value={newStore.stato}
-                    onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
+                    value={newStore.status}
+                    onChange={(e) => setNewStore({ ...newStore, status: e.target.value })}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
