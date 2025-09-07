@@ -11,7 +11,6 @@ import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
 
 export default function App() {
-  console.log('App rendering');
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -24,57 +23,88 @@ export default function App() {
 }
 
 
-// ROUTER COMPLETAMENTE STATICO PER DEBUG - IGNORA TUTTO IL ROUTING
 function Router() {
-  console.log('Static Router rendering');
-  
-  // IGNORO COMPLETAMENTE WOUTER E MOSTRO CONTENUTO STATICO
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-    }}>
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '16px',
-        padding: '32px',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        textAlign: 'center'
-      }}>
-        <h1 style={{ color: 'white', fontSize: '24px', marginBottom: '16px' }}>
-          W3 Suite - STATIC TEST
-        </h1>
-        <p style={{ color: 'white', opacity: 0.8 }}>
-          Se vedi questo senza loop, il problema è nel routing
-        </p>
-      </div>
-    </div>
+    <Switch>
+      {/* Route con tenant nel path */}
+      <Route path="/:tenant/login">
+        {(params) => <TenantWrapper params={params}><Login tenantCode={params.tenant} /></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/settings">
+        {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/demo-fields">
+        {(params) => <TenantWrapper params={params}><StandardFieldsDemo /></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant">
+        {(params) => <TenantWrapper params={params}><MainApp /></TenantWrapper>}
+      </Route>
+      {/* Fallback - redirect a staging */}
+      <Route>
+        {() => {
+          window.location.href = '/staging';
+          return null;
+        }}
+      </Route>
+    </Switch>
   );
 }
 
-// Component wrapper per gestire il tenant - SEMPLIFICATO PER DEBUG
+// Component wrapper per gestire il tenant
 function TenantWrapper({ params, children }: { params: any, children: React.ReactNode }) {
   const tenant = params.tenant;
-  console.log('TenantWrapper rendering for tenant:', tenant);
   
-  // RIMUOVO TEMPORANEAMENTE useEffect che potrebbe causare loop
+  useEffect(() => {
+    // Salva il tenant corrente
+    if (tenant) {
+      localStorage.setItem('currentTenant', tenant);
+      
+      const tenantMapping: Record<string, string> = {
+        'staging': '00000000-0000-0000-0000-000000000001',
+        'demo': '99999999-9999-9999-9999-999999999999',
+        'acme': '11111111-1111-1111-1111-111111111111',
+        'tech': '22222222-2222-2222-2222-222222222222'
+      };
+      
+      const tenantId = tenantMapping[tenant] || tenantMapping['staging'];
+      localStorage.setItem('currentTenantId', tenantId);
+    }
+  }, [tenant]);
   
   return <>{children}</>;
 }
 
-// Main app component che gestisce autenticazione - DEBUG COMPLETO
+// Main app component che gestisce autenticazione
 function MainApp() {
+  const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
-  console.log('MainApp rendering for tenant:', tenant);
   
-  // TEMPORANEAMENTE IGNORO L'AUTENTICAZIONE PER ISOLARE IL LOOP
-  // const { isAuthenticated, isLoading } = useAuth();
-  
-  console.log('MainApp: showing login directly');
-  return <Login tenantCode={tenant} />;
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
+      }}>
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '32px',
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <h2 style={{ color: 'white', fontSize: '24px' }}>Caricamento W3 Suite...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login tenantCode={tenant} />;
+  }
+
+  return <DashboardPage />;
 }

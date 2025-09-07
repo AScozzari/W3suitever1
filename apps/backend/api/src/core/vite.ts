@@ -80,11 +80,18 @@ export async function setupVite(app: Express, server: Server) {
     }
   });
 
-  // Brand Interface assets and API middleware
+  // Brand Interface assets and API middleware - DEVE ESSERE PRIMA per intercettare le sue route
   app.use("/brandinterface", brandVite.middlewares);
 
-  // Main W3 Suite middleware  
-  app.use(vite.middlewares);
+  // Main W3 Suite middleware - solo per route NON brandinterface
+  app.use((req, res, next) => {
+    // Skip Brand Interface routes completamente
+    if (req.url.startsWith('/brandinterface')) {
+      return next();
+    }
+    // Usa il middleware di W3 Suite solo per altre route
+    return vite.middlewares(req, res, next);
+  });
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
