@@ -121,6 +121,27 @@ class ApiService {
     return this.makeRequest<any[]>('/api/commercial-areas');
   }
 
+  /**
+   * BRAND INTERFACE - Tenant Management APIs
+   */
+  async createTenant(tenantData: any) {
+    return this.makeRequest<any>('/api/tenants', {
+      method: 'POST',
+      body: JSON.stringify(tenantData)
+    });
+  }
+
+  async getTenant(id: string) {
+    return this.makeRequest<any>(`/api/tenants/${id}`);
+  }
+
+  async updateTenant(id: string, tenantData: any) {
+    return this.makeRequest<any>(`/api/tenants/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(tenantData)
+    });
+  }
+
   async getRoles() {
     return this.makeRequest<any[]>('/api/roles');
   }
