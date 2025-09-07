@@ -5202,7 +5202,7 @@ export default function SettingsPage() {
               background: '#f8fafc'
             }}>
               <button
-                onClick={() => setIsStoreModalOpen(false)}
+                onClick={() => setStoreModal({ open: false, data: null })}
                 style={{
                   padding: '8px 20px',
                   backgroundColor: '#f3f4f6',
@@ -5216,16 +5216,16 @@ export default function SettingsPage() {
                   fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#e5e7eb';
+                  e.currentTarget.style.backgroundColor = '#e5e7eb';
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.backgroundColor = '#f3f4f6';
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
                 }}
               >
                 Annulla
               </button>
               <button
-                onClick={handleCreateStore}
+                onClick={handleSaveStore}
                 disabled={!newStore.nome || !newStore.indirizzo || !newStore.ragioneSociale_id || newStore.brands.length === 0}
                 style={{
                   padding: '8px 20px',
@@ -5241,13 +5241,13 @@ export default function SettingsPage() {
                   fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                 }}
                 onMouseOver={(e) => {
-                  if (!e.target.disabled) {
-                    e.target.style.backgroundColor = '#2563eb';
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#2563eb';
                   }
                 }}
                 onMouseOut={(e) => {
-                  if (!e.target.disabled) {
-                    e.target.style.backgroundColor = '#3b82f6';
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#3b82f6';
                   }
                 }}
               >
