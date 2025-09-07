@@ -199,30 +199,18 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             fontSize: '28px',
             fontWeight: '700',
             color: '#FF6900',
-            marginBottom: '20px',
+            marginBottom: '8px',
             letterSpacing: '-0.5px'
           }}>
             W3 Suite
           </h1>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            color: 'white',
-            fontWeight: '600'
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            margin: '0 0 12px 0'
           }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.8)'
-            }} />
-            {currentTenant.name}
-          </div>
+            Enterprise Multi-Tenant Platform
+          </p>
         </div>
 
         {/* Login Form */}
