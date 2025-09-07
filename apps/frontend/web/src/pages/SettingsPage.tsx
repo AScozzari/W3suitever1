@@ -4550,7 +4550,7 @@ export default function SettingsPage() {
                     marginBottom: '8px',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
-                    Stato
+                    Stato <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <select
                     value={newStore.status}
