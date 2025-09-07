@@ -4540,6 +4540,50 @@ export default function SettingsPage() {
                   </select>
                 </div>
 
+                {/* Stato */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Stato
+                  </label>
+                  <select
+                    value={newStore.status}
+                    onChange={(e) => setNewStore({ ...newStore, status: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="Attivo">Attivo</option>
+                    <option value="Sospeso">Sospeso</option>
+                    <option value="Chiuso">Chiuso</option>
+                  </select>
+                </div>
+
                 {/* Brand - Multi-select */}
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={{
@@ -4929,6 +4973,24 @@ export default function SettingsPage() {
                   }}>
                     <span>💡</span>
                     <span>Puoi trovare le coordinate su <a href="https://www.google.com/maps" target="_blank" style={{ color: '#FF6900', textDecoration: 'underline' }}>Google Maps</a> cliccando destro sul punto vendita</span>
+                  </div>
+                </div>
+
+                {/* 📱 Sezione Contatti/Social */}
+                <div style={{ gridColumn: 'span 2', marginTop: '24px', marginBottom: '16px' }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    color: '#374151',
+                    padding: '12px 16px',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    textAlign: 'center',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    📱 Contatti/Social
                   </div>
                 </div>
 
