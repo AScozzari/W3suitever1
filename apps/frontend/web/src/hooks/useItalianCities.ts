@@ -27,6 +27,6 @@ export const useItalianCities = () => {
       return response.json();
     },
     staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
-    cacheTime: 1000 * 60 * 60 * 24 * 7, // Keep in cache for 7 days
+    gcTime: 1000 * 60 * 60 * 24 * 7, // Keep in cache for 7 days
   });
 };
