@@ -1,0 +1,109 @@
+import express, { type Express } from "express";
+import fs from "fs";
+import path from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+import { type Server } from "http";
+// Import basic vite config for brand-web
+const brandViteConfig = {
+  plugins: [],
+  resolve: {
+    alias: {
+      "@": "/src",
+    },
+  },
+};
+import { nanoid } from "nanoid";
+
+const viteLogger = createLogger();
+
+export function brandLog(message: string, source = "brand-express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit", 
+    second: "2-digit",
+    hour12: true,
+  });
+
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+
+export async function setupBrandVite(app: Express, server: Server) {
+  console.log("🎨 Setting up Brand Interface Vite server...");
+
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true as const,
+  };
+
+  const vite = await createViteServer({
+    ...brandViteConfig,
+    configFile: false,
+    root: path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web"),
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      },
+    },
+    server: serverOptions,
+    appType: "custom",
+  });
+
+  app.use(vite.middlewares);
+  app.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+
+    // Skip Brand API routes - let them be handled by the Brand API router
+    if (url.startsWith('/brand-api/')) {
+      return next();
+    }
+
+    try {
+      const brandTemplate = path.resolve(
+        import.meta.dirname,
+        "..",
+        "..",
+        "..",
+        "..",
+        "..",
+        "apps",
+        "frontend", 
+        "brand-web",
+        "index.html",
+      );
+
+      // always reload the index.html file from disk in case it changes
+      let template = await fs.promises.readFile(brandTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e as Error);
+      next(e);
+    }
+  });
+
+  console.log("✅ Brand Interface Vite setup completed");
+}
+
+export function serveBrandStatic(app: Express) {
+  const distPath = path.resolve(import.meta.dirname, "public");
+
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the Brand build directory: ${distPath}, make sure to build the brand client first`,
+    );
+  }
+
+  app.use(express.static(distPath));
+
+  // fall through to index.html if the file doesn't exist
+  app.use("*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
+}
