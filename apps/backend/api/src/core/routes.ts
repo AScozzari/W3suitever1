@@ -229,7 +229,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create store
+  // Create store (simple endpoint for current tenant)
+  app.post('/api/stores', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      const storeData = { ...req.body, tenantId };
+      const store = await storage.createStore(storeData);
+      res.status(201).json(store);
+    } catch (error) {
+      console.error("Error creating store:", error);
+      res.status(500).json({ error: "Failed to create store" });
+    }
+  });
+
+  // Update store
+  app.put('/api/stores/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const store = await storage.updateStore(req.params.id, req.body);
+      res.json(store);
+    } catch (error) {
+      console.error("Error updating store:", error);
+      if (error.message?.includes('not found')) {
+        res.status(404).json({ error: "Store not found" });
+      } else {
+        res.status(500).json({ error: "Failed to update store" });
+      }
+    }
+  });
+
+  // Delete store
+  app.delete('/api/stores/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      await storage.deleteStore(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting store:", error);
+      if (error.message?.includes('not found')) {
+        res.status(404).json({ error: "Store not found" });
+      } else {
+        res.status(500).json({ error: "Failed to delete store" });
+      }
+    }
+  });
+
+  // Create store (legacy endpoint with tenantId parameter)
   app.post('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
     try {
       const storeData = { ...req.body, tenantId: req.params.tenantId };

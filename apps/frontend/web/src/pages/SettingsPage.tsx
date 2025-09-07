@@ -373,11 +373,20 @@ export default function SettingsPage() {
     setStoreModal({ open: true, data: null });
   };
   
-  const handleDeletePuntoVendita = (id: string) => {
-    // Temporaneamente disabilitato - mantiene la funzionalità di UI ma non elimina dal DB
-    // TODO: Implementare delete API quando sarà disponibile
-    console.log('Delete store requested for ID:', id);
-    alert('Funzionalità di eliminazione temporaneamente disabilitata');
+  const handleDeletePuntoVendita = async (id: string) => {
+    try {
+      const result = await apiService.deleteStore(id);
+      if (result.success) {
+        // Ricarica i dati dopo l'eliminazione
+        await reloadStoreData();
+      } else {
+        console.error('❌ Error deleting store:', result.error);
+        alert('Errore nell\'eliminazione del punto vendita. Riprova.');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting store:', error);
+      alert('Errore nell\'eliminazione del punto vendita. Riprova.');
+    }
   };
 
   // Funzione per ricaricare i dati stores
@@ -2722,41 +2731,83 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler per salvare il nuovo punto vendita - TEMPORANEAMENTE DISABILITATO
-  const handleSaveStore = () => {
-    // Temporaneamente disabilitato - il modal si chiude ma non salva
-    // TODO: Implementare create API quando sarà disponibile
-    console.log('Save store requested:', newStore);
-    alert('Funzionalità di salvataggio temporaneamente disabilitata. Mostrando solo dati reali dal database.');
-    
-    // Chiudi modal e reset form
-    setStoreModal({ open: false, data: null });
-    setNewStore({
-      code: '',
-      nome: '',
-      address: '',
-      citta: '',
-      provincia: '',
-      cap: '',
-      region: '',
-      geo: { lat: null, lng: null },
-      phone: '',
-      email: '',
-      whatsapp1: '',
-      whatsapp2: '',
-      facebook: '',
-      instagram: '',
-      tiktok: '',
-      google_maps_url: '',
-      telegram: '',
-      legal_entity_id: null,
-      commercial_area_id: null,
-      channel_id: null,
-      status: 'active',
-      brands: [],
-      opened_at: null,
-      closed_at: null
-    });
+  // Handler per salvare il nuovo punto vendita - USA API REALE
+  const handleSaveStore = async () => {
+    try {
+      const currentTenantId = getCurrentTenantId();
+      // Genera codice PDV: inizia con 9, almeno 7 cifre totali
+      const newCode = newStore.code || `9${String(Date.now()).slice(-6)}`;
+      
+      const storeData = {
+        tenantId: currentTenantId,
+        legalEntityId: newStore.legal_entity_id,
+        code: newCode,                        
+        nome: newStore.nome || 'Nuovo Punto Vendita',
+        address: newStore.address || 'Via Nuova 1',
+        citta: newStore.citta || 'Milano',
+        provincia: newStore.provincia,
+        cap: newStore.cap,
+        region: newStore.region,
+        geo: newStore.geo,                    
+        phone: newStore.phone,                
+        email: newStore.email,
+        whatsapp1: newStore.whatsapp1,
+        whatsapp2: newStore.whatsapp2,
+        facebook: newStore.facebook,
+        instagram: newStore.instagram,
+        tiktok: newStore.tiktok,
+        googleMapsUrl: newStore.google_maps_url,
+        telegram: newStore.telegram,
+        commercialAreaId: newStore.commercial_area_id,
+        channelId: newStore.channel_id,
+        status: newStore.status,              
+        openedAt: newStore.opened_at,
+        closedAt: newStore.closed_at
+      };
+
+      const result = await apiService.createStore(storeData);
+      
+      if (result.success) {
+        // Chiudi modal e reset form
+        setStoreModal({ open: false, data: null });
+        setNewStore({
+          code: '',
+          nome: '',
+          address: '',
+          citta: '',
+          provincia: '',
+          cap: '',
+          region: '',
+          geo: { lat: null, lng: null },
+          phone: '',
+          email: '',
+          whatsapp1: '',
+          whatsapp2: '',
+          facebook: '',
+          instagram: '',
+          tiktok: '',
+          google_maps_url: '',
+          telegram: '',
+          legal_entity_id: null,
+          commercial_area_id: null,
+          channel_id: null,
+          status: 'active',
+          brands: [],
+          opened_at: null,
+          closed_at: null
+        });
+
+        // Ricarica i dati per mostrare il nuovo store
+        await reloadStoreData();
+        
+      } else {
+        console.error('❌ Error creating store:', result.error);
+        alert('Errore nella creazione del punto vendita. Riprova.');
+      }
+    } catch (error) {
+      console.error('❌ Error creating store:', error);
+      alert('Errore nella creazione del punto vendita. Riprova.');
+    }
   };
 
   return (

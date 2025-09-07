@@ -57,6 +57,8 @@ export interface IStorage {
   // Store Management
   getStoresByTenant(tenantId: string): Promise<Store[]>;
   createStore(store: InsertStore): Promise<Store>;
+  updateStore(id: string, store: Partial<InsertStore>): Promise<Store>;
+  deleteStore(id: string): Promise<void>;
   
   // User Assignment Management
   getUserAssignments(userId: string): Promise<UserAssignment[]>;
@@ -224,6 +226,28 @@ export class DatabaseStorage implements IStorage {
   async createStore(storeData: InsertStore): Promise<Store> {
     const [store] = await db.insert(stores).values(storeData).returning();
     return store;
+  }
+
+  async updateStore(id: string, storeData: Partial<InsertStore>): Promise<Store> {
+    const [store] = await db
+      .update(stores)
+      .set({ ...storeData, updatedAt: new Date() })
+      .where(eq(stores.id, id))
+      .returning();
+    
+    if (!store) {
+      throw new Error(`Store with id ${id} not found`);
+    }
+    
+    return store;
+  }
+
+  async deleteStore(id: string): Promise<void> {
+    const result = await db.delete(stores).where(eq(stores.id, id));
+    
+    if (result.rowCount === 0) {
+      throw new Error(`Store with id ${id} not found`);
+    }
   }
 
   // ==================== USER ASSIGNMENT MANAGEMENT ====================

@@ -77,6 +77,26 @@ class ApiService {
     return this.makeRequest<any[]>('/api/stores');
   }
 
+  async createStore(storeData: any) {
+    return this.makeRequest<any>('/api/stores', {
+      method: 'POST',
+      body: JSON.stringify(storeData)
+    });
+  }
+
+  async updateStore(id: string, storeData: any) {
+    return this.makeRequest<any>(`/api/stores/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(storeData)
+    });
+  }
+
+  async deleteStore(id: string) {
+    return this.makeRequest<void>(`/api/stores/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
   async getCommercialAreas() {
     return this.makeRequest<any[]>('/api/commercial-areas');
   }
