@@ -413,24 +413,32 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         marginTop: '24px',
         textAlign: 'center'
       }}>
+        <span style={{
+          fontSize: '13px',
+          color: '#6b7280'
+        }}>
+          Powered by{' '}
+        </span>
         <a 
           href="https://www.easydigitalgroup.it" 
           target="_blank" 
           rel="noopener noreferrer"
           style={{
             fontSize: '13px',
-            color: '#6b7280',
+            color: '#7B2CBF',
             textDecoration: 'none',
+            fontWeight: '600',
+            fontStyle: 'italic',
             transition: 'color 0.2s ease'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.color = '#FF6900';
+            e.currentTarget.style.color = '#5B21B6';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.color = '#6b7280';
+            e.currentTarget.style.color = '#7B2CBF';
           }}
         >
-          Powered by Easydigital group
+          Easydigitalgroup
         </a>
       </div>
     </div>
