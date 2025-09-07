@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* W3 Suite Brand Interface Theme - WindTre Colors */
+:root {
+  /* Colori primari WindTre */
+  --orange-primary: #FF6900;
+  --orange-light: #ff8533;
+  --purple-primary: #7B2CBF;
+  --purple-light: #9747ff;
+  
+  /* Colori semantici */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+  
+  /* Grigi neutri */
+  --neutral-dark: #1f2937;
+  --neutral-medium: #6b7280;
+  --neutral-light: #9ca3af;
+  --neutral-lighter: #e5e7eb;
+  --neutral-lightest: #f9fafb;
+  
+  /* Glassmorphism effects */
+  --glass-white: rgba(255, 255, 255, 0.08);
+  --glass-white-light: rgba(255, 255, 255, 0.03);
+  --glass-white-medium: rgba(255, 255, 255, 0.12);
+}
+
+/* Base styles matching W3 Suite */
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Glassmorphism components */
+.glass-card {
+  background: var(--glass-white);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.glass-button {
+  background: var(--glass-white-medium);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
