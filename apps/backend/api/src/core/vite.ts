@@ -4,7 +4,6 @@ import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../../../../../apps/frontend/web/vite.config";
-import brandViteConfig from "../../../../../apps/frontend/brand-web/vite.config";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -42,66 +41,12 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  // Setup Brand Interface routes
-  const brandVite = await createViteServer({
-    ...brandViteConfig,
-    configFile: false,
-    root: path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web"),
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      },
-    },
-    server: {
-      ...serverOptions,
-      port: undefined, // Don't conflict with main server
-    },
-    appType: "custom",
-  });
-
-  // Brand Interface specific route handling - serve SPA for all Brand Interface routes
-  app.get("/brandinterface*", async (req, res) => {
-    try {
-      const brandTemplate = path.resolve(process.cwd(), "apps", "frontend", "brand-web", "index.html");
-
-      let template = await fs.promises.readFile(brandTemplate, "utf-8");
-      
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`,
-      );
-      const page = await brandVite.transformIndexHtml("/brandinterface", template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      console.error('❌ Brand Interface error:', e);
-      res.status(500).send('Brand Interface loading error: ' + e.message);
-    }
-  });
-
-  // Brand Interface assets and API middleware - DEVE ESSERE PRIMA per intercettare le sue route
-  app.use("/brandinterface", brandVite.middlewares);
-
-  // Main W3 Suite middleware - solo per route NON brandinterface
-  app.use((req, res, next) => {
-    // Skip Brand Interface routes completamente
-    if (req.url.startsWith('/brandinterface')) {
-      return next();
-    }
-    // Usa il middleware di W3 Suite solo per altre route
-    return vite.middlewares(req, res, next);
-  });
+  app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
     // Skip API routes - let them be handled by the API router
     if (url.startsWith('/api/')) {
-      return next();
-    }
-
-    // Skip Brand Interface routes
-    if (url.startsWith('/brandinterface')) {
       return next();
     }
 

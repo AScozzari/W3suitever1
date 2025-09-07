@@ -11,26 +11,14 @@ import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
 
 export default function App() {
-  console.log('App render - minimal test');
-  
-  // ELIMINARE TUTTI I PROVIDER PER TEST MINIMO
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#FF6900',
-      color: 'white',
-      fontSize: '24px',
-      textAlign: 'center'
-    }}>
-      <div>
-        <h1>MINIMAL TEST</h1>
-        <p>Se questo va in loop, il problema è nel server o Vite</p>
-        <p>Timestamp: {Date.now()}</p>
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TenantProvider>
+          <Router />
+        </TenantProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -39,9 +27,6 @@ function Router() {
   return (
     <Switch>
       {/* Route con tenant nel path */}
-      <Route path="/:tenant/login">
-        {(params) => <TenantWrapper params={params}><Login tenantCode={params.tenant} /></TenantWrapper>}
-      </Route>
       <Route path="/:tenant/settings">
         {(params) => <TenantWrapper params={params}><SettingsPage /></TenantWrapper>}
       </Route>

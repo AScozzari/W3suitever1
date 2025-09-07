@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
-export default function LoginBrand() {
+export default function Login() {
   const { login } = useBrandAuth();
   const [credentials, setCredentials] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -73,7 +73,7 @@ export default function LoginBrand() {
               🚀 Demo Credentials
             </p>
             <p className="text-orange-100 text-xs">
-              Username: sadminbrand<br />
+              Email: admin@w3suite.com<br />
               Password: admin123
             </p>
           </div>
@@ -81,22 +81,22 @@ export default function LoginBrand() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Username */}
+            {/* Email */}
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">
-                Username
+                Email
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
                 <input
-                  type="text"
-                  value={credentials.username}
+                  type="email"
+                  value={credentials.email}
                   onChange={(e) => setCredentials({
                     ...credentials,
-                    username: e.target.value
+                    email: e.target.value
                   })}
                   className="w-full pl-10 pr-4 py-3 glass-button rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                  placeholder="sadminbrand"
+                  placeholder="admin@w3suite.com"
                   required
                 />
               </div>

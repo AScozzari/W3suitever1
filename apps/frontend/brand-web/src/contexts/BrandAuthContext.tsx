@@ -41,10 +41,10 @@ export function BrandAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // TODO: Replace with actual OAuth2 integration
       // For now, create a super admin seed user
-      if (credentials.username === 'sadminbrand' && credentials.password === 'admin123') {
+      if (credentials.email === 'admin@w3suite.com' && credentials.password === 'admin123') {
         const superAdmin: BrandUser = {
           id: 'brand-super-admin',
-          email: 'sadminbrand@w3suite.com',
+          email: 'admin@w3suite.com',
           name: 'Super Administrator',
           role: 'super-admin',
           permissions: ['*'], // All permissions

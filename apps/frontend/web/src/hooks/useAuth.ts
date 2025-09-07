@@ -6,26 +6,35 @@ export function useAuth() {
   const [hasToken, setHasToken] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Check for OAuth2 tokens ONCE on mount
+  // Check for OAuth2 tokens and initialize client
   useEffect(() => {
-    const storedTokens = localStorage.getItem('oauth2_tokens');
-    setHasToken(!!storedTokens);
-    setIsInitializing(false);
-  }, []); // Empty dependency array - run only once
-
-  // Only make userinfo query if we have tokens and are not initializing
+    const checkTokens = async () => {
+      try {
+        // Check for OAuth2 tokens
+        const storedTokens = localStorage.getItem('oauth2_tokens');
+        const accessToken = await oauth2Client.getAccessToken();
+        
+        setHasToken(!!storedTokens && !!accessToken);
+      } catch (error) {
+        console.error('Error checking tokens:', error);
+        setHasToken(false);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    
+    checkTokens();
+  }, []);
+  
   const { data: userInfo, isLoading: isUserInfoLoading } = useQuery({
-    queryKey: ["/oauth2/userinfo"],
-    enabled: hasToken && !isInitializing,
+    queryKey: ["/oauth2/userinfo"], // OAuth2 standard userinfo endpoint
+    enabled: hasToken, // Only run query if we have a token
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false, // Prevent unnecessary refetches
   });
 
   return {
     user: userInfo,
-    isLoading: isInitializing || (hasToken && isUserInfoLoading),
-    isAuthenticated: hasToken && !!userInfo,
+    isLoading: isInitializing || (hasToken ? isUserInfoLoading : false),
+    isAuthenticated: !!userInfo,
   };
 }
