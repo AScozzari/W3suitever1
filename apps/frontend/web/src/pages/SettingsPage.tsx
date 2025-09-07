@@ -4286,469 +4286,603 @@ export default function SettingsPage() {
 
             {/* Body Modal */}
             <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                {/* Codice */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Codice Punto Vendita
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="90xxxxxxxx (auto-generato)"
-                    value={newStore.codice}
-                    onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
+              
+              {/* SEZIONE 1: RIFERIMENTO */}
+              <div style={{ marginBottom: '32px' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  borderBottom: '2px solid #e5e7eb',
+                  paddingBottom: '8px'
+                }}>
+                  📍 Riferimento
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Codice */}
+                  <div>
+                    <label style={{
+                      display: 'block',
                       fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
+                      fontWeight: '600',
                       color: '#374151',
-                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      lineHeight: '1.5'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#3b82f6';
-                      e.target.style.background = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Codice Punto Vendita
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="90xxxxxxxx (auto-generato)"
+                      value={newStore.codice}
+                      onChange={(e) => setNewStore({ ...newStore, codice: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s ease',
+                        outline: 'none',
+                        color: '#374151',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        lineHeight: '1.5'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#3b82f6';
+                        e.target.style.background = '#ffffff';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.background = '#fafbfc';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
 
-                {/* Nome */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="es. WindTre Milano Centro"
-                    value={newStore.nome}
-                    onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
+                  {/* Nome */}
+                  <div>
+                    <label style={{
+                      display: 'block',
                       fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Ragione Sociale */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <select
-                    value={newStore.ragioneSociale_id || ''}
-                    onChange={(e) => setNewStore({ ...newStore, ragioneSociale_id: e.target.value ? Number(e.target.value) : null })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option value="">Seleziona ragione sociale...</option>
-                    {ragioneSocialiList.map(rs => (
-                      <option key={rs.id} value={rs.id}>
-                        {rs.nome} ({rs.codice})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Canale */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Canale <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <select
-                    value={newStore.canale}
-                    onChange={(e) => setNewStore({ ...newStore, canale: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option value="Franchising">Franchising</option>
-                    <option value="Top Dealer">Top Dealer</option>
-                    <option value="Dealer">Dealer</option>
-                  </select>
-                </div>
-
-                {/* Area Commerciale */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <select
-                    value={newStore.commercialAreaId || ''}
-                    onChange={(e) => setNewStore({ ...newStore, commercialAreaId: e.target.value || null })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option value="">Seleziona area...</option>
-                    {(commercialAreas as any[]).map((area: any) => (
-                      <option key={area.id} value={area.id}>
-                        {area.name} - {area.description}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Indirizzo - full width */}
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Indirizzo <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="es. Via Roma 123"
-                    value={newStore.indirizzo}
-                    onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                {/* Città */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Città <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <StandardCityField
-                    value={newStore.citta}
-                    onChange={(cityName) => setNewStore({ ...newStore, citta: cityName })}
-                    onCapChange={(cap) => setNewStore(prev => ({ ...prev, cap }))}
-                    onProvinciaChange={(provincia) => setNewStore(prev => ({ ...prev, provincia }))}
-                    required={true}
-                  />
-                </div>
-
-                {/* CAP */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    CAP
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="20121"
-                    value={newStore.cap}
-                    onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
-                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937',
-                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
-                    }}
-                    onFocus={(e) => {
-                      if (italianCities.length === 0) {
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="es. WindTre Milano Centro"
+                      value={newStore.nome}
+                      onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
                         e.target.style.borderColor = '#6366f1';
                         e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (italianCities.length === 0) {
+                      }}
+                      onBlur={(e) => {
                         e.target.style.borderColor = '#d1d5db';
                         e.target.style.boxShadow = 'none';
-                      }
-                    }}
-                  />
-                </div>
+                      }}
+                    />
+                  </div>
 
-                {/* Provincia */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Provincia
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="MI"
-                    value={newStore.provincia}
-                    onChange={(e) => setNewStore({ ...newStore, provincia: e.target.value })}
-                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
+                  {/* Indirizzo - full width */}
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{
+                      display: 'block',
                       fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937',
-                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
-                    }}
-                    onFocus={(e) => {
-                      if (italianCities.length === 0) {
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Indirizzo <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="es. Via Roma 123"
+                      value={newStore.indirizzo}
+                      onChange={(e) => setNewStore({ ...newStore, indirizzo: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
                         e.target.style.borderColor = '#6366f1';
                         e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (italianCities.length === 0) {
+                      }}
+                      onBlur={(e) => {
                         e.target.style.borderColor = '#d1d5db';
                         e.target.style.boxShadow = 'none';
-                      }
-                    }}
-                  />
-                </div>
+                      }}
+                    />
+                  </div>
 
-                {/* Telefono */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Telefono
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+39 02 1234567"
-                    value={newStore.telefono}
-                    onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
+                  {/* Città */}
+                  <div>
+                    <label style={{
+                      display: 'block',
                       fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Città <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <StandardCityField
+                      value={newStore.citta}
+                      onChange={(cityName) => setNewStore({ ...newStore, citta: cityName })}
+                      onCapChange={(cap) => setNewStore(prev => ({ ...prev, cap }))}
+                      onProvinciaChange={(provincia) => setNewStore(prev => ({ ...prev, provincia }))}
+                      required={true}
+                    />
+                  </div>
 
-                {/* Email */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#374151',
-                    marginBottom: '8px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-                  }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="punto.vendita@windtre.it"
-                    value={newStore.email}
-                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
+                  {/* CAP */}
+                  <div>
+                    <label style={{
+                      display: 'block',
                       fontSize: '14px',
-                      background: '#fafbfc',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                      fontWeight: '400',
-                      outline: 'none',
-                      color: '#1f2937'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      CAP
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="20121"
+                      value={newStore.cap}
+                      onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
+                      readOnly={italianCities.length > 0}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937',
+                        cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                      }}
+                    />
+                  </div>
 
-                {/* WhatsApp 1 */}
+                  {/* Provincia */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Provincia
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="MI"
+                      value={newStore.provincia}
+                      onChange={(e) => setNewStore({ ...newStore, provincia: e.target.value })}
+                      readOnly={italianCities.length > 0}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937',
+                        cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE 2: CANALI, STATO E RELAZIONI */}
+              <div style={{ marginBottom: '32px' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  borderBottom: '2px solid #e5e7eb',
+                  paddingBottom: '8px'
+                }}>
+                  ⚙️ Canali, Stato e Relazioni
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Canale */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Canale <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newStore.canale}
+                      onChange={(e) => setNewStore({ ...newStore, canale: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    >
+                      <option value="Franchising">Franchising</option>
+                      <option value="Top Dealer">Top Dealer</option>
+                      <option value="Dealer">Dealer</option>
+                    </select>
+                  </div>
+
+                  {/* Stato */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Stato <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newStore.stato}
+                      onChange={(e) => setNewStore({ ...newStore, stato: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    >
+                      <option value="Attivo">Attivo</option>
+                      <option value="Sospeso">Sospeso</option>
+                      <option value="Cessato">Cessato</option>
+                    </select>
+                  </div>
+
+                  {/* Area Commerciale */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newStore.commercialAreaId || ''}
+                      onChange={(e) => setNewStore({ ...newStore, commercialAreaId: e.target.value || null })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    >
+                      <option value="">Seleziona area...</option>
+                      {(commercialAreas as any[]).map((area: any) => (
+                        <option key={area.id} value={area.id}>
+                          {area.name} - {area.description}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Ragione Sociale */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newStore.ragioneSociale_id || ''}
+                      onChange={(e) => setNewStore({ ...newStore, ragioneSociale_id: e.target.value ? Number(e.target.value) : null })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    >
+                      <option value="">Seleziona ragione sociale...</option>
+                      {ragioneSocialiList.map(rs => (
+                        <option key={rs.id} value={rs.id}>
+                          {rs.nome} ({rs.codice})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Brand - Multi-select */}
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '20px' }}>
+                      <label style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '12px', 
+                        cursor: 'pointer',
+                        padding: '6px 10px',
+                        background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
+                        borderRadius: '8px',
+                        border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
+                        transition: 'all 0.2s ease'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={newStore.brands.includes('WindTre')}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewStore({ ...newStore, brands: [...newStore.brands, 'WindTre'] });
+                            } else {
+                              setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
+                            }
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                        <span style={{ fontSize: '20px', color: '#FF6900' }}>🅦</span>
+                        <span style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937' }}>WindTre</span>
+                      </label>
+                      <label style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '12px', 
+                        cursor: 'pointer',
+                        padding: '6px 10px',
+                        background: newStore.brands.includes('Very Mobile') ? 'rgba(123, 44, 191, 0.1)' : '#f8fafc',
+                        borderRadius: '8px',
+                        border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#7B2CBF' : 'transparent'}`,
+                        transition: 'all 0.2s ease'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={newStore.brands.includes('Very Mobile')}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewStore({ ...newStore, brands: [...newStore.brands, 'Very Mobile'] });
+                            } else {
+                              setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
+                            }
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                        <span style={{ fontSize: '20px', color: '#7B2CBF' }}>Ⓥ</span>
+                        <span style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937' }}>Very Mobile</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE 3: CONTATTI */}
+              <div style={{ marginBottom: '32px' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  borderBottom: '2px solid #e5e7eb',
+                  paddingBottom: '8px'
+                }}>
+                  📞 Contatti
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Telefono */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Telefono
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+39 02 1234567"
+                      value={newStore.telefono}
+                      onChange={(e) => setNewStore({ ...newStore, telefono: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="punto.vendita@windtre.it"
+                      value={newStore.email}
+                      onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: '400',
+                        outline: 'none',
+                        color: '#1f2937'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+
+                  {/* WhatsApp 1 */}
                 <div>
                   <label style={{
                     display: 'flex',
