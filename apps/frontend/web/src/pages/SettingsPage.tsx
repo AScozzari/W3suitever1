@@ -812,10 +812,10 @@ export default function SettingsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Punto Vendita</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice PDV</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Area</th>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Canale</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
                 <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
               </tr>
@@ -828,13 +828,13 @@ export default function SettingsPage() {
                 }}
                 onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
-                  <td style={{ padding: '16px' }}>
-                    <div>
-                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Cod. {item.codice}</div>
-                    </div>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+                    {item.code}
                   </td>
-                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.indirizzo}</td>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
+                  </td>
+                  <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>{item.address}</td>
                   <td style={{ padding: '16px' }}>
                     <span style={{
                       display: 'inline-flex',
@@ -848,8 +848,8 @@ export default function SettingsPage() {
                       fontWeight: '600',
                       border: '1px solid #e0f2fe'
                     }}>
-                      {item.commercialAreaId ? 
-                        (commercialAreas as any[]).find((area: any) => area.id === item.commercialAreaId)?.name || 'N/A'
+                      {item.commercial_area_id ? 
+                        (commercialAreas as any[]).find((area: any) => area.id === item.commercial_area_id)?.name || 'N/A'
                         : 'Non assegnata'}
                     </span>
                   </td>
@@ -859,62 +859,37 @@ export default function SettingsPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '4px 12px',
-                      background: item.canale === 'Franchising' 
-                        ? '#fef3f0'
-                        : '#faf5ff',
-                      color: item.canale === 'Franchising' ? '#ea580c' : '#7c3aed',
-                      border: `1px solid ${item.canale === 'Franchising' ? '#fed7aa' : '#e9d5ff'}`,
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}>
-                      <div style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: 'white'
-                      }} />
-                      {item.canale}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px' }}>
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
-                      background: item.stato === 'Attiva' 
+                      background: (item.status === 'Attivo' || item.status === 'active')
                         ? '#dcfce7'
-                        : item.stato === 'Sospesa'
+                        : (item.status === 'Sospeso' || item.status === 'suspended')
                         ? '#fef3c7'
-                        : item.stato === 'Bozza'
+                        : item.status === 'Bozza'
                         ? '#e0e7ff'
-                        : item.stato === 'Cessata'
+                        : item.status === 'Cessato'
                         ? '#fecaca'
-                        : item.stato === 'Trasferita'
+                        : item.status === 'Trasferito'
                         ? '#fed7aa'
                         : '#f1f5f9',
-                      color: item.stato === 'Attiva' 
+                      color: (item.status === 'Attivo' || item.status === 'active')
                         ? '#15803d' 
-                        : item.stato === 'Sospesa'
+                        : (item.status === 'Sospeso' || item.status === 'suspended')
                         ? '#d97706'
-                        : item.stato === 'Bozza'
+                        : item.status === 'Bozza'
                         ? '#4338ca'
-                        : item.stato === 'Cessata'
+                        : item.status === 'Cessato'
                         ? '#dc2626'
-                        : item.stato === 'Trasferita'
+                        : item.status === 'Trasferito'
                         ? '#ea580c'
                         : '#475569',
-                      border: `1px solid ${item.stato === 'Attiva' 
+                      border: `1px solid ${(item.status === 'Attivo' || item.status === 'active')
                         ? '#bbf7d0' 
-                        : item.stato === 'Sospesa'
+                        : (item.status === 'Sospeso' || item.status === 'suspended')
                         ? '#fcd34d'
-                        : item.stato === 'Bozza'
+                        : item.status === 'Bozza'
                         ? '#c7d2fe'
-                        : item.stato === 'Cessata'
+                        : item.status === 'Cessato'
                         ? '#fca5a5'
-                        : item.stato === 'Trasferita'
+                        : item.status === 'Trasferito'
                         ? '#fdba74'
                         : '#e2e8f0'}`,
                       borderRadius: '20px',
@@ -928,7 +903,7 @@ export default function SettingsPage() {
                         borderRadius: '50%',
                         background: 'white'
                       }} />
-                      {item.stato}
+                      {item.status === 'active' ? 'Attivo' : item.status}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
