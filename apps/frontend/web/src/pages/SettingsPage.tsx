@@ -6717,6 +6717,5 @@ export default function SettingsPage() {
           {renderContent()}
         </div>
       </Layout>
-    </>
   );
 }
