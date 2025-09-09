@@ -2,7 +2,14 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { sql } from 'drizzle-orm';
 import ws from "ws";
-import * as schema from "../db/schema";
+import * as publicSchema from "../db/schema/index";
+import * as brandInterfaceSchema from "../db/schema/brand-interface";
+
+// Merge degli schemi per supportare multi-schema database
+const schema = { 
+  ...publicSchema, 
+  ...brandInterfaceSchema 
+};
 
 neonConfig.webSocketConstructor = ws;
 
@@ -37,7 +44,7 @@ export const getCurrentTenant = async (): Promise<string | null> => {
     const result = await db.execute(
       sql`SELECT get_current_tenant() as tenant_id`
     );
-    return result.rows[0]?.tenant_id || null;
+    return result.rows[0]?.tenant_id as string || null;
   } catch (error) {
     return null;
   }
