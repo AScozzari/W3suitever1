@@ -28,9 +28,28 @@ export const campaignStatusEnum = pgEnum('brand_campaign_status', ['draft', 'act
 export const campaignTypeEnum = pgEnum('brand_campaign_type', ['global', 'tenant_specific', 'selective']);
 export const deploymentStatusEnum = pgEnum('brand_deployment_status', ['pending', 'in_progress', 'completed', 'failed']);
 
+// ==================== BRAND TENANTS TABLE ====================
+export const brandTenants = brandInterfaceSchema.table("brand_tenants", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).unique(),
+  type: varchar("type", { length: 50 }).default('brand_interface'),
+  status: varchar("status", { length: 50 }).default('active'),
+  settings: jsonb("settings").default({}),
+  features: jsonb("features").default({}),
+  brandAdminEmail: varchar("brand_admin_email", { length: 255 }),
+  apiKey: varchar("api_key", { length: 255 }),
+  allowedIpRanges: text("allowed_ip_ranges").array(),
+  maxConcurrentUsers: smallint("max_concurrent_users").default(50),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  archivedAt: timestamp("archived_at"),
+});
+
 // ==================== BRAND USERS TABLE ====================
 export const brandUsers = brandInterfaceSchema.table("brand_users", {
   id: varchar("id").primaryKey(), // mario.brand@company.com
+  tenantId: uuid("tenant_id").notNull().references(() => brandTenants.id), // ← RLS KEY
   email: varchar("email", { length: 255 }).unique().notNull(),
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
@@ -68,6 +87,7 @@ export type BrandUser = typeof brandUsers.$inferSelect;
 // ==================== BRAND ROLES TABLE ====================
 export const brandRoles = brandInterfaceSchema.table("brand_roles", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => brandTenants.id), // ← RLS KEY
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   
@@ -83,7 +103,7 @@ export const brandRoles = brandInterfaceSchema.table("brand_roles", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
-  uniqueIndex("brand_roles_name_unique").on(table.name),
+  uniqueIndex("brand_roles_name_unique").on(table.tenantId, table.name), // Unique per tenant
 ]);
 
 export const insertBrandRoleSchema = createInsertSchema(brandRoles).omit({ 
@@ -97,6 +117,7 @@ export type BrandRole = typeof brandRoles.$inferSelect;
 // ==================== BRAND AUDIT LOGS ====================
 export const brandAuditLogs = brandInterfaceSchema.table("brand_audit_logs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => brandTenants.id), // ← RLS KEY
   userEmail: varchar("user_email", { length: 255 }).notNull(),
   userRole: varchar("user_role", { length: 100 }),
   commercialAreas: text("commercial_areas").array(), // Areas the user had access to
