@@ -6,6 +6,8 @@ import { setupOAuth2Server } from "./oauth2-server";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
 import jwt from "jsonwebtoken";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -24,7 +26,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.path === '/api/stores' ||
         req.path === '/api/legal-entities' ||
         req.path === '/api/users' ||
-        req.path === '/api/commercial-areas') {
+        req.path === '/api/commercial-areas' ||
+        req.path === '/api/tenants' ||
+        req.path === '/api/roles') {
       return next();
     }
     // Apply tenant middleware for other API routes
@@ -46,32 +50,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check for demo session header (for testing)
         const demoUser = req.headers['x-demo-user'];
         if (demoUser) {
+          const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
           req.user = {
             id: 'demo-user',
             email: demoUser || 'admin@w3suite.com',
-            tenantId: '00000000-0000-0000-0000-000000000001',
+            tenantId: tenantId,
             roles: ['admin'],
             permissions: [],
             capabilities: [],
             scope: 'openid profile email'
           };
-          console.log(`[AUTH-DEMO] ${req.method} ${req.path} - User: ${req.user.email}`);
+          console.log(`[AUTH-DEMO] ${req.method} ${req.path} - User: ${req.user.email} - Tenant: ${tenantId}`);
+          
+          // Set RLS context for demo user
+          try {
+            await db.execute(sql.raw(`SET LOCAL app.current_tenant = '${tenantId}'`));
+            console.log(`[RLS] Set tenant context: ${tenantId}`);
+          } catch (rlsError) {
+            console.log(`[RLS] Could not set tenant context: ${rlsError}`);
+          }
+          
           return next();
         }
         
         // Check for authenticated session from OAuth2 login
         const sessionAuth = req.headers['x-auth-session'];
         if (sessionAuth === 'authenticated') {
+          const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
           req.user = {
             id: 'session-user',
             email: 'admin@w3suite.com',
-            tenantId: '00000000-0000-0000-0000-000000000001',
+            tenantId: tenantId,
             roles: ['admin'],
             permissions: [],
             capabilities: [],
             scope: 'openid profile email'
           };
-          console.log(`[AUTH-SESSION] ${req.method} ${req.path} - Session User`);
+          console.log(`[AUTH-SESSION] ${req.method} ${req.path} - Session User - Tenant: ${tenantId}`);
+          
+          // Set RLS context for session user
+          try {
+            await db.execute(sql.raw(`SET LOCAL app.current_tenant = '${tenantId}'`));
+            console.log(`[RLS] Set tenant context: ${tenantId}`);
+          } catch (rlsError) {
+            console.log(`[RLS] Could not set tenant context: ${rlsError}`);
+          }
+          
           return next();
         }
       }
