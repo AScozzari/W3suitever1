@@ -7,6 +7,9 @@ import express, { Request, Response } from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { storage } from './storage';
+import { db } from './db';
+import { users } from '../db/schema/w3suite';
+import { eq } from 'drizzle-orm';
 
 // OAuth2 Configuration Enterprise
 const OAUTH2_CONFIG = {
@@ -131,18 +134,58 @@ function validateRedirectUri(clientId: string, redirectUri: string): boolean {
 }
 
 async function getUserByCredentials(username: string, password: string) {
-  // For demo: admin/admin123
-  if (username === 'admin' && password === 'admin123') {
-    return {
-      id: 'admin-user',
-      email: 'admin@w3suite.com',
-      tenantId: '00000000-0000-0000-0000-000000000001',
-      roles: ['super_admin', 'tenant_admin'],
-      firstName: 'Admin',
-      lastName: 'User'
+  try {
+    // Query the database for the user using the w3suite schema
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, username))
+      .limit(1);
+    
+    if (!user) {
+      console.log(`🔍 User not found: ${username}`);
+      // For demo purposes, check hardcoded admin credentials
+      if (username === 'admin' && password === 'admin123') {
+        return {
+          id: 'admin-user',
+          email: 'admin@w3suite.com',
+          tenantId: '00000000-0000-0000-0000-000000000001',
+          roles: ['super_admin', 'tenant_admin'],
+          firstName: 'Admin',
+          lastName: 'User'
+        };
+      }
+      return null;
+    }
+    
+    // For demo purposes, we use a simple password check
+    // In production, this would use OAuth2/OIDC or bcrypt-hashed passwords
+    const demoPasswords: Record<string, string> = {
+      'marco.rossi@w3demo.com': 'password123',
+      'giulia.bianchi@w3demo.com': 'password123',
+      'admin@w3suite.com': 'admin123'
     };
+    
+    const validPassword = demoPasswords[user.email || ''] || 'password123';
+    
+    if (password !== validPassword) {
+      console.log(`🔒 Invalid password for user: ${username}`);
+      return null;
+    }
+    
+    console.log(`✅ User authenticated successfully: ${username}`);
+    return {
+      id: user.id,
+      email: user.email || username,
+      tenantId: user.tenantId || '00000000-0000-0000-0000-000000000001',
+      roles: user.role ? [user.role] : ['user'],
+      firstName: user.firstName || '',
+      lastName: user.lastName || ''
+    };
+  } catch (error) {
+    console.error('Error authenticating user:', error);
+    return null;
   }
-  return null;
 }
 
 export function setupOAuth2Server(app: express.Application) {

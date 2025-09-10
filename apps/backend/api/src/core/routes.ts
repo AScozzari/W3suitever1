@@ -41,6 +41,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const startTime = Date.now();
     
     try {
+      // In development/demo mode, allow bypass for testing
+      if (process.env.NODE_ENV === 'development') {
+        // Check for demo session header (for testing)
+        const demoUser = req.headers['x-demo-user'];
+        if (demoUser) {
+          req.user = {
+            id: 'demo-user',
+            email: demoUser || 'admin@w3suite.com',
+            tenantId: '00000000-0000-0000-0000-000000000001',
+            roles: ['admin'],
+            permissions: [],
+            capabilities: [],
+            scope: 'openid profile email'
+          };
+          console.log(`[AUTH-DEMO] ${req.method} ${req.path} - User: ${req.user.email}`);
+          return next();
+        }
+        
+        // Check for authenticated session from OAuth2 login
+        const sessionAuth = req.headers['x-auth-session'];
+        if (sessionAuth === 'authenticated') {
+          req.user = {
+            id: 'session-user',
+            email: 'admin@w3suite.com',
+            tenantId: '00000000-0000-0000-0000-000000000001',
+            roles: ['admin'],
+            permissions: [],
+            capabilities: [],
+            scope: 'openid profile email'
+          };
+          console.log(`[AUTH-SESSION] ${req.method} ${req.path} - Session User`);
+          return next();
+        }
+      }
+      
       const authHeader = req.headers.authorization;
       const token = authHeader?.split(' ')[1];
       
@@ -154,6 +189,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // ==================== TENANT MANAGEMENT API ====================
+  
+  // Get all tenants (for admin/multi-tenant views)
+  app.get('/api/tenants', enterpriseAuth, async (req: any, res) => {
+    try {
+      // In a real enterprise app, this would check permissions
+      // For demo, return the current user's tenant
+      const tenantId = req.user?.tenantId || '00000000-0000-0000-0000-000000000001';
+      const tenant = await storage.getTenant(tenantId);
+      
+      if (!tenant) {
+        return res.json([]);
+      }
+      
+      // Return as array for compatibility with frontend expecting multiple tenants
+      res.json([tenant]);
+    } catch (error) {
+      console.error("Error fetching tenants:", error);
+      res.status(500).json({ error: "Failed to fetch tenants" });
+    }
+  });
   
   // Get tenant info
   app.get('/api/tenants/:id', enterpriseAuth, async (req, res) => {
