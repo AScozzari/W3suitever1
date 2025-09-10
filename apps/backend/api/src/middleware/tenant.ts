@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../core/db';
-import { tenants, userAssignments, roles, rolePerms, userExtraPerms } from '../db/schema';
+import { tenants, userAssignments, roles, rolePerms, userExtraPerms } from '../db/schema/w3suite';
 import { eq, and, or, sql } from 'drizzle-orm';
 
 declare global {
