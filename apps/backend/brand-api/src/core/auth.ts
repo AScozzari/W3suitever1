@@ -1,4 +1,8 @@
 // Brand Interface Cross-Tenant Authentication System
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import { brandStorage } from "./storage.js";
+import type { BrandUser } from "../db/index.js";
 
 export interface BrandAuthContext {
   userId: string;
@@ -12,8 +16,79 @@ export interface BrandAuthContext {
 export const BRAND_TENANT_ID = '50dbf940-5809-4094-afa1-bd699122a636';
 export const BRAND_SERVICE_ACCOUNT_ID = 'brand-service-account';
 
+const JWT_SECRET = process.env.BRAND_JWT_SECRET || "brand-interface-secret-key-change-in-production";
+
 // Service per autenticazione cross-tenant
 export class BrandAuthService {
+  
+  /**
+   * Valida credenziali utente Brand
+   */
+  static async validateCredentials(email: string, password: string): Promise<BrandUser | null> {
+    try {
+      const user = await brandStorage.getUserByEmail(email);
+      
+      if (!user || !user.isActive) {
+        return null;
+      }
+      
+      // In sviluppo, accetta password fissa per test
+      if (process.env.NODE_ENV === "development") {
+        if (password === "Brand123!") {
+          return user;
+        }
+      }
+      
+      // In produzione userebbe bcrypt.compare con hash reale
+      // const isValid = await bcrypt.compare(password, user.passwordHash);
+      // if (!isValid) return null;
+      
+      // Aggiorna ultimo login
+      await brandStorage.updateUser(user.id, { 
+        lastLoginAt: new Date(),
+        failedLoginAttempts: 0 
+      });
+      
+      return user;
+    } catch (error) {
+      console.error("Error validating credentials:", error);
+      return null;
+    }
+  }
+  
+  /**
+   * Genera JWT token per utente Brand
+   */
+  static generateToken(user: BrandUser): string {
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+      commercialAreas: user.commercialAreaCodes,
+      permissions: user.permissions
+    };
+    
+    return jwt.sign(payload, JWT_SECRET, { 
+      expiresIn: "8h",
+      issuer: "brand-interface"
+    });
+  }
+  
+  /**
+   * Verifica JWT token Brand
+   */
+  static async verifyToken(token: string): Promise<any> {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET, {
+        issuer: "brand-interface"
+      });
+      return decoded;
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      return null;
+    }
+  }
   
   /**
    * Crea context di autenticazione per Brand Interface

@@ -6,6 +6,62 @@ import { brandStorage } from "./storage.js";
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
   
+  // Middleware per parsing cookies
+  app.use(express.json());
+  
+  // ==================== AUTH ENDPOINTS ====================
+  // Login endpoint - non richiede autenticazione
+  app.post("/brand-api/auth/login", async (req, res) => {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password required" });
+    }
+    
+    const user = await BrandAuthService.validateCredentials(email, password);
+    
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    
+    const token = BrandAuthService.generateToken(user);
+    
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        commercialAreas: user.commercialAreaCodes,
+        permissions: user.permissions
+      }
+    });
+  });
+  
+  // Verify token endpoint
+  app.get("/brand-api/auth/me", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+    
+    const token = authHeader.substring(7);
+    const decoded = await BrandAuthService.verifyToken(token);
+    
+    if (!decoded) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+    
+    res.json({ 
+      success: true,
+      user: decoded 
+    });
+  });
+  
   // Middleware per context tenant su tutte le routes Brand
   app.use("/brand-api", createTenantContextMiddleware());
   
