@@ -16,7 +16,12 @@ export interface BrandAuthContext {
 export const BRAND_TENANT_ID = '50dbf940-5809-4094-afa1-bd699122a636';
 export const BRAND_SERVICE_ACCOUNT_ID = 'brand-service-account';
 
-const JWT_SECRET = process.env.BRAND_JWT_SECRET || "brand-interface-secret-key-change-in-production";
+// JWT Secret - required from environment in production
+const JWT_SECRET = process.env.BRAND_JWT_SECRET || (
+  process.env.NODE_ENV === "development" 
+    ? "dev-brand-secret-key-change-in-production" 
+    : (() => { throw new Error("BRAND_JWT_SECRET environment variable is required in production"); })()
+);
 
 // Service per autenticazione cross-tenant
 export class BrandAuthService {
@@ -32,18 +37,28 @@ export class BrandAuthService {
         return null;
       }
       
-      // In sviluppo, accetta password fissa per test
-      if (process.env.NODE_ENV === "development") {
-        if (password === "Brand123!") {
-          return user;
-        }
+      // Password validation
+      let isValid = false;
+      
+      if (user.passwordHash) {
+        // Use bcrypt to compare password with hash
+        isValid = await bcrypt.compare(password, user.passwordHash);
+      } else if (process.env.NODE_ENV === "development") {
+        // ONLY in development, allow test password if no hash is set
+        console.warn(`⚠️ Development mode: Using test password for ${email}`);
+        isValid = password === "Brand123!";
       }
       
-      // In produzione userebbe bcrypt.compare con hash reale
-      // const isValid = await bcrypt.compare(password, user.passwordHash);
-      // if (!isValid) return null;
+      if (!isValid) {
+        // Update failed login attempts
+        await brandStorage.updateUser(user.id, { 
+          failedLoginAttempts: (user.failedLoginAttempts || 0) + 1,
+          lastFailedLoginAt: new Date()
+        });
+        return null;
+      }
       
-      // Aggiorna ultimo login
+      // Successful login - update user
       await brandStorage.updateUser(user.id, { 
         lastLoginAt: new Date(),
         failedLoginAttempts: 0 
@@ -54,6 +69,14 @@ export class BrandAuthService {
       console.error("Error validating credentials:", error);
       return null;
     }
+  }
+  
+  /**
+   * Hash a password using bcrypt
+   */
+  static async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
   }
   
   /**
@@ -126,47 +149,82 @@ export class BrandAuthService {
   }
 }
 
-// Middleware per setting tenant context in base al path URL
-export function createTenantContextMiddleware() {
-  return (req: any, res: any, next: any) => {
-    // Estrai tenant dal path: /brand-api/demo/... or /brand-api/...
-    const pathParts = req.path.split('/').filter(Boolean);
+// Middleware per autenticazione JWT
+export function authenticateToken() {
+  return async (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
     
-    if (pathParts[0] === 'brand-api') {
-      const potentialTenant = pathParts[1];
-      
-      // Lista tenant validi (dovresti caricare dal DB)
-      const validTenants = ['demo', 'staging', 'acme', 'tech'];
-      
-      if (validTenants.includes(potentialTenant)) {
-        // Tenant-specific operation
-        req.brandContext = BrandAuthService.getTenantSpecificContext(getTenantIdBySlug(potentialTenant));
-      } else {
-        // Cross-tenant operation
-        req.brandContext = BrandAuthService.getCrossTenantContext();
-      }
-    } else {
-      // Default cross-tenant
-      req.brandContext = BrandAuthService.getCrossTenantContext();
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
     }
     
-    console.log(`🎯 Brand Auth Context: ${req.brandContext.isCrossTenant ? 'Cross-Tenant' : `Tenant ${req.brandContext.tenantId}`}`);
+    const token = authHeader.substring(7);
+    const decoded = await BrandAuthService.verifyToken(token);
+    
+    if (!decoded) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+    
+    // Attach user info to request
+    req.user = decoded;
+    next();
+  };
+}
+
+// Middleware per setting tenant context in base al path URL
+export function createTenantContextMiddleware() {
+  return async (req: any, res: any, next: any) => {
+    // Since middleware is mounted at /brand-api, req.path is relative
+    // Use req.originalUrl or req.baseUrl + req.path to get full path
+    const fullPath = req.originalUrl || req.url;
+    const pathAfterApi = req.path; // This is already relative to /brand-api
+    const pathParts = pathAfterApi.split('/').filter(Boolean);
+    
+    // First part after /brand-api could be a tenant slug
+    const potentialTenant = pathParts[0];
+    
+    if (potentialTenant) {
+      // Query database for valid tenants
+      const tenants = await brandStorage.getTenants();
+      const tenant = tenants.find(t => t.slug === potentialTenant);
+      
+      if (tenant) {
+        // Tenant-specific operation with user context
+        req.brandContext = {
+          userId: req.user?.id || BRAND_SERVICE_ACCOUNT_ID,
+          tenantId: tenant.id,
+          isCrossTenant: false,
+          isServiceAccount: false,
+          brandTenantId: BRAND_TENANT_ID
+        };
+        console.log(`🎯 Brand Auth Context: Tenant-specific (${tenant.slug})`);
+      } else {
+        // Cross-tenant operation with user context
+        req.brandContext = {
+          userId: req.user?.id || BRAND_SERVICE_ACCOUNT_ID,
+          tenantId: null,
+          isCrossTenant: true,
+          isServiceAccount: false,
+          brandTenantId: BRAND_TENANT_ID
+        };
+        console.log(`🎯 Brand Auth Context: Cross-Tenant`);
+      }
+    } else {
+      // Default cross-tenant for root /brand-api path
+      req.brandContext = {
+        userId: req.user?.id || BRAND_SERVICE_ACCOUNT_ID,
+        tenantId: null,
+        isCrossTenant: true,
+        isServiceAccount: false,
+        brandTenantId: BRAND_TENANT_ID
+      };
+      console.log(`🎯 Brand Auth Context: Cross-Tenant (root)`);
+    }
     
     next();
   };
 }
 
-// Helper per mapping slug → tenant ID
-function getTenantIdBySlug(slug: string): string {
-  const tenantMapping: Record<string, string> = {
-    'staging': '00000000-0000-0000-0000-000000000001',
-    'demo': '99999999-9999-9999-9999-999999999999',
-    'acme': '11111111-1111-1111-1111-111111111111',
-    'tech': '22222222-2222-2222-2222-222222222222'
-  };
-  
-  return tenantMapping[slug] || tenantMapping['staging'];
-}
 
 // Decorator per routes che richiedono specifico context
 export function requiresCrossTenant(target: any, propertyName: string, descriptor: PropertyDescriptor) {

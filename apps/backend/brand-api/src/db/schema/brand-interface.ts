@@ -4,14 +4,11 @@ import { sql } from "drizzle-orm";
 // Create brand_interface schema
 export const brandInterfaceSchema = pgSchema("brand_interface");
 
-// Enum per i ruoli brand
+// Enum per i ruoli brand (deve matchare l'enum esistente nel database)
 export const brandRoleEnum = brandInterfaceSchema.enum("brand_role", [
-  "super_admin",
   "area_manager",
-  "operations_manager",
-  "marketing_manager",
-  "sales_manager",
-  "viewer"
+  "national_manager",
+  "super_admin"
 ]);
 
 // Brand Tenants table

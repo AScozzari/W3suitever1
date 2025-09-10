@@ -1,6 +1,6 @@
 import express from "express";
 import http from "http";
-import { createTenantContextMiddleware, BrandAuthService } from "./auth.js";
+import { createTenantContextMiddleware, BrandAuthService, authenticateToken } from "./auth.js";
 import { brandStorage } from "./storage.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
@@ -41,50 +41,57 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     });
   });
   
-  // Verify token endpoint
-  app.get("/brand-api/auth/me", async (req, res) => {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "No token provided" });
-    }
-    
-    const token = authHeader.substring(7);
-    const decoded = await BrandAuthService.verifyToken(token);
-    
-    if (!decoded) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-    
-    res.json({ 
-      success: true,
-      user: decoded 
-    });
-  });
-  
-  // Middleware per context tenant su tutte le routes Brand
-  app.use("/brand-api", createTenantContextMiddleware());
-  
-  // Health check - sempre disponibile
+  // Health check - NO auth required
   app.get("/brand-api/health", (req, res) => {
-    const context = (req as any).brandContext;
     res.json({ 
       status: "healthy", 
       service: "Brand Interface API",
-      context: {
-        isCrossTenant: context?.isCrossTenant,
-        tenantId: context?.tenantId,
-        brandTenantId: context?.brandTenantId
-      },
       timestamp: new Date().toISOString()
     });
   });
+  
+  // Verify token endpoint - requires auth
+  app.get("/brand-api/auth/me", authenticateToken(), async (req, res) => {
+    const user = (req as any).user;
+    
+    res.json({ 
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        commercialAreas: user.commercialAreas,
+        permissions: user.permissions
+      }
+    });
+  });
+  
+  // Apply JWT authentication middleware to all routes except auth/login and health
+  app.use("/brand-api", (req, res, next) => {
+    // Skip auth for login and health endpoints
+    if (req.path === "/auth/login" || req.path === "/health") {
+      return next();
+    }
+    // Apply JWT middleware for all other routes
+    return authenticateToken()(req, res, next);
+  });
+  
+  // Apply tenant context middleware after authentication
+  app.use("/brand-api", createTenantContextMiddleware());
 
   // ==================== CROSS-TENANT ENDPOINTS ====================
   // Operazioni che vedono tutti i tenant
   
   app.get("/brand-api/organizations", async (req, res) => {
     const context = (req as any).brandContext;
+    const user = (req as any).user;
+    
+    // Role-based access control - only super_admin and national_manager can see all orgs
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to view all organizations" });
+    }
     
     if (!context.isCrossTenant) {
       return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
@@ -110,6 +117,12 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
   app.get("/brand-api/analytics/cross-tenant", async (req, res) => {
     const context = (req as any).brandContext;
+    const user = (req as any).user;
+    
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for cross-tenant analytics" });
+    }
     
     if (!context.isCrossTenant) {
       return res.status(400).json({ error: "Analytics cross-tenant requires global access" });
@@ -139,8 +152,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   // ==================== TENANT-SPECIFIC ENDPOINTS ====================
   // Operazioni su tenant specifico (path: /brand-api/:tenant/...)
   
-  app.get("/brand-api/:tenant/stores", (req, res) => {
+  app.get("/brand-api/:tenant/stores", async (req, res) => {
     const context = (req as any).brandContext;
+    const user = (req as any).user;
     
     if (context.isCrossTenant) {
       return res.status(400).json({ error: "This endpoint requires tenant-specific context" });
@@ -160,8 +174,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   // ==================== BRAND LEVEL ENDPOINTS ====================
   // Operazioni su tabelle Brand Interface
   
-  app.get("/brand-api/campaigns", (req, res) => {
+  app.get("/brand-api/campaigns", async (req, res) => {
     const context = (req as any).brandContext;
+    const user = (req as any).user;
     
     res.json({ 
       campaigns: [
@@ -198,9 +213,15 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
 
   // ==================== DEPLOYMENT ENDPOINTS ====================
-  app.post("/brand-api/deploy", express.json(), (req, res) => {
+  app.post("/brand-api/deploy", express.json(), async (req, res) => {
     const context = (req as any).brandContext;
+    const user = (req as any).user;
     const { campaignId, targetType, targetTenants } = req.body;
+    
+    // Only super_admin and national_manager can deploy
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to deploy campaigns" });
+    }
     
     res.json({
       deployment: {
