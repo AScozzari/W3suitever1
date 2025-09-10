@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { commercialAreas } from "../db/schema/index.js";
+import { commercialAreas } from "../db/schema/public.js";
 
 export async function seedCommercialAreas() {
   try {

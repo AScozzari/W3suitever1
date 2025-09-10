@@ -1,15 +1,11 @@
+// Import from W3 Suite schema (tenant-specific)
 import {
   users,
   tenants,
   legalEntities,
   stores,
-  commercialAreas,
-  channels,
   roles,
   userAssignments,
-  legalForms,
-  countries,
-  italianCities,
   entityLogs,
   type User,
   type UpsertUser,
@@ -19,17 +15,26 @@ import {
   type InsertLegalEntity,
   type Store,
   type InsertStore,
-  type CommercialArea,
-  type InsertCommercialArea,
   type UserAssignment,
   type InsertUserAssignment,
   type Role,
   type InsertRole,
-  type LegalForm,
-  type Country,
   type EntityLog,
   type InsertEntityLog,
-} from "../db/schema";
+} from "../db/schema/w3suite";
+
+// Import from Public schema (shared reference data)
+import {
+  commercialAreas,
+  channels,
+  legalForms,
+  countries,
+  italianCities,
+  type CommercialArea,
+  type InsertCommercialArea,
+  type LegalForm,
+  type Country,
+} from "../db/schema/public";
 import { db } from "./db";
 import { eq, and, or } from "drizzle-orm";
 
@@ -360,17 +365,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getEntityLogs(tenantId: string, entityType?: string, entityId?: string): Promise<EntityLog[]> {
-    let query = db.select().from(entityLogs).where(eq(entityLogs.tenantId, tenantId));
+    const conditions = [eq(entityLogs.tenantId, tenantId)];
     
     if (entityType) {
-      query = query.where(eq(entityLogs.entityType, entityType));
+      conditions.push(eq(entityLogs.entityType, entityType));
     }
     
     if (entityId) {
-      query = query.where(eq(entityLogs.entityId, entityId));
+      conditions.push(eq(entityLogs.entityId, entityId));
     }
     
-    return await query.orderBy(entityLogs.createdAt);
+    return await db.select()
+      .from(entityLogs)
+      .where(and(...conditions))
+      .orderBy(entityLogs.createdAt);
   }
 
 }

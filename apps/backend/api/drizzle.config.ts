@@ -7,7 +7,8 @@ if (!process.env.DATABASE_URL) {
 export default defineConfig({
   out: "./src/db/migrations",
   schema: [
-    "./src/db/schema/index.ts",           // Schema public (W3 Suite + Shared)
+    "./src/db/schema/public.ts",          // Schema public (Shared reference data)
+    "./src/db/schema/w3suite.ts",         // Schema w3suite (W3 Suite tenant-specific)
     "./src/db/schema/brand-interface.ts"  // Schema brand_interface (Brand Interface)
   ],
   dialect: "postgresql",

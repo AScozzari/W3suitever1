@@ -2,13 +2,15 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { sql } from 'drizzle-orm';
 import ws from "ws";
-import * as publicSchema from "../db/schema/index";
+import * as publicSharedSchema from "../db/schema/public";
+import * as w3suiteSchema from "../db/schema/w3suite";
 import * as brandInterfaceSchema from "../db/schema/brand-interface";
 
 // Merge degli schemi per supportare multi-schema database
 const schema = { 
-  ...publicSchema, 
-  ...brandInterfaceSchema 
+  ...publicSharedSchema,     // Shared reference data
+  ...w3suiteSchema,          // W3 Suite tenant-specific data
+  ...brandInterfaceSchema    // Brand Interface system
 };
 
 neonConfig.webSocketConstructor = ws;
