@@ -1,6 +1,7 @@
 import express from "express";
 import http from "http";
 import { createTenantContextMiddleware, BrandAuthService } from "./auth.js";
+import { brandStorage } from "./storage.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
@@ -26,42 +27,57 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   // ==================== CROSS-TENANT ENDPOINTS ====================
   // Operazioni che vedono tutti i tenant
   
-  app.get("/brand-api/organizations", (req, res) => {
+  app.get("/brand-api/organizations", async (req, res) => {
     const context = (req as any).brandContext;
     
     if (!context.isCrossTenant) {
       return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
     }
     
-    res.json({ 
-      organizations: [
-        { id: "00000000-0000-0000-0000-000000000001", name: "Staging Environment", stores: 5 },
-        { id: "99999999-9999-9999-9999-999999999999", name: "Demo Organization", stores: 3 },
-        { id: "11111111-1111-1111-1111-111111111111", name: "ACME Corporation", stores: 8 },
-        { id: "22222222-2222-2222-2222-222222222222", name: "Tech Solutions Ltd", stores: 2 }
-      ],
-      context: "cross-tenant",
-      message: "All organizations visible in cross-tenant mode"
-    });
+    try {
+      const tenants = await brandStorage.getTenants();
+      res.json({ 
+        organizations: tenants.map(t => ({
+          id: t.id,
+          name: t.name,
+          status: t.status,
+          settings: t.settings
+        })),
+        context: "cross-tenant",
+        message: "All organizations visible in cross-tenant mode"
+      });
+    } catch (error) {
+      console.error("Error fetching organizations:", error);
+      res.status(500).json({ error: "Failed to fetch organizations" });
+    }
   });
 
-  app.get("/brand-api/analytics/cross-tenant", (req, res) => {
+  app.get("/brand-api/analytics/cross-tenant", async (req, res) => {
     const context = (req as any).brandContext;
     
     if (!context.isCrossTenant) {
       return res.status(400).json({ error: "Analytics cross-tenant requires global access" });
     }
     
-    res.json({
-      summary: {
-        totalTenants: 4,
-        totalStores: 18,
-        totalRevenue: 1250000,
-        growthRate: "+12.5%"
-      },
-      context: "cross-tenant",
-      message: "Global analytics data"
-    });
+    try {
+      const tenants = await brandStorage.getTenants();
+      const users = await brandStorage.getUsers();
+      
+      res.json({
+        summary: {
+          totalTenants: tenants.length,
+          totalUsers: users.length,
+          activeTenants: tenants.filter(t => t.status === 'active').length,
+          totalRevenue: 1250000, // Mock per ora
+          growthRate: "+12.5%" // Mock per ora
+        },
+        context: "cross-tenant",
+        message: "Global analytics data"
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
   });
 
   // ==================== TENANT-SPECIFIC ENDPOINTS ====================
