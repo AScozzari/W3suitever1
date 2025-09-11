@@ -1,5 +1,5 @@
 import express from "express";
-import { spawn } from "child_process";
+// spawn no longer needed - Brand Interface runs as separate service
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -14,7 +14,7 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 
 const app = express();
 
-// W3 Suite standalone - Brand Interface completamente isolato su porta 5001
+// W3 Suite standalone - Brand Interface completamente isolato su porta 3001 (dietro API Gateway)
 
 // Security Headers with Helmet
 app.use(helmet({
@@ -80,7 +80,7 @@ app.use('/oauth2/token', authLimiter);
 
 // CORS configuration for W3 Suite
 app.use((req, res, next) => {
-  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5000'];
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:5000'];
   const origin = req.headers.origin;
   
   if (origin && allowedOrigins.includes(origin)) {
@@ -110,72 +110,21 @@ if (process.env.NODE_ENV === "development") {
   await setupVite(app, httpServer);
 }
 
-// ==================== BRAND INTERFACE STANDALONE PROCESS ====================
-// Brand Interface completamente isolato su porta 5001
+// Brand Interface is now running as a separate service on port 3001
+// It's no longer spawned from W3 Suite but runs independently behind the API Gateway
 
-let brandInterfaceProcess: any = null;
-
-function startBrandInterface() {
-  console.log("🚀 Starting Brand Interface standalone service...");
-  
-  // Path per Brand Interface (completo: frontend + backend su porta 5001)
-  const BRAND_PATH = join(__dirname, "..", "..", "..", "backend", "brand-api");
-  
-  // Avvia Brand Interface standalone (porta 5001)
-  brandInterfaceProcess = spawn("npx", ["tsx", "src/index.ts"], {
-    cwd: BRAND_PATH,
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      NODE_ENV: "development",
-      BRAND_JWT_SECRET: process.env.BRAND_JWT_SECRET || "brand-dev-secret-2025",
-      JWT_SECRET: process.env.JWT_SECRET || "w3suite-dev-secret-2025"
-    }
-  });
-
-  brandInterfaceProcess.on("error", (error: any) => {
-    console.error("❌ Brand Interface failed to start:", error);
-  });
-
-  brandInterfaceProcess.on("exit", (code: any, signal: any) => {
-    if (signal) {
-      console.log(`🚫 Brand Interface killed with signal ${signal}`);
-    } else {
-      console.log(`🚫 Brand Interface exited with code ${code}`);
-    }
-    // Respawn after 2 seconds if not intentionally killed
-    if (code !== 0 && signal !== "SIGTERM" && signal !== "SIGINT") {
-      setTimeout(() => {
-        console.log("🔄 Restarting Brand Interface...");
-        startBrandInterface();
-      }, 2000);
-    }
-  });
-
-  console.log("✅ Brand Interface standalone service started");
-  console.log("🌐 Brand Interface (frontend + backend): http://localhost:5001/brandinterface/login");
-  console.log("🔌 Brand Interface API: http://localhost:5001/brand-api/health");
-}
-
-// Avvia Brand Interface solo in development come processo separato
-if (process.env.NODE_ENV === "development") {
-  startBrandInterface();
-}
-
-// W3 Suite cleanup - gestisce anche il processo Brand Interface separato
+// W3 Suite cleanup
 process.on("SIGTERM", () => {
   console.log("🚫 W3 Suite shutting down");
-  if (brandInterfaceProcess) brandInterfaceProcess.kill("SIGTERM");
 });
 
 process.on("SIGINT", () => {
   console.log("🚫 W3 Suite shutting down");
-  if (brandInterfaceProcess) brandInterfaceProcess.kill("SIGTERM");
   process.exit(0);
 });
 
-// Avvia il server sulla porta 5000
-httpServer.listen(5000, "0.0.0.0", () => {
-  console.log("W3 Suite server running on port 5000");
-  console.log("Frontend available at: http://localhost:5000");
+// Avvia il server sulla porta 3000 (dietro API Gateway)
+httpServer.listen(3000, "0.0.0.0", () => {
+  console.log("W3 Suite server running on port 3000 (internal)");
+  console.log("Frontend will be available via Gateway at: http://localhost:5000");
 });

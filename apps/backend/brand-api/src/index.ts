@@ -97,7 +97,7 @@ try {
   
   // CORS configuration for Brand Interface - MORE RESTRICTIVE
   app.use(cors({
-    origin: process.env.BRAND_CORS_ORIGINS?.split(',') || ['http://localhost:5001'],
+    origin: process.env.BRAND_CORS_ORIGINS?.split(',') || ['http://localhost:3001', 'http://localhost:5000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -123,11 +123,12 @@ try {
     console.log('🚫 Brand Interface server closed');
   });
 
-  // Avvia il server Brand Interface (frontend + backend) sulla porta 5001
-  httpServer.listen(5001, "0.0.0.0", () => {
-    console.log("✅ Brand Interface server running on port 5001");
-    console.log("🌐 Brand Interface available at: http://localhost:5001/brandinterface/login");
-    console.log("🔌 Brand Interface API available at: http://localhost:5001/brand-api/health");
+  // Avvia il server Brand Interface (frontend + backend) sulla porta 3001 (dietro API Gateway)
+  httpServer.listen(3001, "0.0.0.0", () => {
+    console.log("✅ Brand Interface server running on port 3001 (internal)");
+    console.log("🌐 Brand Interface available at: http://localhost:3001/brandinterface/login (internal)");
+    console.log("🔌 Brand Interface API available at: http://localhost:3001/brand-api/health (internal)");
+    console.log("📡 Access via Gateway: http://localhost:5000/brandinterface/login");
   });
 
 } catch (error) {
