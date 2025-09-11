@@ -21,8 +21,13 @@ if (process.env.NODE_ENV === "development") {
     target: 'http://localhost:5002',
     changeOrigin: true,
     xfwd: true,
-    pathRewrite: { '^/brand-api': '/brand-api' }, // Mantieni il prefisso
     logLevel: 'debug',
+    onProxyReq: (proxyReq, req, res) => {
+      console.log(`🔄 [BRAND API PROXY] ${req.method} ${req.url} -> http://localhost:5002${req.url}`);
+    },
+    onProxyRes: (proxyRes, req, res) => {
+      console.log(`✅ [BRAND API PROXY] ${req.method} ${req.url} <- ${proxyRes.statusCode}`);
+    },
     onError: (err, req, res) => {
       console.error(`🔥 [BRAND API PROXY ERROR] ${req.url}:`, err.message);
       if (!res.headersSent) res.status(502).json({ error: 'Brand API proxy error', details: err.message });

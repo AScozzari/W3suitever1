@@ -212,7 +212,7 @@ export default function Login() {
         <div style={styles.demoBox}>
           <p style={styles.demoTitle}>🚀 Demo Credentials</p>
           <p style={styles.demoText}>
-            Email: sbadmin@w3suite.com<br />
+            Email: brand.superadmin@windtre.it<br />
             Password: Brand123!
           </p>
         </div>
