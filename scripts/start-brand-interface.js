@@ -67,7 +67,7 @@ setTimeout(() => {
   );
 }, 2000);
 
-// Graceful shutdown handlers
+// Graceful shutdown handlers - NO exit cleanup (lascia processi attivi)
 function cleanup() {
   console.log('\n🚫 Shutting down Brand Interface services...');
   
@@ -84,10 +84,14 @@ function cleanup() {
   }, 1000);
 }
 
+// Solo gestione SIGINT/SIGTERM - NO exit handler che uccide i figli
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
-process.on('exit', cleanup);
 
 console.log('✅ Brand Interface Orchestrator ready');
 console.log('📱 Brand Interface Frontend: http://localhost:5001/brandinterface/login');
 console.log('🔌 Brand Interface API: http://localhost:5002/brand-api/health');
+
+// Mantiene vivo l'orchestratore per non uccidere i processi figli
+process.stdin.resume(); // Keep event loop alive
+console.log('🔄 Brand Interface Orchestrator staying alive...');
