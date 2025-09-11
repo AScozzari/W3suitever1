@@ -13,22 +13,30 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 
 const app = express();
 
-// REDIRECT /login e / PRIMA di qualsiasi proxy per prevenire loop
-// Usa app.get per redirect semplici
-app.get(['/login', '/'], (req, res) => {
-  res.redirect(302, '/brandinterface/login');
-});
-
-// IMPORTANTE: Proxy per Brand Interface PRIMA di altre middleware
+// PRIMA ASSOLUTA: Proxy per Brand Interface (DEVE essere prima di tutto)
 if (process.env.NODE_ENV === "development") {
   // Proxy per Brand Interface Frontend (porta 5001)
+  // CORRETTO: pathRewrite per mantenere il prefisso /brandinterface
   app.use('/brandinterface', createProxyMiddleware({
-    target: 'http://localhost:5001', // Solo host:porta, NO path nel target
-    changeOrigin: true, // Usa Host: localhost:5001
+    target: 'http://127.0.0.1:5001',
+    changeOrigin: true,
     ws: true, // Supporto WebSocket per hot reload
-    logLevel: 'warn',
-    xfwd: true
-    // NO pathRewrite - mantieni il path originale /brandinterface
+    xfwd: true,
+    timeout: 10000,
+    proxyTimeout: 10000,
+    pathRewrite: (path: string) => '/brandinterface' + path, // Re-aggiunge il prefisso
+    onError: (err: any, req: any, res: any) => {
+      console.error(`🔥 [PROXY ERROR] ${req.url}:`, err.message);
+      if (!res.headersSent) {
+        res.status(504).json({ error: 'Brand Interface proxy error', details: err.message });
+      }
+    },
+    onProxyReq: (proxyReq: any, req: any) => {
+      console.log(`🔥 [PROXY REQ] ${req.method} ${req.url} -> ${proxyReq.getHeaders().host}${proxyReq.path}`);
+    },
+    onProxyRes: (proxyRes: any, req: any) => {
+      console.log(`🔥 [PROXY RES] ${req.url} <- ${proxyRes.statusCode}`);
+    }
   }));
   console.log("🔀 Brand Interface proxy configured: /brandinterface -> http://localhost:5001");
   
@@ -36,11 +44,16 @@ if (process.env.NODE_ENV === "development") {
   app.use('/brand-api', createProxyMiddleware({
     target: 'http://localhost:5002',
     changeOrigin: true,
-    logLevel: 'warn',
+    logLevel: 'debug', // Debug temporaneo
     xfwd: true
   }));
   console.log("🔀 Brand API proxy configured: /brand-api -> http://localhost:5002");
 }
+
+// REDIRECT /login e / DOPO i proxy
+app.get(['/login', '/'], (req, res) => {
+  res.redirect(302, '/brandinterface/login');
+});
 
 app.use(express.json());
 

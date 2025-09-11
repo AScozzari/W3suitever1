@@ -42,7 +42,13 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
+  // GUARDIA: Impedisce a Vite middleware di toccare i path Brand Interface
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/brandinterface') || req.path.startsWith('/brand-api')) {
+      return next(); // Salta completamente Vite middleware
+    }
+    return vite.middlewares(req, res, next);
+  });
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
