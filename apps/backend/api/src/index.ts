@@ -13,9 +13,9 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 
 const app = express();
 
-// REDIRECT /login PRIMA di qualsiasi proxy per prevenire loop
-// Usa app.use per catturare TUTTE le richieste (GET, POST, con trailing slash, query string, etc.)
-app.use('/login', (req, res) => {
+// REDIRECT /login e / PRIMA di qualsiasi proxy per prevenire loop
+// Usa app.get per redirect semplici
+app.get(['/login', '/'], (req, res) => {
   res.redirect(302, '/brandinterface/login');
 });
 
