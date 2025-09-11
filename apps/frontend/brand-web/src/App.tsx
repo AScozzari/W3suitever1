@@ -31,11 +31,11 @@ export default function App() {
 function Routes() {
   return (
     <>
-      <Route path="/:tenant/login">
-        {(params) => <BrandTenantWrapper params={params}><Login /></BrandTenantWrapper>}
-      </Route>
       <Route path="/login">
         <Login />
+      </Route>
+      <Route path="/:tenant/login">
+        {(params) => <BrandTenantWrapper params={params}><Login /></BrandTenantWrapper>}
       </Route>
       
       <Route path="/:tenant/*">

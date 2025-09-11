@@ -16,26 +16,17 @@ const app = express();
 // PRIMA ASSOLUTA: Proxy per Brand Interface (DEVE essere prima di tutto)
 if (process.env.NODE_ENV === "development") {
   // Proxy per Brand Interface Frontend (porta 5001)
-  // CORRETTO: pathRewrite per mantenere il prefisso /brandinterface
+  // CORRETTO: Rimuovo prefisso /brandinterface quando inolto a Vite
   app.use('/brandinterface', createProxyMiddleware({
     target: 'http://127.0.0.1:5001',
     changeOrigin: true,
     ws: true, // Supporto WebSocket per hot reload
     xfwd: true,
+    pathRewrite: { '^/brandinterface': '/' }, // Rimuove prefisso per Vite
     timeout: 10000,
     proxyTimeout: 10000,
-    pathRewrite: (path: string) => '/brandinterface' + path, // Re-aggiunge il prefisso
     onError: (err: any, req: any, res: any) => {
-      console.error(`🔥 [PROXY ERROR] ${req.url}:`, err.message);
-      if (!res.headersSent) {
-        res.status(504).json({ error: 'Brand Interface proxy error', details: err.message });
-      }
-    },
-    onProxyReq: (proxyReq: any, req: any) => {
-      console.log(`🔥 [PROXY REQ] ${req.method} ${req.url} -> ${proxyReq.getHeaders().host}${proxyReq.path}`);
-    },
-    onProxyRes: (proxyRes: any, req: any) => {
-      console.log(`🔥 [PROXY RES] ${req.url} <- ${proxyRes.statusCode}`);
+      if (!res.headersSent) res.status(504).json({ error: 'Brand Interface proxy error', details: err.message });
     }
   }));
   console.log("🔀 Brand Interface proxy configured: /brandinterface -> http://localhost:5001");
@@ -50,14 +41,16 @@ if (process.env.NODE_ENV === "development") {
   console.log("🔀 Brand API proxy configured: /brand-api -> http://localhost:5002");
 }
 
-// Controlla se Brand Interface è pronto
+// Controlla se Brand Interface è pronto - versione semplificata
 async function isBrandWebReady(): Promise<boolean> {
   try {
-    const response = await fetch('http://127.0.0.1:5001/brandinterface/', { 
-      method: 'HEAD',
-      signal: AbortSignal.timeout(2000)
-    });
-    return response.ok;
+    // Test alla root di Vite (senza prefisso brandinterface)
+    const response = await fetch('http://127.0.0.1:5001/', { 
+      method: 'GET',
+      headers: { 'Accept': 'text/html' }
+    }).catch(() => null);
+    
+    return response?.status === 200;
   } catch {
     return false;
   }
