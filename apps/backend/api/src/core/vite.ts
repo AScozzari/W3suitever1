@@ -19,74 +19,7 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-export async function setupBrandInterfaceVite(app: Express, server: Server) {
-  console.log("🚀 Setting up Brand Interface Vite middleware...");
-  
-  const brandWebPath = path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web");
-  
-  const brandVite = await createViteServer({
-    configFile: path.join(brandWebPath, "vite.config.ts"), // USA il config di Brand Web
-    root: brandWebPath,
-    base: '/brandinterface/',
-    server: { 
-      middlewareMode: true,
-      hmr: { server }
-    },
-    appType: "spa",
-    customLogger: {
-      ...viteLogger,
-      info: (msg) => console.log(`🔶 [Brand Vite] ${msg}`),
-      error: (msg, options) => {
-        console.error(`❌ [Brand Vite] ${msg}`);
-        viteLogger.error(msg, options);
-      },
-    }
-    // Plugins e resolve vengono caricati automaticamente dal config file
-  });
-  
-  // PRIMO: Vite middlewares per asset, HMR, @vite/client, etc.
-  app.use('/brandinterface', brandVite.middlewares);
-  
-  // SECONDO: Catch-all RISTRETTO solo per richieste HTML document
-  app.use('/brandinterface', async (req, res, next) => {
-    // Solo richieste GET che accettano HTML
-    if (req.method !== 'GET') return next();
-    
-    const accept = req.headers.accept || '';
-    const isHtmlRequest = accept.includes('text/html');
-    
-    // Skip assets: path con punto, @vite paths, src paths
-    const isAsset = req.path.includes('.') || 
-                   req.path.startsWith('/@') || 
-                   req.path.startsWith('/src/') ||
-                   req.originalUrl.includes('/brandinterface/@') ||
-                   req.originalUrl.includes('/brandinterface/src/');
-    
-    // Solo HTML document requests, non assets
-    if (!isHtmlRequest || isAsset) {
-      console.log(`🔄 [Brand Vite] Skip HTML for: ${req.originalUrl} (asset=${isAsset}, html=${isHtmlRequest})`);
-      return next();
-    }
-    
-    try {
-      console.log(`📄 [Brand Vite] Serving HTML for: ${req.originalUrl}`);
-      const url = req.originalUrl.replace(/^\/brandinterface/, '') || '/';
-      const tplPath = path.join(brandWebPath, 'index.html');
-      let tpl = await fs.promises.readFile(tplPath, 'utf-8');
-      const html = await brandVite.transformIndexHtml(url, tpl);
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
-    } catch (e) {
-      console.error(`❌ [Brand Vite] HTML transform error:`, e);
-      brandVite.ssrFixStacktrace(e as Error);
-      next(e);
-    }
-  });
-  
-  console.log("✅ Brand Interface Vite middleware mounted at /brandinterface");
-  console.log("✅ Brand Interface HTML transform handler added");
-  
-  return brandVite;
-}
+// setupBrandInterfaceVite removed - Brand Interface is now completely isolated on port 5001
 
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
@@ -111,13 +44,8 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  // GUARDIA: Impedisce a Vite middleware di toccare i path Brand Interface
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/brandinterface') || req.path.startsWith('/brand-api')) {
-      return next(); // Salta completamente Vite middleware
-    }
-    return vite.middlewares(req, res, next);
-  });
+  // W3 Suite Vite middleware - Brand Interface completamente isolato
+  app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
@@ -126,10 +54,7 @@ export async function setupVite(app: Express, server: Server) {
       return next();
     }
     
-    // Skip Brand Interface routes - they're handled by proxy
-    if (url.startsWith('/brandinterface') || url.startsWith('/brand-api')) {
-      return next();
-    }
+    // W3 Suite only - Brand Interface completely isolated on port 5001
 
     try {
       const clientTemplate = path.resolve(
