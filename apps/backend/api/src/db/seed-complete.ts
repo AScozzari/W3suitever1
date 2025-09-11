@@ -68,73 +68,10 @@ async function seedCompleteDatabase() {
       { code: 'WINDTRE_BUSINESS', name: 'WindTre Business', status: 'active' }
     ]).onConflictDoNothing();
 
-    // 5. Create roles
-    console.log('Creating organizational roles...');
-    await db.insert(roles).values([
-      {
-        id: '30000000-0000-0000-0000-000000000001',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Amministratore',
-        description: 'Accesso completo al sistema',
-        isSystem: true
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000002',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Store Manager',
-        description: 'Gestione completa del punto vendita',
-        isSystem: false
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000003',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Area Manager',
-        description: 'Gestione area commerciale',
-        isSystem: false
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000004',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Sales Agent',
-        description: 'Agente di vendita',
-        isSystem: false
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000005',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Cassiere',
-        description: 'Operatore di cassa',
-        isSystem: false
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000006',
-        tenantId: DEMO_TENANT_ID,
-        name: 'HR Manager',
-        description: 'Gestione risorse umane',
-        isSystem: false
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000007',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Finance',
-        description: 'Gestione finanziaria',
-        isSystem: false
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000008',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Marketing',
-        description: 'Gestione marketing e campagne',
-        isSystem: false
-      },
-      {
-        id: '30000000-0000-0000-0000-000000000009',
-        tenantId: DEMO_TENANT_ID,
-        name: 'Magazziniere',
-        description: 'Gestione magazzino',
-        isSystem: false
-      }
-    ]).onConflictDoNothing();
+    // 5. Create roles and permissions using RBAC seed
+    console.log('Creating organizational roles and permissions...');
+    const { seedRBACForTenant } = await import('./seed-rbac');
+    await seedRBACForTenant(DEMO_TENANT_ID);
 
     // 6. Create legal entities
     console.log('Creating legal entities...');
