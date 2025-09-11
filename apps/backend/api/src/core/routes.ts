@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupOAuth2Server } from "./oauth2-server";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
+import { rbacMiddleware, requirePermission } from "../middleware/tenant";
 import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
@@ -171,6 +172,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+  // Combined middleware for authentication + RBAC
+  const authWithRBAC = [enterpriseAuth, rbacMiddleware];
+
   // Session endpoint with tenant info
   app.get('/api/auth/session', async (req: any, res) => {
     // Check for auth token
@@ -215,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== TENANT MANAGEMENT API ====================
   
   // Get all tenants (for admin/multi-tenant views)
-  app.get('/api/tenants', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/tenants', ...authWithRBAC, async (req: any, res) => {
     try {
       // In a real enterprise app, this would check permissions
       // For demo, return the current user's tenant
@@ -273,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get stores for current tenant (automatic via middleware)
-  app.get('/api/stores', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/stores', ...authWithRBAC, async (req: any, res) => {
     try {
       // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
@@ -309,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create store (simple endpoint for current tenant)
-  app.post('/api/stores', enterpriseAuth, async (req: any, res) => {
+  app.post('/api/stores', ...authWithRBAC, requirePermission('stores.create'), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
       
@@ -327,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update store
-  app.put('/api/stores/:id', enterpriseAuth, async (req: any, res) => {
+  app.put('/api/stores/:id', ...authWithRBAC, requirePermission('stores.update'), async (req: any, res) => {
     try {
       const store = await storage.updateStore(req.params.id, req.body);
       res.json(store);
@@ -342,7 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete store
-  app.delete('/api/stores/:id', enterpriseAuth, async (req: any, res) => {
+  app.delete('/api/stores/:id', ...authWithRBAC, requirePermission('stores.delete'), async (req: any, res) => {
     try {
       await storage.deleteStore(req.params.id);
       res.status(204).send();
@@ -627,7 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== RBAC MANAGEMENT API ====================
   
   // Get all roles for the current tenant
-  app.get('/api/roles', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/roles', ...authWithRBAC, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -644,7 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new role
-  app.post('/api/roles', enterpriseAuth, async (req: any, res) => {
+  app.post('/api/roles', ...authWithRBAC, requirePermission('admin.roles.create'), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -662,7 +666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a role
-  app.put('/api/roles/:roleId', enterpriseAuth, async (req: any, res) => {
+  app.put('/api/roles/:roleId', ...authWithRBAC, requirePermission('admin.roles.update'), async (req: any, res) => {
     try {
       const { rbacStorage } = await import('../core/rbac-storage.js');
       const role = await rbacStorage.updateRole(req.params.roleId, req.body);
@@ -674,7 +678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a role
-  app.delete('/api/roles/:roleId', enterpriseAuth, async (req: any, res) => {
+  app.delete('/api/roles/:roleId', ...authWithRBAC, requirePermission('admin.roles.delete'), async (req: any, res) => {
     try {
       const { rbacStorage } = await import('../core/rbac-storage.js');
       await rbacStorage.deleteRole(req.params.roleId);
