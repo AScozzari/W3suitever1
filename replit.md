@@ -31,6 +31,28 @@ W3 Suite è una piattaforma enterprise multitenant completa per la gestione azie
 - **BACKGROUND RULE**: Tutte le pagine devono avere sfondo bianco (#ffffff) con header e sidebar
 - **DATABASE ARCHITECTURE**: Always use 3-schema structure (w3suite, public, brand_interface)
 
+## 🎯 CONVENZIONE PROMPT SCOPE (OBBLIGATORIA)
+
+### **Prefissi per App:**
+- **`[W3]`** = WindTre Suite (tenant-facing app)
+- **`[BRAND]`** = Brand Interface (HQ system)
+
+### **Prefissi per Database Schema:**
+- **`[w3suite]`** = Schema tenant-specific (users, tenants, stores, roles, etc.)
+- **`[PUBLIC]`** = Schema dati riferimento (commercial_areas, countries, channels, etc.)
+- **`[brand_interface]`** = Schema Brand Interface (brand_users, brand_tenants, etc.)
+
+### **Esempi Obbligatori:**
+```
+✅ "[W3][w3suite] Aggiungi campo 'phone' alla tabella users"
+✅ "[BRAND] Crea pagina analytics nel Brand Interface"  
+✅ "[PUBLIC] Aggiungi nuova commercial_area alla tabella"
+✅ "[BRAND][brand_interface] Modifica tabella brand_users"
+✅ "[W3] Modifica endpoint /api/stores per includere filtri"
+```
+
+**REGOLA**: Usare SEMPRE questi prefissi nei prompt per evitare ambiguità su quale scope lavorare.
+
 # System Architecture - W3 Suite Enterprise Monorepo
 
 ## 🏗️ STRUTTURA MONOREPO ENTERPRISE (ESATTA DA DOCUMENTO TECNICO)
