@@ -67,7 +67,7 @@ async function seedBrandUsers() {
       },
       {
         id: 'brand-sbadmin-' + nanoid(8),
-        email: 'sbadmin',
+        email: 'sbadmin@w3suite.com',
         firstName: 'Super',
         lastName: 'Admin',
         role: 'super_admin' as const,
@@ -190,7 +190,7 @@ async function seedBrandUsers() {
     console.log("\n📋 Test Credentials:");
     console.log("=====================================");
     console.log("Super Admin: brand.superadmin@windtre.it / Brand123!");
-    console.log("Super Admin (sbadmin): sbadmin / admin123");
+    console.log("Super Admin (sbadmin): sbadmin@w3suite.com / admin123");
     console.log("National Manager: brand.national@windtre.it / Brand123!");
     console.log("Area Manager: brand.areamanager@windtre.it / Brand123!");
     console.log("=====================================\n");

@@ -212,7 +212,7 @@ export default function Login() {
         <div style={styles.demoBox}>
           <p style={styles.demoTitle}>🚀 Demo Credentials</p>
           <p style={styles.demoText}>
-            Email: admin@w3suite.com<br />
+            Email: sbadmin@w3suite.com<br />
             Password: admin123
           </p>
         </div>
@@ -229,7 +229,7 @@ export default function Login() {
                 value={credentials.email}
                 onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
                 style={styles.input}
-                placeholder="admin@w3suite.com"
+                placeholder="sbadmin@w3suite.com"
                 required
                 data-testid="input-email"
               />
