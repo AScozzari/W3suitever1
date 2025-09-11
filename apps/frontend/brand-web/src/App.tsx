@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
-import { Route, Switch } from "wouter";
+import { Router, Route } from "wouter";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -13,7 +13,9 @@ export default function App() {
       <ThemeProvider>
         <BrandTenantProvider>
           <BrandAuthProvider>
-            <Router />
+            <Router base="/brandinterface">
+              <Routes />
+            </Router>
           </BrandAuthProvider>
         </BrandTenantProvider>
       </ThemeProvider>
@@ -21,38 +23,30 @@ export default function App() {
   );
 }
 
-function Router() {
+function Routes() {
   return (
-    <Switch>
+    <>
       {/* Brand Interface Login routes - con e senza tenant */}
-      <Route path="/brandinterface/:tenant/login">
+      <Route path="/:tenant/login">
         {(params) => <BrandTenantWrapper params={params}><Login /></BrandTenantWrapper>}
       </Route>
-      <Route path="/brandinterface/login" component={Login} />
+      <Route path="/login" component={Login} />
       
       {/* Brand Interface Dashboard routes - tenant-specific */}
-      <Route path="/brandinterface/:tenant/*">
+      <Route path="/:tenant/*">
         {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
       </Route>
-      <Route path="/brandinterface/:tenant">
+      <Route path="/:tenant">
         {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
       </Route>
       
       {/* Brand Interface Dashboard routes - cross-tenant */}
-      <Route path="/brandinterface/*">
+      <Route path="/*">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
       </Route>
-      <Route path="/brandinterface">
+      <Route path="/">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
       </Route>
-      
-      {/* Fallback to brand interface */}
-      <Route>
-        {() => {
-          window.location.href = '/brandinterface';
-          return null;
-        }}
-      </Route>
-    </Switch>
+    </>
   );
 }
