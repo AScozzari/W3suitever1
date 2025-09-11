@@ -13,30 +13,20 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 
 const app = express();
 
-// PRIMA ASSOLUTA: Proxy per Brand Interface (DEVE essere prima di tutto)
+// ELIMINATO: Proxy separato sostituito con Vite middleware diretto
+
+// Proxy per Brand Interface API (porta 5002) - SOLO quello rimane
 if (process.env.NODE_ENV === "development") {
-  // Proxy per Brand Interface Frontend (porta 5001)
-  // CORRETTO: Rimuovo prefisso /brandinterface quando inolto a Vite
-  app.use('/brandinterface', createProxyMiddleware({
-    target: 'http://127.0.0.1:5001',
-    changeOrigin: true,
-    ws: true, // Supporto WebSocket per hot reload
-    xfwd: true,
-    pathRewrite: { '^/brandinterface': '/' }, // Rimuove prefisso per Vite
-    timeout: 10000,
-    proxyTimeout: 10000,
-    onError: (err: any, req: any, res: any) => {
-      if (!res.headersSent) res.status(504).json({ error: 'Brand Interface proxy error', details: err.message });
-    }
-  }));
-  console.log("🔀 Brand Interface proxy configured: /brandinterface -> http://localhost:5001");
-  
-  // Proxy per Brand Interface API (porta 5002)
   app.use('/brand-api', createProxyMiddleware({
     target: 'http://localhost:5002',
     changeOrigin: true,
-    logLevel: 'debug', // Debug temporaneo
-    xfwd: true
+    xfwd: true,
+    pathRewrite: { '^/brand-api': '/brand-api' }, // Mantieni il prefisso
+    logLevel: 'debug',
+    onError: (err, req, res) => {
+      console.error(`🔥 [BRAND API PROXY ERROR] ${req.url}:`, err.message);
+      if (!res.headersSent) res.status(502).json({ error: 'Brand API proxy error', details: err.message });
+    }
   }));
   console.log("🔀 Brand API proxy configured: /brand-api -> http://localhost:5002");
 }
@@ -44,8 +34,8 @@ if (process.env.NODE_ENV === "development") {
 // Controlla se Brand Interface è pronto - versione semplificata
 async function isBrandWebReady(): Promise<boolean> {
   try {
-    // Test alla root di Vite (senza prefisso brandinterface)
-    const response = await fetch('http://127.0.0.1:5001/', { 
+    // Test al endpoint Brand Interface montato direttamente
+    const response = await fetch('http://127.0.0.1:5000/brandinterface/', { 
       method: 'GET',
       headers: { 'Accept': 'text/html' }
     }).catch(() => null);
@@ -97,25 +87,29 @@ await seedCommercialAreas();
 // Crea il server HTTP
 const httpServer = await registerRoutes(app);
 
+// ELIMINATO: WebSocket upgrade ora gestito da Vite middleware diretto
+
 // Setup Vite per servire il frontend in development
 if (process.env.NODE_ENV === "development") {
   await setupVite(app, httpServer);
+  
+  // NUOVO: Setup Brand Interface Vite middleware diretto
+  const { setupBrandInterfaceVite } = await import("./core/vite.js");
+  await setupBrandInterfaceVite(app, httpServer);
 }
 
 // ==================== BRAND INTERFACE SERVICES ====================
-// Avvia Brand Interface come servizi supervisionati dal processo principale
+// Solo Brand API come servizio separato - Brand Frontend ora è middleware diretto
 
 let brandApiProcess: any = null;
-let brandWebProcess: any = null;
 
 function startBrandServices() {
-  console.log("🚀 Starting Brand Interface services...");
+  console.log("🚀 Starting Brand Interface API service...");
   
-  // Path per Brand Interface apps
+  // Path per Brand Interface API
   const BRAND_API_PATH = join(__dirname, "..", "..", "..", "backend", "brand-api");
-  const BRAND_WEB_PATH = join(__dirname, "..", "..", "..", "frontend", "brand-web");
   
-  // 1. Avvia Brand API (porta 5002)
+  // Avvia Solo Brand API (porta 5002) - Frontend ora è middleware
   brandApiProcess = spawn("npx", ["tsx", "src/index.ts"], {
     cwd: BRAND_API_PATH,
     stdio: "inherit",
@@ -145,33 +139,9 @@ function startBrandServices() {
     }
   });
 
-  // 2. Avvia Brand Frontend (porta 5001) 
-  setTimeout(() => {
-    brandWebProcess = spawn("npx", ["vite", "--port", "5001", "--host", "0.0.0.0"], {
-      cwd: BRAND_WEB_PATH,
-      stdio: "inherit",
-      env: {
-        ...process.env,
-        NODE_ENV: "development"
-      }
-    });
-
-    brandWebProcess.on("error", (error: any) => {
-      console.error("❌ Brand Frontend failed to start:", error);
-    });
-
-    brandWebProcess.on("exit", (code: any, signal: any) => {
-      if (signal) {
-        console.log(`🚫 Brand Frontend killed with signal ${signal}`);
-      } else {
-        console.log(`🚫 Brand Frontend exited with code ${code}`);
-      }
-    });
-
-    console.log("✅ Brand Interface services started");
-    console.log("📱 Brand Interface Frontend: http://localhost:5001/brandinterface/login");
-    console.log("🔌 Brand Interface API: http://localhost:5002/brand-api/health");
-  }, 2000);
+  console.log("✅ Brand Interface API service started");
+  console.log("📱 Brand Interface Frontend: mounted as middleware at /brandinterface");
+  console.log("🔌 Brand Interface API: http://localhost:5002/brand-api/health");
 }
 
 // Avvia Brand Interface solo in development
@@ -182,12 +152,12 @@ if (process.env.NODE_ENV === "development") {
 // Cleanup al shutdown
 process.on("SIGTERM", () => {
   if (brandApiProcess) brandApiProcess.kill("SIGTERM");
-  if (brandWebProcess) brandWebProcess.kill("SIGTERM");
+  // brandWebProcess rimosso - ora è middleware
 });
 
 process.on("SIGINT", () => {
   if (brandApiProcess) brandApiProcess.kill("SIGTERM");
-  if (brandWebProcess) brandWebProcess.kill("SIGTERM");
+  // brandWebProcess rimosso - ora è middleware
   process.exit(0);
 });
 

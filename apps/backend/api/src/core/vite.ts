@@ -19,6 +19,53 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+export async function setupBrandInterfaceVite(app: Express, server: Server) {
+  console.log("🚀 Setting up Brand Interface Vite middleware...");
+  
+  const brandWebPath = path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web");
+  
+  const brandVite = await createViteServer({
+    configFile: path.join(brandWebPath, "vite.config.ts"), // USA il config di Brand Web
+    root: brandWebPath,
+    base: '/brandinterface/',
+    server: { 
+      middlewareMode: true,
+      hmr: { server }
+    },
+    appType: "spa",
+    customLogger: {
+      ...viteLogger,
+      info: (msg) => console.log(`🔶 [Brand Vite] ${msg}`),
+      error: (msg, options) => {
+        console.error(`❌ [Brand Vite] ${msg}`);
+        viteLogger.error(msg, options);
+      },
+    }
+    // Plugins e resolve vengono caricati automaticamente dal config file
+  });
+  
+  app.use('/brandinterface', brandVite.middlewares);
+  
+  // CRITICO: Catch-all per servire index.html trasformato per Brand Interface
+  app.use('/brandinterface', async (req, res, next) => {
+    try {
+      const url = req.originalUrl.replace(/^\/brandinterface/, '') || '/';
+      const tplPath = path.join(brandWebPath, 'index.html');
+      let tpl = await fs.promises.readFile(tplPath, 'utf-8');
+      const html = await brandVite.transformIndexHtml(url, tpl);
+      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
+    } catch (e) {
+      brandVite.ssrFixStacktrace(e as Error);
+      next(e);
+    }
+  });
+  
+  console.log("✅ Brand Interface Vite middleware mounted at /brandinterface");
+  console.log("✅ Brand Interface HTML transform handler added");
+  
+  return brandVite;
+}
+
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,

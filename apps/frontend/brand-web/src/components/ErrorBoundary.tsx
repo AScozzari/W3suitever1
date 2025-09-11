@@ -26,10 +26,24 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '20px', background: '#fee', border: '1px solid #fcc' }}>
-          <h1>Brand Interface Error</h1>
-          <pre>{this.state.error?.message}</pre>
-          <pre>{this.state.error?.stack}</pre>
+        <div style={{ 
+          padding: '20px', 
+          background: '#fee', 
+          border: '1px solid #fcc',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          overflow: 'auto',
+          fontFamily: 'monospace'
+        }}>
+          <h1 style={{ color: 'red' }}>🚨 Brand Interface Error</h1>
+          <h2>Error: {this.state.error?.message}</h2>
+          <pre style={{ background: '#fff', padding: '10px', overflow: 'auto' }}>
+            {this.state.error?.stack}
+          </pre>
         </div>
       );
     }
