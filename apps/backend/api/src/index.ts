@@ -50,9 +50,50 @@ if (process.env.NODE_ENV === "development") {
   console.log("🔀 Brand API proxy configured: /brand-api -> http://localhost:5002");
 }
 
-// REDIRECT /login e / DOPO i proxy
-app.get(['/login', '/'], (req, res) => {
-  res.redirect(302, '/brandinterface/login');
+// Controlla se Brand Interface è pronto
+async function isBrandWebReady(): Promise<boolean> {
+  try {
+    const response = await fetch('http://127.0.0.1:5001/brandinterface/', { 
+      method: 'HEAD',
+      signal: AbortSignal.timeout(2000)
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+// REDIRECT /login e / con controllo readiness
+app.get(['/login', '/'], async (req, res) => {
+  const ready = await isBrandWebReady();
+  
+  if (ready) {
+    res.redirect(302, '/brandinterface/login');
+  } else {
+    // Pagina 503 con auto-refresh mentre il Brand Interface si avvia
+    res.status(503).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Brand Interface - Starting...</title>
+        <meta http-equiv="refresh" content="3">
+        <style>
+          body { font-family: Arial; text-align: center; padding: 50px; background: #f5f5f5; }
+          .loading { color: #FF6900; font-size: 18px; }
+          .retry { margin-top: 20px; }
+          a { color: #7B2CBF; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="loading">🚀 Brand Interface is starting...</div>
+        <p>This page will refresh automatically in 3 seconds.</p>
+        <div class="retry">
+          <a href="/" onclick="location.reload()">Click here to retry now</a>
+        </div>
+      </body>
+      </html>
+    `);
+  }
 });
 
 app.use(express.json());
