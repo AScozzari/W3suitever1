@@ -1,9 +1,13 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
+
+// Compute __dirname for ESM
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 // Basic vite config for brand-web
 const brandViteConfig = {
@@ -40,12 +44,12 @@ export async function setupBrandVite(app: Express, server: Server) {
   const vite = await createViteServer({
     ...brandViteConfig,
     configFile: false,
-    root: path.resolve(import.meta.dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web"),
+    root: path.resolve(__dirname, "..", "..", "..", "..", "..", "apps", "frontend", "brand-web"),
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
+        viteLogger.error(`[Brand Interface Vite Error] ${msg}`, options);
+        // Non terminare il processo per errori Vite in development
       },
     },
     server: serverOptions,
@@ -63,7 +67,7 @@ export async function setupBrandVite(app: Express, server: Server) {
 
     try {
       const brandTemplate = path.resolve(
-        import.meta.dirname,
+        __dirname,
         "..",
         "..",
         "..",

@@ -4,14 +4,16 @@ W3 Suite è una piattaforma enterprise multitenant completa per la gestione azie
 
 ## 🚧 BRAND INTERFACE HQ - IMPLEMENTATO (10 Settembre 2025)
 - **Brand Interface HQ**: Sistema di controllo centralizzato completamente separato
-- **Port 5001**: Brand API backend con autenticazione JWT dedicata
+- **Port 5001**: Brand API backend + frontend integrato su porta dedicata
+- **URL Access**: http://localhost:5001/brandinterface/login (path dedicato)
+- **Architettura**: Frontend e backend Brand Interface SEMPRE separati da W3 Suite
 - **Database Schema**: brand_interface schema isolato con tabelle dedicate (brand_users, brand_tenants, brand_roles, brand_audit_logs)
 - **UI Dashboard**: Dashboard multi-workspace per gestione cross-tenant
 - **Ruoli Gerarchici**: super_admin, area_manager, national_manager con RBAC completo
 - **Workspaces**: Admin, Marketing, Sales, Operations con UI glassmorphism dedicata
 - **Test Suite**: 12 test completi per validazione sicurezza e funzionalità
 - **Autenticazione**: JWT con bcrypt per production, seed data con 3 utenti test
-- **Note**: Per eseguire Brand Interface, avviare `cd apps/backend/brand-api && tsx src/index.ts` su porta 5001
+- **Note**: Mai mischiare Brand Interface con W3 Suite - sempre porte separate
 
 ## ✅ MIGRAZIONE DATABASE COMPLETATA (10 Settembre 2025)
 - Architettura a 3 schemi implementata con successo
