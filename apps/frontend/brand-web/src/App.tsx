@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
-import { Router, Route } from "wouter";
+import { Router, Route, Switch } from "wouter";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -31,7 +31,8 @@ export default function App() {
 
 function Routes() {
   return (
-    <>
+    <Switch>
+      {/* ORDINE CRITICO: Route statiche prima di quelle parametrizzate */}
       <Route path="/login">
         <Login />
       </Route>
@@ -46,10 +47,10 @@ function Routes() {
         {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
       </Route>
       
-      {/* EXACT route for base dashboard - no catch-all overlap */}
+      {/* EXACT route for base dashboard */}
       <Route path="/">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
       </Route>
-    </>
+    </Switch>
   );
 }
