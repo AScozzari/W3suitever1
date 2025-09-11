@@ -131,16 +131,16 @@ export default {
 
       // ==================== TYPOGRAPHY ====================
       fontSize: {
-        'xs': ['var(--text-xs)', { lineHeight: '1.5' }],
-        'sm': ['var(--text-sm)', { lineHeight: '1.5' }],
-        'base': ['var(--text-base)', { lineHeight: '1.6' }],
-        'lg': ['var(--text-lg)', { lineHeight: '1.6' }],
-        'xl': ['var(--text-xl)', { lineHeight: '1.5' }],
-        '2xl': ['var(--text-2xl)', { lineHeight: '1.4' }],
-        '3xl': ['var(--text-3xl)', { lineHeight: '1.3' }],
-        '4xl': ['var(--text-4xl)', { lineHeight: '1.2' }],
-        '5xl': ['var(--text-5xl)', { lineHeight: '1.1' }],
-        '6xl': ['var(--text-6xl)', { lineHeight: '1.0' }]
+        'xs': ['var(--text-xs)', { lineHeight: '1.5' }] as [string, { lineHeight: string }],
+        'sm': ['var(--text-sm)', { lineHeight: '1.5' }] as [string, { lineHeight: string }],
+        'base': ['var(--text-base)', { lineHeight: '1.6' }] as [string, { lineHeight: string }],
+        'lg': ['var(--text-lg)', { lineHeight: '1.6' }] as [string, { lineHeight: string }],
+        'xl': ['var(--text-xl)', { lineHeight: '1.5' }] as [string, { lineHeight: string }],
+        '2xl': ['var(--text-2xl)', { lineHeight: '1.4' }] as [string, { lineHeight: string }],
+        '3xl': ['var(--text-3xl)', { lineHeight: '1.3' }] as [string, { lineHeight: string }],
+        '4xl': ['var(--text-4xl)', { lineHeight: '1.2' }] as [string, { lineHeight: string }],
+        '5xl': ['var(--text-5xl)', { lineHeight: '1.1' }] as [string, { lineHeight: string }],
+        '6xl': ['var(--text-6xl)', { lineHeight: '1.0' }] as [string, { lineHeight: string }]
       },
 
       fontFamily: {
