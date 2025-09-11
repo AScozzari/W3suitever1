@@ -9,7 +9,16 @@ import { rbacMiddleware, requirePermission } from "../middleware/tenant";
 import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
-const JWT_SECRET = process.env.JWT_SECRET || "w3suite-secret-key-2025";
+let JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET environment variable is not set. Using default for development only.');
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+  // Only in development
+  JWT_SECRET = "w3suite-dev-secret-2025";
+  process.env.JWT_SECRET = JWT_SECRET;
+}
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function registerRoutes(app: Express): Promise<Server> {

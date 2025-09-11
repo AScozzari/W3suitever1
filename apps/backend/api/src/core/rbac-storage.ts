@@ -147,7 +147,13 @@ export class RBACStorage {
     return assignments;
   }
 
-  async getUserPermissions(userId: string, tenantId: string, scopeType?: string, scopeId?: string): Promise<string[]> {
+  async getUserPermissions(
+    userId: string, 
+    tenantId: string, 
+    scopeType?: string, 
+    scopeId?: string,
+    parentScopes?: { legalEntityId?: string }
+  ): Promise<string[]> {
     // Get all user role assignments for this tenant
     const assignments = await db
       .select({
@@ -168,24 +174,37 @@ export class RBACStorage {
         )
       );
     
-    // Filter assignments based on scope
+    // Filter assignments based on scope with hierarchy support
     const validAssignments = assignments.filter(({ assignment }) => {
-      // Tenant-level assignments apply everywhere
+      // Tenant-level assignments apply everywhere in this tenant
       if (assignment.scopeType === 'tenant' && assignment.scopeId === tenantId) {
         return true;
       }
       
-      // Check if the current context matches the assignment scope
+      // Check scope hierarchy based on current context
       if (scopeType && scopeId) {
-        // Legal entity level applies to the entity and its stores
-        if (assignment.scopeType === 'legal_entity' && scopeType === 'legal_entity' && assignment.scopeId === scopeId) {
-          return true;
+        // Store scope: include store, legal_entity parent, and tenant assignments
+        if (scopeType === 'store') {
+          // Direct store assignment
+          if (assignment.scopeType === 'store' && assignment.scopeId === scopeId) {
+            return true;
+          }
+          // Include legal_entity parent assignments if provided
+          if (parentScopes?.legalEntityId && 
+              assignment.scopeType === 'legal_entity' && 
+              assignment.scopeId === parentScopes.legalEntityId) {
+            return true;
+          }
         }
         
-        // Store level only applies to that specific store
-        if (assignment.scopeType === 'store' && scopeType === 'store' && assignment.scopeId === scopeId) {
-          return true;
+        // Legal entity scope: include legal_entity and tenant assignments
+        if (scopeType === 'legal_entity') {
+          if (assignment.scopeType === 'legal_entity' && assignment.scopeId === scopeId) {
+            return true;
+          }
         }
+        
+        // Tenant scope already handled above
       }
       
       return false;

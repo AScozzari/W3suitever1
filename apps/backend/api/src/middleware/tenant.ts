@@ -77,14 +77,35 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
       return next();
     }
     
-    // Otteniamo i permessi dell'utente per questo tenant dal database
-    // Per ora usiamo sempre scope tenant-level, in futuro potremmo determinare
-    // lo scope dal contesto della richiesta (es. storeId, legalEntityId)
+    // Determina lo scope dal contesto della richiesta
+    let scopeType = 'tenant';
+    let scopeId = req.tenant.id;
+    let parentScopes: { legalEntityId?: string } = {};
+    
+    // Controlla se abbiamo un contesto più specifico dai parametri o body
+    if (req.params?.storeId || req.body?.storeId) {
+      scopeType = 'store';
+      scopeId = req.params?.storeId || req.body?.storeId;
+      
+      // Try to get the legal entity ID for this store
+      // This would normally come from the database
+      // For now, check if it's in the request
+      if (req.body?.legalEntityId || req.params?.legalEntityId) {
+        parentScopes.legalEntityId = req.body?.legalEntityId || req.params?.legalEntityId;
+      }
+      // TODO: Query database to get store's legal entity if not provided
+    } else if (req.params?.legalEntityId || req.body?.legalEntityId) {
+      scopeType = 'legal_entity';
+      scopeId = req.params?.legalEntityId || req.body?.legalEntityId;
+    }
+    
+    // Otteniamo i permessi dell'utente per questo tenant con lo scope corretto
     const userPermissions = await rbacStorage.getUserPermissions(
       req.user.id,
       req.tenant.id,
-      'tenant',
-      req.tenant.id
+      scopeType,
+      scopeId,
+      parentScopes
     );
     
     // Se l'utente non ha permessi, proviamo a inizializzare i ruoli di sistema
