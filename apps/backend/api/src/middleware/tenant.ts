@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { db } from '../core/db';
 import { tenants, userAssignments, roles, rolePerms, userExtraPerms } from '../db/schema/w3suite';
 import { eq, and, or, sql } from 'drizzle-orm';
+import { rbacStorage } from '../core/rbac-storage';
 
 declare global {
   namespace Express {
@@ -76,14 +77,54 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
       return next();
     }
     
-    // Otteniamo i permessi dell'utente per questo tenant usando Drizzle
-    // Questa è una query complessa che dovremmo semplificare per ora
-    // TODO: Implementare RBAC completo con Drizzle
-    req.userPermissions = ['*']; // Per ora accesso completo in development
+    // Otteniamo i permessi dell'utente per questo tenant dal database
+    const userPermissions = await rbacStorage.getUserPermissions(
+      req.user.id,
+      req.tenant.id
+    );
+    
+    // Se l'utente non ha permessi, proviamo a inizializzare i ruoli di sistema
+    // e assegnare il ruolo admin al primo utente (utile per development)
+    if (userPermissions.length === 0) {
+      // Inizializza i ruoli di sistema per questo tenant se non esistono
+      await rbacStorage.initializeSystemRoles(req.tenant.id);
+      
+      // In development, assegna automaticamente il ruolo admin al primo utente
+      if (process.env.NODE_ENV === 'development') {
+        const adminRole = await db
+          .select()
+          .from(roles)
+          .where(and(
+            eq(roles.tenantId, req.tenant.id),
+            eq(roles.name, 'admin')
+          ))
+          .limit(1);
+        
+        if (adminRole.length > 0) {
+          // Assegna il ruolo admin all'utente corrente
+          await rbacStorage.assignRoleToUser({
+            userId: req.user.id,
+            roleId: adminRole[0].id,
+            scopeType: 'tenant',
+            scopeId: req.tenant.id
+          });
+          
+          // Aggiungi tutti i permessi al ruolo admin
+          await rbacStorage.setRolePermissions(adminRole[0].id, ['*']);
+          
+          // Ricarica i permessi
+          req.userPermissions = ['*'];
+        }
+      }
+    } else {
+      req.userPermissions = userPermissions;
+    }
     
     next();
   } catch (error) {
     console.error('RBAC middleware error:', error);
+    // In caso di errore, continuiamo ma senza permessi
+    req.userPermissions = [];
     next();
   }
 }
