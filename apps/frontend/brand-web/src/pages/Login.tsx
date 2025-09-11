@@ -41,7 +41,7 @@ export default function Login() {
          }}>
       
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute inset-0"
              style={{
                backgroundImage: `
@@ -52,14 +52,14 @@ export default function Login() {
       </div>
 
       {/* Login Card */}
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md z-10">
         <div className="glass-card p-8 shadow-2xl">
           
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <div className="glass-button rounded-full p-3">
-                <Shield className="w-8 h-8 text-white" />
+                <Shield className="w-8 h-8 text-white drop-shadow" />
               </div>
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">
@@ -90,7 +90,7 @@ export default function Login() {
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60 drop-shadow" />
                 <input
                   type="email"
                   value={credentials.email}
@@ -111,7 +111,7 @@ export default function Login() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60 drop-shadow" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={credentials.password}
@@ -128,7 +128,7 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white/80"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5 drop-shadow" /> : <Eye className="w-5 h-5 drop-shadow" />}
                 </button>
               </div>
             </div>

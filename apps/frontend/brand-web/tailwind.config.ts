@@ -4,9 +4,9 @@ import preset from "../../../packages/tokens/tailwind-preset";
 const config: Config = {
   presets: [preset],
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{ts,tsx,jsx,js}",
     "./index.html",
-    "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
+    "../../../packages/ui/src/**/*.{ts,tsx,jsx,js}",
   ],
   darkMode: ["class"],
   safelist: [
