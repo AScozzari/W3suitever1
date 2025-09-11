@@ -6,45 +6,40 @@ import Dashboard from "./pages/Dashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 export default function App() {
+  console.log('[Brand Interface] App mounting...');
+  
+  // Versione semplificata per debug
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrandTenantProvider>
-          <BrandAuthProvider>
-            <Router base="/brandinterface">
-              <Routes />
-            </Router>
-          </BrandAuthProvider>
-        </BrandTenantProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <div style={{ padding: '20px', background: '#f0f0f0' }}>
+        <h1>Brand Interface - Debug Mode</h1>
+        <p>If you see this, React is rendering!</p>
+        <Router base="/brandinterface">
+          <Routes />
+        </Router>
+      </div>
+    </ErrorBoundary>
   );
 }
 
 function Routes() {
   return (
     <>
-      {/* Brand Interface Login routes - con e senza tenant */}
-      <Route path="/:tenant/login">
-        {(params) => <BrandTenantWrapper params={params}><Login /></BrandTenantWrapper>}
-      </Route>
       <Route path="/login">
-        <Login />
+        <div style={{ padding: '20px' }}>
+          <h2>Login Page - Debug</h2>
+          <p>Route matched: /login</p>
+        </div>
       </Route>
       
-      {/* Brand Interface Dashboard routes - tenant-specific */}
-      <Route path="/:tenant/*">
-        {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
-      </Route>
-      <Route path="/:tenant">
-        {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
-      </Route>
-      
-      {/* Brand Interface Dashboard routes - cross-tenant (catch-all) */}
       <Route path="/*">
-        <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
+        <div style={{ padding: '20px' }}>
+          <h2>Dashboard - Debug</h2>
+          <p>Catch-all route matched</p>
+        </div>
       </Route>
     </>
   );
