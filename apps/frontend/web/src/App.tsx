@@ -158,9 +158,8 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    // Redirect a login se non autenticato
-    window.location.href = '/brandinterface/login';
-    return null;
+    // W3 Suite ha il suo sistema di login indipendente
+    return <LoginPage />;
   }
 
   return <>{children}</>;
