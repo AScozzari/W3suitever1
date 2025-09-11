@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Set RLS context for demo user
           try {
-            await db.execute(sql.raw(`SET LOCAL app.current_tenant = '${tenantId}'`));
+            await db.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
             console.log(`[RLS] Set tenant context: ${tenantId}`);
           } catch (rlsError) {
             console.log(`[RLS] Could not set tenant context: ${rlsError}`);
@@ -114,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Set RLS context for session user
           try {
-            await db.execute(sql.raw(`SET LOCAL app.current_tenant = '${tenantId}'`));
+            await db.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
             console.log(`[RLS] Set tenant context: ${tenantId}`);
           } catch (rlsError) {
             console.log(`[RLS] Could not set tenant context: ${rlsError}`);

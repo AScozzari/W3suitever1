@@ -39,8 +39,12 @@ try {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Dev mode only
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: process.env.NODE_ENV === 'development'
+          ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"]
+          : ["'self'"],
+        styleSrc: process.env.NODE_ENV === 'development'
+          ? ["'self'", "'unsafe-inline'"]
+          : ["'self'"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "ws:", "wss:"],
         fontSrc: ["'self'", "data:"],
@@ -65,7 +69,12 @@ try {
   const brandApiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
     max: 60, // 60 requests per minute (more restrictive than W3 Suite)
-    message: 'Too many requests from this IP to Brand Interface',
+    handler: (req, res) => {
+      res.status(429).json({ 
+        error: 'rate_limit_exceeded',
+        message: 'Too many requests from this IP to Brand Interface' 
+      });
+    },
     standardHeaders: true,
     legacyHeaders: false
   });
@@ -73,7 +82,12 @@ try {
   const brandAuthLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 3, // 3 login attempts per 15 minutes (more restrictive)
-    message: 'Too many login attempts to Brand Interface',
+    handler: (req, res) => {
+      res.status(429).json({ 
+        error: 'too_many_login_attempts',
+        message: 'Too many login attempts to Brand Interface' 
+      });
+    },
     skipSuccessfulRequests: true
   });
   

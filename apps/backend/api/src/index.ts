@@ -21,8 +21,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"], // Allow for dev mode
-      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      scriptSrc: process.env.NODE_ENV === 'development' 
+        ? ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"] 
+        : ["'self'", "https:"],
+      styleSrc: process.env.NODE_ENV === 'development'
+        ? ["'self'", "'unsafe-inline'", "https:"]
+        : ["'self'", "https:"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
       fontSrc: ["'self'", "https:", "data:"],
@@ -47,7 +51,12 @@ app.use(helmet({
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 100, // 100 requests per minute
-  message: 'Too many requests from this IP, please try again later.',
+  handler: (req, res) => {
+    res.status(429).json({ 
+      error: 'rate_limit_exceeded',
+      message: 'Too many requests from this IP, please try again later.' 
+    });
+  },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -55,7 +64,12 @@ const apiLimiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 login attempts per 15 minutes
-  message: 'Too many login attempts, please try again later.',
+  handler: (req, res) => {
+    res.status(429).json({ 
+      error: 'too_many_login_attempts',
+      message: 'Too many login attempts, please try again later.' 
+    });
+  },
   skipSuccessfulRequests: true
 });
 
