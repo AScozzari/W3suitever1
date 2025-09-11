@@ -1,4 +1,4 @@
-import { eq, and, or, inArray } from "drizzle-orm";
+import { eq, and, or, inArray, isNull, isNotNull, gt } from "drizzle-orm";
 import { db } from "./db.js";
 import { 
   roles, 
@@ -147,23 +147,71 @@ export class RBACStorage {
     return assignments;
   }
 
-  async getUserPermissions(userId: string, tenantId: string): Promise<string[]> {
-    // Get all user role assignments
-    const userRoles = await this.getUserRoles(userId, tenantId);
+  async getUserPermissions(userId: string, tenantId: string, scopeType?: string, scopeId?: string): Promise<string[]> {
+    // Get all user role assignments for this tenant
+    const assignments = await db
+      .select({
+        role: roles,
+        assignment: userAssignments
+      })
+      .from(userAssignments)
+      .innerJoin(roles, eq(userAssignments.roleId, roles.id))
+      .where(
+        and(
+          eq(userAssignments.userId, userId),
+          eq(roles.tenantId, tenantId),
+          // Check for expired assignments
+          or(
+            isNull(userAssignments.expiresAt),
+            gt(userAssignments.expiresAt, new Date())
+          )
+        )
+      );
     
-    // Get permissions for all roles
+    // Filter assignments based on scope
+    const validAssignments = assignments.filter(({ assignment }) => {
+      // Tenant-level assignments apply everywhere
+      if (assignment.scopeType === 'tenant' && assignment.scopeId === tenantId) {
+        return true;
+      }
+      
+      // Check if the current context matches the assignment scope
+      if (scopeType && scopeId) {
+        // Legal entity level applies to the entity and its stores
+        if (assignment.scopeType === 'legal_entity' && scopeType === 'legal_entity' && assignment.scopeId === scopeId) {
+          return true;
+        }
+        
+        // Store level only applies to that specific store
+        if (assignment.scopeType === 'store' && scopeType === 'store' && assignment.scopeId === scopeId) {
+          return true;
+        }
+      }
+      
+      return false;
+    });
+    
+    // Get permissions for valid roles
     const allPermissions = new Set<string>();
     
-    for (const { role } of userRoles) {
+    for (const { role } of validAssignments) {
       const rolePerms = await this.getRolePermissions(role.id);
       rolePerms.forEach(perm => allPermissions.add(perm));
     }
     
-    // Get user extra permissions
+    // Get user extra permissions (respecting expiry)
     const extraPerms = await db
       .select()
       .from(userExtraPerms)
-      .where(eq(userExtraPerms.userId, userId));
+      .where(
+        and(
+          eq(userExtraPerms.userId, userId),
+          or(
+            isNull(userExtraPerms.expiresAt),
+            gt(userExtraPerms.expiresAt, new Date())
+          )
+        )
+      );
     
     // Apply extra permissions (grant or revoke)
     for (const extra of extraPerms) {

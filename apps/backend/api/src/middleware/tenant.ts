@@ -78,8 +78,12 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
     }
     
     // Otteniamo i permessi dell'utente per questo tenant dal database
+    // Per ora usiamo sempre scope tenant-level, in futuro potremmo determinare
+    // lo scope dal contesto della richiesta (es. storeId, legalEntityId)
     const userPermissions = await rbacStorage.getUserPermissions(
       req.user.id,
+      req.tenant.id,
+      'tenant',
       req.tenant.id
     );
     

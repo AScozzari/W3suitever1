@@ -17,22 +17,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup OAuth2 Authorization Server (Enterprise)
   setupOAuth2Server(app);
   
-  // Apply tenant middleware to all API routes except auth, oauth2 and enterprise endpoints
+  // Apply tenant middleware to all API routes except auth and OAuth2
   app.use((req, res, next) => {
-    // Skip tenant middleware for auth routes, OAuth2 routes, reference data and enterprise endpoints (handled by enterpriseAuth)
+    // Skip tenant middleware only for auth routes and OAuth2 routes
     if (req.path.startsWith('/api/auth/') || 
         req.path.startsWith('/oauth2/') || 
-        req.path.startsWith('/.well-known/') ||
-        req.path.startsWith('/api/reference/') ||
-        req.path === '/api/stores' ||
-        req.path === '/api/legal-entities' ||
-        req.path === '/api/users' ||
-        req.path === '/api/commercial-areas' ||
-        req.path === '/api/tenants' ||
-        req.path === '/api/roles') {
+        req.path.startsWith('/.well-known/')) {
       return next();
     }
-    // Apply tenant middleware for other API routes
+    // Apply tenant middleware for all other API routes (including stores, users, roles, etc.)
+    // The tenant context will be set from headers or user context
     if (req.path.startsWith('/api/')) {
       return tenantMiddleware(req, res, next);
     }
