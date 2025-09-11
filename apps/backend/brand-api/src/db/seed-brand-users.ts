@@ -2,6 +2,7 @@
 import { db, brandTenants, brandUsers } from "./index.js";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
+import { BrandAuthService } from "../core/auth.js";
 
 async function seedBrandUsers() {
   console.log("🌱 Seeding Brand Interface users...");
@@ -39,6 +40,9 @@ async function seedBrandUsers() {
       console.log("✅ Using existing brand tenant");
     }
     
+    // Create password hash for the new sbadmin user
+    const sbadminPasswordHash = await BrandAuthService.hashPassword('admin123');
+    
     // Create users
     const users = [
       {
@@ -58,6 +62,27 @@ async function seedBrandUsers() {
           'user.manage'
         ],
         department: 'HQ Management',
+        isActive: true,
+        tenantId: brandTenantId
+      },
+      {
+        id: 'brand-sbadmin-' + nanoid(8),
+        email: 'sbadmin',
+        firstName: 'Super',
+        lastName: 'Admin',
+        role: 'super_admin' as const,
+        commercialAreaCodes: ['*'], // All areas
+        permissions: [
+          'brand.admin',
+          'brand.deploy',
+          'brand.analytics',
+          'brand.campaigns',
+          'tenant.manage',
+          'tenant.view_all',
+          'user.manage'
+        ],
+        department: 'HQ Management',
+        passwordHash: sbadminPasswordHash,
         isActive: true,
         tenantId: brandTenantId
       },
@@ -165,6 +190,7 @@ async function seedBrandUsers() {
     console.log("\n📋 Test Credentials:");
     console.log("=====================================");
     console.log("Super Admin: brand.superadmin@windtre.it / Brand123!");
+    console.log("Super Admin (sbadmin): sbadmin / admin123");
     console.log("National Manager: brand.national@windtre.it / Brand123!");
     console.log("Area Manager: brand.areamanager@windtre.it / Brand123!");
     console.log("=====================================\n");
