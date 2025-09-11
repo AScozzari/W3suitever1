@@ -213,7 +213,7 @@ export default function Login() {
           <p style={styles.demoTitle}>🚀 Demo Credentials</p>
           <p style={styles.demoText}>
             Email: sbadmin@w3suite.com<br />
-            Password: admin123
+            Password: Brand123!
           </p>
         </div>
 
