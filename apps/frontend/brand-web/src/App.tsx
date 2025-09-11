@@ -30,7 +30,9 @@ function Routes() {
       <Route path="/:tenant/login">
         {(params) => <BrandTenantWrapper params={params}><Login /></BrandTenantWrapper>}
       </Route>
-      <Route path="/login" component={Login} />
+      <Route path="/login">
+        <Login />
+      </Route>
       
       {/* Brand Interface Dashboard routes - tenant-specific */}
       <Route path="/:tenant/*">
@@ -40,11 +42,8 @@ function Routes() {
         {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
       </Route>
       
-      {/* Brand Interface Dashboard routes - cross-tenant */}
+      {/* Brand Interface Dashboard routes - cross-tenant (catch-all) */}
       <Route path="/*">
-        <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
-      </Route>
-      <Route path="/">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
       </Route>
     </>
