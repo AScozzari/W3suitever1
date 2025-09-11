@@ -23,12 +23,12 @@ app.use('/login', (req, res) => {
 if (process.env.NODE_ENV === "development") {
   // Proxy per Brand Interface Frontend (porta 5001)
   app.use('/brandinterface', createProxyMiddleware({
-    target: 'http://localhost:5001/brandinterface',
+    target: 'http://localhost:5001', // Solo host:porta, NO path nel target
     changeOrigin: true, // Usa Host: localhost:5001
     ws: true, // Supporto WebSocket per hot reload
     logLevel: 'warn',
-    xfwd: true,
-    pathRewrite: { '^/brandinterface': '' } // Rimuovi prefix dal path
+    xfwd: true
+    // NO pathRewrite - mantieni il path originale /brandinterface
   }));
   console.log("🔀 Brand Interface proxy configured: /brandinterface -> http://localhost:5001");
   
