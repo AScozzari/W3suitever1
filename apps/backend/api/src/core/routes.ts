@@ -624,21 +624,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== RBAC MANAGEMENT API ====================
+  
   // Get all roles for the current tenant
-  app.get('/api/roles', async (req: any, res) => {
+  app.get('/api/roles', enterpriseAuth, async (req: any, res) => {
     try {
-      // Get tenant from token or use demo tenant
-      const authHeader = req.headers.authorization;
-      const token = authHeader?.split(' ')[1];
-      let tenantId = '00000000-0000-0000-0000-000000000001'; // Default demo tenant
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, JWT_SECRET) as any;
-          tenantId = decoded.tenantId || tenantId;
-        } catch (error) {
-          console.log("Using default tenant for roles");
-        }
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
       }
       
       const roles = await storage.getRolesByTenant(tenantId);
@@ -646,6 +640,199 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching roles:", error);
       res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  });
+
+  // Create a new role
+  app.post('/api/roles', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const role = await rbacStorage.createRole(tenantId, req.body);
+      res.status(201).json(role);
+    } catch (error) {
+      console.error("Error creating role:", error);
+      res.status(500).json({ error: "Failed to create role" });
+    }
+  });
+
+  // Update a role
+  app.put('/api/roles/:roleId', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const role = await rbacStorage.updateRole(req.params.roleId, req.body);
+      res.json(role);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  // Delete a role
+  app.delete('/api/roles/:roleId', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.deleteRole(req.params.roleId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting role:", error);
+      if (error.message?.includes('system role')) {
+        res.status(403).json({ error: "Cannot delete system role" });
+      } else {
+        res.status(500).json({ error: "Failed to delete role" });
+      }
+    }
+  });
+
+  // Get permissions for a role
+  app.get('/api/roles/:roleId/permissions', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const permissions = await rbacStorage.getRolePermissions(req.params.roleId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching role permissions:", error);
+      res.status(500).json({ error: "Failed to fetch role permissions" });
+    }
+  });
+
+  // Set permissions for a role
+  app.put('/api/roles/:roleId/permissions', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.setRolePermissions(req.params.roleId, req.body.permissions || []);
+      res.json({ message: "Permissions updated successfully" });
+    } catch (error) {
+      console.error("Error updating role permissions:", error);
+      res.status(500).json({ error: "Failed to update role permissions" });
+    }
+  });
+
+  // Get user roles and permissions
+  app.get('/api/users/:userId/permissions', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const roles = await rbacStorage.getUserRoles(req.params.userId, tenantId);
+      const permissions = await rbacStorage.getUserPermissions(req.params.userId, tenantId);
+      
+      res.json({
+        roles,
+        permissions
+      });
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+      res.status(500).json({ error: "Failed to fetch user permissions" });
+    }
+  });
+
+  // Assign role to user
+  app.post('/api/users/:userId/roles/:roleId', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const assignmentData = {
+        userId: req.params.userId,
+        roleId: req.params.roleId,
+        scopeType: req.body.scopeType || 'tenant',
+        scopeId: req.body.scopeId || req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID,
+        expiresAt: req.body.expiresAt
+      };
+      
+      await rbacStorage.assignRoleToUser(assignmentData);
+      res.status(201).json({ message: "Role assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning role:", error);
+      res.status(500).json({ error: "Failed to assign role" });
+    }
+  });
+
+  // Remove role from user
+  app.delete('/api/users/:userId/roles/:roleId', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const scopeType = req.query.scopeType as string || 'tenant';
+      const scopeId = req.query.scopeId as string || req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      await rbacStorage.removeRoleFromUser(
+        req.params.userId,
+        req.params.roleId,
+        scopeType,
+        scopeId
+      );
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing role:", error);
+      res.status(500).json({ error: "Failed to remove role" });
+    }
+  });
+
+  // Grant extra permission to user
+  app.post('/api/users/:userId/extra-permissions', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.grantExtraPermission(
+        req.params.userId,
+        req.body.permission,
+        req.body.expiresAt
+      );
+      res.status(201).json({ message: "Permission granted successfully" });
+    } catch (error) {
+      console.error("Error granting permission:", error);
+      res.status(500).json({ error: "Failed to grant permission" });
+    }
+  });
+
+  // Revoke extra permission from user
+  app.delete('/api/users/:userId/extra-permissions/:permission', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.clearExtraPermission(
+        req.params.userId,
+        req.params.permission
+      );
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error revoking permission:", error);
+      res.status(500).json({ error: "Failed to revoke permission" });
+    }
+  });
+
+  // Initialize system roles for a tenant
+  app.post('/api/rbac/initialize', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: "No tenant ID available" });
+      }
+      
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.initializeSystemRoles(tenantId);
+      res.json({ message: "System roles initialized successfully" });
+    } catch (error) {
+      console.error("Error initializing system roles:", error);
+      res.status(500).json({ error: "Failed to initialize system roles" });
+    }
+  });
+
+  // Get all available permissions (from registry)
+  app.get('/api/permissions', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { PERMISSIONS } = await import('../core/permissions/registry.js');
+      res.json(PERMISSIONS);
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      res.status(500).json({ error: "Failed to fetch permissions" });
     }
   });
 
