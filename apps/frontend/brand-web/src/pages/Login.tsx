@@ -20,7 +20,10 @@ export default function Login() {
     try {
       const success = await login(credentials);
       if (success) {
-        window.location.href = '/brandinterface';
+        // SPA navigation invece di full page reload
+        console.log('🎉 Login success - SPA navigate to dashboard');
+        window.history.replaceState({}, '', '/brandinterface');
+        window.dispatchEvent(new PopStateEvent('popstate'));
       } else {
         setError('Credenziali non valide. Riprova.');
       }

@@ -44,17 +44,39 @@ export async function setupBrandInterfaceVite(app: Express, server: Server) {
     // Plugins e resolve vengono caricati automaticamente dal config file
   });
   
+  // PRIMO: Vite middlewares per asset, HMR, @vite/client, etc.
   app.use('/brandinterface', brandVite.middlewares);
   
-  // CRITICO: Catch-all per servire index.html trasformato per Brand Interface
+  // SECONDO: Catch-all RISTRETTO solo per richieste HTML document
   app.use('/brandinterface', async (req, res, next) => {
+    // Solo richieste GET che accettano HTML
+    if (req.method !== 'GET') return next();
+    
+    const accept = req.headers.accept || '';
+    const isHtmlRequest = accept.includes('text/html');
+    
+    // Skip assets: path con punto, @vite paths, src paths
+    const isAsset = req.path.includes('.') || 
+                   req.path.startsWith('/@') || 
+                   req.path.startsWith('/src/') ||
+                   req.originalUrl.includes('/brandinterface/@') ||
+                   req.originalUrl.includes('/brandinterface/src/');
+    
+    // Solo HTML document requests, non assets
+    if (!isHtmlRequest || isAsset) {
+      console.log(`🔄 [Brand Vite] Skip HTML for: ${req.originalUrl} (asset=${isAsset}, html=${isHtmlRequest})`);
+      return next();
+    }
+    
     try {
+      console.log(`📄 [Brand Vite] Serving HTML for: ${req.originalUrl}`);
       const url = req.originalUrl.replace(/^\/brandinterface/, '') || '/';
       const tplPath = path.join(brandWebPath, 'index.html');
       let tpl = await fs.promises.readFile(tplPath, 'utf-8');
       const html = await brandVite.transformIndexHtml(url, tpl);
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
     } catch (e) {
+      console.error(`❌ [Brand Vite] HTML transform error:`, e);
       brandVite.ssrFixStacktrace(e as Error);
       next(e);
     }

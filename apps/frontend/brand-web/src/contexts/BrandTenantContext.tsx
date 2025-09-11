@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 
 interface BrandTenantContextType {
   currentTenant: string | null;
   currentTenantId: string | null;
   isCrossTenant: boolean;
   switchTenant: (tenant: string | null) => void;
+  updateTenant: (tenant: string | null) => void;
 }
 
 const BrandTenantContext = createContext<BrandTenantContextType | undefined>(undefined);
@@ -23,17 +24,16 @@ export function BrandTenantProvider({ children }: { children: ReactNode }) {
 
   const isCrossTenant = currentTenant === null;
 
-  const switchTenant = (tenant: string | null) => {
-    if (tenant) {
-      // Naviga a tenant specifico
-      window.location.href = `/brandinterface/${tenant}`;
-    } else {
-      // Naviga a modalità cross-tenant
-      window.location.href = '/brandinterface';
+  const switchTenant = useCallback((tenant: string | null) => {
+    const nextPath = tenant ? `/brandinterface/${tenant}` : '/brandinterface';
+    if (window.location.pathname !== nextPath) {
+      console.log(`🔄 [Brand Tenant] SPA navigate: ${nextPath}`);
+      window.history.pushState({}, '', nextPath);
+      window.dispatchEvent(new PopStateEvent('popstate'));
     }
-  };
+  }, []);
 
-  const updateTenant = (tenant: string | null) => {
+  const updateTenant = useCallback((tenant: string | null) => {
     setCurrentTenant(tenant);
     
     if (tenant) {
@@ -54,15 +54,28 @@ export function BrandTenantProvider({ children }: { children: ReactNode }) {
       
       console.log('🌍 Brand Interface - Cross-tenant mode');
     }
-  };
+  }, []);
+
+  // Inizializza da localStorage al mount
+  useEffect(() => {
+    const savedTenant = localStorage.getItem('brandCurrentTenant');
+    const savedTenantId = localStorage.getItem('brandCurrentTenantId');
+    
+    if (savedTenant && savedTenantId) {
+      setCurrentTenant(savedTenant);
+      setCurrentTenantId(savedTenantId);
+      console.log(`🔄 Brand Interface - Restored tenant: ${savedTenant} (${savedTenantId})`);
+    }
+  }, []);
 
   return (
-    <BrandTenantContext.Provider value={{
+    <BrandTenantContext.Provider value={useMemo(() => ({
       currentTenant,
       currentTenantId,
       isCrossTenant,
-      switchTenant
-    }}>
+      switchTenant,
+      updateTenant
+    }), [currentTenant, currentTenantId, isCrossTenant, switchTenant, updateTenant])}>
       {children}
     </BrandTenantContext.Provider>
   );
@@ -79,25 +92,18 @@ export function useBrandTenant() {
 
 // Component wrapper per gestire tenant dal path URL
 export function BrandTenantWrapper({ params, children }: { params: any, children: ReactNode }) {
-  const tenant = params?.tenant || null;
+  const rawTenant = params?.tenant || null;
+  // Guard: tratta 'login' come non-tenant per evitare loop
+  const effectiveTenant = rawTenant === 'login' ? null : rawTenant;
+  const { currentTenant, updateTenant } = useBrandTenant();
 
   useEffect(() => {
-    // Extract tenant from URL path and update context
-    if (tenant) {
-      const tenantId = BRAND_TENANT_MAPPING[tenant] || BRAND_TENANT_MAPPING['staging'];
-      
-      localStorage.setItem('brandCurrentTenant', tenant);
-      localStorage.setItem('brandCurrentTenantId', tenantId);
-      
-      console.log(`🎯 Brand Interface - Tenant context: ${tenant} (${tenantId})`);
-    } else {
-      // Cross-tenant mode
-      localStorage.removeItem('brandCurrentTenant'); 
-      localStorage.removeItem('brandCurrentTenantId');
-      
-      console.log('🌍 Brand Interface - Cross-tenant mode active');
+    // Solo update se tenant è effettivamente cambiato
+    if (effectiveTenant !== currentTenant) {
+      console.log(`🔄 BrandTenantWrapper - Update: ${currentTenant} → ${effectiveTenant}`);
+      updateTenant(effectiveTenant);
     }
-  }, [tenant]);
+  }, [effectiveTenant, currentTenant, updateTenant]);
 
   return <>{children}</>;
 }
