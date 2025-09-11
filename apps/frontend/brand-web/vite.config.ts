@@ -7,7 +7,9 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   base: '/brandinterface/',
-  plugins: [react()],
+  plugins: [
+    react(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(dirname, "src"),
