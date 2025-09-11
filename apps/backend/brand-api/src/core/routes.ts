@@ -2,9 +2,13 @@ import express from "express";
 import http from "http";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken } from "./auth.js";
 import { brandStorage } from "./storage.js";
+import { createBrandAuditMiddleware } from "../middleware/audit.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
+  
+  // Apply brand audit logging middleware
+  app.use(createBrandAuditMiddleware());
   
   // Middleware per parsing cookies
   app.use(express.json());

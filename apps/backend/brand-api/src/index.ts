@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { nanoid } from "nanoid";
 import { registerBrandRoutes } from "./core/routes.js";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,12 +34,60 @@ process.on('unhandledRejection', (reason, promise) => {
 try {
   const app = express();
   
-  // CORS configuration for Brand Interface standalone on port 5001
+  // Security Headers with Helmet - Brand Interface specific
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Dev mode only
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "ws:", "wss:"],
+        fontSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'none'"],
+        frameSrc: ["'none'"]
+      }
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true
+    },
+    xFrameOptions: { action: 'sameorigin' }, // Allow iframe within same origin
+    noSniff: true,
+    xssFilter: true,
+    referrerPolicy: { policy: 'same-origin' },
+    permittedCrossDomainPolicies: false
+  }));
+  
+  // Rate Limiting for Brand Interface
+  const brandApiLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 60, // 60 requests per minute (more restrictive than W3 Suite)
+    message: 'Too many requests from this IP to Brand Interface',
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+  
+  const brandAuthLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3, // 3 login attempts per 15 minutes (more restrictive)
+    message: 'Too many login attempts to Brand Interface',
+    skipSuccessfulRequests: true
+  });
+  
+  // Apply rate limiting
+  app.use('/brand-api/', brandApiLimiter);
+  app.use('/brand-api/auth/login', brandAuthLimiter);
+  
+  // CORS configuration for Brand Interface - MORE RESTRICTIVE
   app.use(cors({
-    origin: ['http://localhost:5001', 'http://localhost:5000', 'http://localhost:3000'],
+    origin: process.env.BRAND_CORS_ORIGINS?.split(',') || ['http://localhost:5001'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400 // Cache preflight for 24 hours
   }));
   
   app.use(express.json());

@@ -9,6 +9,7 @@ import { rbacMiddleware, requirePermission } from "../middleware/tenant";
 import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import { createAuditMiddleware } from "../middleware/audit";
 let JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.error('CRITICAL: JWT_SECRET environment variable is not set. Using default for development only.');
@@ -22,6 +23,25 @@ if (!JWT_SECRET) {
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // CRITICAL ISOLATION: Reject Brand Interface routes with 404
+  // W3 Suite (port 5000) must NOT handle Brand Interface paths
+  app.use((req, res, next) => {
+    // Reject any Brand Interface paths - they belong to port 5001 only
+    if (req.path.startsWith('/brandinterface') || 
+        req.path.startsWith('/brand-api')) {
+      console.warn(`[SECURITY] W3 Suite rejecting Brand Interface path: ${req.path}`);
+      return res.status(404).json({ 
+        error: 'not_found',
+        message: 'Resource not found on W3 Suite',
+        hint: 'Brand Interface is available on port 5001'
+      });
+    }
+    next();
+  });
+  
+  // Apply audit logging middleware for critical operations
+  app.use(createAuditMiddleware());
   
   // Setup OAuth2 Authorization Server (Enterprise)
   setupOAuth2Server(app);
