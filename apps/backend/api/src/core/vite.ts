@@ -24,6 +24,7 @@ export async function setupVite(app: Express, server: Server) {
     middlewareMode: true,
     hmr: { server },
     allowedHosts: true as const,
+    proxy: {} // DISABILITA proxy di Vite in middleware mode per evitare loop
   };
 
   const vite = await createViteServer({
@@ -47,6 +48,11 @@ export async function setupVite(app: Express, server: Server) {
 
     // Skip API routes - let them be handled by the API router
     if (url.startsWith('/api/')) {
+      return next();
+    }
+    
+    // Skip Brand Interface routes - they're handled by proxy
+    if (url.startsWith('/brandinterface') || url.startsWith('/brand-api')) {
       return next();
     }
 

@@ -487,14 +487,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       console.log('✅ OAuth2 logout completed');
       
       // Redirect to login page
-      window.location.href = '/login';
+      window.location.href = '/brandinterface/login';
       
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Fallback: force logout even if server call fails
       await oauth2Client.logout();
       queryClient.clear();
-      window.location.href = '/login';
+      window.location.href = '/brandinterface/login';
     }
   };
 

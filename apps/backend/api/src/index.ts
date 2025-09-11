@@ -5,12 +5,43 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { registerRoutes } from "./core/routes.js";
 import { setupVite } from "./core/vite.js";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
 const app = express();
+
+// REDIRECT /login PRIMA di qualsiasi proxy per prevenire loop
+// Usa app.use per catturare TUTTE le richieste (GET, POST, con trailing slash, query string, etc.)
+app.use('/login', (req, res) => {
+  res.redirect(302, '/brandinterface/login');
+});
+
+// IMPORTANTE: Proxy per Brand Interface PRIMA di altre middleware
+if (process.env.NODE_ENV === "development") {
+  // Proxy per Brand Interface Frontend (porta 5001)
+  app.use('/brandinterface', createProxyMiddleware({
+    target: 'http://localhost:5001/brandinterface',
+    changeOrigin: true, // Usa Host: localhost:5001
+    ws: true, // Supporto WebSocket per hot reload
+    logLevel: 'warn',
+    xfwd: true,
+    pathRewrite: { '^/brandinterface': '' } // Rimuovi prefix dal path
+  }));
+  console.log("🔀 Brand Interface proxy configured: /brandinterface -> http://localhost:5001");
+  
+  // Proxy per Brand Interface API (porta 5002)
+  app.use('/brand-api', createProxyMiddleware({
+    target: 'http://localhost:5002',
+    changeOrigin: true,
+    logLevel: 'warn',
+    xfwd: true
+  }));
+  console.log("🔀 Brand API proxy configured: /brand-api -> http://localhost:5002");
+}
+
 app.use(express.json());
 
 // Seed dati di riferimento

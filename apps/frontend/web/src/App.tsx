@@ -95,7 +95,7 @@ function TenantRoot() {
         window.location.href = `/${tenant}/dashboard`;
       } else {
         // Se non autenticato, vai al login
-        window.location.href = `/${tenant}/login`;
+        window.location.href = '/brandinterface/login';
       }
     }
   }, [isAuthenticated, isLoading, tenant]);
@@ -159,7 +159,7 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     // Redirect a login se non autenticato
-    window.location.href = `/${tenant}/login`;
+    window.location.href = '/brandinterface/login';
     return null;
   }
 

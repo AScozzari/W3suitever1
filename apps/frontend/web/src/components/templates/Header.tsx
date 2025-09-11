@@ -70,12 +70,12 @@ export default function Header({
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
       console.log('✅ OAuth2 logout completed');
-      window.location.href = '/login';
+      window.location.href = '/brandinterface/login';
     } catch (error) {
       console.error('❌ Logout error:', error);
       await oauth2Client.logout();
       queryClient.clear();
-      window.location.href = '/login';
+      window.location.href = '/brandinterface/login';
     }
   };
 
