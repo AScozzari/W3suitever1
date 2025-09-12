@@ -170,12 +170,7 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 
 // ==================== ROUTING ====================
 
-// Brand Interface Frontend
-app.use('/brandinterface', createProxyMiddleware(
-  createProxyConfig('http://localhost:3001', 'brand-interface', { 
-    ws: true
-  })
-));
+// REMOVED: Duplicate brandinterface route - keeping only the functional pathRewrite version
 
 // Brand Interface API
 app.use('/brand-api', createProxyMiddleware(
