@@ -19,6 +19,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
     'w3suite': { name: 'W3 Suite Enterprise', color: '#FF6900' },
+    'staging': { name: 'W3 Suite Staging', color: '#FF6900' },
     'demo': { name: 'Demo Organization', color: '#FF6900' },
     'acme': { name: 'Acme Corporation', color: '#0066CC' },
     'tech': { name: 'Tech Solutions Ltd', color: '#10B981' }
