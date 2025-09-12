@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Enterprise JWT verification with OAuth2 standard support
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET!) as any;
       
       // OAuth2 standard: use 'sub' field for user identification
       if (!decoded.sub && !decoded.userId) {
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Verify JWT token
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET!) as any;
       
       // Mock session data with tenant information
       const sessionData = {
@@ -540,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (token) {
         try {
-          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          const decoded = jwt.verify(token, JWT_SECRET!) as any;
           tenantId = decoded.tenantId;
         } catch (error) {
           // Continue without tenant context

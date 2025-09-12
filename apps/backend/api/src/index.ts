@@ -80,7 +80,7 @@ app.use('/oauth2/token', authLimiter);
 
 // CORS configuration for W3 Suite
 app.use((req, res, next) => {
-  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5000'];
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:5000'];
   const origin = req.headers.origin;
   
   if (origin && allowedOrigins.includes(origin)) {
