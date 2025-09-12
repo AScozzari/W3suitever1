@@ -2,6 +2,19 @@ import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import axios from 'axios';
 import helmet from 'helmet';
+import { spawn } from 'child_process';
+
+// Set development secrets if missing
+if (process.env.NODE_ENV === 'development') {
+  if (!process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = 'dev-jwt-secret-32-chars-minimum-secure';
+    console.log('🔑 JWT_SECRET set for development');
+  }
+  if (!process.env.OAUTH_CLIENT_SECRET) {
+    process.env.OAUTH_CLIENT_SECRET = 'dev-oauth-secret-32-chars-minimum-secure';
+    console.log('🔑 OAUTH_CLIENT_SECRET set for development');
+  }
+}
 
 const app = express();
 const PORT = 5000;
@@ -341,6 +354,28 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ==================== AUTO-START SERVICES ====================
+// Auto-start backend services in development
+let w3Process, brandProcess;
+
+if (process.env.NODE_ENV === 'development') {
+  console.log('🚀 Auto-starting backend services...');
+  
+  // Start W3 Suite (port 3000)
+  w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
+    stdio: 'inherit',
+    env: { ...process.env, NODE_ENV: 'development' }
+  });
+  
+  // Start Brand Interface (port 3001)
+  brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
+    stdio: 'inherit',
+    env: { ...process.env, NODE_ENV: 'development' }
+  });
+  
+  console.log('✅ Backend services started');
+}
+
 // ==================== SERVER STARTUP ====================
 // Start the gateway server
 const server = app.listen(PORT, '0.0.0.0', () => {
@@ -380,6 +415,16 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 const gracefulShutdown = (signal) => {
   console.log(`\n🚫 API Gateway received ${signal}, shutting down gracefully...`);
   
+  // Stop backend services first
+  if (w3Process) {
+    console.log('⏹️ Stopping W3 Suite service...');
+    w3Process.kill('SIGTERM');
+  }
+  if (brandProcess) {
+    console.log('⏹️ Stopping Brand Interface service...');
+    brandProcess.kill('SIGTERM');
+  }
+  
   server.close(() => {
     console.log('✅ API Gateway stopped accepting new connections');
     console.log('⏳ Waiting for existing connections to close...');
@@ -394,6 +439,8 @@ const gracefulShutdown = (signal) => {
   // Force shutdown after 30 seconds
   setTimeout(() => {
     console.error('⚠️ API Gateway forced shutdown after 30 seconds');
+    if (w3Process) w3Process.kill('SIGKILL');
+    if (brandProcess) brandProcess.kill('SIGKILL');
     process.exit(1);
   }, 30000);
 };

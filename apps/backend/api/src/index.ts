@@ -1,5 +1,5 @@
 import express from "express";
-// spawn no longer needed - Brand Interface runs as separate service
+import { spawn } from "child_process";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -11,6 +11,33 @@ import rateLimit from "express-rate-limit";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
+
+// Auto-start gateway if this is being run directly (not via gateway)
+const shouldStartGateway = process.env.NODE_ENV === 'development' && 
+                          !process.env.GATEWAY_LAUNCHED;
+
+if (shouldStartGateway) {
+  console.log('🔄 W3 Suite redirecting to API Gateway...');
+  console.log('📡 Gateway will manage all services on port 5000');
+  
+  // Start gateway with flag to prevent infinite loop
+  const gatewayProcess = spawn('npx', ['tsx', 'gateway/index.js'], {
+    stdio: 'inherit',
+    detached: true,
+    env: { ...process.env, GATEWAY_LAUNCHED: 'true' }
+  });
+  
+  // Detach the gateway process so it survives this process ending
+  gatewayProcess.unref();
+  
+  // Keep this process alive to maintain the workflow
+  console.log('⏳ Waiting for gateway to start services...');
+  
+  // Wait indefinitely (gateway will handle everything)
+  setInterval(() => {
+    // Do nothing, just keep process alive for Replit workflow
+  }, 60000);
+}
 
 const app = express();
 
