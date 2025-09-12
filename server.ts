@@ -74,7 +74,8 @@ const backendProxy = createProxyMiddleware({
 const FRONTEND_PORT = Number(process.env.FRONTEND_PORT || 3000);
 const frontendProxy = createProxyMiddleware({
   target: `http://localhost:${FRONTEND_PORT}`,
-  changeOrigin: true,
+  changeOrigin: false,  // Preserve original host for Vite HMR
+  xfwd: true,          // Forward x-forwarded headers
   secure: false,
   ws: true, // Enable WebSocket proxying for HMR
   on: {

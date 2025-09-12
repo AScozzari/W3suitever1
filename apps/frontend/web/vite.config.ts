@@ -16,5 +16,9 @@ export default defineConfig({
     port: 3000,
     host: "0.0.0.0",
     allowedHosts: true,
+    hmr: {
+      protocol: 'wss',      // when served over https (Replit)
+      clientPort: 443        // ensure browser connects on 443
+    }
   },
 });

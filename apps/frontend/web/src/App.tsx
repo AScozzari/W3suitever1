@@ -205,8 +205,9 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    // W3 Suite ha il suo sistema di login indipendente
-    return <LoginPage />;
+    // Redirect to canonical login route
+    window.location.href = `/${tenant}/login`;
+    return null;
   }
 
   return <>{children}</>;
