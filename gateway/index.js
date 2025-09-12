@@ -170,8 +170,6 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 
 // ==================== ROUTING ====================
 
-// REMOVED: Duplicate brandinterface route - keeping only the functional pathRewrite version
-
 // Brand Interface API
 app.use('/brand-api', createProxyMiddleware(
   createProxyConfig('http://localhost:3001', 'brand-api')
@@ -341,7 +339,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ API Gateway running on port ${PORT}`);
   console.log('');
   console.log('📡 Routing Configuration:');
-  console.log('  /brandinterface/*     → http://localhost:3001 (Brand Interface Frontend)');
   console.log('  /brand-api/*          → http://localhost:3001 (Brand Interface API)');
   console.log('  /api/*                → http://localhost:3000 (W3 Suite API)');
   console.log('  /oauth2/*             → http://localhost:3000 (OAuth2 Server)');
@@ -350,7 +347,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('🌐 Access Points:');
   console.log(`  W3 Suite:        http://localhost:${PORT}`);
-  console.log(`  Brand Interface: http://localhost:${PORT}/brandinterface/login`);
   console.log(`  Health Check:    http://localhost:${PORT}/health`);
   console.log('');
   console.log('🔍 Monitoring:');
