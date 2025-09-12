@@ -12,11 +12,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
-// Auto-start gateway if this is being run directly (not via gateway)
-const shouldStartGateway = process.env.NODE_ENV === 'development' && 
-                          !process.env.GATEWAY_LAUNCHED;
-
-if (shouldStartGateway) {
+// Skip auto-start gateway if running via gateway
+if (process.env.GATEWAY_LAUNCHED) {
+  console.log('🚀 W3 Suite starting via Gateway on port 3000...');
+} else {
   console.log('🔄 W3 Suite redirecting to API Gateway...');
   console.log('📡 Gateway will manage all services on port 5000');
   
@@ -37,6 +36,8 @@ if (shouldStartGateway) {
   setInterval(() => {
     // Do nothing, just keep process alive for Replit workflow
   }, 60000);
+  return;
+}0000);
 }
 
 const app = express();

@@ -277,9 +277,7 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 app.use('/brandinterface', createProxyMiddleware(
   createProxyConfig('http://localhost:3001', 'brand-interface', { 
     ws: true, // Enable WebSocket for HMR
-    pathRewrite: {
-      '^/brandinterface': '/brandinterface' // Explicitly preserve the path
-    },
+    pathRewrite: (path, req) => '/brandinterface' + path, // FIX: Use function instead of regex
     onProxyReqWs: (proxyReq, req, socket, head) => {
       // Handle WebSocket upgrade for HMR
       const requestId = req.headers['x-request-id'] || 'ws-' + Date.now();
