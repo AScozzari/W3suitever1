@@ -136,7 +136,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             
             console.log('🔄 Redirecting to dashboard...');
             // Redirect alla dashboard del tenant dopo login
-            const tenantCode = propTenantCode || 'staging';
+            const tenantCode = propTenantCode || 'w3suite';
             window.location.href = `/${tenantCode}/dashboard`;
           } else {
             const errorData = await tokenResponse.json();

@@ -91,6 +91,7 @@ const brandInterfaceProxy = createProxyMiddleware({
   changeOrigin: true,
   secure: false,
   ws: true, // Enable WebSocket proxying
+  // Don't filter paths here - let middleware handle routing
   on: {
     error: (err, req, res) => {
       log(`Brand Interface proxy error: ${err.message}`);
@@ -100,10 +101,22 @@ const brandInterfaceProxy = createProxyMiddleware({
       }
     },
     proxyReq: (proxyReq, req) => {
-      log(`→ Brand Interface: ${req.method} ${req.url}`);
+      log(`→ Brand Interface: ${req.method} ${req.url} → ${proxyReq.path}`);
     }
   }
 });
+
+// Custom middleware to handle Brand Interface routing
+function brandInterfaceHandler(req: express.Request, res: express.Response, next: express.NextFunction) {
+  // Check if the request is for Brand Interface paths
+  if (req.path.startsWith('/brandinterface') || req.path.startsWith('/brand-api')) {
+    log(`Custom Brand Interface handler: ${req.method} ${req.originalUrl}`);
+    // Use the proxy but preserve the full original URL
+    brandInterfaceProxy(req, res, next);
+  } else {
+    next();
+  }
+}
 
 // Frontend startup function
 async function startFrontendServer() {
@@ -148,9 +161,8 @@ async function startFrontendServer() {
 
 // ==================== ROUTING CONFIGURATION ====================
 
-// Route Brand Interface frontend and API
-app.use('/brandinterface', brandInterfaceProxy);
-app.use('/brand-api', brandInterfaceProxy);
+// Brand Interface custom middleware (preserves full paths)
+app.use(brandInterfaceHandler);
 
 // Route API calls to backend
 app.use('/api', backendProxy);
