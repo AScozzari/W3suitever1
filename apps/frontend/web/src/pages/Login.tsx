@@ -75,7 +75,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         },
         body: new URLSearchParams({
           client_id: 'w3suite-frontend',
-          redirect_uri: `${window.location.origin}/auth/callback`,
+          redirect_uri: `${window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}`}/auth/callback`,
           response_type: 'code',
           scope: 'openid profile email tenant_access',
           code_challenge: codeChallenge,
@@ -101,7 +101,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             body: new URLSearchParams({
               grant_type: 'authorization_code',
               code: authCode,
-              redirect_uri: `${window.location.origin}/auth/callback`,
+              redirect_uri: `${window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}`}/auth/callback`,
               client_id: 'w3suite-frontend',
               code_verifier: codeVerifier
             }),
