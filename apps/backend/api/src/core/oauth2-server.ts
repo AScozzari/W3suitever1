@@ -384,7 +384,8 @@ export function setupOAuth2Server(app: express.Application) {
       redirectUrl.searchParams.set('code', authCode);
       if (state) redirectUrl.searchParams.set('state', state);
 
-      res.redirect(redirectUrl.toString());
+      // Use 303 See Other to force browser to change POST to GET for OAuth2 callback
+      res.redirect(303, redirectUrl.toString());
     } catch (error) {
       console.error('OAuth2 authorization error:', error);
       res.status(500).json({

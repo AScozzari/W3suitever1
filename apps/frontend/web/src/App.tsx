@@ -8,6 +8,7 @@ import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
+import { oauth2Client } from "./services/OAuth2Client";
 import { useEffect } from "react";
 
 export default function App() {
@@ -22,10 +23,55 @@ export default function App() {
   );
 }
 
+// OAuth2 Callback Handler Component - MOVE BEFORE Router
+function OAuth2CallbackHandler() {
+  useEffect(() => {
+    const handleOAuth2Callback = async () => {
+      try {
+        await oauth2Client.handleCallback();
+        
+        // Get current tenant and redirect to dashboard
+        const currentTenant = localStorage.getItem('currentTenant') || 'staging';
+        window.location.href = `/${currentTenant}/dashboard`;
+      } catch (error) {
+        console.error('OAuth2 callback error:', error);
+        // Redirect to login on error
+        window.location.href = '/staging/login';
+      }
+    };
+
+    handleOAuth2Callback();
+  }, []);
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
+    }}>
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '32px',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
+      }}>
+        <h2 style={{ color: 'white', fontSize: '24px' }}>Completamento login...</h2>
+      </div>
+    </div>
+  );
+}
 
 function Router() {
   return (
     <Switch>
+      {/* OAuth2 Callback Route - BEFORE tenant routes */}
+      <Route path="/auth/callback">
+        {() => <OAuth2CallbackHandler />}
+      </Route>
+      
       {/* Route dedicate per login */}
       <Route path="/:tenant/login">
         {(params) => <TenantWrapper params={params}><LoginPage /></TenantWrapper>}
@@ -81,6 +127,7 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
   
   return <>{children}</>;
 }
+
 
 // Componente per gestire il redirect dal root tenant
 function TenantRoot() {
