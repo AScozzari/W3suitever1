@@ -12,19 +12,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
-console.log('🚀 W3 Suite API starting on port 3004...');
-
 const app = express();
 
-// W3 Suite standalone - Brand Interface completamente isolato su porta 3001 (dietro API Gateway)
+// W3 Suite standalone - Brand Interface completamente isolato su porta 5001
 
 // Security Headers with Helmet
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: process.env.NODE_ENV === 'development'
-        ? ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"]
+      scriptSrc: process.env.NODE_ENV === 'development' 
+        ? ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"] 
         : ["'self'", "https:"],
       styleSrc: process.env.NODE_ENV === 'development'
         ? ["'self'", "'unsafe-inline'", "https:"]
@@ -54,9 +52,9 @@ const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 100, // 100 requests per minute
   handler: (req, res) => {
-    res.status(429).json({
+    res.status(429).json({ 
       error: 'rate_limit_exceeded',
-      message: 'Too many requests from this IP, please try again later.'
+      message: 'Too many requests from this IP, please try again later.' 
     });
   },
   standardHeaders: true,
@@ -67,9 +65,9 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 login attempts per 15 minutes
   handler: (req, res) => {
-    res.status(429).json({
+    res.status(429).json({ 
       error: 'too_many_login_attempts',
-      message: 'Too many login attempts, please try again later.'
+      message: 'Too many login attempts, please try again later.' 
     });
   },
   skipSuccessfulRequests: true
@@ -82,20 +80,20 @@ app.use('/oauth2/token', authLimiter);
 
 // CORS configuration for W3 Suite
 app.use((req, res, next) => {
-  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:5000'];
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5000'];
   const origin = req.headers.origin;
-
+  
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Id');
   }
-
+  
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
-
+  
   next();
 });
 
@@ -108,39 +106,76 @@ await seedCommercialAreas();
 const httpServer = await registerRoutes(app);
 
 // Setup Vite per servire il frontend W3 Suite in development
-// DISABLED: Frontend will be served separately to avoid port conflicts
-// Use separate frontend service for W3 Suite when needed
-if (process.env.NODE_ENV === "development" && process.env.ENABLE_VITE_FRONTEND === "true") {
-  console.log("🎯 Setting up Vite frontend (explicitly enabled)");
+if (process.env.NODE_ENV === "development") {
   await setupVite(app, httpServer);
-} else if (process.env.NODE_ENV === "development") {
-  console.log("⚠️  Vite frontend disabled - use separate frontend service");
-  console.log("   To enable: set ENABLE_VITE_FRONTEND=true");
 }
 
-// Brand Interface is now running as a separate service on port 3001
-// It's no longer spawned from W3 Suite but runs independently behind the API Gateway
+// ==================== BRAND INTERFACE STANDALONE PROCESS ====================
+// Brand Interface completamente isolato su porta 5001
 
-// W3 Suite cleanup
-let shutdownInProgress = false;
+let brandInterfaceProcess: any = null;
 
-process.once("SIGTERM", () => {
-  if (shutdownInProgress) return;
-  shutdownInProgress = true;
+function startBrandInterface() {
+  console.log("🚀 Starting Brand Interface standalone service...");
+  
+  // Path per Brand Interface (completo: frontend + backend su porta 5001)
+  const BRAND_PATH = join(__dirname, "..", "..", "..", "backend", "brand-api");
+  
+  // Avvia Brand Interface standalone (porta 5001)
+  brandInterfaceProcess = spawn("npx", ["tsx", "src/index.ts"], {
+    cwd: BRAND_PATH,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      NODE_ENV: "development",
+      BRAND_JWT_SECRET: process.env.BRAND_JWT_SECRET || "brand-dev-secret-2025",
+      JWT_SECRET: process.env.JWT_SECRET || "w3suite-dev-secret-2025"
+    }
+  });
+
+  brandInterfaceProcess.on("error", (error: any) => {
+    console.error("❌ Brand Interface failed to start:", error);
+  });
+
+  brandInterfaceProcess.on("exit", (code: any, signal: any) => {
+    if (signal) {
+      console.log(`🚫 Brand Interface killed with signal ${signal}`);
+    } else {
+      console.log(`🚫 Brand Interface exited with code ${code}`);
+    }
+    // Respawn after 2 seconds if not intentionally killed
+    if (code !== 0 && signal !== "SIGTERM" && signal !== "SIGINT") {
+      setTimeout(() => {
+        console.log("🔄 Restarting Brand Interface...");
+        startBrandInterface();
+      }, 2000);
+    }
+  });
+
+  console.log("✅ Brand Interface standalone service started");
+  console.log("🌐 Brand Interface (frontend + backend): http://localhost:5001/brandinterface/login");
+  console.log("🔌 Brand Interface API: http://localhost:5001/brand-api/health");
+}
+
+// Avvia Brand Interface solo in development come processo separato
+if (process.env.NODE_ENV === "development") {
+  startBrandInterface();
+}
+
+// W3 Suite cleanup - gestisce anche il processo Brand Interface separato
+process.on("SIGTERM", () => {
   console.log("🚫 W3 Suite shutting down");
+  if (brandInterfaceProcess) brandInterfaceProcess.kill("SIGTERM");
+});
+
+process.on("SIGINT", () => {
+  console.log("🚫 W3 Suite shutting down");
+  if (brandInterfaceProcess) brandInterfaceProcess.kill("SIGTERM");
   process.exit(0);
 });
 
-process.once("SIGINT", () => {
-  if (shutdownInProgress) return;
-  shutdownInProgress = true;
-  console.log("🚫 W3 Suite shutting down");
-  process.exit(0);
-});
-
-// Avvia il server sulla porta 3004 (dietro API Gateway)
-const PORT = Number(process.env.PORT) || 3004;
-httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ W3 Suite server running on port ${PORT} (internal)`);
-  console.log("📡 Frontend will be available via Gateway at: http://localhost:5000");
+// Avvia il server sulla porta 5000
+httpServer.listen(5000, "0.0.0.0", () => {
+  console.log("W3 Suite server running on port 5000");
+  console.log("Frontend available at: http://localhost:5000");
 });

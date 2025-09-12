@@ -15,7 +15,7 @@ run = ["npm", "run", "start"]
 PORT = "5000"
 
 [workflows]
-runButton = "Start System"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -35,52 +35,8 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
-[[workflows.workflow]]
-name = "Gateway Only"
-author = 45871987
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "GATEWAY_ONLY=true npx tsx gateway/index.js"
-
-[[workflows.workflow]]
-name = "Start Gateway"
-author = 45871987
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npx tsx gateway/index.js"
-
-[[workflows.workflow]]
-name = "Start Simple Gateway"
-author = 45871987
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=5000 npx tsx gateway/index.js"
-
-[[workflows.workflow]]
-name = "Start System"
-author = 45871987
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-
 [agent]
 integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0"]
-
-[[ports]]
-localPort = 3000
-externalPort = 4200
-
-[[ports]]
-localPort = 3001
-externalPort = 5173
 
 [[ports]]
 localPort = 5000
@@ -95,10 +51,6 @@ localPort = 5002
 externalPort = 3003
 
 [[ports]]
-localPort = 8080
-externalPort = 8080
-
-[[ports]]
 localPort = 24678
 externalPort = 5000
 
@@ -109,7 +61,3 @@ externalPort = 3002
 [[ports]]
 localPort = 40925
 externalPort = 3001
-
-[[ports]]
-localPort = 41313
-externalPort = 6000
