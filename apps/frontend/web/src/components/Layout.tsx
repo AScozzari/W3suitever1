@@ -100,17 +100,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   }, [location]);
 
   // Query per ottenere i punti vendita del tenant corrente
-  // TODO: Uncomment when /api/stores endpoint is implemented
-  // const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
-  //   queryKey: ["/api/stores"],
-  //   enabled: !!user,
-  //   retry: 2
-  // });
-
-  // Temporarily disable stores fetching until endpoint is implemented
-  const storesResponse: any[] = [];
-  const storesLoading: boolean = false;
-  const storesError: any = null;
+  const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
+    queryKey: ["/api/stores"],
+    enabled: !!user,
+    retry: 2
+  });
   
   // Ensure stores is always an array
   const stores = Array.isArray(storesResponse) ? storesResponse : [];
