@@ -50,11 +50,8 @@ const backendProxy = createProxyMiddleware({
   xfwd: true, // Forward X-Forwarded-* headers to fix :8000 redirect issues
   secure: false,
   ws: true, // Enable WebSocket proxying
-  pathRewrite: (path, req) => {
-    // Preserve the baseUrl from each mount point (e.g., /api, /oauth2, /.well-known)
-    const baseUrl = (req as any).baseUrl || '';
-    const rewrittenPath = `${baseUrl}${path}`;
-    return rewrittenPath;
+  pathRewrite: {
+    '^/api(?=/|$)': '' // Remove /api prefix - backend routes are mounted at root
   },
   on: {
     error: (err, req, res) => {
