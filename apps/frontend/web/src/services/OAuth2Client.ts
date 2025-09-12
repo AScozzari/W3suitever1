@@ -51,12 +51,12 @@ class OAuth2Client {
     
     this.config = {
       clientId: 'w3suite-frontend',
-      redirectUri: `${gatewayOrigin}/auth/callback`,
+      redirectUri: `${window.location.origin}/auth/callback`,
       scopes: ['openid', 'profile', 'email', 'tenant_access'],
-      authorizationEndpoint: '/oauth2/authorize',
-      tokenEndpoint: '/oauth2/token',
-      userinfoEndpoint: '/oauth2/userinfo', 
-      revocationEndpoint: '/oauth2/revoke'
+      authorizationEndpoint: '/api/oauth2/authorize',
+      tokenEndpoint: '/api/oauth2/token',
+      userinfoEndpoint: '/api/oauth2/userinfo', 
+      revocationEndpoint: '/api/oauth2/revoke'
     };
   }
 
@@ -128,15 +128,11 @@ class OAuth2Client {
       const state = this.generateRandomString(32);
       sessionStorage.setItem('oauth2_state', state);
 
-      // Build authorization URL - use corrected gateway URL without :8000
-      const baseUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000'
-        : window.location.origin.replace(':8000', ''); // Remove :8000 if present
-      const authUrl = new URL(this.config.authorizationEndpoint, baseUrl);
+      // Build authorization URL - use relative path, browser will handle host correctly
+      const authUrl = new URL(this.config.authorizationEndpoint, window.location.origin);
       
       console.log('🎯 Auth URL Construction:');
-      console.log('🌐 Original window.location.origin:', window.location.origin);
-      console.log('🔧 Corrected baseUrl:', baseUrl);
+      console.log('🌐 window.location.origin:', window.location.origin);
       console.log('📍 Final authUrl:', authUrl.toString());
       
       authUrl.searchParams.set('response_type', 'code');
