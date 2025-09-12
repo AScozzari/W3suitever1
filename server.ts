@@ -1,9 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { spawn } from "child_process";
-import fs from "fs";
+import { existsSync } from "fs";
 import path from "path";
-import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
@@ -308,7 +307,7 @@ async function startServer() {
         }
         
         const indexPath = path.join(webDistPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
+        if (existsSync(indexPath)) {
           res.sendFile(indexPath);
         } else {
           res.status(503).send(`
