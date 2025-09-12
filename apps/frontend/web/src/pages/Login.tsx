@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { authService } from '../services/AuthService';
 
 interface LoginProps {
   tenantCode?: string;
 }
 
 /**
- * W3 Suite OAuth2 Enterprise Login
- * Direct integration with OAuth2 Authorization Server
+ * W3 Suite JWT Login Component
+ * Direct authentication with JWT tokens
  */
 export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [username, setUsername] = useState('admin');
@@ -15,6 +16,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
@@ -34,124 +36,40 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // OAuth2 PKCE helpers
-  const generateCodeVerifier = (): string => {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return btoa(String.fromCharCode.apply(null, Array.from(array)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-  };
-
-  const generateCodeChallenge = async (verifier: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(verifier);
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(digest))))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-  };
-
-  const handleOAuth2Login = async () => {
+  const handleLogin = async () => {
     if (!username || !password) {
-      alert('Inserisci nome utente e password');
+      setError('Please enter both username and password');
       return;
     }
     
     setIsLoading(true);
+    setError(null);
     
     try {
-      // OAuth2 Authorization Code Flow with PKCE
-      const codeVerifier = generateCodeVerifier();
-      const codeChallenge = await generateCodeChallenge(codeVerifier);
+      // Direct JWT login
+      const response = await authService.login(username, password);
       
-      // Step 1: Get authorization code (use AJAX-specific endpoint)
-      const authResponse = await fetch('/api/oauth2/authorize-ajax', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          client_id: 'w3suite-frontend',
-          redirect_uri: `${window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}`}/auth/callback`,
-          response_type: 'code',
-          scope: 'openid profile email tenant_access',
-          code_challenge: codeChallenge,
-          code_challenge_method: 'S256',
-          username: username,
-          password: password
-        }),
-      });
-
-
-      // Check for successful response (now returns JSON with code)
-      if (authResponse.ok) {
-        const authData = await authResponse.json();
+      if (response.success) {
+        // Store user info for quick access
+        localStorage.setItem('user_info', JSON.stringify(response.user));
         
-        if (authData.success && authData.code) {
-          const authCode = authData.code;
-          
-          // Step 2: Exchange authorization code for access token
-          const tokenResponse = await fetch('/api/oauth2/token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code: authCode,
-              redirect_uri: `${window.location.hostname === 'localhost' ? 'http://localhost:5000' : `${window.location.protocol}//${window.location.hostname}`}/auth/callback`,
-              client_id: 'w3suite-frontend',
-              code_verifier: codeVerifier
-            }),
-          });
-
-          
-          if (tokenResponse.ok) {
-            const tokenData = await tokenResponse.json();
-            
-            // Add expires_at timestamp for OAuth2Client compatibility
-            const expiresAt = Date.now() + (tokenData.expires_in * 1000);
-            const tokensWithExpiry = {
-              ...tokenData,
-              expires_at: expiresAt
-            };
-            
-            // Store OAuth2 tokens using OAuth2Client format
-            localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
-            
-            // Redirect alla dashboard del tenant dopo login
-            const tenantCode = propTenantCode || 'w3suite';
-            // Use wouter navigation instead of full page refresh
-            setTimeout(() => {
-              window.location.href = `/${tenantCode}/dashboard`;
-            }, 100);
-          } else {
-            const errorData = await tokenResponse.json();
-            throw new Error(`Token exchange failed: ${errorData.error || 'Unknown error'}`);
-          }
-        } else {
-          throw new Error('No authorization code received');
-        }
+        // Redirect to dashboard after successful login
+        const tenantCode = propTenantCode || 'w3suite';
+        window.location.href = `/${tenantCode}/dashboard`;
       } else {
-        // Handle different error cases
-        if (authResponse.status === 0) {
-          alert('Errore di rete. Verifica la connessione.');
-        } else {
-          try {
-            const error = await authResponse.json();
-            alert(error.message || 'Credenziali non valide');
-          } catch (e) {
-            alert(`Errore del server (${authResponse.status})`);
-          }
-        }
+        setError('Login failed. Please try again.');
         setIsLoading(false);
       }
-    } catch (error) {
-      alert('Errore durante il login. Riprova.');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setError(error.message || 'Invalid username or password');
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isLoading) {
+      handleLogin();
     }
   };
 
@@ -203,6 +121,21 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
 
         {/* Login Form */}
         <div style={{ padding: '32px' }}>
+          {/* Error Message */}
+          {error && (
+            <div style={{
+              padding: '12px',
+              marginBottom: '20px',
+              backgroundColor: '#fee2e2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              color: '#dc2626',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
+          
           <div style={{ marginBottom: '24px' }}>
             {/* Username Field */}
             <div style={{ marginBottom: '20px' }}>
@@ -230,26 +163,26 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                 }} />
                 <input
                   type="text"
-                  placeholder="Inserisci username"
+                  placeholder="Enter username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   disabled={isLoading}
                   style={{
                     width: '100%',
                     padding: '12px 12px 12px 40px',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
+                    outline: 'none',
                     fontSize: '14px',
-                    color: '#111827',
-                    outline: 'none'
+                    color: '#111827'
                   }}
                 />
               </div>
             </div>
 
             {/* Password Field */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <label style={{
                 display: 'block',
                 fontSize: '14px',
@@ -274,19 +207,19 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                 }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Inserisci password"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   disabled={isLoading}
                   style={{
                     width: '100%',
                     padding: '12px 40px 12px 40px',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
+                    outline: 'none',
                     fontSize: '14px',
-                    color: '#111827',
-                    outline: 'none'
+                    color: '#111827'
                   }}
                 />
                 <button
@@ -303,8 +236,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
                     padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '4px'
+                    justifyContent: 'center'
                   }}
                 >
                   {showPassword ? (
@@ -316,120 +248,60 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
               </div>
             </div>
 
-            {/* Forgot Password Link */}
-            <div style={{ textAlign: 'right', marginBottom: '24px' }}>
-              <a 
-                href="#forgot-password"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Contatta l\'amministratore per il reset della password');
-                }}
-                style={{
-                  fontSize: '13px',
-                  color: '#6b7280',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.color = '#FF6900';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.color = '#6b7280';
-                }}
-              >
-                Password dimenticata?
-              </a>
-            </div>
-
             {/* Login Button */}
             <button
-              onClick={handleOAuth2Login}
+              onClick={handleLogin}
               disabled={isLoading}
               style={{
                 width: '100%',
-                padding: '14px',
-                background: isLoading 
-                  ? '#d1d5db' 
-                  : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                padding: '12px',
+                backgroundColor: isLoading ? '#94a3b8' : '#FF6900',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
-                fontSize: '14px',
+                fontSize: '15px',
                 fontWeight: '600',
-                color: 'white',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: isLoading ? 'none' : '0 2px 8px rgba(255, 105, 0, 0.3)'
-              }}
-              onMouseOver={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.4)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(0px)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 105, 0, 0.3)';
-                }
+                transition: 'all 0.2s',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
               }}
             >
-              {isLoading ? 'Autenticazione in corso...' : 'Accedi alla Suite'}
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </div>
 
-          {/* Security Info */}
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '12px',
+          {/* Demo Credentials */}
+          <div style={{
+            padding: '16px',
             background: '#f9fafb',
             borderRadius: '8px',
-            border: '1px solid #e5e7eb'
+            marginTop: '20px'
           }}>
             <p style={{
-              fontSize: '12px',
+              fontSize: '13px',
               color: '#6b7280',
-              margin: 0
-            }}>
-              Autenticazione OAuth2 Enterprise • RFC 6749 • PKCE
-            </p>
+              marginBottom: '8px',
+              fontWeight: '600'
+            }}>Demo Credentials:</p>
+            <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '18px' }}>
+              <div>Admin: <span style={{ fontFamily: 'monospace', color: '#374151' }}>admin / admin123</span></div>
+              <div>User: <span style={{ fontFamily: 'monospace', color: '#374151' }}>marco.rossi@w3demo.com / password123</span></div>
+            </div>
           </div>
         </div>
       </div>
-      
+
       {/* Footer */}
       <div style={{
-        marginTop: '40px',
+        marginTop: '32px',
         textAlign: 'center'
       }}>
-        <span style={{
-          fontSize: '13px',
-          color: '#6b7280',
-          fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+        <p style={{
+          fontSize: '12px',
+          color: '#9ca3af'
         }}>
-          Powered by{' '}
-        </span>
-        <a 
-          href="https://www.easydigitalgroup.it" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{
-            fontSize: '13px',
-            color: '#3B82F6',
-            textDecoration: 'none',
-            fontWeight: '500',
-            fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
-            letterSpacing: '0.5px',
-            transition: 'color 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = '#1D4ED8';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = '#3B82F6';
-          }}
-        >
-          Easydigitalgroup srl
-        </a>
+          © 2025 W3 Suite. All rights reserved.
+        </p>
       </div>
     </div>
   );

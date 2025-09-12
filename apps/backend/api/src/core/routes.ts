@@ -1,71 +1,51 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-// OAuth legacy system removed - using only OAuth2 enterprise
-import { setupOAuth2Server } from "./oauth2-server";
+import { login, refresh, getMe, logout, authenticateJWT } from "./auth";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
 import { rbacMiddleware, requirePermission } from "../middleware/tenant";
-import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { createAuditMiddleware } from "../middleware/audit";
-let JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('CRITICAL: JWT_SECRET environment variable is not set. Using default for development only.');
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET environment variable is required in production');
-  }
-  // Only in development
-  JWT_SECRET = "w3suite-dev-secret-2025";
-  process.env.JWT_SECRET = JWT_SECRET;
+import cookieParser from "cookie-parser";
+
+const JWT_SECRET = process.env.JWT_SECRET || "w3suite-dev-secret-2025";
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production');
 }
+
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // CRITICAL ISOLATION: Reject Brand Interface routes with 404
-  // W3 Suite (port 5000) must NOT handle Brand Interface paths
-  app.use((req, res, next) => {
-    // Reject any Brand Interface paths - they belong to port 5001 only
-    if (req.path.startsWith('/brandinterface') || 
-        req.path.startsWith('/brand-api')) {
-      console.warn(`[SECURITY] W3 Suite rejecting Brand Interface path: ${req.path}`);
-      return res.status(404).json({ 
-        error: 'not_found',
-        message: 'Resource not found on W3 Suite',
-        hint: 'Brand Interface is available on port 5001'
-      });
-    }
-    next();
-  });
+  // Add cookie parser for handling refresh tokens
+  app.use(cookieParser());
   
   // Apply audit logging middleware for critical operations
   app.use(createAuditMiddleware());
   
-  // Setup OAuth2 Authorization Server (Enterprise)
-  setupOAuth2Server(app);
+  // JWT Authentication routes (public - no auth required)
+  app.post('/api/auth/login', login);
+  app.post('/api/auth/refresh', refresh);
+  app.post('/api/auth/logout', logout);
+  app.get('/api/auth/me', authenticateJWT as any, getMe);
   
-  // Apply tenant middleware to all API routes except auth and OAuth2
+  // Apply tenant middleware to all API routes except auth
   app.use((req, res, next) => {
-    // Skip tenant middleware only for auth routes and OAuth2 routes
-    if (req.path.startsWith('/api/auth/') || 
-        req.path.startsWith('/oauth2/') || 
-        req.path.startsWith('/.well-known/')) {
+    // Skip tenant middleware only for auth routes
+    if (req.path.startsWith('/api/auth/')) {
       return next();
     }
-    // Apply tenant middleware for all other API routes (including stores, users, roles, etc.)
-    // The tenant context will be set from headers or user context
+    // Apply tenant middleware for all other API routes
     if (req.path.startsWith('/api/')) {
       return tenantMiddleware(req, res, next);
     }
     next();
   });
-  
-  // Only OAuth2 endpoints are available - legacy auth endpoints removed
 
-  // Enterprise JWT Authentication Middleware with OAuth2 compatibility
-  const enterpriseAuth = async (req: any, res: any, next: any) => {
+  // Simple JWT Authentication Middleware
+  const authMiddleware = async (req: any, res: any, next: any) => {
     const startTime = Date.now();
     
     try {
@@ -77,42 +57,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
           req.user = {
             id: 'demo-user',
+            userId: 'demo-user',
             email: demoUser || 'admin@w3suite.com',
             tenantId: tenantId,
             roles: ['admin'],
             permissions: [],
-            capabilities: [],
-            scope: 'openid profile email'
+            capabilities: []
           };
           console.log(`[AUTH-DEMO] ${req.method} ${req.path} - User: ${req.user.email} - Tenant: ${tenantId}`);
           
           // Set RLS context for demo user
-          try {
-            await db.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
-            console.log(`[RLS] Set tenant context: ${tenantId}`);
-          } catch (rlsError) {
-            console.log(`[RLS] Could not set tenant context: ${rlsError}`);
-          }
-          
-          return next();
-        }
-        
-        // Check for authenticated session from OAuth2 login
-        const sessionAuth = req.headers['x-auth-session'];
-        if (sessionAuth === 'authenticated') {
-          const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
-          req.user = {
-            id: 'session-user',
-            email: 'admin@w3suite.com',
-            tenantId: tenantId,
-            roles: ['admin'],
-            permissions: [],
-            capabilities: [],
-            scope: 'openid profile email'
-          };
-          console.log(`[AUTH-SESSION] ${req.method} ${req.path} - Session User - Tenant: ${tenantId}`);
-          
-          // Set RLS context for session user
           try {
             await db.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
             console.log(`[RLS] Set tenant context: ${tenantId}`);
@@ -130,112 +84,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!token) {
         return res.status(401).json({ 
           error: 'unauthorized',
-          message: 'No authentication token provided',
-          loginUrl: '/oauth2/authorize'
+          message: 'No authentication token provided'
         });
       }
       
-      // Enterprise JWT verification with OAuth2 standard support
-      const decoded = jwt.verify(token, JWT_SECRET!) as any;
-      
-      // OAuth2 standard: use 'sub' field for user identification
-      if (!decoded.sub && !decoded.userId) {
-        return res.status(401).json({ 
-          error: 'invalid_token',
-          message: 'Invalid token structure - missing subject',
-          loginUrl: '/oauth2/authorize'
-        });
-      }
-      
-      // Check token expiration (enterprise standard)
-      const now = Math.floor(Date.now() / 1000);
-      if (decoded.exp && now >= decoded.exp) {
-        return res.status(401).json({ 
-          error: 'token_expired',
-          message: 'Token has expired',
-          loginUrl: '/oauth2/authorize'
-        });
-      }
-      
-      // Set enterprise user context with OAuth2 standard fields
-      req.user = {
-        id: decoded.sub || decoded.userId, // OAuth2 standard: 'sub' first
-        email: decoded.email,
-        tenantId: decoded.tenant_id || decoded.tenantId, // OAuth2 uses snake_case
-        clientId: decoded.client_id,
-        audience: decoded.aud,
-        issuer: decoded.iss,
-        roles: decoded.roles || [],
-        permissions: decoded.permissions || [],
-        capabilities: decoded.capabilities || [],
-        scope: decoded.scope // OAuth2 scope string
-      };
-      
-      // Enterprise logging for audit
-      console.log(`[AUTH] ${req.method} ${req.path} - User: ${req.user.id} - Tenant: ${req.user.tenantId} - Duration: ${Date.now() - startTime}ms`);
-      
-      next();
+      // Use the authenticateJWT middleware from auth.ts
+      return authenticateJWT(req as any, res, next);
     } catch (error: any) {
-      // Enterprise error handling with detailed logging
       console.error(`[AUTH ERROR] ${req.method} ${req.path} - Error: ${error.message} - Duration: ${Date.now() - startTime}ms`);
       
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ 
           error: 'token_expired',
-          message: 'Token has expired',
-          loginUrl: '/oauth2/authorize'
+          message: 'Token has expired'
         });
       }
       
       return res.status(401).json({ 
         error: 'invalid_token',
-        message: 'Invalid token',
-        loginUrl: '/oauth2/authorize'
+        message: 'Invalid token'
       });
     }
   };
 
   // Combined middleware for authentication + RBAC
-  const authWithRBAC = [enterpriseAuth, rbacMiddleware];
+  const authWithRBAC = [authMiddleware, rbacMiddleware];
 
-  // Session endpoint with tenant info
-  app.get('/api/auth/session', async (req: any, res) => {
-    // Check for auth token
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
+  // Session endpoint with tenant info (for compatibility)
+  app.get('/api/auth/session', authenticateJWT as any, async (req: any, res) => {
+    if (!req.user) {
       return res.status(401).json({ message: "Non autenticato" });
     }
     
-    try {
-      // Verify JWT token
-      const decoded = jwt.verify(token, JWT_SECRET!) as any;
-      
-      // Mock session data with tenant information
-      const sessionData = {
-        user: {
-          id: decoded.id || 'admin-user',
-          email: decoded.email || 'admin@w3suite.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          tenantId: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
-          tenant: {
-            id: decoded.tenantId || '00000000-0000-0000-0000-000000000001',
-            name: 'Demo Organization',
-            code: 'DEMO001',
-            plan: 'Enterprise',
-            isActive: true
-          },
-          roles: ['admin', 'manager'] // Ruoli dell'utente
-        }
-      };
-      
-      res.json(sessionData);
-    } catch (error) {
-      console.error("Session error:", error);
-      return res.status(401).json({ message: "Token non valido" });
-    }
+    // Return session data in expected format
+    const sessionData = {
+      user: {
+        id: req.user.userId || req.user.id,
+        email: req.user.email,
+        firstName: 'Admin',
+        lastName: 'User',
+        tenantId: req.user.tenantId || '00000000-0000-0000-0000-000000000001',
+        tenant: {
+          id: req.user.tenantId || '00000000-0000-0000-0000-000000000001',
+          name: 'Demo Organization',
+          code: 'DEMO001',
+          plan: 'Enterprise',
+          isActive: true
+        },
+        roles: req.user.roles || ['admin', 'manager']
+      }
+    };
+    
+    res.json(sessionData);
   });
 
 
@@ -262,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get tenant info
-  app.get('/api/tenants/:id', enterpriseAuth, async (req, res) => {
+  app.get('/api/tenants/:id', authMiddleware, async (req, res) => {
     try {
       const tenant = await storage.getTenant(req.params.id);
       if (!tenant) {
@@ -276,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create tenant
-  app.post('/api/tenants', enterpriseAuth, async (req, res) => {
+  app.post('/api/tenants', authMiddleware, async (req, res) => {
     try {
       const tenant = await storage.createTenant(req.body);
       res.status(201).json(tenant);
@@ -289,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== STORE MANAGEMENT API ====================
 
   // Get commercial areas (reference data)
-  app.get('/api/commercial-areas', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/commercial-areas', authMiddleware, async (req: any, res) => {
     try {
       const areas = await storage.getCommercialAreas();
       res.json(areas);
@@ -300,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get stores for current tenant
-  app.get('/api/stores', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/stores', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -317,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get stores for tenant
-  app.get('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
+  app.get('/api/tenants/:tenantId/stores', authMiddleware, async (req, res) => {
     try {
       const stores = await storage.getStoresByTenant(req.params.tenantId);
       res.json(stores);
@@ -376,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create store (legacy endpoint with tenantId parameter)
-  app.post('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
+  app.post('/api/tenants/:tenantId/stores', authMiddleware, async (req, res) => {
     try {
       const storeData = { ...req.body, tenantId: req.params.tenantId };
       const store = await storage.createStore(storeData);
@@ -390,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== LEGAL ENTITIES API ====================
   
   // Get legal entities for current tenant
-  app.get('/api/legal-entities', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/legal-entities', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -407,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create legal entity
-  app.post('/api/legal-entities', enterpriseAuth, async (req: any, res) => {
+  app.post('/api/legal-entities', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const legalEntityData = { ...req.body, tenantId };
@@ -420,7 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update legal entity
-  app.put('/api/legal-entities/:id', enterpriseAuth, async (req: any, res) => {
+  app.put('/api/legal-entities/:id', authMiddleware, async (req: any, res) => {
     try {
       const legalEntity = await storage.updateLegalEntity(req.params.id, req.body);
       res.json(legalEntity);
@@ -435,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete legal entity
-  app.delete('/api/legal-entities/:id', enterpriseAuth, async (req: any, res) => {
+  app.delete('/api/legal-entities/:id', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const legalEntityId = req.params.id;
@@ -455,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== USER MANAGEMENT API ====================
   
   // Get users for current tenant
-  app.get('/api/users', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/users', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
@@ -472,7 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create user
-  app.post('/api/users', enterpriseAuth, async (req: any, res) => {
+  app.post('/api/users', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userData = { ...req.body, tenantId, id: `user-${Date.now()}` };
@@ -485,7 +385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user roles
-  app.get('/api/users/:userId/roles', enterpriseAuth, async (req, res) => {
+  app.get('/api/users/:userId/roles', authMiddleware, async (req, res) => {
     try {
       const assignments = await storage.getUserAssignments(req.params.userId);
       res.json(assignments);
@@ -496,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assign user role
-  app.post('/api/users/:userId/roles', enterpriseAuth, async (req, res) => {
+  app.post('/api/users/:userId/roles', authMiddleware, async (req, res) => {
     try {
       const assignmentData = { ...req.body, userId: req.params.userId };
       const assignment = await storage.createUserAssignment(assignmentData);
@@ -531,11 +431,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = authHeader?.split(' ')[1];
       
       if (token) {
-        try {
-          const decoded = jwt.verify(token, JWT_SECRET!) as any;
-          tenantId = decoded.tenantId;
-        } catch (error) {
-          // Continue without tenant context
+        // Use our JWT auth to get tenant
+        const tempReq = { headers: { authorization: authHeader } } as any;
+        const tempRes = { status: () => ({ json: () => {} }) } as any;
+        let userInfo: any = null;
+        
+        await authenticateJWT(tempReq, tempRes, () => {
+          userInfo = tempReq.user;
+        });
+        
+        if (userInfo) {
+          tenantId = userInfo.tenantId;
         }
       }
       
@@ -548,7 +454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard metrics (detailed metrics)
-  app.get('/api/dashboard/metrics', enterpriseAuth, async (req, res) => {
+  app.get('/api/dashboard/metrics', authMiddleware, async (req, res) => {
     try {
       // TODO: Implement dashboard metrics
       const metrics = {
@@ -565,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRM endpoints
-  app.get('/api/crm/customers', enterpriseAuth, async (req, res) => {
+  app.get('/api/crm/customers', authMiddleware, async (req, res) => {
     try {
       // TODO: Implement CRM customer management
       res.json({ customers: [], total: 0 });
@@ -576,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POS endpoints  
-  app.get('/api/pos/transactions', enterpriseAuth, async (req, res) => {
+  app.get('/api/pos/transactions', authMiddleware, async (req, res) => {
     try {
       // TODO: Implement POS transaction management
       res.json({ transactions: [], total: 0 });
@@ -587,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Inventory endpoints
-  app.get('/api/inventory/products', enterpriseAuth, async (req, res) => {
+  app.get('/api/inventory/products', authMiddleware, async (req, res) => {
     try {
       // TODO: Implement inventory management
       res.json({ products: [], total: 0 });
@@ -598,7 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics endpoints
-  app.get('/api/analytics/reports', enterpriseAuth, async (req, res) => {
+  app.get('/api/analytics/reports', authMiddleware, async (req, res) => {
     try {
       // TODO: Implement analytics and reporting
       res.json({ reports: [], total: 0 });
@@ -643,17 +549,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ==================== RBAC MANAGEMENT API ====================
+  // ==================== ROLES & PERMISSIONS API ====================
   
-  // Get all roles for the current tenant
-  app.get('/api/roles', ...authWithRBAC, async (req: any, res) => {
+  // Get all roles
+  app.get('/api/roles', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
-      }
-      
       const roles = await storage.getRolesByTenant(tenantId);
       res.json(roles);
     } catch (error) {
@@ -662,17 +563,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new role
-  app.post('/api/roles', ...authWithRBAC, requirePermission('admin.roles.create'), async (req: any, res) => {
+  // Create role
+  app.post('/api/roles', authMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
-      }
-      
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      const role = await rbacStorage.createRole(tenantId, req.body);
+      const roleData = { ...req.body, tenantId };
+      const role = await storage.createRole(roleData);
       res.status(201).json(role);
     } catch (error) {
       console.error("Error creating role:", error);
@@ -680,39 +576,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a role
-  app.put('/api/roles/:roleId', ...authWithRBAC, requirePermission('admin.roles.update'), async (req: any, res) => {
+  // Update role
+  app.put('/api/roles/:id', authMiddleware, async (req, res) => {
     try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      const role = await rbacStorage.updateRole(req.params.roleId, req.body);
+      const role = await storage.updateRole(req.params.id, req.body);
       res.json(role);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating role:", error);
-      res.status(500).json({ error: "Failed to update role" });
+      if (error.message?.includes('not found')) {
+        res.status(404).json({ error: "Role not found" });
+      } else {
+        res.status(500).json({ error: "Failed to update role" });
+      }
     }
   });
 
-  // Delete a role
-  app.delete('/api/roles/:roleId', ...authWithRBAC, requirePermission('admin.roles.delete'), async (req: any, res) => {
+  // Delete role
+  app.delete('/api/roles/:id', authMiddleware, async (req, res) => {
     try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      await rbacStorage.deleteRole(req.params.roleId);
+      await storage.deleteRole(req.params.id);
       res.status(204).send();
     } catch (error: any) {
       console.error("Error deleting role:", error);
-      if (error.message?.includes('system role')) {
-        res.status(403).json({ error: "Cannot delete system role" });
+      if (error.message?.includes('not found')) {
+        res.status(404).json({ error: "Role not found" });
       } else {
         res.status(500).json({ error: "Failed to delete role" });
       }
     }
   });
 
-  // Get permissions for a role
-  app.get('/api/roles/:roleId/permissions', enterpriseAuth, async (req: any, res) => {
+  // Get role permissions
+  app.get('/api/roles/:roleId/permissions', authMiddleware, async (req, res) => {
     try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      const permissions = await rbacStorage.getRolePermissions(req.params.roleId);
+      const permissions = await storage.getRolePermissions(req.params.roleId);
       res.json(permissions);
     } catch (error) {
       console.error("Error fetching role permissions:", error);
@@ -720,151 +617,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Set permissions for a role
-  app.put('/api/roles/:roleId/permissions', enterpriseAuth, async (req: any, res) => {
+  // Grant permission to role
+  app.post('/api/roles/:roleId/permissions', authMiddleware, async (req, res) => {
     try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      await rbacStorage.setRolePermissions(req.params.roleId, req.body.permissions || []);
-      res.json({ message: "Permissions updated successfully" });
-    } catch (error) {
-      console.error("Error updating role permissions:", error);
-      res.status(500).json({ error: "Failed to update role permissions" });
-    }
-  });
-
-  // Get user roles and permissions
-  app.get('/api/users/:userId/permissions', enterpriseAuth, async (req: any, res) => {
-    try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
-      }
-      
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      const roles = await rbacStorage.getUserRoles(req.params.userId, tenantId);
-      const permissions = await rbacStorage.getUserPermissions(req.params.userId, tenantId);
-      
-      res.json({
-        roles,
-        permissions
-      });
-    } catch (error) {
-      console.error("Error fetching user permissions:", error);
-      res.status(500).json({ error: "Failed to fetch user permissions" });
-    }
-  });
-
-  // Assign role to user
-  app.post('/api/users/:userId/roles/:roleId', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      const assignmentData = {
-        userId: req.params.userId,
-        roleId: req.params.roleId,
-        scopeType: req.body.scopeType || 'tenant',
-        scopeId: req.body.scopeId || req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID,
-        expiresAt: req.body.expiresAt
-      };
-      
-      await rbacStorage.assignRoleToUser(assignmentData);
-      res.status(201).json({ message: "Role assigned successfully" });
-    } catch (error) {
-      console.error("Error assigning role:", error);
-      res.status(500).json({ error: "Failed to assign role" });
-    }
-  });
-
-  // Remove role from user
-  app.delete('/api/users/:userId/roles/:roleId', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      const scopeType = req.query.scopeType as string || 'tenant';
-      const scopeId = req.query.scopeId as string || req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      await rbacStorage.removeRoleFromUser(
-        req.params.userId,
-        req.params.roleId,
-        scopeType,
-        scopeId
-      );
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error removing role:", error);
-      res.status(500).json({ error: "Failed to remove role" });
-    }
-  });
-
-  // Grant extra permission to user
-  app.post('/api/users/:userId/extra-permissions', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      await rbacStorage.grantExtraPermission(
-        req.params.userId,
-        req.body.permission,
-        req.body.expiresAt
-      );
-      res.status(201).json({ message: "Permission granted successfully" });
+      const permissionData = { ...req.body, roleId: req.params.roleId };
+      const permission = await storage.grantPermission(permissionData);
+      res.status(201).json(permission);
     } catch (error) {
       console.error("Error granting permission:", error);
       res.status(500).json({ error: "Failed to grant permission" });
     }
   });
 
-  // Revoke extra permission from user
-  app.delete('/api/users/:userId/extra-permissions/:permission', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      await rbacStorage.clearExtraPermission(
-        req.params.userId,
-        req.params.permission
-      );
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error revoking permission:", error);
-      res.status(500).json({ error: "Failed to revoke permission" });
-    }
-  });
-
-  // Initialize system roles for a tenant
-  app.post('/api/rbac/initialize', enterpriseAuth, async (req: any, res) => {
-    try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
-      }
-      
-      const { rbacStorage } = await import('../core/rbac-storage.js');
-      await rbacStorage.initializeSystemRoles(tenantId);
-      res.json({ message: "System roles initialized successfully" });
-    } catch (error) {
-      console.error("Error initializing system roles:", error);
-      res.status(500).json({ error: "Failed to initialize system roles" });
-    }
-  });
-
-  // Get all available permissions (from registry)
-  app.get('/api/permissions', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { PERMISSIONS } = await import('../core/permissions/registry.js');
-      res.json(PERMISSIONS);
-    } catch (error) {
-      console.error("Error fetching permissions:", error);
-      res.status(500).json({ error: "Failed to fetch permissions" });
-    }
-  });
-
-  // Health check endpoint (no authentication required)
-  app.get('/api/health', async (req, res) => {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      service: 'W3 Suite API',
-      environment: process.env.NODE_ENV || 'development'
-    });
-  });
-
+  // Create server
   const httpServer = createServer(app);
+  
   return httpServer;
 }

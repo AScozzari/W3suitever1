@@ -9,23 +9,33 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
-// Conditional bootstrap: start gateway if port 5000 is expected (but not if we're a gateway child)
-const isGatewayChild = process.env.GATEWAY_CHILD === '1';
-const wantGateway = !isGatewayChild && ((process.env.PORT ?? '') === '5000' || process.env.RUN_GATEWAY === '1' || process.env.RUN_GATEWAY === 'true');
+// Skip gateway logic for JWT authentication mode
+// JWT Auth runs backend directly on port 3004
+const skipGateway = true; // Force direct backend mode for JWT auth
 
-if (wantGateway) {
-  console.log('🚀 Detected PORT=5000, starting gateway server instead of standalone API...');
-  process.env.AUTO_START_FRONTEND = 'true'; // Ensure frontend auto-starts
-  await import('../../../../server.ts'); // Import and start the gateway server
-  // Gateway server is now running and managing all services - do not start standalone API
-  console.log('✅ Gateway server active, skipping standalone API startup');
-  // Don't exit - let the gateway process stay alive
+if (!skipGateway && false) {
+  // Gateway logic disabled for JWT authentication
 } else {
   console.log('🚀 Starting W3 Suite API server in standalone mode...');
   const app = express();
 
   // Trust first proxy for rate limiting and X-Forwarded headers
   app.set('trust proxy', 1);
+
+  // CORS Configuration for direct frontend communication
+  const corsOptions = {
+    origin: process.env.NODE_ENV === 'production' 
+      ? ['https://w3suite.com', 'https://*.w3suite.com']
+      : ['http://localhost:3000', 'http://localhost:5173'], // Vite dev server
+    credentials: true, // Important for cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Demo-User'],
+    exposedHeaders: ['X-Total-Count', 'X-Page-Count']
+  };
+
+  // Enable CORS before other middleware
+  const cors = (await import('cors')).default;
+  app.use(cors(corsOptions));
 
   // W3 Suite standalone - Brand Interface completamente isolato su porta 5001
 
@@ -91,18 +101,26 @@ app.use('/api/', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/oauth2/token', authLimiter);
 
-// CORS configuration for W3 Suite
+// CORS configuration for JWT Auth (direct frontend-backend communication)
 app.use((req, res, next) => {
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
     'http://localhost:3000', // Frontend (W3 Suite)
-    'http://localhost:5000'  // Gateway
+    'http://localhost:5000', // Gateway (legacy)
+    'http://localhost:3004'  // Backend API (JWT auth)
   ];
   const origin = req.headers.origin;
   
-  if (origin && allowedOrigins.includes(origin)) {
+  // Allow all localhost origins in development
+  if (process.env.NODE_ENV === 'development' && origin && origin.includes('localhost')) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Id, X-Demo-User, X-Auth-Session');
+    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+  } else if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Id');
   }
   
@@ -132,6 +150,6 @@ const httpServer = await registerRoutes(app);
   httpServer.listen(W3_PORT, "0.0.0.0", () => {
     console.log(`✅ W3 Suite API server running on port ${W3_PORT}`);
     console.log(`🔌 API endpoints available at: http://localhost:${W3_PORT}/api`);
-    console.log(`🌐 Frontend served by gateway at: http://localhost:5000`);
+    console.log(`🌐 Frontend running separately at: http://localhost:3000`);
   });
 }
