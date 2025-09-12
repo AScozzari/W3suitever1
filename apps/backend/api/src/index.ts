@@ -12,30 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
-// Check if running via gateway to prevent conflicts
-if (!process.env.GATEWAY_LAUNCHED) {
-  console.log('🔄 W3 Suite redirecting to API Gateway...');
-  console.log('📡 Gateway will manage all services on port 5000');
-
-  // Start gateway and exit this process
-  const gatewayProcess = spawn('npx', ['tsx', 'gateway/index.js'], {
-    stdio: 'inherit',
-    detached: true,
-    env: { ...process.env, GATEWAY_LAUNCHED: 'true' }
-  });
-
-  gatewayProcess.unref();
-
-  // Exit this process to avoid port conflicts
-  setTimeout(() => {
-    console.log('⏳ Gateway started, exiting W3 Suite process...');
-    process.exit(0);
-  }, 2000);
-
-  process.exit(0); // Replace return with proper exit
-}
-
-console.log('🚀 W3 Suite starting via Gateway on port 3000...');
+console.log('🚀 W3 Suite starting on port 3000...');
 
 const app = express();
 
