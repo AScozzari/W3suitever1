@@ -383,7 +383,7 @@ async function checkPortAvailable(port) {
       resolve(false);
     }
   });
-}</async>
+}
 
 async function killProcessOnPort(port) {
   return new Promise(async (resolve) => {
