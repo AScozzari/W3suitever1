@@ -212,7 +212,7 @@ export function setupOAuth2Server(app: express.Application) {
   });
 
   // ==================== AUTHORIZATION ENDPOINT ====================
-  app.get('/oauth2/authorize', (req: Request, res: Response) => {
+  const authorizeHandler = (req: Request, res: Response) => {
     const {
       client_id,
       redirect_uri,
@@ -306,10 +306,13 @@ export function setupOAuth2Server(app: express.Application) {
     `;
 
     res.send(loginFormHtml);
-  });
+  };
+
+  app.get('/authorize', authorizeHandler);
+  app.get('/oauth2/authorize', authorizeHandler);
 
   // ==================== AUTHORIZATION PROCESSING ====================
-  app.post('/oauth2/authorize', async (req: Request, res: Response) => {
+  const authorizePostHandler = async (req: Request, res: Response) => {
     console.log('📥 OAuth2 Authorization POST - Body:', req.body);
     console.log('📥 OAuth2 Authorization POST - Headers:', req.headers['content-type']);
     
@@ -365,10 +368,13 @@ export function setupOAuth2Server(app: express.Application) {
         error_description: 'Internal server error'
       });
     }
-  });
+  };
+
+  app.post('/authorize', authorizePostHandler);
+  app.post('/oauth2/authorize', authorizePostHandler);
 
   // ==================== TOKEN ENDPOINT ====================
-  app.post('/oauth2/token', async (req: Request, res: Response) => {
+  const tokenHandler = async (req: Request, res: Response) => {
     const {
       grant_type,
       code,
@@ -492,10 +498,13 @@ export function setupOAuth2Server(app: express.Application) {
         error_description: 'Internal server error'
       });
     }
-  });
+  };
+
+  app.post('/token', tokenHandler);
+  app.post('/oauth2/token', tokenHandler);
 
   // ==================== USERINFO ENDPOINT ====================
-  app.get('/oauth2/userinfo', (req: Request, res: Response) => {
+  const userinfoHandler = (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       return res.status(401).json({
@@ -534,10 +543,13 @@ export function setupOAuth2Server(app: express.Application) {
         error_description: 'Token verification failed'
       });
     }
-  });
+  };
+
+  app.get('/userinfo', userinfoHandler);
+  app.get('/oauth2/userinfo', userinfoHandler);
 
   // ==================== TOKEN REVOCATION ====================
-  app.post('/oauth2/revoke', (req: Request, res: Response) => {
+  const revokeHandler = (req: Request, res: Response) => {
     const { token, token_type_hint } = req.body;
     
     if (!token) {
@@ -554,10 +566,15 @@ export function setupOAuth2Server(app: express.Application) {
 
     // Always return 200 per OAuth2 spec
     res.status(200).json({});
-  });
+  };
+
+  app.post('/revoke', revokeHandler);
+  app.post('/oauth2/revoke', revokeHandler);
 
   console.log('✅ OAuth2 Authorization Server initialized');
   console.log('🔍 Discovery: /.well-known/oauth-authorization-server');
-  console.log('🔐 Authorize: /oauth2/authorize');
-  console.log('🎫 Token: /oauth2/token');
+  console.log('🔐 Authorize: /authorize and /oauth2/authorize');
+  console.log('🎫 Token: /token and /oauth2/token');
+  console.log('👤 Userinfo: /userinfo and /oauth2/userinfo');
+  console.log('🚫 Revoke: /revoke and /oauth2/revoke');
 }

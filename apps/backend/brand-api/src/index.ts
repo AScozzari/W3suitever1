@@ -98,7 +98,7 @@ try {
   // CORS configuration for Brand Interface - MORE RESTRICTIVE
   const BRAND_PORT = Number(process.env.BRAND_PORT || 3001);
   app.use(cors({
-    origin: process.env.BRAND_CORS_ORIGINS?.split(',') || [`http://localhost:${BRAND_PORT}`],
+    origin: process.env.BRAND_CORS_ORIGINS?.split(',') || [`http://localhost:${BRAND_PORT}`, 'http://localhost:5000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -150,7 +150,7 @@ async function setupBrandInterfaceVite(app: express.Express) {
     base: '/brandinterface/',
     server: { 
       middlewareMode: true,
-      hmr: { port: 24678 } // Different HMR port to avoid conflicts
+      hmr: true // Let HMR work through the main server/gateway
     },
     appType: "spa",
     customLogger: {
