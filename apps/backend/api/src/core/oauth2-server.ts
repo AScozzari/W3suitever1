@@ -350,7 +350,10 @@ export function setupOAuth2Server(app: express.Application) {
       const user = await getUserByCredentials(username, password);
       
       if (!user) {
-        return res.status(401).send('Invalid credentials');
+        return res.status(401).json({
+          error: 'invalid_credentials',
+          error_description: 'Invalid username or password'
+        });
       }
 
       // Generate authorization code
@@ -369,14 +372,82 @@ export function setupOAuth2Server(app: express.Application) {
         expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
       });
 
-      // Redirect with authorization code
+      // Build redirect URL with authorization code
       const redirectUrl = new URL(redirect_uri);
       redirectUrl.searchParams.set('code', authCode);
       if (state) redirectUrl.searchParams.set('state', state);
 
-      // Use 303 See Other to force browser to change POST to GET for OAuth2 callback
-      res.redirect(303, redirectUrl.toString());
+      // Check if this is an AJAX request (XMLHttpRequest header)
+      const isAjaxRequest = req.headers['x-requested-with'] === 'XMLHttpRequest';
+      
+      if (isAjaxRequest) {
+        // For AJAX requests, return JSON with the auth code
+        res.json({
+          success: true,
+          redirect_url: redirectUrl.toString(),
+          code: authCode
+        });
+      } else {
+        // For traditional form submissions, do the redirect
+        res.redirect(303, redirectUrl.toString());
+      }
     } catch (error) {
+      console.error('OAuth2 authorize error:', error);
+      res.status(500).json({
+        error: 'server_error',
+        error_description: 'Internal server error'
+      });
+    }
+  };
+
+  // AJAX endpoint that always returns JSON
+  const authorizeAjaxHandler = async (req: Request, res: Response) => {
+    const {
+      client_id,
+      redirect_uri,
+      response_type,
+      scope,
+      state,
+      code_challenge,
+      code_challenge_method,
+      username,
+      password
+    } = req.body;
+
+    try {
+      // Authenticate user
+      const user = await getUserByCredentials(username, password);
+      
+      if (!user) {
+        return res.status(401).json({
+          error: 'invalid_credentials',
+          error_description: 'Invalid username or password'
+        });
+      }
+
+      // Generate authorization code
+      const authCode = generateSecureToken(32);
+      
+      // Store authorization code
+      authorizationCodes.set(authCode, {
+        code: authCode,
+        clientId: client_id,
+        redirectUri: redirect_uri,
+        scopes: scope ? scope.split(' ') : ['openid'],
+        userId: user.id,
+        tenantId: user.tenantId,
+        codeChallenge: code_challenge,
+        codeChallengeMethod: code_challenge_method,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+      });
+
+      // Always return JSON for this endpoint
+      res.json({
+        success: true,
+        code: authCode
+      });
+    } catch (error) {
+      console.error('OAuth2 authorize error:', error);
       res.status(500).json({
         error: 'server_error',
         error_description: 'Internal server error'
@@ -386,6 +457,7 @@ export function setupOAuth2Server(app: express.Application) {
 
   app.post('/authorize', authorizePostHandler);
   app.post('/oauth2/authorize', authorizePostHandler);
+  app.post('/oauth2/authorize-ajax', authorizeAjaxHandler);  // AJAX-specific endpoint
 
   // ==================== TOKEN ENDPOINT ====================
   const tokenHandler = async (req: Request, res: Response) => {

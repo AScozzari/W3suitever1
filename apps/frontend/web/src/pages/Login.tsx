@@ -67,11 +67,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = await generateCodeChallenge(codeVerifier);
       
-      // Step 1: Get authorization code
-      const authResponse = await fetch('/api/oauth2/authorize', {
+      // Step 1: Get authorization code (use AJAX-specific endpoint)
+      const authResponse = await fetch('/api/oauth2/authorize-ajax', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: new URLSearchParams({
           client_id: 'w3suite-frontend',
@@ -86,16 +86,13 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       });
 
 
-      // Check for redirect (303) or successful response
-      if (authResponse.status === 303 || authResponse.status === 302 || authResponse.ok) {
-        // Get the redirect location from headers or response URL
-        const redirectLocation = authResponse.headers.get('location') || authResponse.url;
+      // Check for successful response (now returns JSON with code)
+      if (authResponse.ok) {
+        const authData = await authResponse.json();
         
-        if (redirectLocation) {
-          const redirectUrl = new URL(redirectLocation, window.location.origin);
-          const authCode = redirectUrl.searchParams.get('code');
+        if (authData.success && authData.code) {
+          const authCode = authData.code;
           
-          if (authCode) {
           // Step 2: Exchange authorization code for access token
           const tokenResponse = await fetch('/api/oauth2/token', {
             method: 'POST',
@@ -136,11 +133,8 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             throw new Error(`Token exchange failed: ${errorData.error || 'Unknown error'}`);
           }
         } else {
-          throw new Error('No authorization code received in redirect');
+          throw new Error('No authorization code received');
         }
-      } else {
-        throw new Error('No redirect location received');
-      }
       } else {
         // Handle different error cases
         if (authResponse.status === 0) {
