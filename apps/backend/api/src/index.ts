@@ -14,6 +14,9 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 
 const app = express();
 
+// Trust first proxy for rate limiting and X-Forwarded headers
+app.set('trust proxy', 1);
+
 // W3 Suite standalone - Brand Interface completamente isolato su porta 5001
 
 // Security Headers with Helmet

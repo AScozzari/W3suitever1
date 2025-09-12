@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./apps/backend/api/src/core/routes";
 import { setupVite, serveStatic, log } from "./apps/backend/api/src/core/vite";
 import { setupOAuth2Server } from "./apps/backend/api/src/core/oauth2-server";
