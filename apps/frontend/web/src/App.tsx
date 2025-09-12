@@ -90,12 +90,13 @@ function TenantRoot() {
   
   useEffect(() => {
     if (!isLoading) {
+      const currentTenant = tenant || 'staging'; // Default to staging if no tenant
       if (isAuthenticated) {
         // Se autenticato, vai alla dashboard
-        window.location.href = `/${tenant}/dashboard`;
+        window.location.href = `/${currentTenant}/dashboard`;
       } else {
-        // Se non autenticato, vai al login
-        window.location.href = '/brandinterface/login';
+        // Se non autenticato, vai al login della frontend W3 Suite
+        window.location.href = `/${currentTenant}/login`;
       }
     }
   }, [isAuthenticated, isLoading, tenant]);
