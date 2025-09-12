@@ -35,18 +35,18 @@ app.use((req, res, next) => {
 // ==================== PROXY CONFIGURATION ====================
 
 // Backend API proxy (W3 Suite API + OAuth2)
-const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3000);
+const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
 const backendProxy = createProxyMiddleware({
   target: `http://localhost:${W3_PORT}`,
   changeOrigin: true,
   secure: false,
   ws: true, // Enable WebSocket proxying
-  logLevel: 'info',
   on: {
     error: (err, req, res) => {
       log(`Backend proxy error: ${err.message}`);
-      if (!res.headersSent) {
-        res.status(503).json({ error: 'Backend service unavailable' });
+      // Type guard: check if res is ServerResponse and not Socket
+      if ('headersSent' in res && 'status' in res && !res.headersSent) {
+        (res as express.Response).status(503).json({ error: 'Backend service unavailable' });
       }
     },
     proxyReq: (proxyReq, req) => {
@@ -61,12 +61,12 @@ const frontendProxy = createProxyMiddleware({
   changeOrigin: true,
   secure: false,
   ws: true, // Enable WebSocket proxying for HMR
-  logLevel: 'info',
   on: {
     error: (err, req, res) => {
       log(`Frontend proxy error: ${err.message}`);
-      if (!res.headersSent) {
-        res.status(503).send(`
+      // Type guard: check if res is ServerResponse and not Socket
+      if ('headersSent' in res && 'status' in res && !res.headersSent) {
+        (res as express.Response).status(503).send(`
           <!DOCTYPE html>
           <html>
             <head><title>W3 Suite - Service Unavailable</title></head>
