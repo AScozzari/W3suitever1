@@ -127,7 +127,10 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             
             // Redirect alla dashboard del tenant dopo login
             const tenantCode = propTenantCode || 'w3suite';
-            window.location.href = `/${tenantCode}/dashboard`;
+            // Use wouter navigation instead of full page refresh
+            setTimeout(() => {
+              window.location.href = `/${tenantCode}/dashboard`;
+            }, 100);
           } else {
             const errorData = await tokenResponse.json();
             throw new Error(`Token exchange failed: ${errorData.error || 'Unknown error'}`);

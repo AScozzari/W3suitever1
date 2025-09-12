@@ -1,7 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
-import { Route, Switch, useParams, Redirect } from "wouter";
+import { Route, Switch, useParams, useLocation } from "wouter";
 import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
@@ -133,19 +133,20 @@ function TenantRoot() {
   const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
+  const [, navigate] = useLocation();
   
   useEffect(() => {
     if (!isLoading) {
       const currentTenant = tenant || 'staging'; // Default to staging if no tenant
       if (isAuthenticated) {
-        // Se autenticato, vai alla dashboard
-        window.location.href = `/${currentTenant}/dashboard`;
+        // Se autenticato, vai alla dashboard (usando wouter navigation)
+        navigate(`/${currentTenant}/dashboard`, { replace: true });
       } else {
-        // Se non autenticato, vai al login della frontend W3 Suite
-        window.location.href = `/${currentTenant}/login`;
+        // Se non autenticato, vai al login (usando wouter navigation)
+        navigate(`/${currentTenant}/login`, { replace: true });
       }
     }
-  }, [isAuthenticated, isLoading, tenant]);
+  }, [isAuthenticated, isLoading, tenant, navigate]);
 
   // Loading screen durante il check
   return (
@@ -181,6 +182,14 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
+  const [, navigate] = useLocation();
+  
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      // Redirect to login if not authenticated (usando wouter)
+      navigate(`/${tenant}/login`, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, tenant, navigate]);
   
   if (isLoading) {
     return (
@@ -205,9 +214,7 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    // Redirect to canonical login route
-    window.location.href = `/${tenant}/login`;
-    return null;
+    return null; // Return null while redirecting
   }
 
   return <>{children}</>;
