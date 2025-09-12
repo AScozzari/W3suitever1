@@ -56,8 +56,7 @@ const registeredClients: Map<string, OAuth2Client> = new Map([
     clientId: 'w3suite-frontend',
     clientSecret: undefined, // Public client (SPA)
     redirectUris: [
-      'http://localhost:5000/auth/callback',
-      'http://localhost:3004/auth/callback',
+      'http://localhost:5000/auth/callback', // Gateway routing to frontend
       'https://*.w3suite.com/auth/callback',
       'https://*.replit.dev/auth/callback'
     ],
@@ -71,7 +70,7 @@ const registeredClients: Map<string, OAuth2Client> = new Map([
     clientId: 'w3suite-admin',
     clientSecret: process.env.ADMIN_CLIENT_SECRET || 'admin-secret-key',
     redirectUris: [
-      'http://localhost:3000/auth/callback',
+      'http://localhost:5000/admin/auth/callback', // Gateway routing to admin
       'https://admin.w3suite.com/auth/callback'
     ],
     grantTypes: ['authorization_code', 'refresh_token', 'client_credentials'],

@@ -3,7 +3,7 @@
  * RFC 6749 compliant OAuth2 client with PKCE support
  */
 
-import { apiRequest } from '@/lib/queryClient';
+// Removed apiRequest import to eliminate circular dependency
 
 interface OAuth2Config {
   clientId: string;

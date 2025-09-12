@@ -96,8 +96,9 @@ try {
   app.use('/brand-api/auth/login', brandAuthLimiter);
   
   // CORS configuration for Brand Interface - MORE RESTRICTIVE
+  const BRAND_PORT = Number(process.env.BRAND_PORT || 3001);
   app.use(cors({
-    origin: process.env.BRAND_CORS_ORIGINS?.split(',') || ['http://localhost:5001'],
+    origin: process.env.BRAND_CORS_ORIGINS?.split(',') || [`http://localhost:${BRAND_PORT}`],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -123,11 +124,11 @@ try {
     console.log('🚫 Brand Interface server closed');
   });
 
-  // Avvia il server Brand Interface (frontend + backend) sulla porta 5001
-  httpServer.listen(5001, "0.0.0.0", () => {
-    console.log("✅ Brand Interface server running on port 5001");
-    console.log("🌐 Brand Interface available at: http://localhost:5001/brandinterface/login");
-    console.log("🔌 Brand Interface API available at: http://localhost:5001/brand-api/health");
+  // Avvia il server Brand Interface (frontend + backend) sulla porta configurabile
+  httpServer.listen(BRAND_PORT, "0.0.0.0", () => {
+    console.log(`✅ Brand Interface server running on port ${BRAND_PORT}`);
+    console.log(`🌐 Brand Interface available at: http://localhost:${BRAND_PORT}/brandinterface/login`);
+    console.log(`🔌 Brand Interface API available at: http://localhost:${BRAND_PORT}/brand-api/health`);
   });
 
 } catch (error) {

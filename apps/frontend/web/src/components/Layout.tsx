@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { oauth2Client } from '../services/OAuth2Client';
+import { useAuth } from '../hooks/useAuth';
 import { 
   User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
@@ -74,7 +75,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   
-  const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
+  const { user } = useAuth(); // Use OAuth2 authentication
   const [location, navigate] = useLocation();
 
   // Estrai tenant dal path URL per il context
@@ -108,34 +109,20 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Ensure stores is always an array
   const stores = Array.isArray(storesResponse) ? storesResponse : [];
 
-  // Check token validity se non c'è token
+  // OAuth2 token validation - replaced legacy auth_token check
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      // NO AUTO-LOGIN - Force manual login
-      console.log('No auth token found - login required');
-    } else {
-      // Verifica che il token sia valido e contenga il tenant ID corretto
+    const checkOAuth2Token = async () => {
       try {
-        const tokenParts = token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          // Se il token contiene "demo-tenant" invece di UUID, rifai il login
-          if (payload.tenantId === 'demo-tenant' || !payload.tenantId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-            console.log('Detected invalid tenant ID in token, clearing...');
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('currentTenantId');
-            // Force re-login instead of auto-login
-          }
+        const accessToken = await oauth2Client.getAccessToken();
+        if (!accessToken) {
+          console.log('OAuth2 token not available - login required');
         }
-      } catch (e) {
-        // Token invalido, clear storage
-        console.log('Invalid token, clearing...');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('currentTenantId');
-        // Force re-login instead of auto-login
+      } catch (error) {
+        console.log('OAuth2 token validation failed:', error);
       }
-    }
+    };
+    
+    checkOAuth2Token();
   }, []);
 
   // Auto-login removed - manual login required
