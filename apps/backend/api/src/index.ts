@@ -122,12 +122,18 @@ if (process.env.NODE_ENV === "development" && process.env.ENABLE_VITE_FRONTEND =
 // It's no longer spawned from W3 Suite but runs independently behind the API Gateway
 
 // W3 Suite cleanup
-process.on("SIGTERM", () => {
+let shutdownInProgress = false;
+
+process.once("SIGTERM", () => {
+  if (shutdownInProgress) return;
+  shutdownInProgress = true;
   console.log("🚫 W3 Suite shutting down");
   process.exit(0);
 });
 
-process.on("SIGINT", () => {
+process.once("SIGINT", () => {
+  if (shutdownInProgress) return;
+  shutdownInProgress = true;
   console.log("🚫 W3 Suite shutting down");
   process.exit(0);
 });
