@@ -128,9 +128,16 @@ class OAuth2Client {
       const state = this.generateRandomString(32);
       sessionStorage.setItem('oauth2_state', state);
 
-      // Build authorization URL - use current origin for gateway routing
-      const baseUrl = window.location.origin; // This should be the gateway URL (port 5000)
+      // Build authorization URL - use corrected gateway URL without :8000
+      const baseUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5000'
+        : window.location.origin.replace(':8000', ''); // Remove :8000 if present
       const authUrl = new URL(this.config.authorizationEndpoint, baseUrl);
+      
+      console.log('🎯 Auth URL Construction:');
+      console.log('🌐 Original window.location.origin:', window.location.origin);
+      console.log('🔧 Corrected baseUrl:', baseUrl);
+      console.log('📍 Final authUrl:', authUrl.toString());
       
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('client_id', this.config.clientId);
