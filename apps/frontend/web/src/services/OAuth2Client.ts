@@ -148,8 +148,6 @@ class OAuth2Client {
       console.log('🔐 Starting OAuth2 flow...');
       console.log('📍 Final Authorization URL:', authUrl.toString());
       
-      // Skip test request to avoid loops - direct redirect is safer
-      console.log('🔐 Skipping endpoint test to prevent loops - redirecting directly');
 
       // Redirect to authorization server
       window.location.href = authUrl.toString();
@@ -444,7 +442,6 @@ class OAuth2Client {
       // Set expiry to 1 minute ago to force expiration
       this.currentTokens.expires_at = Date.now() - 60000;
       localStorage.setItem('oauth2_tokens', JSON.stringify(this.currentTokens));
-      console.log('⚠️ DEBUG: Token force-expired for testing');
     }
   }
 }

@@ -167,6 +167,12 @@ async function startFrontendServer() {
 
 // ==================== ROUTING CONFIGURATION ====================
 
+// ✅ Health check handlers - STOP HEAD /api/ loop by intercepting BEFORE proxy
+app.head('/api', (req, res) => res.status(200).end());
+app.head('/api/', (req, res) => res.status(200).end());
+app.get('/api', (req, res) => res.json({ status: 'W3 Suite API Gateway - OK', timestamp: Date.now() }));
+app.get('/api/', (req, res) => res.json({ status: 'W3 Suite API Gateway - OK', timestamp: Date.now() }));
+
 // Brand Interface custom middleware (preserves full paths)
 app.use(brandInterfaceHandler);
 

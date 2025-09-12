@@ -68,7 +68,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       const codeChallenge = await generateCodeChallenge(codeVerifier);
       
       // Step 1: Get authorization code
-      const authResponse = await fetch('/oauth2/authorize', {
+      const authResponse = await fetch('/api/oauth2/authorize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -85,18 +85,15 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         }),
       });
 
-      console.log('🔍 Auth Response Status:', authResponse.status);
-      console.log('🔍 Auth Response URL:', authResponse.url);
 
       if (authResponse.ok && authResponse.redirected) {
         // The server redirected us to the callback URL with the authorization code
         const redirectUrl = new URL(authResponse.url);
         const authCode = redirectUrl.searchParams.get('code');
-        console.log('🔑 Authorization code from redirect:', authCode ? 'YES' : 'NO');
         
         if (authCode) {
           // Step 2: Exchange authorization code for access token
-          const tokenResponse = await fetch('/oauth2/token', {
+          const tokenResponse = await fetch('/api/oauth2/token', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
@@ -110,11 +107,9 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             }),
           });
 
-          console.log('🎫 Token Response Status:', tokenResponse.status);
           
           if (tokenResponse.ok) {
             const tokenData = await tokenResponse.json();
-            console.log('🎫 Token Data:', tokenData);
             
             // Add expires_at timestamp for OAuth2Client compatibility
             const expiresAt = Date.now() + (tokenData.expires_in * 1000);
@@ -125,15 +120,8 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             
             // Store OAuth2 tokens using OAuth2Client format
             localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
-            console.log('💾 Tokens stored in localStorage');
             
-            console.log('✅ OAuth2 Enterprise Login Successful:', {
-              tokenType: tokenData.token_type,
-              expiresIn: tokenData.expires_in,
-              expiresAt: new Date(expiresAt).toLocaleString(),
-              scope: tokenData.scope
-            });
-            
+            console.log('✅ OAuth2 Enterprise Login Successful');
             console.log('🔄 Redirecting to dashboard...');
             // Redirect alla dashboard del tenant dopo login
             const tenantCode = propTenantCode || 'w3suite';
