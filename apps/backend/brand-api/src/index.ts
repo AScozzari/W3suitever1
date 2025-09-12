@@ -135,7 +135,7 @@ try {
   });
 
   // Avvia il server Brand Interface (frontend + backend) sulla porta 3001 (dietro API Gateway)
-  const PORT = process.env.PORT || 3001;
+  const PORT = parseInt(process.env.PORT || '3001', 10);
   httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`✅ Brand Interface server running on port ${PORT} (internal)`);
     console.log(`🌐 Brand Interface available at: http://localhost:${PORT}/brandinterface/login (internal)`);
