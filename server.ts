@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./apps/backend/api/src/core/vite";
 import { setupOAuth2Server } from "./apps/backend/api/src/core/oauth2-server";
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy for rate limiting and X-Forwarded headers
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -61,10 +62,10 @@ app.use((req, res, next) => {
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
+  // Other ports are firewalled. Default to 3004 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
+  const port = parseInt(process.env.PORT || '3004', 10);
   server.listen({
     port,
     host: "0.0.0.0",
