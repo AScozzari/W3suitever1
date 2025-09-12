@@ -114,11 +114,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     const checkOAuth2Token = async () => {
       try {
         const accessToken = await oauth2Client.getAccessToken();
-        if (!accessToken) {
-          console.log('OAuth2 token not available - login required');
-        }
       } catch (error) {
-        console.log('OAuth2 token validation failed:', error);
       }
     };
     
@@ -462,7 +458,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
   const handleLogout = async () => {
     try {
-      console.log('🚪 Logging out via OAuth2...');
       
       // Use OAuth2 logout (clears tokens and revokes on server)
       await oauth2Client.logout();
@@ -471,13 +466,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
       
-      console.log('✅ OAuth2 logout completed');
       
       // Redirect to login page
       window.location.href = '/brandinterface/login';
       
     } catch (error) {
-      console.error('❌ Logout error:', error);
       // Fallback: force logout even if server call fails
       await oauth2Client.logout();
       queryClient.clear();
@@ -835,7 +828,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
-                      // TODO: Navigate to profile
                     }}
                     style={{
                       display: 'flex',
@@ -859,7 +851,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
-                      // TODO: Open support ticket
                     }}
                     style={{
                       display: 'flex',
@@ -883,7 +874,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
-                      // TODO: Clock in/out functionality
                     }}
                     style={{
                       display: 'flex',

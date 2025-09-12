@@ -65,14 +65,11 @@ export default function Header({
 
   const handleLogout = async () => {
     try {
-      console.log('🚪 Logging out via OAuth2...');
       await oauth2Client.logout();
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
-      console.log('✅ OAuth2 logout completed');
       window.location.href = '/brandinterface/login';
     } catch (error) {
-      console.error('❌ Logout error:', error);
       await oauth2Client.logout();
       queryClient.clear();
       window.location.href = '/brandinterface/login';

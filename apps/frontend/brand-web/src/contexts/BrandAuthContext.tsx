@@ -74,7 +74,6 @@ export function BrandAuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('Login failed:', error);
         return false;
       }
 
@@ -105,7 +104,6 @@ export function BrandAuthProvider({ children }: { children: React.ReactNode }) {
       
       return false;
     } catch (error) {
-      console.error('Login failed:', error);
       return false;
     }
   };

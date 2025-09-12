@@ -9,8 +9,6 @@ import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantC
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 export default function App() {
-  console.log('[Brand Interface] App mounting with REAL providers...');
-  console.log('[Brand Interface] Route location:', window.location.pathname);
   
   return (
     <ErrorBoundary>

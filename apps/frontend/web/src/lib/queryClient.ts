@@ -23,7 +23,6 @@ export const queryClient = new QueryClient({
         });
         if (!res.ok) {
           if (res.status === 401) {
-            console.log('❌ 401 Unauthorized - redirecting to login');
             // Use OAuth2 logout instead of manual token clearing
             await oauth2Client.logout();
             window.location.href = '/login';
@@ -59,7 +58,6 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
-      console.log('❌ 401 Unauthorized in apiRequest - redirecting to login');
       // Use OAuth2 logout instead of manual token clearing
       await oauth2Client.logout();
       window.location.href = '/login';

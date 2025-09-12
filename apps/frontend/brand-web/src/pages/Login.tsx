@@ -179,7 +179,6 @@ export default function Login() {
       const success = await login(credentials);
       if (success) {
         // SPA navigation invece di full page reload
-        console.log('🎉 Login success - SPA navigate to dashboard');
         window.history.replaceState({}, '', '/brandinterface');
         window.dispatchEvent(new PopStateEvent('popstate'));
       } else {

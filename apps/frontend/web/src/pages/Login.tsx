@@ -121,14 +121,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
             // Store OAuth2 tokens using OAuth2Client format
             localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
             
-            console.log('✅ OAuth2 Enterprise Login Successful');
-            console.log('🔄 Redirecting to dashboard...');
             // Redirect alla dashboard del tenant dopo login
             const tenantCode = propTenantCode || 'w3suite';
             window.location.href = `/${tenantCode}/dashboard`;
           } else {
             const errorData = await tokenResponse.json();
-            console.error('Token exchange failed:', errorData);
             throw new Error(`Token exchange failed: ${errorData.error || 'Unknown error'}`);
           }
         } else {
@@ -137,22 +134,18 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       } else {
         // Handle different error cases
         if (authResponse.status === 0) {
-          console.error('Network error or CORS issue');
           alert('Errore di rete. Verifica la connessione.');
         } else {
           try {
             const error = await authResponse.json();
             alert(error.message || 'Credenziali non valide');
           } catch (e) {
-            console.error('Error parsing response:', e);
             alert(`Errore del server (${authResponse.status})`);
           }
         }
         setIsLoading(false);
       }
     } catch (error) {
-      console.error('OAuth2 Login error:', error);
-      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
       alert('Errore durante il login. Riprova.');
       setIsLoading(false);
     }

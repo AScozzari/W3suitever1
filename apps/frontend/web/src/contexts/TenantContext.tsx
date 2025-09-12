@@ -99,7 +99,6 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         throw new Error('Failed to switch tenant');
       }
     } catch (error) {
-      console.error('Error switching tenant:', error);
       throw error;
     }
   };

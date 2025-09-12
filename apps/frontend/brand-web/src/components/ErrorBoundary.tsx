@@ -20,8 +20,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('🚨 [Brand Interface] ErrorBoundary caught error:', error);
-    console.error('🚨 [Brand Interface] Error info:', errorInfo);
   }
 
   render() {

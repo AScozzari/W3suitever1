@@ -40,15 +40,11 @@ class OAuth2Client {
   private currentTokens: TokenResponse | null = null;
 
   constructor() {
-    // Force gateway URL to avoid Replit external port issues
+    // Force gateway URL to avoid Replit external port issues - NEVER use :8000 
     this.gatewayOrigin = window.location.hostname === 'localhost' 
       ? 'http://localhost:5000'
-      : window.location.origin.replace(':8000', ''); // Remove :8000 if present
+      : `${window.location.protocol}//${window.location.hostname}`; // Always exclude port completely
       
-    console.log('🔧 OAuth2 URL Fix:');
-    console.log('🌐 window.location.origin:', window.location.origin);
-    console.log('🌐 window.location.hostname:', window.location.hostname);
-    console.log('🎯 gatewayOrigin (corrected):', this.gatewayOrigin);
     
     this.config = {
       clientId: 'w3suite-frontend',
@@ -66,13 +62,7 @@ class OAuth2Client {
    */
   async initialize(): Promise<void> {
     try {
-      // In a full implementation, we'd fetch /.well-known/oauth-authorization-server
-      // For now, we use static config
-      console.log('✅ OAuth2 Client initialized');
-      console.log('🔧 Client ID:', this.config.clientId);
-      console.log('📍 Redirect URI:', this.config.redirectUri);
     } catch (error) {
-      console.error('❌ OAuth2 discovery failed:', error);
       throw error;
     }
   }
@@ -110,13 +100,6 @@ class OAuth2Client {
    */
   async startAuthorizationFlow(): Promise<void> {
     try {
-      // Debug logging for URL construction
-      console.log('🔍 OAuth2Client Configuration:');
-      console.log('🔧 Client ID:', this.config.clientId);
-      console.log('📍 Redirect URI:', this.config.redirectUri);
-      console.log('🌐 Auth Endpoint:', this.config.authorizationEndpoint);
-      console.log('🌐 Window Origin:', window.location.origin);
-      console.log('🌐 Window Location:', window.location.href);
       
       // Generate PKCE challenge
       const { codeVerifier, codeChallenge } = await this.generatePKCEChallenge();
@@ -129,13 +112,9 @@ class OAuth2Client {
       const state = this.generateRandomString(32);
       sessionStorage.setItem('oauth2_state', state);
 
-      // Build authorization URL - use corrected gateway origin without :8000
+      // Build authorization URL - use corrected gateway origin (no port)
       const authUrl = new URL(this.config.authorizationEndpoint, this.gatewayOrigin);
       
-      console.log('🎯 Auth URL Construction:');
-      console.log('🌐 window.location.origin:', window.location.origin);
-      console.log('🔧 gatewayOrigin (used):', this.gatewayOrigin);
-      console.log('📍 Final authUrl:', authUrl.toString());
       
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('client_id', this.config.clientId);
@@ -145,14 +124,11 @@ class OAuth2Client {
       authUrl.searchParams.set('code_challenge', codeChallenge);
       authUrl.searchParams.set('code_challenge_method', 'S256');
 
-      console.log('🔐 Starting OAuth2 flow...');
-      console.log('📍 Final Authorization URL:', authUrl.toString());
       
 
       // Redirect to authorization server
       window.location.href = authUrl.toString();
     } catch (error) {
-      console.error('❌ OAuth2 flow start failed:', error);
       throw error;
     }
   }
@@ -202,16 +178,12 @@ class OAuth2Client {
       this.currentTokens = tokensWithExpiry;
       localStorage.setItem('oauth2_tokens', JSON.stringify(tokensWithExpiry));
       
-      // Clear temporary storage
       sessionStorage.removeItem('oauth2_code_verifier');
       sessionStorage.removeItem('oauth2_state');
 
-      console.log('✅ OAuth2 tokens received');
-      console.log('⏰ Expires in:', tokenResponse.expires_in, 'seconds');
 
       return tokenResponse;
     } catch (error) {
-      console.error('❌ OAuth2 callback failed:', error);
       throw error;
     }
   }
@@ -267,13 +239,10 @@ class OAuth2Client {
         const now = Date.now();
         const fiveMinutesBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
         
-        console.log(`🔍 Token expiry check: Current time: ${new Date(now).toLocaleTimeString()}, Token expires: ${new Date(expiryTime).toLocaleTimeString()}`);
         
         if (now >= (expiryTime - fiveMinutesBuffer)) {
-          console.log('🔄 Access token expired, attempting refresh...');
           const refreshedTokens = await this.refreshToken();
           if (!refreshedTokens) {
-            console.log('🚫 Refresh failed, user needs to re-login');
             return null;
           }
           return refreshedTokens.access_token;
@@ -282,7 +251,6 @@ class OAuth2Client {
 
       return this.currentTokens.access_token;
     } catch (error) {
-      console.error('❌ Token retrieval failed:', error);
       return null;
     }
   }
@@ -332,10 +300,8 @@ class OAuth2Client {
       this.currentTokens = refreshedTokensWithExpiry;
       localStorage.setItem('oauth2_tokens', JSON.stringify(refreshedTokensWithExpiry));
 
-      console.log('✅ OAuth2 tokens refreshed');
       return refreshedTokensWithExpiry;
     } catch (error) {
-      console.error('❌ Token refresh failed:', error);
       await this.logout();
       return null;
     }
@@ -370,7 +336,6 @@ class OAuth2Client {
 
       return await response.json();
     } catch (error) {
-      console.error('❌ UserInfo request failed:', error);
       return null;
     }
   }
@@ -421,7 +386,6 @@ class OAuth2Client {
         });
       }
     } catch (error) {
-      console.warn('⚠️ Token revocation failed (continuing logout):', error);
     }
 
     // Clear local storage
@@ -431,19 +395,8 @@ class OAuth2Client {
     sessionStorage.removeItem('oauth2_code_verifier');
     sessionStorage.removeItem('oauth2_state');
 
-    console.log('✅ OAuth2 logout completed');
   }
 
-  /**
-   * Debug function: Force expire current token for testing
-   */
-  async forceExpireToken(): Promise<void> {
-    if (this.currentTokens && this.currentTokens.expires_at) {
-      // Set expiry to 1 minute ago to force expiration
-      this.currentTokens.expires_at = Date.now() - 60000;
-      localStorage.setItem('oauth2_tokens', JSON.stringify(this.currentTokens));
-    }
-  }
 }
 
 // Singleton OAuth2 client

@@ -238,7 +238,6 @@ export default function SettingsPage() {
             // Qui dovremmo gestire il redirect al login
             return;
           }
-          console.error('Failed to load settings data:', result.error);
           return;
         }
 
@@ -253,7 +252,6 @@ export default function SettingsPage() {
         await fetchRoles();
 
       } catch (error) {
-        console.error('Enterprise service error:', error);
       }
     };
 
@@ -268,7 +266,6 @@ export default function SettingsPage() {
         setRagioneSocialiList(result.data.legalEntities);
       }
     } catch (error) {
-      console.error('Error refetching legal entities:', error);
     }
   };
   
@@ -293,7 +290,6 @@ export default function SettingsPage() {
         ]);
       }
     } catch (error) {
-      console.error('Error fetching roles:', error);
       setAvailableRoles([
         'Amministratore',
         'Store Manager',
@@ -343,13 +339,11 @@ export default function SettingsPage() {
         throw new Error(`Failed to delete legal entity: ${response.statusText}`);
       }
 
-      console.log('✅ Legal entity deleted successfully');
       
       // Refresh the list dopo l'eliminazione
       await refetchLegalEntities();
       
     } catch (error) {
-      console.error('❌ Error deleting legal entity:', error);
       alert('Errore nell\'eliminazione della ragione sociale. Riprova.');
     }
   };
@@ -367,11 +361,9 @@ export default function SettingsPage() {
         // Ricarica i dati dopo l'eliminazione
         await reloadStoreData();
       } else {
-        console.error('❌ Error deleting store:', result.error);
         alert('Errore nell\'eliminazione del punto vendita. Riprova.');
       }
     } catch (error) {
-      console.error('❌ Error deleting store:', error);
       alert('Errore nell\'eliminazione del punto vendita. Riprova.');
     }
   };
@@ -384,7 +376,6 @@ export default function SettingsPage() {
         setPuntiVenditaList(result.data);
       }
     } catch (error) {
-      console.error('Error reloading stores:', error);
     }
   };
   
@@ -2733,7 +2724,6 @@ export default function SettingsPage() {
       }
 
       const newLegalEntity = await response.json();
-      console.log('✅ Legal entity created:', newLegalEntity);
 
       // Refresh the list dopo la creazione
       await refetchLegalEntities();
@@ -2775,7 +2765,6 @@ export default function SettingsPage() {
         note: ''
       });
     } catch (error) {
-      console.error('❌ Error creating legal entity:', error);
       alert('Errore nella creazione della ragione sociale. Riprova.');
     }
   };
@@ -2859,11 +2848,9 @@ export default function SettingsPage() {
         await reloadStoreData();
         
       } else {
-        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} store:`, result.error);
         alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
       }
     } catch (error) {
-      console.error(`❌ Error ${storeModal.data ? 'updating' : 'creating'} store:`, error);
       alert(`Errore nella ${storeModal.data ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
     }
   };
