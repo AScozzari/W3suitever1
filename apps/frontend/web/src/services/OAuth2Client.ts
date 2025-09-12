@@ -146,25 +146,8 @@ class OAuth2Client {
       console.log('🔐 Starting OAuth2 flow...');
       console.log('📍 Final Authorization URL:', authUrl.toString());
       
-      // Make a test request first to check if the endpoint is working
-      try {
-        const testResponse = await fetch(authUrl.toString(), { method: 'GET' });
-        console.log('🔍 Auth Response Status:', testResponse.status);
-        console.log('🔍 Auth Response URL:', testResponse.url);
-        
-        if (!testResponse.ok) {
-          console.error('❌ Auth endpoint test failed:', testResponse.status, testResponse.statusText);
-          // Try to get response text for debugging
-          try {
-            const responseText = await testResponse.text();
-            console.error('❌ Auth Response Text:', responseText);
-          } catch (textError) {
-            console.error('❌ Could not read response text:', textError);
-          }
-        }
-      } catch (testError) {
-        console.error('❌ Auth endpoint test error:', testError);
-      }
+      // Skip test request to avoid loops - direct redirect is safer
+      console.log('🔐 Skipping endpoint test to prevent loops - redirecting directly');
 
       // Redirect to authorization server
       window.location.href = authUrl.toString();

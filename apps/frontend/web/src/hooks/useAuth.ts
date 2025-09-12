@@ -29,7 +29,7 @@ export function useAuth() {
   }, []);
   
   const { data: userInfo, isLoading: isUserInfoLoading } = useQuery({
-    queryKey: ["/oauth2/userinfo"], // OAuth2 standard userinfo endpoint
+    queryKey: ["/api/oauth2/userinfo"], // OAuth2 userinfo endpoint via API gateway
     enabled: hasToken, // Only run query if we have a token
     retry: false,
   });
