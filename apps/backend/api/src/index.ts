@@ -9,6 +9,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
+// Conditional bootstrap: start gateway if port 5000 is expected (but not if we're a gateway child)
+const isGatewayChild = process.env.GATEWAY_CHILD === '1';
+const wantGateway = !isGatewayChild && ((process.env.PORT ?? '') === '5000' || process.env.RUN_GATEWAY === '1' || process.env.RUN_GATEWAY === 'true');
+
+if (wantGateway) {
+  console.log('🚀 Detected PORT=5000, starting gateway server instead of standalone API...');
+  process.env.AUTO_START_FRONTEND = 'true'; // Ensure frontend auto-starts
+  await import('../../../../server.ts'); // Import and start the gateway server
+  // Gateway server is now running and managing all services - do not start standalone API
+  console.log('✅ Gateway server active, skipping standalone API startup');
+  // Don't exit - let the gateway process stay alive
+} else {
+  console.log('🚀 Starting W3 Suite API server in standalone mode...');
 const app = express();
 
 // Trust first proxy for rate limiting and X-Forwarded headers
@@ -114,10 +127,11 @@ const httpServer = await registerRoutes(app);
 
 
 
-// Avvia il server W3 Suite API su porta 3004 (proxy gateway sulla 5000)
-const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
-httpServer.listen(W3_PORT, "0.0.0.0", () => {
-  console.log(`✅ W3 Suite API server running on port ${W3_PORT}`);
-  console.log(`🔌 API endpoints available at: http://localhost:${W3_PORT}/api`);
-  console.log(`🌐 Frontend served by gateway at: http://localhost:5000`);
-});
+  // Avvia il server W3 Suite API su porta 3004 (proxy gateway sulla 5000)
+  const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
+  httpServer.listen(W3_PORT, "0.0.0.0", () => {
+    console.log(`✅ W3 Suite API server running on port ${W3_PORT}`);
+    console.log(`🔌 API endpoints available at: http://localhost:${W3_PORT}/api`);
+    console.log(`🌐 Frontend served by gateway at: http://localhost:5000`);
+  });
+}

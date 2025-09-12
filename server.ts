@@ -209,7 +209,9 @@ function startApiServer() {
       ...process.env,
       NODE_ENV: "development",
       W3_PORT: process.env.W3_PORT || process.env.API_PORT || "3004",
-      JWT_SECRET: process.env.JWT_SECRET || "w3suite-dev-secret-2025"
+      JWT_SECRET: process.env.JWT_SECRET || "w3suite-dev-secret-2025",
+      GATEWAY_CHILD: "1", // Prevent child API from starting gateway recursively
+      PORT: "" // Clear PORT to prevent gateway detection in child process
     }
   });
 
