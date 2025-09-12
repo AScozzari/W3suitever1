@@ -180,6 +180,21 @@ app.use('/api', backendProxy);
 app.use('/oauth2', backendProxy);
 app.use('/.well-known', backendProxy);
 
+// SPA fallback: serve index.html for all navigation routes
+app.get('*', (req, res, next) => {
+  const p = req.path;
+  const isApi = p.startsWith('/api') || p.startsWith('/oauth2') || p.startsWith('/.well-known') || 
+                p.startsWith('/gateway') || p.startsWith('/brandinterface') || p.startsWith('/brand-api');
+  const isAsset = p.includes('.') || (req.headers.accept && !req.headers.accept.includes('text/html'));
+  
+  if (!isApi && !isAsset) {
+    // Force Vite to serve index.html for SPA navigation
+    req.url = '/';
+    return frontendProxy(req, res, next);
+  }
+  return next();
+});
+
 // Route all other requests to separated W3 Suite frontend (catch-all)
 app.use('/', frontendProxy);
 

@@ -12,7 +12,6 @@ import { oauth2Client } from "./services/OAuth2Client";
 import { useEffect } from "react";
 
 export default function App() {
-  console.log('App component rendering, current path:', window.location.pathname);
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
