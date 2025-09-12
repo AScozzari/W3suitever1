@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { oauth2Client } from "../services/OAuth2Client";
 import { useEffect, useState } from "react";
 
+console.log('useAuth module loaded');
+
 export function useAuth() {
   const [hasToken, setHasToken] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
