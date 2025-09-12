@@ -170,6 +170,14 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 
 // ==================== ROUTING ====================
 
+// Brand Interface Frontend (SPA) - MUST be before catch-all
+app.use('/brandinterface', createProxyMiddleware(
+  createProxyConfig('http://localhost:3002', 'brand-web', { 
+    ws: true, // Enable HMR for Brand Web
+    pathRewrite: { '^/brandinterface': '/' } // Strip prefix for SPA
+  })
+));
+
 // Brand Interface API
 app.use('/brand-api', createProxyMiddleware(
   createProxyConfig('http://localhost:3001', 'brand-api')
