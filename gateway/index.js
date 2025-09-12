@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const app = express();
-const PORT = 5000;
+const PORT = 8080; // Changed from 5000 to avoid conflicts
 
 console.log('🚀 Starting API Gateway...');
 
@@ -369,8 +369,8 @@ let w3Process, brandProcess;
 async function checkPortAvailable(port) {
   return new Promise(async (resolve) => {
     try {
-      const { createServer } = await import('net');
-      const server = createServer();
+      const net = await import('net');
+      const server = net.createServer();
       server.listen(port, '0.0.0.0', (err) => {
         if (err) {
           resolve(false);
@@ -379,11 +379,11 @@ async function checkPortAvailable(port) {
         }
       });
       server.on('error', () => resolve(false));
-    } catch (err) {
+    } catch (error) {
       resolve(false);
     }
   });
-}
+}</async>
 
 async function killProcessOnPort(port) {
   return new Promise(async (resolve) => {
@@ -394,11 +394,13 @@ async function killProcessOnPort(port) {
       });
       killProcess.on('exit', () => resolve());
       killProcess.on('error', () => resolve());
-    } catch (err) {
+    } catch (error) {
       resolve();
     }
   });
 }
+
+
 
 if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
   console.log('🚀 Auto-starting backend services...');
@@ -407,10 +409,14 @@ if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
   const killExistingProcesses = async () => {
     try {
       // Kill any existing tsx processes for our apps
-      await new Promise((resolve) => {
-        const killCmd = spawn('pkill', ['-f', 'tsx.*apps/backend'], { stdio: 'inherit' });
-        killCmd.on('exit', () => resolve());
-        killCmd.on('error', () => resolve());
+      await new Promise(async (resolve) => {
+        try {
+          const killCmd = spawn('pkill', ['-f', 'tsx.*apps/backend'], { stdio: 'inherit' });
+          killCmd.on('exit', () => resolve());
+          killCmd.on('error', () => resolve());
+        } catch (error) {
+          resolve();
+        }
       });
       
       // Wait for cleanup
@@ -531,9 +537,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('  /*                    → http://localhost:3000 (W3 Suite Frontend)');
   console.log('');
   console.log('🌐 Access Points:');
-  console.log('  W3 Suite:        http://localhost:5000');
-  console.log('  Brand Interface: http://localhost:5000/brandinterface/login');
-  console.log('  Health Check:    http://localhost:5000/health');
+  console.log(`  W3 Suite:        http://localhost:${PORT}`);
+  console.log(`  Brand Interface: http://localhost:${PORT}/brandinterface/login`);
+  console.log(`  Health Check:    http://localhost:${PORT}/health`);
   console.log('');
   console.log('🔍 Monitoring:');
   console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
