@@ -183,9 +183,9 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// Avvia il server W3 Suite API direttamente su porta 5000 (standard Replit)
-const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 5000);
+// Avvia il server W3 Suite API su porta 3004 (separato dal gateway)
+const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
 httpServer.listen(W3_PORT, "0.0.0.0", () => {
-  console.log(`✅ W3 Suite server running on port ${W3_PORT}`);
-  console.log(`📡 Frontend available at: http://localhost:${W3_PORT}`);
+  console.log(`✅ W3 Suite API server running on port ${W3_PORT}`);
+  console.log(`🔌 API endpoints available at: http://localhost:${W3_PORT}/api`);
 });

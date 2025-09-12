@@ -1,5 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { createServer as createViteServer, createLogger } from "vite";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const viteLogger = createLogger();
 
 /**
  * W3 Suite API Gateway
@@ -55,6 +64,27 @@ const backendProxy = createProxyMiddleware({
   }
 });
 
+// Brand Interface proxy (Brand Interface frontend + API)
+const BRAND_PORT = Number(process.env.BRAND_PORT || 3001);
+const brandInterfaceProxy = createProxyMiddleware({
+  target: `http://localhost:${BRAND_PORT}`,
+  changeOrigin: true,
+  secure: false,
+  ws: true, // Enable WebSocket proxying
+  on: {
+    error: (err, req, res) => {
+      log(`Brand Interface proxy error: ${err.message}`);
+      // Type guard: check if res is ServerResponse and not Socket
+      if ('headersSent' in res && 'status' in res && !res.headersSent) {
+        (res as express.Response).status(503).json({ error: 'Brand Interface service unavailable' });
+      }
+    },
+    proxyReq: (proxyReq, req) => {
+      log(`→ Brand Interface: ${req.method} ${req.url}`);
+    }
+  }
+});
+
 // Frontend proxy (W3 Suite SPA)
 const frontendProxy = createProxyMiddleware({
   target: 'http://localhost:3000',
@@ -87,6 +117,10 @@ const frontendProxy = createProxyMiddleware({
 
 // ==================== ROUTING CONFIGURATION ====================
 
+// Route Brand Interface frontend and API
+app.use('/brandinterface', brandInterfaceProxy);
+app.use('/brand-api', brandInterfaceProxy);
+
 // Route API calls to backend
 app.use('/api', backendProxy);
 app.use('/oauth2', backendProxy);
@@ -101,13 +135,56 @@ app.get('/gateway/health', (req, res) => {
     services: {
       frontend: 'http://localhost:3000',
       backend: `http://localhost:${W3_PORT}`,
-      brandInterface: `http://localhost:${BRAND_PORT}`
+      brandInterface: `http://localhost:${BRAND_PORT}`,
+      routes: {
+        w3Suite: 'http://localhost:5000',
+        w3SuiteApi: 'http://localhost:5000/api',
+        brandInterface: 'http://localhost:5000/brandinterface',
+        brandInterfaceApi: 'http://localhost:5000/brand-api'
+      }
     }
   });
 });
 
-// Route all other requests to frontend (SPA catch-all)
-app.use('/', frontendProxy);
+// Setup W3 Suite Vite middleware for frontend in development
+if (process.env.NODE_ENV === "development") {
+  await setupW3SuiteVite(app);
+} else {
+  // In production, serve static files from dist
+  const webDistPath = path.resolve(__dirname, "apps", "frontend", "web", "dist");
+  app.use('/', express.static(webDistPath));
+  
+  // Catch-all for SPA routes in production
+  app.get('*', (req, res, next) => {
+    // Skip API routes, Brand Interface routes, and static assets
+    if (req.path.startsWith('/api/') || 
+        req.path.startsWith('/brandinterface/') || 
+        req.path.startsWith('/brand-api/') ||
+        req.path.startsWith('/oauth2/') ||
+        req.path.startsWith('/.well-known/') ||
+        req.path.startsWith('/gateway/') ||
+        req.path.includes('.')) {
+      return next();
+    }
+    
+    const indexPath = path.join(webDistPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(503).send(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>W3 Suite - Not Built</title></head>
+          <body>
+            <h1>W3 Suite Not Built</h1>
+            <p>Please build the frontend first:</p>
+            <code>cd apps/frontend/web && npm run build</code>
+          </body>
+        </html>
+      `);
+    }
+  });
+}
 
 // Error handling
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
