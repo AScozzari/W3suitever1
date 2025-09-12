@@ -51,7 +51,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "GATEWAY_ONLY=true npx tsx gateway/index.js"
+args = "npx tsx gateway/index.js"
 
 [agent]
 integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0"]

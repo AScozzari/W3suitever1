@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const app = express();
-const PORT = 5000; // Changed back to 5000
+const PORT = 5000;
 
 console.log('🚀 Starting API Gateway...');
 
@@ -143,44 +143,6 @@ const createProxyConfig = (target, serviceName, options = {}) => {
     onProxyRes: (proxyRes, req, res) => {
       const requestId = req.headers['x-request-id'];
       
-      if (proxyRes.headers['set-cookie']) {
-        const cookies = proxyRes.headers['set-cookie'];
-        proxyRes.headers['set-cookie'] = cookies.map(cookie => {
-          if (serviceName === 'brand-interface' || serviceName === 'brand-api') {
-            if (!cookie.includes('Path=')) {
-              cookie += '; Path=/brandinterface';
-            } else {
-              cookie = cookie.replace(/Path=\/[^;]*/i, 'Path=/brandinterface');
-            }
-          } else {
-            if (!cookie.includes('Path=') || cookie.includes('Path=/brandinterface')) {
-              cookie = cookie.replace(/Path=\/brandinterface[^;]*/i, 'Path=/');
-              if (!cookie.includes('Path=')) {
-                cookie += '; Path=/';
-              }
-            }
-          }
-          
-          if (!cookie.includes('SameSite=')) {
-            cookie += '; SameSite=Lax';
-          }
-          if (!cookie.includes('HttpOnly') && !cookie.toLowerCase().includes('httponly')) {
-            cookie += '; HttpOnly';
-          }
-          if (process.env.NODE_ENV === 'production' && !cookie.includes('Secure')) {
-            cookie += '; Secure';
-          }
-          
-          return cookie;
-        });
-      }
-      
-      if (serviceName === 'brand-interface' || serviceName === 'brand-api') {
-        res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-      } else {
-        res.setHeader('X-Frame-Options', 'DENY');
-      }
-      
       console.log(`[GATEWAY<-${serviceName.toUpperCase()}] [${requestId}] Response: ${proxyRes.statusCode}`);
       
       if (options.onProxyRes) {
@@ -192,40 +154,14 @@ const createProxyConfig = (target, serviceName, options = {}) => {
       const requestId = req.headers['x-request-id'];
       console.error(`[GATEWAY->${serviceName.toUpperCase()} ERROR] [${requestId}]`, err.message);
       
-      if (options.retry !== false && (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT')) {
-        console.log(`[GATEWAY] [${requestId}] Retrying request to ${serviceName}...`);
-        
-        setTimeout(async () => {
-          try {
-            const retryResponse = await axios({
-              method: req.method,
-              url: `${target}${req.originalUrl}`,
-              headers: req.headers,
-              data: req.body,
-              timeout: 5000
-            });
-            
-            res.status(retryResponse.status).json(retryResponse.data);
-          } catch (retryError) {
-            res.status(502).json({
-              error: 'bad_gateway',
-              message: `${serviceName} service unavailable after retry`,
-              service: serviceName,
-              requestId: requestId,
-              details: process.env.NODE_ENV === 'development' ? retryError.message : undefined
-            });
-          }
-        }, 1000);
-      } else {
-        const statusCode = err.code === 'ETIMEDOUT' ? 504 : 502;
-        res.status(statusCode).json({
-          error: statusCode === 504 ? 'gateway_timeout' : 'bad_gateway',
-          message: `${serviceName} service ${statusCode === 504 ? 'timeout' : 'unavailable'}`,
-          service: serviceName,
-          requestId: requestId,
-          details: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
-      }
+      const statusCode = err.code === 'ETIMEDOUT' ? 504 : 502;
+      res.status(statusCode).json({
+        error: statusCode === 504 ? 'gateway_timeout' : 'bad_gateway',
+        message: `${serviceName} service ${statusCode === 504 ? 'timeout' : 'unavailable'}`,
+        service: serviceName,
+        requestId: requestId,
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
     },
     
     ...options
@@ -233,74 +169,35 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 };
 
 // ==================== ROUTING ====================
+
+// Brand Interface Frontend
 app.use('/brandinterface', createProxyMiddleware(
   createProxyConfig('http://localhost:3001', 'brand-interface', { 
-    ws: true,
-    pathRewrite: {
-      '^/brandinterface': '/brandinterface'
-    },
-    onProxyReqWs: (proxyReq, req, socket, head) => {
-      const requestId = req.headers['x-request-id'] || 'ws-' + Date.now();
-      console.log(`[GATEWAY->BRAND WS] [${requestId}] WebSocket upgrade for ${req.url}`);
-    }
+    ws: true
   })
 ));
 
-app.use('/brandinterface-hmr', createProxyMiddleware(
-  createProxyConfig('ws://localhost:24678', 'brand-hmr', {
-    ws: true,
-    changeOrigin: true,
-    onProxyReqWs: (proxyReq, req, socket, head) => {
-      console.log(`[GATEWAY->BRAND HMR] WebSocket connection for HMR`);
-    }
-  })
-));
-
-// ==================== BRAND INTERFACE ROUTING ====================
-// Route all Brand Interface frontend requests to port 3001
-app.use('/brandinterface', createProxyMiddleware(
-  createProxyConfig('http://localhost:3001', 'brand-interface', { 
-    ws: true, // Enable WebSocket for HMR
-    pathRewrite: (path, req) => '/brandinterface' + path, // Re-add stripped prefix
-    onProxyReqWs: (proxyReq, req, socket, head) => {
-      // Handle WebSocket upgrade for HMR
-      const requestId = req.headers['x-request-id'] || 'ws-' + Date.now();
-      console.log(`[GATEWAY->BRAND WS] [${requestId}] WebSocket upgrade for ${req.url}`);
-    }
-  })
-));
-
-// Route all Brand API requests to port 3001
+// Brand Interface API
 app.use('/brand-api', createProxyMiddleware(
-  createProxyConfig('http://localhost:3001', 'brand-api', {
-    pathRewrite: (path, req) => '/brand-api' + path // Re-add stripped prefix
-  })
+  createProxyConfig('http://localhost:3001', 'brand-api')
 ));
 
+// W3 Suite API
 app.use('/api', createProxyMiddleware(
   createProxyConfig('http://localhost:3000', 'w3-api')
 ));
 
+// OAuth2
 app.use('/oauth2', createProxyMiddleware(
-  createProxyConfig('http://localhost:3000', 'w3-oauth2', {
-    onProxyReq: (proxyReq, req, res) => {
-      if (req.headers.authorization) {
-        proxyReq.setHeader('Authorization', req.headers.authorization);
-      }
-    }
-  })
+  createProxyConfig('http://localhost:3000', 'w3-oauth2')
 ));
 
+// Well-known
 app.use('/.well-known', createProxyMiddleware(
-  createProxyConfig('http://localhost:3000', 'w3-wellknown', {
-    onProxyRes: (proxyRes, req, res) => {
-      if (proxyRes.statusCode === 200) {
-        res.setHeader('Cache-Control', 'public, max-age=3600');
-      }
-    }
-  })
+  createProxyConfig('http://localhost:3000', 'w3-wellknown')
 ));
 
+// W3 Suite Frontend (catch-all)
 app.use('/', createProxyMiddleware(
   createProxyConfig('http://localhost:3000', 'w3-suite', {
     ws: true
@@ -448,18 +345,8 @@ if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ API Gateway running on port ${PORT}`);
   console.log('');
-  console.log('🔒 Security Features:');
-  console.log('  ✓ X-Forwarded headers for origin tracking');
-  console.log('  ✓ 30-second timeout for all proxied requests');
-  console.log('  ✓ Cookie path isolation (W3: /, Brand: /brandinterface)');
-  console.log('  ✓ Service context tracking with X-Service-Context');
-  console.log('  ✓ Request ID tracking for distributed tracing');
-  console.log('  ✓ Automatic retry for temporary failures');
-  console.log('  ✓ Security headers (HSTS, XSS, CSP per app)');
-  console.log('');
   console.log('📡 Routing Configuration:');
   console.log('  /brandinterface/*     → http://localhost:3001 (Brand Interface Frontend)');
-  console.log('  /brandinterface-hmr/* → ws://localhost:24678 (Brand HMR WebSocket)');
   console.log('  /brand-api/*          → http://localhost:3001 (Brand Interface API)');
   console.log('  /api/*                → http://localhost:3000 (W3 Suite API)');
   console.log('  /oauth2/*             → http://localhost:3000 (OAuth2 Server)');
