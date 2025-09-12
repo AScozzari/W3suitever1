@@ -299,21 +299,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get stores for current tenant (automatic via middleware)
-  app.get('/api/stores', ...authWithRBAC, async (req: any, res) => {
+  // Get stores for current tenant
+  app.get('/api/stores', enterpriseAuth, async (req: any, res) => {
     try {
-      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       
       if (!tenantId) {
         return res.status(400).json({ error: "No tenant ID available" });
-      }
-      
-      // Valida che il tenantId sia un UUID valido
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(tenantId)) {
-        console.error("Invalid tenant ID format:", tenantId);
-        return res.status(400).json({ error: "Invalid tenant ID format" });
       }
       
       const stores = await storage.getStoresByTenant(tenantId);
@@ -861,6 +853,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching permissions:", error);
       res.status(500).json({ error: "Failed to fetch permissions" });
     }
+  });
+
+  // Health check endpoint (no authentication required)
+  app.get('/api/health', async (req, res) => {
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'W3 Suite API',
+      environment: process.env.NODE_ENV || 'development'
+    });
   });
 
   const httpServer = createServer(app);

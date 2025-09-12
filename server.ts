@@ -49,6 +49,9 @@ const backendProxy = createProxyMiddleware({
   changeOrigin: true,
   secure: false,
   ws: true, // Enable WebSocket proxying
+  pathRewrite: {
+    '^/api': '/api', // Preserve the /api prefix when forwarding to backend
+  },
   on: {
     error: (err, req, res) => {
       log(`Backend proxy error: ${err.message}`);
@@ -58,7 +61,7 @@ const backendProxy = createProxyMiddleware({
       }
     },
     proxyReq: (proxyReq, req) => {
-      log(`→ Backend: ${req.method} ${req.url}`);
+      log(`→ Backend: ${req.method} ${req.url} → ${proxyReq.path}`);
     }
   }
 });

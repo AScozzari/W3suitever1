@@ -22,43 +22,43 @@ if (wantGateway) {
   // Don't exit - let the gateway process stay alive
 } else {
   console.log('🚀 Starting W3 Suite API server in standalone mode...');
-const app = express();
+  const app = express();
 
-// Trust first proxy for rate limiting and X-Forwarded headers
-app.set('trust proxy', 1);
+  // Trust first proxy for rate limiting and X-Forwarded headers
+  app.set('trust proxy', 1);
 
-// W3 Suite standalone - Brand Interface completamente isolato su porta 5001
+  // W3 Suite standalone - Brand Interface completamente isolato su porta 5001
 
-// Security Headers with Helmet
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: process.env.NODE_ENV === 'development' 
-        ? ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"] 
-        : ["'self'", "https:"],
-      styleSrc: process.env.NODE_ENV === 'development'
-        ? ["'self'", "'unsafe-inline'", "https:"]
-        : ["'self'", "https:"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
-      fontSrc: ["'self'", "https:", "data:"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'self'"]
-    }
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  },
-  xFrameOptions: { action: 'deny' },
-  noSniff: true,
-  xssFilter: true,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  permittedCrossDomainPolicies: false
-}));
+  // Security Headers with Helmet
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: process.env.NODE_ENV === 'development' 
+          ? ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"] 
+          : ["'self'", "https:"],
+        styleSrc: process.env.NODE_ENV === 'development'
+          ? ["'self'", "'unsafe-inline'", "https:"]
+          : ["'self'", "https:"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "ws:", "wss:", "http:", "https:"],
+        fontSrc: ["'self'", "https:", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'self'"]
+      }
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true
+    },
+    xFrameOptions: { action: 'deny' },
+    noSniff: true,
+    xssFilter: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    permittedCrossDomainPolicies: false
+  }));
 
 // Rate Limiting
 const apiLimiter = rateLimit({
