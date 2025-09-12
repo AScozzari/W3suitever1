@@ -277,6 +277,9 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 app.use('/brandinterface', createProxyMiddleware(
   createProxyConfig('http://localhost:3001', 'brand-interface', { 
     ws: true, // Enable WebSocket for HMR
+    pathRewrite: {
+      '^/brandinterface': '/brandinterface' // Explicitly preserve the path
+    },
     onProxyReqWs: (proxyReq, req, socket, head) => {
       // Handle WebSocket upgrade for HMR
       const requestId = req.headers['x-request-id'] || 'ws-' + Date.now();
@@ -298,7 +301,11 @@ app.use('/brandinterface-hmr', createProxyMiddleware(
 
 // Route all Brand API requests to port 3001
 app.use('/brand-api', createProxyMiddleware(
-  createProxyConfig('http://localhost:3001', 'brand-api')
+  createProxyConfig('http://localhost:3001', 'brand-api', {
+    pathRewrite: {
+      '^/brand-api': '/brand-api' // Explicitly preserve the path
+    }
+  })
 ));
 
 // ==================== W3 SUITE ROUTING ====================
@@ -334,6 +341,7 @@ app.use('/.well-known', createProxyMiddleware(
 
 // ==================== CATCH-ALL ROUTING ====================
 // Route all other requests to W3 Suite (frontend and other resources)
+// IMPORTANT: This must be LAST to not intercept specific routes
 app.use('/', createProxyMiddleware(
   createProxyConfig('http://localhost:3000', 'w3-suite', {
     ws: true // Enable WebSocket for W3 Suite HMR
