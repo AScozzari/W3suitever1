@@ -39,9 +39,19 @@ class OAuth2Client {
   private currentTokens: TokenResponse | null = null;
 
   constructor() {
+    // Force gateway URL to avoid Replit external port issues
+    const gatewayOrigin = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000'
+      : window.location.origin.replace(':8000', ''); // Remove :8000 if present
+      
+    console.log('🔧 OAuth2 URL Fix:');
+    console.log('🌐 window.location.origin:', window.location.origin);
+    console.log('🌐 window.location.hostname:', window.location.hostname);
+    console.log('🎯 gatewayOrigin (corrected):', gatewayOrigin);
+    
     this.config = {
       clientId: 'w3suite-frontend',
-      redirectUri: `${window.location.origin}/auth/callback`,
+      redirectUri: `${gatewayOrigin}/auth/callback`,
       scopes: ['openid', 'profile', 'email', 'tenant_access'],
       authorizationEndpoint: '/oauth2/authorize',
       tokenEndpoint: '/oauth2/token',
