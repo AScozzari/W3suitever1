@@ -256,11 +256,24 @@ app.use('/brandinterface-hmr', createProxyMiddleware(
   })
 ));
 
+// ==================== BRAND INTERFACE ROUTING ====================
+// Route all Brand Interface frontend requests to port 3001
+app.use('/brandinterface', createProxyMiddleware(
+  createProxyConfig('http://localhost:3001', 'brand-interface', { 
+    ws: true, // Enable WebSocket for HMR
+    pathRewrite: (path, req) => '/brandinterface' + path, // Re-add stripped prefix
+    onProxyReqWs: (proxyReq, req, socket, head) => {
+      // Handle WebSocket upgrade for HMR
+      const requestId = req.headers['x-request-id'] || 'ws-' + Date.now();
+      console.log(`[GATEWAY->BRAND WS] [${requestId}] WebSocket upgrade for ${req.url}`);
+    }
+  })
+));
+
+// Route all Brand API requests to port 3001
 app.use('/brand-api', createProxyMiddleware(
   createProxyConfig('http://localhost:3001', 'brand-api', {
-    pathRewrite: {
-      '^/brand-api': '/brand-api'
-    }
+    pathRewrite: (path, req) => '/brand-api' + path // Re-add stripped prefix
   })
 ));
 
