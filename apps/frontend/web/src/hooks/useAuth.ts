@@ -30,6 +30,10 @@ export function useAuth() {
     queryKey: ["/api/oauth2/userinfo"], // OAuth2 userinfo endpoint via API gateway
     enabled: hasToken, // Only run query if we have a token
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false,
+    staleTime: 1000 * 60 * 5, // 5 minuti
   });
 
   return {

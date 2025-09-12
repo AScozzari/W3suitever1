@@ -25,7 +25,10 @@ export const queryClient = new QueryClient({
           if (res.status === 401) {
             // Use OAuth2 logout instead of manual token clearing
             await oauth2Client.logout();
-            window.location.href = '/login';
+            // Solo redirige se non siamo già sulla pagina di login
+            if (!window.location.pathname.includes('/login')) {
+              window.location.href = '/login';
+            }
             throw new Error(`401: Unauthorized`);
           }
           throw new Error(`${res.status}: ${res.statusText}`);
@@ -34,6 +37,9 @@ export const queryClient = new QueryClient({
       },
       staleTime: 1000 * 60,
       gcTime: 1000 * 60 * 5,
+      retry: false, // Disabilita retry globalmente
+      refetchOnWindowFocus: false, // Disabilita refetch su focus
+      refetchOnMount: false, // Disabilita refetch su mount
     },
   },
 });

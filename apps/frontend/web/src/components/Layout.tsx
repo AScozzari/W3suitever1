@@ -100,11 +100,18 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   }, [location]);
 
   // Query per ottenere i punti vendita del tenant corrente
-  const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
-    queryKey: ["/api/stores"],
-    enabled: !!user,
-    retry: 2
-  });
+  // Temporaneamente disabilitata per fermare i loop
+  // const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
+  //   queryKey: ["/api/stores"],
+  //   enabled: !!user,
+  //   retry: false,
+  //   refetchOnWindowFocus: false,
+  //   refetchOnMount: false
+  // });
+  
+  const storesResponse: any[] = [];
+  const storesLoading = false;
+  const storesError = null;
   
   // Ensure stores is always an array
   const stores = Array.isArray(storesResponse) ? storesResponse : [];
