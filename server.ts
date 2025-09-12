@@ -47,6 +47,7 @@ const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
 const backendProxy = createProxyMiddleware({
   target: `http://localhost:${W3_PORT}`,
   changeOrigin: true,
+  xfwd: true, // Forward X-Forwarded-* headers to fix :8000 redirect issues
   secure: false,
   ws: true, // Enable WebSocket proxying
   pathRewrite: (path, req) => {
