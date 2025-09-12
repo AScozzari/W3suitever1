@@ -367,19 +367,34 @@ let w3Process, brandProcess;
 if (process.env.NODE_ENV === 'development') {
   console.log('🚀 Auto-starting backend services...');
   
-  // Start W3 Suite (port 3000)
-  w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
-    stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
-  });
-  
-  // Start Brand Interface (port 3001)
-  brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
-    stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
-  });
-  
-  console.log('✅ Backend services started');
+  // Wait a moment before starting services
+  setTimeout(() => {
+    // Start W3 Suite (port 3000)
+    w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
+      stdio: 'inherit',
+      cwd: process.cwd(),
+      env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
+    });
+    
+    w3Process.on('error', (error) => {
+      console.error('❌ W3 Process error:', error);
+    });
+    
+    // Start Brand Interface (port 3001) after W3 Suite
+    setTimeout(() => {
+      brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
+        stdio: 'inherit',
+        cwd: process.cwd(),
+        env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
+      });
+      
+      brandProcess.on('error', (error) => {
+        console.error('❌ Brand Process error:', error);
+      });
+      
+      console.log('✅ Backend services started');
+    }, 2000);
+  }, 1000);
 }
 
 // ==================== SERVER STARTUP ====================

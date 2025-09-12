@@ -16,22 +16,22 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 if (!process.env.GATEWAY_LAUNCHED) {
   console.log('🔄 W3 Suite redirecting to API Gateway...');
   console.log('📡 Gateway will manage all services on port 5000');
-  
+
   // Start gateway and exit this process
   const gatewayProcess = spawn('npx', ['tsx', 'gateway/index.js'], {
     stdio: 'inherit',
     detached: true,
     env: { ...process.env, GATEWAY_LAUNCHED: 'true' }
   });
-  
+
   gatewayProcess.unref();
-  
+
   // Exit this process to avoid port conflicts
   setTimeout(() => {
     console.log('⏳ Gateway started, exiting W3 Suite process...');
     process.exit(0);
   }, 2000);
-  
+
   return;
 }
 
@@ -46,8 +46,8 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: process.env.NODE_ENV === 'development' 
-        ? ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"] 
+      scriptSrc: process.env.NODE_ENV === 'development'
+        ? ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"]
         : ["'self'", "https:"],
       styleSrc: process.env.NODE_ENV === 'development'
         ? ["'self'", "'unsafe-inline'", "https:"]
@@ -77,9 +77,9 @@ const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 100, // 100 requests per minute
   handler: (req, res) => {
-    res.status(429).json({ 
+    res.status(429).json({
       error: 'rate_limit_exceeded',
-      message: 'Too many requests from this IP, please try again later.' 
+      message: 'Too many requests from this IP, please try again later.'
     });
   },
   standardHeaders: true,
@@ -90,9 +90,9 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 login attempts per 15 minutes
   handler: (req, res) => {
-    res.status(429).json({ 
+    res.status(429).json({
       error: 'too_many_login_attempts',
-      message: 'Too many login attempts, please try again later.' 
+      message: 'Too many login attempts, please try again later.'
     });
   },
   skipSuccessfulRequests: true
@@ -107,18 +107,18 @@ app.use('/oauth2/token', authLimiter);
 app.use((req, res, next) => {
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:5000'];
   const origin = req.headers.origin;
-  
+
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Id');
   }
-  
+
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
-  
+
   next();
 });
 
