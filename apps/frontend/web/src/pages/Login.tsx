@@ -86,12 +86,16 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       });
 
 
-      if (authResponse.ok && authResponse.redirected) {
-        // The server redirected us to the callback URL with the authorization code
-        const redirectUrl = new URL(authResponse.url);
-        const authCode = redirectUrl.searchParams.get('code');
+      // Check for redirect (303) or successful response
+      if (authResponse.status === 303 || authResponse.status === 302 || authResponse.ok) {
+        // Get the redirect location from headers or response URL
+        const redirectLocation = authResponse.headers.get('location') || authResponse.url;
         
-        if (authCode) {
+        if (redirectLocation) {
+          const redirectUrl = new URL(redirectLocation, window.location.origin);
+          const authCode = redirectUrl.searchParams.get('code');
+          
+          if (authCode) {
           // Step 2: Exchange authorization code for access token
           const tokenResponse = await fetch('/api/oauth2/token', {
             method: 'POST',
@@ -131,6 +135,9 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         } else {
           throw new Error('No authorization code received in redirect');
         }
+      } else {
+        throw new Error('No redirect location received');
+      }
       } else {
         // Handle different error cases
         if (authResponse.status === 0) {
