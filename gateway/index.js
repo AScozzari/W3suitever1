@@ -367,27 +367,36 @@ app.use((err, req, res, next) => {
 let w3Process, brandProcess;
 
 async function checkPortAvailable(port) {
-  return new Promise((resolve) => {
-    const server = require('net').createServer();
-    server.listen(port, '0.0.0.0', (err) => {
-      if (err) {
-        resolve(false);
-      } else {
-        server.close(() => resolve(true));
-      }
-    });
-    server.on('error', () => resolve(false));
+  return new Promise(async (resolve) => {
+    try {
+      const { createServer } = await import('net');
+      const server = createServer();
+      server.listen(port, '0.0.0.0', (err) => {
+        if (err) {
+          resolve(false);
+        } else {
+          server.close(() => resolve(true));
+        }
+      });
+      server.on('error', () => resolve(false));
+    } catch (err) {
+      resolve(false);
+    }
   });
 }
 
 async function killProcessOnPort(port) {
-  return new Promise((resolve) => {
-    const { spawn } = require('child_process');
-    const killProcess = spawn('npx', ['kill-port', port.toString()], {
-      stdio: 'inherit'
-    });
-    killProcess.on('exit', () => resolve());
-    killProcess.on('error', () => resolve());
+  return new Promise(async (resolve) => {
+    try {
+      const { spawn } = await import('child_process');
+      const killProcess = spawn('npx', ['kill-port', port.toString()], {
+        stdio: 'inherit'
+      });
+      killProcess.on('exit', () => resolve());
+      killProcess.on('error', () => resolve());
+    } catch (err) {
+      resolve();
+    }
   });
 }
 
