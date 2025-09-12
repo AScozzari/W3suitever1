@@ -366,63 +366,86 @@ app.use((err, req, res, next) => {
 // Auto-start backend services in development
 let w3Process, brandProcess;
 
-if (process.env.NODE_ENV === 'development' && !process.env.SERVICES_STARTED) {
+async function checkPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = require('net').createServer();
+    server.listen(port, (err) => {
+      if (err) {
+        resolve(false);
+      } else {
+        server.close(() => resolve(true));
+      }
+    });
+    server.on('error', () => resolve(false));
+  });
+}
+
+if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
   console.log('🚀 Auto-starting backend services...');
   
-  // Set flag to prevent double start
-  process.env.SERVICES_STARTED = 'true';
-  
   // Wait a moment before starting services
-  setTimeout(() => {
-    // Start W3 Suite (port 3000)
-    console.log('🔄 Starting W3 Suite on port 3000...');
-    w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
-      stdio: ['pipe', 'inherit', 'inherit'],
-      cwd: process.cwd(),
-      env: { 
-        ...process.env, 
-        NODE_ENV: 'development', 
-        GATEWAY_LAUNCHED: 'true',
-        PORT: '3000'
-      }
-    });
+  setTimeout(async () => {
+    // Check if ports are available before starting
+    const port3000Available = await checkPortAvailable(3000);
+    const port3001Available = await checkPortAvailable(3001);
     
-    w3Process.on('error', (error) => {
-      console.error('❌ W3 Process error:', error);
-    });
-
-    w3Process.on('exit', (code) => {
-      if (code !== 0) {
-        console.error(`❌ W3 Suite exited with code ${code}`);
-      }
-    });
-    
-    // Start Brand Interface (port 3001) after W3 Suite
-    setTimeout(() => {
-      console.log('🔄 Starting Brand Interface on port 3001...');
-      brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
+    if (port3000Available) {
+      // Start W3 Suite (port 3000)
+      console.log('🔄 Starting W3 Suite on port 3000...');
+      w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
         stdio: ['pipe', 'inherit', 'inherit'],
         cwd: process.cwd(),
         env: { 
           ...process.env, 
           NODE_ENV: 'development', 
           GATEWAY_LAUNCHED: 'true',
-          PORT: '3001'
+          PORT: '3000'
         }
       });
       
-      brandProcess.on('error', (error) => {
-        console.error('❌ Brand Process error:', error);
+      w3Process.on('error', (error) => {
+        console.error('❌ W3 Process error:', error);
       });
 
-      brandProcess.on('exit', (code) => {
+      w3Process.on('exit', (code) => {
         if (code !== 0) {
-          console.error(`❌ Brand Interface exited with code ${code}`);
+          console.error(`❌ W3 Suite exited with code ${code}`);
         }
       });
+    } else {
+      console.log('⚠️ Port 3000 already in use, W3 Suite may already be running');
+    }
+    
+    // Start Brand Interface (port 3001) after checking availability
+    setTimeout(async () => {
+      if (port3001Available) {
+        console.log('🔄 Starting Brand Interface on port 3001...');
+        brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
+          stdio: ['pipe', 'inherit', 'inherit'],
+          cwd: process.cwd(),
+          env: { 
+            ...process.env, 
+            NODE_ENV: 'development', 
+            GATEWAY_LAUNCHED: 'true',
+            PORT: '3001'
+          }
+        });
+        
+        brandProcess.on('error', (error) => {
+          console.error('❌ Brand Process error:', error);
+        });
+
+        brandProcess.on('exit', (code) => {
+          if (code !== 0) {
+            console.error(`❌ Brand Interface exited with code ${code}`);
+          }
+        });
+      } else {
+        console.log('⚠️ Port 3001 already in use, Brand Interface may already be running');
+      }
       
-      console.log('✅ Backend services started');
-    }, 3000);
+      console.log('✅ Backend services startup sequence completed');
+    }, 2000);
   }, 1000);
 }
 
