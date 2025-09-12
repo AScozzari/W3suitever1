@@ -141,6 +141,7 @@ if (process.env.NODE_ENV === "development") {
 // W3 Suite cleanup
 process.on("SIGTERM", () => {
   console.log("🚫 W3 Suite shutting down");
+  process.exit(0);
 });
 
 process.on("SIGINT", () => {
