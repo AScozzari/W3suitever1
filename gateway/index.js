@@ -369,7 +369,7 @@ let w3Process, brandProcess;
 async function checkPortAvailable(port) {
   return new Promise((resolve) => {
     const server = require('net').createServer();
-    server.listen(port, (err) => {
+    server.listen(port, '0.0.0.0', (err) => {
       if (err) {
         resolve(false);
       } else {
@@ -380,14 +380,40 @@ async function checkPortAvailable(port) {
   });
 }
 
+async function killProcessOnPort(port) {
+  return new Promise((resolve) => {
+    const { spawn } = require('child_process');
+    const killProcess = spawn('npx', ['kill-port', port.toString()], {
+      stdio: 'inherit'
+    });
+    killProcess.on('exit', () => resolve());
+    killProcess.on('error', () => resolve());
+  });
+}
+
 if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
   console.log('🚀 Auto-starting backend services...');
   
   // Wait a moment before starting services
   setTimeout(async () => {
     // Check if ports are available before starting
-    const port3000Available = await checkPortAvailable(3000);
-    const port3001Available = await checkPortAvailable(3001);
+    let port3000Available = await checkPortAvailable(3000);
+    let port3001Available = await checkPortAvailable(3001);
+    
+    // If ports are not available, try to free them
+    if (!port3000Available) {
+      console.log('🔄 Freeing port 3000...');
+      await killProcessOnPort(3000);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      port3000Available = await checkPortAvailable(3000);
+    }
+    
+    if (!port3001Available) {
+      console.log('🔄 Freeing port 3001...');
+      await killProcessOnPort(3001);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      port3001Available = await checkPortAvailable(3001);
+    }
     
     if (port3000Available) {
       // Start W3 Suite (port 3000)
@@ -413,7 +439,7 @@ if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
         }
       });
     } else {
-      console.log('⚠️ Port 3000 already in use, W3 Suite may already be running');
+      console.log('❌ Could not free port 3000, W3 Suite startup failed');
     }
     
     // Start Brand Interface (port 3001) after checking availability
@@ -441,11 +467,11 @@ if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
           }
         });
       } else {
-        console.log('⚠️ Port 3001 already in use, Brand Interface may already be running');
+        console.log('❌ Could not free port 3001, Brand Interface startup failed');
       }
       
       console.log('✅ Backend services startup sequence completed');
-    }, 2000);
+    }, 3000);
   }, 1000);
 }
 

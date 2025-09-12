@@ -33,7 +33,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 try {
   const app = express();
-  
+
   // Security Headers with Helmet - Brand Interface specific
   app.use(helmet({
     contentSecurityPolicy: {
@@ -64,7 +64,7 @@ try {
     referrerPolicy: { policy: 'same-origin' },
     permittedCrossDomainPolicies: false
   }));
-  
+
   // Rate Limiting for Brand Interface
   const brandApiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
@@ -78,7 +78,7 @@ try {
     standardHeaders: true,
     legacyHeaders: false
   });
-  
+
   const brandAuthLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 3, // 3 login attempts per 15 minutes (more restrictive)
@@ -90,11 +90,11 @@ try {
     },
     skipSuccessfulRequests: true
   });
-  
+
   // Apply rate limiting
   app.use('/brand-api/', brandApiLimiter);
   app.use('/brand-api/auth/login', brandAuthLimiter);
-  
+
   // CORS configuration for Brand Interface - MORE RESTRICTIVE
   app.use(cors({
     origin: process.env.BRAND_CORS_ORIGINS?.split(',') || ['http://localhost:3001', 'http://localhost:5000'],
@@ -103,8 +103,19 @@ try {
     allowedHeaders: ['Content-Type', 'Authorization'],
     maxAge: 86400 // Cache preflight for 24 hours
   }));
-  
+
   app.use(express.json());
+
+  // Health check endpoint
+  app.get('/brand-api/health', (req, res) => {
+    res.json({
+      status: 'healthy',
+      service: 'brand-interface-api',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage()
+    });
+  });
 
   // Setup Vite middleware for Brand Interface frontend in development
   if (process.env.NODE_ENV === "development") {
@@ -142,9 +153,9 @@ try {
 // Setup Brand Interface Vite middleware function
 async function setupBrandInterfaceVite(app: express.Express) {
   console.log("🚀 Setting up Brand Interface Vite middleware...");
-  
+
   const brandWebPath = path.resolve(__dirname, "..", "..", "..", "frontend", "brand-web");
-  
+
   const brandVite = await createViteServer({
     configFile: path.join(brandWebPath, "vite.config.ts"),
     root: brandWebPath,
@@ -163,31 +174,31 @@ async function setupBrandInterfaceVite(app: express.Express) {
       },
     }
   });
-  
+
   // PRIMO: Vite middlewares per asset, HMR, @vite/client, etc.
   app.use('/brandinterface', brandVite.middlewares);
-  
+
   // SECONDO: Catch-all RISTRETTO solo per richieste HTML document
   app.use('/brandinterface', async (req, res, next) => {
     // Solo richieste GET che accettano HTML
     if (req.method !== 'GET') return next();
-    
+
     const accept = req.headers.accept || '';
     const isHtmlRequest = accept.includes('text/html');
-    
+
     // Skip assets: path con punto, @vite paths, src paths
     const isAsset = req.path.includes('.') || 
                    req.path.startsWith('/@') || 
                    req.path.startsWith('/src/') ||
                    req.originalUrl.includes('/brandinterface/@') ||
                    req.originalUrl.includes('/brandinterface/src/');
-    
+
     // Solo HTML document requests, non assets
     if (!isHtmlRequest || isAsset) {
       console.log(`🔄 [Brand Vite] Skip HTML for: ${req.originalUrl} (asset=${isAsset}, html=${isHtmlRequest})`);
       return next();
     }
-    
+
     try {
       console.log(`📄 [Brand Vite] Serving HTML for: ${req.originalUrl}`);
       const url = req.originalUrl.replace(/^\/brandinterface/, '') || '/';
@@ -201,9 +212,9 @@ async function setupBrandInterfaceVite(app: express.Express) {
       next(e);
     }
   });
-  
+
   console.log("✅ Brand Interface Vite middleware mounted at /brandinterface");
   console.log("✅ Brand Interface HTML transform handler added");
-  
+
   return brandVite;
 }
