@@ -12,33 +12,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
-// Skip auto-start gateway if running via gateway
-if (process.env.GATEWAY_LAUNCHED) {
-  console.log('🚀 W3 Suite starting via Gateway on port 3000...');
-} else {
+// Check if running via gateway to prevent conflicts
+if (!process.env.GATEWAY_LAUNCHED) {
   console.log('🔄 W3 Suite redirecting to API Gateway...');
   console.log('📡 Gateway will manage all services on port 5000');
   
-  // Start gateway with flag to prevent infinite loop
+  // Start gateway and exit this process
   const gatewayProcess = spawn('npx', ['tsx', 'gateway/index.js'], {
     stdio: 'inherit',
     detached: true,
     env: { ...process.env, GATEWAY_LAUNCHED: 'true' }
   });
   
-  // Detach the gateway process so it survives this process ending
   gatewayProcess.unref();
   
-  // Keep this process alive to maintain the workflow
-  console.log('⏳ Waiting for gateway to start services...');
+  // Exit this process to avoid port conflicts
+  setTimeout(() => {
+    console.log('⏳ Gateway started, exiting W3 Suite process...');
+    process.exit(0);
+  }, 2000);
   
-  // Wait indefinitely (gateway will handle everything)
-  setInterval(() => {
-    // Do nothing, just keep process alive for Replit workflow
-  }, 60000);
   return;
-}0000);
 }
+
+console.log('🚀 W3 Suite starting via Gateway on port 3000...');
 
 const app = express();
 

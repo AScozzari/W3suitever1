@@ -370,13 +370,13 @@ if (process.env.NODE_ENV === 'development') {
   // Start W3 Suite (port 3000)
   w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
     stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'development' }
+    env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
   });
   
   // Start Brand Interface (port 3001)
   brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
     stdio: 'inherit',
-    env: { ...process.env, NODE_ENV: 'development' }
+    env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
   });
   
   console.log('✅ Backend services started');
