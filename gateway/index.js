@@ -101,7 +101,7 @@ app.get('/health', async (req, res) => {
   };
 
   const [w3SuiteApi, w3SuiteFrontend, brandInterface] = await Promise.all([
-    checkService('w3-suite-api', 'http://localhost:3000/api/health'),
+    checkService('w3-suite-api', 'http://localhost:3004/api/health'),
     checkService('w3-suite-frontend', 'http://localhost:3000'),
     checkService('brand-interface', 'http://localhost:3001/brand-api/health')
   ]);
@@ -192,17 +192,17 @@ app.use('/brand-api', createProxyMiddleware(
 
 // W3 Suite API
 app.use('/api', createProxyMiddleware(
-  createProxyConfig('http://localhost:3000', 'w3-api')
+  createProxyConfig('http://localhost:3004', 'w3-api')
 ));
 
 // OAuth2
 app.use('/oauth2', createProxyMiddleware(
-  createProxyConfig('http://localhost:3000', 'w3-oauth2')
+  createProxyConfig('http://localhost:3004', 'w3-oauth2')
 ));
 
 // Well-known
 app.use('/.well-known', createProxyMiddleware(
-  createProxyConfig('http://localhost:3000', 'w3-wellknown')
+  createProxyConfig('http://localhost:3004', 'w3-wellknown')
 ));
 
 // W3 Suite Frontend (catch-all)
