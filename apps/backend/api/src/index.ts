@@ -32,7 +32,7 @@ if (!process.env.GATEWAY_LAUNCHED) {
     process.exit(0);
   }, 2000);
 
-  return;
+  process.exit(0); // Replace return with proper exit
 }
 
 console.log('🚀 W3 Suite starting via Gateway on port 3000...');
@@ -149,7 +149,8 @@ process.on("SIGINT", () => {
 });
 
 // Avvia il server sulla porta 3000 (dietro API Gateway)
-httpServer.listen(3000, "0.0.0.0", () => {
-  console.log("W3 Suite server running on port 3000 (internal)");
-  console.log("Frontend will be available via Gateway at: http://localhost:5000");
+const PORT = process.env.PORT || 3000;
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ W3 Suite server running on port ${PORT} (internal)`);
+  console.log("📡 Frontend will be available via Gateway at: http://localhost:5000");
 });

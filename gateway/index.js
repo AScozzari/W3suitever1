@@ -277,7 +277,9 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 app.use('/brandinterface', createProxyMiddleware(
   createProxyConfig('http://localhost:3001', 'brand-interface', { 
     ws: true, // Enable WebSocket for HMR
-    pathRewrite: (path, req) => '/brandinterface' + path, // FIX: Use function instead of regex
+    pathRewrite: {
+      '^/brandinterface': '/brandinterface' // Keep the path as-is
+    },
     onProxyReqWs: (proxyReq, req, socket, head) => {
       // Handle WebSocket upgrade for HMR
       const requestId = req.headers['x-request-id'] || 'ws-' + Date.now();
@@ -364,36 +366,63 @@ app.use((err, req, res, next) => {
 // Auto-start backend services in development
 let w3Process, brandProcess;
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' && !process.env.SERVICES_STARTED) {
   console.log('🚀 Auto-starting backend services...');
+  
+  // Set flag to prevent double start
+  process.env.SERVICES_STARTED = 'true';
   
   // Wait a moment before starting services
   setTimeout(() => {
     // Start W3 Suite (port 3000)
+    console.log('🔄 Starting W3 Suite on port 3000...');
     w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
-      stdio: 'inherit',
+      stdio: ['pipe', 'inherit', 'inherit'],
       cwd: process.cwd(),
-      env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
+      env: { 
+        ...process.env, 
+        NODE_ENV: 'development', 
+        GATEWAY_LAUNCHED: 'true',
+        PORT: '3000'
+      }
     });
     
     w3Process.on('error', (error) => {
       console.error('❌ W3 Process error:', error);
     });
+
+    w3Process.on('exit', (code) => {
+      if (code !== 0) {
+        console.error(`❌ W3 Suite exited with code ${code}`);
+      }
+    });
     
     // Start Brand Interface (port 3001) after W3 Suite
     setTimeout(() => {
+      console.log('🔄 Starting Brand Interface on port 3001...');
       brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
-        stdio: 'inherit',
+        stdio: ['pipe', 'inherit', 'inherit'],
         cwd: process.cwd(),
-        env: { ...process.env, NODE_ENV: 'development', GATEWAY_LAUNCHED: 'true' }
+        env: { 
+          ...process.env, 
+          NODE_ENV: 'development', 
+          GATEWAY_LAUNCHED: 'true',
+          PORT: '3001'
+        }
       });
       
       brandProcess.on('error', (error) => {
         console.error('❌ Brand Process error:', error);
       });
+
+      brandProcess.on('exit', (code) => {
+        if (code !== 0) {
+          console.error(`❌ Brand Interface exited with code ${code}`);
+        }
+      });
       
       console.log('✅ Backend services started');
-    }, 2000);
+    }, 3000);
   }, 1000);
 }
 
