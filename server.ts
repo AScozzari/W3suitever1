@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
  * W3 Suite API Gateway
  * Routes traffic between frontend and backend services
  * - Frontend (W3 Suite): http://localhost:3000
- * - Backend API: http://localhost:3000 (W3_PORT/API_PORT)
+ * - Backend API: http://localhost:3004 (W3_PORT/API_PORT)
  * - Brand Interface: http://localhost:3001 (BRAND_PORT)
  */
 
@@ -43,7 +43,7 @@ app.use((req, res, next) => {
 // ==================== PROXY CONFIGURATION ====================
 
 // Backend API proxy (W3 Suite API + OAuth2)
-const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3000);
+const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
 const backendProxy = createProxyMiddleware({
   target: `http://localhost:${W3_PORT}`,
   changeOrigin: true,
@@ -208,7 +208,7 @@ function startApiServer() {
     env: {
       ...process.env,
       NODE_ENV: "development",
-      W3_PORT: process.env.W3_PORT || process.env.API_PORT || "3000",
+      W3_PORT: process.env.W3_PORT || process.env.API_PORT || "3004",
       JWT_SECRET: process.env.JWT_SECRET || "w3suite-dev-secret-2025"
     }
   });
@@ -285,7 +285,17 @@ async function startServer() {
     if (process.env.NODE_ENV === "development") {
       startApiServer();
       startBrandInterface();
-      frontendServerProcess = await startFrontendServer();
+      
+      // Only auto-start frontend if explicitly enabled (default: false)
+      // This prevents port conflicts when frontend runs separately
+      if (process.env.AUTO_START_FRONTEND === "true") {
+        log("🎯 AUTO_START_FRONTEND=true - Starting integrated frontend server");
+        frontendServerProcess = await startFrontendServer();
+      } else {
+        log("🎯 AUTO_START_FRONTEND not enabled - Frontend should run separately on port 3000");
+        log("💡 To enable auto-start: set AUTO_START_FRONTEND=true");
+      }
+      
       // Add small delay to let services start
       await new Promise(resolve => setTimeout(resolve, 3000));
     } else {
