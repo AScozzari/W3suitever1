@@ -138,8 +138,8 @@ process.once("SIGINT", () => {
   process.exit(0);
 });
 
-// Avvia il server sulla porta 3004 (dietro API Gateway)
-const PORT = Number(process.env.PORT) || 3004;
+// Avvia il server sulla porta 3000 (dietro API Gateway)
+const PORT = Number(process.env.PORT) || 3000;
 httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ W3 Suite server running on port ${PORT} (internal)`);
   console.log("📡 Frontend will be available via Gateway at: http://localhost:5000");

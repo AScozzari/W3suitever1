@@ -102,7 +102,7 @@ app.get('/health', async (req, res) => {
   };
 
   const [w3SuiteApi, w3SuiteFrontend, brandInterface] = await Promise.all([
-    checkService('w3-suite-api', 'http://localhost:3004/api/health'),
+    checkService('w3-suite-api', 'http://localhost:3000/api/health'),
     checkService('w3-suite-frontend', 'http://localhost:3000'),
     checkService('brand-interface', 'http://localhost:3001/brand-api/health')
   ]);
@@ -180,7 +180,7 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 
 // Brand Interface Frontend (SPA) - MUST be before catch-all
 app.use('/brandinterface', createProxyMiddleware(
-  createProxyConfig('http://localhost:3002', 'brand-web', { 
+  createProxyConfig('http://localhost:3001', 'brand-web', { 
     ws: true, // Enable HMR for Brand Web
     pathRewrite: { '^/brandinterface': '/' } // Strip prefix for SPA
   })
@@ -193,17 +193,17 @@ app.use('/brand-api', createProxyMiddleware(
 
 // W3 Suite API
 app.use('/api', createProxyMiddleware(
-  createProxyConfig('http://localhost:3004', 'w3-api')
+  createProxyConfig('http://localhost:3000', 'w3-api')
 ));
 
 // OAuth2
 app.use('/oauth2', createProxyMiddleware(
-  createProxyConfig('http://localhost:3004', 'w3-oauth2')
+  createProxyConfig('http://localhost:3000', 'w3-oauth2')
 ));
 
 // Well-known
 app.use('/.well-known', createProxyMiddleware(
-  createProxyConfig('http://localhost:3004', 'w3-wellknown')
+  createProxyConfig('http://localhost:3000', 'w3-wellknown')
 ));
 
 // W3 Suite Frontend (catch-all)
@@ -241,10 +241,9 @@ if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
   console.log('⚠️  SECURITY NOTICE: Auto-start disabled for security reasons');
   console.log('🔧 To enable auto-start, set GATEWAY_ONLY=false (not recommended)');
   console.log('🚀 Please start services manually:');
-  console.log('   W3 Suite API: npx tsx apps/backend/api/src/index.ts (port 3004)');
-  console.log('   W3 Suite Frontend: cd apps/frontend/web && npm run dev (port 3000)');
-  console.log('   Brand API: npx tsx apps/backend/brand-api/src/index.ts (port 3001)');
-  console.log('   Brand Web: cd apps/frontend/brand-web && npm run dev (port 3002)');
+  console.log('   W3 Suite: cd apps/backend/api && npm run dev (port 3000)');
+  console.log('   Brand Interface: cd apps/backend/brand-api && npm run dev (port 3001)');
+  console.log('   Brand Web Frontend: cd apps/frontend/brand-web && npm run dev (already on port 3001)');
   console.log('');
 }
 
@@ -253,11 +252,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ API Gateway running on port ${PORT}`);
   console.log('');
   console.log('📡 Routing Configuration:');
-  console.log('  /brandinterface/*     → http://localhost:3002 (Brand Interface Frontend)');
+  console.log('  /brandinterface/*     → http://localhost:3001 (Brand Interface Frontend)');
   console.log('  /brand-api/*          → http://localhost:3001 (Brand Interface API)');
-  console.log('  /api/*                → http://localhost:3004 (W3 Suite API)');
-  console.log('  /oauth2/*             → http://localhost:3004 (OAuth2 Server)');
-  console.log('  /.well-known/*        → http://localhost:3004 (OAuth2 Discovery)');
+  console.log('  /api/*                → http://localhost:3000 (W3 Suite API)');
+  console.log('  /oauth2/*             → http://localhost:3000 (OAuth2 Server)');
+  console.log('  /.well-known/*        → http://localhost:3000 (OAuth2 Discovery)');
   console.log('  /*                    → http://localhost:3000 (W3 Suite Frontend)');
   console.log('');
   console.log('🌐 Access Points:');
