@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import axios from 'axios';
@@ -60,14 +59,14 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const requestId = req.headers['x-request-id'];
   const start = Date.now();
-  
+
   console.log(`[GATEWAY] ${new Date().toISOString()} [${requestId}] ${req.method} ${req.originalUrl} - Client: ${req.ip}`);
-  
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     console.log(`[GATEWAY] ${new Date().toISOString()} [${requestId}] Response: ${res.statusCode} - Duration: ${duration}ms`);
   });
-  
+
   next();
 });
 
@@ -84,9 +83,9 @@ app.get('/health', async (req, res) => {
 
   const checkService = async (name, url) => {
     try {
-      const response = await axios.get(url, { 
+      const response = await axios.get(url, {
         timeout: 5000,
-        validateStatus: () => true 
+        validateStatus: () => true
       });
       return {
         status: response.status < 500 ? 'healthy' : 'unhealthy',
@@ -114,9 +113,9 @@ app.get('/health', async (req, res) => {
   const allHealthy = Object.values(healthStatus.services).every(
     service => service.status === 'healthy'
   );
-  
+
   healthStatus.status = allHealthy ? 'healthy' : 'degraded';
-  
+
   res.status(allHealthy ? 200 : 503).json(healthStatus);
 });
 
@@ -129,10 +128,10 @@ const createProxyConfig = (target, serviceName, options = {}) => {
     proxyTimeout: 30000,
     ws: options.ws || false,
     logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'warn',
-    
+
     onProxyReq: (proxyReq, req, res) => {
       const requestId = req.headers['x-request-id'];
-      
+
       proxyReq.setHeader('X-Forwarded-For', req.ip || req.connection.remoteAddress);
       proxyReq.setHeader('X-Forwarded-Proto', req.protocol);
       proxyReq.setHeader('X-Forwarded-Host', req.get('host'));
@@ -140,28 +139,28 @@ const createProxyConfig = (target, serviceName, options = {}) => {
       proxyReq.setHeader('X-Original-URI', req.originalUrl);
       proxyReq.setHeader('X-Service-Context', serviceName);
       proxyReq.setHeader('X-Request-ID', requestId);
-      
+
       console.log(`[GATEWAY->${serviceName.toUpperCase()}] [${requestId}] Proxying ${req.method} ${req.originalUrl} to ${target}`);
-      
+
       if (options.onProxyReq) {
         options.onProxyReq(proxyReq, req, res);
       }
     },
-    
+
     onProxyRes: (proxyRes, req, res) => {
       const requestId = req.headers['x-request-id'];
-      
+
       console.log(`[GATEWAY<-${serviceName.toUpperCase()}] [${requestId}] Response: ${proxyRes.statusCode}`);
-      
+
       if (options.onProxyRes) {
         options.onProxyRes(proxyRes, req, res);
       }
     },
-    
+
     onError: async (err, req, res) => {
       const requestId = req.headers['x-request-id'];
       console.error(`[GATEWAY->${serviceName.toUpperCase()} ERROR] [${requestId}]`, err.message);
-      
+
       const statusCode = err.code === 'ETIMEDOUT' ? 504 : 502;
       res.status(statusCode).json({
         error: statusCode === 504 ? 'gateway_timeout' : 'bad_gateway',
@@ -171,7 +170,7 @@ const createProxyConfig = (target, serviceName, options = {}) => {
         details: process.env.NODE_ENV === 'development' ? err.message : undefined
       });
     },
-    
+
     ...options
   };
 };
@@ -180,7 +179,7 @@ const createProxyConfig = (target, serviceName, options = {}) => {
 
 // Brand Interface Frontend (SPA) - MUST be before catch-all
 app.use('/brandinterface', createProxyMiddleware(
-  createProxyConfig('http://localhost:3001', 'brand-web', { 
+  createProxyConfig('http://localhost:3001', 'brand-web', {
     ws: true, // Enable HMR for Brand Web
     pathRewrite: { '^/brandinterface': '/' } // Strip prefix for SPA
   })
@@ -217,7 +216,7 @@ app.use('/', createProxyMiddleware(
 app.use((err, req, res, next) => {
   const requestId = req.headers['x-request-id'] || 'unknown';
   console.error(`[GATEWAY ERROR] [${requestId}]`, err);
-  
+
   res.status(500).json({
     error: 'internal_server_error',
     message: 'An internal error occurred in the gateway',
@@ -229,7 +228,7 @@ app.use((err, req, res, next) => {
 // ==================== AUTO-START SERVICES ====================
 // SECURITY CRITICAL: Auto-start logic removed due to dangerous pkill usage
 // Services must be started manually to prevent system process interference
-// 
+//
 // IMPORTANT: This gateway now operates in GATEWAY_ONLY mode by default
 // To start services manually:
 // 1. W3 Suite API: npx tsx apps/backend/api/src/index.ts (port 3004)
@@ -272,17 +271,17 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 // ==================== GRACEFUL SHUTDOWN ====================
 const gracefulShutdown = (signal) => {
   console.log(`\n🚫 API Gateway received ${signal}, shutting down gracefully...`);
-  
+
   server.close(() => {
     console.log('✅ API Gateway stopped accepting new connections');
     console.log('⏳ Waiting for existing connections to close...');
-    
+
     setTimeout(() => {
       console.log('✅ API Gateway shutdown complete');
       process.exit(0);
     }, 5000);
   });
-  
+
   setTimeout(() => {
     console.error('⚠️ API Gateway forced shutdown after 15 seconds');
     process.exit(1);

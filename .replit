@@ -15,7 +15,7 @@ run = ["npm", "run", "start"]
 PORT = "5000"
 
 [workflows]
-runButton = "Start Simple Gateway"
+runButton = "Start System"
 
 [[workflows.workflow]]
 name = "Project"
@@ -61,6 +61,15 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "PORT=5000 npx tsx gateway/index.js"
+
+[[workflows.workflow]]
+name = "Start System"
+author = 45871987
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [agent]
 integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0"]
