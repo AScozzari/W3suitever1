@@ -17,6 +17,12 @@ if (process.env.NODE_ENV === 'development') {
   }
 }
 
+// Security: Default to GATEWAY_ONLY mode
+if (!process.env.GATEWAY_ONLY) {
+  process.env.GATEWAY_ONLY = 'true';
+  console.log('🔒 GATEWAY_ONLY enabled by default for security');
+}
+
 const app = express();
 const PORT = 5000;
 
@@ -219,127 +225,23 @@ app.use((err, req, res, next) => {
 });
 
 // ==================== AUTO-START SERVICES ====================
-let w3Process, brandProcess;
-
-async function checkPortAvailable(port) {
-  return new Promise(async (resolve) => {
-    try {
-      const net = await import('net');
-      const server = net.createServer();
-      server.listen(port, '0.0.0.0', (err) => {
-        if (err) {
-          resolve(false);
-        } else {
-          server.close(() => resolve(true));
-        }
-      });
-      server.on('error', () => resolve(false));
-    } catch (error) {
-      resolve(false);
-    }
-  });
-}
+// SECURITY CRITICAL: Auto-start logic removed due to dangerous pkill usage
+// Services must be started manually to prevent system process interference
+// 
+// IMPORTANT: This gateway now operates in GATEWAY_ONLY mode by default
+// To start services manually:
+// 1. W3 Suite: npx tsx apps/backend/api/src/index.ts
+// 2. Brand API: npx tsx apps/backend/brand-api/src/index.ts
+// 3. Brand Web: cd apps/frontend/brand-web && npm run dev
 
 if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
-  console.log('🚀 Auto-starting backend services...');
-  
-  const killExistingProcesses = async () => {
-    try {
-      await new Promise(async (resolve) => {
-        try {
-          const killCmd = spawn('pkill', ['-f', 'tsx.*apps/backend'], { stdio: 'inherit' });
-          killCmd.on('exit', () => resolve());
-          killCmd.on('error', () => resolve());
-        } catch (error) {
-          resolve();
-        }
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } catch (error) {
-      console.log('🧹 Process cleanup completed');
-    }
-  };
-  
-  setTimeout(async () => {
-    await killExistingProcesses();
-    
-    let port3000Available = await checkPortAvailable(3000);
-    let port3001Available = await checkPortAvailable(3001);
-    
-    console.log(`🔍 Port status: 3000=${port3000Available ? 'available' : 'busy'}, 3001=${port3001Available ? 'available' : 'busy'}`);
-    
-    if (port3000Available) {
-      console.log('🔄 Starting W3 Suite on port 3000...');
-      w3Process = spawn('npx', ['tsx', 'apps/backend/api/src/index.ts'], {
-        stdio: ['pipe', 'inherit', 'inherit'],
-        cwd: process.cwd(),
-        env: { 
-          ...process.env, 
-          NODE_ENV: 'development', 
-          GATEWAY_LAUNCHED: 'true',
-          PORT: '3000'
-        }
-      });
-      
-      w3Process.on('error', (error) => {
-        console.error('❌ W3 Process error:', error);
-        w3Process = null;
-      });
-
-      w3Process.on('exit', (code) => {
-        console.log(`🚫 W3 Suite process exited with code ${code}`);
-        w3Process = null;
-      });
-    } else {
-      console.log('❌ Port 3000 still busy, W3 Suite startup skipped');
-    }
-    
-    setTimeout(async () => {
-      port3001Available = await checkPortAvailable(3001);
-      
-      if (port3001Available) {
-        console.log('🔄 Starting Brand Interface on port 3001...');
-        brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
-          stdio: ['pipe', 'inherit', 'inherit'],
-          cwd: process.cwd(),
-          env: { 
-            ...process.env, 
-            NODE_ENV: 'development', 
-            GATEWAY_LAUNCHED: 'true',
-            PORT: '3001'
-          }
-        });
-        
-        brandProcess.on('error', (error) => {
-          console.error('❌ Brand Process error:', error);
-          brandProcess = null;
-        });
-
-        brandProcess.on('exit', (code) => {
-          console.log(`🚫 Brand Interface process exited with code ${code}`);
-          brandProcess = null;
-        });
-      } else {
-        console.log('❌ Port 3001 still busy, Brand Interface startup skipped');
-      }
-      
-      console.log('✅ Backend services startup sequence completed');
-      
-      setTimeout(async () => {
-        console.log('🔍 Performing post-startup health check...');
-        try {
-          const w3Health = await axios.get('http://localhost:3000/api/health', { timeout: 3000 }).catch(() => null);
-          const brandHealth = await axios.get('http://localhost:3001/brand-api/health', { timeout: 3000 }).catch(() => null);
-          
-          console.log(`📊 W3 Suite: ${w3Health ? '✅ Healthy' : '❌ Unavailable'}`);
-          console.log(`📊 Brand Interface: ${brandHealth ? '✅ Healthy' : '❌ Unavailable'}`);
-        } catch (error) {
-          console.log('📊 Health check completed with errors');
-        }
-      }, 5000);
-    }, 4000);
-  }, 2000);
+  console.log('⚠️  SECURITY NOTICE: Auto-start disabled for security reasons');
+  console.log('🔧 To enable auto-start, set GATEWAY_ONLY=false (not recommended)');
+  console.log('🚀 Please start services manually:');
+  console.log('   W3 Suite API: npx tsx apps/backend/api/src/index.ts');
+  console.log('   Brand API: npx tsx apps/backend/brand-api/src/index.ts');
+  console.log('   Brand Web: cd apps/frontend/brand-web && npm run dev');
+  console.log('');
 }
 
 // ==================== SERVER STARTUP ====================
@@ -367,15 +269,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 const gracefulShutdown = (signal) => {
   console.log(`\n🚫 API Gateway received ${signal}, shutting down gracefully...`);
   
-  if (w3Process) {
-    console.log('⏹️ Stopping W3 Suite service...');
-    w3Process.kill('SIGTERM');
-  }
-  if (brandProcess) {
-    console.log('⏹️ Stopping Brand Interface service...');
-    brandProcess.kill('SIGTERM');
-  }
-  
   server.close(() => {
     console.log('✅ API Gateway stopped accepting new connections');
     console.log('⏳ Waiting for existing connections to close...');
@@ -383,15 +276,13 @@ const gracefulShutdown = (signal) => {
     setTimeout(() => {
       console.log('✅ API Gateway shutdown complete');
       process.exit(0);
-    }, 10000);
+    }, 5000);
   });
   
   setTimeout(() => {
-    console.error('⚠️ API Gateway forced shutdown after 30 seconds');
-    if (w3Process) w3Process.kill('SIGKILL');
-    if (brandProcess) brandProcess.kill('SIGKILL');
+    console.error('⚠️ API Gateway forced shutdown after 15 seconds');
     process.exit(1);
-  }, 30000);
+  }, 15000);
 };
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

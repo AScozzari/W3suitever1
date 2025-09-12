@@ -108,8 +108,14 @@ await seedCommercialAreas();
 const httpServer = await registerRoutes(app);
 
 // Setup Vite per servire il frontend W3 Suite in development
-if (process.env.NODE_ENV === "development") {
+// DISABLED: Frontend will be served separately to avoid port conflicts
+// Use separate frontend service for W3 Suite when needed
+if (process.env.NODE_ENV === "development" && process.env.ENABLE_VITE_FRONTEND === "true") {
+  console.log("🎯 Setting up Vite frontend (explicitly enabled)");
   await setupVite(app, httpServer);
+} else if (process.env.NODE_ENV === "development") {
+  console.log("⚠️  Vite frontend disabled - use separate frontend service");
+  console.log("   To enable: set ENABLE_VITE_FRONTEND=true");
 }
 
 // Brand Interface is now running as a separate service on port 3001
