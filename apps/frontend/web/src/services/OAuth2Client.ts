@@ -99,6 +99,14 @@ class OAuth2Client {
    */
   async startAuthorizationFlow(): Promise<void> {
     try {
+      // Debug logging for URL construction
+      console.log('🔍 OAuth2Client Configuration:');
+      console.log('🔧 Client ID:', this.config.clientId);
+      console.log('📍 Redirect URI:', this.config.redirectUri);
+      console.log('🌐 Auth Endpoint:', this.config.authorizationEndpoint);
+      console.log('🌐 Window Origin:', window.location.origin);
+      console.log('🌐 Window Location:', window.location.href);
+      
       // Generate PKCE challenge
       const { codeVerifier, codeChallenge } = await this.generatePKCEChallenge();
       this.codeVerifier = codeVerifier;
@@ -110,8 +118,10 @@ class OAuth2Client {
       const state = this.generateRandomString(32);
       sessionStorage.setItem('oauth2_state', state);
 
-      // Build authorization URL
-      const authUrl = new URL(this.config.authorizationEndpoint, window.location.origin);
+      // Build authorization URL - use current origin for gateway routing
+      const baseUrl = window.location.origin; // This should be the gateway URL (port 5000)
+      const authUrl = new URL(this.config.authorizationEndpoint, baseUrl);
+      
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('client_id', this.config.clientId);
       authUrl.searchParams.set('redirect_uri', this.config.redirectUri);
@@ -121,7 +131,27 @@ class OAuth2Client {
       authUrl.searchParams.set('code_challenge_method', 'S256');
 
       console.log('🔐 Starting OAuth2 flow...');
-      console.log('📍 Authorization URL:', authUrl.toString());
+      console.log('📍 Final Authorization URL:', authUrl.toString());
+      
+      // Make a test request first to check if the endpoint is working
+      try {
+        const testResponse = await fetch(authUrl.toString(), { method: 'GET' });
+        console.log('🔍 Auth Response Status:', testResponse.status);
+        console.log('🔍 Auth Response URL:', testResponse.url);
+        
+        if (!testResponse.ok) {
+          console.error('❌ Auth endpoint test failed:', testResponse.status, testResponse.statusText);
+          // Try to get response text for debugging
+          try {
+            const responseText = await testResponse.text();
+            console.error('❌ Auth Response Text:', responseText);
+          } catch (textError) {
+            console.error('❌ Could not read response text:', textError);
+          }
+        }
+      } catch (testError) {
+        console.error('❌ Auth endpoint test error:', testError);
+      }
 
       // Redirect to authorization server
       window.location.href = authUrl.toString();

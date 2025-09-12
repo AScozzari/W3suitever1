@@ -191,12 +191,36 @@ async function getUserByCredentials(username: string, password: string) {
 export function setupOAuth2Server(app: express.Application) {
   // Middleware for form parsing (required for OAuth2 flows)
   app.use(express.urlencoded({ extended: true }));
-  // ==================== DISCOVERY ENDPOINT ====================
+  // ==================== DISCOVERY ENDPOINTS ====================
+  
+  // Standard OIDC Discovery endpoint (required by most OIDC clients)
+  app.get('/.well-known/openid-configuration', (req: Request, res: Response) => {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    
+    res.json({
+      issuer: baseUrl, // Use actual base URL as issuer
+      authorization_endpoint: `${baseUrl}${OAUTH2_CONFIG.authorizationEndpoint}`,
+      token_endpoint: `${baseUrl}${OAUTH2_CONFIG.tokenEndpoint}`,
+      jwks_uri: `${baseUrl}${OAUTH2_CONFIG.jwksUri}`,
+      userinfo_endpoint: `${baseUrl}${OAUTH2_CONFIG.userinfoEndpoint}`,
+      revocation_endpoint: `${baseUrl}${OAUTH2_CONFIG.revocationEndpoint}`,
+      introspection_endpoint: `${baseUrl}${OAUTH2_CONFIG.introspectionEndpoint}`,
+      response_types_supported: OAUTH2_CONFIG.supportedResponseTypes,
+      grant_types_supported: OAUTH2_CONFIG.supportedGrantTypes,
+      scopes_supported: OAUTH2_CONFIG.supportedScopes,
+      code_challenge_methods_supported: OAUTH2_CONFIG.codeChallengeMethods,
+      token_endpoint_auth_methods_supported: OAUTH2_CONFIG.tokenEndpointAuthMethods,
+      subject_types_supported: ['public'],
+      id_token_signing_alg_values_supported: ['RS256', 'HS256']
+    });
+  });
+
+  // OAuth2 Authorization Server Discovery endpoint (alternative)
   app.get('/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     
     res.json({
-      issuer: OAUTH2_CONFIG.issuer,
+      issuer: baseUrl,
       authorization_endpoint: `${baseUrl}${OAUTH2_CONFIG.authorizationEndpoint}`,
       token_endpoint: `${baseUrl}${OAUTH2_CONFIG.tokenEndpoint}`,
       jwks_uri: `${baseUrl}${OAUTH2_CONFIG.jwksUri}`,
@@ -572,7 +596,8 @@ export function setupOAuth2Server(app: express.Application) {
   app.post('/oauth2/revoke', revokeHandler);
 
   console.log('✅ OAuth2 Authorization Server initialized');
-  console.log('🔍 Discovery: /.well-known/oauth-authorization-server');
+  console.log('🔍 OIDC Discovery: /.well-known/openid-configuration');
+  console.log('🔍 OAuth2 Discovery: /.well-known/oauth-authorization-server');
   console.log('🔐 Authorize: /authorize and /oauth2/authorize');
   console.log('🎫 Token: /token and /oauth2/token');
   console.log('👤 Userinfo: /userinfo and /oauth2/userinfo');
