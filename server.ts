@@ -1,14 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
-import { createServer as createViteServer, createLogger } from "vite";
-import fs from "fs";
+import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const viteLogger = createLogger();
 
 /**
  * W3 Suite API Gateway
@@ -44,7 +42,7 @@ app.use((req, res, next) => {
 // ==================== PROXY CONFIGURATION ====================
 
 // Backend API proxy (W3 Suite API + OAuth2)
-const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
+const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3000);
 const backendProxy = createProxyMiddleware({
   target: `http://localhost:${W3_PORT}`,
   changeOrigin: true,
@@ -60,6 +58,27 @@ const backendProxy = createProxyMiddleware({
     },
     proxyReq: (proxyReq, req) => {
       log(`→ Backend: ${req.method} ${req.url}`);
+    }
+  }
+});
+
+// W3 Suite Frontend proxy (separate frontend dev server)
+const FRONTEND_PORT = Number(process.env.FRONTEND_PORT || 3000);
+const frontendProxy = createProxyMiddleware({
+  target: `http://localhost:${FRONTEND_PORT}`,
+  changeOrigin: true,
+  secure: false,
+  ws: true, // Enable WebSocket proxying for HMR
+  on: {
+    error: (err, req, res) => {
+      log(`Frontend proxy error: ${err.message}`);
+      // Type guard: check if res is ServerResponse and not Socket
+      if ('headersSent' in res && 'status' in res && !res.headersSent) {
+        (res as express.Response).status(503).json({ error: 'Frontend service unavailable' });
+      }
+    },
+    proxyReq: (proxyReq, req) => {
+      log(`→ Frontend: ${req.method} ${req.url}`);
     }
   }
 });
@@ -85,78 +104,45 @@ const brandInterfaceProxy = createProxyMiddleware({
   }
 });
 
-// Setup W3 Suite Vite middleware function
-async function setupW3SuiteVite(app: express.Express) {
-  log("🚀 Setting up W3 Suite Vite middleware...");
+// Frontend startup function
+async function startFrontendServer() {
+  log("🚀 Starting W3 Suite Frontend server...");
   
-  const webFrontendPath = path.resolve(__dirname, "apps", "frontend", "web");
+  const FRONTEND_PATH = path.resolve(__dirname, "apps", "frontend", "web");
   
-  const w3SuiteVite = await createViteServer({
-    configFile: path.join(webFrontendPath, "vite.config.ts"),
-    root: webFrontendPath,
-    server: { 
-      middlewareMode: true,
-      hmr: { port: 24677 } // Different HMR port to avoid conflicts
-    },
-    appType: "spa",
-    customLogger: {
-      ...viteLogger,
-      info: (msg) => log(`🔶 [W3 Suite Vite] ${msg}`),
-      error: (msg, options) => {
-        log(`❌ [W3 Suite Vite] ${msg}`);
-        viteLogger.error(msg, options);
-      },
+  const frontendProcess = spawn("npm", ["run", "dev"], {
+    cwd: FRONTEND_PATH,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      NODE_ENV: "development",
+      PORT: process.env.FRONTEND_PORT || "3000",
+      VITE_API_URL: "http://localhost:5000/api"
     }
   });
-  
-  // FIRST: Vite middlewares for assets, HMR, @vite/client, etc.
-  app.use(w3SuiteVite.middlewares);
-  
-  // SECOND: Catch-all for HTML document requests (SPA routing)
-  app.use('/', async (req, res, next) => {
-    // Only GET requests that accept HTML
-    if (req.method !== 'GET') return next();
-    
-    const accept = req.headers.accept || '';
-    const isHtmlRequest = accept.includes('text/html');
-    
-    // Skip API routes, Brand Interface routes, and assets
-    const isApiRoute = req.path.startsWith('/api/') || 
-                      req.path.startsWith('/brandinterface/') || 
-                      req.path.startsWith('/brand-api/') ||
-                      req.path.startsWith('/oauth2/') ||
-                      req.path.startsWith('/.well-known/') ||
-                      req.path.startsWith('/gateway/');
-    
-    // Skip assets: paths with dots, @vite paths, src paths
-    const isAsset = req.path.includes('.') || 
-                   req.path.startsWith('/@') || 
-                   req.path.startsWith('/src/') ||
-                   req.originalUrl.includes('/@') ||
-                   req.originalUrl.includes('/src/');
-    
-    // Only serve HTML for document requests that aren't API routes or assets
-    if (!isHtmlRequest || isApiRoute || isAsset) {
-      return next();
+
+  frontendProcess.on("error", (error: any) => {
+    log(`❌ Frontend Server failed to start: ${error.message}`);
+  });
+
+  frontendProcess.on("exit", (code: any, signal: any) => {
+    if (signal) {
+      log(`🚫 Frontend Server killed with signal ${signal}`);
+    } else {
+      log(`🚫 Frontend Server exited with code ${code}`);
     }
-    
-    try {
-      log(`📄 [W3 Suite Vite] Serving HTML for: ${req.originalUrl}`);
-      const tplPath = path.join(webFrontendPath, 'index.html');
-      let tpl = await fs.promises.readFile(tplPath, 'utf-8');
-      const html = await w3SuiteVite.transformIndexHtml(req.originalUrl, tpl);
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
-    } catch (e) {
-      log(`❌ [W3 Suite Vite] HTML transform error: ${(e as Error).message}`);
-      w3SuiteVite.ssrFixStacktrace(e as Error);
-      next(e);
+    // Respawn after 2 seconds if not intentionally killed
+    if (code !== 0 && signal !== "SIGTERM" && signal !== "SIGINT") {
+      setTimeout(() => {
+        log("🔄 Restarting Frontend Server...");
+        startFrontendServer();
+      }, 2000);
     }
   });
-  
-  log("✅ W3 Suite Vite middleware mounted at /");
-  log("✅ W3 Suite HTML transform handler added");
-  
-  return w3SuiteVite;
+
+  log("✅ W3 Suite Frontend server started");
+  log(`🌐 Frontend Server running on: http://localhost:${FRONTEND_PORT}`);
+  return frontendProcess;
 }
 
 // ==================== ROUTING CONFIGURATION ====================
@@ -170,6 +156,9 @@ app.use('/api', backendProxy);
 app.use('/oauth2', backendProxy);
 app.use('/.well-known', backendProxy);
 
+// Route all other requests to separated W3 Suite frontend (catch-all)
+app.use('/', frontendProxy);
+
 // Health check for gateway
 app.get('/gateway/health', (req, res) => {
   const BRAND_PORT = Number(process.env.BRAND_PORT || 3001);
@@ -177,7 +166,7 @@ app.get('/gateway/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     services: {
-      frontend: 'http://localhost:3000',
+      frontend: `http://localhost:${FRONTEND_PORT}`,
       backend: `http://localhost:${W3_PORT}`,
       brandInterface: `http://localhost:${BRAND_PORT}`,
       routes: {
@@ -201,13 +190,103 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
+// ==================== CHILD PROCESS MANAGEMENT ====================
+
+let apiServerProcess: any = null;
+let brandInterfaceProcess: any = null;
+let frontendServerProcess: any = null;
+
+function startApiServer() {
+  log("🚀 Starting W3 Suite API server...");
+  
+  const API_PATH = path.resolve(__dirname, "apps", "backend", "api");
+  
+  apiServerProcess = spawn("npx", ["tsx", "src/index.ts"], {
+    cwd: API_PATH,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      NODE_ENV: "development",
+      W3_PORT: process.env.W3_PORT || process.env.API_PORT || "3000",
+      JWT_SECRET: process.env.JWT_SECRET || "w3suite-dev-secret-2025"
+    }
+  });
+
+  apiServerProcess.on("error", (error: any) => {
+    log(`❌ API Server failed to start: ${error.message}`);
+  });
+
+  apiServerProcess.on("exit", (code: any, signal: any) => {
+    if (signal) {
+      log(`🚫 API Server killed with signal ${signal}`);
+    } else {
+      log(`🚫 API Server exited with code ${code}`);
+    }
+    // Respawn after 2 seconds if not intentionally killed
+    if (code !== 0 && signal !== "SIGTERM" && signal !== "SIGINT") {
+      setTimeout(() => {
+        log("🔄 Restarting API Server...");
+        startApiServer();
+      }, 2000);
+    }
+  });
+
+  log("✅ W3 Suite API server started");
+  log(`🔌 API Server running on: http://localhost:${W3_PORT}`);
+}
+
+function startBrandInterface() {
+  log("🚀 Starting Brand Interface server...");
+  
+  const BRAND_PATH = path.resolve(__dirname, "apps", "backend", "brand-api");
+  
+  brandInterfaceProcess = spawn("npx", ["tsx", "src/index.ts"], {
+    cwd: BRAND_PATH,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      NODE_ENV: "development",
+      BRAND_PORT: process.env.BRAND_PORT || "3001",
+      BRAND_JWT_SECRET: process.env.BRAND_JWT_SECRET || "brand-dev-secret-2025",
+      JWT_SECRET: process.env.JWT_SECRET || "w3suite-dev-secret-2025"
+    }
+  });
+
+  brandInterfaceProcess.on("error", (error: any) => {
+    log(`❌ Brand Interface failed to start: ${error.message}`);
+  });
+
+  brandInterfaceProcess.on("exit", (code: any, signal: any) => {
+    if (signal) {
+      log(`🚫 Brand Interface killed with signal ${signal}`);
+    } else {
+      log(`🚫 Brand Interface exited with code ${code}`);
+    }
+    // Respawn after 2 seconds if not intentionally killed
+    if (code !== 0 && signal !== "SIGTERM" && signal !== "SIGINT") {
+      setTimeout(() => {
+        log("🔄 Restarting Brand Interface...");
+        startBrandInterface();
+      }, 2000);
+    }
+  });
+
+  const brandPort = process.env.BRAND_PORT || "3001";
+  log("✅ Brand Interface server started");
+  log(`🌐 Brand Interface available at: http://localhost:${brandPort}/brandinterface/login`);
+}
+
 // ==================== SERVER STARTUP ====================
 
 async function startServer() {
   try {
-    // Setup W3 Suite Vite middleware for frontend in development
+    // Start child processes in development
     if (process.env.NODE_ENV === "development") {
-      await setupW3SuiteVite(app);
+      startApiServer();
+      startBrandInterface();
+      frontendServerProcess = await startFrontendServer();
+      // Add small delay to let services start
+      await new Promise(resolve => setTimeout(resolve, 3000));
     } else {
       // In production, serve static files from dist
       const webDistPath = path.resolve(__dirname, "apps", "frontend", "web", "dist");
@@ -252,7 +331,7 @@ async function startServer() {
       log(`\n🚀 W3 Suite API Gateway running on port ${port}`);
       log('📍 Service endpoints:');
       log('   • Gateway:          http://localhost:5000');
-      log('   • Frontend (W3):    Direct Vite middleware (no proxy)');
+      log(`   • Frontend (W3):    http://localhost:${FRONTEND_PORT} (proxied)`);
       log(`   • Backend API:      http://localhost:${W3_PORT} (proxied)`);
       log(`   • Brand Interface:  http://localhost:${BRAND_PORT} (standalone)`);
       log('\n🔗 Access your app at: http://localhost:5000\n');
@@ -268,10 +347,34 @@ startServer();
 // Graceful shutdown
 process.on('SIGTERM', () => {
   log('🚫 Gateway shutting down gracefully');
+  if (apiServerProcess) {
+    log('🚫 Stopping API Server...');
+    apiServerProcess.kill('SIGTERM');
+  }
+  if (brandInterfaceProcess) {
+    log('🚫 Stopping Brand Interface...');
+    brandInterfaceProcess.kill('SIGTERM');
+  }
+  if (frontendServerProcess) {
+    log('🚫 Stopping Frontend Server...');
+    frontendServerProcess.kill('SIGTERM');
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   log('🚫 Gateway shutting down gracefully');
+  if (apiServerProcess) {
+    log('🚫 Stopping API Server...');
+    apiServerProcess.kill('SIGTERM');
+  }
+  if (brandInterfaceProcess) {
+    log('🚫 Stopping Brand Interface...');
+    brandInterfaceProcess.kill('SIGTERM');
+  }
+  if (frontendServerProcess) {
+    log('🚫 Stopping Frontend Server...');
+    frontendServerProcess.kill('SIGTERM');
+  }
   process.exit(0);
 });
