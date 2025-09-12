@@ -85,35 +85,79 @@ const brandInterfaceProxy = createProxyMiddleware({
   }
 });
 
-// Frontend proxy (W3 Suite SPA)
-const frontendProxy = createProxyMiddleware({
-  target: 'http://localhost:3000',
-  changeOrigin: true,
-  secure: false,
-  ws: true, // Enable WebSocket proxying for HMR
-  on: {
-    error: (err, req, res) => {
-      log(`Frontend proxy error: ${err.message}`);
-      // Type guard: check if res is ServerResponse and not Socket
-      if ('headersSent' in res && 'status' in res && !res.headersSent) {
-        (res as express.Response).status(503).send(`
-          <!DOCTYPE html>
-          <html>
-            <head><title>W3 Suite - Service Unavailable</title></head>
-            <body>
-              <h1>W3 Suite Frontend Unavailable</h1>
-              <p>The frontend service is not running. Please start it with:</p>
-              <code>cd apps/frontend/web && npm run dev</code>
-            </body>
-          </html>
-        `);
-      }
+// Setup W3 Suite Vite middleware function
+async function setupW3SuiteVite(app: express.Express) {
+  log("🚀 Setting up W3 Suite Vite middleware...");
+  
+  const webFrontendPath = path.resolve(__dirname, "apps", "frontend", "web");
+  
+  const w3SuiteVite = await createViteServer({
+    configFile: path.join(webFrontendPath, "vite.config.ts"),
+    root: webFrontendPath,
+    server: { 
+      middlewareMode: true,
+      hmr: { port: 24677 } // Different HMR port to avoid conflicts
     },
-    proxyReq: (proxyReq, req) => {
-      log(`→ Frontend: ${req.method} ${req.url}`);
+    appType: "spa",
+    customLogger: {
+      ...viteLogger,
+      info: (msg) => log(`🔶 [W3 Suite Vite] ${msg}`),
+      error: (msg, options) => {
+        log(`❌ [W3 Suite Vite] ${msg}`);
+        viteLogger.error(msg, options);
+      },
     }
-  }
-});
+  });
+  
+  // FIRST: Vite middlewares for assets, HMR, @vite/client, etc.
+  app.use(w3SuiteVite.middlewares);
+  
+  // SECOND: Catch-all for HTML document requests (SPA routing)
+  app.use('/', async (req, res, next) => {
+    // Only GET requests that accept HTML
+    if (req.method !== 'GET') return next();
+    
+    const accept = req.headers.accept || '';
+    const isHtmlRequest = accept.includes('text/html');
+    
+    // Skip API routes, Brand Interface routes, and assets
+    const isApiRoute = req.path.startsWith('/api/') || 
+                      req.path.startsWith('/brandinterface/') || 
+                      req.path.startsWith('/brand-api/') ||
+                      req.path.startsWith('/oauth2/') ||
+                      req.path.startsWith('/.well-known/') ||
+                      req.path.startsWith('/gateway/');
+    
+    // Skip assets: paths with dots, @vite paths, src paths
+    const isAsset = req.path.includes('.') || 
+                   req.path.startsWith('/@') || 
+                   req.path.startsWith('/src/') ||
+                   req.originalUrl.includes('/@') ||
+                   req.originalUrl.includes('/src/');
+    
+    // Only serve HTML for document requests that aren't API routes or assets
+    if (!isHtmlRequest || isApiRoute || isAsset) {
+      return next();
+    }
+    
+    try {
+      log(`📄 [W3 Suite Vite] Serving HTML for: ${req.originalUrl}`);
+      const tplPath = path.join(webFrontendPath, 'index.html');
+      let tpl = await fs.promises.readFile(tplPath, 'utf-8');
+      const html = await w3SuiteVite.transformIndexHtml(req.originalUrl, tpl);
+      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
+    } catch (e) {
+      log(`❌ [W3 Suite Vite] HTML transform error: ${(e as Error).message}`);
+      w3SuiteVite.ssrFixStacktrace(e as Error);
+      next(e);
+    }
+  });
+  
+  log("✅ W3 Suite Vite middleware mounted at /");
+  log("✅ W3 Suite HTML transform handler added");
+  
+  return w3SuiteVite;
+}
 
 // ==================== ROUTING CONFIGURATION ====================
 
@@ -146,45 +190,6 @@ app.get('/gateway/health', (req, res) => {
   });
 });
 
-// Setup W3 Suite Vite middleware for frontend in development
-if (process.env.NODE_ENV === "development") {
-  await setupW3SuiteVite(app);
-} else {
-  // In production, serve static files from dist
-  const webDistPath = path.resolve(__dirname, "apps", "frontend", "web", "dist");
-  app.use('/', express.static(webDistPath));
-  
-  // Catch-all for SPA routes in production
-  app.get('*', (req, res, next) => {
-    // Skip API routes, Brand Interface routes, and static assets
-    if (req.path.startsWith('/api/') || 
-        req.path.startsWith('/brandinterface/') || 
-        req.path.startsWith('/brand-api/') ||
-        req.path.startsWith('/oauth2/') ||
-        req.path.startsWith('/.well-known/') ||
-        req.path.startsWith('/gateway/') ||
-        req.path.includes('.')) {
-      return next();
-    }
-    
-    const indexPath = path.join(webDistPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.status(503).send(`
-        <!DOCTYPE html>
-        <html>
-          <head><title>W3 Suite - Not Built</title></head>
-          <body>
-            <h1>W3 Suite Not Built</h1>
-            <p>Please build the frontend first:</p>
-            <code>cd apps/frontend/web && npm run build</code>
-          </body>
-        </html>
-      `);
-    }
-  });
-}
 
 // Error handling
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -198,18 +203,67 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 // ==================== SERVER STARTUP ====================
 
-const port = parseInt(process.env.PORT || '5000', 10);
+async function startServer() {
+  try {
+    // Setup W3 Suite Vite middleware for frontend in development
+    if (process.env.NODE_ENV === "development") {
+      await setupW3SuiteVite(app);
+    } else {
+      // In production, serve static files from dist
+      const webDistPath = path.resolve(__dirname, "apps", "frontend", "web", "dist");
+      app.use('/', express.static(webDistPath));
+      
+      // Catch-all for SPA routes in production
+      app.get('*', (req, res, next) => {
+        // Skip API routes, Brand Interface routes, and static assets
+        if (req.path.startsWith('/api/') || 
+            req.path.startsWith('/brandinterface/') || 
+            req.path.startsWith('/brand-api/') ||
+            req.path.startsWith('/oauth2/') ||
+            req.path.startsWith('/.well-known/') ||
+            req.path.startsWith('/gateway/') ||
+            req.path.includes('.')) {
+          return next();
+        }
+        
+        const indexPath = path.join(webDistPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.status(503).send(`
+            <!DOCTYPE html>
+            <html>
+              <head><title>W3 Suite - Not Built</title></head>
+              <body>
+                <h1>W3 Suite Not Built</h1>
+                <p>Please build the frontend first:</p>
+                <code>cd apps/frontend/web && npm run build</code>
+              </body>
+            </html>
+          `);
+        }
+      });
+    }
 
-app.listen(port, '0.0.0.0', () => {
-  const BRAND_PORT = Number(process.env.BRAND_PORT || 3001);
-  log(`\n🚀 W3 Suite API Gateway running on port ${port}`);
-  log('📍 Service endpoints:');
-  log('   • Gateway:          http://localhost:5000');
-  log('   • Frontend (W3):    http://localhost:3000 (proxied)');
-  log(`   • Backend API:      http://localhost:${W3_PORT} (proxied)`);
-  log(`   • Brand Interface:  http://localhost:${BRAND_PORT} (standalone)`);
-  log('\n🔗 Access your app at: http://localhost:5000\n');
-});
+    const port = parseInt(process.env.PORT || '5000', 10);
+
+    app.listen(port, '0.0.0.0', () => {
+      const BRAND_PORT = Number(process.env.BRAND_PORT || 3001);
+      log(`\n🚀 W3 Suite API Gateway running on port ${port}`);
+      log('📍 Service endpoints:');
+      log('   • Gateway:          http://localhost:5000');
+      log('   • Frontend (W3):    Direct Vite middleware (no proxy)');
+      log(`   • Backend API:      http://localhost:${W3_PORT} (proxied)`);
+      log(`   • Brand Interface:  http://localhost:${BRAND_PORT} (standalone)`);
+      log('\n🔗 Access your app at: http://localhost:5000\n');
+    });
+  } catch (error) {
+    log(`❌ Server startup failed: ${(error as Error).message}`);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

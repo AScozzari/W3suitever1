@@ -83,7 +83,7 @@ app.use('/oauth2/token', authLimiter);
 // CORS configuration for W3 Suite
 app.use((req, res, next) => {
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
-    'http://localhost:3000', // Frontend (W3 Suite)
+    'http://localhost:3004', // Frontend (W3 Suite)
     'http://localhost:5000'  // Gateway
   ];
   const origin = req.headers.origin;
@@ -102,8 +102,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Trust proxy for rate limiting with X-Forwarded-For
-app.set('trust proxy', true);
+// Trust proxy configuration - use specific value instead of true for security
+app.set('trust proxy', 1);
 
 app.use(express.json());
 
@@ -113,9 +113,7 @@ await seedCommercialAreas();
 // Crea il server HTTP
 const httpServer = await registerRoutes(app);
 
-// ==================== API-ONLY BACKEND ====================
-// Frontend serving is handled by the gateway (server.ts)
-// This backend is API-only to maintain service separation
+
 
 // ==================== BRAND INTERFACE STANDALONE PROCESS ====================
 // Brand Interface completamente isolato su porta 5001
@@ -183,9 +181,10 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// Avvia il server W3 Suite API su porta 3004 (separato dal gateway)
+// Avvia il server W3 Suite (API + Frontend) su porta 3004
 const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
 httpServer.listen(W3_PORT, "0.0.0.0", () => {
-  console.log(`✅ W3 Suite API server running on port ${W3_PORT}`);
-  console.log(`🔌 API endpoints available at: http://localhost:${W3_PORT}/api`);
+  console.log(`✅ W3 Suite server (API + Frontend) running on port ${W3_PORT}`);
+  console.log(`🌐 W3 Suite frontend available at: http://localhost:${W3_PORT}`);
+  console.log(`🔌 W3 Suite API endpoints at: http://localhost:${W3_PORT}/api`);
 });
