@@ -394,26 +394,32 @@ async function killProcessOnPort(port) {
 if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
   console.log('🚀 Auto-starting backend services...');
   
+  // Kill any existing processes first
+  const killExistingProcesses = async () => {
+    try {
+      // Kill any existing tsx processes for our apps
+      await new Promise((resolve) => {
+        const killCmd = spawn('pkill', ['-f', 'tsx.*apps/backend'], { stdio: 'inherit' });
+        killCmd.on('exit', () => resolve());
+        killCmd.on('error', () => resolve());
+      });
+      
+      // Wait for cleanup
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } catch (error) {
+      console.log('🧹 Process cleanup completed');
+    }
+  };
+  
   // Wait a moment before starting services
   setTimeout(async () => {
-    // Check if ports are available before starting
+    await killExistingProcesses();
+    
+    // Check if ports are available after cleanup
     let port3000Available = await checkPortAvailable(3000);
     let port3001Available = await checkPortAvailable(3001);
     
-    // If ports are not available, try to free them
-    if (!port3000Available) {
-      console.log('🔄 Freeing port 3000...');
-      await killProcessOnPort(3000);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      port3000Available = await checkPortAvailable(3000);
-    }
-    
-    if (!port3001Available) {
-      console.log('🔄 Freeing port 3001...');
-      await killProcessOnPort(3001);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      port3001Available = await checkPortAvailable(3001);
-    }
+    console.log(`🔍 Port status: 3000=${port3000Available ? 'available' : 'busy'}, 3001=${port3001Available ? 'available' : 'busy'}`);
     
     if (port3000Available) {
       // Start W3 Suite (port 3000)
@@ -431,19 +437,22 @@ if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
       
       w3Process.on('error', (error) => {
         console.error('❌ W3 Process error:', error);
+        w3Process = null;
       });
 
       w3Process.on('exit', (code) => {
-        if (code !== 0) {
-          console.error(`❌ W3 Suite exited with code ${code}`);
-        }
+        console.log(`🚫 W3 Suite process exited with code ${code}`);
+        w3Process = null;
       });
     } else {
-      console.log('❌ Could not free port 3000, W3 Suite startup failed');
+      console.log('❌ Port 3000 still busy, W3 Suite startup skipped');
     }
     
-    // Start Brand Interface (port 3001) after checking availability
+    // Start Brand Interface (port 3001) after a delay
     setTimeout(async () => {
+      // Recheck port availability
+      port3001Available = await checkPortAvailable(3001);
+      
       if (port3001Available) {
         console.log('🔄 Starting Brand Interface on port 3001...');
         brandProcess = spawn('npx', ['tsx', 'apps/backend/brand-api/src/index.ts'], {
@@ -459,20 +468,34 @@ if (process.env.NODE_ENV === 'development' && !process.env.GATEWAY_ONLY) {
         
         brandProcess.on('error', (error) => {
           console.error('❌ Brand Process error:', error);
+          brandProcess = null;
         });
 
         brandProcess.on('exit', (code) => {
-          if (code !== 0) {
-            console.error(`❌ Brand Interface exited with code ${code}`);
-          }
+          console.log(`🚫 Brand Interface process exited with code ${code}`);
+          brandProcess = null;
         });
       } else {
-        console.log('❌ Could not free port 3001, Brand Interface startup failed');
+        console.log('❌ Port 3001 still busy, Brand Interface startup skipped');
       }
       
       console.log('✅ Backend services startup sequence completed');
-    }, 3000);
-  }, 1000);
+      
+      // Health check after startup
+      setTimeout(async () => {
+        console.log('🔍 Performing post-startup health check...');
+        try {
+          const w3Health = await axios.get('http://localhost:3000/api/health', { timeout: 3000 }).catch(() => null);
+          const brandHealth = await axios.get('http://localhost:3001/brand-api/health', { timeout: 3000 }).catch(() => null);
+          
+          console.log(`📊 W3 Suite: ${w3Health ? '✅ Healthy' : '❌ Unavailable'}`);
+          console.log(`📊 Brand Interface: ${brandHealth ? '✅ Healthy' : '❌ Unavailable'}`);
+        } catch (error) {
+          console.log('📊 Health check completed with errors');
+        }
+      }, 5000);
+    }, 4000);
+  }, 2000);
 }
 
 // ==================== SERVER STARTUP ====================
