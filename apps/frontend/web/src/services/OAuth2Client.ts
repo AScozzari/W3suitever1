@@ -35,23 +35,24 @@ interface UserInfo {
 
 class OAuth2Client {
   private config: OAuth2Config;
+  private gatewayOrigin: string;
   private codeVerifier: string | null = null;
   private currentTokens: TokenResponse | null = null;
 
   constructor() {
     // Force gateway URL to avoid Replit external port issues
-    const gatewayOrigin = window.location.hostname === 'localhost' 
+    this.gatewayOrigin = window.location.hostname === 'localhost' 
       ? 'http://localhost:5000'
       : window.location.origin.replace(':8000', ''); // Remove :8000 if present
       
     console.log('🔧 OAuth2 URL Fix:');
     console.log('🌐 window.location.origin:', window.location.origin);
     console.log('🌐 window.location.hostname:', window.location.hostname);
-    console.log('🎯 gatewayOrigin (corrected):', gatewayOrigin);
+    console.log('🎯 gatewayOrigin (corrected):', this.gatewayOrigin);
     
     this.config = {
       clientId: 'w3suite-frontend',
-      redirectUri: `${window.location.origin}/auth/callback`,
+      redirectUri: `${this.gatewayOrigin}/auth/callback`,
       scopes: ['openid', 'profile', 'email', 'tenant_access'],
       authorizationEndpoint: '/api/oauth2/authorize',
       tokenEndpoint: '/api/oauth2/token',
@@ -128,11 +129,12 @@ class OAuth2Client {
       const state = this.generateRandomString(32);
       sessionStorage.setItem('oauth2_state', state);
 
-      // Build authorization URL - use relative path, browser will handle host correctly
-      const authUrl = new URL(this.config.authorizationEndpoint, window.location.origin);
+      // Build authorization URL - use corrected gateway origin without :8000
+      const authUrl = new URL(this.config.authorizationEndpoint, this.gatewayOrigin);
       
       console.log('🎯 Auth URL Construction:');
       console.log('🌐 window.location.origin:', window.location.origin);
+      console.log('🔧 gatewayOrigin (used):', this.gatewayOrigin);
       console.log('📍 Final authUrl:', authUrl.toString());
       
       authUrl.searchParams.set('response_type', 'code');
