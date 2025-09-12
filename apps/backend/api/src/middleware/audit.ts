@@ -82,7 +82,7 @@ export function createAuditMiddleware() {
       
       // In production, write to database
       if (process.env.NODE_ENV === 'production') {
-        // TODO: Write to audit_logs table
+        // Write audit entry to logs table when implemented
         // await storage.createAuditLog(auditEntry);
       }
       

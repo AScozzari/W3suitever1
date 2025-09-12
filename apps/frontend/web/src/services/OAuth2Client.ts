@@ -40,11 +40,9 @@ class OAuth2Client {
   private currentTokens: TokenResponse | null = null;
 
   constructor() {
-    // Force gateway URL to avoid Replit external port issues - NEVER use :8000 
     this.gatewayOrigin = window.location.hostname === 'localhost' 
       ? 'http://localhost:5000'
-      : `${window.location.protocol}//${window.location.hostname}`; // Always exclude port completely
-      
+      : `${window.location.protocol}//${window.location.hostname}`;
     
     this.config = {
       clientId: 'w3suite-frontend',
@@ -61,10 +59,7 @@ class OAuth2Client {
    * Initialize OAuth2 flow discovery
    */
   async initialize(): Promise<void> {
-    try {
-    } catch (error) {
-      throw error;
-    }
+    // OAuth2 configuration is static for this implementation
   }
 
   /**
@@ -100,7 +95,6 @@ class OAuth2Client {
    */
   async startAuthorizationFlow(): Promise<void> {
     try {
-      
       // Generate PKCE challenge
       const { codeVerifier, codeChallenge } = await this.generatePKCEChallenge();
       this.codeVerifier = codeVerifier;
@@ -112,9 +106,8 @@ class OAuth2Client {
       const state = this.generateRandomString(32);
       sessionStorage.setItem('oauth2_state', state);
 
-      // Build authorization URL - use corrected gateway origin (no port)
+      // Build authorization URL
       const authUrl = new URL(this.config.authorizationEndpoint, this.gatewayOrigin);
-      
       
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('client_id', this.config.clientId);
@@ -123,8 +116,6 @@ class OAuth2Client {
       authUrl.searchParams.set('state', state);
       authUrl.searchParams.set('code_challenge', codeChallenge);
       authUrl.searchParams.set('code_challenge_method', 'S256');
-
-      
 
       // Redirect to authorization server
       window.location.href = authUrl.toString();
@@ -180,7 +171,6 @@ class OAuth2Client {
       
       sessionStorage.removeItem('oauth2_code_verifier');
       sessionStorage.removeItem('oauth2_state');
-
 
       return tokenResponse;
     } catch (error) {
@@ -238,7 +228,6 @@ class OAuth2Client {
         const expiryTime = this.currentTokens.expires_at;
         const now = Date.now();
         const fiveMinutesBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
-        
         
         if (now >= (expiryTime - fiveMinutesBuffer)) {
           const refreshedTokens = await this.refreshToken();
@@ -386,6 +375,7 @@ class OAuth2Client {
         });
       }
     } catch (error) {
+      // Revocation errors are acceptable
     }
 
     // Clear local storage
@@ -394,7 +384,6 @@ class OAuth2Client {
     localStorage.removeItem('auth_token'); // Clear legacy token
     sessionStorage.removeItem('oauth2_code_verifier');
     sessionStorage.removeItem('oauth2_state');
-
   }
 
 }

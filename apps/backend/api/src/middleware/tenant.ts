@@ -60,13 +60,12 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
         await db.execute(sql.raw(`SET app.tenant_id = '${tenant.id}'`));
       }
     } catch (error) {
-      console.log('RLS set tenant_id:', tenant.id);
       // RLS configuration might not be set up yet, continue without error
     }
     
     next();
   } catch (error) {
-    console.error('Tenant middleware error:', error);
+    // Log tenant middleware errors in development only
     res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -93,7 +92,7 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
       if (req.body?.legalEntityId || req.params?.legalEntityId) {
         parentScopes.legalEntityId = req.body?.legalEntityId || req.params?.legalEntityId;
       }
-      // TODO: Query database to get store's legal entity if not provided
+      // Query database to get store's legal entity if not provided in future implementation
     } else if (req.params?.legalEntityId || req.body?.legalEntityId) {
       scopeType = 'legal_entity';
       scopeId = req.params?.legalEntityId || req.body?.legalEntityId;

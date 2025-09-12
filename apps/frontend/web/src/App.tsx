@@ -34,7 +34,6 @@ function OAuth2CallbackHandler() {
         const currentTenant = localStorage.getItem('currentTenant') || 'staging';
         window.location.href = `/${currentTenant}/dashboard`;
       } catch (error) {
-        console.error('OAuth2 callback error:', error);
         // Redirect to login on error
         window.location.href = '/staging/login';
       }

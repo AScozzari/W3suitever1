@@ -143,7 +143,6 @@ async function getUserByCredentials(username: string, password: string) {
       .limit(1);
     
     if (!user) {
-      console.log(`🔍 User not found: ${username}`);
       // For demo purposes, check hardcoded admin credentials
       if (username === 'admin' && password === 'admin123') {
         return {
@@ -169,11 +168,9 @@ async function getUserByCredentials(username: string, password: string) {
     const validPassword = demoPasswords[user.email || ''] || 'password123';
     
     if (password !== validPassword) {
-      console.log(`🔒 Invalid password for user: ${username}`);
       return null;
     }
     
-    console.log(`✅ User authenticated successfully: ${username}`);
     return {
       id: user.id,
       email: user.email || username,
@@ -183,7 +180,6 @@ async function getUserByCredentials(username: string, password: string) {
       lastName: user.lastName || ''
     };
   } catch (error) {
-    console.error('Error authenticating user:', error);
     return null;
   }
 }
@@ -337,9 +333,6 @@ export function setupOAuth2Server(app: express.Application) {
 
   // ==================== AUTHORIZATION PROCESSING ====================
   const authorizePostHandler = async (req: Request, res: Response) => {
-    console.log('📥 OAuth2 Authorization POST - Body:', req.body);
-    console.log('📥 OAuth2 Authorization POST - Headers:', req.headers['content-type']);
-    
     const {
       client_id,
       redirect_uri,
@@ -352,12 +345,9 @@ export function setupOAuth2Server(app: express.Application) {
       password
     } = req.body;
 
-    console.log(`🔐 Attempting login with username: ${username}, password: ${password ? '[PROVIDED]' : '[MISSING]'}`);
-
     try {
       // Authenticate user
       const user = await getUserByCredentials(username, password);
-      console.log('👤 User authentication result:', user ? 'SUCCESS' : 'FAILED');
       
       if (!user) {
         return res.status(401).send('Invalid credentials');
@@ -387,7 +377,6 @@ export function setupOAuth2Server(app: express.Application) {
       // Use 303 See Other to force browser to change POST to GET for OAuth2 callback
       res.redirect(303, redirectUrl.toString());
     } catch (error) {
-      console.error('OAuth2 authorization error:', error);
       res.status(500).json({
         error: 'server_error',
         error_description: 'Internal server error'
@@ -517,7 +506,6 @@ export function setupOAuth2Server(app: express.Application) {
         });
       }
     } catch (error) {
-      console.error('OAuth2 token error:', error);
       res.status(500).json({
         error: 'server_error',
         error_description: 'Internal server error'
@@ -596,11 +584,4 @@ export function setupOAuth2Server(app: express.Application) {
   app.post('/revoke', revokeHandler);
   app.post('/oauth2/revoke', revokeHandler);
 
-  console.log('✅ OAuth2 Authorization Server initialized');
-  console.log('🔍 OIDC Discovery: /.well-known/openid-configuration');
-  console.log('🔍 OAuth2 Discovery: /.well-known/oauth-authorization-server');
-  console.log('🔐 Authorize: /authorize and /oauth2/authorize');
-  console.log('🎫 Token: /token and /oauth2/token');
-  console.log('👤 Userinfo: /userinfo and /oauth2/userinfo');
-  console.log('🚫 Revoke: /revoke and /oauth2/revoke');
 }

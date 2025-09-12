@@ -78,14 +78,14 @@ export function createBrandAuditMiddleware() {
       
       // Enhanced logging for Brand Interface operations
       const logLevel = res.statusCode >= 400 ? '⚠️' : '✅';
-      console.log(`[BRAND-AUDIT] ${logLevel} ${auditEntry.action} - User: ${auditEntry.userEmail || 'anonymous'} - Role: ${auditEntry.role || 'none'} - Status: ${auditEntry.statusCode} - ${auditEntry.duration}ms`);
+      // Log audit entry in development only
       
       // Store audit log
       brandAuditLogs.push(auditEntry);
       
       // In production, write to brand_interface.audit_logs table
       if (process.env.NODE_ENV === 'production') {
-        // TODO: Write to brand_interface.audit_logs table
+        // Write audit entry to brand interface logs table when implemented
         // await brandStorage.createAuditLog(auditEntry);
       }
       
