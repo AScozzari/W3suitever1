@@ -12,15 +12,26 @@ echo ""
 
 # Stop any existing processes first
 echo "🧹 Cleaning up existing processes..."
-pkill -9 -f "tsx" 2>/dev/null || true
-pkill -9 -f "vite" 2>/dev/null || true
-pkill -9 -f "node.*3000" 2>/dev/null || true
-pkill -9 -f "node.*3001" 2>/dev/null || true
-pkill -9 -f "node.*3002" 2>/dev/null || true  
-pkill -9 -f "node.*3004" 2>/dev/null || true
-pkill -9 -f "node.*5000" 2>/dev/null || true
-pkill -9 -f "concurrently" 2>/dev/null || true
-sleep 3
+
+# Ultra-aggressive process cleanup - multiple rounds
+for round in 1 2 3; do
+  echo "🔪 Cleanup round $round..."
+  pkill -9 -f "tsx" 2>/dev/null || true
+  pkill -9 -f "vite" 2>/dev/null || true
+  pkill -9 -f "node.*tsx" 2>/dev/null || true
+  pkill -9 -f "node.*vite" 2>/dev/null || true
+  pkill -9 -f "concurrently" 2>/dev/null || true
+  pkill -9 -f "apps/backend" 2>/dev/null || true
+  pkill -9 -f "apps/frontend" 2>/dev/null || true
+  pkill -9 -f "apps/reverse-proxy" 2>/dev/null || true
+  
+  # Kill by specific process patterns
+  ps aux | grep -E "(tsx|vite|node.*3[0-9]{3}|node.*5000)" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
+  
+  sleep 2
+done
+
+echo "✅ Process cleanup completed"
 
 # Export environment variables for consistent configuration
 export NODE_ENV=${NODE_ENV:-development}
@@ -40,36 +51,61 @@ echo "  Service Ports: W3 FE:$W3_FRONTEND_PORT | W3 BE:$W3_BACKEND_PORT | Brand 
 echo "  Reverse Proxy: $PROXY_PORT"
 echo ""
 
-# Function to aggressively kill processes on specific port
+# Function to ultra-aggressively kill processes on specific port
 kill_port() {
   local port=$1
+  echo "🔪 Ultra-aggressive kill for port $port..."
   
-  # Method 1: lsof + kill
-  local pids=$(lsof -ti :$port 2>/dev/null)
-  if [ ! -z "$pids" ]; then
-    echo "🔪 Killing processes on port $port: $pids"
-    kill -9 $pids 2>/dev/null || true
-  fi
+  # Round 1: Standard methods
+  for attempt in 1 2 3; do
+    echo "  Attempt $attempt for port $port"
+    
+    # Method 1: lsof + kill
+    local pids=$(lsof -ti :$port 2>/dev/null)
+    if [ ! -z "$pids" ]; then
+      echo "    lsof kill: $pids"
+      echo "$pids" | xargs -r kill -9 2>/dev/null || true
+    fi
+    
+    # Method 2: netstat + kill  
+    local netstat_pids=$(netstat -tulpn 2>/dev/null | grep ":$port " | awk '{print $7}' | cut -d'/' -f1 | grep -E '^[0-9]+$' 2>/dev/null)
+    if [ ! -z "$netstat_pids" ]; then
+      echo "    netstat kill: $netstat_pids"
+      echo "$netstat_pids" | xargs -r kill -9 2>/dev/null || true
+    fi
+    
+    # Method 3: fuser
+    if command -v fuser >/dev/null 2>&1; then
+      fuser -k -9 $port/tcp 2>/dev/null || true
+    fi
+    
+    # Method 4: ss command (modern alternative to netstat)
+    if command -v ss >/dev/null 2>&1; then
+      local ss_pids=$(ss -tulpn | grep ":$port " | sed 's/.*pid=\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' 2>/dev/null)
+      if [ ! -z "$ss_pids" ]; then
+        echo "    ss kill: $ss_pids"
+        echo "$ss_pids" | xargs -r kill -9 2>/dev/null || true
+      fi
+    fi
+    
+    sleep 1
+    
+    # Check if port is free
+    if ! lsof -ti :$port >/dev/null 2>&1; then
+      echo "  ✅ Port $port is now free"
+      return 0
+    fi
+  done
   
-  # Method 2: netstat + kill (backup)
-  local netstat_pids=$(netstat -tulpn 2>/dev/null | grep ":$port " | awk '{print $7}' | cut -d'/' -f1 | grep -E '^[0-9]+$' 2>/dev/null)
-  if [ ! -z "$netstat_pids" ]; then
-    echo "🔪 Netstat kill on port $port: $netstat_pids"
-    echo "$netstat_pids" | xargs -r kill -9 2>/dev/null || true
-  fi
-  
-  # Method 3: fuser (if available)
-  if command -v fuser >/dev/null 2>&1; then
-    fuser -k -9 $port/tcp 2>/dev/null || true
-  fi
-  
-  # Wait and verify
-  sleep 2
+  # Final verification
   local remaining=$(lsof -ti :$port 2>/dev/null)
   if [ ! -z "$remaining" ]; then
-    echo "⚠️  Port $port still has processes: $remaining"
-    kill -9 $remaining 2>/dev/null || true
-    sleep 1
+    echo "  ⚠️  Port $port STILL has processes after all attempts: $remaining"
+    # Nuclear option
+    echo "$remaining" | xargs -r kill -9 2>/dev/null || true
+    sleep 2
+  else
+    echo "  ✅ Port $port successfully freed"
   fi
 }
 
