@@ -1,39 +1,67 @@
 /**
- * Minimal status server for workflow health checks
- * Runs on port 5000 to satisfy workflow requirements
- * No proxy, no gateway - just health status
+ * Reverse Proxy for W3 Suite Multi-App Architecture
+ * Runs on port 5000 - Routes traffic to separated apps
+ * W3 Suite + Brand Interface routing
  */
 
 import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
 
-// Simple health check endpoint
+// Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'healthy',
-    service: 'W3 Suite Status Server',
-    timestamp: new Date().toISOString()
+    service: 'W3 Suite Reverse Proxy',
+    timestamp: new Date().toISOString(),
+    routes: {
+      'W3 Frontend': 'http://localhost:3000',
+      'W3 Backend': 'http://localhost:3004', 
+      'Brand Frontend': 'http://localhost:3001',
+      'Brand Backend': 'http://localhost:3002'
+    }
   });
 });
 
-// Root endpoint returns health status too
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    service: 'W3 Suite Status Server',
-    message: 'Frontend runs on port 3000, Backend API on port 3004',
-    frontend: 'http://localhost:3000',
-    backend: 'http://localhost:3004',
-    timestamp: new Date().toISOString()
-  });
-});
+// Brand Interface Frontend - must come first (more specific)
+app.use('/brandinterface', createProxyMiddleware({
+  target: 'http://localhost:3001',
+  changeOrigin: true,
+  ws: true, // WebSocket support for Vite HMR
+  logLevel: 'warn'
+}));
+
+// Brand Interface Backend
+app.use('/brand-api', createProxyMiddleware({
+  target: 'http://localhost:3002',
+  changeOrigin: true,
+  logLevel: 'warn'
+}));
+
+// W3 Suite Backend 
+app.use('/api', createProxyMiddleware({
+  target: 'http://localhost:3004',
+  changeOrigin: true,
+  logLevel: 'warn'
+}));
+
+// W3 Suite Frontend (default - must be last)
+app.use('/', createProxyMiddleware({
+  target: 'http://localhost:3000',
+  changeOrigin: true,
+  ws: true, // WebSocket support for Vite HMR
+  logLevel: 'warn'
+}));
 
 // Start server on port 5000
 const PORT = 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`📍 Status server running on port ${PORT}`);
-  console.log(`🏥 Health check available at: http://localhost:${PORT}/health`);
-  console.log(`🌐 Frontend at: http://localhost:3000`);
-  console.log(`🔌 Backend API at: http://localhost:3004`);
+  console.log(`🔄 W3 Suite Reverse Proxy running on port ${PORT}`);
+  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  console.log(`📊 Routes configured:`);
+  console.log(`   / → W3 Frontend (3000)`);
+  console.log(`   /api → W3 Backend (3004)`);
+  console.log(`   /brandinterface → Brand Frontend (3001)`);
+  console.log(`   /brand-api → Brand Backend (3002)`);
 });
