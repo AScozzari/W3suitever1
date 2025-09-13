@@ -71,7 +71,6 @@
     "express-slow-down": "^3.0.0",
     "framer-motion": "^11.18.2",
     "helmet": "^8.1.0",
-    "http-proxy-middleware": "^3.0.5",
     "input-otp": "^1.4.2",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",

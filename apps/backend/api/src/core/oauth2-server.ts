@@ -56,7 +56,7 @@ const registeredClients: Map<string, OAuth2Client> = new Map([
     clientId: 'w3suite-frontend',
     clientSecret: undefined, // Public client (SPA)
     redirectUris: [
-      'http://localhost:5000/auth/callback',
+      'http://localhost:3004/auth/callback',
       'https://*.w3suite.com/auth/callback',
       'https://*.replit.dev/auth/callback'
     ],

@@ -8,7 +8,7 @@ import { seedCommercialAreas } from "./core/seed-areas.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Start backend directly - no reverse proxy
+// Start backend directly
 startBackend();
 
 async function startBackend() {

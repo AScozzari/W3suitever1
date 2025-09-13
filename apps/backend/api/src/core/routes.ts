@@ -222,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== TENANT MANAGEMENT API ====================
 
-  // Health check endpoint for reverse proxy
+  // Health check endpoint
   app.get("/health", async (req, res) => {
     try {
       // Simple database connectivity check

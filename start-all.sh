@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "🔥 Starting Both Systems..."
-echo "W3 Suite: http://localhost:5000"
+echo "W3 Suite: http://localhost:3004"
 echo "Brand Interface: http://localhost:5001"
 echo ""
 concurrently \

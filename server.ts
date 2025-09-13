@@ -61,7 +61,7 @@ app.use((req, res, next) => {
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5001 to avoid conflict with reverse proxy.
+  // Other ports are firewalled. Default to 5001.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5001', 10);

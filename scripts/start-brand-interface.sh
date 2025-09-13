@@ -16,7 +16,7 @@ cd apps/frontend/brand-web && npm run dev &
 
 echo "✅ Brand Interface is starting..."
 echo "🔗 Brand API: http://localhost:5001"
-echo "🔗 Brand Web: http://localhost:5000/brandinterface"
+echo "🔗 Brand Web: http://localhost:3001"
 
 # Keep script running
 wait

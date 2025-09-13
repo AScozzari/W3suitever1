@@ -10,8 +10,8 @@ BACKEND_PID=$!
 # Wait for backend to start
 sleep 3
 
-# Start W3 Suite frontend on port 5000
-echo "Starting W3 Suite frontend on port 5000..."
+# Start W3 Suite frontend 
+echo "Starting W3 Suite frontend..."
 cd apps/frontend/web && npm run dev &
 FRONTEND_PID=$!
 

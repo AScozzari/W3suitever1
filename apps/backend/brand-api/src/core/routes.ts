@@ -6,7 +6,7 @@ import { brandStorage } from "./storage.js";
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
 
-  // Health check endpoint for reverse proxy
+  // Health check endpoint
   app.get("/health", (req, res) => {
     res.json({
       status: "healthy",
