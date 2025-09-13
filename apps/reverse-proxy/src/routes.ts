@@ -142,7 +142,8 @@ export const brandFrontendProxy = createProxyMiddleware({
  * Serves welcome.html for root URL
  */
 export const staticWelcomeHandler = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.path === '/' || req.path === '') {
+  // Only serve welcome page for exactly "/" - let SPA routes pass through
+  if (req.path === '/' && req.headers.accept?.includes('text/html') && !req.headers['x-requested-with']) {
     const welcomePath = path.join(__dirname, '../../../public/welcome.html');
     res.sendFile(welcomePath, (err) => {
       if (err) {
@@ -162,14 +163,14 @@ export const staticWelcomeHandler = (req: express.Request, res: express.Response
  */
 export const w3FrontendProxy = createProxyMiddleware({
   ...createProxyOptions(`http://${config.upstream.w3Frontend.host}:${config.upstream.w3Frontend.port}`, {
-    // SPA rewrite: all non-static routes go to index for React Router to handle
-    '^(?!.*\\.)(.*)$': '/'
+    // SPA rewrite: any route that doesn't exist as a file should go to index
+    '^/staging/.*$': '/',
+    '^/[^/]+/.*$': '/',
+    '^/[^/.]+$': '/'
   }),
   filter: (pathname: string) => {
-    // Exclude paths already handled by other proxies and root welcome page
-    return pathname !== '/' &&
-           pathname !== '' &&
-           !pathname.startsWith('/api/') &&
+    // Exclude paths already handled by other proxies (but allow root for SPA)
+    return !pathname.startsWith('/api/') &&
            !pathname.startsWith('/oauth2/') &&
            !pathname.startsWith('/.well-known/') &&
            !pathname.startsWith('/brand-api/') &&
