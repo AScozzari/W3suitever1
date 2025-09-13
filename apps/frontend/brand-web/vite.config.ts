@@ -19,19 +19,11 @@ export default defineConfig({
     },
   },
   server: {
-    // Brand Frontend runs on standard port (localhost only)
-    port: 3001,
-    host: '127.0.0.1',
-    strictPort: true,
-    allowedHosts: true,
-    hmr: {
-      protocol: 'wss',
-      clientPort: 443,
-      host: 'localhost'
-    }
+    // Configurazione per ambiente Replit
+    host: '0.0.0.0',
+    allowedHosts: true
   },
   preview: {
-    port: 3001,
-    host: '127.0.0.1'
+    host: '0.0.0.0'
   }
 });

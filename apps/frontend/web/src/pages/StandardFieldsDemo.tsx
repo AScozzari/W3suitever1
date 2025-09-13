@@ -23,6 +23,7 @@ const StandardFieldsDemo = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form Data:', formData);
     alert('Controlla la console per vedere i dati validati!');
   };
 

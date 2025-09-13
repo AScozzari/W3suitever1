@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import {
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
@@ -13,6 +14,7 @@ import {
 export default function DashboardPage() {
   const [currentModule, setCurrentModule] = useState('dashboard');
   const [isMobile, setIsMobile] = useState(false);
+  const { data: dashboardStats } = useQuery({ queryKey: ["/api/dashboard/stats"] });
 
   useEffect(() => {
     const checkDevice = () => {

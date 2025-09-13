@@ -47,23 +47,23 @@ function spawnService(name, command, args, cwd, port) {
   return childProcess;
 }
 
-// Start Brand Interface API (port 3002)
+// Start Brand Interface API (port 5002)
 brandApiProcess = spawnService(
   'Brand API',
   'npx',
   ['tsx', 'src/index.ts'],
   BRAND_API_PATH,
-  3002
+  5002
 );
 
-// Wait a moment then start Brand Interface Frontend (port 3001)
+// Wait a moment then start Brand Interface Frontend (port 5001)
 setTimeout(() => {
   brandWebProcess = spawnService(
     'Brand Frontend',
     'npx',
-    ['vite', '--port', '3001', '--host', '0.0.0.0'],
+    ['vite', '--port', '5001', '--host', '0.0.0.0'],
     BRAND_WEB_PATH,
-    3001
+    5001
   );
 }, 2000);
 
@@ -89,8 +89,8 @@ process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
 
 console.log('✅ Brand Interface Orchestrator ready');
-console.log('📱 Brand Interface Frontend: http://localhost:3001/');
-console.log('🔌 Brand Interface API: http://localhost:3002/brand-api/health');
+console.log('📱 Brand Interface Frontend: http://localhost:5001/brandinterface/login');
+console.log('🔌 Brand Interface API: http://localhost:5002/brand-api/health');
 
 // Mantiene vivo l'orchestratore per non uccidere i processi figli
 process.stdin.resume(); // Keep event loop alive

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { jwtClient } from '../services/JWTClient';
-import { useAuth } from '../hooks/useAuth';
+import { oauth2Client } from '../services/OAuth2Client';
 import { 
   User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
@@ -75,7 +74,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   
-  const { user } = useAuth(); // Use OAuth2 authentication
+  const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
   const [location, navigate] = useLocation();
 
   // Estrai tenant dal path URL per il context
@@ -103,27 +102,40 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
     queryKey: ["/api/stores"],
     enabled: !!user,
-    retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    staleTime: 1000 * 60 * 5, // 5 minuti
+    retry: 2
   });
-  
+
   // Ensure stores is always an array
   const stores = Array.isArray(storesResponse) ? storesResponse : [];
 
-  // JWT token validation
+  // Check token validity se non c'è token
   useEffect(() => {
-    const checkJWTToken = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      // NO AUTO-LOGIN - Force manual login
+      console.log('No auth token found - login required');
+    } else {
+      // Verifica che il token sia valido e contenga il tenant ID corretto
       try {
-        const accessToken = await jwtClient.getAccessToken();
-      } catch (error) {
-        // Token invalid or expired, user needs to login
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          // Se il token contiene "demo-tenant" invece di UUID, rifai il login
+          if (payload.tenantId === 'demo-tenant' || !payload.tenantId?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+            console.log('Detected invalid tenant ID in token, clearing...');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('currentTenantId');
+            // Force re-login instead of auto-login
+          }
+        }
+      } catch (e) {
+        // Token invalido, clear storage
+        console.log('Invalid token, clearing...');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('currentTenantId');
+        // Force re-login instead of auto-login
       }
-    };
-    
-    checkJWTToken();
+    }
   }, []);
 
   // Auto-login removed - manual login required
@@ -463,21 +475,24 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
   const handleLogout = async () => {
     try {
+      console.log('🚪 Logging out via OAuth2...');
       
-      // Use JWT logout (clears tokens)
-      await jwtClient.logout();
+      // Use OAuth2 logout (clears tokens and revokes on server)
+      await oauth2Client.logout();
       
       // Clear React Query cache
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
       
+      console.log('✅ OAuth2 logout completed');
       
       // Redirect to login page
       window.location.href = '/brandinterface/login';
       
     } catch (error) {
+      console.error('❌ Logout error:', error);
       // Fallback: force logout even if server call fails
-      await jwtClient.logout();
+      await oauth2Client.logout();
       queryClient.clear();
       window.location.href = '/brandinterface/login';
     }
@@ -833,6 +848,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
+                      // TODO: Navigate to profile
                     }}
                     style={{
                       display: 'flex',
@@ -856,6 +872,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
+                      // TODO: Open support ticket
                     }}
                     style={{
                       display: 'flex',
@@ -879,6 +896,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
+                      // TODO: Clock in/out functionality
                     }}
                     style={{
                       display: 'flex',

@@ -13,13 +13,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3006,  // Changed from 3000 to 3006 for cache bypass
-    host: "127.0.0.1",  // localhost only for security
-    strictPort: true,
-    allowedHosts: true,
-    hmr: {
-      protocol: 'wss',      // when served over https (Replit)
-      clientPort: 443        // ensure browser connects on 443
-    }
+    port: 3000,
+    host: "0.0.0.0",
   },
 });

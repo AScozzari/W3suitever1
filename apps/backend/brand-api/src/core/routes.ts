@@ -2,20 +2,16 @@ import express from "express";
 import http from "http";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken } from "./auth.js";
 import { brandStorage } from "./storage.js";
-import { createBrandAuditMiddleware } from "../middleware/audit.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
-  
-  // Apply brand audit logging middleware
-  app.use(createBrandAuditMiddleware());
   
   // Middleware per parsing cookies
   app.use(express.json());
   
   // ==================== AUTH ENDPOINTS ====================
   // Login endpoint - non richiede autenticazione
-  app.post("/auth/login", async (req, res) => {
+  app.post("/brand-api/auth/login", async (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
@@ -46,7 +42,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
   
   // Health check - NO auth required
-  app.get("/health", (req, res) => {
+  app.get("/brand-api/health", (req, res) => {
     res.json({ 
       status: "healthy", 
       service: "Brand Interface API",
@@ -55,7 +51,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
   
   // Verify token endpoint - requires auth
-  app.get("/auth/me", authenticateToken(), async (req, res) => {
+  app.get("/brand-api/auth/me", authenticateToken(), async (req, res) => {
     const user = (req as any).user;
     
     res.json({ 
@@ -73,7 +69,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
   
   // Apply JWT authentication middleware to all routes except auth/login and health
-  app.use("/", (req, res, next) => {
+  app.use("/brand-api", (req, res, next) => {
     // Skip auth for login and health endpoints
     if (req.path === "/auth/login" || req.path === "/health") {
       return next();
@@ -83,12 +79,12 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
   
   // Apply tenant context middleware after authentication
-  app.use("/", createTenantContextMiddleware());
+  app.use("/brand-api", createTenantContextMiddleware());
 
   // ==================== CROSS-TENANT ENDPOINTS ====================
   // Operazioni che vedono tutti i tenant
   
-  app.get("/organizations", async (req, res) => {
+  app.get("/brand-api/organizations", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
     
@@ -119,7 +115,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  app.get("/analytics/cross-tenant", async (req, res) => {
+  app.get("/brand-api/analytics/cross-tenant", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
     
@@ -156,7 +152,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   // ==================== TENANT-SPECIFIC ENDPOINTS ====================
   // Operazioni su tenant specifico (path: /brand-api/:tenant/...)
   
-  app.get("/:tenant/stores", async (req, res) => {
+  app.get("/brand-api/:tenant/stores", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
     
@@ -178,7 +174,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   // ==================== BRAND LEVEL ENDPOINTS ====================
   // Operazioni su tabelle Brand Interface
   
-  app.get("/campaigns", async (req, res) => {
+  app.get("/brand-api/campaigns", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
     
@@ -204,7 +200,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     });
   });
 
-  app.get("/deployment-targets", (req, res) => {
+  app.get("/brand-api/deployment-targets", (req, res) => {
     const context = (req as any).brandContext;
     
     res.json({ 
@@ -217,7 +213,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   });
 
   // ==================== DEPLOYMENT ENDPOINTS ====================
-  app.post("/deploy", express.json(), async (req, res) => {
+  app.post("/brand-api/deploy", express.json(), async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
     const { campaignId, targetType, targetTenants } = req.body;

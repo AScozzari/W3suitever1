@@ -27,6 +27,7 @@ export function BrandTenantProvider({ children }: { children: ReactNode }) {
   const switchTenant = useCallback((tenant: string | null) => {
     const nextPath = tenant ? `/brandinterface/${tenant}` : '/brandinterface';
     if (window.location.pathname !== nextPath) {
+      console.log(`🔄 [Brand Tenant] SPA navigate: ${nextPath}`);
       window.history.pushState({}, '', nextPath);
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
@@ -43,6 +44,7 @@ export function BrandTenantProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('brandCurrentTenant', tenant);
       localStorage.setItem('brandCurrentTenantId', tenantId);
       
+      console.log(`🎯 Brand Interface - Tenant: ${tenant} (${tenantId})`);
     } else {
       setCurrentTenantId(null);
       
@@ -50,6 +52,7 @@ export function BrandTenantProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('brandCurrentTenant');
       localStorage.removeItem('brandCurrentTenantId');
       
+      console.log('🌍 Brand Interface - Cross-tenant mode');
     }
   }, []);
 
@@ -61,6 +64,7 @@ export function BrandTenantProvider({ children }: { children: ReactNode }) {
     if (savedTenant && savedTenantId) {
       setCurrentTenant(savedTenant);
       setCurrentTenantId(savedTenantId);
+      console.log(`🔄 Brand Interface - Restored tenant: ${savedTenant} (${savedTenantId})`);
     }
   }, []);
 
@@ -96,6 +100,7 @@ export function BrandTenantWrapper({ params, children }: { params: any, children
   useEffect(() => {
     // Solo update se tenant è effettivamente cambiato
     if (effectiveTenant !== currentTenant) {
+      console.log(`🔄 BrandTenantWrapper - Update: ${currentTenant} → ${effectiveTenant}`);
       updateTenant(effectiveTenant);
     }
   }, [effectiveTenant, currentTenant, updateTenant]);

@@ -1,25 +1,72 @@
-import { Route, Switch, useLocation, useParams } from "wouter";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { TenantProvider } from "./contexts/TenantContext";
-import DashboardPage from "./pages/DashboardPage";
-import SettingsPage from "./pages/SettingsPage";
-import Login from "./pages/Login";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
-// import { Toaster } from "@/components/ui/toaster"; // Rimosso - file non esiste
-import Layout from "./components/Layout";
 import { useAuth } from "./hooks/useAuth";
-import { useEffect } from "react";
+import { Route, Switch, useParams, Redirect } from "wouter";
+import DashboardPage from "./pages/DashboardPage";
+import Login from "./pages/Login";
+import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { TenantProvider } from "./contexts/TenantContext";
+import { useEffect } from "react";
 
-// Component wrapper per tenant ID
-function TenantWrapper({ children }: { children: React.ReactNode }) {
-  const params = useParams();
-  const tenant = (params as any).tenant;
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TenantProvider>
+          <Router />
+        </TenantProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+
+function Router() {
+  return (
+    <Switch>
+      {/* Route dedicate per login */}
+      <Route path="/:tenant/login">
+        {(params) => <TenantWrapper params={params}><LoginPage /></TenantWrapper>}
+      </Route>
+      
+      {/* Route con tenant nel path - richiedono autenticazione */}
+      <Route path="/:tenant/settings">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/demo-fields">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><StandardFieldsDemo /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/dashboard">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      
+      {/* Route root tenant - redirect basato su auth */}
+      <Route path="/:tenant">
+        {(params) => <TenantWrapper params={params}><TenantRoot /></TenantWrapper>}
+      </Route>
+      
+      {/* Fallback - redirect a staging */}
+      <Route>
+        {() => {
+          window.location.href = '/staging';
+          return null;
+        }}
+      </Route>
+    </Switch>
+  );
+}
+
+// Component wrapper per gestire il tenant
+function TenantWrapper({ params, children }: { params: any, children: React.ReactNode }) {
+  const tenant = params.tenant;
   
   useEffect(() => {
+    // Salva il tenant corrente
     if (tenant) {
-      // Map tenant codes to IDs (using UUIDs for real tenants)
+      localStorage.setItem('currentTenant', tenant);
+      
       const tenantMapping: Record<string, string> = {
         'staging': '00000000-0000-0000-0000-000000000001',
         'demo': '99999999-9999-9999-9999-999999999999',
@@ -35,30 +82,23 @@ function TenantWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Component per gestire il redirect dal root tenant - DISABILITATO PER ORA
+// Componente per gestire il redirect dal root tenant
 function TenantRoot() {
   const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
   
-  // Temporaneamente disabilitato il redirect automatico per fermare i loop
-  // useEffect(() => {
-  //   if (!isLoading) {
-  //     const currentTenant = tenant || 'staging';
-  //     const currentPath = window.location.pathname;
-  //     if (isAuthenticated) {
-  //       const targetPath = `/${currentTenant}/dashboard`;
-  //       if (!currentPath.includes('/dashboard')) {
-  //         navigate(targetPath, { replace: true });
-  //       }
-  //     } else {
-  //       const targetPath = `/${currentTenant}/login`;
-  //       if (!currentPath.includes('/login')) {
-  //         navigate(targetPath, { replace: true });
-  //       }
-  //     }
-  //   }
-  // }, [isAuthenticated, isLoading, tenant, navigate]);
+  useEffect(() => {
+    if (!isLoading) {
+      if (isAuthenticated) {
+        // Se autenticato, vai alla dashboard
+        window.location.href = `/${tenant}/dashboard`;
+      } else {
+        // Se non autenticato, vai al login
+        window.location.href = '/brandinterface/login';
+      }
+    }
+  }, [isAuthenticated, isLoading, tenant]);
 
   // Loading screen durante il check
   return (
@@ -77,19 +117,6 @@ function TenantRoot() {
         border: '1px solid rgba(255, 255, 255, 0.2)'
       }}>
         <h2 style={{ color: 'white', fontSize: '24px' }}>Caricamento W3 Suite...</h2>
-        {!isLoading && (
-          <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            {isAuthenticated ? (
-              <a href={`/${tenant || 'staging'}/dashboard`} style={{ color: 'white', textDecoration: 'underline' }}>
-                Vai alla Dashboard
-              </a>
-            ) : (
-              <a href={`/${tenant || 'staging'}/login`} style={{ color: 'white', textDecoration: 'underline' }}>
-                Vai al Login
-              </a>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -102,22 +129,11 @@ function LoginPage() {
   return <Login tenantCode={tenant} />;
 }
 
-// Wrapper per pagine che richiedono autenticazione - DISABILITATO PER ORA
+// Wrapper per pagine che richiedono autenticazione
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
-  
-  // Temporaneamente disabilitato il redirect automatico per fermare i loop
-  // useEffect(() => {
-  //   if (!isLoading && !isAuthenticated) {
-  //     const currentPath = window.location.pathname;
-  //     const targetPath = `/${tenant}/login`;
-  //     if (!currentPath.includes('/login')) {
-  //       navigate(targetPath, { replace: true });
-  //     }
-  //   }
-  // }, [isAuthenticated, isLoading, tenant, navigate]);
   
   if (isLoading) {
     return (
@@ -142,79 +158,9 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '16px',
-          padding: '32px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          textAlign: 'center'
-        }}>
-          <h2 style={{ color: 'white', fontSize: '24px', marginBottom: '20px' }}>Non sei autenticato</h2>
-          <a href={`/${tenant}/login`} style={{ color: 'white', textDecoration: 'underline' }}>
-            Vai al Login
-          </a>
-        </div>
-      </div>
-    );
+    // W3 Suite ha il suo sistema di login indipendente
+    return <LoginPage />;
   }
 
-  return (
-    <Layout>
-      {children}
-    </Layout>
-  );
-}
-
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TenantProvider>
-          <TenantWrapper>
-            <Switch>
-              {/* Root redirect to default tenant */}
-              <Route path="/" component={TenantRoot} />
-              
-              {/* Tenant-specific routes */}
-              <Route path="/:tenant" component={TenantRoot} />
-              <Route path="/:tenant/login" component={LoginPage} />
-              
-              <Route path="/:tenant/dashboard">
-                <AuthenticatedApp>
-                  <DashboardPage />
-                </AuthenticatedApp>
-              </Route>
-              
-              <Route path="/:tenant/settings">
-                <AuthenticatedApp>
-                  <SettingsPage />
-                </AuthenticatedApp>
-              </Route>
-              
-              <Route path="/:tenant/standard-fields-demo">
-                <AuthenticatedApp>
-                  <StandardFieldsDemo />
-                </AuthenticatedApp>
-              </Route>
-              
-              {/* Fallback route */}
-              <Route>
-                <TenantRoot />
-              </Route>
-            </Switch>
-          </TenantWrapper>
-        </TenantProvider>
-      </ThemeProvider>
-      {/* <Toaster /> */}
-    </QueryClientProvider>
-  );
+  return <>{children}</>;
 }

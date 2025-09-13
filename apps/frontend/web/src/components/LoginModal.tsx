@@ -99,6 +99,7 @@ export default function LoginModal({ isOpen, onClose, tenantCode: propTenantCode
         setIsLoading(false);
       }
     } catch (error) {
+      console.error('Login error:', error);
       alert('Errore durante il login. Riprova.');
       setIsLoading(false);
     }

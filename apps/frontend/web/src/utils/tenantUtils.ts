@@ -89,14 +89,15 @@ export const addTenantHeaders = (headers: HeadersInit = {}): HeadersInit => {
 export const getTenantUrl = (subdomain: string): string => {
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
+  const port = window.location.port;
   
-  // In development - NEVER use :8000, always use gateway :5000
+  // In development
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    // Usa parametro URL per cambiare tenant - SEMPRE porta 5000 (gateway)
-    return `${protocol}//${hostname}:5000?tenant=${subdomain}`;
+    // Usa parametro URL per cambiare tenant
+    return `${protocol}//${hostname}${port ? ':' + port : ''}?tenant=${subdomain}`;
   }
   
-  // In produzione - MAI includere porte
+  // In produzione
   const baseDomain = hostname.split('.').slice(1).join('.');
   return `${protocol}//${subdomain}.${baseDomain}`;
 };
