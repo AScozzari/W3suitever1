@@ -24,11 +24,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Brand Interface Frontend - direct proxy without redirect loops
+// Brand Interface Frontend - properly handle paths
 app.use('/brandinterface', createProxyMiddleware({
   target: 'http://localhost:3001',
   changeOrigin: true,
-  ws: true // WebSocket support for Vite HMR
+  ws: true, // WebSocket support for Vite HMR
+  pathRewrite: {
+    '^/brandinterface/(.*)': '/brandinterface/$1', // Mantieni il path completo
+    '^/brandinterface$': '/brandinterface/' // Aggiungi trailing slash se manca
+  },
+  followRedirects: true
 }));
 
 // Brand Interface Backend - fix path duplication
