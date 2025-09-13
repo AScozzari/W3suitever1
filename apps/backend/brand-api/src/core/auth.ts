@@ -40,20 +40,20 @@ export class BrandAuthService {
       // Password validation
       let isValid = false;
       
-      if (user.passwordHash) {
-        // Use bcrypt to compare password with hash
-        isValid = await bcrypt.compare(password, user.passwordHash);
-      } else if (process.env.NODE_ENV === "development") {
-        // ONLY in development, allow test password if no hash is set
+      if (process.env.NODE_ENV === "development") {
+        // ONLY in development, allow test password since passwordHash is not implemented yet
         console.warn(`⚠️ Development mode: Using test password for ${email}`);
         isValid = password === "Brand123!";
+      } else {
+        // In production, password authentication needs to be implemented
+        console.error(`❌ Password authentication not implemented for production`);
+        return null;
       }
       
       if (!isValid) {
         // Update failed login attempts
         await brandStorage.updateUser(user.id, { 
-          failedLoginAttempts: (user.failedLoginAttempts || 0) + 1,
-          lastFailedLoginAt: new Date()
+          failedLoginAttempts: (user.failedLoginAttempts || 0) + 1
         });
         return null;
       }

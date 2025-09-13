@@ -6,7 +6,8 @@ import MarketingWorkspace from '../components/workspaces/MarketingWorkspace';
 import SalesWorkspace from '../components/workspaces/SalesWorkspace';
 import OperationsWorkspace from '../components/workspaces/OperationsWorkspace';
 import AdminWorkspace from '../components/workspaces/AdminWorkspace';
-import { Building2, Users, TrendingUp, Settings, Globe, ChartBar, Activity, Package } from 'lucide-react';
+import CrossTenantStoreModal from '../components/CrossTenantStoreModal';
+import { Building2, Users, TrendingUp, Settings, Globe, ChartBar, Activity, Package, Store, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
@@ -14,6 +15,7 @@ export default function Dashboard() {
   const { isAuthenticated, user } = useBrandAuth();
   const { currentTenant, currentTenantId, isCrossTenant, switchTenant } = useBrandTenant();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
@@ -160,6 +162,24 @@ export default function Dashboard() {
             </TabsList>
             
             <TabsContent value="overview" className="mt-6">
+              {/* Quick Actions Section */}
+              <div className="mb-6 bg-gradient-to-r from-violet-600 to-orange-500 rounded-xl p-6 text-white shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Quick Actions</h3>
+                    <p className="text-white/80">Gestione centralizzata cross-tenant</p>
+                  </div>
+                  <button
+                    onClick={() => setIsStoreModalOpen(true)}
+                    className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 font-medium shadow-lg hover:shadow-xl"
+                    data-testid="button-open-store-modal"
+                  >
+                    <Store className="w-5 h-5" />
+                    Crea Punto Vendita
+                  </button>
+                </div>
+              </div>
+              
               <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-violet-100">
                 <h2 className="text-xl font-semibold mb-4 text-gray-800">
                   Panoramica Sistema
@@ -240,6 +260,16 @@ export default function Dashboard() {
           </Tabs>
         </div>
       </div>
+
+      {/* Cross-Tenant Store Modal */}
+      <CrossTenantStoreModal
+        isOpen={isStoreModalOpen}
+        onClose={() => setIsStoreModalOpen(false)}
+        onSuccess={() => {
+          setIsStoreModalOpen(false);
+          // You could add a toast notification here
+        }}
+      />
     </BrandLayout>
   );
 }

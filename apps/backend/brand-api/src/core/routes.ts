@@ -248,6 +248,276 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     });
   });
 
+  // ==================== SECURE CROSS-TENANT ENDPOINTS ====================
+  // Security-first implementation for cross-tenant operations
+
+  // Helper function for secure W3 backend calls with service authentication
+  async function secureW3BackendCall(endpoint: string, options: any = {}) {
+    try {
+      const response = await fetch(`http://localhost:3004${endpoint}`, {
+        method: options.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`,
+          'X-Service': 'brand-interface',
+          'X-Service-Version': '1.0.0',
+          ...options.headers
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined
+      });
+
+      if (!response.ok) {
+        throw new Error(`W3 Backend error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Secure W3 Backend call failed for ${endpoint}:`, error);
+      throw error;
+    }
+  }
+
+  // Get tenants for cross-tenant operations (alias for organizations)
+  app.get("/brand-api/cross-tenant/tenants", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Only super_admin and national_manager can access cross-tenant operations
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for cross-tenant operations" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const tenants = await brandStorage.getTenants();
+      res.json({ 
+        tenants: tenants.map(t => ({
+          id: t.id,
+          name: t.name,
+          slug: t.slug,
+          status: t.status
+        }))
+      });
+    } catch (error) {
+      console.error("Error fetching tenants:", error);
+      res.status(500).json({ error: "Failed to fetch tenants" });
+    }
+  });
+
+  // Get legal entities for specific tenant (server-side tenant validation)
+  app.get("/brand-api/cross-tenant/legal-entities/:tenantSlug", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { tenantSlug } = req.params;
+
+    // Only super_admin and national_manager can access cross-tenant operations
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for cross-tenant operations" });
+    }
+
+    try {
+      // Server-side tenant validation - map slug to ID
+      const tenants = await brandStorage.getTenants();
+      const tenant = tenants.find(t => t.slug === tenantSlug);
+      
+      if (!tenant) {
+        return res.status(404).json({ error: `Tenant not found: ${tenantSlug}` });
+      }
+
+      // Secure service-to-service call to W3 backend
+      const legalEntities = await secureW3BackendCall(`/api/legal-entities?tenantId=${tenant.id}`);
+      
+      res.json({ 
+        legalEntities,
+        tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name }
+      });
+    } catch (error) {
+      console.error(`Error fetching legal entities for tenant ${tenantSlug}:`, error);
+      res.status(500).json({ error: "Failed to fetch legal entities" });
+    }
+  });
+
+  // Get channels for specific tenant
+  app.get("/brand-api/cross-tenant/channels/:tenantSlug", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { tenantSlug } = req.params;
+
+    // Only super_admin and national_manager can access cross-tenant operations
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for cross-tenant operations" });
+    }
+
+    try {
+      // Server-side tenant validation
+      const tenants = await brandStorage.getTenants();
+      const tenant = tenants.find(t => t.slug === tenantSlug);
+      
+      if (!tenant) {
+        return res.status(404).json({ error: `Tenant not found: ${tenantSlug}` });
+      }
+
+      // Secure service-to-service call
+      const channels = await secureW3BackendCall(`/api/channels?tenantId=${tenant.id}`);
+      
+      res.json({ 
+        channels,
+        tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name }
+      });
+    } catch (error) {
+      console.error(`Error fetching channels for tenant ${tenantSlug}:`, error);
+      res.status(500).json({ error: "Failed to fetch channels" });
+    }
+  });
+
+  // Get commercial areas for specific tenant
+  app.get("/brand-api/cross-tenant/commercial-areas/:tenantSlug", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { tenantSlug } = req.params;
+
+    // Only super_admin and national_manager can access cross-tenant operations
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for cross-tenant operations" });
+    }
+
+    try {
+      // Server-side tenant validation
+      const tenants = await brandStorage.getTenants();
+      const tenant = tenants.find(t => t.slug === tenantSlug);
+      
+      if (!tenant) {
+        return res.status(404).json({ error: `Tenant not found: ${tenantSlug}` });
+      }
+
+      // Secure service-to-service call
+      const commercialAreas = await secureW3BackendCall(`/api/commercial-areas?tenantId=${tenant.id}`);
+      
+      res.json({ 
+        commercialAreas,
+        tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name }
+      });
+    } catch (error) {
+      console.error(`Error fetching commercial areas for tenant ${tenantSlug}:`, error);
+      res.status(500).json({ error: "Failed to fetch commercial areas" });
+    }
+  });
+
+  // Get brands for specific tenant
+  app.get("/brand-api/cross-tenant/brands/:tenantSlug", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { tenantSlug } = req.params;
+
+    // Only super_admin and national_manager can access cross-tenant operations
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for cross-tenant operations" });
+    }
+
+    try {
+      // Server-side tenant validation
+      const tenants = await brandStorage.getTenants();
+      const tenant = tenants.find(t => t.slug === tenantSlug);
+      
+      if (!tenant) {
+        return res.status(404).json({ error: `Tenant not found: ${tenantSlug}` });
+      }
+
+      // Secure service-to-service call
+      const brands = await secureW3BackendCall(`/api/brands?tenantId=${tenant.id}`);
+      
+      res.json({ 
+        brands,
+        tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name }
+      });
+    } catch (error) {
+      console.error(`Error fetching brands for tenant ${tenantSlug}:`, error);
+      res.status(500).json({ error: "Failed to fetch brands" });
+    }
+  });
+
+  // Create store with secure cross-tenant validation
+  app.post("/brand-api/cross-tenant/stores", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const storeData = req.body;
+
+    // Only super_admin and national_manager can create cross-tenant stores
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create cross-tenant stores" });
+    }
+
+    if (!storeData.tenantSlug) {
+      return res.status(400).json({ error: "tenantSlug is required" });
+    }
+
+    try {
+      // Server-side tenant validation and mapping
+      const tenants = await brandStorage.getTenants();
+      const tenant = tenants.find(t => t.slug === storeData.tenantSlug);
+      
+      if (!tenant) {
+        return res.status(404).json({ error: `Tenant not found: ${storeData.tenantSlug}` });
+      }
+
+      // Remove tenantSlug from data and add proper tenantId for W3 backend
+      const { tenantSlug, ...cleanStoreData } = storeData;
+      const storePayload = {
+        ...cleanStoreData,
+        tenantId: tenant.id, // Server-controlled tenant ID
+        createdBy: user.id,
+        createdFromBrandInterface: true,
+        brandInterfaceUser: {
+          id: user.id,
+          email: user.email,
+          role: user.role
+        }
+      };
+
+      // Secure service-to-service call to create store
+      const createdStore = await secureW3BackendCall('/api/stores', {
+        method: 'POST',
+        body: storePayload,
+        headers: {
+          'X-Tenant-ID': tenant.id, // Server-controlled tenant targeting
+          'X-Source': 'brand-interface'
+        }
+      });
+
+      // Log the cross-tenant operation for audit
+      await brandStorage.createAuditLog({
+        tenantId: tenant.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'CREATE_CROSS_TENANT_STORE',
+        resourceType: 'store',
+        resourceIds: [createdStore.id],
+        targetTenants: [tenant.slug || tenant.name],
+        metadata: {
+          storeCode: storeData.code,
+          storeName: storeData.nome,
+          brandInterfaceUserId: user.id
+        }
+      });
+
+      res.json({
+        success: true,
+        store: createdStore,
+        tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name },
+        message: `Store created successfully on tenant ${tenant.name}`
+      });
+    } catch (error) {
+      console.error(`Error creating store for tenant ${storeData.tenantSlug}:`, error);
+      res.status(500).json({ 
+        error: "Failed to create store",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 

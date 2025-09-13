@@ -34,7 +34,7 @@ if (isDbDisabled) {
   });
   
   // Add error handling for connection pool
-  pool.on('error', (err) => {
+  pool.on('error', (err: any) => {
     console.error('❌ Brand DB pool error:', err.message);
     if (err.code === '57P01' || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
       console.log('🔄 Brand DB connection will be retried automatically');
