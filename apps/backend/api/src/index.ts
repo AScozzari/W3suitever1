@@ -12,6 +12,8 @@ const __dirname = path.dirname(__filename);
 
 // Global process references for lifecycle management
 let brandFrontendProcess = null;
+let w3FrontendProcess = null;
+let brandBackendProcess = null;
 
 // Start nginx reverse proxy and backend
 startNginxAndBackend();
@@ -206,7 +208,19 @@ async function startNginxAndBackend() {
     const gracefulShutdown = () => {
       console.log("🛑 Shutting down all services gracefully...");
       
-      // Shutdown Brand Frontend first
+      // Shutdown all frontend services and brand backend
+      if (w3FrontendProcess) {
+        console.log("🌐 Stopping W3 Suite Frontend...");
+        w3FrontendProcess.kill("SIGTERM");
+        w3FrontendProcess = null;
+      }
+      
+      if (brandBackendProcess) {
+        console.log("🏭 Stopping Brand Backend...");
+        brandBackendProcess.kill("SIGTERM");
+        brandBackendProcess = null;
+      }
+      
       if (brandFrontendProcess) {
         console.log("🎨 Stopping Brand Frontend...");
         brandFrontendProcess.kill("SIGTERM");
@@ -276,6 +290,16 @@ async function startBackend() {
   // W3 Suite backend cleanup
   process.on("SIGTERM", () => {
     console.log("🚫 W3 Suite backend shutting down");
+    if (w3FrontendProcess) {
+      console.log("🌐 Stopping W3 Suite Frontend from backend shutdown...");
+      w3FrontendProcess.kill("SIGTERM");
+      w3FrontendProcess = null;
+    }
+    if (brandBackendProcess) {
+      console.log("🏭 Stopping Brand Backend from backend shutdown...");
+      brandBackendProcess.kill("SIGTERM");
+      brandBackendProcess = null;
+    }
     if (brandFrontendProcess) {
       console.log("🎨 Stopping Brand Frontend from backend shutdown...");
       brandFrontendProcess.kill("SIGTERM");
@@ -286,6 +310,16 @@ async function startBackend() {
 
   process.on("SIGINT", () => {
     console.log("🚫 W3 Suite backend shutting down");
+    if (w3FrontendProcess) {
+      console.log("🌐 Stopping W3 Suite Frontend from backend shutdown...");
+      w3FrontendProcess.kill("SIGTERM");
+      w3FrontendProcess = null;
+    }
+    if (brandBackendProcess) {
+      console.log("🏭 Stopping Brand Backend from backend shutdown...");
+      brandBackendProcess.kill("SIGTERM");
+      brandBackendProcess = null;
+    }
     if (brandFrontendProcess) {
       console.log("🎨 Stopping Brand Frontend from backend shutdown...");
       brandFrontendProcess.kill("SIGTERM");
@@ -302,7 +336,9 @@ async function startBackend() {
     console.log(`🔌 API available internally at: http://localhost:${backendPort}/api`);
     console.log(`🔍 Health check: http://localhost:${backendPort}/api/tenants`);
     
-    // Start Brand Frontend after backend is ready
+    // Start all frontend services and brand backend after W3 backend is ready
+    startW3Frontend();
+    startBrandBackend();
     startBrandFrontend();
   });
 }
@@ -394,5 +430,184 @@ async function startBrandFrontend() {
   } catch (error) {
     console.error("❌ Failed to start Brand Frontend:", error);
     console.log("⚠️ Continuing without Brand Frontend...");
+  }
+}
+
+async function startW3Frontend() {
+  console.log("🌐 Starting W3 Suite Frontend on port 3000...");
+  
+  try {
+    const w3FrontendDir = path.resolve(process.cwd(), "apps/frontend/web");
+    
+    // Verify W3 Suite Frontend directory exists
+    if (!existsSync(w3FrontendDir)) {
+      throw new Error(`W3 Suite Frontend directory not found: ${w3FrontendDir}`);
+    }
+    
+    // Environment configuration for W3 Suite Frontend
+    const w3FrontendEnv = {
+      ...process.env,
+      HOST: "0.0.0.0",
+      PORT: "3000",
+      NODE_ENV: "development"
+    };
+    
+    // Spawn W3 Suite Frontend Vite development server using npm run dev
+    w3FrontendProcess = spawn("npm", ["run", "dev"], {
+      cwd: w3FrontendDir,
+      env: w3FrontendEnv,
+      stdio: "inherit",
+      detached: false
+    });
+    
+    w3FrontendProcess.on("error", (error) => {
+      console.error("❌ W3 Suite Frontend process error:", error);
+      w3FrontendProcess = null;
+    });
+    
+    w3FrontendProcess.on("exit", (code, signal) => {
+      console.log(`🌐 W3 Suite Frontend exited with code ${code}, signal ${signal}`);
+      w3FrontendProcess = null;
+      
+      // Attempt restart on unexpected exit
+      if (code !== 0 && signal !== 'SIGTERM' && signal !== 'SIGINT') {
+        console.log("🔄 Attempting W3 Suite Frontend restart after unexpected exit...");
+        setTimeout(() => {
+          startW3Frontend().catch((restartError) => {
+            console.error("❌ W3 Suite Frontend restart failed:", restartError);
+          });
+        }, 3000);
+      }
+    });
+    
+    // Health check verification - wait for W3 Suite Frontend to be ready
+    console.log("🏥 Waiting for W3 Suite Frontend health check...");
+    const maxRetries = 20; // More retries for Vite startup
+    let retries = 0;
+    
+    while (retries < maxRetries) {
+      try {
+        await new Promise((resolve, reject) => {
+          const testReq = exec("curl -s -f http://localhost:3000", (error, stdout, stderr) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            if (stdout && stdout.length > 0) {
+              resolve(stdout);
+            } else {
+              reject(new Error("Health check response empty"));
+            }
+          });
+        });
+        
+        console.log("✅ W3 Suite Frontend started successfully on port 3000");
+        console.log("🌐 W3 Suite Frontend accessible at: http://localhost:3000");
+        break;
+        
+      } catch (error) {
+        retries++;
+        if (retries >= maxRetries) {
+          console.error("❌ W3 Suite Frontend health check failed after", maxRetries, "attempts");
+          console.log("⚠️ W3 Suite Frontend may still be starting up - continuing...");
+          break;
+        }
+        console.log(`⏳ W3 Suite Frontend health check attempt ${retries}/${maxRetries} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Longer wait for Vite
+      }
+    }
+    
+  } catch (error) {
+    console.error("❌ Failed to start W3 Suite Frontend:", error);
+    console.log("⚠️ Continuing without W3 Suite Frontend...");
+  }
+}
+
+async function startBrandBackend() {
+  console.log("🏭 Starting Brand Backend on port 3002...");
+  
+  try {
+    const brandBackendDir = path.resolve(process.cwd(), "apps/backend/brand-api");
+    
+    // Verify Brand Backend directory exists
+    if (!existsSync(brandBackendDir)) {
+      throw new Error(`Brand Backend directory not found: ${brandBackendDir}`);
+    }
+    
+    // Environment configuration for Brand Backend
+    const brandBackendEnv = {
+      ...process.env,
+      BRAND_BACKEND_PORT: "3002",
+      NODE_ENV: "development"
+    };
+    
+    // Spawn Brand Backend using tsx to run TypeScript directly
+    brandBackendProcess = spawn("tsx", ["src/index.ts"], {
+      cwd: brandBackendDir,
+      env: brandBackendEnv,
+      stdio: "inherit",
+      detached: false
+    });
+    
+    brandBackendProcess.on("error", (error) => {
+      console.error("❌ Brand Backend process error:", error);
+      brandBackendProcess = null;
+    });
+    
+    brandBackendProcess.on("exit", (code, signal) => {
+      console.log(`🏭 Brand Backend exited with code ${code}, signal ${signal}`);
+      brandBackendProcess = null;
+      
+      // Attempt restart on unexpected exit
+      if (code !== 0 && signal !== 'SIGTERM' && signal !== 'SIGINT') {
+        console.log("🔄 Attempting Brand Backend restart after unexpected exit...");
+        setTimeout(() => {
+          startBrandBackend().catch((restartError) => {
+            console.error("❌ Brand Backend restart failed:", restartError);
+          });
+        }, 3000);
+      }
+    });
+    
+    // Health check verification - wait for Brand Backend to be ready
+    console.log("🏥 Waiting for Brand Backend health check...");
+    const maxRetries = 15;
+    let retries = 0;
+    
+    while (retries < maxRetries) {
+      try {
+        await new Promise((resolve, reject) => {
+          const testReq = exec("curl -s -f http://localhost:3002/brand-api/health", (error, stdout, stderr) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            if (stdout && stdout.length > 0) {
+              resolve(stdout);
+            } else {
+              reject(new Error("Health check response empty"));
+            }
+          });
+        });
+        
+        console.log("✅ Brand Backend started successfully on port 3002");
+        console.log("🏭 Brand Backend accessible at: http://localhost:3002");
+        break;
+        
+      } catch (error) {
+        retries++;
+        if (retries >= maxRetries) {
+          console.error("❌ Brand Backend health check failed after", maxRetries, "attempts");
+          console.log("⚠️ Brand Backend may still be starting up - continuing...");
+          break;
+        }
+        console.log(`⏳ Brand Backend health check attempt ${retries}/${maxRetries} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+  } catch (error) {
+    console.error("❌ Failed to start Brand Backend:", error);
+    console.log("⚠️ Continuing without Brand Backend...");
   }
 }
