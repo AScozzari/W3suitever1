@@ -40,8 +40,21 @@ process.on("SIGINT", () => {
 });
 
 // Avvia il server W3 Suite backend sulla porta 3004
-httpServer.listen(3004, "0.0.0.0", () => {
-  console.log("🚀 W3 Suite backend running on port 3004");
-  console.log("🔌 API available at: http://localhost:3004/api");
-  console.log("🔍 Health check: http://localhost:3004/api/tenants");
+const port = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
+
+httpServer.on('error', (error: any) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${port} is already in use. Please free the port and restart.`);
+    console.error('💡 Try: pkill -f "tsx" && ./start-enterprise.sh');
+    process.exit(1);
+  } else {
+    console.error('❌ W3 Suite backend server error:', error);
+    throw error;
+  }
+});
+
+httpServer.listen(port, "0.0.0.0", () => {
+  console.log(`🚀 W3 Suite backend running on port ${port}`);
+  console.log(`🔌 API available at: http://localhost:${port}/api`);
+  console.log(`🔍 Health check: http://localhost:${port}/api/tenants`);
 });

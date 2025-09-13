@@ -45,9 +45,23 @@ try {
   });
 
   // Avvia il server Brand API sulla porta 3002
-  httpServer.listen(3002, "0.0.0.0", () => {
-    console.log("✅ Brand API server running on port 3002");
-    console.log("🔌 Brand API available at: http://localhost:3002/brand-api/health");
+  const port = parseInt(process.env.BRAND_BACKEND_PORT || '3002', 10);
+  
+  httpServer.listen(port, "0.0.0.0", () => {
+    console.log(`✅ Brand API server running on port ${port}`);
+    console.log(`🔌 Brand API available at: http://localhost:${port}/brand-api/health`);
+  });
+
+  httpServer.on('error', (error: any) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use. Please free the port and restart.`);
+      console.error('💡 Try: pkill -f "tsx" && ./start-enterprise.sh');
+    } else {
+      console.error('❌ Brand API server error:', error);
+    }
+    if (process.env.NODE_ENV !== 'development') {
+      process.exit(1);
+    }
   });
 
 } catch (error) {
