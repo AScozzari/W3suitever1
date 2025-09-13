@@ -90,7 +90,7 @@ if (process.env.NODE_ENV === 'development') {
       cwd: 'apps/frontend/web',
       stdio: ['pipe', 'pipe', 'pipe'],
       shell: true,
-      env: { ...process.env, HOST: '127.0.0.1', PORT: '3000' }
+      env: { ...process.env, HOST: '127.0.0.1', PORT: '35555' }
     });
     childProcesses.push({ name: 'W3 Frontend', process: w3Frontend });
     

@@ -19,13 +19,19 @@ export default defineConfig({
     },
   },
   server: {
-    // Brand Frontend runs on port 3001 (localhost only)
-    port: 3001,
+    // Brand Frontend runs on unmapped port (localhost only)
+    port: 35556,
     host: '127.0.0.1',
-    allowedHosts: true
+    strictPort: true,
+    allowedHosts: true,
+    hmr: {
+      protocol: 'wss',
+      clientPort: 443,
+      host: 'localhost'
+    }
   },
   preview: {
-    port: 3001,
+    port: 35556,
     host: '127.0.0.1'
   }
 });

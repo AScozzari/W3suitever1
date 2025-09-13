@@ -13,8 +13,9 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 35555,  // Unmapped port to avoid .replit auto-exposure
     host: "127.0.0.1",  // localhost only for security
+    strictPort: true,
     allowedHosts: true,
     hmr: {
       protocol: 'wss',      // when served over https (Replit)
