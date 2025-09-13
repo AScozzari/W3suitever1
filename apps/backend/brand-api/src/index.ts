@@ -104,8 +104,8 @@ try {
   });
 
   // Avvia il server Brand Interface Backend su porta 3002
-  httpServer.listen(BRAND_BACKEND_PORT, "0.0.0.0", () => {
-    console.log(`🚀 Brand Interface Backend running on http://localhost:${BRAND_BACKEND_PORT}`);
+  httpServer.listen(BRAND_BACKEND_PORT, "127.0.0.1", () => {
+    console.log(`🚀 Brand Interface Backend running on http://127.0.0.1:${BRAND_BACKEND_PORT} (localhost only)`);
   });
 
 } catch (error) {

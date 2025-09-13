@@ -16,17 +16,17 @@ app.get('/health', (req, res) => {
     service: 'W3 Suite Reverse Proxy',
     timestamp: new Date().toISOString(),
     routes: {
-      'W3 Frontend': 'http://localhost:3000',
-      'W3 Backend': 'http://localhost:3004', 
-      'Brand Frontend': 'http://localhost:3001',
-      'Brand Backend': 'http://localhost:3002'
+      'W3 Frontend': 'http://127.0.0.1:3000',
+      'W3 Backend': 'http://127.0.0.1:3004', 
+      'Brand Frontend': 'http://127.0.0.1:3001',
+      'Brand Backend': 'http://127.0.0.1:3002'
     }
   });
 });
 
 // Brand Interface Frontend - strict path matching to prevent root capture
 app.use('/brandinterface', createProxyMiddleware({
-  target: 'http://localhost:3001',
+  target: 'http://127.0.0.1:3001',
   changeOrigin: true,
   ws: true, // WebSocket support for Vite HMR
   pathRewrite: (path: string, req: any) => {
@@ -38,13 +38,13 @@ app.use('/brandinterface', createProxyMiddleware({
 
 // Brand Interface Backend - fix path duplication
 app.use('/brand-api', createProxyMiddleware({
-  target: 'http://localhost:3002',
+  target: 'http://127.0.0.1:3002',
   changeOrigin: true
 }));
 
 // W3 Suite Backend - prevent path duplication
 app.use('/api', createProxyMiddleware({
-  target: 'http://localhost:3004',
+  target: 'http://127.0.0.1:3004',
   changeOrigin: true
 }));
 

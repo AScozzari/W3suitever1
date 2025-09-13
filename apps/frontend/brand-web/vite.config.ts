@@ -19,13 +19,13 @@ export default defineConfig({
     },
   },
   server: {
-    // Brand Frontend runs on port 3001
+    // Brand Frontend runs on port 3001 (localhost only)
     port: 3001,
-    host: '0.0.0.0',
+    host: '127.0.0.1',
     allowedHosts: true
   },
   preview: {
     port: 3001,
-    host: '0.0.0.0'
+    host: '127.0.0.1'
   }
 });

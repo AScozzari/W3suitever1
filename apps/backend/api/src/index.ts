@@ -246,9 +246,9 @@ const httpServer = await registerRoutes(app);
 
 // Start W3 Suite API server on port 3004
 const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
-httpServer.listen(W3_PORT, "0.0.0.0", () => {
-  console.log(`[W3-API] ✅ W3 Suite Backend running on port ${W3_PORT}`);
-  console.log(`[W3-API] 🔌 API endpoints available at: http://localhost:${W3_PORT}/api`);
+httpServer.listen(W3_PORT, "127.0.0.1", () => {
+  console.log(`[W3-API] ✅ W3 Suite Backend running on port ${W3_PORT} (localhost only)`);
+  console.log(`[W3-API] 🔌 API endpoints available at: http://127.0.0.1:${W3_PORT}/api`);
   if (process.env.NODE_ENV === 'development') {
     console.log(`[W3-API] 🏗️  Part of multi-service architecture - orchestrating all services...`);
   }
