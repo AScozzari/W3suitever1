@@ -51,8 +51,10 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// Fixed port for W3 Backend - using 5000 for Replit compatibility
-const port = parseInt(process.env.W3_BACKEND_PORT || '5000', 10);
+// Fixed port for W3 Backend - detect Replit environment and use appropriate port
+const isReplit = !!(process.env.REPL_ID || process.env.REPL_SLUG || process.env.PORT === '5000');
+const defaultPort = isReplit ? '5000' : '3004';
+const port = parseInt(process.env.W3_BACKEND_PORT || defaultPort, 10);
 
 httpServer.listen(port, "0.0.0.0", () => {
   console.log(`🚀 W3 Suite backend running on fixed port ${port}`);

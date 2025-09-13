@@ -1,63 +1,38 @@
 #!/usr/bin/env node
 
+// Simple script to start reverse proxy for Replit compatibility
 import { spawn } from 'child_process';
-import path from 'path';
 import { fileURLToPath } from 'url';
+import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-console.log('🚀 Starting W3 Suite fullstack application...');
+console.log('🚀 Starting W3 Suite Enterprise via Reverse Proxy...');
 
-// Start backend on port 3001
-const backend = spawn('node', ['--loader', 'tsx/esm', 'apps/backend/api/src/index.ts'], {
+// Start reverse proxy which handles all routing
+const proxy = spawn('tsx', ['apps/reverse-proxy/src/index.ts'], {
   cwd: __dirname,
-  env: { ...process.env, NODE_ENV: 'development' },
-  stdio: 'pipe'
+  env: { ...process.env, NODE_ENV: 'development', PROXY_PORT: '5000' },
+  stdio: 'inherit'
 });
 
-backend.stdout.on('data', (data) => {
-  console.log(`[BACKEND] ${data.toString().trim()}`);
+proxy.on('error', (error) => {
+  console.error('❌ Failed to start reverse proxy:', error);
+  process.exit(1);
 });
 
-backend.stderr.on('data', (data) => {
-  console.error(`[BACKEND ERROR] ${data.toString().trim()}`);
-});
-
-// Start frontend on port 5000 after a short delay
-setTimeout(() => {
-  const frontend = spawn('npm', ['run', 'dev'], {
-    cwd: path.join(__dirname, 'apps/frontend/web'),
-    env: process.env,
-    stdio: 'pipe'
-  });
-
-  frontend.stdout.on('data', (data) => {
-    console.log(`[FRONTEND] ${data.toString().trim()}`);
-  });
-
-  frontend.stderr.on('data', (data) => {
-    console.error(`[FRONTEND ERROR] ${data.toString().trim()}`);
-  });
-
-  frontend.on('close', (code) => {
-    console.log(`[FRONTEND] Process exited with code ${code}`);
-  });
-
-}, 3000);
-
-backend.on('close', (code) => {
-  console.log(`[BACKEND] Process exited with code ${code}`);
+proxy.on('close', (code) => {
+  console.log(`🚫 Reverse proxy exited with code ${code}`);
+  process.exit(code);
 });
 
 // Handle process termination
-process.on('SIGTERM', () => {
+const cleanup = () => {
   console.log('🚫 Shutting down W3 Suite...');
-  backend.kill();
-  process.exit(0);
-});
+  proxy.kill('SIGTERM');
+  setTimeout(() => proxy.kill('SIGKILL'), 5000);
+};
 
-process.on('SIGINT', () => {
-  console.log('🚫 Shutting down W3 Suite...');
-  backend.kill();
-  process.exit(0);
-});
+process.on('SIGTERM', cleanup);
+process.on('SIGINT', cleanup);
+process.on('SIGUSR2', cleanup); // nodemon restart
