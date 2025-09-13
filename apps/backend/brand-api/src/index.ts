@@ -79,8 +79,8 @@ try {
   });
   
   // Apply rate limiting
-  app.use('/brand-api/', brandApiLimiter);
-  app.use('/brand-api/auth/login', brandAuthLimiter);
+  app.use('/', brandApiLimiter);
+  app.use('/auth/login', brandAuthLimiter);
   
   // CORS configuration for Brand Interface - Accepts requests from frontend on port 3001
   const BRAND_BACKEND_PORT = Number(process.env.BRAND_BACKEND_PORT || 3002);
