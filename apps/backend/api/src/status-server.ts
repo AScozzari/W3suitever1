@@ -24,14 +24,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Brand Interface Frontend - re-add /brandinterface prefix that Express strips
+// Brand Interface Frontend - strict path matching to prevent root capture
 app.use('/brandinterface', createProxyMiddleware({
   target: 'http://localhost:3001',
   changeOrigin: true,
   ws: true, // WebSocket support for Vite HMR
-  pathRewrite: (path, req) => {
+  pathRewrite: (path: string, req: any) => {
     const newPath = '/brandinterface' + (path === '/' ? '/' : path);
-    console.log(`🔄 [BRAND PROXY] ${(req as any).method} ${(req as any).originalUrl || req.url} -> ${newPath}`);
+    console.log(`🔄 [BRAND PROXY] ${req.method} /brandinterface${path} -> ${newPath}`);
     return newPath;
   }
 }));
@@ -52,8 +52,7 @@ app.use('/api', createProxyMiddleware({
 app.use('/', createProxyMiddleware({
   target: 'http://localhost:3000',
   changeOrigin: true,
-  ws: true, // WebSocket support for Vite HMR
-  logLevel: 'info' as const
+  ws: true // WebSocket support for Vite HMR
 }));
 
 // Start server on port 5000
