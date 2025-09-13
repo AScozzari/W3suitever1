@@ -25,6 +25,7 @@ import {
   notFoundMiddleware,
 } from './middleware.js';
 import {
+  oauthProxy,
   brandApiProxy,
   w3ApiProxy,
   brandFrontendProxy,
@@ -122,17 +123,20 @@ class W3SuiteProxyServer {
     });
 
     // API routes (higher priority than frontend)
-    // 1. Brand Interface Backend API (/brand-api/*)
+    // 1. OAuth2 Authorization Server (/oauth2/*, /.well-known/*)
+    this.app.use(oauthProxy);
+
+    // 2. Brand Interface Backend API (/brand-api/*)
     this.app.use(brandApiProxy);
 
-    // 2. W3 Suite Backend API (/api/*)
+    // 3. W3 Suite Backend API (/api/*)
     this.app.use(w3ApiProxy);
 
     // Frontend routes
-    // 3. Brand Interface Frontend (/brandinterface/*)
+    // 4. Brand Interface Frontend (/brandinterface/*)
     this.app.use(brandFrontendProxy);
 
-    // 4. W3 Suite Frontend (/* - catch-all, lowest priority)
+    // 5. W3 Suite Frontend (/* - catch-all, lowest priority)
     this.app.use(w3FrontendProxy);
 
     logger.info('✅ Routing rules configured');

@@ -41,17 +41,14 @@ integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.
 [[ports]]
 localPort = 3000
 externalPort = 8000
-exposeLocalhost = true
 
 [[ports]]
 localPort = 3001
 externalPort = 5173
-exposeLocalhost = true
 
 [[ports]]
 localPort = 3002
 externalPort = 8099
-exposeLocalhost = true
 
 [[ports]]
 localPort = 3004

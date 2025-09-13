@@ -76,16 +76,19 @@ const createProxyOptions = (
  * ===========================
  * 
  * /* (all other routes)           → W3 Suite Frontend (port 3000)
+ * /oauth2/*                      → W3 Suite Backend (port 3004) - OAuth2 endpoints
+ * /.well-known/*                 → W3 Suite Backend (port 3004) - Discovery endpoints
  * /api/*                         → W3 Suite Backend (port 3004)
  * /brandinterface/*              → Brand Interface Frontend (port 3001)
  * /brand-api/*                   → Brand Interface Backend (port 3002)
  * 
  * Priority Order:
  * 1. Health endpoints (/health, /health/*)
- * 2. Brand Interface API (/brand-api/*)
- * 3. W3 Suite API (/api/*)
- * 4. Brand Interface Frontend (/brandinterface/*)
- * 5. W3 Suite Frontend (/* - catch-all)
+ * 2. OAuth2 Authorization Server (/oauth2/*, /.well-known/*)
+ * 3. Brand Interface API (/brand-api/*)
+ * 4. W3 Suite API (/api/*)
+ * 5. Brand Interface Frontend (/brandinterface/*)
+ * 6. W3 Suite Frontend (/* - catch-all)
  */
 
 /**
@@ -95,6 +98,16 @@ const createProxyOptions = (
 export const brandApiProxy = createProxyMiddleware({
   ...createProxyOptions(`http://${config.upstream.brandBackend.host}:${config.upstream.brandBackend.port}`),
   filter: (pathname) => pathname.startsWith('/brand-api/'),
+});
+
+/**
+ * OAuth2 Authorization Server Proxy
+ * Handles: /oauth2/* → localhost:3004/oauth2/*
+ * Handles: /.well-known/* → localhost:3004/.well-known/*
+ */
+export const oauthProxy = createProxyMiddleware({
+  ...createProxyOptions(`http://${config.upstream.w3Backend.host}:${config.upstream.w3Backend.port}`),
+  filter: (pathname) => pathname.startsWith('/oauth2/') || pathname.startsWith('/.well-known/'),
 });
 
 /**
@@ -108,10 +121,13 @@ export const w3ApiProxy = createProxyMiddleware({
 
 /**
  * Brand Interface Frontend Proxy
- * Handles: /brandinterface/* → localhost:3001/brandinterface/*
+ * Handles: /brandinterface/* → localhost:3001/* (with pathRewrite to remove /brandinterface prefix)
  */
 export const brandFrontendProxy = createProxyMiddleware({
-  ...createProxyOptions(`http://${config.upstream.brandFrontend.host}:${config.upstream.brandFrontend.port}`),
+  ...createProxyOptions(
+    `http://${config.upstream.brandFrontend.host}:${config.upstream.brandFrontend.port}`,
+    { '^/brandinterface': '' } // Remove /brandinterface prefix
+  ),
   filter: (pathname) => pathname.startsWith('/brandinterface/'),
 });
 
@@ -124,6 +140,8 @@ export const w3FrontendProxy = createProxyMiddleware({
   filter: (pathname) => {
     // Exclude paths already handled by other proxies
     return !pathname.startsWith('/api/') && 
+           !pathname.startsWith('/oauth2/') &&
+           !pathname.startsWith('/.well-known/') &&
            !pathname.startsWith('/brand-api/') && 
            !pathname.startsWith('/brandinterface/') &&
            !pathname.startsWith('/health');
@@ -140,6 +158,16 @@ export const routingRules = [
     description: 'Proxy health status and upstream service monitoring',
   },
   {
+    pattern: '/oauth2/*',
+    target: `${config.upstream.w3Backend.host}:${config.upstream.w3Backend.port}`,
+    description: 'OAuth2 Authorization Server',
+  },
+  {
+    pattern: '/.well-known/*',
+    target: `${config.upstream.w3Backend.host}:${config.upstream.w3Backend.port}`,
+    description: 'OAuth2 Discovery Endpoints',
+  },
+  {
     pattern: '/brand-api/*',
     target: `${config.upstream.brandBackend.host}:${config.upstream.brandBackend.port}`,
     description: 'Brand Interface Backend API',
@@ -152,7 +180,7 @@ export const routingRules = [
   {
     pattern: '/brandinterface/*',
     target: `${config.upstream.brandFrontend.host}:${config.upstream.brandFrontend.port}`,
-    description: 'Brand Interface Frontend',
+    description: 'Brand Interface Frontend (pathRewrite removes /brandinterface)',
   },
   {
     pattern: '/*',
