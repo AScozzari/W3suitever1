@@ -1,13 +1,12 @@
-
 #!/bin/bash
 
 echo "🔥 W3 Suite Enterprise - Starting All Services..."
 echo "=================================================="
 echo "🌐 Enterprise Reverse Proxy: http://localhost:5000"
 echo "📱 W3 Suite Frontend: http://localhost:3000"
-echo "🔧 W3 Suite Backend: http://localhost:3004"
+echo "🔧 W3 Suite Backend: http://localhost:3101"
 echo "🏢 Brand Interface Frontend: http://localhost:3001"
-echo "⚡ Brand Interface Backend: http://localhost:3002"
+echo "⚡ Brand Interface Backend: http://localhost:3102"
 echo "=================================================="
 echo ""
 
@@ -20,11 +19,13 @@ sleep 2
 # Export environment variables for consistent configuration
 export NODE_ENV=${NODE_ENV:-development}
 export JWT_SECRET=${JWT_SECRET:-w3suite-dev-secret-2025}
-export PROXY_PORT=${PROXY_PORT:-5000}
+
+# Port configuration with dedicated backend ports
 export W3_FRONTEND_PORT=${W3_FRONTEND_PORT:-3000}
-export W3_BACKEND_PORT=${W3_BACKEND_PORT:-3004}
+export W3_BACKEND_PORT=${W3_BACKEND_PORT:-3101}  # Dedicated backend port
 export BRAND_FRONTEND_PORT=${BRAND_FRONTEND_PORT:-3001}
-export BRAND_BACKEND_PORT=${BRAND_BACKEND_PORT:-3002}
+export BRAND_BACKEND_PORT=${BRAND_BACKEND_PORT:-3102}  # Dedicated backend port  
+export PROXY_PORT=${PROXY_PORT:-5000}
 
 echo "🔧 Environment Configuration:"
 echo "  NODE_ENV: $NODE_ENV"
@@ -49,8 +50,8 @@ check_port() {
 echo "🔍 Checking port availability..."
 check_port 3000 || echo "  W3 Frontend will use alternative port"
 check_port 3001 || echo "  Brand Frontend will use alternative port"  
-check_port 3002 || exit 1
-check_port 3004 || exit 1
+check_port 3101 || exit 1
+check_port 3102 || exit 1
 check_port 5000 || exit 1
 
 echo ""

@@ -39,8 +39,8 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// Avvia il server W3 Suite backend sulla porta 3004
-const port = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
+// Avvia il server W3 Suite backend sulla porta 3101
+const port = parseInt(process.env.W3_BACKEND_PORT || '3101', 10);
 
 httpServer.on('error', (error: any) => {
   if (error.code === 'EADDRINUSE') {

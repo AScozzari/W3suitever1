@@ -44,8 +44,8 @@ try {
     console.log('🚫 Brand API server closed');
   });
 
-  // Avvia il server Brand API sulla porta 3002
-  const port = parseInt(process.env.BRAND_BACKEND_PORT || '3002', 10);
+  // Avvia il server Brand API sulla porta 3102
+  const port = parseInt(process.env.BRAND_BACKEND_PORT || '3102', 10);
   
   httpServer.listen(port, "0.0.0.0", () => {
     console.log(`✅ Brand API server running on port ${port}`);
