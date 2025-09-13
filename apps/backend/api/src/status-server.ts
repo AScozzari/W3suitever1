@@ -38,13 +38,13 @@ app.use('/brandinterface', createProxyMiddleware({
 
 // Brand Interface Backend - fix path duplication
 app.use('/brand-api', createProxyMiddleware({
-  target: 'http://127.0.0.1:3002',
+  target: 'http://127.0.0.1:35558',
   changeOrigin: true
 }));
 
 // W3 Suite Backend - prevent path duplication
 app.use('/api', createProxyMiddleware({
-  target: 'http://127.0.0.1:3004',
+  target: 'http://127.0.0.1:35557',
   changeOrigin: true
 }));
 
@@ -63,7 +63,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
   console.log(`📊 Routes configured:`);
   console.log(`   / → W3 Frontend (35555)`);
-  console.log(`   /api → W3 Backend (3004)`);
+  console.log(`   /api → W3 Backend (35557)`);
   console.log(`   /brandinterface → Brand Frontend (35556)`);
-  console.log(`   /brand-api → Brand Backend (3002)`);
+  console.log(`   /brand-api → Brand Backend (35558)`);
 });

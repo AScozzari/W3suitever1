@@ -62,7 +62,7 @@ if (process.env.NODE_ENV === 'development') {
     const brandBackend = spawn('tsx', ['apps/backend/brand-api/src/index.ts'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       shell: true,
-      env: { ...process.env, BRAND_BACKEND_PORT: '3002' }
+      env: { ...process.env, BRAND_BACKEND_PORT: '35558' }
     });
     childProcesses.push({ name: 'Brand Backend', process: brandBackend });
     
@@ -262,8 +262,8 @@ const httpServer = await registerRoutes(app);
 
 
 
-// Start W3 Suite API server on port 3004
-const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 3004);
+// Start W3 Suite API server on unmapped port
+const W3_PORT = Number(process.env.W3_PORT || process.env.API_PORT || 35557);
 httpServer.listen(W3_PORT, "127.0.0.1", () => {
   console.log(`[W3-API] ✅ W3 Suite Backend running on port ${W3_PORT} (localhost only)`);
   console.log(`[W3-API] 🔌 API endpoints available at: http://127.0.0.1:${W3_PORT}/api`);
