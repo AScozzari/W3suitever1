@@ -9,6 +9,7 @@ import { rbacMiddleware, requirePermission } from "../middleware/tenant";
 import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import { tenants } from "../db/schema";
 let JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.error('CRITICAL: JWT_SECRET environment variable is not set. Using default for development only.');
@@ -222,11 +223,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== TENANT MANAGEMENT API ====================
 
   // Health check endpoint for reverse proxy
-  app.get("/health", async (c) => {
+  app.get("/health", async (req, res) => {
     try {
       // Simple database connectivity check
       await db.select().from(tenants).limit(1);
-      return c.json({
+      return res.json({
         status: "healthy",
         timestamp: new Date().toISOString(),
         service: "w3-suite-backend",
@@ -234,12 +235,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         database: "connected"
       });
     } catch (error) {
-      return c.json({
+      return res.status(503).json({
         status: "unhealthy",
         timestamp: new Date().toISOString(),
         service: "w3-suite-backend",
         error: error instanceof Error ? error.message : "Unknown error"
-      }, 503);
+      });
     }
   });
 
@@ -866,10 +867,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Direct health check route (outside /api prefix)
-  app.get("/health", async (c) => {
+  app.get("/health", async (req, res) => {
     try {
       await db.select().from(tenants).limit(1);
-      return c.json({
+      return res.json({
         status: "healthy",
         timestamp: new Date().toISOString(),
         service: "w3-suite-backend",
@@ -877,12 +878,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         database: "connected"
       });
     } catch (error) {
-      return c.json({
+      return res.status(503).json({
         status: "unhealthy",
         timestamp: new Date().toISOString(),
         service: "w3-suite-backend",
         error: error instanceof Error ? error.message : "Unknown error"
-      }, 503);
+      });
     }
   });
 
