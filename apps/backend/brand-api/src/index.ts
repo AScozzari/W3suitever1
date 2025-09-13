@@ -83,7 +83,7 @@ try {
   app.use('/auth/login', brandAuthLimiter);
   
   // CORS configuration for Brand Interface - Accepts requests from frontend on port 3001
-  const BRAND_BACKEND_PORT = Number(process.env.BRAND_BACKEND_PORT || 35558);
+  const BRAND_BACKEND_PORT = Number(process.env.BRAND_BACKEND_PORT || 3002);
   const BRAND_FRONTEND_PORT = Number(process.env.BRAND_FRONTEND_PORT || 3001);
   app.use(cors({
     origin: process.env.BRAND_CORS_ORIGINS?.split(',') || [`http://localhost:${BRAND_FRONTEND_PORT}`, 'http://localhost:5000'],

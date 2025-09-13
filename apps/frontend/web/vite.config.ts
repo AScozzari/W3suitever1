@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 35555,  // Unmapped port to avoid .replit auto-exposure
+    port: 3000,  // Standard W3 Frontend port
     host: "127.0.0.1",  // localhost only for security
     strictPort: true,
     allowedHosts: true,

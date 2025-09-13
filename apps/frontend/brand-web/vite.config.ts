@@ -19,8 +19,8 @@ export default defineConfig({
     },
   },
   server: {
-    // Brand Frontend runs on unmapped port (localhost only)
-    port: 35556,
+    // Brand Frontend runs on standard port (localhost only)
+    port: 3001,
     host: '127.0.0.1',
     strictPort: true,
     allowedHosts: true,
@@ -31,7 +31,7 @@ export default defineConfig({
     }
   },
   preview: {
-    port: 35556,
+    port: 3001,
     host: '127.0.0.1'
   }
 });
