@@ -143,34 +143,77 @@ echo "🚀 Starting all enterprise services in proper order..."
 
 # Start backends first, then frontends, then proxy
 echo "🔥 Phase 1: Starting Backend Services..."
-npx concurrently \
-  --names "W3-Backend,Brand-Backend" \
-  --colors "cyan,yellow" \
-  --prefix "[{name}]" \
-  --kill-others-on-fail \
-  --success "first" \
-  "cd apps/backend/api && NODE_ENV=development JWT_SECRET=w3suite-dev-secret-2025 tsx src/index.ts" \
-  "cd apps/backend/brand-api && NODE_ENV=development tsx src/index.ts" &
+
+# Start W3 Backend
+echo "🚀 Starting W3 Backend on port 3004..."
+cd apps/backend/api && NODE_ENV=development JWT_SECRET=w3suite-dev-secret-2025 tsx src/index.ts &
+W3_BACKEND_PID=$!
+cd ../../..
+
+sleep 3
+
+# Start Brand Backend  
+echo "🚀 Starting Brand Backend on port 3002..."
+cd apps/backend/brand-api && NODE_ENV=development tsx src/index.ts &
+BRAND_BACKEND_PID=$!
+cd ../../..
 
 # Extended wait for backends to fully start
 echo "⏰ Waiting for backends to fully initialize..."
-sleep 12
+sleep 15
 
 echo "🎨 Phase 2: Starting Frontend Services..."
-npx concurrently \
-  --names "W3-Frontend,Brand-Frontend" \
-  --colors "blue,magenta" \
-  --prefix "[{name}]" \
-  --kill-others-on-fail \
-  --success "first" \
-  "cd apps/frontend/web && npm run dev" \
-  "cd apps/frontend/brand-web && npm run dev" &
+
+# Start W3 Frontend
+echo "🚀 Starting W3 Frontend on port 3000..."
+cd apps/frontend/web && npm run dev &
+W3_FRONTEND_PID=$!
+cd ../../..
+
+sleep 3
+
+# Start Brand Frontend
+echo "🚀 Starting Brand Frontend on port 3001..."  
+cd apps/frontend/brand-web && npm run dev &
+BRAND_FRONTEND_PID=$!
+cd ../../..
 
 # Extended wait for frontends to start 
 echo "⏰ Waiting for frontends to fully initialize..."
-sleep 10
+sleep 12
 
 echo "🌐 Phase 3: Starting Reverse Proxy..."
 echo "⏰ Final check - ensuring all services are ready..."
-sleep 3
-cd apps/reverse-proxy && NODE_ENV=development tsx src/index.ts
+sleep 5
+
+# Final port cleanup for 5000 before starting proxy
+echo "🔪 Final cleanup of port 5000..."
+lsof -ti :5000 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+fuser -k -9 5000/tcp 2>/dev/null || true
+sleep 2
+
+echo "🚀 Starting Reverse Proxy on port 5000..."
+cd apps/reverse-proxy && NODE_ENV=development tsx src/index.ts &
+PROXY_PID=$!
+
+# Store all PIDs for cleanup
+echo "📝 Process PIDs:"
+echo "  W3 Backend: $W3_BACKEND_PID"  
+echo "  Brand Backend: $BRAND_BACKEND_PID"
+echo "  W3 Frontend: $W3_FRONTEND_PID"
+echo "  Brand Frontend: $BRAND_FRONTEND_PID"
+echo "  Reverse Proxy: $PROXY_PID"
+
+# Wait for proxy or handle interrupt
+cleanup() {
+    echo "🧹 Cleaning up all services..."
+    kill $W3_BACKEND_PID $BRAND_BACKEND_PID $W3_FRONTEND_PID $BRAND_FRONTEND_PID $PROXY_PID 2>/dev/null || true
+    wait
+    echo "✅ All services stopped"
+    exit 0
+}
+
+trap cleanup INT TERM
+
+# Keep script alive and monitor proxy
+wait $PROXY_PID
