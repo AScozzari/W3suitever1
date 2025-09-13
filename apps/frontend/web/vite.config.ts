@@ -22,7 +22,7 @@ export default defineConfig({
     proxy: {
       // Proxy API calls to backend server
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {
@@ -39,13 +39,13 @@ export default defineConfig({
       },
       // Proxy OAuth2 endpoints to backend server
       '/oauth2': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
       // Proxy .well-known endpoints to backend server
       '/.well-known': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       }

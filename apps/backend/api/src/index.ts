@@ -37,28 +37,8 @@ await seedCommercialAreas();
 // Crea il server HTTP
 const httpServer = await registerRoutes(app);
 
-// Serve specific login pages and static content
-app.get('*', (req, res, next) => {
-  // Don't serve static page for API, OAuth2, or well-known routes
-  if (req.path.startsWith('/api') || 
-      req.path.startsWith('/oauth2') || 
-      req.path.startsWith('/.well-known')) {
-    return next();
-  }
-  
-  // Serve Brand Interface login page
-  if (req.path.startsWith('/brandinterface') || req.path === '/brand-login') {
-    return res.sendFile(path.join(publicPath, 'brand-login.html'));
-  }
-  
-  // Serve W3 Suite login page for login routes
-  if (req.path.includes('/login') || req.path.startsWith('/staging') || req.path.startsWith('/demo') || req.path.startsWith('/acme')) {
-    return res.sendFile(path.join(publicPath, 'w3suite-login.html'));
-  }
-  
-  // Serve generic homepage for root and other routes
-  res.sendFile(path.join(publicPath, 'index.html'));
-});
+// API-only backend - frontend apps handle their own routing
+// Only serve API, OAuth2, and well-known endpoints
 
 // W3 Suite backend cleanup
 process.on("SIGTERM", () => {
