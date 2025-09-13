@@ -21,7 +21,7 @@ const createProxyOptions = (
   timeout: 30000, // 30 second timeout
   proxyTimeout: 30000,
   pathRewrite,
-  
+
   // Enhanced logging with sanitized headers
   onProxyReq: (proxyReq, req) => {
     // Sanitize headers to avoid logging sensitive information
@@ -29,7 +29,7 @@ const createProxyOptions = (
     delete sanitizedHeaders.authorization;
     delete sanitizedHeaders.cookie;
     delete sanitizedHeaders['set-cookie'];
-    
+
     logger.debug('Proxying request', {
       method: req.method,
       url: req.url,
@@ -38,7 +38,7 @@ const createProxyOptions = (
       requestId: req.headers['x-request-id'],
     });
   },
-  
+
   onProxyRes: (proxyRes, req) => {
     logger.debug('Proxy response', {
       method: req.method,
@@ -49,7 +49,7 @@ const createProxyOptions = (
       requestId: req.headers['x-request-id'],
     });
   },
-  
+
   onError: (err, req, res) => {
     logger.error('Proxy error', {
       error: err.message,
@@ -58,7 +58,7 @@ const createProxyOptions = (
       target,
       requestId: req.headers['x-request-id'],
     });
-    
+
     if (!res.headersSent) {
       res.status(502).json({
         error: 'Bad Gateway',
@@ -74,14 +74,14 @@ const createProxyOptions = (
 /**
  * ROUTING RULES DOCUMENTATION
  * ===========================
- * 
+ *
  * /* (all other routes)           → W3 Suite Frontend (port 3000)
  * /oauth2/*                      → W3 Suite Backend (port 3004) - OAuth2 endpoints
  * /.well-known/*                 → W3 Suite Backend (port 3004) - Discovery endpoints
  * /api/*                         → W3 Suite Backend (port 3004)
  * /brandinterface/*              → Brand Interface Frontend (port 3001)
  * /brand-api/*                   → Brand Interface Backend (port 3002)
- * 
+ *
  * Priority Order:
  * 1. Health endpoints (/health, /health/*)
  * 2. OAuth2 Authorization Server (/oauth2/*, /.well-known/*)
@@ -139,10 +139,10 @@ export const w3FrontendProxy = createProxyMiddleware({
   ...createProxyOptions(`http://${config.upstream.w3Frontend.host}:${config.upstream.w3Frontend.port}`),
   filter: (pathname) => {
     // Exclude paths already handled by other proxies
-    return !pathname.startsWith('/api/') && 
+    return !pathname.startsWith('/api/') &&
            !pathname.startsWith('/oauth2/') &&
            !pathname.startsWith('/.well-known/') &&
-           !pathname.startsWith('/brand-api/') && 
+           !pathname.startsWith('/brand-api/') &&
            !pathname.startsWith('/brandinterface/') &&
            !pathname.startsWith('/health');
   },
@@ -196,13 +196,13 @@ export const logRoutingRules = (): void => {
   logger.info('='.repeat(60));
   logger.info('W3 SUITE ENTERPRISE REVERSE PROXY - ROUTING RULES');
   logger.info('='.repeat(60));
-  
+
   routingRules.forEach((rule, index) => {
     logger.info(`${index + 1}. ${rule.pattern.padEnd(20)} → ${rule.target}`, {
       description: rule.description,
     });
   });
-  
+
   logger.info('='.repeat(60));
   logger.info(`Environment: ${config.environment.toUpperCase()}`);
   logger.info(`Proxy Port: ${config.port}`);
