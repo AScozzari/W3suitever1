@@ -39,8 +39,34 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// Avvia il server W3 Suite backend sulla porta 3101
-const port = parseInt(process.env.W3_BACKEND_PORT || '3101', 10);
+// Trova una porta libera per il W3 Backend
+const preferredPort = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
+const alternativePorts = [3004, 3011, 3012, 3013];
+
+let port = preferredPort;
+
+// Check if preferred port is available, otherwise try alternatives
+const net = await import('net');
+
+const checkPort = (portToCheck: number): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.listen(portToCheck, () => {
+      server.once('close', () => resolve(true));
+      server.close();
+    });
+    server.on('error', () => resolve(false));
+  });
+};
+
+for (const tryPort of alternativePorts) {
+  const isAvailable = await checkPort(tryPort);
+  if (isAvailable) {
+    port = tryPort;
+    console.log(`✅ Using port ${port} for W3 Backend`);
+    break;
+  }
+}
 
 httpServer.on('error', (error: any) => {
   if (error.code === 'EADDRINUSE') {

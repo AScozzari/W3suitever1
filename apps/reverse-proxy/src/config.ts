@@ -7,9 +7,9 @@ export interface ProxyConfig {
   port: number;
   environment: 'development' | 'production';
   upstream: {
-    w3Frontend: { host: string; port: number; };
+    w3Frontend: { host: string; port: number; fallbackPorts?: number[] };
     w3Backend: { host: string; port: number; };
-    brandFrontend: { host: string; port: number; };
+    brandFrontend: { host: string; port: number; fallbackPorts?: number[] };
     brandBackend: { host: string; port: number; };
   };
   security: {
@@ -37,6 +37,7 @@ export const config: ProxyConfig = {
     w3Frontend: {
       host: process.env.W3_FRONTEND_HOST || 'localhost',
       port: parseInt(process.env.W3_FRONTEND_PORT || '3000', 10),
+      fallbackPorts: [3000, 3001, 3003, 3005], // Try multiple ports
     },
     w3Backend: {
       host: process.env.W3_BACKEND_HOST || 'localhost',
@@ -45,6 +46,7 @@ export const config: ProxyConfig = {
     brandFrontend: {
       host: process.env.BRAND_FRONTEND_HOST || 'localhost',
       port: parseInt(process.env.BRAND_FRONTEND_PORT || '3001', 10),
+      fallbackPorts: [3001, 3002, 3006, 3007], // Try multiple ports
     },
     brandBackend: {
       host: process.env.BRAND_BACKEND_HOST || 'localhost',
