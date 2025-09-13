@@ -68,38 +68,38 @@ echo ""
 kill_port() {
   local port=$1
   echo "💥 SUPER NUCLEAR kill for port $port..."
-  
+
   # Round 1: Multiple aggressive kills
   for round in 1 2 3; do
     echo "  🔪 Round $round: Multiple kill methods"
-    
+
     # Method 1: lsof kill
     lsof -ti :$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
-    
+
     # Method 2: netstat kill
     netstat -tulpn 2>/dev/null | grep ":$port " | awk '{print $7}' | cut -d'/' -f1 | grep -E '^[0-9]+$' | xargs -r kill -9 2>/dev/null || true
-    
+
     # Method 3: fuser kill
     fuser -k -9 $port/tcp 2>/dev/null || true
-    
+
     # Method 4: Process pattern kill
     ps aux | grep -E ":$port|$port.*node|tsx.*$port|vite.*$port" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
-    
+
     # Method 5: Kill all node/tsx/vite processes
     killall -9 node 2>/dev/null || true
     killall -9 tsx 2>/dev/null || true
     killall -9 vite 2>/dev/null || true
-    
+
     # EXTENDED SLEEP - Give processes time to actually die
     sleep 3
-    
+
     # Check if port is free
     if ! lsof -ti :$port >/dev/null 2>&1; then
       echo "  ✅ Port $port freed after round $round"
       return 0
     fi
   done
-  
+
   # Final verification with extended wait
   echo "  ⏰ Final verification with extended wait..."
   for final_check in 1 2 3 4 5 6 7 8 9 10; do
@@ -108,14 +108,14 @@ kill_port() {
       return 0
     fi
     echo "  🔄 Extended check $final_check: Port $port still occupied, waiting..."
-    
+
     # Kill again any remaining processes
     lsof -ti :$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
     fuser -k -9 $port/tcp 2>/dev/null || true
-    
+
     sleep 2
   done
-  
+
   # Final status
   if lsof -ti :$port >/dev/null 2>&1; then
     echo "  💀 Port $port STUBBORNLY OCCUPIED - will continue but may fail"
