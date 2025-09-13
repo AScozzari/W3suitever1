@@ -29,7 +29,11 @@ app.use('/brandinterface', createProxyMiddleware({
   target: 'http://localhost:3001',
   changeOrigin: true,
   ws: true, // WebSocket support for Vite HMR
-  pathRewrite: (path, req) => '/brandinterface' + (path === '/' ? '/' : path)
+  pathRewrite: (path, req) => {
+    const newPath = '/brandinterface' + (path === '/' ? '/' : path);
+    console.log(`🔄 [BRAND PROXY] ${(req as any).method} ${(req as any).originalUrl || req.url} -> ${newPath}`);
+    return newPath;
+  }
 }));
 
 // Brand Interface Backend - fix path duplication
@@ -48,7 +52,8 @@ app.use('/api', createProxyMiddleware({
 app.use('/', createProxyMiddleware({
   target: 'http://localhost:3000',
   changeOrigin: true,
-  ws: true // WebSocket support for Vite HMR
+  ws: true, // WebSocket support for Vite HMR
+  logLevel: 'info' as const
 }));
 
 // Start server on port 5000
