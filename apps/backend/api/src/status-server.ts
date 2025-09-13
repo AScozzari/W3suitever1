@@ -16,7 +16,7 @@ app.get('/health', (req, res) => {
     service: 'W3 Suite Reverse Proxy',
     timestamp: new Date().toISOString(),
     routes: {
-      'W3 Frontend': 'http://127.0.0.1:3000',
+      'W3 Frontend': 'http://127.0.0.1:3006',
       'W3 Backend': 'http://127.0.0.1:3004', 
       'Brand Frontend': 'http://127.0.0.1:3001',
       'Brand Backend': 'http://127.0.0.1:3002'
@@ -50,7 +50,7 @@ app.use('/api', createProxyMiddleware({
 
 // W3 Suite Frontend - proxy to localhost (private)
 app.use('/', createProxyMiddleware({
-  target: 'http://127.0.0.1:3000',
+  target: 'http://127.0.0.1:3006',
   changeOrigin: true,
   ws: true // WebSocket support for Vite HMR
 }));
@@ -61,7 +61,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔄 W3 Suite Reverse Proxy running on port ${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
   console.log(`📊 Routes configured:`);
-  console.log(`   / → W3 Frontend (3000)`);
+  console.log(`   / → W3 Frontend (3006)`);
   console.log(`   /api → W3 Backend (3004)`);
   console.log(`   /brandinterface → Brand Frontend (3001)`);
   console.log(`   /brand-api → Brand Backend (3002)`);

@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,  // Standard W3 Frontend port
+    port: 3006,  // Changed from 3000 to 3006 for cache bypass
     host: "127.0.0.1",  // localhost only for security
     strictPort: true,
     allowedHosts: true,
