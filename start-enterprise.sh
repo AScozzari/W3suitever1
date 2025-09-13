@@ -12,9 +12,15 @@ echo ""
 
 # Stop any existing processes first
 echo "🧹 Cleaning up existing processes..."
-pkill -f "tsx" 2>/dev/null || true
-pkill -f "vite" 2>/dev/null || true
-sleep 2
+pkill -9 -f "tsx" 2>/dev/null || true
+pkill -9 -f "vite" 2>/dev/null || true
+pkill -9 -f "node.*3000" 2>/dev/null || true
+pkill -9 -f "node.*3001" 2>/dev/null || true
+pkill -9 -f "node.*3002" 2>/dev/null || true  
+pkill -9 -f "node.*3004" 2>/dev/null || true
+pkill -9 -f "node.*5000" 2>/dev/null || true
+pkill -9 -f "concurrently" 2>/dev/null || true
+sleep 3
 
 # Export environment variables for consistent configuration
 export NODE_ENV=${NODE_ENV:-development}
@@ -34,13 +40,35 @@ echo "  Service Ports: W3 FE:$W3_FRONTEND_PORT | W3 BE:$W3_BACKEND_PORT | Brand 
 echo "  Reverse Proxy: $PROXY_PORT"
 echo ""
 
-# Function to kill processes on specific port
+# Function to aggressively kill processes on specific port
 kill_port() {
   local port=$1
+  
+  # Method 1: lsof + kill
   local pids=$(lsof -ti :$port 2>/dev/null)
   if [ ! -z "$pids" ]; then
     echo "🔪 Killing processes on port $port: $pids"
     kill -9 $pids 2>/dev/null || true
+  fi
+  
+  # Method 2: netstat + kill (backup)
+  local netstat_pids=$(netstat -tulpn 2>/dev/null | grep ":$port " | awk '{print $7}' | cut -d'/' -f1 | grep -E '^[0-9]+$' 2>/dev/null)
+  if [ ! -z "$netstat_pids" ]; then
+    echo "🔪 Netstat kill on port $port: $netstat_pids"
+    echo "$netstat_pids" | xargs -r kill -9 2>/dev/null || true
+  fi
+  
+  # Method 3: fuser (if available)
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k -9 $port/tcp 2>/dev/null || true
+  fi
+  
+  # Wait and verify
+  sleep 2
+  local remaining=$(lsof -ti :$port 2>/dev/null)
+  if [ ! -z "$remaining" ]; then
+    echo "⚠️  Port $port still has processes: $remaining"
+    kill -9 $remaining 2>/dev/null || true
     sleep 1
   fi
 }

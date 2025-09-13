@@ -15,6 +15,10 @@ export default defineConfig({
   server: {
     port: 3000,
     host: "0.0.0.0",
+    strictPort: true, // Exit if port is not available
+    hmr: {
+      port: 24678
+    },
     proxy: {
       // Proxy API calls to backend server
       '/api': {
