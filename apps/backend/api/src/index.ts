@@ -2,79 +2,25 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { spawn } from "child_process";
 import { registerRoutes } from "./core/routes.js";
 import { seedCommercialAreas } from "./core/seed-areas.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Detect if running in Replit environment
-const isReplit = !!(process.env.REPL_ID || process.env.REPL_SLUG || process.env.PORT === '5000');
-
-// If in Replit, start the reverse proxy instead of just the backend
-if (isReplit) {
-  console.log('🔄 Replit environment detected - starting reverse proxy on port 5000...');
-  
-  const proxyPath = path.join(__dirname, '../../../reverse-proxy/src/index.ts');
-  // Start W3 Backend on port 3004 first
-  console.log('🔧 Starting W3 Suite backend on port 3004...');
-  startBackend();
-
-  // Start W3 Frontend on port 3000
-  console.log('🎨 Starting W3 Suite frontend on port 3000...');
-  const frontendPath = path.join(__dirname, '../../../frontend/web');
-  const frontend = spawn('npm', ['run', 'dev'], {
-    cwd: frontendPath,
-    env: { ...process.env, NODE_ENV: 'development' },
-    stdio: ['ignore', 'pipe', 'pipe']
-  });
-  
-  frontend.stdout?.on('data', (data) => {
-    console.log(`[W3-Frontend] ${data}`);
-  });
-  
-  frontend.stderr?.on('data', (data) => {
-    console.log(`[W3-Frontend] ${data}`);
-  });
-
-  // Wait a bit for frontend to start, then start reverse proxy
-  setTimeout(() => {
-    console.log('🔄 Starting reverse proxy on port 5000...');
-    const proxy = spawn('tsx', [proxyPath], {
-      env: { ...process.env, NODE_ENV: 'development', PROXY_PORT: '5000' },
-      stdio: 'inherit'
-    });
-    
-    proxy.on('error', (error) => {
-      console.error('❌ Failed to start reverse proxy:', error);
-      // Fallback to backend only
-      console.log('⚠️ Continuing with backend only...');
-    });
-    
-    proxy.on('close', (code) => {
-      console.log(`🚫 Reverse proxy exited with code ${code}`);
-      process.exit(code);
-    });
-  }, 3000); // Wait 3 seconds for frontend to initialize
-  
-} else {
-  // Local development - start backend only
-  startBackend();
-}
+// Start backend directly - no reverse proxy
+startBackend();
 
 async function startBackend() {
   const app = express();
 
-  // W3 Suite backend standalone - senza Brand Interface
+  // W3 Suite backend standalone
 
-  // CORS configuration - accept requests from frontend (3000) and reverse proxy (5000)
+  // CORS configuration - accept requests from frontend only
   app.use(cors({
     origin: [
       'http://localhost:3000',  // W3 Suite frontend
-      'http://localhost:5000',  // Reverse proxy
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5000'
+      'http://127.0.0.1:3000'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -107,7 +53,7 @@ async function startBackend() {
     process.exit(0);
   });
 
-  // Fixed port for W3 Backend - always use 3004, reverse proxy handles 5000
+  // W3 Suite backend on dedicated port 3004
   const port = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
 
   httpServer.listen(port, "0.0.0.0", () => {
