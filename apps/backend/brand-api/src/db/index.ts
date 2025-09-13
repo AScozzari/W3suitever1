@@ -2,17 +2,31 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import * as brandSchema from "./schema/brand-interface.js";
 
-// Usa la stessa connessione database ma con schema brand_interface
-const databaseUrl = process.env.DATABASE_URL;
+// Check if database is disabled for in-memory mode
+const isDbDisabled = process.env.DB_DISABLED === '1' || process.env.USE_INMEMORY_DB === 'true' || !process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL environment variable is not set");
+// In-memory storage fallback
+let inMemoryBrandData: Map<string, any> = new Map();
+
+let db: any;
+
+if (isDbDisabled) {
+  console.log('⚠️  Brand Database disabled - using in-memory storage');
+  // Mock Drizzle client for in-memory mode
+  db = {
+    select: () => ({ from: () => ({ where: () => [] }) }),
+    insert: () => ({ values: () => ({ returning: () => [] }) }),
+    update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) }),
+    delete: () => ({ where: () => ({ returning: () => [] }) })
+  };
+} else {
+  const databaseUrl = process.env.DATABASE_URL!; // Safe because we checked above
+  const sql = neon(databaseUrl);
+  db = drizzle(sql, { schema: brandSchema });
+  console.log('✅ Brand Database connection initialized');
 }
 
-const sql = neon(databaseUrl);
-
-// Crea client Drizzle con schema brand_interface
-export const db = drizzle(sql, { schema: brandSchema });
+export { db, isDbDisabled, inMemoryBrandData };
 
 // Export schema per uso esterno
 export * from "./schema/brand-interface.js";

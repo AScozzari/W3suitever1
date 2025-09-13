@@ -31,7 +31,7 @@ export interface ProxyConfig {
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const config: ProxyConfig = {
-  port: parseInt(process.env.PROXY_PORT || '5000', 10),
+  port: parseInt(process.env.PROXY_PORT || '6000', 10),
   environment: isDevelopment ? 'development' : 'production',
   upstream: {
     w3Frontend: {
