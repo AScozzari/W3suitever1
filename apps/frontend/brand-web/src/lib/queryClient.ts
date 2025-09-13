@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 
-// Brand API base URL - frontend su 5001, backend su 5002
-const BRAND_API_BASE_URL = "http://localhost:5002";
+// Brand API base URL - frontend su 3001, backend su 3002
+const BRAND_API_BASE_URL = "http://localhost:3002";
 
 // API client function per Brand Interface
 export async function apiRequest(url: string, options: RequestInit = {}) {

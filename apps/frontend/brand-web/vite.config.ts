@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  base: '/brandinterface/',
+  base: '/',
   plugins: [
     react(),
   ],
@@ -19,11 +19,13 @@ export default defineConfig({
     },
   },
   server: {
-    // Configurazione per ambiente Replit
+    // Brand Frontend runs on port 3001
+    port: 3001,
     host: '0.0.0.0',
     allowedHosts: true
   },
   preview: {
+    port: 3001,
     host: '0.0.0.0'
   }
 });

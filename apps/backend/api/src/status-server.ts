@@ -28,30 +28,26 @@ app.get('/health', (req, res) => {
 app.use('/brandinterface', createProxyMiddleware({
   target: 'http://localhost:3001',
   changeOrigin: true,
-  ws: true, // WebSocket support for Vite HMR
-  logLevel: 'warn'
+  ws: true // WebSocket support for Vite HMR
 }));
 
 // Brand Interface Backend
 app.use('/brand-api', createProxyMiddleware({
   target: 'http://localhost:3002',
-  changeOrigin: true,
-  logLevel: 'warn'
+  changeOrigin: true
 }));
 
 // W3 Suite Backend 
 app.use('/api', createProxyMiddleware({
   target: 'http://localhost:3004',
-  changeOrigin: true,
-  logLevel: 'warn'
+  changeOrigin: true
 }));
 
 // W3 Suite Frontend (default - must be last)
 app.use('/', createProxyMiddleware({
   target: 'http://localhost:3000',
   changeOrigin: true,
-  ws: true, // WebSocket support for Vite HMR
-  logLevel: 'warn'
+  ws: true // WebSocket support for Vite HMR
 }));
 
 // Start server on port 5000
