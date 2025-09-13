@@ -13,23 +13,36 @@ echo ""
 # Stop any existing processes first
 echo "🧹 Cleaning up existing processes..."
 
-# Ultra-aggressive process cleanup - multiple rounds
-for round in 1 2 3; do
-  echo "🔪 Cleanup round $round..."
-  pkill -9 -f "tsx" 2>/dev/null || true
-  pkill -9 -f "vite" 2>/dev/null || true
-  pkill -9 -f "node.*tsx" 2>/dev/null || true
-  pkill -9 -f "node.*vite" 2>/dev/null || true
-  pkill -9 -f "concurrently" 2>/dev/null || true
-  pkill -9 -f "apps/backend" 2>/dev/null || true
-  pkill -9 -f "apps/frontend" 2>/dev/null || true
-  pkill -9 -f "apps/reverse-proxy" 2>/dev/null || true
-  
-  # Kill by specific process patterns
-  ps aux | grep -E "(tsx|vite|node.*3[0-9]{3}|node.*5000)" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
-  
-  sleep 2
-done
+# NUCLEAR process cleanup - multiple rounds with escalation
+echo "💥 Starting NUCLEAR process cleanup..."
+
+# Round 1: Kill by name
+echo "🔪 Round 1: Kill by process name"
+killall -9 node 2>/dev/null || true
+killall -9 tsx 2>/dev/null || true  
+killall -9 vite 2>/dev/null || true
+killall -9 concurrently 2>/dev/null || true
+sleep 2
+
+# Round 2: Kill by pattern
+echo "🔪 Round 2: Kill by pattern matching"
+pkill -9 -f "tsx" 2>/dev/null || true
+pkill -9 -f "vite" 2>/dev/null || true
+pkill -9 -f "node.*tsx" 2>/dev/null || true
+pkill -9 -f "node.*vite" 2>/dev/null || true
+pkill -9 -f "concurrently" 2>/dev/null || true
+pkill -9 -f "apps/" 2>/dev/null || true
+sleep 2
+
+# Round 3: Kill by port patterns in process list
+echo "🔪 Round 3: Kill by port patterns"
+ps aux | grep -E "(tsx|vite|node.*3[0-9]{3}|node.*5000|:3000|:3001|:3002|:3004|:5000)" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
+sleep 2
+
+# Round 4: Kill anything that looks like our services
+echo "🔪 Round 4: Kill W3 Suite processes"
+ps aux | grep -E "(w3suite|brand-api|reverse-proxy)" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
+sleep 3
 
 echo "✅ Process cleanup completed"
 
@@ -51,59 +64,48 @@ echo "  Service Ports: W3 FE:$W3_FRONTEND_PORT | W3 BE:$W3_BACKEND_PORT | Brand 
 echo "  Reverse Proxy: $PROXY_PORT"
 echo ""
 
-# Function to ultra-aggressively kill processes on specific port
+# Function to NUCLEAR kill processes on specific port  
 kill_port() {
   local port=$1
-  echo "🔪 Ultra-aggressive kill for port $port..."
+  echo "💥 NUCLEAR kill for port $port..."
   
-  # Round 1: Standard methods
-  for attempt in 1 2 3; do
-    echo "  Attempt $attempt for port $port"
-    
-    # Method 1: lsof + kill
-    local pids=$(lsof -ti :$port 2>/dev/null)
-    if [ ! -z "$pids" ]; then
-      echo "    lsof kill: $pids"
-      echo "$pids" | xargs -r kill -9 2>/dev/null || true
-    fi
-    
-    # Method 2: netstat + kill  
-    local netstat_pids=$(netstat -tulpn 2>/dev/null | grep ":$port " | awk '{print $7}' | cut -d'/' -f1 | grep -E '^[0-9]+$' 2>/dev/null)
-    if [ ! -z "$netstat_pids" ]; then
-      echo "    netstat kill: $netstat_pids"
-      echo "$netstat_pids" | xargs -r kill -9 2>/dev/null || true
-    fi
-    
-    # Method 3: fuser
-    if command -v fuser >/dev/null 2>&1; then
-      fuser -k -9 $port/tcp 2>/dev/null || true
-    fi
-    
-    # Method 4: ss command (modern alternative to netstat)
-    if command -v ss >/dev/null 2>&1; then
-      local ss_pids=$(ss -tulpn | grep ":$port " | sed 's/.*pid=\([0-9]*\).*/\1/' | grep -E '^[0-9]+$' 2>/dev/null)
-      if [ ! -z "$ss_pids" ]; then
-        echo "    ss kill: $ss_pids"
-        echo "$ss_pids" | xargs -r kill -9 2>/dev/null || true
-      fi
-    fi
-    
+  # Method 1: Direct lsof kill with force
+  echo "  🔪 Method 1: Direct lsof kill"
+  lsof -ti :$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+  
+  # Method 2: Find and kill by port pattern in process list
+  echo "  🔪 Method 2: Process pattern kill"
+  ps aux | grep -E ":$port|$port.*node|tsx.*$port" | grep -v grep | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
+  
+  # Method 3: netstat and kill
+  echo "  🔪 Method 3: Netstat kill"
+  netstat -tulpn 2>/dev/null | grep ":$port " | awk '{print $7}' | cut -d'/' -f1 | grep -E '^[0-9]+$' | xargs -r kill -9 2>/dev/null || true
+  
+  # Method 4: fuser aggressive kill
+  echo "  🔪 Method 4: Fuser kill"
+  fuser -k -9 $port/tcp 2>/dev/null || true
+  
+  # Method 5: killall by common process names for the port
+  echo "  🔪 Method 5: Killall by name"
+  killall -9 node 2>/dev/null || true
+  killall -9 tsx 2>/dev/null || true
+  killall -9 vite 2>/dev/null || true
+  
+  # Wait and check multiple times
+  for check in 1 2 3 4 5; do
     sleep 1
-    
-    # Check if port is free
     if ! lsof -ti :$port >/dev/null 2>&1; then
-      echo "  ✅ Port $port is now free"
+      echo "  ✅ Port $port freed after $check attempts"
       return 0
     fi
+    echo "  🔄 Check $check: Port $port still occupied, retrying..."
+    lsof -ti :$port 2>/dev/null | xargs -r kill -9 2>/dev/null || true
   done
   
-  # Final verification
-  local remaining=$(lsof -ti :$port 2>/dev/null)
-  if [ ! -z "$remaining" ]; then
-    echo "  ⚠️  Port $port STILL has processes after all attempts: $remaining"
-    # Nuclear option
-    echo "$remaining" | xargs -r kill -9 2>/dev/null || true
-    sleep 2
+  # Final status
+  if lsof -ti :$port >/dev/null 2>&1; then
+    echo "  💀 Port $port STUBBORNLY OCCUPIED - continuing anyway"
+    lsof -ti :$port 2>/dev/null || echo "    (no processes found)"
   else
     echo "  ✅ Port $port successfully freed"
   fi
