@@ -41,6 +41,47 @@ class AuthService {
     this.baseUrl = process.env.NODE_ENV === 'production' 
       ? `${window.location.protocol}//${window.location.hostname}:3004`
       : 'http://localhost:3004';
+    
+    // Restore token from localStorage on initialization
+    this.restoreTokenFromStorage();
+  }
+  
+  /**
+   * Restore token from localStorage
+   */
+  private restoreTokenFromStorage(): void {
+    try {
+      const storedAuth = localStorage.getItem('w3_auth');
+      if (storedAuth) {
+        const data = JSON.parse(storedAuth);
+        if (data.accessToken && data.tokenExpiry) {
+          const expiry = new Date(data.tokenExpiry);
+          if (expiry > new Date()) {
+            this.accessToken = data.accessToken;
+            this.tokenExpiry = expiry;
+          } else {
+            // Token expired, clear it
+            localStorage.removeItem('w3_auth');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring auth token:', error);
+      localStorage.removeItem('w3_auth');
+    }
+  }
+  
+  /**
+   * Save token to localStorage
+   */
+  private saveTokenToStorage(token: string, expiresIn: number, user?: any): void {
+    const expiry = new Date(Date.now() + (expiresIn * 1000));
+    const authData = {
+      accessToken: token,
+      tokenExpiry: expiry.toISOString(),
+      user: user || null
+    };
+    localStorage.setItem('w3_auth', JSON.stringify(authData));
   }
   
   /**
@@ -64,9 +105,12 @@ class AuthService {
       
       const data: LoginResponse = await response.json();
       
-      // Store access token in memory
+      // Store access token in memory and localStorage
       this.accessToken = data.accessToken;
       this.tokenExpiry = new Date(Date.now() + (data.expiresIn * 1000));
+      
+      // Persist to localStorage
+      this.saveTokenToStorage(data.accessToken, data.expiresIn, data.user);
       
       return data;
     } catch (error: any) {
@@ -113,9 +157,14 @@ class AuthService {
       
       const data: RefreshResponse = await response.json();
       
-      // Update access token
+      // Update access token in memory and localStorage
       this.accessToken = data.accessToken;
       this.tokenExpiry = new Date(Date.now() + (data.expiresIn * 1000));
+      
+      // Update token in localStorage (preserve user info)
+      const storedAuth = localStorage.getItem('w3_auth');
+      const user = storedAuth ? JSON.parse(storedAuth).user : null;
+      this.saveTokenToStorage(data.accessToken, data.expiresIn, user);
       
       return data.accessToken;
     } catch (error: any) {
@@ -185,9 +234,11 @@ class AuthService {
     } catch (error: any) {
       console.error('Logout error:', error);
     } finally {
-      // Clear local token regardless
+      // Clear local token and localStorage
       this.accessToken = null;
       this.tokenExpiry = null;
+      localStorage.removeItem('w3_auth');
+      localStorage.removeItem('user_info');
     }
   }
   
@@ -256,8 +307,18 @@ class AuthService {
    * Initialize auth service (check for existing session)
    */
   async initialize(): Promise<void> {
-    // Try to refresh token on startup
-    await this.refresh();
+    // Check if we have a valid token already
+    if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
+      // Token is still valid, no need to refresh immediately
+      return;
+    }
+    
+    // Try to refresh token on startup only if we have a refresh cookie
+    // This prevents unnecessary 401 errors on fresh loads
+    const hasCookie = document.cookie.includes('refresh_token');
+    if (hasCookie) {
+      await this.refresh();
+    }
   }
 }
 

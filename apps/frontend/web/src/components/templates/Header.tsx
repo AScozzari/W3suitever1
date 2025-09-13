@@ -4,7 +4,7 @@ import {
   User, Search, Bell, Settings, Menu, ChevronDown,
   Store, LogOut, UserCircle
 } from 'lucide-react';
-import { oauth2Client } from '../../services/OAuth2Client';
+import { jwtClient } from '../../services/JWTClient';
 import { queryClient } from '../../lib/queryClient';
 
 // Palette colori W3 Suite - Consistent con Layout
@@ -16,6 +16,17 @@ const COLORS = {
     purpleLight: '#9747ff',
   }
 };
+
+// User type definition
+interface UserData {
+  id?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  tenantId?: string;
+  roles?: string[];
+}
 
 interface HeaderProps {
   isMobile?: boolean;
@@ -40,7 +51,7 @@ export default function Header({
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   
-  const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
+  const { data: user } = useQuery<UserData>({ queryKey: ["/api/auth/session"] });
 
   // Chiudi menu quando clicchi fuori
   useEffect(() => {
@@ -65,12 +76,12 @@ export default function Header({
 
   const handleLogout = async () => {
     try {
-      await oauth2Client.logout();
+      await jwtClient.logout();
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
       queryClient.clear();
       window.location.href = '/brandinterface/login';
     } catch (error) {
-      await oauth2Client.logout();
+      await jwtClient.logout();
       queryClient.clear();
       window.location.href = '/brandinterface/login';
     }
@@ -335,7 +346,7 @@ export default function Header({
             <div style={{
               width: '28px',
               height: '28px',
-              background: user?.profileImageUrl ? `url(${user.profileImageUrl})` : `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`,
+              background: user?.profileImageUrl ? `url(${user?.profileImageUrl})` : `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               borderRadius: '6px',
@@ -346,12 +357,12 @@ export default function Header({
               fontSize: '12px',
               fontWeight: 600
             }}>
-              {!user?.profileImageUrl && (user?.firstName?.[0] || user?.email?.[0] || 'U')}
+              {!(user as UserData)?.profileImageUrl && ((user as UserData)?.firstName?.[0] || (user as UserData)?.email?.[0] || 'U')}
             </div>
             {!isMobile && (
               <>
                 <div style={{ fontSize: '14px', fontWeight: 500, color: '#1f2937' }}>
-                  {user?.firstName || user?.email?.split('@')[0] || 'Utente'}
+                  {(user as UserData)?.firstName || (user as UserData)?.email?.split('@')[0] || 'Utente'}
                 </div>
                 <ChevronDown size={14} style={{ 
                   transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { authService } from '../services/AuthService';
+import { useLocation } from 'wouter';
+import { queryClient } from '../lib/queryClient';
 
 interface LoginProps {
   tenantCode?: string;
@@ -17,6 +19,7 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [, navigate] = useLocation();
   
   // Tenant information
   const tenantInfo: Record<string, { name: string, color: string }> = {
@@ -53,9 +56,15 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
         // Store user info for quick access
         localStorage.setItem('user_info', JSON.stringify(response.user));
         
-        // Redirect to dashboard after successful login
+        // Invalidate all queries to refetch with new auth
+        await queryClient.invalidateQueries();
+        
+        // Navigate to dashboard using wouter (no page reload)
         const tenantCode = propTenantCode || 'w3suite';
-        window.location.href = `/${tenantCode}/dashboard`;
+        navigate(`/${tenantCode}/dashboard`);
+        
+        // Keep loading state during navigation
+        // The AuthenticatedApp wrapper will handle the rest
       } else {
         setError('Login failed. Please try again.');
         setIsLoading(false);

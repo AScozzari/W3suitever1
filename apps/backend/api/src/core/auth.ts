@@ -11,7 +11,12 @@ import { users } from '../db/schema/w3suite';
 import { eq } from 'drizzle-orm';
 
 // JWT Configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'w3suite-dev-secret-2025';
+const JWT_SECRET_ENV = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? undefined : 'w3suite-dev-secret-2025');
+if (!JWT_SECRET_ENV) {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
+// Ensure JWT_SECRET is always defined after the check
+const JWT_SECRET: string = JWT_SECRET_ENV;
 const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
 const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
 
@@ -232,7 +237,8 @@ export async function refresh(req: Request, res: Response) {
     // Verify refresh token
     let payload: JWTPayload;
     try {
-      payload = jwt.verify(refreshToken, JWT_SECRET) as JWTPayload;
+      const decoded = jwt.verify(refreshToken, JWT_SECRET);
+      payload = decoded as JWTPayload;
     } catch (error) {
       return res.status(401).json({
         error: 'invalid_token',
@@ -353,7 +359,8 @@ export function authenticateJWT(req: AuthRequest, res: Response, next: NextFunct
     // Verify token
     let payload: JWTPayload;
     try {
-      payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      const decoded = jwt.verify(token, JWT_SECRET);
+      payload = decoded as JWTPayload;
     } catch (error: any) {
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({
@@ -406,7 +413,8 @@ export function optionalAuthenticateJWT(req: AuthRequest, res: Response, next: N
     }
     
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const payload = decoded as JWTPayload;
       
       if (payload.type === 'access') {
         req.user = {

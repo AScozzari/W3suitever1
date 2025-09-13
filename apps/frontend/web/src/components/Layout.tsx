@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { oauth2Client } from '../services/OAuth2Client';
+import { jwtClient } from '../services/JWTClient';
 import { useAuth } from '../hooks/useAuth';
 import { 
   User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
@@ -113,16 +113,17 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Ensure stores is always an array
   const stores = Array.isArray(storesResponse) ? storesResponse : [];
 
-  // OAuth2 token validation - replaced legacy auth_token check
+  // JWT token validation
   useEffect(() => {
-    const checkOAuth2Token = async () => {
+    const checkJWTToken = async () => {
       try {
-        const accessToken = await oauth2Client.getAccessToken();
+        const accessToken = await jwtClient.getAccessToken();
       } catch (error) {
+        // Token invalid or expired, user needs to login
       }
     };
     
-    checkOAuth2Token();
+    checkJWTToken();
   }, []);
 
   // Auto-login removed - manual login required
@@ -463,8 +464,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const handleLogout = async () => {
     try {
       
-      // Use OAuth2 logout (clears tokens and revokes on server)
-      await oauth2Client.logout();
+      // Use JWT logout (clears tokens)
+      await jwtClient.logout();
       
       // Clear React Query cache
       queryClient.removeQueries({ queryKey: ['/api/auth/session'] });
@@ -476,7 +477,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       
     } catch (error) {
       // Fallback: force logout even if server call fails
-      await oauth2Client.logout();
+      await jwtClient.logout();
       queryClient.clear();
       window.location.href = '/brandinterface/login';
     }

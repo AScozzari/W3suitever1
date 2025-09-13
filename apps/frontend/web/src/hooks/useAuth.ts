@@ -1,16 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { authService } from "../services/AuthService";
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 export function useAuth() {
   const [hasToken, setHasToken] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [, navigate] = useLocation();
 
   // Check for JWT auth and initialize
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Initialize auth service (tries to refresh token)
+        // Initialize auth service (restores token from localStorage)
         await authService.initialize();
         
         // Check if authenticated
@@ -25,6 +27,16 @@ export function useAuth() {
     };
     
     checkAuth();
+    
+    // Also listen for storage events to sync auth state across tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'w3_auth') {
+        checkAuth();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
   
   // Get current user info
@@ -52,8 +64,11 @@ export function useAuth() {
       setHasToken(false);
       // Clear query cache
       refetch();
-      // Redirect to login
-      window.location.href = '/login';
+      // Get current tenant from path
+      const pathSegments = window.location.pathname.split('/').filter(Boolean);
+      const tenant = pathSegments[0] || 'staging';
+      // Navigate to login using wouter
+      navigate(`/${tenant}/login`);
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -62,7 +77,14 @@ export function useAuth() {
   return {
     user: userInfo,
     isLoading: isInitializing || (hasToken ? isUserInfoLoading : false),
-    isAuthenticated: !!userInfo,
+    isAuthenticated: hasToken && !!userInfo,
     logout,
+    refetchAuth: async () => {
+      const isAuthenticated = await authService.isAuthenticated();
+      setHasToken(isAuthenticated);
+      if (isAuthenticated) {
+        await refetch();
+      }
+    },
   };
 }

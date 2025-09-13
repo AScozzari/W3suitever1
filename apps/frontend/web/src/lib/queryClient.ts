@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { oauth2Client } from '../services/OAuth2Client';
+import { authService } from '../services/AuthService';
 
 // Helper per ottenere il tenant ID corrente
 const getCurrentTenantId = () => {
@@ -11,10 +11,13 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
-        const token = await oauth2Client.getAccessToken();
+        const token = await authService.getAccessToken();
         const tenantId = getCurrentTenantId();
         
-        const res = await fetch(queryKey[0] as string, {
+        const url = queryKey[0] as string;
+        const fullUrl = url.startsWith('http') ? url : `http://localhost:3004${url}`;
+        
+        const res = await fetch(fullUrl, {
           credentials: "include",
           headers: {
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -23,11 +26,13 @@ export const queryClient = new QueryClient({
         });
         if (!res.ok) {
           if (res.status === 401) {
-            // Use OAuth2 logout instead of manual token clearing
-            await oauth2Client.logout();
+            // Use auth service logout
+            await authService.logout();
             // Solo redirige se non siamo già sulla pagina di login
             if (!window.location.pathname.includes('/login')) {
-              window.location.href = '/login';
+              const pathSegments = window.location.pathname.split('/').filter(Boolean);
+              const tenant = pathSegments[0] || 'staging';
+              window.location.href = `/${tenant}/login`;
             }
             throw new Error(`401: Unauthorized`);
           }
@@ -48,10 +53,12 @@ export async function apiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const token = await oauth2Client.getAccessToken();
+  const token = await authService.getAccessToken();
   const tenantId = getCurrentTenantId();
   
-  const res = await fetch(url, {
+  const fullUrl = url.startsWith('http') ? url : `http://localhost:3004${url}`;
+  
+  const res = await fetch(fullUrl, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -64,9 +71,11 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
-      // Use OAuth2 logout instead of manual token clearing
-      await oauth2Client.logout();
-      window.location.href = '/login';
+      // Use auth service logout
+      await authService.logout();
+      const pathSegments = window.location.pathname.split('/').filter(Boolean);
+      const tenant = pathSegments[0] || 'staging';
+      window.location.href = `/${tenant}/login`;
       throw new Error(`401: Unauthorized`);
     }
     throw new Error(`${res.status}: ${res.statusText}`);

@@ -10,8 +10,8 @@ import { sql } from "drizzle-orm";
 import { createAuditMiddleware } from "../middleware/audit";
 import cookieParser from "cookie-parser";
 
-const JWT_SECRET = process.env.JWT_SECRET || "w3suite-dev-secret-2025";
-if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+// JWT Secret - required in production
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('JWT_SECRET environment variable is required in production');
 }
 
@@ -19,7 +19,7 @@ const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Add cookie parser for handling refresh tokens
+  // Add cookie parser for handling refresh tokens - MUST be before auth routes
   app.use(cookieParser());
   
   // Apply audit logging middleware for critical operations
@@ -576,58 +576,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update role
-  app.put('/api/roles/:id', authMiddleware, async (req, res) => {
-    try {
-      const role = await storage.updateRole(req.params.id, req.body);
-      res.json(role);
-    } catch (error: any) {
-      console.error("Error updating role:", error);
-      if (error.message?.includes('not found')) {
-        res.status(404).json({ error: "Role not found" });
-      } else {
-        res.status(500).json({ error: "Failed to update role" });
-      }
-    }
-  });
+  // Update role - DISABLED: Method not implemented in storage
+  // app.put('/api/roles/:id', authMiddleware, async (req, res) => {
+  //   try {
+  //     const role = await storage.updateRole(req.params.id, req.body);
+  //     res.json(role);
+  //   } catch (error: any) {
+  //     console.error("Error updating role:", error);
+  //     if (error.message?.includes('not found')) {
+  //       res.status(404).json({ error: "Role not found" });
+  //     } else {
+  //       res.status(500).json({ error: "Failed to update role" });
+  //     }
+  //   }
+  // });
 
-  // Delete role
-  app.delete('/api/roles/:id', authMiddleware, async (req, res) => {
-    try {
-      await storage.deleteRole(req.params.id);
-      res.status(204).send();
-    } catch (error: any) {
-      console.error("Error deleting role:", error);
-      if (error.message?.includes('not found')) {
-        res.status(404).json({ error: "Role not found" });
-      } else {
-        res.status(500).json({ error: "Failed to delete role" });
-      }
-    }
-  });
+  // Delete role - DISABLED: Method not implemented in storage
+  // app.delete('/api/roles/:id', authMiddleware, async (req, res) => {
+  //   try {
+  //     await storage.deleteRole(req.params.id);
+  //     res.status(204).send();
+  //   } catch (error: any) {
+  //     console.error("Error deleting role:", error);
+  //     if (error.message?.includes('not found')) {
+  //       res.status(404).json({ error: "Role not found" });
+  //     } else {
+  //       res.status(500).json({ error: "Failed to delete role" });
+  //     }
+  //   }
+  // });
 
-  // Get role permissions
-  app.get('/api/roles/:roleId/permissions', authMiddleware, async (req, res) => {
-    try {
-      const permissions = await storage.getRolePermissions(req.params.roleId);
-      res.json(permissions);
-    } catch (error) {
-      console.error("Error fetching role permissions:", error);
-      res.status(500).json({ error: "Failed to fetch role permissions" });
-    }
-  });
+  // Get role permissions - DISABLED: Method not implemented in storage
+  // app.get('/api/roles/:roleId/permissions', authMiddleware, async (req, res) => {
+  //   try {
+  //     const permissions = await storage.getRolePermissions(req.params.roleId);
+  //     res.json(permissions);
+  //   } catch (error) {
+  //     console.error("Error fetching role permissions:", error);
+  //     res.status(500).json({ error: "Failed to fetch role permissions" });
+  //   }
+  // });
 
-  // Grant permission to role
-  app.post('/api/roles/:roleId/permissions', authMiddleware, async (req, res) => {
-    try {
-      const permissionData = { ...req.body, roleId: req.params.roleId };
-      const permission = await storage.grantPermission(permissionData);
-      res.status(201).json(permission);
-    } catch (error) {
-      console.error("Error granting permission:", error);
-      res.status(500).json({ error: "Failed to grant permission" });
-    }
-  });
+  // Grant permission to role - DISABLED: Method not implemented in storage
+  // app.post('/api/roles/:roleId/permissions', authMiddleware, async (req, res) => {
+  //   try {
+  //     const permissionData = { ...req.body, roleId: req.params.roleId };
+  //     const permission = await storage.grantPermission(permissionData);
+  //     res.status(201).json(permission);
+  //   } catch (error) {
+  //     console.error("Error granting permission:", error);
+  //     res.status(500).json({ error: "Failed to grant permission" });
+  //   }
+  // });
 
   // Create server
   const httpServer = createServer(app);
