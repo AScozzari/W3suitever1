@@ -39,7 +39,7 @@ export function BrandAuthProvider({ children }: { children: React.ReactNode }) {
     
     if (savedUser && savedToken) {
       // Verify token is still valid
-      fetch('http://localhost:5002/brand-api/auth/me', {
+      fetch('/brand-api/auth/me', {
         headers: {
           'Authorization': `Bearer ${savedToken}`
         }
@@ -64,7 +64,7 @@ export function BrandAuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (credentials: { email: string; password: string }): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:5002/brand-api/auth/login', {
+      const response = await fetch('/brand-api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,7 +116,7 @@ export function BrandAuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('brand-token');
     localStorage.removeItem('brand-workspace');
     delete window.brandAuthToken;
-    window.location.href = '/brandinterface/login';
+    window.location.href = '/login';
   };
 
   const updateWorkspace = (newWorkspace: string) => {

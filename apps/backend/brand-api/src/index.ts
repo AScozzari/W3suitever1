@@ -1,29 +1,19 @@
 import express from "express";
 import cors from "cors";
-import fs from "fs";
-import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-import { nanoid } from "nanoid";
 import { registerBrandRoutes } from "./core/routes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const viteLogger = createLogger();
-
-console.log("🚀 Starting Brand Interface Server...");
+console.log("🚀 Starting Brand API Server...");
 
 // Error handling per mantenere il processo attivo in development
 process.on('uncaughtException', (error) => {
-  console.error('❌ Brand Interface uncaught exception:', error);
+  console.error('❌ Brand API uncaught exception:', error);
   if (process.env.NODE_ENV !== 'development') {
     process.exit(1);
   }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Brand Interface unhandled rejection at:', promise, 'reason:', reason);
+  console.error('❌ Brand API unhandled rejection at:', promise, 'reason:', reason);
   if (process.env.NODE_ENV !== 'development') {
     process.exit(1);
   }
@@ -32,9 +22,9 @@ process.on('unhandledRejection', (reason, promise) => {
 try {
   const app = express();
   
-  // CORS configuration for Brand Interface standalone on port 5001
+  // CORS configuration for Brand API - Allow Frontend (3001) and Reverse Proxy (5000)
   app.use(cors({
-    origin: ['http://localhost:5001', 'http://localhost:5000', 'http://localhost:3000'],
+    origin: ['http://localhost:3001', 'http://localhost:5000', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -42,102 +32,28 @@ try {
   
   app.use(express.json());
 
-  // Setup Vite middleware for Brand Interface frontend in development
-  if (process.env.NODE_ENV === "development") {
-    await setupBrandInterfaceVite(app);
-  }
-
-  // Crea il server HTTP per Brand Interface (frontend + backend integrati)
+  // Crea il server HTTP per Brand API
   const httpServer = await registerBrandRoutes(app);
 
   // Event handlers per il server HTTP
   httpServer.on('error', (error) => {
-    console.error('❌ Brand Interface server error:', error);
+    console.error('❌ Brand API server error:', error);
   });
 
   httpServer.on('close', () => {
-    console.log('🚫 Brand Interface server closed');
+    console.log('🚫 Brand API server closed');
   });
 
-  // Avvia il server Brand Interface (frontend + backend) sulla porta 5001
-  httpServer.listen(5001, "0.0.0.0", () => {
-    console.log("✅ Brand Interface server running on port 5001");
-    console.log("🌐 Brand Interface available at: http://localhost:5001/brandinterface/login");
-    console.log("🔌 Brand Interface API available at: http://localhost:5001/brand-api/health");
+  // Avvia il server Brand API sulla porta 3002
+  httpServer.listen(3002, "0.0.0.0", () => {
+    console.log("✅ Brand API server running on port 3002");
+    console.log("🔌 Brand API available at: http://localhost:3002/brand-api/health");
   });
 
 } catch (error) {
-  console.error('❌ Brand Interface startup failed:', error);
+  console.error('❌ Brand API startup failed:', error);
   if (process.env.NODE_ENV !== 'development') {
     process.exit(1);
   }
 }
 
-// Setup Brand Interface Vite middleware function
-async function setupBrandInterfaceVite(app: express.Express) {
-  console.log("🚀 Setting up Brand Interface Vite middleware...");
-  
-  const brandWebPath = path.resolve(__dirname, "..", "..", "..", "frontend", "brand-web");
-  
-  const brandVite = await createViteServer({
-    configFile: path.join(brandWebPath, "vite.config.ts"),
-    root: brandWebPath,
-    base: '/brandinterface/',
-    server: { 
-      middlewareMode: true,
-      hmr: { port: 24678 } // Different HMR port to avoid conflicts
-    },
-    appType: "spa",
-    customLogger: {
-      ...viteLogger,
-      info: (msg) => console.log(`🔶 [Brand Vite] ${msg}`),
-      error: (msg, options) => {
-        console.error(`❌ [Brand Vite] ${msg}`);
-        viteLogger.error(msg, options);
-      },
-    }
-  });
-  
-  // PRIMO: Vite middlewares per asset, HMR, @vite/client, etc.
-  app.use('/brandinterface', brandVite.middlewares);
-  
-  // SECONDO: Catch-all RISTRETTO solo per richieste HTML document
-  app.use('/brandinterface', async (req, res, next) => {
-    // Solo richieste GET che accettano HTML
-    if (req.method !== 'GET') return next();
-    
-    const accept = req.headers.accept || '';
-    const isHtmlRequest = accept.includes('text/html');
-    
-    // Skip assets: path con punto, @vite paths, src paths
-    const isAsset = req.path.includes('.') || 
-                   req.path.startsWith('/@') || 
-                   req.path.startsWith('/src/') ||
-                   req.originalUrl.includes('/brandinterface/@') ||
-                   req.originalUrl.includes('/brandinterface/src/');
-    
-    // Solo HTML document requests, non assets
-    if (!isHtmlRequest || isAsset) {
-      console.log(`🔄 [Brand Vite] Skip HTML for: ${req.originalUrl} (asset=${isAsset}, html=${isHtmlRequest})`);
-      return next();
-    }
-    
-    try {
-      console.log(`📄 [Brand Vite] Serving HTML for: ${req.originalUrl}`);
-      const url = req.originalUrl.replace(/^\/brandinterface/, '') || '/';
-      const tplPath = path.join(brandWebPath, 'index.html');
-      let tpl = await fs.promises.readFile(tplPath, 'utf-8');
-      const html = await brandVite.transformIndexHtml(url, tpl);
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
-    } catch (e) {
-      console.error(`❌ [Brand Vite] HTML transform error:`, e);
-      brandVite.ssrFixStacktrace(e as Error);
-      next(e);
-    }
-  });
-  
-  console.log("✅ Brand Interface Vite middleware mounted at /brandinterface");
-  console.log("✅ Brand Interface HTML transform handler added");
-  
-  return brandVite;
-}
