@@ -158,9 +158,13 @@ export const staticWelcomeHandler = (req: express.Request, res: express.Response
 /**
  * W3 Suite Frontend Proxy (Catch-all)
  * Handles: /* → localhost:3000/*
+ * Special SPA handling: rewrites all non-API routes to / for React Router
  */
 export const w3FrontendProxy = createProxyMiddleware({
-  ...createProxyOptions(`http://${config.upstream.w3Frontend.host}:${config.upstream.w3Frontend.port}`),
+  ...createProxyOptions(`http://${config.upstream.w3Frontend.host}:${config.upstream.w3Frontend.port}`, {
+    // SPA rewrite: all non-static routes go to index for React Router to handle
+    '^(?!.*\\.)(.*)$': '/'
+  }),
   filter: (pathname: string) => {
     // Exclude paths already handled by other proxies and root welcome page
     return pathname !== '/' &&
