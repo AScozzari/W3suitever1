@@ -24,13 +24,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Brand Interface Frontend - normalize slash and prevent redirect loops
-app.get('/brandinterface', (req, res) => res.redirect(301, '/brandinterface/'));
+// Brand Interface Frontend - direct proxy without redirect loops
 app.use('/brandinterface', createProxyMiddleware({
   target: 'http://localhost:3001',
   changeOrigin: true,
-  ws: true, // WebSocket support for Vite HMR
-  autoRewrite: true // Prevent cross-port Location header loops
+  ws: true // WebSocket support for Vite HMR
 }));
 
 // Brand Interface Backend - fix path duplication
