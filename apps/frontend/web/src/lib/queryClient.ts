@@ -15,7 +15,7 @@ export const queryClient = new QueryClient({
         const tenantId = getCurrentTenantId();
         
         const url = queryKey[0] as string;
-        const fullUrl = url.startsWith('http') ? url : `http://localhost:3004${url}`;
+        const fullUrl = url.startsWith('http') ? url : url;
         
         const res = await fetch(fullUrl, {
           credentials: "include",
@@ -56,7 +56,7 @@ export async function apiRequest(
   const token = await authService.getAccessToken();
   const tenantId = getCurrentTenantId();
   
-  const fullUrl = url.startsWith('http') ? url : `http://localhost:3004${url}`;
+  const fullUrl = url.startsWith('http') ? url : url;
   
   const res = await fetch(fullUrl, {
     ...options,

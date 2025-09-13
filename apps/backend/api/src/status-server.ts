@@ -24,20 +24,22 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Brand Interface Frontend - must come first (more specific)
+// Brand Interface Frontend - normalize slash and prevent redirect loops
+app.get('/brandinterface', (req, res) => res.redirect(301, '/brandinterface/'));
 app.use('/brandinterface', createProxyMiddleware({
   target: 'http://localhost:3001',
   changeOrigin: true,
-  ws: true // WebSocket support for Vite HMR
+  ws: true, // WebSocket support for Vite HMR
+  autoRewrite: true // Prevent cross-port Location header loops
 }));
 
-// Brand Interface Backend
+// Brand Interface Backend - fix path duplication
 app.use('/brand-api', createProxyMiddleware({
   target: 'http://localhost:3002',
   changeOrigin: true
 }));
 
-// W3 Suite Backend 
+// W3 Suite Backend - prevent path duplication
 app.use('/api', createProxyMiddleware({
   target: 'http://localhost:3004',
   changeOrigin: true

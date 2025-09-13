@@ -16,7 +16,7 @@ export default function App() {
         <ThemeProvider>
           <BrandTenantProvider>
             <BrandAuthProvider>
-              <Router base="/brandinterface">
+              <Router base="/brandinterface/">
                 <Routes />
               </Router>
             </BrandAuthProvider>

@@ -38,9 +38,8 @@ class AuthService {
   
   constructor() {
     // Direct backend communication (no gateway)
-    this.baseUrl = process.env.NODE_ENV === 'production' 
-      ? `${window.location.protocol}//${window.location.hostname}:3004`
-      : 'http://localhost:3004';
+    // Use relative paths for same-origin requests (works in both dev and production)
+    this.baseUrl = '';
     
     // Restore token from localStorage on initialization
     this.restoreTokenFromStorage();
