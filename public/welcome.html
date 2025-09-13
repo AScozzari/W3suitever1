@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W3 Suite Enterprise - Piattaforma Gestionale</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .hero {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            max-width: 600px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+        .apps-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .app-card {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .app-card:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        .app-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .app-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .app-desc {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .feature-text {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+        }
+        @media (max-width: 768px) {
+            .apps-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+            .hero { padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="logo">🚀</div>
+        <h1>W3 Suite Enterprise</h1>
+        <p class="subtitle">Piattaforma gestionale unificata per aziende moderne<br>CRM, Inventario, POS e Brand Management in un'unica soluzione</p>
+        
+        <div class="apps-grid">
+            <a href="/staging/login" class="app-card">
+                <div class="app-icon">🏢</div>
+                <div class="app-title">W3 Suite</div>
+                <div class="app-desc">Gestione aziendale completa</div>
+            </a>
+            
+            <a href="/brandinterface/login" class="app-card">
+                <div class="app-icon">🏷️</div>
+                <div class="app-title">Brand Interface</div>
+                <div class="app-desc">Amministrazione brand</div>
+            </a>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <div class="feature-text">CRM</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📦</div>
+                <div class="feature-text">Inventario</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">💰</div>
+                <div class="feature-text">POS</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔐</div>
+                <div class="feature-text">OAuth2</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🗄️</div>
+                <div class="feature-text">Database</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚙️</div>
+                <div class="feature-text">Multi-tenant</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -3,9 +3,15 @@
  * Intelligent routing rules for W3 Suite and Brand Interface services
  */
 
-import { createProxyMiddleware, Options } from 'http-proxy-middleware';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { config } from './config.js';
 import logger from './logger.js';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Proxy configuration options factory
@@ -13,7 +19,7 @@ import logger from './logger.js';
 const createProxyOptions = (
   target: string,
   pathRewrite?: Record<string, string>
-): Options => ({
+) => ({
   target,
   changeOrigin: true,
   ws: true, // Enable WebSocket proxying
@@ -23,7 +29,7 @@ const createProxyOptions = (
   pathRewrite,
 
   // Enhanced logging with sanitized headers
-  onProxyReq: (proxyReq, req) => {
+  onProxyReq: (proxyReq: any, req: any) => {
     // Sanitize headers to avoid logging sensitive information
     const sanitizedHeaders = { ...req.headers };
     delete sanitizedHeaders.authorization;
@@ -39,7 +45,7 @@ const createProxyOptions = (
     });
   },
 
-  onProxyRes: (proxyRes, req) => {
+  onProxyRes: (proxyRes: any, req: any) => {
     logger.debug('Proxy response', {
       method: req.method,
       url: req.url,
@@ -50,7 +56,7 @@ const createProxyOptions = (
     });
   },
 
-  onError: (err, req, res) => {
+  onError: (err: any, req: any, res: any) => {
     logger.error('Proxy error', {
       error: err.message,
       method: req.method,
@@ -97,7 +103,7 @@ const createProxyOptions = (
  */
 export const brandApiProxy = createProxyMiddleware({
   ...createProxyOptions(`http://${config.upstream.brandBackend.host}:${config.upstream.brandBackend.port}`),
-  filter: (pathname) => pathname.startsWith('/brand-api/'),
+  filter: (pathname: string) => pathname.startsWith('/brand-api/'),
 });
 
 /**
@@ -107,7 +113,7 @@ export const brandApiProxy = createProxyMiddleware({
  */
 export const oauthProxy = createProxyMiddleware({
   ...createProxyOptions(`http://${config.upstream.w3Backend.host}:${config.upstream.w3Backend.port}`),
-  filter: (pathname) => pathname.startsWith('/oauth2/') || pathname.startsWith('/.well-known/'),
+  filter: (pathname: string) => pathname.startsWith('/oauth2/') || pathname.startsWith('/.well-known/'),
 });
 
 /**
@@ -116,7 +122,7 @@ export const oauthProxy = createProxyMiddleware({
  */
 export const w3ApiProxy = createProxyMiddleware({
   ...createProxyOptions(`http://${config.upstream.w3Backend.host}:${config.upstream.w3Backend.port}`),
-  filter: (pathname) => pathname.startsWith('/api/'),
+  filter: (pathname: string) => pathname.startsWith('/api/'),
 });
 
 /**
@@ -128,8 +134,26 @@ export const brandFrontendProxy = createProxyMiddleware({
     `http://${config.upstream.brandFrontend.host}:${config.upstream.brandFrontend.port}`,
     { '^/brandinterface': '' } // Remove /brandinterface prefix
   ),
-  filter: (pathname) => pathname.startsWith('/brandinterface/'),
+  filter: (pathname: string) => pathname.startsWith('/brandinterface/'),
 });
+
+/**
+ * Static Welcome Page Handler
+ * Serves welcome.html for root URL
+ */
+export const staticWelcomeHandler = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.path === '/' || req.path === '') {
+    const welcomePath = path.join(__dirname, '../../../public/welcome.html');
+    res.sendFile(welcomePath, (err) => {
+      if (err) {
+        logger.error('Failed to serve welcome page', { error: err.message });
+        next(); // Fall back to W3 Frontend proxy
+      }
+    });
+  } else {
+    next();
+  }
+};
 
 /**
  * W3 Suite Frontend Proxy (Catch-all)
@@ -137,9 +161,11 @@ export const brandFrontendProxy = createProxyMiddleware({
  */
 export const w3FrontendProxy = createProxyMiddleware({
   ...createProxyOptions(`http://${config.upstream.w3Frontend.host}:${config.upstream.w3Frontend.port}`),
-  filter: (pathname) => {
-    // Exclude paths already handled by other proxies
-    return !pathname.startsWith('/api/') &&
+  filter: (pathname: string) => {
+    // Exclude paths already handled by other proxies and root welcome page
+    return pathname !== '/' &&
+           pathname !== '' &&
+           !pathname.startsWith('/api/') &&
            !pathname.startsWith('/oauth2/') &&
            !pathname.startsWith('/.well-known/') &&
            !pathname.startsWith('/brand-api/') &&

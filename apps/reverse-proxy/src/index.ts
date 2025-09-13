@@ -30,6 +30,7 @@ import {
   w3ApiProxy,
   brandFrontendProxy,
   w3FrontendProxy,
+  staticWelcomeHandler,
   logRoutingRules,
 } from './routes.js';
 
@@ -136,7 +137,10 @@ class W3SuiteProxyServer {
     // 4. Brand Interface Frontend (/brandinterface/*)
     this.app.use(brandFrontendProxy);
 
-    // 5. W3 Suite Frontend (/* - catch-all, lowest priority)
+    // 5. Static welcome page for root URL (must come before catch-all)
+    this.app.use(staticWelcomeHandler);
+
+    // 6. W3 Suite Frontend (/* - catch-all, lowest priority)
     this.app.use(w3FrontendProxy);
 
     logger.info('✅ Routing rules configured');
