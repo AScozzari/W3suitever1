@@ -1,7 +1,6 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
-import ws from "ws";
 import * as publicSharedSchema from "../db/schema/public";
 import * as w3suiteSchema from "../db/schema/w3suite";
 import * as brandInterfaceSchema from "../db/schema/brand-interface";
@@ -13,7 +12,7 @@ const schema = {
   ...brandInterfaceSchema    // Brand Interface system
 };
 
-neonConfig.webSocketConstructor = ws;
+// Standard TCP connection - no WebSocket needed
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -21,8 +20,26 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+export const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  max: 3,
+  keepAlive: true,
+  idleTimeoutMillis: 30000,
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 5000,
+});
+
+// Add error handling for connection pool
+pool.on('error', (err) => {
+  console.error('❌ Drizzle pool error:', err.message);
+  if (err.code === '57P01' || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+    console.log('🔄 Drizzle connection will be retried automatically');
+  }
+});
+
+export const db = drizzle(pool, { schema });
+
+console.log('✅ Drizzle ORM initialized with TCP connection');
 
 // ============================================================================
 // MULTITENANT DATABASE CONTEXT MANAGEMENT

@@ -13,7 +13,6 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
-    "@neondatabase/serverless": "^0.10.4",
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
@@ -52,6 +51,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/memoizee": "^0.4.12",
     "@types/morgan": "^1.9.10",
+    "@types/pg": "^8.15.5",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -83,6 +83,7 @@
     "openid-client": "^6.7.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
+    "pg": "^8.16.3",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
