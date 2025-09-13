@@ -84,26 +84,9 @@ if (process.env.NODE_ENV === 'development') {
   setTimeout(() => {
     console.log('🎨 Phase 2: Starting Frontend Services...');
     
-    // Start W3 Suite Frontend on port 3000
-    console.log('   Starting W3 Suite Frontend (port 3000)...');
-    const w3Frontend = spawn('npm', ['run', 'dev'], {
-      cwd: 'apps/frontend/web',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      shell: true
-    });
-    childProcesses.push({ name: 'W3 Frontend', process: w3Frontend });
-    
-    // Prefix W3 Frontend output
-    w3Frontend.stdout?.on('data', (data) => {
-      process.stdout.write(`[W3-WEB] ${data}`);
-    });
-    w3Frontend.stderr?.on('data', (data) => {
-      process.stderr.write(`[W3-WEB] ${data}`);
-    });
-    
-    w3Frontend.on('error', (err) => {
-      console.error('[W3-WEB] Failed to start:', err);
-    });
+    // W3 Suite Frontend is now served ONLY through reverse proxy (port 80)
+    // This eliminates port 8000 from URL - W3 content is proxied from static build
+    console.log('   ✅ W3 Suite Frontend will be served through reverse proxy only (clean URL)');
 
     // Start Brand Interface Frontend on port 3001
     console.log('   Starting Brand Interface Frontend (port 3001)...');
