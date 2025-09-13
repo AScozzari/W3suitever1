@@ -39,8 +39,8 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// Fixed port for W3 Backend
-const port = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
+// Fixed port for W3 Backend - using 5000 for Replit compatibility
+const port = parseInt(process.env.W3_BACKEND_PORT || '5000', 10);
 
 httpServer.listen(port, "0.0.0.0", () => {
   console.log(`🚀 W3 Suite backend running on fixed port ${port}`);
