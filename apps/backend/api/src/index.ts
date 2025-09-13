@@ -21,32 +21,42 @@ if (isReplit) {
   console.log('🔧 Starting W3 Suite backend on port 3004...');
   startBackend();
 
-  // Then start reverse proxy on port 5000
-  const proxy = spawn('tsx', [proxyPath], {
-    env: { ...process.env, NODE_ENV: 'development', PROXY_PORT: '5000' },
-    stdio: 'inherit'
+  // Start W3 Frontend on port 3000
+  console.log('🎨 Starting W3 Suite frontend on port 3000...');
+  const frontendPath = path.join(__dirname, '../../../frontend/web');
+  const frontend = spawn('npm', ['run', 'dev'], {
+    cwd: frontendPath,
+    env: { ...process.env, NODE_ENV: 'development' },
+    stdio: ['ignore', 'pipe', 'pipe']
   });
   
-  proxy.on('error', (error) => {
-    console.error('❌ Failed to start reverse proxy:', error);
-    // Fallback to backend only
-    startBackend();
+  frontend.stdout?.on('data', (data) => {
+    console.log(`[W3-Frontend] ${data}`);
   });
   
-  proxy.on('close', (code) => {
-    console.log(`🚫 Reverse proxy exited with code ${code}`);
-    process.exit(code);
+  frontend.stderr?.on('data', (data) => {
+    console.log(`[W3-Frontend] ${data}`);
   });
-  
-  // Handle process termination
-  const cleanup = () => {
-    console.log('🚫 Shutting down reverse proxy...');
-    proxy.kill('SIGTERM');
-    setTimeout(() => proxy.kill('SIGKILL'), 5000);
-  };
-  
-  process.on('SIGTERM', cleanup);
-  process.on('SIGINT', cleanup);
+
+  // Wait a bit for frontend to start, then start reverse proxy
+  setTimeout(() => {
+    console.log('🔄 Starting reverse proxy on port 5000...');
+    const proxy = spawn('tsx', [proxyPath], {
+      env: { ...process.env, NODE_ENV: 'development', PROXY_PORT: '5000' },
+      stdio: 'inherit'
+    });
+    
+    proxy.on('error', (error) => {
+      console.error('❌ Failed to start reverse proxy:', error);
+      // Fallback to backend only
+      console.log('⚠️ Continuing with backend only...');
+    });
+    
+    proxy.on('close', (code) => {
+      console.log(`🚫 Reverse proxy exited with code ${code}`);
+      process.exit(code);
+    });
+  }, 3000); // Wait 3 seconds for frontend to initialize
   
 } else {
   // Local development - start backend only
