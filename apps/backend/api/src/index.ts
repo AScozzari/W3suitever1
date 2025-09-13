@@ -1,7 +1,12 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { registerRoutes } from "./core/routes.js";
 import { seedCommercialAreas } from "./core/seed-areas.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -22,11 +27,23 @@ app.use(cors({
 
 app.use(express.json());
 
+// Serve static files from public directory
+const publicPath = path.join(__dirname, "../../../../public");
+app.use(express.static(publicPath));
+
 // Seed dati di riferimento
 await seedCommercialAreas();
 
 // Crea il server HTTP
 const httpServer = await registerRoutes(app);
+
+// Serve frontend for all non-API routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/oauth2') || req.path.startsWith('/.well-known')) {
+    return next();
+  }
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 // W3 Suite backend cleanup
 process.on("SIGTERM", () => {

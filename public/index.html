@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W3 Suite - Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+        .header { background: #FF6900; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .card h3 { color: #333; margin-bottom: 1rem; }
+        .status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .btn { background: #FF6900; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        .btn:hover { background: #e55a00; }
+        .api-status { margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        function App() {
+            const [apiStatus, setApiStatus] = useState('checking');
+            const [tenants, setTenants] = useState([]);
+            
+            useEffect(() => {
+                // Test API connection
+                fetch('/api/tenants')
+                    .then(res => res.ok ? res.json() : Promise.reject('API Error'))
+                    .then(data => {
+                        setApiStatus('connected');
+                        setTenants(Array.isArray(data) ? data : []);
+                    })
+                    .catch(() => setApiStatus('error'));
+            }, []);
+            
+            return (
+                <div>
+                    <header className="header">
+                        <h1>🚀 W3 Suite</h1>
+                        <div>
+                            <span className={`status ${apiStatus === 'connected' ? 'success' : 'warning'}`}>
+                                {apiStatus === 'connected' ? '✅ API Connected' : 
+                                 apiStatus === 'error' ? '❌ API Error' : '⏳ Checking...'}
+                            </span>
+                        </div>
+                    </header>
+                    
+                    <div className="container">
+                        <h2>Dashboard</h2>
+                        
+                        <div className="grid">
+                            <div className="card">
+                                <h3>🏢 Tenants</h3>
+                                <p>Gestisci le aziende registrate nel sistema</p>
+                                <div className="api-status">
+                                    <strong>Tenants trovati: {tenants.length}</strong>
+                                    {tenants.length > 0 && (
+                                        <ul style={{marginTop: '0.5rem', paddingLeft: '1rem'}}>
+                                            {tenants.slice(0, 3).map((tenant, i) => (
+                                                <li key={i}>{tenant.name || tenant.id}</li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div className="card">
+                                <h3>🔐 OAuth2</h3>
+                                <p>Sistema di autenticazione e autorizzazione</p>
+                                <button className="btn" onClick={() => window.open('/oauth2/authorize', '_blank')}>
+                                    Test OAuth2
+                                </button>
+                            </div>
+                            
+                            <div className="card">
+                                <h3>📊 CRM</h3>
+                                <p>Gestione clienti e relazioni commerciali</p>
+                                <span className="status success">Attivo</span>
+                            </div>
+                            
+                            <div className="card">
+                                <h3>📦 Inventory</h3>
+                                <p>Gestione magazzino e prodotti</p>
+                                <span className="status success">Attivo</span>
+                            </div>
+                            
+                            <div className="card">
+                                <h3>💰 POS</h3>
+                                <p>Punto vendita e transazioni</p>
+                                <span className="status success">Attivo</span>
+                            </div>
+                            
+                            <div className="card">
+                                <h3>⚙️ Configurazione</h3>
+                                <p>Impostazioni sistema e personalizzazioni</p>
+                                <div style={{marginTop: '1rem'}}>
+                                    <div><strong>Backend:</strong> porta 5000</div>
+                                    <div><strong>Database:</strong> PostgreSQL</div>
+                                    <div><strong>Auth:</strong> OAuth2 + JWT</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

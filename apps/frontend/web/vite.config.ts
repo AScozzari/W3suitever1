@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 5000,
     host: "0.0.0.0",
     strictPort: true, // Exit if port is not available
     hmr: {
@@ -22,7 +22,7 @@ export default defineConfig({
     proxy: {
       // Proxy API calls to backend server
       '/api': {
-        target: 'http://localhost:3004',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {
@@ -39,13 +39,13 @@ export default defineConfig({
       },
       // Proxy OAuth2 endpoints to backend server
       '/oauth2': {
-        target: 'http://localhost:3004',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       },
       // Proxy .well-known endpoints to backend server
       '/.well-known': {
-        target: 'http://localhost:3004',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       }
