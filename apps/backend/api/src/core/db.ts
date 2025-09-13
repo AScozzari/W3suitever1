@@ -27,12 +27,16 @@ export const pool = new Pool({
   idleTimeoutMillis: 30000,
   ssl: { rejectUnauthorized: false },
   connectionTimeoutMillis: 5000,
+  // Set search_path to prioritize w3suite schema for multitenant operations
+  options: '-c search_path=w3suite,public'
 });
 
 // Add error handling for connection pool
 pool.on('error', (err) => {
   console.error('❌ Drizzle pool error:', err.message);
-  if (err.code === '57P01' || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+  // Type assertion for PostgreSQL/Node.js errors that have a code property
+  const pgError = err as any;
+  if (pgError.code === '57P01' || pgError.code === 'ECONNRESET' || pgError.code === 'ETIMEDOUT') {
     console.log('🔄 Drizzle connection will be retried automatically');
   }
 });

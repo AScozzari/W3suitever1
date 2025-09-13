@@ -27,6 +27,12 @@ export default defineConfig({
       "localhost",
       "127.0.0.1"
     ],
+    // HMR configuration for reverse proxy compatibility  
+    hmr: {
+      port: 3001,
+      host: 'localhost',
+      clientPort: undefined // Use the port from the request URL
+    },
     proxy: {
       '/brand-api': {
         target: 'http://localhost:3002',

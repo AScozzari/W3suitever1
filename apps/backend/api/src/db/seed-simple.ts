@@ -79,16 +79,18 @@ async function seedDatabase() {
       {
         id: '40000000-0000-0000-0000-000000000001',
         tenantId: DEMO_TENANT_ID,
-        name: 'WindTre Retail Milano Srl',
-        vat: 'IT12345678901',
-        status: 'Attiva'
+        codice: 'WTR001',
+        nome: 'WindTre Retail Milano Srl',
+        pIva: 'IT12345678901',
+        stato: 'Attiva'
       },
       {
         id: '40000000-0000-0000-0000-000000000002',
         tenantId: DEMO_TENANT_ID,
-        name: 'Digital Services Italia Spa',
-        vat: 'IT98765432101',
-        status: 'Attiva'
+        codice: 'DSI001',
+        nome: 'Digital Services Italia Spa',
+        pIva: 'IT98765432101',
+        stato: 'Attiva'
       }
     ]).onConflictDoNothing();
 
@@ -100,12 +102,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000001',
         code: 'MI001',
-        name: 'Milano Duomo',
+        nome: 'Milano Duomo',
         channelId: '10000000-0000-0000-0000-000000000001',
         commercialAreaId: '20000000-0000-0000-0000-000000000001',
         address: 'Piazza Duomo, 1',
-        city: 'Milano',
-        province: 'MI',
+        citta: 'Milano',
+        provincia: 'MI',
         cap: '20121',
         region: 'Lombardia',
         status: 'Attivo'
@@ -115,12 +117,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000001',
         code: 'MI002',
-        name: 'Milano Corso Buenos Aires',
+        nome: 'Milano Corso Buenos Aires',
         channelId: '10000000-0000-0000-0000-000000000001',
         commercialAreaId: '20000000-0000-0000-0000-000000000001',
         address: 'Corso Buenos Aires, 33',
-        city: 'Milano',
-        province: 'MI',
+        citta: 'Milano',
+        provincia: 'MI',
         cap: '20124',
         region: 'Lombardia',
         status: 'Attivo'
@@ -130,12 +132,12 @@ async function seedDatabase() {
         tenantId: DEMO_TENANT_ID,
         legalEntityId: '40000000-0000-0000-0000-000000000002',
         code: 'RM001',
-        name: 'Roma Termini',
+        nome: 'Roma Termini',
         channelId: '10000000-0000-0000-0000-000000000002',
         commercialAreaId: '20000000-0000-0000-0000-000000000003',
         address: 'Via Marsala, 25',
-        city: 'Roma',
-        province: 'RM',
+        citta: 'Roma',
+        provincia: 'RM',
         cap: '00185',
         region: 'Lazio',
         status: 'Attivo'

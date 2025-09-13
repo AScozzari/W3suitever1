@@ -135,7 +135,9 @@ function validateRedirectUri(clientId: string, redirectUri: string): boolean {
 
 async function getUserByCredentials(username: string, password: string) {
   try {
-    // Query the database for the user using the w3suite schema
+    console.log(`🔐 Authenticating user: ${username}`);
+    
+    // SECURITY: Fail-closed authentication - Query database for user by email
     const [user] = await db
       .select()
       .from(users)
@@ -143,33 +145,32 @@ async function getUserByCredentials(username: string, password: string) {
       .limit(1);
     
     if (!user) {
-      console.log(`🔍 User not found: ${username}`);
-      // For demo purposes, check hardcoded admin credentials
-      if (username === 'admin' && password === 'admin123') {
-        return {
-          id: 'admin-user',
-          email: 'admin@w3suite.com',
-          tenantId: '00000000-0000-0000-0000-000000000001',
-          roles: ['super_admin', 'tenant_admin'],
-          firstName: 'Admin',
-          lastName: 'User'
-        };
-      }
-      return null;
+      console.log(`❌ Authentication failed: User not found in database: ${username}`);
+      return null; // FAIL-CLOSED: No fallback credentials allowed
     }
     
-    // For demo purposes, we use a simple password check
-    // In production, this would use OAuth2/OIDC or bcrypt-hashed passwords
+    console.log(`🔍 User found in database: ${user.email} (ID: ${user.id})`);
+    
+    // Demo password validation - matches seed data users
+    // In production, this would use bcrypt-hashed passwords
     const demoPasswords: Record<string, string> = {
-      'marco.rossi@w3demo.com': 'password123',
-      'giulia.bianchi@w3demo.com': 'password123',
-      'admin@w3suite.com': 'admin123'
+      // Admin user
+      'admin@w3suite.com': 'admin123',
+      // WindTre seed users - all use standard password
+      'mario.rossi@windtre.it': 'password123',
+      'giulia.bianchi@windtre.it': 'password123', 
+      'luca.verdi@windtre.it': 'password123',
+      'marco.bianchi@windtre.it': 'password123',
+      'roberto.esposito@windtre.it': 'password123',
+      'francesca.marino@windtre.it': 'password123',
+      'alessandro.greco@windtre.it': 'password123',
+      'chiara.bruno@windtre.it': 'password123',
+      'matteo.costa@windtre.it': 'password123'
     };
     
-    const validPassword = demoPasswords[user.email || ''] || 'password123';
-    
-    if (password !== validPassword) {
-      console.log(`🔒 Invalid password for user: ${username}`);
+    const expectedPassword = demoPasswords[user.email || ''];
+    if (!expectedPassword || password !== expectedPassword) {
+      console.log(`❌ Authentication failed: Invalid password for user: ${username}`);
       return null;
     }
     
@@ -183,8 +184,8 @@ async function getUserByCredentials(username: string, password: string) {
       lastName: user.lastName || ''
     };
   } catch (error) {
-    console.error('Error authenticating user:', error);
-    return null;
+    console.error('❌ Authentication error:', error);
+    return null; // FAIL-CLOSED: Return null on any errors
   }
 }
 
