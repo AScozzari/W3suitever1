@@ -37,8 +37,16 @@ await seedCommercialAreas();
 // Crea il server HTTP
 const httpServer = await registerRoutes(app);
 
-// Serve static page for all routes
-app.get('*', (req, res) => {
+// Serve static page for non-API routes only
+app.get('*', (req, res, next) => {
+  // Don't serve static page for API, OAuth2, or well-known routes
+  if (req.path.startsWith('/api') || 
+      req.path.startsWith('/oauth2') || 
+      req.path.startsWith('/.well-known')) {
+    return next();
+  }
+  
+  // Serve the static page for all other routes (including frontend routes like /staging/login)
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
