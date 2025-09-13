@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  base: '/brandinterface/',
   plugins: [
     react(),
   ],
