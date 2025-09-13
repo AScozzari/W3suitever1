@@ -44,50 +44,12 @@ try {
     console.log('🚫 Brand API server closed');
   });
 
-  // Trova una porta libera per il Brand Backend
-  const preferredPort = parseInt(process.env.BRAND_BACKEND_PORT || '3002', 10);
-  const alternativePorts = [3002, 3008, 3009, 3010];
-  
-  let port = preferredPort;
-  
-  // Check if preferred port is available, otherwise try alternatives
-  const net = await import('net');
-  
-  const checkPort = (portToCheck: number): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const server = net.createServer();
-      server.listen(portToCheck, () => {
-        server.once('close', () => resolve(true));
-        server.close();
-      });
-      server.on('error', () => resolve(false));
-    });
-  };
-  
-  for (const tryPort of alternativePorts) {
-    const isAvailable = await checkPort(tryPort);
-    if (isAvailable) {
-      port = tryPort;
-      console.log(`✅ Using port ${port} for Brand Backend`);
-      break;
-    }
-  }
+  // Fixed port for Brand Backend
+  const port = parseInt(process.env.BRAND_BACKEND_PORT || '3002', 10);
   
   httpServer.listen(port, "0.0.0.0", () => {
-    console.log(`✅ Brand API server running on port ${port}`);
+    console.log(`✅ Brand API server running on fixed port ${port}`);
     console.log(`🔌 Brand API available at: http://localhost:${port}/brand-api/health`);
-  });
-
-  httpServer.on('error', (error: any) => {
-    if (error.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${port} is already in use. Please free the port and restart.`);
-      console.error('💡 Try: pkill -f "tsx" && ./start-enterprise.sh');
-    } else {
-      console.error('❌ Brand API server error:', error);
-    }
-    if (process.env.NODE_ENV !== 'development') {
-      process.exit(1);
-    }
   });
 
 } catch (error) {

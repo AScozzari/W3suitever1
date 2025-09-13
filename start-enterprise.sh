@@ -20,12 +20,12 @@ sleep 2
 export NODE_ENV=${NODE_ENV:-development}
 export JWT_SECRET=${JWT_SECRET:-w3suite-dev-secret-2025}
 
-# Port configuration with dedicated backend ports
-export W3_FRONTEND_PORT=${W3_FRONTEND_PORT:-3000}
-export W3_BACKEND_PORT=${W3_BACKEND_PORT:-3101}  # Dedicated backend port
-export BRAND_FRONTEND_PORT=${BRAND_FRONTEND_PORT:-3001}
-export BRAND_BACKEND_PORT=${BRAND_BACKEND_PORT:-3102}  # Dedicated backend port  
-export PROXY_PORT=${PROXY_PORT:-5000}
+# Fixed port configuration - no alternatives
+export W3_FRONTEND_PORT=3000
+export W3_BACKEND_PORT=3004
+export BRAND_FRONTEND_PORT=3001
+export BRAND_BACKEND_PORT=3002
+export PROXY_PORT=5000
 
 echo "🔧 Environment Configuration:"
 echo "  NODE_ENV: $NODE_ENV"
@@ -34,25 +34,26 @@ echo "  Service Ports: W3 FE:$W3_FRONTEND_PORT | W3 BE:$W3_BACKEND_PORT | Brand 
 echo "  Reverse Proxy: $PROXY_PORT"
 echo ""
 
-# Function to check if port is free
-check_port() {
+# Function to kill processes on specific port
+kill_port() {
   local port=$1
-  if lsof -i :$port >/dev/null 2>&1; then
-    echo "❌ Port $port is occupied"
-    return 1
-  else
-    echo "✅ Port $port is free"
-    return 0
+  local pids=$(lsof -ti :$port 2>/dev/null)
+  if [ ! -z "$pids" ]; then
+    echo "🔪 Killing processes on port $port: $pids"
+    kill -9 $pids 2>/dev/null || true
+    sleep 1
   fi
 }
 
-# Check critical ports
-echo "🔍 Checking port availability..."
-check_port 3000 || echo "  W3 Frontend will use alternative port"
-check_port 3001 || echo "  Brand Frontend will use alternative port"  
-check_port 3101 || exit 1
-check_port 3102 || exit 1
-check_port 5000 || exit 1
+# Kill processes on required ports
+echo "🔪 Freeing required ports..."
+kill_port 3000  # W3 Frontend
+kill_port 3001  # Brand Frontend
+kill_port 3002  # Brand Backend
+kill_port 3004  # W3 Backend
+kill_port 5000  # Reverse Proxy
+
+echo "✅ All required ports freed"
 
 echo ""
 echo "🚀 Starting all enterprise services in proper order..."

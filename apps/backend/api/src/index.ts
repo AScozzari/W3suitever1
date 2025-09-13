@@ -39,48 +39,11 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-// Trova una porta libera per il W3 Backend
-const preferredPort = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
-const alternativePorts = [3004, 3011, 3012, 3013];
-
-let port = preferredPort;
-
-// Check if preferred port is available, otherwise try alternatives
-const net = await import('net');
-
-const checkPort = (portToCheck: number): Promise<boolean> => {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.listen(portToCheck, () => {
-      server.once('close', () => resolve(true));
-      server.close();
-    });
-    server.on('error', () => resolve(false));
-  });
-};
-
-for (const tryPort of alternativePorts) {
-  const isAvailable = await checkPort(tryPort);
-  if (isAvailable) {
-    port = tryPort;
-    console.log(`✅ Using port ${port} for W3 Backend`);
-    break;
-  }
-}
-
-httpServer.on('error', (error: any) => {
-  if (error.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${port} is already in use. Please free the port and restart.`);
-    console.error('💡 Try: pkill -f "tsx" && ./start-enterprise.sh');
-    process.exit(1);
-  } else {
-    console.error('❌ W3 Suite backend server error:', error);
-    throw error;
-  }
-});
+// Fixed port for W3 Backend
+const port = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
 
 httpServer.listen(port, "0.0.0.0", () => {
-  console.log(`🚀 W3 Suite backend running on port ${port}`);
+  console.log(`🚀 W3 Suite backend running on fixed port ${port}`);
   console.log(`🔌 API available at: http://localhost:${port}/api`);
   console.log(`🔍 Health check: http://localhost:${port}/api/tenants`);
 });
