@@ -162,23 +162,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     };
   }, [leftSidebarTimer, workspaceTimer]);
 
-  // Helper function to handle workspace tab click with auto-collapse
+  // Helper function to handle workspace tab click - 1500ms hover-only behavior
   const handleWorkspaceTabClick = (tab: string) => {
     setActiveWorkspaceTab(tab);
-    // Se il workspace era collapsed, espandilo e avvia timer per auto-collapse
+    // Se il workspace era collapsed, espandilo senza timer automatico
     if (workspaceCollapsed) {
       setWorkspaceCollapsed(false);
     }
-    // Cancella timer precedente
-    if (workspaceTimer) {
-      clearTimeout(workspaceTimer);
-    }
-    // Avvia nuovo timer per auto-collapse dopo interazione
-    const timer = setTimeout(() => {
-      setWorkspaceCollapsed(true);
-      setWorkspaceTimer(null);
-    }, 3000); // 3 secondi dopo il click
-    setWorkspaceTimer(timer);
+    // NO click-based auto-collapse timer - solo hover-only behavior
   };
   
   // Dati tasks dal repository GitHub

@@ -95,9 +95,9 @@ export default function CRM() {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      active: 'bg-green-100 text-green-800',
-      lead: 'bg-blue-100 text-blue-800',
-      prospect: 'bg-yellow-100 text-yellow-800'
+      active: 'glass-card bg-green-500/20 text-green-800 border-green-400/30',
+      lead: 'glass-card bg-orange-500/20 text-orange-800 border-orange-400/30',
+      prospect: 'glass-card bg-purple-500/20 text-purple-800 border-purple-400/30'
     };
     const labels = {
       active: 'Attivo',
@@ -105,7 +105,7 @@ export default function CRM() {
       prospect: 'Prospect'
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles]}`}>
+      <span className={`px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide border ${styles[status as keyof typeof styles]}`}>
         {labels[status as keyof typeof labels]}
       </span>
     );
@@ -114,180 +114,211 @@ export default function CRM() {
   return (
     <BrandLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-          <div className="flex items-center justify-between mb-6">
+        {/* Modern CRM Header */}
+        <div className="glass-card p-8 border-2 border-purple-300/30" data-testid="crm-header">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold brand-gradient-text">
+              <h1 className="text-4xl font-bold brand-gradient-text">
                 CRM Management
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-700 mt-3 flex items-center gap-3 font-medium">
+                <Users className="w-5 h-5 text-purple-600" strokeWidth={2} />
                 Gestione clienti {isCrossTenant ? 'cross-tenant' : `per ${currentTenant}`}
+                {isCrossTenant && <span className="action-badge ml-2">MULTI-TENANT</span>}
               </p>
             </div>
-            <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all flex items-center space-x-2">
-              <UserPlus className="w-5 h-5" />
-              <span>Nuovo Cliente</span>
+            <button className="glass-button-orange px-6 py-3 flex items-center space-x-3" data-testid="button-new-customer">
+              <UserPlus className="w-5 h-5" strokeWidth={2.5} />
+              <span className="font-semibold">Nuovo Cliente</span>
             </button>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-purple-600">
-                  Clienti Totali
-                </CardTitle>
+          {/* Modern CRM Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card className="glass-card bg-gradient-to-br from-purple-500/10 to-purple-600/15 border-2 border-purple-400/30 hover:border-purple-400/50 transition-all duration-300" data-testid="card-total-customers">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
+                    Clienti Totali
+                  </CardTitle>
+                  <div className="p-2 bg-purple-500/20 rounded-xl">
+                    <Users className="w-6 h-6 text-purple-600" strokeWidth={2.5} />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-700">248</div>
-                <p className="text-xs text-purple-600">+12% questo mese</p>
+                <div className="text-3xl font-bold text-purple-800 mb-2">248</div>
+                <p className="text-sm text-purple-700 font-medium">+12% questo mese</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-blue-600">
-                  Valore Pipeline
-                </CardTitle>
+            <Card className="glass-card bg-gradient-to-br from-orange-500/10 to-orange-600/15 border-2 border-orange-400/30 hover:border-orange-400/50 transition-all duration-300" data-testid="card-pipeline-value">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold text-orange-700 uppercase tracking-wide">
+                    Valore Pipeline
+                  </CardTitle>
+                  <div className="p-2 bg-orange-500/20 rounded-xl">
+                    <DollarSign className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-700">€165K</div>
-                <p className="text-xs text-blue-600">5 deals in corso</p>
+                <div className="text-3xl font-bold text-orange-800 mb-2">€165K</div>
+                <p className="text-sm text-orange-700 font-medium">5 deals in corso</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-green-600">
-                  Tasso Conversione
-                </CardTitle>
+            <Card className="glass-card bg-gradient-to-br from-green-500/10 to-green-600/15 border-2 border-green-400/30 hover:border-green-400/50 transition-all duration-300" data-testid="card-conversion-rate">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold text-green-700 uppercase tracking-wide">
+                    Tasso Conversione
+                  </CardTitle>
+                  <div className="p-2 bg-green-500/20 rounded-xl">
+                    <Target className="w-6 h-6 text-green-600" strokeWidth={2.5} />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-700">68%</div>
-                <p className="text-xs text-green-600">+5% vs mese scorso</p>
+                <div className="text-3xl font-bold text-green-800 mb-2">68%</div>
+                <p className="text-sm text-green-700 font-medium">+5% vs mese scorso</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-amber-600">
-                  Nuovi Lead
-                </CardTitle>
+            <Card className="glass-card bg-gradient-to-br from-purple-400/10 to-purple-500/15 border-2 border-purple-300/30 hover:border-purple-300/50 transition-all duration-300" data-testid="card-new-leads">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
+                    Nuovi Lead
+                  </CardTitle>
+                  <div className="p-2 bg-purple-400/20 rounded-xl">
+                    <TrendingUp className="w-6 h-6 text-purple-600" strokeWidth={2.5} />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-amber-700">34</div>
-                <p className="text-xs text-amber-600">Questa settimana</p>
+                <div className="text-3xl font-bold text-purple-800 mb-2">34</div>
+                <p className="text-sm text-purple-700 font-medium">Questa settimana</p>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Customer List */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-          {/* Search and Filters */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4 flex-1">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        {/* Modern Customer List */}
+        <div className="glass-card p-8 border-2 border-purple-300/20" data-testid="customer-list">
+          {/* Modern Search and Filters */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-6 flex-1">
+              <div className="relative flex-1 max-w-lg">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-purple-500" strokeWidth={2} />
                 <input
                   type="text"
-                  placeholder="Cerca clienti..."
+                  placeholder="Cerca clienti per nome, email o azienda..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="glass-input pl-12 pr-6 py-4 w-full text-gray-800 font-medium placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  data-testid="input-search-customers"
                 />
               </div>
               
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="glass-button-purple px-6 py-4 text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
+                data-testid="select-status-filter"
               >
-                <option value="all">Tutti gli stati</option>
-                <option value="active">Attivi</option>
-                <option value="lead">Lead</option>
-                <option value="prospect">Prospect</option>
+                <option value="all" className="bg-gray-800 text-white">Tutti gli stati</option>
+                <option value="active" className="bg-gray-800 text-white">Attivi</option>
+                <option value="lead" className="bg-gray-800 text-white">Lead</option>
+                <option value="prospect" className="bg-gray-800 text-white">Prospect</option>
               </select>
 
-              <button className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center space-x-2">
-                <Filter className="w-4 h-4" />
-                <span>Altri filtri</span>
+              <button className="glass-button px-6 py-4 flex items-center space-x-3 hover:bg-purple-50 transition-all duration-200" data-testid="button-advanced-filters">
+                <Filter className="w-5 h-5" strokeWidth={2} />
+                <span className="font-medium">Altri Filtri</span>
               </button>
             </div>
           </div>
 
-          {/* Customer Table */}
-          <div className="overflow-x-auto">
+          {/* Modern Customer Table */}
+          <div className="overflow-x-auto rounded-xl">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Cliente</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Azienda</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Stato</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Valore</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Rating</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Ultimo Contatto</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Tags</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Azioni</th>
+                <tr className="border-b-2 border-purple-200/50 bg-purple-50/30">
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Cliente</th>
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Azienda</th>
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Stato</th>
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Valore</th>
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Rating</th>
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Ultimo Contatto</th>
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Tags</th>
+                  <th className="text-left py-5 px-6 font-bold text-purple-800 uppercase tracking-wide text-sm">Azioni</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
+                  <tr key={customer.id} className="border-b border-purple-100/50 hover:bg-purple-50/20 transition-all duration-200" data-testid={`row-customer-${customer.id}`}>
+                    <td className="py-6 px-6">
                       <div>
-                        <p className="font-medium text-gray-900">{customer.name}</p>
-                        <p className="text-sm text-gray-500">{customer.email}</p>
+                        <p className="font-bold text-gray-900 text-lg">{customer.name}</p>
+                        <p className="text-sm text-gray-600 font-medium mt-1">{customer.email}</p>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center space-x-2">
-                        <Building2 className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-700">{customer.company}</span>
+                    <td className="py-6 px-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <Building2 className="w-5 h-5 text-purple-600" strokeWidth={2} />
+                        </div>
+                        <span className="text-gray-800 font-medium">{customer.company}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-6 px-6">
                       {getStatusBadge(customer.status)}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="font-medium text-gray-900">{customer.value}</span>
+                    <td className="py-6 px-6">
+                      <span className="font-bold text-2xl text-purple-700">{customer.value}</span>
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center">
+                    <td className="py-6 px-6">
+                      <div className="flex items-center space-x-1">
                         {[...Array(5)].map((_, i) => (
                           <Star 
                             key={i} 
-                            className={`w-4 h-4 ${i < customer.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                            className={`w-5 h-5 ${i < customer.rating ? 'text-orange-500 fill-current' : 'text-gray-300'}`}
+                            strokeWidth={2}
                           />
                         ))}
+                        <span className="ml-2 text-sm font-bold text-gray-700">({customer.rating}/5)</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="text-sm text-gray-600">{customer.lastContact}</span>
+                    <td className="py-6 px-6">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4 text-purple-500" strokeWidth={2} />
+                        <span className="text-sm text-gray-700 font-medium">{customer.lastContact}</span>
+                      </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-1">
+                    <td className="py-6 px-6">
+                      <div className="flex flex-wrap gap-2">
                         {customer.tags.map((tag) => (
-                          <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                          <span key={tag} className="action-badge text-xs font-bold">
                             {tag}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-6 px-6">
                       <div className="flex items-center space-x-2">
-                        <button className="p-1 hover:bg-gray-100 rounded">
-                          <Phone className="w-4 h-4 text-gray-600" />
+                        <button className="glass-button p-3 hover:bg-green-100 rounded-xl transition-all duration-200" data-testid={`button-call-${customer.id}`}>
+                          <Phone className="w-5 h-5 text-green-600" strokeWidth={2} />
                         </button>
-                        <button className="p-1 hover:bg-gray-100 rounded">
-                          <Mail className="w-4 h-4 text-gray-600" />
+                        <button className="glass-button p-3 hover:bg-blue-100 rounded-xl transition-all duration-200" data-testid={`button-email-${customer.id}`}>
+                          <Mail className="w-5 h-5 text-blue-600" strokeWidth={2} />
                         </button>
-                        <button className="p-1 hover:bg-gray-100 rounded">
-                          <Edit className="w-4 h-4 text-gray-600" />
+                        <button className="glass-button-orange p-3 rounded-xl transition-all duration-200" data-testid={`button-edit-${customer.id}`}>
+                          <Edit className="w-5 h-5 text-white" strokeWidth={2} />
                         </button>
-                        <button className="p-1 hover:bg-gray-100 rounded">
-                          <MoreVertical className="w-4 h-4 text-gray-600" />
+                        <button className="glass-button p-3 hover:bg-gray-100 rounded-xl transition-all duration-200" data-testid={`button-more-${customer.id}`}>
+                          <MoreVertical className="w-5 h-5 text-gray-600" strokeWidth={2} />
                         </button>
                       </div>
                     </td>

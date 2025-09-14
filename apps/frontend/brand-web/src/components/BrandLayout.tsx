@@ -1,16 +1,58 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLocation } from 'wouter';
-import {
-  User, Bell, Settings, Menu, ChevronLeft, ChevronRight,
-  LogOut, Shield, Target, Users, BarChart3, Briefcase,
-  Megaphone, TrendingUp, Cog, Globe, Building2, Store,
-  UserPlus, FileText, PieChart, Zap, Search, Home,
-  UserCircle, Building, ChevronDown, Activity, Package,
-  DollarSign, Calendar, CheckCircle, AlertCircle, Moon, Sun
+import { 
+  User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
+  BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
+  Target, Zap, Shield, Calendar, Clock,
+  Activity, FileText, MessageCircle, AlertTriangle,
+  Plus, Filter, Download, Phone, Wifi, Smartphone, 
+  Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
+  ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
+  Folder, UserX, Star, Home, Building, Briefcase, Wrench,
+  LogOut, HelpCircle, MapPin, UserCircle, Store, Building2,
+  Megaphone, Cog, Globe, Moon, Sun
 } from 'lucide-react';
+
+// Palette colori W3 Suite - Coerente e Professionale
+const COLORS = {
+  // Colori primari brand WindTre
+  primary: {
+    orange: '#FF6900',      // Arancione WindTre
+    orangeLight: '#ff8533', // Arancione chiaro
+    purple: '#7B2CBF',      // Viola WindTre
+    purpleLight: '#9747ff', // Viola chiaro
+  },
+  // Colori semantici per stati e feedback
+  semantic: {
+    success: '#10b981',     // Verde successo
+    warning: '#f59e0b',     // Arancione warning
+    error: '#ef4444',       // Rosso errore
+    info: '#3b82f6',        // Blu info
+  },
+  // Priorità tasks e leads
+  priority: {
+    high: '#ef4444',        // Rosso alta priorità
+    medium: '#f59e0b',      // Arancione media
+    low: '#10b981',         // Verde bassa
+  },
+  // Grigi per UI neutrale
+  neutral: {
+    dark: '#1f2937',        // Testo principale
+    medium: '#6b7280',      // Testo secondario
+    light: '#9ca3af',       // Testo disabilitato
+    lighter: '#e5e7eb',     // Bordi
+    lightest: '#f9fafb',    // Sfondi
+  },
+  // Sfondi glassmorphism
+  glass: {
+    white: 'rgba(255, 255, 255, 0.08)',
+    whiteLight: 'rgba(255, 255, 255, 0.03)',
+    whiteMedium: 'rgba(255, 255, 255, 0.12)',
+  }
+};
 
 interface BrandLayoutProps {
   children: React.ReactNode;
@@ -22,14 +64,41 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
   const [location, navigate] = useLocation();
   
-  // Sidebar states with auto-collapse
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true);
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true);
+  const [workspaceCollapsed, setWorkspaceCollapsed] = useState(true);
+  const [lastInteraction, setLastInteraction] = useState(Date.now());
+  const [leftSidebarTimer, setLeftSidebarTimer] = useState<NodeJS.Timeout | null>(null);
+  const [workspaceTimer, setWorkspaceTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const leftSidebarTimer = useRef<number | null>(null);
-  const rightSidebarTimer = useRef<number | null>(null);
+  const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<any>(null);
 
-  // Navigation items for left sidebar
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (leftSidebarTimer) {
+        clearTimeout(leftSidebarTimer);
+      }
+      if (workspaceTimer) {
+        clearTimeout(workspaceTimer);
+      }
+    };
+  }, [leftSidebarTimer, workspaceTimer]);
+
+  // Helper function to handle workspace tab click - 1500ms hover-only behavior
+  const handleWorkspaceTabClick = (tab: string) => {
+    setWorkspace(tab);
+    // Se il workspace era collapsed, espandilo senza timer automatico
+    if (workspaceCollapsed) {
+      setWorkspaceCollapsed(false);
+    }
+    // NO click-based auto-collapse timer - solo hover-only behavior
+  };
+
+  // Navigation items for Brand Interface
   const navigationItems = [
     {
       id: 'dashboard',
@@ -54,35 +123,35 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     }
   ];
 
-  // Workspace sections for right sidebar
+  // Workspace sections exactly like W3 Suite structure
   const workspaces = [
     {
       id: 'marketing',
       name: 'Marketing',
       icon: Megaphone,
       description: 'Campagne e comunicazione',
-      color: 'var(--primary-purple)'
+      color: COLORS.primary.purple
     },
     {
       id: 'sales',
       name: 'Vendite',
       icon: TrendingUp,
       description: 'Listini e supporto vendite',
-      color: 'var(--primary-blue)'
+      color: COLORS.primary.orange
     },
     {
       id: 'operations',
       name: 'Operations',
       icon: Cog,
       description: 'Gestione operativa',
-      color: 'var(--secondary-green)'
+      color: COLORS.semantic.success
     },
     {
       id: 'admin',
       name: 'Amministrazione',
       icon: Shield,
       description: 'Tenant e configurazioni',
-      color: 'var(--secondary-amber)'
+      color: COLORS.primary.purpleLight
     }
   ];
 
@@ -98,381 +167,651 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     navigate('/brandinterface/login');
   };
 
-  // Auto-collapse logic for left sidebar
-  const handleLeftSidebarMouseEnter = () => {
-    if (leftSidebarCollapsed) {
-      setLeftSidebarCollapsed(false);
-    }
-    // Clear existing timer
-    if (leftSidebarTimer.current) {
-      window.clearTimeout(leftSidebarTimer.current);
-      leftSidebarTimer.current = null;
-    }
-  };
-
-  const handleLeftSidebarMouseLeave = () => {
-    if (!leftSidebarCollapsed) {
-      // Clear existing timer
-      if (leftSidebarTimer.current) {
-        window.clearTimeout(leftSidebarTimer.current);
-      }
-      // Set new timer
-      leftSidebarTimer.current = window.setTimeout(() => {
-        setLeftSidebarCollapsed(true);
-        leftSidebarTimer.current = null;
-      }, 1500);
-    }
-  };
-
-  // Auto-collapse logic for right sidebar
-  const handleRightSidebarMouseEnter = () => {
-    if (rightSidebarCollapsed) {
-      setRightSidebarCollapsed(false);
-    }
-    // Clear existing timer
-    if (rightSidebarTimer.current) {
-      window.clearTimeout(rightSidebarTimer.current);
-      rightSidebarTimer.current = null;
-    }
-  };
-
-  const handleRightSidebarMouseLeave = () => {
-    if (!rightSidebarCollapsed) {
-      // Clear existing timer
-      if (rightSidebarTimer.current) {
-        window.clearTimeout(rightSidebarTimer.current);
-      }
-      // Set new timer
-      rightSidebarTimer.current = window.setTimeout(() => {
-        setRightSidebarCollapsed(true);
-        rightSidebarTimer.current = null;
-      }, 1500);
-    }
-  };
-
-  // Cleanup timers on unmount
-  React.useEffect(() => {
-    return () => {
-      if (leftSidebarTimer.current) {
-        window.clearTimeout(leftSidebarTimer.current);
-      }
-      if (rightSidebarTimer.current) {
-        window.clearTimeout(rightSidebarTimer.current);
-      }
+  // Responsive detection like W3 Suite
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
     };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden brand-gradient">
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      background: `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`
+    }}>
       
-      {/* Fixed Top Header Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-2xl font-bold text-gray-900">
+      {/* Header moderno con glassmorphism esatto W3 Suite */}
+      <header style={{
+        position: 'relative',
+        zIndex: 50,
+        background: COLORS.glass.whiteMedium,
+        backdropFilter: 'blur(24px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+        borderBottom: `1px solid ${COLORS.glass.white}`,
+        padding: '16px 24px',
+        flexShrink: 0
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: 700,
+              color: 'white',
+              margin: 0
+            }}>
               {currentNavItem?.name || 'Brand Interface'}
-            </h2>
+            </h1>
             {currentWorkspace && (
-              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-lg border"
-                   style={{ background: `${currentWorkspace.color}10` }}>
-                <currentWorkspace.icon className="w-4 h-4" style={{ color: currentWorkspace.color }} />
-                <span className="text-sm text-gray-700">{currentWorkspace.name}</span>
+              <div style={{
+                background: COLORS.glass.whiteMedium,
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: `1px solid ${COLORS.glass.white}`,
+                borderRadius: '12px',
+                padding: '8px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <currentWorkspace.icon size={16} color={currentWorkspace.color} />
+                <span style={{ fontSize: '14px', fontWeight: 500, color: 'white' }}>
+                  {currentWorkspace.name}
+                </span>
               </div>
             )}
           </div>
           
-          <div className="flex items-center space-x-3">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Search con glassmorphism */}
+            <div style={{ position: 'relative' }}>
+              <Search style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'rgba(255, 255, 255, 0.6)'
+              }} size={16} />
               <input
                 type="text"
                 placeholder="Cerca..."
-                className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                style={{
+                  background: COLORS.glass.whiteMedium,
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: `1px solid ${COLORS.glass.white}`,
+                  borderRadius: '12px',
+                  padding: '12px 16px 12px 40px',
+                  color: 'white',
+                  fontSize: '14px',
+                  width: '240px',
+                  outline: 'none'
+                }}
               />
             </div>
             
-            {/* Notifications */}
-            <button className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            {/* Notification button */}
+            <button style={{
+              background: COLORS.glass.whiteMedium,
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: `1px solid ${COLORS.glass.white}`,
+              borderRadius: '12px',
+              padding: '12px',
+              cursor: 'pointer',
+              position: 'relative'
+            }}>
+              <Bell size={16} color="white" />
+              <span style={{
+                position: 'absolute',
+                top: '6px',
+                right: '6px',
+                width: '8px',
+                height: '8px',
+                background: COLORS.primary.orange,
+                borderRadius: '50%'
+              }} />
             </button>
             
-            {/* Settings */}
+            {/* Settings button */}
             <button 
               onClick={() => handleNavigation('/settings')}
-              className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              style={{
+                background: COLORS.glass.whiteMedium,
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: `1px solid ${COLORS.glass.white}`,
+                borderRadius: '12px',
+                padding: '12px',
+                cursor: 'pointer'
+              }}
             >
-              <Settings className="w-5 h-5" />
+              <Settings size={16} color="white" />
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Layout - Three Column Structure */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Main Layout - Struttura tre colonne esatta W3 Suite */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         
-        {/* Left Sidebar - Navigation */}
-        <div 
-          className={`${leftSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 sidebar-left flex flex-col flex-shrink-0`}
-          onMouseEnter={handleLeftSidebarMouseEnter}
-          onMouseLeave={handleLeftSidebarMouseLeave}
+        {/* Left Sidebar - Navigation con auto-collapse */}
+        <aside
+          onMouseEnter={() => {
+            if (leftSidebarCollapsed) {
+              setLeftSidebarCollapsed(false);
+            }
+            if (leftSidebarTimer) {
+              clearTimeout(leftSidebarTimer);
+              setLeftSidebarTimer(null);
+            }
+          }}
+          onMouseLeave={() => {
+            if (!leftSidebarCollapsed) {
+              if (leftSidebarTimer) {
+                clearTimeout(leftSidebarTimer);
+              }
+              const timer = setTimeout(() => {
+                setLeftSidebarCollapsed(true);
+                setLeftSidebarTimer(null);
+              }, 1500);
+              setLeftSidebarTimer(timer);
+            }
+          }}
+          style={{
+            width: leftSidebarCollapsed ? '64px' : '256px',
+            background: COLORS.glass.whiteMedium,
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            borderRight: `1px solid ${COLORS.glass.white}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px 8px'
+          }}
         >
-        
-        {/* Brand Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          {!leftSidebarCollapsed && (
-            <div className="flex items-center space-x-3">
-              <div className="glass-button rounded-lg p-2">
-                <Shield className="w-6 h-6 text-white" />
+          {/* Brand header */}
+          <div style={{
+            padding: '16px',
+            borderBottom: `1px solid ${COLORS.glass.white}`,
+            marginBottom: '16px'
+          }}>
+            {!leftSidebarCollapsed && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  background: COLORS.glass.whiteMedium,
+                  borderRadius: '12px',
+                  padding: '8px'
+                }}>
+                  <Shield size={20} color={COLORS.primary.purple} />
+                </div>
+                <div>
+                  <h2 style={{ color: 'white', fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                    Brand Interface
+                  </h2>
+                  <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
+                    Control Panel
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="font-bold text-white text-lg">Brand Interface</h1>
-                <p className="text-white/60 text-xs">Control Panel</p>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
-            className="toggle-button"
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '-12px',
-              zIndex: 50
-            }}
-          >
-            {leftSidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-          </button>
-        </div>
+            )}
+          </div>
 
-        {/* Tenant Context */}
-        <div className="p-4 border-b border-white/10">
-          <div className={`glass-button rounded-lg p-3 ${leftSidebarCollapsed ? 'px-3' : ''}`}
-               style={{ background: isCrossTenant ? 'var(--glass-blue)' : 'var(--glass-purple)' }}>
-            <div className="flex items-center space-x-3">
-              <Globe 
-                className="w-5 h-5 flex-shrink-0"
-                style={{ color: isCrossTenant ? 'var(--primary-blue)' : 'var(--primary-purple)' }} 
-              />
+          {/* Tenant context */}
+          <div style={{
+            padding: '12px',
+            marginBottom: '16px',
+            background: isCrossTenant ? 'rgba(255, 105, 0, 0.1)' : 'rgba(123, 44, 191, 0.1)',
+            borderRadius: '12px',
+            border: `1px solid ${COLORS.glass.white}`
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Globe size={16} color={isCrossTenant ? COLORS.primary.orange : 'white'} />
               {!leftSidebarCollapsed && (
-                <div className="flex-1">
-                  <p className="text-white font-medium text-sm">
+                <div>
+                  <p style={{ color: 'white', fontSize: '14px', fontWeight: 600, margin: 0 }}>
                     {isCrossTenant ? 'Cross-Tenant' : currentTenant || 'Tenant'}
                   </p>
-                  <p className="text-white/60 text-xs">
+                  <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
                     {isCrossTenant ? 'Tutti i tenant' : `ID: ${currentTenantId?.substring(0, 8) || 'N/A'}...`}
                   </p>
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Navigation Menu */}
-        <div className="flex-1 p-4 space-y-2">
-          {!leftSidebarCollapsed && (
-            <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-3">
-              Navigazione
-            </p>
-          )}
-          
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item.path)}
-              className={`w-full flex items-center space-x-3 p-3 rounded-lg menu-item text-left
-                ${location.endsWith(item.path)
-                  ? 'active glass-button border border-white/30' 
-                  : ''
-                }`}
-              data-testid={`nav-${item.id}`}
-            >
-              <item.icon 
-                className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
-                  location.endsWith(item.path) ? 'text-white' : 'text-white/70'
-                }`}
-              />
-              {!leftSidebarCollapsed && (
-                <div className="slide-in">
-                  <p className={`font-medium text-sm transition-colors duration-200 ${
-                    location.endsWith(item.path) ? 'text-white' : 'text-white/80'
-                  }`}>
-                    {item.name}
-                  </p>
-                  <p className="text-white/50 text-xs">{item.description}</p>
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
+          {/* Navigation menu */}
+          <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {navigationItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item.path)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: leftSidebarCollapsed ? '0' : '12px',
+                  padding: '12px',
+                  background: location.endsWith(item.path) 
+                    ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
+                    : 'transparent',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: location.endsWith(item.path) ? 'white' : 'rgba(255, 255, 255, 0.8)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start'
+                }}
+              >
+                <item.icon size={20} />
+                {!leftSidebarCollapsed && (
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                      {item.name}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>
+                      {item.description}
+                    </p>
+                  </div>
+                )}
+              </button>
+            ))}
+          </nav>
 
-        {/* User Profile */}
-        <div className="p-4 border-t border-white/10">
-          <div className="relative">
+          {/* User profile */}
+          <div style={{
+            borderTop: `1px solid ${COLORS.glass.white}`,
+            paddingTop: '16px',
+            position: 'relative'
+          }}>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-full flex items-center space-x-3 glass-button rounded-lg p-3 text-white/80 hover:text-white"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: leftSidebarCollapsed ? '0' : '12px',
+                padding: '12px',
+                background: COLORS.glass.whiteMedium,
+                border: `1px solid ${COLORS.glass.white}`,
+                borderRadius: '12px',
+                color: 'white',
+                cursor: 'pointer',
+                justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start'
+              }}
             >
-              <div className="glass-button rounded-full p-2">
-                <User className="w-4 h-4" />
+              <div style={{
+                background: COLORS.primary.orange,
+                borderRadius: '50%',
+                padding: '6px'
+              }}>
+                <User size={16} />
               </div>
               {!leftSidebarCollapsed && (
-                <div className="flex-1 text-left">
-                  <p className="font-medium text-sm text-white">{user?.name || 'User'}</p>
-                  <p className="text-white/60 text-xs">{user?.role || 'Role'}</p>
-                </div>
+                <>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                      {user?.name || 'User'}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', opacity: 0.7 }}>
+                      {user?.role || 'Role'}
+                    </p>
+                  </div>
+                  <ChevronDown size={16} style={{
+                    transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }} />
+                </>
               )}
             </button>
 
-            {/* User Menu Dropdown */}
+            {/* User menu dropdown */}
             {userMenuOpen && !leftSidebarCollapsed && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 glass-card border border-white/10 rounded-lg p-2">
+              <div style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: 0,
+                right: 0,
+                marginBottom: '8px',
+                background: COLORS.glass.whiteMedium,
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: `1px solid ${COLORS.glass.white}`,
+                borderRadius: '12px',
+                padding: '8px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+              }}>
                 <button
                   onClick={toggleTheme}
-                  className="w-full flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/80 hover:text-white"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
                 >
-                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                  <span className="text-sm">Tema {isDark ? 'Chiaro' : 'Scuro'}</span>
+                  {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                  Tema {isDark ? 'Chiaro' : 'Scuro'}
                 </button>
                 <button
                   onClick={() => handleNavigation('/settings')}
-                  className="w-full flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/80 hover:text-white"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
                 >
-                  <Settings className="w-4 h-4" />
-                  <span className="text-sm">Impostazioni</span>
+                  <Settings size={16} />
+                  Impostazioni
                 </button>
+                <div style={{
+                  height: '1px',
+                  background: COLORS.glass.white,
+                  margin: '8px 0'
+                }} />
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-red-400 hover:text-red-300"
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: COLORS.semantic.error,
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">Esci</span>
+                  <LogOut size={16} />
+                  Esci
                 </button>
               </div>
             )}
           </div>
-        </div>
-        </div>
+        </aside>
 
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-auto bg-white">
-          <div className="p-6 bg-white min-h-full">
-            {children}
-          </div>
-        </div>
+        {/* Main Content Area - Identico W3 Suite */}
+        <main style={{
+          flex: 1,
+          overflow: 'auto',
+          background: 'white',
+          padding: '24px'
+        }}>
+          {children}
+        </main>
 
-        {/* Right Sidebar - Workspace Selector */}
-        <div 
-          className={`${rightSidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 sidebar-right flex flex-col flex-shrink-0`}
-          onMouseEnter={handleRightSidebarMouseEnter}
-          onMouseLeave={handleRightSidebarMouseLeave}
+        {/* Right Sidebar - Workspace con auto-collapse */}
+        <aside
+          onMouseEnter={() => {
+            if (workspaceCollapsed) {
+              setWorkspaceCollapsed(false);
+            }
+            if (workspaceTimer) {
+              clearTimeout(workspaceTimer);
+              setWorkspaceTimer(null);
+            }
+          }}
+          onMouseLeave={() => {
+            if (!workspaceCollapsed) {
+              if (workspaceTimer) {
+                clearTimeout(workspaceTimer);
+              }
+              const timer = setTimeout(() => {
+                setWorkspaceCollapsed(true);
+                setWorkspaceTimer(null);
+              }, 1500);
+              setWorkspaceTimer(timer);
+            }
+          }}
+          style={{
+            width: workspaceCollapsed ? '64px' : '320px',
+            background: COLORS.glass.whiteLight,
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            borderLeft: `1px solid ${COLORS.glass.white}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px 8px'
+          }}
         >
+          {/* Workspace header */}
+          <div style={{
+            padding: '16px',
+            borderBottom: `1px solid ${COLORS.glass.white}`,
+            marginBottom: '16px'
+          }}>
+            {!workspaceCollapsed && (
+              <h3 style={{
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
+                margin: 0,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                WORKSPACE
+              </h3>
+            )}
+          </div>
+
+          {/* Active workspace display */}
+          {currentWorkspace && (
+            <div style={{
+              padding: '12px',
+              marginBottom: '16px',
+              background: `linear-gradient(135deg, ${currentWorkspace.color}15, rgba(255, 255, 255, 0.1))`,
+              borderRadius: '12px',
+              border: `1px solid ${COLORS.glass.white}`
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  background: `${currentWorkspace.color}20`,
+                  borderRadius: '8px',
+                  padding: '8px'
+                }}>
+                  <currentWorkspace.icon size={16} color={currentWorkspace.color} />
+                </div>
+                {!workspaceCollapsed && (
+                  <div>
+                    <p style={{ color: 'white', fontSize: '14px', fontWeight: 600, margin: 0 }}>
+                      {currentWorkspace.name}
+                    </p>
+                    <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
+                      {currentWorkspace.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Workspace list */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {!workspaceCollapsed && (
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '12px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: '0 0 16px 0'
+              }}>
+                Aree Funzionali
+              </p>
+            )}
             
-            {/* Workspace Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              {!rightSidebarCollapsed && (
-                <h3 className="text-white font-medium text-sm">Workspace</h3>
-              )}
+            {workspaces.map((ws) => (
               <button
-                onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
-                className="toggle-button"
+                key={ws.id}
+                onClick={() => handleWorkspaceTabClick(ws.id)}
                 style={{
-                  position: 'absolute',
-                  top: '16px',
-                  left: '-12px',
-                  zIndex: 50
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: workspaceCollapsed ? '0' : '12px',
+                  padding: '12px',
+                  background: workspace === ws.id 
+                    ? `${ws.color}20` 
+                    : 'transparent',
+                  border: workspace === ws.id 
+                    ? `1px solid ${ws.color}40` 
+                    : '1px solid transparent',
+                  borderRadius: '12px',
+                  color: workspace === ws.id ? 'white' : 'rgba(255, 255, 255, 0.8)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  justifyContent: workspaceCollapsed ? 'center' : 'flex-start'
                 }}
               >
-                {rightSidebarCollapsed ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                <div style={{
+                  background: `${ws.color}20`,
+                  borderRadius: '8px',
+                  padding: '6px'
+                }}>
+                  <ws.icon size={16} color={workspace === ws.id ? ws.color : 'rgba(255, 255, 255, 0.8)'} />
+                </div>
+                {!workspaceCollapsed && (
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                      {ws.name}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>
+                      {ws.description}
+                    </p>
+                  </div>
+                )}
               </button>
-            </div>
-
-            {/* Active Workspace */}
-            {currentWorkspace && (
-              <div className="p-4 border-b border-white/10">
-                <div className={`glass-button rounded-lg p-3 ${rightSidebarCollapsed ? 'px-3' : ''}`}
-                     style={{ background: `${currentWorkspace.color}20` }}>
-                  <div className="flex items-center space-x-3">
-                    <currentWorkspace.icon 
-                      className="w-5 h-5 flex-shrink-0"
-                      style={{ color: currentWorkspace.color }} 
-                    />
-                    {!rightSidebarCollapsed && (
-                      <div>
-                        <p className="text-white font-medium text-sm">{currentWorkspace.name}</p>
-                        <p className="text-white/60 text-xs">{currentWorkspace.description}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Workspace List */}
-            <div className="flex-1 p-4 space-y-2">
-              {!rightSidebarCollapsed && (
-                <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-3">
-                  Aree Funzionali
-                </p>
-              )}
-              
-              {workspaces.map((ws) => (
-                <button
-                  key={ws.id}
-                  onClick={() => setWorkspace(ws.id)}
-                  className={`w-full flex items-center space-x-3 p-3 rounded-lg menu-item text-left
-                    ${workspace === ws.id 
-                      ? 'active glass-button border border-white/30' 
-                      : ''
-                    }`}
-                  data-testid={`workspace-${ws.id}`}
-                >
-                  <ws.icon 
-                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
-                      workspace === ws.id ? 'text-white' : 'text-white/70'
-                    }`}
-                    style={{ color: workspace === ws.id ? ws.color : undefined }}
-                  />
-                  {!rightSidebarCollapsed && (
-                    <div className="slide-in">
-                      <p className={`font-medium text-sm transition-colors duration-200 ${
-                        workspace === ws.id ? 'text-white' : 'text-white/80'
-                      }`}>
-                        {ws.name}
-                      </p>
-                      <p className="text-white/50 text-xs">{ws.description}</p>
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Quick Stats */}
-            {!rightSidebarCollapsed && (
-              <div className="p-4 border-t border-white/10 space-y-3">
-                <p className="text-white/60 text-xs font-medium uppercase tracking-wider">
-                  Quick Stats
-                </p>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/70 text-sm">Tasks</span>
-                    <span className="text-white font-medium">12</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/70 text-sm">Alerts</span>
-                    <span className="text-white font-medium">3</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/70 text-sm">Users</span>
-                    <span className="text-white font-medium">24</span>
-                  </div>
-                </div>
-              </div>
-            )}
+            ))}
           </div>
-        </div>
+
+          {/* Quick stats */}
+          {!workspaceCollapsed && (
+            <div style={{
+              borderTop: `1px solid ${COLORS.glass.white}`,
+              paddingTop: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '12px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: 0
+              }}>
+                Quick Stats
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: COLORS.glass.whiteMedium,
+                  borderRadius: '8px',
+                  border: `1px solid ${COLORS.glass.white}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CheckCircle size={14} color={COLORS.semantic.success} />
+                    <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px' }}>Tasks</span>
+                  </div>
+                  <span style={{
+                    background: `${COLORS.semantic.success}20`,
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    12
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: COLORS.glass.whiteMedium,
+                  borderRadius: '8px',
+                  border: `1px solid ${COLORS.glass.white}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertTriangle size={14} color={COLORS.semantic.warning} />
+                    <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px' }}>Alerts</span>
+                  </div>
+                  <span style={{
+                    background: `${COLORS.semantic.warning}20`,
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    3
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: COLORS.glass.whiteMedium,
+                  borderRadius: '8px',
+                  border: `1px solid ${COLORS.glass.white}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={14} color={COLORS.semantic.info} />
+                    <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px' }}>Users</span>
+                  </div>
+                  <span style={{
+                    background: `${COLORS.semantic.info}20`,
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: '4px'
+                  }}>
+                    24
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
+    </div>
   );
 }
