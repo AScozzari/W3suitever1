@@ -113,7 +113,7 @@ export default function Entities() {
         <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold brand-gradient-text">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                 Gestione Entità Cross-Tenant
               </h1>
               <p className="text-gray-600 mt-2 flex items-center gap-2">

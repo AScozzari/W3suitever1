@@ -95,9 +95,9 @@ export default function CRM() {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      active: 'glass-card bg-green-500/20 text-green-800 border-green-400/30',
-      lead: 'glass-card bg-orange-500/20 text-orange-800 border-orange-400/30',
-      prospect: 'glass-card bg-purple-500/20 text-purple-800 border-purple-400/30'
+      active: 'bg-green-50 text-green-800 border border-green-200',
+      lead: 'bg-orange-50 text-orange-800 border border-orange-200',
+      prospect: 'bg-purple-50 text-purple-800 border border-purple-200'
     };
     const labels = {
       active: 'Attivo',
@@ -115,19 +115,19 @@ export default function CRM() {
     <BrandLayout>
       <div className="space-y-6">
         {/* Modern CRM Header */}
-        <div className="glass-card p-8 border-2 border-purple-300/30" data-testid="crm-header">
+        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200" data-testid="crm-header">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-bold brand-gradient-text">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                 CRM Management
               </h1>
               <p className="text-gray-700 mt-3 flex items-center gap-3 font-medium">
                 <Users className="w-5 h-5 text-purple-600" strokeWidth={2} />
                 Gestione clienti {isCrossTenant ? 'cross-tenant' : `per ${currentTenant}`}
-                {isCrossTenant && <span className="action-badge ml-2">MULTI-TENANT</span>}
+                {isCrossTenant && <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold ml-2">MULTI-TENANT</span>}
               </p>
             </div>
-            <button className="glass-button-orange px-6 py-3 flex items-center space-x-3" data-testid="button-new-customer">
+            <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-6 py-3 flex items-center space-x-3 transition-colors" data-testid="button-new-customer">
               <UserPlus className="w-5 h-5" strokeWidth={2.5} />
               <span className="font-semibold">Nuovo Cliente</span>
             </button>
@@ -135,7 +135,7 @@ export default function CRM() {
 
           {/* Modern CRM Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="glass-card bg-gradient-to-br from-purple-500/10 to-purple-600/15 border-2 border-purple-400/30 hover:border-purple-400/50 transition-all duration-300" data-testid="card-total-customers">
+            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-purple-500/10 to-purple-600/15 border-2 border-purple-400/30 hover:border-purple-400/50 transition-all duration-300" data-testid="card-total-customers">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
@@ -152,7 +152,7 @@ export default function CRM() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card bg-gradient-to-br from-orange-500/10 to-orange-600/15 border-2 border-orange-400/30 hover:border-orange-400/50 transition-all duration-300" data-testid="card-pipeline-value">
+            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-orange-500/10 to-orange-600/15 border-2 border-orange-400/30 hover:border-orange-400/50 transition-all duration-300" data-testid="card-pipeline-value">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold text-orange-700 uppercase tracking-wide">
@@ -169,7 +169,7 @@ export default function CRM() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card bg-gradient-to-br from-green-500/10 to-green-600/15 border-2 border-green-400/30 hover:border-green-400/50 transition-all duration-300" data-testid="card-conversion-rate">
+            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-green-500/10 to-green-600/15 border-2 border-green-400/30 hover:border-green-400/50 transition-all duration-300" data-testid="card-conversion-rate">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold text-green-700 uppercase tracking-wide">
@@ -186,7 +186,7 @@ export default function CRM() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card bg-gradient-to-br from-purple-400/10 to-purple-500/15 border-2 border-purple-300/30 hover:border-purple-300/50 transition-all duration-300" data-testid="card-new-leads">
+            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-purple-400/10 to-purple-500/15 border-2 border-purple-300/30 hover:border-purple-300/50 transition-all duration-300" data-testid="card-new-leads">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
@@ -206,7 +206,7 @@ export default function CRM() {
         </div>
 
         {/* Modern Customer List */}
-        <div className="glass-card p-8 border-2 border-purple-300/20" data-testid="customer-list">
+        <div className="bg-white border border-gray-200 p-8 border-2 border-purple-300/20" data-testid="customer-list">
           {/* Modern Search and Filters */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-6 flex-1">
@@ -225,7 +225,7 @@ export default function CRM() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="glass-button-purple px-6 py-4 text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700-purple px-6 py-4 text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
                 data-testid="select-status-filter"
               >
                 <option value="all" className="bg-gray-800 text-white">Tutti gli stati</option>
@@ -234,7 +234,7 @@ export default function CRM() {
                 <option value="prospect" className="bg-gray-800 text-white">Prospect</option>
               </select>
 
-              <button className="glass-button px-6 py-4 flex items-center space-x-3 hover:bg-purple-50 transition-all duration-200" data-testid="button-advanced-filters">
+              <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-4 flex items-center space-x-3 hover:bg-purple-50 transition-all duration-200" data-testid="button-advanced-filters">
                 <Filter className="w-5 h-5" strokeWidth={2} />
                 <span className="font-medium">Altri Filtri</span>
               </button>
@@ -308,16 +308,16 @@ export default function CRM() {
                     </td>
                     <td className="py-6 px-6">
                       <div className="flex items-center space-x-2">
-                        <button className="glass-button p-3 hover:bg-green-100 rounded-xl transition-all duration-200" data-testid={`button-call-${customer.id}`}>
+                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 hover:bg-green-100 rounded-xl transition-all duration-200" data-testid={`button-call-${customer.id}`}>
                           <Phone className="w-5 h-5 text-green-600" strokeWidth={2} />
                         </button>
-                        <button className="glass-button p-3 hover:bg-blue-100 rounded-xl transition-all duration-200" data-testid={`button-email-${customer.id}`}>
+                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 hover:bg-blue-100 rounded-xl transition-all duration-200" data-testid={`button-email-${customer.id}`}>
                           <Mail className="w-5 h-5 text-blue-600" strokeWidth={2} />
                         </button>
-                        <button className="glass-button-orange p-3 rounded-xl transition-all duration-200" data-testid={`button-edit-${customer.id}`}>
+                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700-orange p-3 rounded-xl transition-all duration-200" data-testid={`button-edit-${customer.id}`}>
                           <Edit className="w-5 h-5 text-white" strokeWidth={2} />
                         </button>
-                        <button className="glass-button p-3 hover:bg-gray-100 rounded-xl transition-all duration-200" data-testid={`button-more-${customer.id}`}>
+                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 hover:bg-gray-100 rounded-xl transition-all duration-200" data-testid={`button-more-${customer.id}`}>
                           <MoreVertical className="w-5 h-5 text-gray-600" strokeWidth={2} />
                         </button>
                       </div>

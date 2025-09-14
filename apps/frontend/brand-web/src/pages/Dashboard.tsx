@@ -71,16 +71,16 @@ export default function Dashboard() {
     <BrandLayout>
       <div className="space-y-6">
         {/* Modern Glass Header */}
-        <div className="glass-card p-8 border-2 border-purple-300/30" data-testid="dashboard-header">
+        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200" data-testid="dashboard-header">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-bold brand-gradient-text">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                 Brand Interface Dashboard
               </h1>
               <p className="text-gray-700 mt-3 flex items-center gap-3 font-medium">
                 <Globe className="w-5 h-5 text-purple-600" strokeWidth={2} />
                 {isCrossTenant ? "Modalità Cross-Tenant" : `Tenant: ${currentTenant || currentTenantId}`}
-                {isCrossTenant && <span className="action-badge ml-2">MULTI</span>}
+                {isCrossTenant && <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold ml-2">MULTI</span>}
               </p>
             </div>
             
@@ -89,7 +89,7 @@ export default function Dashboard() {
               <select
                 value={selectedArea}
                 onChange={(e) => setSelectedArea(e.target.value)}
-                className="glass-button-purple px-6 py-3 text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-6 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 data-testid="select-area-filter"
               >
                 {commercialAreas.map((area) => (
@@ -99,7 +99,7 @@ export default function Dashboard() {
                 ))}
               </select>
               
-              <button className="glass-button-orange px-6 py-3 flex items-center space-x-3" data-testid="button-filters">
+              <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-6 py-3 flex items-center space-x-3 transition-colors" data-testid="button-filters">
                 <Filter className="w-5 h-5" strokeWidth={2} />
                 <span className="font-medium">Filtri Avanzati</span>
               </button>
@@ -108,7 +108,7 @@ export default function Dashboard() {
           
           {/* Modern KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="glass-card bg-gradient-to-br from-purple-500/10 to-purple-600/15 border-2 border-purple-400/30 hover:border-purple-400/50 transition-all duration-300" data-testid="card-revenue">
+            <Card className="bg-white border border-gray-200 hover:shadow-md transition-all duration-300" data-testid="card-revenue">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
                   Revenue Totale
@@ -126,7 +126,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
             
-            <Card className="glass-card bg-gradient-to-br from-orange-500/10 to-orange-600/15 border-2 border-orange-400/30 hover:border-orange-400/50 transition-all duration-300" data-testid="card-customers">
+            <Card className="bg-white border border-gray-200 hover:shadow-md transition-all duration-300" data-testid="card-customers">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-semibold text-orange-700 uppercase tracking-wide">
                   Nuovi Clienti
@@ -144,7 +144,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
             
-            <Card className="glass-card bg-gradient-to-br from-green-500/10 to-green-600/15 border-2 border-green-400/30 hover:border-green-400/50 transition-all duration-300" data-testid="card-conversion">
+            <Card className="bg-white border border-gray-200 hover:shadow-md transition-all duration-300" data-testid="card-conversion">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-semibold text-green-700 uppercase tracking-wide">
                   Tasso Conversione
@@ -162,7 +162,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
             
-            <Card className="glass-card bg-gradient-to-br from-purple-400/10 to-purple-500/15 border-2 border-purple-300/30 hover:border-purple-300/50 transition-all duration-300" data-testid="card-stores">
+            <Card className="bg-white border border-gray-200 hover:shadow-md transition-all duration-300" data-testid="card-stores">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-semibold text-purple-700 uppercase tracking-wide">
                   PDV Attivi
@@ -176,7 +176,7 @@ export default function Dashboard() {
                 <div className="flex items-center text-sm text-purple-700 font-medium">
                   <Activity className="w-4 h-4 mr-2" strokeWidth={2.5} />
                   38 operativi oggi
-                  <span className="action-badge ml-2 text-xs">LIVE</span>
+                  <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold ml-2 text-xs">LIVE</span>
                 </div>
               </CardContent>
             </Card>
@@ -185,31 +185,31 @@ export default function Dashboard() {
 
         {/* Modern Charts Section */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-testid="dashboard-tabs">
-          <TabsList className="glass-card grid w-full grid-cols-4 p-2 border-2 border-purple-300/20">
+          <TabsList className="bg-white border border-gray-200 grid w-full grid-cols-4 p-2">
             <TabsTrigger 
               value="overview" 
-              className="glass-button-purple data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
+              className="bg-purple-600 hover:bg-purple-700 text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
               data-testid="tab-overview"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger 
               value="revenue" 
-              className="glass-button data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
               data-testid="tab-revenue"
             >
               Revenue
             </TabsTrigger>
             <TabsTrigger 
               value="performance" 
-              className="glass-button data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
               data-testid="tab-performance"
             >
               Performance
             </TabsTrigger>
             <TabsTrigger 
               value="analytics" 
-              className="glass-button data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg font-semibold transition-all duration-200"
               data-testid="tab-analytics"
             >
               Analytics
@@ -219,7 +219,7 @@ export default function Dashboard() {
           <TabsContent value="overview" className="mt-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Modern Revenue Trend Chart */}
-              <Card className="glass-card border-2 border-purple-300/20" data-testid="chart-revenue-trend">
+              <Card className="bg-white border border-gray-200 border-2 border-purple-300/20" data-testid="chart-revenue-trend">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold text-purple-800 flex items-center gap-3">
                     <TrendingUp className="w-6 h-6 text-purple-600" strokeWidth={2.5} />
@@ -244,10 +244,10 @@ export default function Dashboard() {
               </Card>
 
               {/* Modern Product Mix Pie Chart */}
-              <Card className="glass-card border-2 border-orange-300/20" data-testid="chart-product-mix">
+              <Card className="bg-white border border-gray-200 border-2 border-orange-300/20" data-testid="chart-product-mix">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold text-orange-800 flex items-center gap-3">
-                    <PieChart className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
+                    <Package className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
                     Mix Prodotti
                   </CardTitle>
                   <CardDescription className="text-gray-700 font-medium">Distribuzione vendite per categoria</CardDescription>
@@ -277,7 +277,7 @@ export default function Dashboard() {
             </div>
 
             {/* Modern Conversion Rate by Area */}
-            <Card className="glass-card border-2 border-green-300/20" data-testid="chart-conversion-rate">
+            <Card className="bg-white border border-gray-200 border-2 border-green-300/20" data-testid="chart-conversion-rate">
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-green-800 flex items-center gap-3">
                   <Target className="w-6 h-6 text-green-600" strokeWidth={2.5} />
@@ -301,12 +301,12 @@ export default function Dashboard() {
             </Card>
 
             {/* Modern Store Performance Table */}
-            <Card className="glass-card border-2 border-purple-300/20" data-testid="table-store-performance">
+            <Card className="bg-white border border-gray-200 border-2 border-purple-300/20" data-testid="table-store-performance">
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-purple-800 flex items-center gap-3">
                   <Store className="w-6 h-6 text-purple-600" strokeWidth={2.5} />
                   Top Performing Stores
-                  <span className="action-badge ml-auto">REAL-TIME</span>
+                  <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold ml-auto">REAL-TIME</span>
                 </CardTitle>
                 <CardDescription className="text-gray-700 font-medium">I migliori punti vendita per revenue</CardDescription>
               </CardHeader>
@@ -369,12 +369,12 @@ export default function Dashboard() {
           </TabsContent>
           
           <TabsContent value="revenue" className="mt-6">
-            <Card className="glass-card border-2 border-orange-300/20" data-testid="revenue-analysis">
+            <Card className="bg-white border border-gray-200 border-2 border-orange-300/20" data-testid="revenue-analysis">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-orange-800 flex items-center gap-3">
                   <DollarSign className="w-7 h-7 text-orange-600" strokeWidth={2.5} />
                   Analisi Revenue Dettagliata
-                  <span className="action-badge ml-auto">LIVE DATA</span>
+                  <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold ml-auto">LIVE DATA</span>
                 </CardTitle>
                 <CardDescription className="text-gray-700 font-medium text-lg">Breakdown completo dei ricavi per area e periodo</CardDescription>
               </CardHeader>
@@ -397,7 +397,7 @@ export default function Dashboard() {
           
           <TabsContent value="performance" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="glass-card border-2 border-green-300/20" data-testid="performance-nord">
+              <Card className="bg-white border border-gray-200 border-2 border-green-300/20" data-testid="performance-nord">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold text-green-800 flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-green-600" strokeWidth={2.5} />

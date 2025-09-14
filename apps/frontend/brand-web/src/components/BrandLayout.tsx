@@ -185,17 +185,18 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
-      background: `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`
+      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
+      fontFamily: 'Inter, system-ui, sans-serif'
     }}>
       
       {/* Header moderno con glassmorphism esatto W3 Suite */}
       <header style={{
         position: 'relative',
         zIndex: 50,
-        background: COLORS.glass.whiteMedium,
-        backdropFilter: 'blur(24px) saturate(140%)',
+        background: 'hsla(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(24px) saturate(180%)',
         WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-        borderBottom: `1px solid ${COLORS.glass.white}`,
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         padding: '16px 24px',
         flexShrink: 0
       }}>
@@ -206,19 +207,21 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <h1 style={{
-              fontSize: '24px',
-              fontWeight: 700,
-              color: 'white',
+              fontSize: '20px',
+              fontWeight: 600,
+              background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
               margin: 0
             }}>
               {currentNavItem?.name || 'Brand Interface'}
             </h1>
             {currentWorkspace && (
               <div style={{
-                background: COLORS.glass.whiteMedium,
+                background: 'hsla(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                border: `1px solid ${COLORS.glass.white}`,
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '12px',
                 padding: '8px 16px',
                 display: 'flex',
@@ -226,7 +229,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 gap: '8px'
               }}>
                 <currentWorkspace.icon size={16} color={currentWorkspace.color} />
-                <span style={{ fontSize: '14px', fontWeight: 500, color: 'white' }}>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: 'rgba(255, 255, 255, 0.9)' }}>
                   {currentWorkspace.name}
                 </span>
               </div>
@@ -247,10 +250,10 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 type="text"
                 placeholder="Cerca..."
                 style={{
-                  background: COLORS.glass.whiteMedium,
+                  background: 'hsla(255, 255, 255, 0.15)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  border: `1px solid ${COLORS.glass.white}`,
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '12px',
                   padding: '12px 16px 12px 40px',
                   color: 'white',
@@ -263,10 +266,10 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             
             {/* Notification button */}
             <button style={{
-              background: COLORS.glass.whiteMedium,
+              background: 'hsla(255, 255, 255, 0.15)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
-              border: `1px solid ${COLORS.glass.white}`,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '12px',
               padding: '12px',
               cursor: 'pointer',
@@ -288,10 +291,10 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             <button 
               onClick={() => handleNavigation('/settings')}
               style={{
-                background: COLORS.glass.whiteMedium,
+                background: 'hsla(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                border: `1px solid ${COLORS.glass.white}`,
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '12px',
                 padding: '12px',
                 cursor: 'pointer'
@@ -331,10 +334,10 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           }}
           style={{
             width: leftSidebarCollapsed ? '64px' : '256px',
-            background: COLORS.glass.whiteMedium,
-            backdropFilter: 'blur(24px) saturate(140%)',
+            background: 'hsla(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(24px) saturate(180%)',
             WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            borderRight: `1px solid ${COLORS.glass.white}`,
+            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
             display: 'flex',
@@ -345,20 +348,20 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           {/* Brand header */}
           <div style={{
             padding: '16px',
-            borderBottom: `1px solid ${COLORS.glass.white}`,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             marginBottom: '16px'
           }}>
             {!leftSidebarCollapsed && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
-                  background: COLORS.glass.whiteMedium,
+                  background: 'hsla(255, 255, 255, 0.15)',
                   borderRadius: '12px',
                   padding: '8px'
                 }}>
                   <Shield size={20} color={COLORS.primary.purple} />
                 </div>
                 <div>
-                  <h2 style={{ color: 'white', fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                  <h2 style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '16px', fontWeight: 600, margin: 0 }}>
                     Brand Interface
                   </h2>
                   <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
@@ -431,7 +434,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
 
           {/* User profile */}
           <div style={{
-            borderTop: `1px solid ${COLORS.glass.white}`,
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
             paddingTop: '16px',
             position: 'relative'
           }}>
@@ -443,8 +446,8 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 alignItems: 'center',
                 gap: leftSidebarCollapsed ? '0' : '12px',
                 padding: '12px',
-                background: COLORS.glass.whiteMedium,
-                border: `1px solid ${COLORS.glass.white}`,
+                background: 'hsla(255, 255, 255, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '12px',
                 color: 'white',
                 cursor: 'pointer',
@@ -484,10 +487,10 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 left: 0,
                 right: 0,
                 marginBottom: '8px',
-                background: COLORS.glass.whiteMedium,
+                background: 'hsla(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                border: `1px solid ${COLORS.glass.white}`,
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '12px',
                 padding: '8px',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
@@ -594,10 +597,10 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           }}
           style={{
             width: workspaceCollapsed ? '64px' : '320px',
-            background: COLORS.glass.whiteLight,
-            backdropFilter: 'blur(24px) saturate(140%)',
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(180%)',
             WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            borderLeft: `1px solid ${COLORS.glass.white}`,
+            borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
             display: 'flex',
@@ -608,12 +611,12 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           {/* Workspace header */}
           <div style={{
             padding: '16px',
-            borderBottom: `1px solid ${COLORS.glass.white}`,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             marginBottom: '16px'
           }}>
             {!workspaceCollapsed && (
               <h3 style={{
-                color: 'white',
+                color: 'rgba(255, 255, 255, 0.9)',
                 fontSize: '14px',
                 fontWeight: 600,
                 margin: 0,
@@ -644,7 +647,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 </div>
                 {!workspaceCollapsed && (
                   <div>
-                    <p style={{ color: 'white', fontSize: '14px', fontWeight: 600, margin: 0 }}>
+                    <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', fontWeight: 600, margin: 0 }}>
                       {currentWorkspace.name}
                     </p>
                     <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
@@ -717,7 +720,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           {/* Quick stats */}
           {!workspaceCollapsed && (
             <div style={{
-              borderTop: `1px solid ${COLORS.glass.white}`,
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
               paddingTop: '16px',
               display: 'flex',
               flexDirection: 'column',
@@ -740,7 +743,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: COLORS.glass.whiteMedium,
+                  background: 'hsla(255, 255, 255, 0.15)',
                   borderRadius: '8px',
                   border: `1px solid ${COLORS.glass.white}`
                 }}>
@@ -764,7 +767,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: COLORS.glass.whiteMedium,
+                  background: 'hsla(255, 255, 255, 0.15)',
                   borderRadius: '8px',
                   border: `1px solid ${COLORS.glass.white}`
                 }}>
@@ -788,7 +791,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: COLORS.glass.whiteMedium,
+                  background: 'hsla(255, 255, 255, 0.15)',
                   borderRadius: '8px',
                   border: `1px solid ${COLORS.glass.white}`
                 }}>
