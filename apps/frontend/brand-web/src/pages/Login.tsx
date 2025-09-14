@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useLocation } from 'wouter';
-import { Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Shield, Mail, Lock, Eye, EyeOff, Sparkles, Activity, Users, TrendingUp } from 'lucide-react';
 
 export default function Login() {
   const { login } = useBrandAuth();
@@ -14,162 +14,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Inline CSS fallback for immediate visual fix
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '1rem',
-      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
-      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-    },
-    backgroundPattern: {
-      position: 'absolute' as const,
-      inset: '0',
-      opacity: '0.1',
-      pointerEvents: 'none' as const,
-      backgroundImage: `
-        radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.15) 0%, transparent 50%)
-      `
-    },
-    card: {
-      position: 'relative' as const,
-      width: '100%',
-      maxWidth: '28rem',
-      zIndex: '10',
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(12px)',
-      border: '2px solid rgba(255, 105, 0, 0.2)',
-      borderRadius: '12px',
-      padding: '2rem',
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 105, 0, 0.1)'
-    },
-    iconContainer: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '1rem',
-      background: 'rgba(255, 255, 255, 0.12)',
-      backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
-      borderRadius: '50%',
-      padding: '0.75rem'
-    },
-    title: {
-      fontSize: '1.5rem',
-      fontWeight: 'bold',
-      color: '#1f2937',
-      marginBottom: '0.5rem',
-      textAlign: 'center' as const
-    },
-    subtitle: {
-      color: '#6b7280',
-      fontSize: '0.875rem',
-      textAlign: 'center' as const,
-      marginBottom: '2rem'
-    },
-    demoBox: {
-      marginBottom: '1.5rem',
-      padding: '1rem',
-      borderRadius: '0.5rem',
-      background: 'rgba(255, 105, 0, 0.2)',
-      border: '1px solid rgba(255, 105, 0, 0.3)'
-    },
-    demoTitle: {
-      color: 'rgba(255, 180, 150, 1)',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      marginBottom: '0.5rem'
-    },
-    demoText: {
-      color: 'rgba(255, 255, 255, 0.9)',
-      fontSize: '0.75rem',
-      lineHeight: '1.5'
-    },
-    form: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '1.5rem'
-    },
-    label: {
-      display: 'block',
-      color: '#374151',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      marginBottom: '0.5rem'
-    },
-    inputContainer: {
-      position: 'relative' as const
-    },
-    input: {
-      width: '100%',
-      padding: '0.75rem 1rem 0.75rem 2.5rem',
-      background: 'rgba(255, 255, 255, 0.8)',
-      backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255, 105, 0, 0.3)',
-      borderRadius: '0.5rem',
-      color: '#1f2937',
-      fontSize: '1rem',
-      outline: 'none',
-      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-    },
-    inputFocus: {
-      borderColor: 'rgba(255, 105, 0, 0.5)',
-      boxShadow: '0 0 0 2px rgba(255, 105, 0, 0.2)'
-    },
-    icon: {
-      position: 'absolute' as const,
-      left: '0.75rem',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#6b7280'
-    },
-    eyeIcon: {
-      position: 'absolute' as const,
-      right: '0.75rem',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#6b7280',
-      cursor: 'pointer',
-      padding: '0.25rem'
-    },
-    errorBox: {
-      padding: '0.75rem',
-      borderRadius: '0.5rem',
-      background: 'rgba(239, 68, 68, 0.2)',
-      border: '1px solid rgba(239, 68, 68, 0.3)'
-    },
-    errorText: {
-      color: 'rgba(255, 200, 200, 1)',
-      fontSize: '0.875rem'
-    },
-    button: {
-      width: '100%',
-      padding: '0.75rem 1rem',
-      borderRadius: '0.5rem',
-      fontWeight: '500',
-      transition: 'all 0.2s',
-      border: 'none',
-      cursor: 'pointer',
-      color: 'white',
-      background: isLoading 
-        ? 'rgba(255, 105, 0, 0.3)' 
-        : 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-      opacity: isLoading ? 0.5 : 1
-    },
-    footer: {
-      marginTop: '2rem',
-      textAlign: 'center' as const
-    },
-    footerText: {
-      color: 'rgba(255, 255, 255, 0.5)',
-      fontSize: '0.75rem'
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -178,7 +22,6 @@ export default function Login() {
     try {
       const success = await login(credentials);
       if (success) {
-        // ✅ SPA navigation usando wouter - navigazione fluida senza refresh
         console.log('🎉 Login success - SPA navigate to dashboard via wouter');
         setLocation('/dashboard');
       } else {
@@ -192,95 +35,178 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      {/* Background Pattern */}
-      <div style={styles.backgroundPattern} />
-
-      {/* Login Card */}
-      <div style={styles.card}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={styles.iconContainer}>
-            <Shield style={{ width: '2rem', height: '2rem', color: 'white', filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))' }} />
-          </div>
-          <h1 style={styles.title}>Brand Interface</h1>
-          <p style={styles.subtitle}>Accesso riservato al team W3 Suite</p>
-        </div>
-
-        {/* Seed User Info */}
-        <div style={styles.demoBox}>
-          <p style={styles.demoTitle}>🚀 Demo Credentials</p>
-          <p style={styles.demoText}>
-            Email: sbadmin@w3suite.com<br />
-            Password: Brand123!
-          </p>
-        </div>
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {/* Email */}
-          <div>
-            <label style={styles.label}>Email</label>
-            <div style={styles.inputContainer}>
-              <Mail style={styles.icon} size={20} />
-              <input
-                type="email"
-                value={credentials.email}
-                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                style={styles.input}
-                placeholder="sbadmin@w3suite.com"
-                required
-                data-testid="input-email"
-              />
+    <div className="brand-login-container">
+      {/* Left Panel - Brand Showcase */}
+      <div className="brand-login-panel">
+        <div className="brand-login-pattern"></div>
+        
+        <div className="brand-login-content">
+          <div className="brand-logo-container">
+            <div className="brand-logo-icon">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <div className="brand-logo-text">
+              <h1 className="brand-logo-title">Brand Interface</h1>
+              <p className="brand-logo-subtitle">W3 Suite Enterprise HQ</p>
             </div>
           </div>
 
-          {/* Password */}
-          <div>
-            <label style={styles.label}>Password</label>
-            <div style={styles.inputContainer}>
-              <Lock style={styles.icon} size={20} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={credentials.password}
-                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                style={styles.input}
-                placeholder="••••••••"
-                required
-                data-testid="input-password"
-              />
+          <div className="brand-features">
+            <div className="brand-feature-card">
+              <Activity className="brand-feature-icon" />
+              <div>
+                <h3 className="brand-feature-title">Real-time Analytics</h3>
+                <p className="brand-feature-description">Monitor performance across all tenants</p>
+              </div>
+            </div>
+            
+            <div className="brand-feature-card">
+              <Users className="brand-feature-icon" />
+              <div>
+                <h3 className="brand-feature-title">Multi-tenant Control</h3>
+                <p className="brand-feature-description">Manage organizations from one dashboard</p>
+              </div>
+            </div>
+            
+            <div className="brand-feature-card">
+              <TrendingUp className="brand-feature-icon" />
+              <div>
+                <h3 className="brand-feature-title">Business Intelligence</h3>
+                <p className="brand-feature-description">Drive growth with data insights</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="brand-footer">
+            <p>© 2024 W3 Suite Enterprise Platform</p>
+            <p className="brand-footer-small">Powering digital transformation</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Login Form */}
+      <div className="brand-login-form-panel">
+        <div className="brand-login-form-container">
+          <div className="brand-login-form-card">
+            {/* Form Header */}
+            <div className="brand-form-header">
+              <div className="brand-form-icon">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h2 className="brand-form-title">Bentornato</h2>
+              <p className="brand-form-subtitle">Accedi al tuo account Brand Interface</p>
+            </div>
+
+            {/* Demo Credentials */}
+            <div className="brand-demo-box">
+              <div className="brand-demo-header">
+                <span className="brand-demo-badge">DEMO</span>
+                <span className="brand-demo-title">Test Credentials</span>
+              </div>
+              <div className="brand-demo-content">
+                <div className="brand-demo-line">
+                  <Mail className="w-3 h-3" />
+                  <span>sbadmin@w3suite.com</span>
+                </div>
+                <div className="brand-demo-line">
+                  <Lock className="w-3 h-3" />
+                  <span>Brand123!</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="brand-form">
+              {/* Email Field */}
+              <div className="brand-field">
+                <label className="brand-label">Email</label>
+                <div className="brand-input-group">
+                  <Mail className="brand-input-icon" />
+                  <input
+                    type="email"
+                    value={credentials.email}
+                    onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                    className="brand-input"
+                    placeholder="Inserisci la tua email"
+                    required
+                    data-testid="input-email"
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="brand-field">
+                <label className="brand-label">Password</label>
+                <div className="brand-input-group">
+                  <Lock className="brand-input-icon" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={credentials.password}
+                    onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                    className="brand-input"
+                    placeholder="••••••••"
+                    required
+                    data-testid="input-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="brand-input-toggle"
+                    data-testid="button-toggle-password"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember & Forgot */}
+              <div className="brand-form-options">
+                <label className="brand-checkbox-label">
+                  <input type="checkbox" className="brand-checkbox" />
+                  <span>Ricordami</span>
+                </label>
+                <button type="button" className="brand-link">
+                  Password dimenticata?
+                </button>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="brand-error-box">
+                  <p className="brand-error-text">{error}</p>
+                </div>
+              )}
+
+              {/* Submit Button */}
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-                data-testid="button-toggle-password"
+                type="submit"
+                disabled={isLoading}
+                className={`brand-submit-button ${isLoading ? 'loading' : ''}`}
+                data-testid="button-submit"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {isLoading ? (
+                  <span className="brand-button-loading">
+                    <div className="brand-spinner"></div>
+                    Accesso in corso...
+                  </span>
+                ) : (
+                  <span className="brand-button-text">
+                    Accedi alla piattaforma
+                  </span>
+                )}
               </button>
+            </form>
+
+            {/* Form Footer */}
+            <div className="brand-form-footer">
+              <p>
+                Hai bisogno di aiuto? 
+                <button type="button" className="brand-link ml-1">
+                  Contatta il supporto
+                </button>
+              </p>
             </div>
           </div>
-
-          {/* Error Message */}
-          {error && (
-            <div style={styles.errorBox}>
-              <p style={styles.errorText}>{error}</p>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={styles.button}
-            data-testid="button-submit"
-          >
-            {isLoading ? 'Accesso in corso...' : 'Accedi alla Brand Interface'}
-          </button>
-        </form>
-
-        {/* Footer */}
-        <div style={styles.footer}>
-          <p style={styles.footerText}>© 2024 W3 Suite Enterprise Platform</p>
         </div>
       </div>
     </div>
