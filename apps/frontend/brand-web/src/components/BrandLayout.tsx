@@ -159,12 +159,12 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   const currentNavItem = navigationItems.find(item => location.endsWith(item.path));
 
   const handleNavigation = (path: string) => {
-    navigate(`/brandinterface${path}`);
+    navigate(path);
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/brandinterface/login');
+    navigate('/login');
   };
 
   // Responsive detection like W3 Suite

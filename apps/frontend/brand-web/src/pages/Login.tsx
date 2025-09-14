@@ -182,7 +182,7 @@ export default function Login() {
       if (success) {
         // ✅ SPA navigation usando wouter - navigazione fluida senza refresh
         console.log('🎉 Login success - SPA navigate to dashboard via wouter');
-        setLocation('/');
+        setLocation('/dashboard');
       } else {
         setError('Credenziali non valide. Riprova.');
       }

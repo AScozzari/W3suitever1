@@ -25,10 +25,10 @@ export function BrandTenantProvider({ children }: { children: ReactNode }) {
   const isCrossTenant = currentTenant === null;
 
   const switchTenant = useCallback((tenant: string | null) => {
-    const nextPath = tenant ? `/brandinterface/${tenant}` : '/brandinterface';
-    if (window.location.pathname !== nextPath) {
-      console.log(`🔄 [Brand Tenant] SPA navigate: ${nextPath}`);
-      window.history.pushState({}, '', nextPath);
+    const nextPath = tenant ? `/${tenant}` : '/';
+    if (window.location.pathname !== `/brandinterface${nextPath}`) {
+      console.log(`🔄 [Brand Tenant] SPA navigate: /brandinterface${nextPath}`);
+      window.history.pushState({}, '', `/brandinterface${nextPath}`);
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
   }, []);
