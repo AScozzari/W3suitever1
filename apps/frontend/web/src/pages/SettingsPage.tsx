@@ -7189,7 +7189,7 @@ export default function SettingsPage() {
                         color: '#111827',
                         marginBottom: '4px'
                       }}>
-                        {newUser.selectAllLegalEntities ? '🌟 Accesso Completo Organizzazione' : '🏢 Seleziona tutto ragioni sociali'}
+                        {newUser.selectAllLegalEntities ? '🌟 Accesso Completo Organizzazione' : 'Accesso Completo'}
                       </div>
                       <div style={{
                         fontSize: '13px',
@@ -7294,7 +7294,7 @@ export default function SettingsPage() {
                             fontSize: '12px',
                             fontWeight: '600'
                           }}>
-                            {rs.denominazione ? rs.denominazione.charAt(0) : '?'}
+                            {rs.nome ? rs.nome.charAt(0) : '?'}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{
@@ -7303,13 +7303,13 @@ export default function SettingsPage() {
                               color: '#111827',
                               marginBottom: '2px'
                             }}>
-                              {rs.denominazione || 'Denominazione non disponibile'}
+                              {rs.nome || 'Denominazione non disponibile'}
                             </div>
                             <div style={{
                               fontSize: '12px',
                               color: '#6b7280'
                             }}>
-                              P.IVA: {rs.partitaIva || 'N/A'}
+                              P.IVA: {rs.pIva || 'N/A'}
                             </div>
                           </div>
                           <div style={{
