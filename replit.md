@@ -214,8 +214,10 @@ TENANT (Organizzazione)
 # External Dependencies
 
 ## Database Services
-- **Neon Database**: Serverless PostgreSQL hosting with connection pooling
-- **Environment**: Requires DATABASE_URL environment variable
+- **Replit Native PostgreSQL**: Built-in PostgreSQL 16 database fully managed by Replit platform
+- **Environment**: Automatically provides DATABASE_URL environment variable
+- **Benefits**: Integrated rollback support, automatic connection pooling, zero external dependencies
+- **Backend**: Uses Neon infrastructure but fully managed by Replit (transparent to user)
 
 ## Authentication Services  
 - **OAuth2/OIDC Enterprise**: OpenID Connect provider for user authentication
