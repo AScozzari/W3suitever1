@@ -353,20 +353,38 @@ class OAuth2Client {
    */
   async getUserInfo(): Promise<UserInfo | null> {
     try {
-      const accessToken = await this.getAccessToken();
-      if (!accessToken) {
-        return null;
+      // In development mode with Replit, use X-Auth-Session headers
+      const isDevMode = window.location.hostname === 'localhost' || 
+                        window.location.hostname.includes('replit.dev');
+      
+      let headers: HeadersInit;
+      
+      if (isDevMode) {
+        // Development mode - use session headers
+        console.log('🔐 Using development mode authentication for userinfo');
+        headers = {
+          'X-Auth-Session': 'authenticated',
+          'X-Demo-User': 'admin@w3suite.com',
+          'X-Tenant-Id': '00000000-0000-0000-0000-000000000001'
+        };
+      } else {
+        // Production mode - use Bearer token
+        const accessToken = await this.getAccessToken();
+        if (!accessToken) {
+          return null;
+        }
+        headers = {
+          'Authorization': `Bearer ${accessToken}`
+        };
       }
 
       const response = await fetch(this.config.userinfoEndpoint, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
+        headers
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          // Try to refresh token
+        if (response.status === 401 && !isDevMode) {
+          // Try to refresh token (only in production mode)
           const refreshed = await this.refreshToken();
           if (refreshed) {
             return this.getUserInfo(); // Retry with new token

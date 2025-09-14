@@ -495,7 +495,34 @@ export function setupOAuth2Server(app: express.Application) {
   });
 
   // ==================== USERINFO ENDPOINT ====================
-  app.get('/oauth2/userinfo', (req: Request, res: Response) => {
+  app.get('/oauth2/userinfo', async (req: Request, res: Response) => {
+    // Development mode support (similar to /api/auth/session)
+    if (process.env.NODE_ENV === 'development') {
+      const sessionAuth = req.headers['x-auth-session'];
+      const demoUser = req.headers['x-demo-user'];
+      
+      if (sessionAuth === 'authenticated') {
+        const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+        console.log(`[USERINFO-DEMO] Development mode - Returning demo user info`);
+        
+        // Return development user info matching OAuth2 standard
+        const userInfo = {
+          sub: 'admin-user',
+          email: demoUser || 'admin@w3suite.com',
+          email_verified: true,
+          name: 'Admin User',
+          given_name: 'Admin',
+          family_name: 'User',
+          tenant_id: tenantId,
+          preferred_username: demoUser || 'admin@w3suite.com',
+          updated_at: Math.floor(Date.now() / 1000)
+        };
+        
+        return res.json(userInfo);
+      }
+    }
+    
+    // Production mode - require Bearer token
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       return res.status(401).json({
