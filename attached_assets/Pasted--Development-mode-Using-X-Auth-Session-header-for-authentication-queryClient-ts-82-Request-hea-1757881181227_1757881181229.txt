@@ -1,0 +1,40 @@
+🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:82 📋 Request headers: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin@w3suite.com'}
+queryClient.ts:84  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/logs 403 (Forbidden)
+queryFn @ queryClient.ts:84
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+start @ @tanstack_react-query.js?v=776e1323:836
+fetch @ @tanstack_react-query.js?v=776e1323:1142
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+setOptions @ @tanstack_react-query.js?v=776e1323:1390
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3249
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+commitRootImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19414
+commitRoot @ chunk-4XMIFQ3Z.js?v=776e1323:19275
+performSyncWorkOnRoot @ chunk-4XMIFQ3Z.js?v=776e1323:18893
+flushSyncCallbacks @ chunk-4XMIFQ3Z.js?v=776e1323:9117
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:18625Understand this error
+queryClient.ts:89 📨 Response status: 403 Forbidden
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:246

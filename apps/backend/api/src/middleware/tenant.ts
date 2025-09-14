@@ -77,6 +77,14 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
       return next();
     }
     
+    // DEMO USER FAST PATH: Use req.user.permissions for demo users in development
+    if (process.env.NODE_ENV === 'development' && req.user?.id === 'demo-user') {
+      const perms = Array.isArray((req.user as any).permissions) ? (req.user as any).permissions : [];
+      req.userPermissions = perms;
+      console.log(`[RBAC-DEMO] Using inline permissions: ${req.userPermissions?.join(',')}`);
+      return next();
+    }
+    
     // Determina lo scope dal contesto della richiesta
     let scopeType = 'tenant';
     let scopeId = req.tenant.id;
