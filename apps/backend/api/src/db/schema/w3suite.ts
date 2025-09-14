@@ -1,7 +1,7 @@
 // W3 Suite Schema - Dedicated schema for tenant-specific tables
 // All tables in this file will be created in 'w3suite' schema
 
-import { sql } from 'drizzle-orm';
+import { sql, relations } from 'drizzle-orm';
 import {
   index,
   jsonb,
@@ -362,3 +362,103 @@ export const insertStructuredLogSchema = createInsertSchema(structuredLogs).omit
 });
 export type InsertStructuredLog = z.infer<typeof insertStructuredLogSchema>;
 export type StructuredLog = typeof structuredLogs.$inferSelect;
+
+// ==================== DRIZZLE RELATIONS ====================
+
+// Tenants Relations
+export const tenantsRelations = relations(tenants, ({ one, many }) => ({
+  users: many(users),
+  stores: many(stores),
+  legalEntities: many(legalEntities),
+  roles: many(roles),
+  entityLogs: many(entityLogs),
+  structuredLogs: many(structuredLogs),
+  userStores: many(userStores),
+  storeBrands: many(storeBrands),
+  storeDriverPotential: many(storeDriverPotential),
+}));
+
+// Users Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [users.tenantId], references: [tenants.id] }),
+  store: one(stores, { fields: [users.storeId], references: [stores.id] }),
+  userStores: many(userStores),
+  userAssignments: many(userAssignments),
+  userExtraPerms: many(userExtraPerms),
+  entityLogs: many(entityLogs),
+  structuredLogs: many(structuredLogs),
+}));
+
+// Legal Entities Relations
+export const legalEntitiesRelations = relations(legalEntities, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [legalEntities.tenantId], references: [tenants.id] }),
+  stores: many(stores),
+}));
+
+// Stores Relations
+export const storesRelations = relations(stores, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [stores.tenantId], references: [tenants.id] }),
+  legalEntity: one(legalEntities, { fields: [stores.legalEntityId], references: [legalEntities.id] }),
+  channel: one(channels, { fields: [stores.channelId], references: [channels.id] }),
+  commercialArea: one(commercialAreas, { fields: [stores.commercialAreaId], references: [commercialAreas.id] }),
+  userStores: many(userStores),
+  storeBrands: many(storeBrands),
+  storeDriverPotential: many(storeDriverPotential),
+  users: many(users),
+}));
+
+// Roles Relations
+export const rolesRelations = relations(roles, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [roles.tenantId], references: [tenants.id] }),
+  rolePerms: many(rolePerms),
+  userAssignments: many(userAssignments),
+}));
+
+// Role Permissions Relations
+export const rolePermsRelations = relations(rolePerms, ({ one }) => ({
+  role: one(roles, { fields: [rolePerms.roleId], references: [roles.id] }),
+}));
+
+// User Assignments Relations
+export const userAssignmentsRelations = relations(userAssignments, ({ one }) => ({
+  user: one(users, { fields: [userAssignments.userId], references: [users.id] }),
+  role: one(roles, { fields: [userAssignments.roleId], references: [roles.id] }),
+}));
+
+// User Extra Permissions Relations
+export const userExtraPermsRelations = relations(userExtraPerms, ({ one }) => ({
+  user: one(users, { fields: [userExtraPerms.userId], references: [users.id] }),
+}));
+
+// User Stores Relations
+export const userStoresRelations = relations(userStores, ({ one }) => ({
+  user: one(users, { fields: [userStores.userId], references: [users.id] }),
+  store: one(stores, { fields: [userStores.storeId], references: [stores.id] }),
+  tenant: one(tenants, { fields: [userStores.tenantId], references: [tenants.id] }),
+}));
+
+// Store Brands Relations
+export const storeBrandsRelations = relations(storeBrands, ({ one }) => ({
+  store: one(stores, { fields: [storeBrands.storeId], references: [stores.id] }),
+  brand: one(brands, { fields: [storeBrands.brandId], references: [brands.id] }),
+  tenant: one(tenants, { fields: [storeBrands.tenantId], references: [tenants.id] }),
+}));
+
+// Store Driver Potential Relations
+export const storeDriverPotentialRelations = relations(storeDriverPotential, ({ one }) => ({
+  store: one(stores, { fields: [storeDriverPotential.storeId], references: [stores.id] }),
+  driver: one(drivers, { fields: [storeDriverPotential.driverId], references: [drivers.id] }),
+  tenant: one(tenants, { fields: [storeDriverPotential.tenantId], references: [tenants.id] }),
+}));
+
+// Entity Logs Relations
+export const entityLogsRelations = relations(entityLogs, ({ one }) => ({
+  tenant: one(tenants, { fields: [entityLogs.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [entityLogs.userId], references: [users.id] }),
+}));
+
+// Structured Logs Relations
+export const structuredLogsRelations = relations(structuredLogs, ({ one }) => ({
+  tenant: one(tenants, { fields: [structuredLogs.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [structuredLogs.userId], references: [users.id] }),
+}));

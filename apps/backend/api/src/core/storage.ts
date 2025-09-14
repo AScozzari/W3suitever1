@@ -6,6 +6,7 @@ import {
   stores,
   roles,
   userAssignments,
+  userStores,
   entityLogs,
   structuredLogs,
   type User,
@@ -18,6 +19,8 @@ import {
   type InsertStore,
   type UserAssignment,
   type InsertUserAssignment,
+  type UserStore,
+  type InsertUserStore,
   type Role,
   type InsertRole,
   type EntityLog,
@@ -95,6 +98,13 @@ export interface IStorage {
   getUserTenantAssignments(userId: string, tenantId: string): Promise<UserAssignment[]>;
   createUserAssignment(userAssignment: InsertUserAssignment): Promise<UserAssignment>;
   
+  // User-Store Relationship Management
+  getUserStores(userId: string): Promise<UserStore[]>;
+  addUserStore(userStore: InsertUserStore): Promise<UserStore>;
+  removeUserStore(userId: string, storeId: string): Promise<void>;
+  setPrimaryStore(userId: string, storeId: string): Promise<void>;
+  getUsersByStore(storeId: string, tenantId: string): Promise<any[]>;
+  
   // Reference Data Management
   getLegalForms(): Promise<LegalForm[]>;
   getCountries(): Promise<Country[]>;
@@ -156,21 +166,36 @@ export class DatabaseStorage implements IStorage {
         status: users.status,
         mfaEnabled: users.mfaEnabled,
         role: users.role,
+        // Keep legacy storeId for backward compatibility
         storeId: users.storeId,
         phone: users.phone,
         position: users.position,
         department: users.department,
         hireDate: users.hireDate,
         contractType: users.contractType,
-        store_name: stores.nome,
+        // Legacy store name from users.storeId (deprecated)
+        legacy_store_name: stores.nome,
+        // New user_stores relationship data
+        primary_store_id: userStores.storeId,
+        primary_store_name: sql<string>`CASE WHEN ${userStores.isPrimary} = true THEN ${stores.nome} ELSE NULL END`.as('primary_store_name'),
+        is_primary_store: userStores.isPrimary,
+        // Role information
         role_name: roles.name,
         role_description: roles.description,
       })
       .from(users)
+      // Legacy join for backward compatibility
       .leftJoin(stores, eq(users.storeId, stores.id))
+      // New user_stores relationship (prioritize primary store)
+      .leftJoin(userStores, and(
+        eq(users.id, userStores.userId),
+        eq(userStores.tenantId, tenantId),
+        eq(userStores.isPrimary, true)
+      ))
       .leftJoin(userAssignments, eq(users.id, userAssignments.userId))
       .leftJoin(roles, eq(userAssignments.roleId, roles.id))
-      .where(eq(users.tenantId, tenantId));
+      .where(eq(users.tenantId, tenantId))
+      .orderBy(users.firstName, users.lastName);
     
     console.log(`[STORAGE-RLS] ✅ getUsersByTenant: Found ${result.length} users for tenant ${tenantId}`);
     return result;
@@ -387,6 +412,145 @@ export class DatabaseStorage implements IStorage {
   async createUserAssignment(userAssignmentData: InsertUserAssignment): Promise<UserAssignment> {
     const [userAssignment] = await db.insert(userAssignments).values(userAssignmentData).returning();
     return userAssignment;
+  }
+
+  // ==================== USER-STORE RELATIONSHIP MANAGEMENT ====================
+
+  async getUserStores(userId: string): Promise<UserStore[]> {
+    console.log(`[STORAGE-RLS] 🔍 getUserStores: Getting stores for user ${userId}`);
+    
+    const result = await db
+      .select()
+      .from(userStores)
+      .where(eq(userStores.userId, userId))
+      .orderBy(userStores.isPrimary, userStores.createdAt);
+    
+    console.log(`[STORAGE-RLS] ✅ getUserStores: Found ${result.length} store associations for user ${userId}`);
+    return result;
+  }
+
+  async addUserStore(userStoreData: InsertUserStore): Promise<UserStore> {
+    console.log(`[STORAGE-RLS] 🔍 addUserStore: Adding store ${userStoreData.storeId} to user ${userStoreData.userId}`);
+    
+    // If this is set as primary, unset any existing primary store for this user
+    if (userStoreData.isPrimary) {
+      await db
+        .update(userStores)
+        .set({ isPrimary: false })
+        .where(and(
+          eq(userStores.userId, userStoreData.userId),
+          eq(userStores.tenantId, userStoreData.tenantId)
+        ));
+    }
+    
+    const [userStore] = await db
+      .insert(userStores)
+      .values(userStoreData)
+      .onConflictDoUpdate({
+        target: [userStores.userId, userStores.storeId],
+        set: {
+          isPrimary: userStoreData.isPrimary,
+        },
+      })
+      .returning();
+    
+    console.log(`[STORAGE-RLS] ✅ addUserStore: Added store association for user ${userStoreData.userId}`);
+    return userStore;
+  }
+
+  async removeUserStore(userId: string, storeId: string): Promise<void> {
+    console.log(`[STORAGE-RLS] 🔍 removeUserStore: Removing store ${storeId} from user ${userId}`);
+    
+    const result = await db
+      .delete(userStores)
+      .where(and(
+        eq(userStores.userId, userId),
+        eq(userStores.storeId, storeId)
+      ));
+    
+    if (result.rowCount === 0) {
+      throw new Error(`User-store association not found for user ${userId} and store ${storeId}`);
+    }
+    
+    console.log(`[STORAGE-RLS] ✅ removeUserStore: Removed store association for user ${userId}`);
+  }
+
+  async setPrimaryStore(userId: string, storeId: string): Promise<void> {
+    console.log(`[STORAGE-RLS] 🔍 setPrimaryStore: Setting primary store ${storeId} for user ${userId}`);
+    
+    // First, get the tenant ID for this user-store combination
+    const [userStoreData] = await db
+      .select({ tenantId: userStores.tenantId })
+      .from(userStores)
+      .where(and(
+        eq(userStores.userId, userId),
+        eq(userStores.storeId, storeId)
+      ));
+    
+    if (!userStoreData) {
+      throw new Error(`User-store association not found for user ${userId} and store ${storeId}`);
+    }
+    
+    // Unset all primary stores for this user in this tenant
+    await db
+      .update(userStores)
+      .set({ isPrimary: false })
+      .where(and(
+        eq(userStores.userId, userId),
+        eq(userStores.tenantId, userStoreData.tenantId)
+      ));
+    
+    // Set the specified store as primary
+    await db
+      .update(userStores)
+      .set({ isPrimary: true })
+      .where(and(
+        eq(userStores.userId, userId),
+        eq(userStores.storeId, storeId)
+      ));
+    
+    console.log(`[STORAGE-RLS] ✅ setPrimaryStore: Set primary store for user ${userId}`);
+  }
+
+  async getUsersByStore(storeId: string, tenantId: string): Promise<any[]> {
+    console.log(`[STORAGE-RLS] 🔍 getUsersByStore: Getting users for store ${storeId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        isSystemAdmin: users.isSystemAdmin,
+        lastLoginAt: users.lastLoginAt,
+        tenantId: users.tenantId,
+        status: users.status,
+        mfaEnabled: users.mfaEnabled,
+        role: users.role,
+        phone: users.phone,
+        position: users.position,
+        department: users.department,
+        hireDate: users.hireDate,
+        contractType: users.contractType,
+        isPrimaryStore: userStores.isPrimary,
+        userStoreCreatedAt: userStores.createdAt,
+      })
+      .from(users)
+      .innerJoin(userStores, eq(users.id, userStores.userId))
+      .where(and(
+        eq(userStores.storeId, storeId),
+        eq(userStores.tenantId, tenantId)
+      ))
+      .orderBy(userStores.isPrimary, users.firstName, users.lastName);
+    
+    console.log(`[STORAGE-RLS] ✅ getUsersByStore: Found ${result.length} users for store ${storeId}`);
+    return result;
   }
 
   // ==================== REFERENCE DATA MANAGEMENT ====================
