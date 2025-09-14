@@ -204,7 +204,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Session endpoint with tenant info
   app.get('/api/auth/session', async (req: any, res) => {
-    // Check for auth token
+    // Check for development mode authentication first
+    if (process.env.NODE_ENV === 'development') {
+      // Check for demo session header (for development)
+      const sessionAuth = req.headers['x-auth-session'];
+      const demoUser = req.headers['x-demo-user'];
+      
+      if (sessionAuth === 'authenticated') {
+        const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+        console.log(`[AUTH-DEMO] ${req.method} ${req.path} - Session authentication for development`);
+        
+        // Return development session data
+        const sessionData = {
+          user: {
+            id: 'admin-user',
+            email: demoUser || 'admin@w3suite.com',
+            firstName: 'Admin',
+            lastName: 'User',
+            tenantId: tenantId,
+            tenant: {
+              id: tenantId,
+              name: 'Demo Organization',
+              code: 'DEMO001',
+              plan: 'Enterprise',
+              isActive: true
+            },
+            roles: ['admin', 'manager'] // Ruoli dell'utente
+          }
+        };
+        
+        return res.json(sessionData);
+      }
+    }
+    
+    // Check for auth token (production mode)
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(' ')[1];
 

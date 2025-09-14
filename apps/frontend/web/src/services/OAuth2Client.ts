@@ -231,6 +231,39 @@ class OAuth2Client {
         }
       }
 
+      // Development fallback: Generate a development token if no OAuth2 token exists
+      if (!this.currentTokens && (window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev'))) {
+        console.log('🔧 Development mode: Creating temporary JWT token...');
+        
+        // Create a simple base64 encoded JWT-like token for development
+        const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+        const payload = btoa(JSON.stringify({
+          id: 'admin-user',
+          email: 'admin@w3suite.com',
+          tenantId: '00000000-0000-0000-0000-000000000001',
+          roles: ['admin'],
+          scope: 'openid profile email tenant_access',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 86400 // 24 hours
+        }));
+        // Simple signature for development (not secure, only for dev!)
+        const signature = btoa('dev-signature');
+        const devToken = `${header}.${payload}.${signature}`;
+        
+        // Store development token
+        const devTokens = {
+          access_token: devToken,
+          token_type: 'Bearer',
+          expires_in: 86400,
+          scope: 'openid profile email tenant_access',
+          expires_at: Date.now() + (86400 * 1000)
+        };
+        
+        this.currentTokens = devTokens;
+        localStorage.setItem('oauth2_tokens', JSON.stringify(devTokens));
+        console.log('✅ Development token created and stored');
+      }
+
       if (!this.currentTokens) {
         return null;
       }

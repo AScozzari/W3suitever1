@@ -23,34 +23,48 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
-        const token = await oauth2Client.getAccessToken();
         const tenantId = getCurrentTenantId();
+        let headers: Record<string, string> = {
+          'X-Tenant-ID': tenantId, // Header per il tenant ID
+        };
         
-        // Validate token before using it
-        if (!isValidToken(token)) {
-          console.warn('⚠️ Invalid or missing access token detected:', token);
+        // Check if we're in development mode
+        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev');
+        
+        if (isDevelopment) {
+          // In development, use the X-Auth-Session header which is already supported by backend
+          console.log('🔧 Development mode: Using X-Auth-Session header for authentication');
+          headers['X-Auth-Session'] = 'authenticated';
+          headers['X-Demo-User'] = 'admin@w3suite.com';
+        } else {
+          // In production, use OAuth2 token
+          const token = await oauth2Client.getAccessToken();
           
-          // If no valid token, try to refresh or redirect to login
-          if (!token || token === 'undefined' || token === 'null' || token === '') {
-            console.log('🔄 Attempting token refresh or redirecting to login...');
+          // Validate token before using it
+          if (!isValidToken(token)) {
+            console.warn('⚠️ Invalid or missing access token detected:', token);
+            
+            // If no valid token, try to refresh or redirect to login
+            if (!token || token === 'undefined' || token === 'null' || token === '') {
+              console.log('🔄 Attempting token refresh or redirecting to login...');
+              await oauth2Client.logout();
+              await oauth2Client.startAuthorizationFlow();
+              throw new Error('Authentication required');
+            }
+            
+            // If token format is invalid, logout and redirect
+            console.log('❌ Token format invalid - redirecting to login');
             await oauth2Client.logout();
             await oauth2Client.startAuthorizationFlow();
-            throw new Error('Authentication required');
+            throw new Error('Invalid token format');
           }
           
-          // If token format is invalid, logout and redirect
-          console.log('❌ Token format invalid - redirecting to login');
-          await oauth2Client.logout();
-          await oauth2Client.startAuthorizationFlow();
-          throw new Error('Invalid token format');
+          headers['Authorization'] = `Bearer ${token}`;
         }
         
         const res = await fetch(queryKey[0] as string, {
           credentials: "include",
-          headers: {
-            'Authorization': `Bearer ${token}`, // Only include if token is valid
-            'X-Tenant-ID': tenantId, // Header per il tenant ID
-          },
+          headers,
         });
         if (!res.ok) {
           if (res.status === 401) {
@@ -74,34 +88,50 @@ export async function apiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const token = await oauth2Client.getAccessToken();
   const tenantId = getCurrentTenantId();
+  let headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    'X-Tenant-ID': tenantId, // Header per il tenant ID
+  };
   
-  // Validate token before using it
-  if (!isValidToken(token)) {
-    console.warn('⚠️ Invalid or missing access token detected in apiRequest:', token);
+  // Check if we're in development mode
+  const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev');
+  
+  if (isDevelopment) {
+    // In development, use the X-Auth-Session header which is already supported by backend
+    console.log('🔧 Development mode: Using X-Auth-Session header for authentication');
+    headers['X-Auth-Session'] = 'authenticated';
+    headers['X-Demo-User'] = 'admin@w3suite.com';
+  } else {
+    // In production, use OAuth2 token
+    const token = await oauth2Client.getAccessToken();
     
-    // If no valid token, try to refresh or redirect to login
-    if (!token || token === 'undefined' || token === 'null' || token === '') {
-      console.log('🔄 Attempting token refresh or redirecting to login...');
+    // Validate token before using it
+    if (!isValidToken(token)) {
+      console.warn('⚠️ Invalid or missing access token detected in apiRequest:', token);
+      
+      // If no valid token, try to refresh or redirect to login
+      if (!token || token === 'undefined' || token === 'null' || token === '') {
+        console.log('🔄 Attempting token refresh or redirecting to login...');
+        await oauth2Client.logout();
+        await oauth2Client.startAuthorizationFlow();
+        throw new Error('Authentication required');
+      }
+      
+      // If token format is invalid, logout and redirect
+      console.log('❌ Token format invalid - redirecting to login');
       await oauth2Client.logout();
       await oauth2Client.startAuthorizationFlow();
-      throw new Error('Authentication required');
+      throw new Error('Invalid token format');
     }
     
-    // If token format is invalid, logout and redirect
-    console.log('❌ Token format invalid - redirecting to login');
-    await oauth2Client.logout();
-    await oauth2Client.startAuthorizationFlow();
-    throw new Error('Invalid token format');
+    headers['Authorization'] = `Bearer ${token}`;
   }
   
   const res = await fetch(url, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
-      'Authorization': `Bearer ${token}`, // Only include if token is valid
-      'X-Tenant-ID': tenantId, // Header per il tenant ID
+      ...headers,
       ...options.headers,
     },
     credentials: "include",
