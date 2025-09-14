@@ -1,0 +1,126 @@
+📨 Response status: 404 Not Found
+/api/legal-entities:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/users:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+ApiService.ts:32   Attempt 2/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:27 📡 Making API request to: /api/reference/legal-forms
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+ApiService.ts:32   Attempt 2/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:27 📡 Making API request to: /api/reference/italian-cities
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+queryClient.ts:27 📡 Making API request to: /api/reference/countries
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+ApiService.ts:32   Attempt 2/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+/api/stores:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/legal-entities:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/reference/countries:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+/api/users:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/reference/legal-forms:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+/api/reference/italian-cities:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+ApiService.ts:32   Attempt 2/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+ApiService.ts:32   Attempt 2/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:27 📡 Making API request to: /api/commercial-areas
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+ApiService.ts:32   Attempt 2/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+/api/stores:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/legal-entities:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/commercial-areas:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+/api/users:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+ApiService.ts:32   Attempt 3/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+ApiService.ts:32   Attempt 3/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:27 📡 Making API request to: /api/reference/countries
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+ApiService.ts:32   Attempt 3/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:27 📡 Making API request to: /api/reference/legal-forms
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+queryClient.ts:27 📡 Making API request to: /api/reference/italian-cities
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+/api/reference/countries:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+/api/reference/italian-cities:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+/api/reference/legal-forms:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+/api/legal-entities:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/stores:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/users:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+ApiService.ts:163 🔍 ApiService: All API calls completed
+SettingsPage.tsx:237 📦 SettingsPage: loadSettingsData result: Object
+SettingsPage.tsx:244 Failed to load settings data: undefined
+loadData @ SettingsPage.tsx:244Understand this error
+ApiService.ts:32   Attempt 3/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+ApiService.ts:32   Attempt 3/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:27 📡 Making API request to: /api/commercial-areas
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: Object
+ApiService.ts:32   Attempt 3/3...
+queryClient.ts:112 🔧 Development mode: Using X-Auth-Session header for authentication
+/api/stores:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/legal-entities:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+/api/users:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+ApiService.ts:163 🔍 ApiService: All API calls completed
+SettingsPage.tsx:237 📦 SettingsPage: loadSettingsData result: Object
+SettingsPage.tsx:244 Failed to load settings data: undefined
+loadData @ SettingsPage.tsx:244Understand this error
+/api/commercial-areas:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+queryClient.ts:27 📡 Making API request to: /api/reference/countries
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin@w3suite.com'}
+queryClient.ts:27 📡 Making API request to: /api/reference/italian-cities
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin@w3suite.com'}
+queryClient.ts:27 📡 Making API request to: /api/reference/legal-forms
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin@w3suite.com'}
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+queryClient.ts:27 📡 Making API request to: /api/commercial-areas
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin@w3suite.com'}
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=CPsb4rxHR2Pq' failed: 
+setupWebSocket @ client:536Understand this error
+client:560 [vite] server connection lost. Polling for restart...
