@@ -31,6 +31,7 @@ export const w3suiteSchema = pgSchema("w3suite");
 // ==================== ENUMS ====================
 export const scopeTypeEnum = pgEnum('scope_type', ['tenant', 'legal_entity', 'store']);
 export const permModeEnum = pgEnum('perm_mode', ['grant', 'revoke']);
+export const userStatusEnum = pgEnum('user_status', ['attivo', 'sospeso', 'off-boarding']);
 
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
@@ -65,7 +66,7 @@ export const users = w3suiteSchema.table("users", {
   isSystemAdmin: boolean("is_system_admin").default(false),
   lastLoginAt: timestamp("last_login_at"),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  status: varchar("status", { length: 50 }).default("active"),
+  status: userStatusEnum("status").default("attivo"),
   mfaEnabled: boolean("mfa_enabled").default(false),
   // Extended enterprise fields
   role: varchar("role", { length: 50 }),
