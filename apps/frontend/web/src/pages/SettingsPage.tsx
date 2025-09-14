@@ -1220,8 +1220,6 @@ export default function SettingsPage() {
               transition: 'all 0.2s ease'
             }}
             onClick={() => {
-              console.log('🔍 DEBUG: Bottone Nuovo Utente cliccato');
-              console.log('🔍 DEBUG: userModal attuale:', userModal);
               setNewUser({
                 username: '',
                 password: '',
@@ -1268,13 +1266,7 @@ export default function SettingsPage() {
                 oreLavoro: '40',
                 note: ''
               });
-              console.log('🔍 DEBUG: Chiamando setUserModal({ open: true, data: null })');
               setUserModal({ open: true, data: null });
-              console.log('🔍 DEBUG: setUserModal chiamato');
-              // Debug aggiuntivo per verificare se il state cambia
-              setTimeout(() => {
-                console.log('🔍 DEBUG: userModal dopo timeout:', userModal);
-              }, 100);
             }}>
               <Plus size={16} />
               Nuovo Utente
