@@ -64,7 +64,7 @@ The project is structured as an enterprise monorepo, separating tenant-facing ap
 - **Multitenancy**: RLS at the database level, `TenantProvider` for context switching, and global unique constraints for entity codes (Tenant, Ragione Sociale, Punto Vendita).
 - **Organizational Hierarchy**: Pyramid structure: TENANT (Organization) > RAGIONI SOCIALI (Legal Entities) > PUNTI VENDITA (Sales Points) > RISORSE (Employees/Users).
 - **Entity Relationships**: 
-  - **1:1 Relations**: Ragioni sociali→Organizzazione (legal_entities.tenant_id unique), Punto vendita→Ragione sociale (stores.legal_entity_id), Utente→Organizzazione (users.tenant_id NOT NULL)
+  - **1:1 Relations**: Ragioni sociali→Organizzazione (legal_entities.tenant_id unique), Punto vendita→Ragione sociale (stores.legal_entity_id), Utente→Organizzazione (users.tenant_id NOT NULL), Punto vendita→Area commerciale (stores.commercial_area_id NOT NULL), Punto vendita→Canale di vendita (stores.channel_id NOT NULL)
   - **1:Many Relations**: Punto vendita→Brand (store_brands join table), Utente→Punti vendita (user_stores join table with isPrimary flag)
 - **Brand Interface Features**: Centralized Super Admin role, cross-tenant campaign creation, pricing management, business driver definition, and selective deployment via BullMQ event propagation.
 

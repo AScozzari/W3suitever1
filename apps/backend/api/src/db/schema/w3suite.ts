@@ -147,7 +147,7 @@ export const stores = w3suiteSchema.table("stores", {
   code: varchar("code", { length: 50 }).notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   channelId: uuid("channel_id").notNull().references(() => channels.id),
-  commercialAreaId: uuid("commercial_area_id").references(() => commercialAreas.id),
+  commercialAreaId: uuid("commercial_area_id").notNull().references(() => commercialAreas.id),
   address: text("address"),
   citta: varchar("citta", { length: 100 }),
   provincia: varchar("provincia", { length: 10 }),
