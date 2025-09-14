@@ -7,7 +7,35 @@ import {
   TrendingUp, Filter, Search, MoreVertical, Star, Edit, Trash2,
   ChevronDown, Activity, DollarSign, Target
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+
+// Color palette
+const COLORS = {
+  primary: {
+    orange: '#FF6900',
+    orangeLight: '#ff8533',
+    purple: '#7B2CBF',
+    purpleLight: '#9747ff',
+  },
+  semantic: {
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    info: '#3b82f6',
+  },
+  neutral: {
+    dark: '#1f2937',
+    medium: '#6b7280',
+    light: '#9ca3af',
+    lighter: '#e5e7eb',
+    lightest: '#f9fafb',
+  },
+  glass: {
+    white: 'hsla(255, 255, 255, 0.08)',
+    whiteLight: 'hsla(255, 255, 255, 0.03)',
+    whiteMedium: 'hsla(255, 255, 255, 0.12)',
+    whiteBorder: 'hsla(255, 255, 255, 0.18)',
+  }
+};
 
 // Mock CRM data
 const mockCustomers = [
@@ -94,231 +122,819 @@ export default function CRM() {
   });
 
   const getStatusBadge = (status: string) => {
-    const styles = {
-      active: 'bg-green-50 text-green-800 border border-green-200',
-      lead: 'bg-orange-50 text-orange-800 border border-orange-200',
-      prospect: 'bg-orange-50 text-orange-800 border border-orange-200'
+    const baseStyle = {
+      padding: '6px 12px',
+      borderRadius: '8px',
+      fontSize: '11px',
+      fontWeight: 700,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
+      display: 'inline-block',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      border: '1px solid',
+      transition: 'all 0.2s ease'
     };
+
+    const styles = {
+      active: {
+        ...baseStyle,
+        background: `linear-gradient(135deg, ${COLORS.semantic.success}15, ${COLORS.semantic.success}10)`,
+        color: COLORS.semantic.success,
+        borderColor: `${COLORS.semantic.success}30`
+      },
+      lead: {
+        ...baseStyle,
+        background: `linear-gradient(135deg, ${COLORS.primary.orange}15, ${COLORS.primary.orange}10)`,
+        color: COLORS.primary.orange,
+        borderColor: `${COLORS.primary.orange}30`
+      },
+      prospect: {
+        ...baseStyle,
+        background: `linear-gradient(135deg, ${COLORS.primary.purple}15, ${COLORS.primary.purple}10)`,
+        color: COLORS.primary.purple,
+        borderColor: `${COLORS.primary.purple}30`
+      }
+    };
+
     const labels = {
       active: 'Attivo',
       lead: 'Lead',
       prospect: 'Prospect'
     };
+
     return (
-      <span className={`px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide border ${styles[status as keyof typeof styles]}`}>
+      <span style={styles[status as keyof typeof styles]}>
         {labels[status as keyof typeof labels]}
       </span>
     );
   };
 
+  // Glassmorphism card style
+  const glassCardStyle = {
+    background: COLORS.glass.white,
+    backdropFilter: 'blur(24px) saturate(140%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+    border: `1px solid ${COLORS.glass.whiteBorder}`,
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+    transition: 'all 0.3s ease'
+  };
+
+  // Stats card style
+  const statsCardStyle = (color: string) => ({
+    ...glassCardStyle,
+    padding: '20px',
+    background: `linear-gradient(135deg, ${COLORS.glass.white}, ${COLORS.glass.whiteLight})`,
+    borderLeft: `3px solid ${color}`,
+    position: 'relative' as const,
+    overflow: 'hidden',
+    cursor: 'pointer'
+  });
+
   return (
     <BrandLayout>
-      <div className="space-y-6">
-        {/* Modern CRM Header */}
-        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200" data-testid="crm-header">
-          <div className="flex items-center justify-between mb-8">
+      <div style={{ padding: '24px', minHeight: '100vh' }}>
+        {/* CRM Header */}
+        <div 
+          style={{
+            ...glassCardStyle,
+            padding: '32px',
+            marginBottom: '24px',
+            background: `linear-gradient(135deg, ${COLORS.glass.white}, ${COLORS.glass.whiteLight})`
+          }}
+          data-testid="crm-header"
+        >
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '32px' 
+          }}>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+              <h1 style={{ 
+                fontSize: '32px', 
+                fontWeight: 700,
+                background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                marginBottom: '8px'
+              }}>
                 CRM Management
               </h1>
-              <p className="text-gray-700 mt-3 flex items-center gap-3 font-medium">
-                <Users className="w-5 h-5 text-orange-600" strokeWidth={2} />
-                Gestione clienti {isCrossTenant ? 'cross-tenant' : `per ${currentTenant}`}
-                {isCrossTenant && <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-semibold ml-2">MULTI-TENANT</span>}
+              <p style={{ 
+                fontSize: '14px',
+                color: COLORS.neutral.medium,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Users size={18} style={{ color: COLORS.primary.orange }} strokeWidth={2} />
+                <span style={{ fontWeight: 500 }}>
+                  Gestione clienti {isCrossTenant ? 'cross-tenant' : `per ${currentTenant}`}
+                </span>
+                {isCrossTenant && (
+                  <span style={{
+                    background: `linear-gradient(135deg, ${COLORS.primary.orange}20, ${COLORS.primary.orange}10)`,
+                    color: COLORS.primary.orange,
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '0.5px',
+                    marginLeft: '8px',
+                    border: `1px solid ${COLORS.primary.orange}30`
+                  }}>
+                    MULTI-TENANT
+                  </span>
+                )}
               </p>
             </div>
-            <button className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-6 py-3 flex items-center space-x-3 transition-colors" data-testid="button-new-customer">
-              <UserPlus className="w-5 h-5" strokeWidth={2.5} />
-              <span className="font-semibold">Nuovo Cliente</span>
+            <button 
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 24px',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.3)';
+              }}
+              data-testid="button-new-customer"
+            >
+              <UserPlus size={20} strokeWidth={2.5} />
+              Nuovo Cliente
             </button>
           </div>
 
-          {/* Modern CRM Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-orange-500/10 to-orange-600/15 border-2 border-orange-400/30 hover:border-orange-400/50 transition-all duration-300" data-testid="card-total-customers">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold text-orange-700 uppercase tracking-wide">
+          {/* Stats Cards Grid */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '20px'
+          }}>
+            {/* Total Customers Card */}
+            <div 
+              style={statsCardStyle(COLORS.primary.orange)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+              }}
+              data-testid="card-total-customers"
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: COLORS.primary.orange,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '12px'
+                  }}>
                     Clienti Totali
-                  </CardTitle>
-                  <div className="p-2 bg-orange-500/20 rounded-xl">
-                    <Users className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
-                  </div>
+                  </p>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    marginBottom: '4px'
+                  }}>248</div>
+                  <p style={{
+                    fontSize: '13px',
+                    color: COLORS.semantic.success,
+                    fontWeight: 500
+                  }}>+12% questo mese</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-800 mb-2">248</div>
-                <p className="text-sm text-orange-700 font-medium">+12% questo mese</p>
-              </CardContent>
-            </Card>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: `linear-gradient(135deg, ${COLORS.primary.orange}20, ${COLORS.primary.orange}10)`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Users size={24} style={{ color: COLORS.primary.orange }} strokeWidth={2} />
+                </div>
+              </div>
+            </div>
 
-            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-orange-500/10 to-orange-600/15 border-2 border-orange-400/30 hover:border-orange-400/50 transition-all duration-300" data-testid="card-pipeline-value">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold text-orange-700 uppercase tracking-wide">
+            {/* Pipeline Value Card */}
+            <div 
+              style={statsCardStyle(COLORS.primary.purple)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+              }}
+              data-testid="card-pipeline-value"
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: COLORS.primary.purple,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '12px'
+                  }}>
                     Valore Pipeline
-                  </CardTitle>
-                  <div className="p-2 bg-orange-500/20 rounded-xl">
-                    <DollarSign className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
-                  </div>
+                  </p>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    marginBottom: '4px'
+                  }}>€165K</div>
+                  <p style={{
+                    fontSize: '13px',
+                    color: COLORS.neutral.medium,
+                    fontWeight: 500
+                  }}>5 deals in corso</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-800 mb-2">€165K</div>
-                <p className="text-sm text-orange-700 font-medium">5 deals in corso</p>
-              </CardContent>
-            </Card>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: `linear-gradient(135deg, ${COLORS.primary.purple}20, ${COLORS.primary.purple}10)`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <DollarSign size={24} style={{ color: COLORS.primary.purple }} strokeWidth={2} />
+                </div>
+              </div>
+            </div>
 
-            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-green-500/10 to-green-600/15 border-2 border-green-400/30 hover:border-green-400/50 transition-all duration-300" data-testid="card-conversion-rate">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold text-green-700 uppercase tracking-wide">
+            {/* Conversion Rate Card */}
+            <div 
+              style={statsCardStyle(COLORS.semantic.success)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+              }}
+              data-testid="card-conversion-rate"
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: COLORS.semantic.success,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '12px'
+                  }}>
                     Tasso Conversione
-                  </CardTitle>
-                  <div className="p-2 bg-green-500/20 rounded-xl">
-                    <Target className="w-6 h-6 text-green-600" strokeWidth={2.5} />
-                  </div>
+                  </p>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    marginBottom: '4px'
+                  }}>68%</div>
+                  <p style={{
+                    fontSize: '13px',
+                    color: COLORS.semantic.success,
+                    fontWeight: 500
+                  }}>+5% vs mese scorso</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-800 mb-2">68%</div>
-                <p className="text-sm text-green-700 font-medium">+5% vs mese scorso</p>
-              </CardContent>
-            </Card>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: `linear-gradient(135deg, ${COLORS.semantic.success}20, ${COLORS.semantic.success}10)`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Target size={24} style={{ color: COLORS.semantic.success }} strokeWidth={2} />
+                </div>
+              </div>
+            </div>
 
-            <Card className="bg-white border border-gray-200 bg-gradient-to-br from-orange-400/10 to-orange-500/15 border-2 border-orange-300/30 hover:border-orange-300/50 transition-all duration-300" data-testid="card-new-leads">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold text-orange-700 uppercase tracking-wide">
+            {/* New Leads Card */}
+            <div 
+              style={statsCardStyle(COLORS.semantic.warning)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08)';
+              }}
+              data-testid="card-new-leads"
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: COLORS.semantic.warning,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '12px'
+                  }}>
                     Nuovi Lead
-                  </CardTitle>
-                  <div className="p-2 bg-orange-400/20 rounded-xl">
-                    <TrendingUp className="w-6 h-6 text-orange-600" strokeWidth={2.5} />
-                  </div>
+                  </p>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    marginBottom: '4px'
+                  }}>34</div>
+                  <p style={{
+                    fontSize: '13px',
+                    color: COLORS.neutral.medium,
+                    fontWeight: 500
+                  }}>Questa settimana</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-800 mb-2">34</div>
-                <p className="text-sm text-orange-700 font-medium">Questa settimana</p>
-              </CardContent>
-            </Card>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: `linear-gradient(135deg, ${COLORS.semantic.warning}20, ${COLORS.semantic.warning}10)`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <TrendingUp size={24} style={{ color: COLORS.semantic.warning }} strokeWidth={2} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Modern Customer List */}
-        <div className="bg-white border border-gray-200 p-8 border-2 border-orange-300/20" data-testid="customer-list">
-          {/* Modern Search and Filters */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-6 flex-1">
-              <div className="relative flex-1 max-w-lg">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-orange-500" strokeWidth={2} />
-                <input
-                  type="text"
-                  placeholder="Cerca clienti per nome, email o azienda..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="glass-input pl-12 pr-6 py-4 w-full text-gray-800 font-medium placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  data-testid="input-search-customers"
-                />
-              </div>
-              
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700-orange px-6 py-4 text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500"
-                data-testid="select-status-filter"
-              >
-                <option value="all" className="bg-gray-800 text-white">Tutti gli stati</option>
-                <option value="active" className="bg-gray-800 text-white">Attivi</option>
-                <option value="lead" className="bg-gray-800 text-white">Lead</option>
-                <option value="prospect" className="bg-gray-800 text-white">Prospect</option>
-              </select>
-
-              <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-4 flex items-center space-x-3 hover:bg-orange-50 transition-all duration-200" data-testid="button-advanced-filters">
-                <Filter className="w-5 h-5" strokeWidth={2} />
-                <span className="font-medium">Altri Filtri</span>
-              </button>
+        {/* Customer List */}
+        <div 
+          style={{
+            ...glassCardStyle,
+            padding: '32px',
+            background: `linear-gradient(135deg, ${COLORS.glass.white}, ${COLORS.glass.whiteLight})`
+          }}
+          data-testid="customer-list"
+        >
+          {/* Search and Filters */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '16px',
+            marginBottom: '24px',
+            flexWrap: 'wrap'
+          }}>
+            {/* Search Input */}
+            <div style={{ 
+              position: 'relative',
+              flex: '1',
+              minWidth: '300px'
+            }}>
+              <Search 
+                size={20} 
+                style={{ 
+                  position: 'absolute',
+                  left: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: COLORS.neutral.medium
+                }} 
+                strokeWidth={2}
+              />
+              <input
+                type="text"
+                placeholder="Cerca clienti per nome, email o azienda..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px 12px 48px',
+                  background: COLORS.glass.white,
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: `1px solid ${COLORS.glass.whiteBorder}`,
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  color: COLORS.neutral.dark,
+                  outline: 'none',
+                  transition: 'all 0.3s ease'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.primary.orange;
+                  e.currentTarget.style.boxShadow = `0 0 0 3px ${COLORS.primary.orange}20`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.glass.whiteBorder;
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                data-testid="input-search-customers"
+              />
             </div>
+
+            {/* Status Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{
+                padding: '12px 20px',
+                background: COLORS.glass.white,
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: `1px solid ${COLORS.glass.whiteBorder}`,
+                borderRadius: '12px',
+                fontSize: '14px',
+                color: COLORS.neutral.dark,
+                fontWeight: 500,
+                cursor: 'pointer',
+                outline: 'none',
+                minWidth: '150px',
+                transition: 'all 0.3s ease'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = COLORS.primary.orange;
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${COLORS.primary.orange}20`;
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = COLORS.glass.whiteBorder;
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              data-testid="select-status-filter"
+            >
+              <option value="all">Tutti gli stati</option>
+              <option value="active">Attivi</option>
+              <option value="lead">Lead</option>
+              <option value="prospect">Prospect</option>
+            </select>
+
+            {/* Advanced Filters Button */}
+            <button 
+              style={{
+                padding: '12px 20px',
+                background: COLORS.glass.white,
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: `1px solid ${COLORS.glass.whiteBorder}`,
+                borderRadius: '12px',
+                fontSize: '14px',
+                color: COLORS.neutral.dark,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = `linear-gradient(135deg, ${COLORS.primary.orange}10, ${COLORS.primary.orange}05)`;
+                e.currentTarget.style.borderColor = `${COLORS.primary.orange}30`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = COLORS.glass.white;
+                e.currentTarget.style.borderColor = COLORS.glass.whiteBorder;
+              }}
+              data-testid="button-advanced-filters"
+            >
+              <Filter size={18} strokeWidth={2} />
+              Altri Filtri
+            </button>
           </div>
 
-          {/* Modern Customer Table */}
-          <div className="overflow-x-auto rounded-xl">
-            <table className="w-full">
+          {/* Customer Table */}
+          <div style={{ 
+            overflowX: 'auto',
+            borderRadius: '12px',
+            border: `1px solid ${COLORS.glass.whiteBorder}`,
+            background: COLORS.glass.whiteLight
+          }}>
+            <table style={{ 
+              width: '100%',
+              borderCollapse: 'collapse'
+            }}>
               <thead>
-                <tr className="border-b-2 border-orange-200/50 bg-orange-50/30">
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Cliente</th>
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Azienda</th>
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Stato</th>
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Valore</th>
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Rating</th>
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Ultimo Contatto</th>
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Tags</th>
-                  <th className="text-left py-5 px-6 font-bold text-orange-800 uppercase tracking-wide text-sm">Azioni</th>
+                <tr style={{
+                  background: `linear-gradient(135deg, ${COLORS.primary.orange}08, ${COLORS.primary.orange}04)`,
+                  borderBottom: `1px solid ${COLORS.glass.whiteBorder}`
+                }}>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Cliente</th>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Azienda</th>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Stato</th>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Valore</th>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Rating</th>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Ultimo Contatto</th>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Tags</th>
+                  <th style={{
+                    padding: '16px',
+                    textAlign: 'left',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: COLORS.neutral.dark,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Azioni</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-orange-100/50 hover:bg-orange-50/20 transition-all duration-200" data-testid={`row-customer-${customer.id}`}>
-                    <td className="py-6 px-6">
+                  <tr 
+                    key={customer.id} 
+                    style={{
+                      borderBottom: `1px solid ${COLORS.glass.whiteBorder}`,
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = `linear-gradient(135deg, ${COLORS.glass.white}, ${COLORS.glass.whiteMedium})`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                    data-testid={`row-customer-${customer.id}`}
+                  >
+                    <td style={{ padding: '20px 16px' }}>
                       <div>
-                        <p className="font-bold text-gray-900 text-lg">{customer.name}</p>
-                        <p className="text-sm text-gray-600 font-medium mt-1">{customer.email}</p>
+                        <p style={{
+                          fontSize: '15px',
+                          fontWeight: 600,
+                          color: COLORS.neutral.dark,
+                          marginBottom: '4px'
+                        }}>{customer.name}</p>
+                        <p style={{
+                          fontSize: '13px',
+                          color: COLORS.neutral.medium
+                        }}>{customer.email}</p>
                       </div>
                     </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-orange-100 rounded-lg">
-                          <Building2 className="w-5 h-5 text-orange-600" strokeWidth={2} />
+                    <td style={{ padding: '20px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                          width: '36px',
+                          height: '36px',
+                          background: `linear-gradient(135deg, ${COLORS.primary.orange}20, ${COLORS.primary.orange}10)`,
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Building2 size={18} style={{ color: COLORS.primary.orange }} strokeWidth={2} />
                         </div>
-                        <span className="text-gray-800 font-medium">{customer.company}</span>
+                        <span style={{
+                          fontSize: '14px',
+                          color: COLORS.neutral.dark,
+                          fontWeight: 500
+                        }}>{customer.company}</span>
                       </div>
                     </td>
-                    <td className="py-6 px-6">
+                    <td style={{ padding: '20px 16px' }}>
                       {getStatusBadge(customer.status)}
                     </td>
-                    <td className="py-6 px-6">
-                      <span className="font-bold text-2xl text-orange-700">{customer.value}</span>
+                    <td style={{ padding: '20px 16px' }}>
+                      <span style={{
+                        fontSize: '18px',
+                        fontWeight: 700,
+                        color: COLORS.neutral.dark
+                      }}>{customer.value}</span>
                     </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-1">
+                    <td style={{ padding: '20px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {[...Array(5)].map((_, i) => (
                           <Star 
                             key={i} 
-                            className={`w-5 h-5 ${i < customer.rating ? 'text-orange-500 fill-current' : 'text-gray-300'}`}
+                            size={16}
+                            style={{ 
+                              color: i < customer.rating ? COLORS.primary.orange : COLORS.neutral.lighter,
+                              fill: i < customer.rating ? COLORS.primary.orange : 'none'
+                            }}
                             strokeWidth={2}
                           />
                         ))}
-                        <span className="ml-2 text-sm font-bold text-gray-700">({customer.rating}/5)</span>
+                        <span style={{
+                          marginLeft: '8px',
+                          fontSize: '13px',
+                          color: COLORS.neutral.medium,
+                          fontWeight: 600
+                        }}>({customer.rating}/5)</span>
                       </div>
                     </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-orange-500" strokeWidth={2} />
-                        <span className="text-sm text-gray-700 font-medium">{customer.lastContact}</span>
+                    <td style={{ padding: '20px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar size={16} style={{ color: COLORS.neutral.medium }} strokeWidth={2} />
+                        <span style={{
+                          fontSize: '13px',
+                          color: COLORS.neutral.medium,
+                          fontWeight: 500
+                        }}>{customer.lastContact}</span>
                       </div>
                     </td>
-                    <td className="py-6 px-6">
-                      <div className="flex flex-wrap gap-2">
+                    <td style={{ padding: '20px 16px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {customer.tags.map((tag) => (
-                          <span key={tag} className="action-badge text-xs font-bold">
+                          <span 
+                            key={tag} 
+                            style={{
+                              padding: '4px 10px',
+                              background: `linear-gradient(135deg, ${COLORS.primary.purple}15, ${COLORS.primary.purple}10)`,
+                              color: COLORS.primary.purple,
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              letterSpacing: '0.3px',
+                              border: `1px solid ${COLORS.primary.purple}20`
+                            }}
+                          >
                             {tag}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-2">
-                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 hover:bg-green-100 rounded-xl transition-all duration-200" data-testid={`button-call-${customer.id}`}>
-                          <Phone className="w-5 h-5 text-green-600" strokeWidth={2} />
+                    <td style={{ padding: '20px 16px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            background: COLORS.glass.white,
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: `1px solid ${COLORS.glass.whiteBorder}`,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = `linear-gradient(135deg, ${COLORS.semantic.success}20, ${COLORS.semantic.success}10)`;
+                            e.currentTarget.style.borderColor = `${COLORS.semantic.success}30`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = COLORS.glass.white;
+                            e.currentTarget.style.borderColor = COLORS.glass.whiteBorder;
+                          }}
+                          data-testid={`button-call-${customer.id}`}
+                        >
+                          <Phone size={16} style={{ color: COLORS.semantic.success }} strokeWidth={2} />
                         </button>
-                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 hover:bg-blue-100 rounded-xl transition-all duration-200" data-testid={`button-email-${customer.id}`}>
-                          <Mail className="w-5 h-5 text-blue-600" strokeWidth={2} />
+                        <button 
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            background: COLORS.glass.white,
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: `1px solid ${COLORS.glass.whiteBorder}`,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = `linear-gradient(135deg, ${COLORS.semantic.info}20, ${COLORS.semantic.info}10)`;
+                            e.currentTarget.style.borderColor = `${COLORS.semantic.info}30`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = COLORS.glass.white;
+                            e.currentTarget.style.borderColor = COLORS.glass.whiteBorder;
+                          }}
+                          data-testid={`button-email-${customer.id}`}
+                        >
+                          <Mail size={16} style={{ color: COLORS.semantic.info }} strokeWidth={2} />
                         </button>
-                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700-orange p-3 rounded-xl transition-all duration-200" data-testid={`button-edit-${customer.id}`}>
-                          <Edit className="w-5 h-5 text-white" strokeWidth={2} />
+                        <button 
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            background: COLORS.glass.white,
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: `1px solid ${COLORS.glass.whiteBorder}`,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = `linear-gradient(135deg, ${COLORS.primary.orange}20, ${COLORS.primary.orange}10)`;
+                            e.currentTarget.style.borderColor = `${COLORS.primary.orange}30`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = COLORS.glass.white;
+                            e.currentTarget.style.borderColor = COLORS.glass.whiteBorder;
+                          }}
+                          data-testid={`button-edit-${customer.id}`}
+                        >
+                          <Edit size={16} style={{ color: COLORS.primary.orange }} strokeWidth={2} />
                         </button>
-                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 hover:bg-gray-100 rounded-xl transition-all duration-200" data-testid={`button-more-${customer.id}`}>
-                          <MoreVertical className="w-5 h-5 text-gray-600" strokeWidth={2} />
+                        <button 
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            background: COLORS.glass.white,
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: `1px solid ${COLORS.glass.whiteBorder}`,
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = COLORS.glass.whiteMedium;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = COLORS.glass.white;
+                          }}
+                          data-testid={`button-more-${customer.id}`}
+                        >
+                          <MoreVertical size={16} style={{ color: COLORS.neutral.medium }} strokeWidth={2} />
                         </button>
                       </div>
                     </td>
