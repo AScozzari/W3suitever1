@@ -1,11 +1,21 @@
 import { QueryClient } from "@tanstack/react-query";
 
-// Brand API base URL - direct connection to brand backend
-const BRAND_API_BASE_URL = "http://localhost:3002";
-
 // API client function per Brand Interface
 export async function apiRequest(url: string, options: RequestInit = {}) {
   const token = window.brandAuthToken || localStorage.getItem('brand-token');
+  
+  // Normalize URL to relative path to ensure it goes through nginx
+  let finalUrl = url;
+  if (url.startsWith('http')) {
+    try {
+      const u = new URL(url, window.location.origin);
+      finalUrl = u.pathname + u.search;
+      console.log('📡 Normalized absolute URL to relative:', url, '->', finalUrl);
+    } catch (e) {
+      console.error('Failed to normalize URL:', e);
+      finalUrl = url;
+    }
+  }
   
   const config: RequestInit = {
     ...options,
@@ -16,8 +26,7 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
     }
   };
 
-  const fullUrl = url.startsWith('http') ? url : `${BRAND_API_BASE_URL}${url}`;
-  const response = await fetch(fullUrl, config);
+  const response = await fetch(finalUrl, config);
   
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
@@ -34,7 +43,21 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       queryFn: async ({ queryKey }) => {
         const url = Array.isArray(queryKey) ? queryKey.join('') : String(queryKey);
-        return apiRequest(url);
+        
+        // Normalize URL to relative path to ensure it goes through nginx
+        let finalUrl = url;
+        if (url.startsWith('http')) {
+          try {
+            const u = new URL(url, window.location.origin);
+            finalUrl = u.pathname + u.search;
+            console.log('📡 Normalized absolute URL to relative:', url, '->', finalUrl);
+          } catch (e) {
+            console.error('Failed to normalize URL:', e);
+            finalUrl = url;
+          }
+        }
+        
+        return apiRequest(finalUrl);
       },
       retry: (failureCount, error: any) => {
         if (error?.status === 401 || error?.status === 403) {

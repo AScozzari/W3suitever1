@@ -24,7 +24,21 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         const url = queryKey[0] as string;
-        console.log('📡 Making API request to:', url);
+        
+        // Normalize URL to relative path to ensure it goes through nginx
+        let finalUrl = url;
+        if (url.startsWith('http')) {
+          try {
+            const u = new URL(url, window.location.origin);
+            finalUrl = u.pathname + u.search;
+            console.log('📡 Normalized absolute URL to relative:', url, '->', finalUrl);
+          } catch (e) {
+            console.error('Failed to normalize URL:', e);
+            finalUrl = url;
+          }
+        }
+        
+        console.log('📡 Making API request to:', finalUrl);
         
         const tenantId = getCurrentTenantId();
         let headers: Record<string, string> = {
@@ -67,7 +81,7 @@ export const queryClient = new QueryClient({
         
         console.log('📋 Request headers:', headers);
         
-        const res = await fetch(url, {
+        const res = await fetch(finalUrl, {
           credentials: "include",
           headers,
         });
@@ -98,6 +112,19 @@ export async function apiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<any> {
+  // Normalize URL to relative path to ensure it goes through nginx
+  let finalUrl = url;
+  if (url.startsWith('http')) {
+    try {
+      const u = new URL(url, window.location.origin);
+      finalUrl = u.pathname + u.search;
+      console.log('📡 Normalized absolute URL to relative:', url, '->', finalUrl);
+    } catch (e) {
+      console.error('Failed to normalize URL:', e);
+      finalUrl = url;
+    }
+  }
+  
   const tenantId = getCurrentTenantId();
   let headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -138,7 +165,7 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  const res = await fetch(url, {
+  const res = await fetch(finalUrl, {
     ...options,
     headers: {
       ...headers,
