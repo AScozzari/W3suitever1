@@ -53,14 +53,18 @@ async function seedBrandInterface() {
       .onConflictDoNothing()
       .returning();
     
-    // Create hashed password for users
+    // Create hashed passwords for users
     const defaultPassword = "Brand123!";
-    let passwordHash: string | undefined;
+    const spadminPassword = "admin123";
+    
+    let defaultPasswordHash: string | undefined;
+    let spadminPasswordHash: string | undefined;
     
     // Only hash password in production or if explicitly requested
     if (process.env.NODE_ENV === "production" || process.env.USE_HASHED_PASSWORDS === "true") {
       const saltRounds = 10;
-      passwordHash = await bcrypt.hash(defaultPassword, saltRounds);
+      defaultPasswordHash = await bcrypt.hash(defaultPassword, saltRounds);
+      spadminPasswordHash = await bcrypt.hash(spadminPassword, saltRounds);
       console.log("🔐 Using hashed passwords for users");
     } else {
       console.log("⚠️ Development mode: Users created without password hashes");
@@ -68,6 +72,19 @@ async function seedBrandInterface() {
     
     // Create test users
     const users = [
+      {
+        id: nanoid(),
+        email: "spadmin@local",
+        firstName: "Super",
+        lastName: "Admin",
+        role: "super_admin" as const,
+        commercialAreaCodes: ["*"],
+        permissions: ["*"],
+        department: "System Admin",
+        isActive: true,
+        tenantId,
+        passwordHash: spadminPasswordHash
+      },
       {
         id: nanoid(),
         email: "brand.superadmin@windtre.it",
@@ -79,7 +96,7 @@ async function seedBrandInterface() {
         department: "HQ Operations",
         isActive: true,
         tenantId,
-        passwordHash
+        passwordHash: defaultPasswordHash
       },
       {
         id: nanoid(),
@@ -92,7 +109,7 @@ async function seedBrandInterface() {
         department: "Commercial Operations",
         isActive: true,
         tenantId,
-        passwordHash
+        passwordHash: defaultPasswordHash
       },
       {
         id: nanoid(),
@@ -105,7 +122,7 @@ async function seedBrandInterface() {
         department: "National Operations",
         isActive: true,
         tenantId,
-        passwordHash
+        passwordHash: defaultPasswordHash
       }
     ];
     
@@ -116,9 +133,10 @@ async function seedBrandInterface() {
     
     console.log("✅ Brand Interface seed data created successfully!");
     console.log("📧 Test users:");
-    console.log("  - brand.superadmin@windtre.it (password: Brand123!)");
-    console.log("  - brand.areamanager@windtre.it (password: Brand123!)");
-    console.log("  - brand.national@windtre.it (password: Brand123!)");
+    console.log("  - spadmin@local (password: admin123) - Super Admin");
+    console.log("  - brand.superadmin@windtre.it (password: Brand123!) - Brand Super Admin");
+    console.log("  - brand.areamanager@windtre.it (password: Brand123!) - Area Manager");
+    console.log("  - brand.national@windtre.it (password: Brand123!) - National Manager");
     
   } catch (error) {
     console.error("❌ Error seeding Brand Interface:", error);
