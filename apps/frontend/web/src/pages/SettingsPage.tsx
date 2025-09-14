@@ -857,9 +857,7 @@ export default function SettingsPage() {
                       fontWeight: '600',
                       border: '1px solid #e0f2fe'
                     }}>
-                      {item.commercial_area_id ? 
-                        (commercialAreas as any[]).find((area: any) => area.id === item.commercial_area_id)?.name || 'N/A'
-                        : 'Non assegnata'}
+                      {item.commercial_area_name || 'Non assegnata'}
                     </span>
                   </td>
                   <td style={{ padding: '16px' }}>
