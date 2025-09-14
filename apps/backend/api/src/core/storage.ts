@@ -226,15 +226,15 @@ export class DatabaseStorage implements IStorage {
     // If no roles exist, initialize default roles
     if (existingRoles.length === 0) {
       const defaultRoles = [
-        { name: 'Amministratore', description: 'Accesso completo a tutte le funzionalità', isSystem: true },
-        { name: 'Store Manager', description: 'Gestione completa del punto vendita', isSystem: true },
-        { name: 'Area Manager', description: 'Supervisione di più punti vendita', isSystem: true },
-        { name: 'Finance', description: 'Gestione finanziaria e reportistica', isSystem: true },
-        { name: 'HR Manager', description: 'Gestione risorse umane', isSystem: true },
-        { name: 'Sales Agent', description: 'Agente di vendita', isSystem: false },
-        { name: 'Cassiere', description: 'Gestione cassa e vendite', isSystem: false },
-        { name: 'Magazziniere', description: 'Gestione magazzino e inventario', isSystem: false },
-        { name: 'Marketing', description: 'Gestione campagne e promozioni', isSystem: false }
+        { name: 'Admin', description: 'Accesso completo', isSystem: true },
+        { name: 'Finance', description: 'Gestione finanziaria', isSystem: true },
+        { name: 'Direttore', description: 'Supervisione strategica', isSystem: true },
+        { name: 'Store Manager', description: 'Gestione punto vendita', isSystem: true },
+        { name: 'Store Specialist', description: 'Operazioni quotidiane', isSystem: false },
+        { name: 'Student', description: 'Accesso limitato formazione', isSystem: false },
+        { name: 'Marketing', description: 'Campagne e comunicazione', isSystem: false },
+        { name: 'HR Management', description: 'Gestione risorse umane', isSystem: false },
+        { name: 'Custom', description: 'Ruolo personalizzato', isSystem: false }
       ];
       
       const insertedRoles = await Promise.all(

@@ -289,29 +289,29 @@ export default function SettingsPage() {
       } else {
         // Fallback ai ruoli di default se l'API fallisce
         setAvailableRoles([
-          'Amministratore',
-          'Store Manager', 
-          'Area Manager',
+          'Admin',
           'Finance',
-          'HR Manager',
-          'Sales Agent',
-          'Cassiere',
-          'Magazziniere',
-          'Marketing'
+          'Direttore', 
+          'Store Manager',
+          'Store Specialist',
+          'Student',
+          'Marketing',
+          'HR Management',
+          'Custom'
         ]);
       }
     } catch (error) {
       console.error('Error fetching roles:', error);
       setAvailableRoles([
-        'Amministratore',
-        'Store Manager',
-        'Area Manager', 
+        'Admin',
         'Finance',
-        'HR Manager',
-        'Sales Agent',
-        'Cassiere',
-        'Magazziniere',
-        'Marketing'
+        'Direttore', 
+        'Store Manager',
+        'Store Specialist',
+        'Student',
+        'Marketing',
+        'HR Management',
+        'Custom'
       ]);
     }
   };
