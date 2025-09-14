@@ -7,7 +7,7 @@ import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
 import { rbacMiddleware, requirePermission } from "../middleware/tenant";
 import jwt from "jsonwebtoken";
-import { db } from "./db";
+import { db, setTenantContext } from "./db";
 import { sql } from "drizzle-orm";
 import { tenants } from "../db/schema";
 import { JWT_SECRET, config } from "./config";
@@ -60,10 +60,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Set RLS context for demo user
           try {
-            await db.execute(sql.raw(`SET LOCAL app.current_tenant = '${tenantId}'`));
-            console.log(`[RLS] Set tenant context: ${tenantId}`);
+            await setTenantContext(tenantId);
+            console.log(`[RLS-DEMO] ✅ Successfully set tenant context: ${tenantId}`);
           } catch (rlsError) {
-            console.log(`[RLS] Could not set tenant context: ${rlsError}`);
+            console.error(`[RLS-DEMO] ❌ Failed to set tenant context: ${rlsError}`);
           }
 
           return next();
@@ -86,10 +86,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Set RLS context for session user
           try {
-            await db.execute(sql.raw(`SET LOCAL app.current_tenant = '${tenantId}'`));
-            console.log(`[RLS] Set tenant context: ${tenantId}`);
+            await setTenantContext(tenantId);
+            console.log(`[RLS-SESSION] ✅ Successfully set tenant context: ${tenantId}`);
           } catch (rlsError) {
-            console.log(`[RLS] Could not set tenant context: ${rlsError}`);
+            console.error(`[RLS-SESSION] ❌ Failed to set tenant context: ${rlsError}`);
           }
 
           return next();

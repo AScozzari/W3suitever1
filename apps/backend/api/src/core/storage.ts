@@ -35,7 +35,7 @@ import {
   type LegalForm,
   type Country,
 } from "../db/schema/public";
-import { db } from "./db";
+import { db, setTenantContext, withTenantContext } from "./db";
 import { eq, and, or } from "drizzle-orm";
 
 // Interface for storage operations
@@ -109,7 +109,12 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUsersByTenant(tenantId: string): Promise<any[]> {
-    return await db
+    console.log(`[STORAGE-RLS] 🔍 getUsersByTenant: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const result = await db
       .select({
         id: users.id,
         email: users.email,
@@ -139,6 +144,9 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(userAssignments, eq(users.id, userAssignments.userId))
       .leftJoin(roles, eq(userAssignments.roleId, roles.id))
       .where(eq(users.tenantId, tenantId));
+    
+    console.log(`[STORAGE-RLS] ✅ getUsersByTenant: Found ${result.length} users for tenant ${tenantId}`);
+    return result;
   }
 
   // ==================== TENANT MANAGEMENT ====================
@@ -170,7 +178,14 @@ export class DatabaseStorage implements IStorage {
   // ==================== LEGAL ENTITY MANAGEMENT ====================
 
   async getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]> {
-    return await db.select().from(legalEntities).where(eq(legalEntities.tenantId, tenantId));
+    console.log(`[STORAGE-RLS] 🔍 getLegalEntitiesByTenant: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const result = await db.select().from(legalEntities).where(eq(legalEntities.tenantId, tenantId));
+    console.log(`[STORAGE-RLS] ✅ getLegalEntitiesByTenant: Found ${result.length} legal entities for tenant ${tenantId}`);
+    return result;
   }
 
   async createLegalEntity(legalEntityData: InsertLegalEntity): Promise<LegalEntity> {
@@ -200,6 +215,11 @@ export class DatabaseStorage implements IStorage {
   // ==================== ROLE MANAGEMENT ====================
 
   async getRolesByTenant(tenantId: string): Promise<Role[]> {
+    console.log(`[STORAGE-RLS] 🔍 getRolesByTenant: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
     // First check if roles exist for this tenant
     const existingRoles = await db.select().from(roles).where(eq(roles.tenantId, tenantId));
     
@@ -240,7 +260,12 @@ export class DatabaseStorage implements IStorage {
   // ==================== STORE MANAGEMENT ====================
 
   async getStoresByTenant(tenantId: string): Promise<any[]> {
-    return await db
+    console.log(`[STORAGE-RLS] 🔍 getStoresByTenant: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const result = await db
       .select({
         id: stores.id,
         tenantId: stores.tenantId,
@@ -282,6 +307,9 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(channels, eq(stores.channelId, channels.id))
       .leftJoin(legalEntities, eq(stores.legalEntityId, legalEntities.id))
       .where(eq(stores.tenantId, tenantId));
+    
+    console.log(`[STORAGE-RLS] ✅ getStoresByTenant: Found ${result.length} stores for tenant ${tenantId}`);
+    return result;
   }
 
 
