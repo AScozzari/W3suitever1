@@ -22,8 +22,8 @@ const COLORS = {
   primary: {
     orange: '#FF6900',      // Arancione WindTre
     orangeLight: '#ff8533', // Arancione chiaro
-    purple: '#FF6900',      // Orange (temporarily keeping name for compatibility)
-    purpleLight: '#ff8533', // Orange light (temporarily keeping name for compatibility)
+    purple: '#7B2CBF',      // Viola WindTre
+    purpleLight: '#9747ff', // Viola chiaro
   },
   // Colori semantici per stati e feedback
   semantic: {
@@ -189,16 +189,15 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       fontFamily: 'Inter, system-ui, sans-serif'
     }}>
       
-      {/* Header moderno con glassmorphism esatto W3 Suite */}
+      {/* Header clean and professional like W3 Suite */}
       <header style={{
         position: 'relative',
         zIndex: 50,
-        background: 'hsla(255, 255, 255, 0.15)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'white',
+        borderBottom: '1px solid #e5e7eb',
         padding: '16px 24px',
-        flexShrink: 0
+        flexShrink: 0,
+        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)'
       }}>
         <div style={{
           display: 'flex',
@@ -209,27 +208,23 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             <h1 style={{
               fontSize: '20px',
               fontWeight: 600,
-              background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              color: COLORS.neutral.dark,  // DARK TEXT for readability
               margin: 0
             }}>
               {currentNavItem?.name || 'Brand Interface'}
             </h1>
             {currentWorkspace && (
               <div style={{
-                background: 'hsla(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
                 padding: '8px 16px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <currentWorkspace.icon size={16} color={currentWorkspace.color} />
-                <span style={{ fontSize: '14px', fontWeight: 500, color: 'rgba(255, 255, 255, 0.9)' }}>
+                <currentWorkspace.icon size={16} color={COLORS.neutral.medium} />
+                <span style={{ fontSize: '14px', fontWeight: 500, color: COLORS.neutral.dark }}>
                   {currentWorkspace.name}
                 </span>
               </div>
@@ -237,45 +232,48 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Search con glassmorphism */}
+            {/* Search clean style */}
             <div style={{ position: 'relative' }}>
               <Search style={{
                 position: 'absolute',
                 left: '12px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: 'rgba(255, 255, 255, 0.6)'
+                color: COLORS.neutral.medium  // Gray icon
               }} size={16} />
               <input
                 type="text"
                 placeholder="Cerca..."
                 style={{
-                  background: 'hsla(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
+                  background: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
                   padding: '12px 16px 12px 40px',
-                  color: 'white',
+                  color: COLORS.neutral.dark,  // Dark text
                   fontSize: '14px',
                   width: '240px',
-                  outline: 'none'
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
                 }}
+                onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
               />
             </div>
             
             {/* Notification button */}
             <button style={{
-              background: 'hsla(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '12px',
-              padding: '12px',
+              background: 'transparent',
+              border: 'none',
+              padding: '8px',
               cursor: 'pointer',
-              position: 'relative'
-            }}>
-              <Bell size={16} color="white" />
+              position: 'relative',
+              borderRadius: '8px',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <Bell size={20} color={COLORS.neutral.medium} />
               <span style={{
                 position: 'absolute',
                 top: '6px',
@@ -291,16 +289,17 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             <button 
               onClick={() => handleNavigation('/settings')}
               style={{
-                background: 'hsla(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                padding: '12px',
-                cursor: 'pointer'
+                background: 'transparent',
+                border: 'none',
+                padding: '8px',
+                cursor: 'pointer',
+                borderRadius: '8px',
+                transition: 'background 0.2s'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
-              <Settings size={16} color="white" />
+              <Settings size={20} color={COLORS.neutral.medium} />
             </button>
           </div>
         </div>
@@ -334,37 +333,36 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           }}
           style={{
             width: leftSidebarCollapsed ? '64px' : '256px',
-            background: 'hsla(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(24px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'white',
+            borderRight: '1px solid #e5e7eb',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            padding: '16px 8px'
+            padding: '16px 8px',
+            boxShadow: '1px 0 3px 0 rgb(0 0 0 / 0.05)'
           }}
         >
           {/* Brand header */}
           <div style={{
             padding: '16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: '1px solid #e5e7eb',
             marginBottom: '16px'
           }}>
             {!leftSidebarCollapsed && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
-                  background: 'hsla(255, 255, 255, 0.15)',
-                  borderRadius: '12px',
+                  background: '#f9fafb',
+                  borderRadius: '8px',
                   padding: '8px'
                 }}>
-                  <Shield size={20} color={COLORS.primary.purple} />
+                  <Shield size={20} color={COLORS.neutral.medium} />
                 </div>
                 <div>
-                  <h2 style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                  <h2 style={{ color: COLORS.neutral.dark, fontSize: '16px', fontWeight: 600, margin: 0 }}>
                     Brand Interface
                   </h2>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
+                  <p style={{ color: COLORS.neutral.medium, fontSize: '12px', margin: 0 }}>
                     Control Panel
                   </p>
                 </div>
@@ -376,18 +374,18 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           <div style={{
             padding: '12px',
             marginBottom: '16px',
-            background: isCrossTenant ? 'rgba(255, 105, 0, 0.1)' : 'rgba(123, 44, 191, 0.1)',
-            borderRadius: '12px',
-            border: `1px solid ${COLORS.glass.white}`
+            background: isCrossTenant ? 'rgba(255, 105, 0, 0.05)' : '#f9fafb',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Globe size={16} color={isCrossTenant ? COLORS.primary.orange : 'white'} />
+              <Globe size={16} color={COLORS.neutral.medium} />
               {!leftSidebarCollapsed && (
                 <div>
-                  <p style={{ color: 'white', fontSize: '14px', fontWeight: 600, margin: 0 }}>
+                  <p style={{ color: COLORS.neutral.dark, fontSize: '14px', fontWeight: 600, margin: 0 }}>
                     {isCrossTenant ? 'Cross-Tenant' : currentTenant || 'Tenant'}
                   </p>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
+                  <p style={{ color: COLORS.neutral.medium, fontSize: '12px', margin: 0 }}>
                     {isCrossTenant ? 'Tutti i tenant' : `ID: ${currentTenantId?.substring(0, 8) || 'N/A'}...`}
                   </p>
                 </div>
@@ -407,23 +405,33 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   gap: leftSidebarCollapsed ? '0' : '12px',
                   padding: '12px',
                   background: location.endsWith(item.path) 
-                    ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
+                    ? 'rgba(255, 105, 0, 0.1)' 
                     : 'transparent',
-                  border: 'none',
-                  borderRadius: '12px',
-                  color: location.endsWith(item.path) ? 'white' : 'rgba(255, 255, 255, 0.8)',
+                  border: location.endsWith(item.path) ? `1px solid ${COLORS.primary.orange}` : 'none',
+                  borderRadius: '8px',
+                  color: location.endsWith(item.path) ? COLORS.primary.orange : COLORS.neutral.dark,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start'
                 }}
+                onMouseEnter={(e) => {
+                  if (!location.endsWith(item.path)) {
+                    e.currentTarget.style.background = '#f9fafb';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!location.endsWith(item.path)) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
               >
-                <item.icon size={20} />
+                <item.icon size={20} color={location.endsWith(item.path) ? COLORS.primary.orange : COLORS.neutral.medium} />
                 {!leftSidebarCollapsed && (
                   <div style={{ textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'inherit' }}>
                       {item.name}
                     </p>
-                    <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>
+                    <p style={{ margin: 0, fontSize: '12px', color: COLORS.neutral.medium }}>
                       {item.description}
                     </p>
                   </div>
@@ -434,7 +442,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
 
           {/* User profile */}
           <div style={{
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: '1px solid #e5e7eb',
             paddingTop: '16px',
             position: 'relative'
           }}>
@@ -446,32 +454,35 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 alignItems: 'center',
                 gap: leftSidebarCollapsed ? '0' : '12px',
                 padding: '12px',
-                background: 'hsla(255, 255, 255, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                color: 'white',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                color: COLORS.neutral.dark,
                 cursor: 'pointer',
-                justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start'
+                justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start',
+                transition: 'background 0.2s'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#f9fafb'}
             >
               <div style={{
-                background: COLORS.primary.orange,
+                background: 'linear-gradient(135deg, #7B2CBF, #a855f7)',
                 borderRadius: '50%',
                 padding: '6px'
               }}>
-                <User size={16} />
+                <User size={16} color="white" />
               </div>
               {!leftSidebarCollapsed && (
                 <>
                   <div style={{ flex: 1, textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark }}>
                       {user?.name || 'User'}
                     </p>
-                    <p style={{ margin: 0, fontSize: '12px', opacity: 0.7 }}>
+                    <p style={{ margin: 0, fontSize: '12px', color: COLORS.neutral.medium }}>
                       {user?.role || 'Role'}
                     </p>
                   </div>
-                  <ChevronDown size={16} style={{
+                  <ChevronDown size={16} color={COLORS.neutral.medium} style={{
                     transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     transition: 'transform 0.2s ease'
                   }} />
@@ -487,13 +498,11 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 left: 0,
                 right: 0,
                 marginBottom: '8px',
-                background: 'hsla(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
+                background: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
                 padding: '8px',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
               }}>
                 <button
                   onClick={toggleTheme}
@@ -505,13 +514,16 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                     padding: '8px 12px',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '6px',
+                    color: COLORS.neutral.dark,
                     cursor: 'pointer',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    transition: 'background 0.2s'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  {isDark ? <Sun size={16} /> : <Moon size={16} />}
+                  {isDark ? <Sun size={16} color={COLORS.neutral.medium} /> : <Moon size={16} color={COLORS.neutral.medium} />}
                   Tema {isDark ? 'Chiaro' : 'Scuro'}
                 </button>
                 <button
@@ -524,18 +536,21 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                     padding: '8px 12px',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
-                    color: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '6px',
+                    color: COLORS.neutral.dark,
                     cursor: 'pointer',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    transition: 'background 0.2s'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <Settings size={16} />
+                  <Settings size={16} color={COLORS.neutral.medium} />
                   Impostazioni
                 </button>
                 <div style={{
                   height: '1px',
-                  background: COLORS.glass.white,
+                  background: '#e5e7eb',
                   margin: '8px 0'
                 }} />
                 <button
@@ -548,13 +563,16 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                     padding: '8px 12px',
                     background: 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     color: COLORS.semantic.error,
                     cursor: 'pointer',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    transition: 'background 0.2s'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <LogOut size={16} />
+                  <LogOut size={16} color={COLORS.semantic.error} />
                   Esci
                 </button>
               </div>
@@ -597,26 +615,25 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           }}
           style={{
             width: workspaceCollapsed ? '64px' : '320px',
-            background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'white',
+            borderLeft: '1px solid #e5e7eb',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            padding: '16px 8px'
+            padding: '16px 8px',
+            boxShadow: '-1px 0 3px 0 rgb(0 0 0 / 0.05)'
           }}
         >
           {/* Workspace header */}
           <div style={{
             padding: '16px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: '1px solid #e5e7eb',
             marginBottom: '16px'
           }}>
             {!workspaceCollapsed && (
               <h3 style={{
-                color: 'rgba(255, 255, 255, 0.9)',
+                color: COLORS.neutral.dark,
                 fontSize: '14px',
                 fontWeight: 600,
                 margin: 0,
@@ -633,24 +650,25 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             <div style={{
               padding: '12px',
               marginBottom: '16px',
-              background: `linear-gradient(135deg, ${currentWorkspace.color}15, rgba(255, 255, 255, 0.1))`,
-              borderRadius: '12px',
-              border: `1px solid ${COLORS.glass.white}`
+              background: '#f9fafb',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
-                  background: `${currentWorkspace.color}20`,
+                  background: 'white',
                   borderRadius: '8px',
-                  padding: '8px'
+                  padding: '8px',
+                  border: '1px solid #e5e7eb'
                 }}>
-                  <currentWorkspace.icon size={16} color={currentWorkspace.color} />
+                  <currentWorkspace.icon size={16} color={COLORS.neutral.medium} />
                 </div>
                 {!workspaceCollapsed && (
                   <div>
-                    <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px', fontWeight: 600, margin: 0 }}>
+                    <p style={{ color: COLORS.neutral.dark, fontSize: '14px', fontWeight: 600, margin: 0 }}>
                       {currentWorkspace.name}
                     </p>
-                    <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', margin: 0 }}>
+                    <p style={{ color: COLORS.neutral.medium, fontSize: '12px', margin: 0 }}>
                       {currentWorkspace.description}
                     </p>
                   </div>
@@ -663,7 +681,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {!workspaceCollapsed && (
               <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
+                color: COLORS.neutral.medium,
                 fontSize: '12px',
                 fontWeight: 600,
                 textTransform: 'uppercase',
@@ -684,31 +702,41 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   gap: workspaceCollapsed ? '0' : '12px',
                   padding: '12px',
                   background: workspace === ws.id 
-                    ? `${ws.color}20` 
+                    ? 'rgba(255, 105, 0, 0.1)' 
                     : 'transparent',
                   border: workspace === ws.id 
-                    ? `1px solid ${ws.color}40` 
+                    ? `1px solid ${COLORS.primary.orange}` 
                     : '1px solid transparent',
-                  borderRadius: '12px',
-                  color: workspace === ws.id ? 'white' : 'rgba(255, 255, 255, 0.8)',
+                  borderRadius: '8px',
+                  color: workspace === ws.id ? COLORS.primary.orange : COLORS.neutral.dark,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   justifyContent: workspaceCollapsed ? 'center' : 'flex-start'
                 }}
+                onMouseEnter={(e) => {
+                  if (workspace !== ws.id) {
+                    e.currentTarget.style.background = '#f9fafb';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (workspace !== ws.id) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
               >
                 <div style={{
-                  background: `${ws.color}20`,
+                  background: workspace === ws.id ? 'rgba(255, 105, 0, 0.1)' : '#f9fafb',
                   borderRadius: '8px',
                   padding: '6px'
                 }}>
-                  <ws.icon size={16} color={workspace === ws.id ? ws.color : 'rgba(255, 255, 255, 0.8)'} />
+                  <ws.icon size={16} color={workspace === ws.id ? COLORS.primary.orange : COLORS.neutral.medium} />
                 </div>
                 {!workspaceCollapsed && (
                   <div style={{ flex: 1, textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'inherit' }}>
                       {ws.name}
                     </p>
-                    <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>
+                    <p style={{ margin: 0, fontSize: '12px', color: COLORS.neutral.medium }}>
                       {ws.description}
                     </p>
                   </div>
@@ -720,14 +748,14 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           {/* Quick stats */}
           {!workspaceCollapsed && (
             <div style={{
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              borderTop: '1px solid #e5e7eb',
               paddingTop: '16px',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px'
             }}>
               <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
+                color: COLORS.neutral.medium,
                 fontSize: '12px',
                 fontWeight: 600,
                 textTransform: 'uppercase',
@@ -743,16 +771,16 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: 'hsla(255, 255, 255, 0.15)',
+                  background: '#f9fafb',
                   borderRadius: '8px',
-                  border: `1px solid ${COLORS.glass.white}`
+                  border: '1px solid #e5e7eb'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CheckCircle size={14} color={COLORS.semantic.success} />
-                    <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px' }}>Tasks</span>
+                    <CheckCircle size={14} color={COLORS.neutral.medium} />
+                    <span style={{ color: COLORS.neutral.dark, fontSize: '12px' }}>Tasks</span>
                   </div>
                   <span style={{
-                    background: `${COLORS.semantic.success}20`,
+                    background: COLORS.semantic.success,
                     color: 'white',
                     fontSize: '12px',
                     fontWeight: 600,
@@ -767,16 +795,16 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: 'hsla(255, 255, 255, 0.15)',
+                  background: '#f9fafb',
                   borderRadius: '8px',
-                  border: `1px solid ${COLORS.glass.white}`
+                  border: '1px solid #e5e7eb'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <AlertTriangle size={14} color={COLORS.semantic.warning} />
-                    <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px' }}>Alerts</span>
+                    <AlertTriangle size={14} color={COLORS.neutral.medium} />
+                    <span style={{ color: COLORS.neutral.dark, fontSize: '12px' }}>Alerts</span>
                   </div>
                   <span style={{
-                    background: `${COLORS.semantic.warning}20`,
+                    background: COLORS.semantic.warning,
                     color: 'white',
                     fontSize: '12px',
                     fontWeight: 600,
@@ -791,16 +819,16 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: 'hsla(255, 255, 255, 0.15)',
+                  background: '#f9fafb',
                   borderRadius: '8px',
-                  border: `1px solid ${COLORS.glass.white}`
+                  border: '1px solid #e5e7eb'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Users size={14} color={COLORS.semantic.info} />
-                    <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px' }}>Users</span>
+                    <Users size={14} color={COLORS.neutral.medium} />
+                    <span style={{ color: COLORS.neutral.dark, fontSize: '12px' }}>Users</span>
                   </div>
                   <span style={{
-                    background: `${COLORS.semantic.info}20`,
+                    background: COLORS.semantic.info,
                     color: 'white',
                     fontSize: '12px',
                     fontWeight: 600,

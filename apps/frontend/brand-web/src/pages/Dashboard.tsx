@@ -57,28 +57,28 @@ export default function Dashboard() {
       value: '€187.5K',
       change: '+12.5%',
       icon: DollarSign,
-      color: '#FF6900'
+      color: '#6b7280'  // Neutral gray for all icons
     },
     { 
       label: 'Store Attivi', 
       value: '156',
       change: '+8.2%',
       icon: ShoppingBag,
-      color: '#FF6900'
+      color: '#6b7280'  // Neutral gray
     },
     { 
       label: 'Dipendenti', 
       value: '1,247',
       change: '+15.3%',
       icon: Users,
-      color: '#FF6900'
+      color: '#6b7280'  // Neutral gray
     },
     { 
       label: 'Performance', 
       value: '92.5%',
       change: '+5.7%',
       icon: TrendingUp,
-      color: '#FF6900'
+      color: '#6b7280'  // Neutral gray
     },
   ];
 
@@ -142,7 +142,7 @@ export default function Dashboard() {
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    background: `${metric.color}15`,
+                    background: '#f9fafb',  // Light gray background
                     borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'center',
