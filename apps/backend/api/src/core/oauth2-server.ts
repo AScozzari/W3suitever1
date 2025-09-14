@@ -173,6 +173,22 @@ async function getUserByCredentials(username: string, password: string) {
       return null;
     }
     
+    // Check user status before allowing login
+    if (user.status === 'sospeso') {
+      console.log(`🚫 Authentication blocked: User account suspended: ${username}`);
+      throw new Error('Il tuo account è stato sospeso. Contatta l\'amministratore per assistenza.');
+    }
+    
+    if (user.status === 'off-boarding') {
+      console.log(`🚫 Authentication blocked: User account in off-boarding: ${username}`);
+      throw new Error('Il tuo account è in fase di off-boarding. Accesso non autorizzato.');
+    }
+    
+    if (user.status !== 'attivo') {
+      console.log(`🚫 Authentication blocked: Invalid user status "${user.status}": ${username}`);
+      throw new Error('Il tuo account non è attivo. Contatta l\'amministratore.');
+    }
+    
     console.log(`✅ User authenticated successfully: ${username}`);
     return {
       id: user.id,
@@ -180,7 +196,8 @@ async function getUserByCredentials(username: string, password: string) {
       tenantId: user.tenantId || '00000000-0000-0000-0000-000000000001',
       roles: user.role ? [user.role] : ['user'],
       firstName: user.firstName || '',
-      lastName: user.lastName || ''
+      lastName: user.lastName || '',
+      status: user.status
     };
   } catch (error) {
     console.error('❌ Authentication error:', error);

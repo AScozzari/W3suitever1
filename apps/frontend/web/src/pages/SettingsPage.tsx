@@ -46,6 +46,7 @@ import {
   Eye,
   EyeOff,
   Check,
+  CheckCircle,
   X,
   AlertTriangle,
   AlertCircle,
@@ -1245,6 +1246,7 @@ export default function SettingsPage() {
                 provincia: '',
                 paese: 'Italia',
                 scopeLevel: 'organizzazione',
+                selectAllLegalEntities: false,
                 selectedLegalEntities: [] as number[],
                 selectedStores: [] as number[],
                 tipoDocumento: 'Carta Identità',
@@ -3815,7 +3817,7 @@ export default function SettingsPage() {
     dataScadenzaDocumento: '',
     
     // Impostazioni account
-    stato: 'Attivo',
+    stato: 'attivo',
     dataInizioValidita: '',
     dataFineValidita: '',
     notificheEmail: true,
@@ -6899,6 +6901,39 @@ export default function SettingsPage() {
                       {availableRoles.map(role => (
                         <option key={role} value={role}>{role}</option>
                       ))}
+                    </select>
+                  </div>
+
+                  {/* Status field */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Status <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newUser.stato}
+                      onChange={(e) => setNewUser({ ...newUser, stato: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                      data-testid="select-user-status"
+                    >
+                      <option value="attivo">Attivo</option>
+                      <option value="sospeso">Sospeso</option>
+                      <option value="off-boarding">Off-boarding</option>
                     </select>
                   </div>
 
