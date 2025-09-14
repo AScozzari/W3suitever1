@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -22,10 +22,12 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   const { isDark, toggleTheme } = useTheme();
   const [location, navigate] = useLocation();
   
-  // Sidebar states
-  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  // Sidebar states with auto-collapse
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(true);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const leftSidebarTimer = useRef<number | null>(null);
+  const rightSidebarTimer = useRef<number | null>(null);
 
   // Navigation items for left sidebar
   const navigationItems = [
@@ -96,21 +98,85 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     navigate('/brandinterface/login');
   };
 
+  // Auto-collapse logic for left sidebar
+  const handleLeftSidebarMouseEnter = () => {
+    if (leftSidebarCollapsed) {
+      setLeftSidebarCollapsed(false);
+    }
+    // Clear existing timer
+    if (leftSidebarTimer.current) {
+      window.clearTimeout(leftSidebarTimer.current);
+      leftSidebarTimer.current = null;
+    }
+  };
+
+  const handleLeftSidebarMouseLeave = () => {
+    if (!leftSidebarCollapsed) {
+      // Clear existing timer
+      if (leftSidebarTimer.current) {
+        window.clearTimeout(leftSidebarTimer.current);
+      }
+      // Set new timer
+      leftSidebarTimer.current = window.setTimeout(() => {
+        setLeftSidebarCollapsed(true);
+        leftSidebarTimer.current = null;
+      }, 1500);
+    }
+  };
+
+  // Auto-collapse logic for right sidebar
+  const handleRightSidebarMouseEnter = () => {
+    if (rightSidebarCollapsed) {
+      setRightSidebarCollapsed(false);
+    }
+    // Clear existing timer
+    if (rightSidebarTimer.current) {
+      window.clearTimeout(rightSidebarTimer.current);
+      rightSidebarTimer.current = null;
+    }
+  };
+
+  const handleRightSidebarMouseLeave = () => {
+    if (!rightSidebarCollapsed) {
+      // Clear existing timer
+      if (rightSidebarTimer.current) {
+        window.clearTimeout(rightSidebarTimer.current);
+      }
+      // Set new timer
+      rightSidebarTimer.current = window.setTimeout(() => {
+        setRightSidebarCollapsed(true);
+        rightSidebarTimer.current = null;
+      }, 1500);
+    }
+  };
+
+  // Cleanup timers on unmount
+  React.useEffect(() => {
+    return () => {
+      if (leftSidebarTimer.current) {
+        window.clearTimeout(leftSidebarTimer.current);
+      }
+      if (rightSidebarTimer.current) {
+        window.clearTimeout(rightSidebarTimer.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="h-screen flex flex-col overflow-hidden brand-gradient">
       
       {/* Fixed Top Header Bar */}
-      <div className="glass-card border-b border-white/10 px-6 py-4 flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-bold text-gray-900">
               {currentNavItem?.name || 'Brand Interface'}
             </h2>
             {currentWorkspace && (
-              <div className="flex items-center space-x-2 px-3 py-1 glass-button rounded-lg"
-                   style={{ background: `${currentWorkspace.color}20` }}>
+              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-lg border"
+                   style={{ background: `${currentWorkspace.color}10` }}>
                 <currentWorkspace.icon className="w-4 h-4" style={{ color: currentWorkspace.color }} />
-                <span className="text-sm text-white/80">{currentWorkspace.name}</span>
+                <span className="text-sm text-gray-700">{currentWorkspace.name}</span>
               </div>
             )}
           </div>
@@ -118,16 +184,16 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           <div className="flex items-center space-x-3">
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Cerca..."
-                className="pl-10 pr-4 py-2 glass-button rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 w-64"
+                className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
               />
             </div>
             
             {/* Notifications */}
-            <button className="glass-button rounded-lg p-2 text-white/80 hover:text-white relative">
+            <button className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 relative">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
@@ -135,7 +201,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             {/* Settings */}
             <button 
               onClick={() => handleNavigation('/settings')}
-              className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
+              className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               <Settings className="w-5 h-5" />
             </button>
@@ -147,7 +213,11 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       <div className="flex-1 flex overflow-hidden">
         
         {/* Left Sidebar - Navigation */}
-        <div className={`${leftSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 sidebar-left flex flex-col flex-shrink-0`}>
+        <div 
+          className={`${leftSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 sidebar-left flex flex-col flex-shrink-0`}
+          onMouseEnter={handleLeftSidebarMouseEnter}
+          onMouseLeave={handleLeftSidebarMouseLeave}
+        >
         
         {/* Brand Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -164,9 +234,15 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           )}
           <button
             onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
-            className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
+            className="toggle-button"
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: '-12px',
+              zIndex: 50
+            }}
           >
-            {leftSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+            {leftSidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
           </button>
         </div>
 
@@ -205,20 +281,21 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             <button
               key={item.id}
               onClick={() => handleNavigation(item.path)}
-              className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg menu-item text-left
                 ${location.endsWith(item.path)
-                  ? 'glass-button border border-white/20' 
-                  : 'hover:bg-white/5'
+                  ? 'active glass-button border border-white/30' 
+                  : ''
                 }`}
+              data-testid={`nav-${item.id}`}
             >
               <item.icon 
-                className={`w-5 h-5 flex-shrink-0 ${
+                className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
                   location.endsWith(item.path) ? 'text-white' : 'text-white/70'
                 }`}
               />
               {!leftSidebarCollapsed && (
-                <div>
-                  <p className={`font-medium text-sm ${
+                <div className="slide-in">
+                  <p className={`font-medium text-sm transition-colors duration-200 ${
                     location.endsWith(item.path) ? 'text-white' : 'text-white/80'
                   }`}>
                     {item.name}
@@ -276,16 +353,21 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             )}
           </div>
         </div>
+        </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-6">
+        <div className="flex-1 overflow-auto bg-white">
+          <div className="p-6 bg-white min-h-full">
             {children}
           </div>
         </div>
 
         {/* Right Sidebar - Workspace Selector */}
-        <div className={`${rightSidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 sidebar-right flex flex-col flex-shrink-0`}>
+        <div 
+          className={`${rightSidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 sidebar-right flex flex-col flex-shrink-0`}
+          onMouseEnter={handleRightSidebarMouseEnter}
+          onMouseLeave={handleRightSidebarMouseLeave}
+        >
             
             {/* Workspace Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -294,9 +376,15 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
               )}
               <button
                 onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
-                className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
+                className="toggle-button"
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  left: '-12px',
+                  zIndex: 50
+                }}
               >
-                {rightSidebarCollapsed ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                {rightSidebarCollapsed ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               </button>
             </div>
 
@@ -333,21 +421,22 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                 <button
                   key={ws.id}
                   onClick={() => setWorkspace(ws.id)}
-                  className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left
+                  className={`w-full flex items-center space-x-3 p-3 rounded-lg menu-item text-left
                     ${workspace === ws.id 
-                      ? 'glass-button border border-white/20' 
-                      : 'hover:bg-white/5'
+                      ? 'active glass-button border border-white/30' 
+                      : ''
                     }`}
+                  data-testid={`workspace-${ws.id}`}
                 >
                   <ws.icon 
-                    className={`w-5 h-5 flex-shrink-0 ${
+                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
                       workspace === ws.id ? 'text-white' : 'text-white/70'
                     }`}
                     style={{ color: workspace === ws.id ? ws.color : undefined }}
                   />
                   {!rightSidebarCollapsed && (
-                    <div>
-                      <p className={`font-medium text-sm ${
+                    <div className="slide-in">
+                      <p className={`font-medium text-sm transition-colors duration-200 ${
                         workspace === ws.id ? 'text-white' : 'text-white/80'
                       }`}>
                         {ws.name}
@@ -385,6 +474,5 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
