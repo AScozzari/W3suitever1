@@ -6727,10 +6727,12 @@ export default function SettingsPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 9999,
+          zIndex: 10000,
           animation: 'fadeIn 0.2s ease-out'
         }}>
-          <div style={{
+          <div 
+            data-testid="modal-nuovo-utente"
+            style={{
             background: 'white',
             borderRadius: '12px',
             width: '90%',
@@ -6741,7 +6743,8 @@ export default function SettingsPage() {
             flexDirection: 'column',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             borderTop: '3px solid transparent',
-            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1'
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            zIndex: 10001
           }}>
             {/* Header Modal - Clean Design */}
             <div style={{
