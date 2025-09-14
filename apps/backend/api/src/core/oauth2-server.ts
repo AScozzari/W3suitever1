@@ -10,10 +10,11 @@ import { storage } from './storage';
 import { db } from './db';
 import { users } from '../db/schema/w3suite';
 import { eq } from 'drizzle-orm';
+import { JWT_SECRET, config } from './config';
 
 // OAuth2 Configuration Enterprise
 const OAUTH2_CONFIG = {
-  issuer: process.env.OAUTH2_ISSUER || 'https://auth.w3suite.com',
+  issuer: config.OAUTH2_ISSUER,
   authorizationEndpoint: '/oauth2/authorize',
   tokenEndpoint: '/oauth2/token',
   jwksUri: '/oauth2/jwks',
@@ -36,8 +37,6 @@ const OAUTH2_CONFIG = {
   codeChallengeMethods: ['S256'], // PKCE required
   tokenEndpointAuthMethods: ['client_secret_basic', 'client_secret_post', 'none']
 };
-
-const JWT_SECRET = process.env.JWT_SECRET || 'w3suite-dev-secret-2025';
 
 // OAuth2 Client Registry (In produzione: database)
 interface OAuth2Client {

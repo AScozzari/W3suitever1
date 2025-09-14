@@ -10,17 +10,8 @@ import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { tenants } from "../db/schema";
-let JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('CRITICAL: JWT_SECRET environment variable is not set. Using default for development only.');
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET environment variable is required in production');
-  }
-  // Only in development
-  JWT_SECRET = "w3suite-dev-secret-2025";
-  process.env.JWT_SECRET = JWT_SECRET;
-}
-const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+import { JWT_SECRET, config } from "./config";
+const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -116,6 +107,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Token format validation before jwt.verify to prevent "jwt malformed" errors
+      if (token === 'undefined' || token === 'null' || token === '' || token.length < 10) {
+        console.error(`[AUTH ERROR] ${req.method} ${req.path} - Invalid token format: "${token}" - Duration: ${Date.now() - startTime}ms`);
+        return res.status(401).json({ 
+          error: 'invalid_token',
+          message: 'Invalid token format provided',
+          loginUrl: '/oauth2/authorize'
+        });
+      }
+
+      // Basic JWT structure validation: should have 3 parts separated by dots
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        console.error(`[AUTH ERROR] ${req.method} ${req.path} - Malformed JWT structure (${tokenParts.length} parts): "${token.substring(0, 20)}..." - Duration: ${Date.now() - startTime}ms`);
+        return res.status(401).json({ 
+          error: 'invalid_token',
+          message: 'Malformed JWT token structure',
+          loginUrl: '/oauth2/authorize'
+        });
+      }
+
+      // Each part should be base64-like (letters, numbers, -, _)
+      const base64Pattern = /^[A-Za-z0-9\-_]+$/;
+      if (!tokenParts.every((part: string) => part.length > 0 && base64Pattern.test(part))) {
+        console.error(`[AUTH ERROR] ${req.method} ${req.path} - Invalid JWT encoding: "${token.substring(0, 20)}..." - Duration: ${Date.now() - startTime}ms`);
+        return res.status(401).json({ 
+          error: 'invalid_token',
+          message: 'Invalid JWT token encoding',
+          loginUrl: '/oauth2/authorize'
+        });
+      }
+
       // Enterprise JWT verification with OAuth2 standard support
       const decoded = jwt.verify(token, JWT_SECRET) as any;
 
@@ -187,6 +210,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     if (!token) {
       return res.status(401).json({ message: "Non autenticato" });
+    }
+
+    // Token format validation for session endpoint
+    if (token === 'undefined' || token === 'null' || token === '' || token.length < 10) {
+      return res.status(401).json({ message: "Token non valido" });
+    }
+
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      return res.status(401).json({ message: "Token malformato" });
     }
 
     try {
