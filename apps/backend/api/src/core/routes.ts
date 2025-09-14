@@ -6,6 +6,7 @@ import { setupOAuth2Server } from "./oauth2-server";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
 import { rbacMiddleware, requirePermission } from "../middleware/tenant";
+import { correlationMiddleware } from "./logger";
 import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
 import { sql } from "drizzle-orm";
@@ -33,6 +34,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup OAuth2 Authorization Server (Enterprise)
   setupOAuth2Server(app);
+
+  // Apply correlation middleware globally for request tracking
+  app.use(correlationMiddleware);
 
   // Apply tenant middleware to all API routes except auth and OAuth2
   app.use((req, res, next) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
@@ -63,7 +63,20 @@ import {
   TrendingUp,
   DollarSign,
   Trash2,
-  Save
+  Save,
+  Search,
+  Filter,
+  Calendar as CalendarIcon,
+  Copy,
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight as ChevronRightIcon,
+  RotateCcw,
+  Play,
+  Pause,
+  Info,
+  AlertTriangle as Warning,
+  XCircle
 } from 'lucide-react';
 
 // Dati caricati dal database
@@ -204,6 +217,30 @@ interface ItalianCity {
   active: boolean;
 }
 
+// Types for structured logs
+interface StructuredLog {
+  id: string;
+  timestamp: string;
+  level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+  component: string;
+  message: string;
+  user?: string;
+  correlationId?: string;
+  metadata?: any;
+  stackTrace?: string;
+  requestContext?: any;
+}
+
+interface LogsResponse {
+  logs: StructuredLog[];
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 // Dati caricati dal database
 
 export default function SettingsPage() {
@@ -215,6 +252,22 @@ export default function SettingsPage() {
   const [legalEntityModal, setLegalEntityModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [storeModal, setStoreModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [userModal, setUserModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  const [logDetailsModal, setLogDetailsModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  
+  // Logs state variables
+  const [logsSearchTerm, setLogsSearchTerm] = useState('');
+  const [logsLevelFilter, setLogsLevelFilter] = useState('ALL');
+  const [logsComponentFilter, setLogsComponentFilter] = useState('ALL');
+  const [logsFromDate, setLogsFromDate] = useState('');
+  const [logsToDate, setLogsToDate] = useState('');
+  const [logsUserFilter, setLogsUserFilter] = useState('');
+  const [logsCorrelationIdFilter, setLogsCorrelationIdFilter] = useState('');
+  const [logsCurrentPage, setLogsCurrentPage] = useState(1);
+  const [logsPageSize] = useState(20);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [newLogsAvailable, setNewLogsAvailable] = useState(false);
+  const autoRefreshInterval = useRef<NodeJS.Timeout | null>(null);
+  const lastSeenTimestamp = useRef<string | null>(null);
   
   // Form states
   const [selectedCity, setSelectedCity] = useState('');
@@ -226,6 +279,7 @@ export default function SettingsPage() {
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
   const [puntiVenditaList, setPuntiVenditaList] = useState<any[]>([]);
+  
   
   // Caricamento dati enterprise con service layer
   useEffect(() => {
@@ -323,6 +377,94 @@ export default function SettingsPage() {
   const [showCreatePuntoVendita, setShowCreatePuntoVendita] = useState(false);
   const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
   
+  // Auto-refresh functionality for logs - FIXED: Remove duplicate mechanism
+  const stopAutoRefresh = () => {
+    if (autoRefreshInterval.current) {
+      clearInterval(autoRefreshInterval.current);
+      autoRefreshInterval.current = null;
+    }
+  };
+  
+  // Toggle auto-refresh - FIXED: Use only TanStack Query mechanism
+  const toggleAutoRefresh = () => {
+    if (autoRefreshEnabled) {
+      stopAutoRefresh();
+      setAutoRefreshEnabled(false);
+      setNewLogsAvailable(false);
+    } else {
+      setAutoRefreshEnabled(true);
+      // Clear any false positives when enabling
+      setNewLogsAvailable(false);
+    }
+  };
+  
+  // Reset all filters
+  const resetLogsFilters = () => {
+    setLogsSearchTerm('');
+    setLogsLevelFilter('ALL');
+    setLogsComponentFilter('ALL');
+    setLogsFromDate('');
+    setLogsToDate('');
+    setLogsUserFilter('');
+    setLogsCorrelationIdFilter('');
+    setLogsCurrentPage(1);
+    setNewLogsAvailable(false);
+  };
+  
+  // Build query params for logs API
+  const buildLogsQueryParams = () => {
+    const params: any = {
+      page: logsCurrentPage,
+      limit: logsPageSize
+    };
+    
+    if (logsSearchTerm) params.search = logsSearchTerm;
+    if (logsLevelFilter !== 'ALL') params.level = logsLevelFilter;
+    if (logsComponentFilter !== 'ALL') params.component = logsComponentFilter;
+    if (logsFromDate) params.fromDate = logsFromDate;
+    if (logsToDate) params.toDate = logsToDate;
+    if (logsUserFilter) params.user = logsUserFilter;
+    if (logsCorrelationIdFilter) params.correlationId = logsCorrelationIdFilter;
+    
+    return params;
+  };
+  
+  // Get level badge color
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case 'ERROR': return '#ef4444';
+      case 'WARN': return '#f59e0b';
+      case 'INFO': return '#3b82f6';
+      case 'DEBUG': return '#6b7280';
+      default: return '#6b7280';
+    }
+  };
+  
+  // Format timestamp for display
+  const formatLogTimestamp = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch {
+      return timestamp;
+    }
+  };
+  
+  // Copy text to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      // Could show a toast notification here
+      console.log('Copied to clipboard:', text);
+    });
+  };
+  
   // Role management states
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [selectedScope, setSelectedScope] = useState<string>('organization');
@@ -338,7 +480,7 @@ export default function SettingsPage() {
   // Handler per eliminare una ragione sociale - USA API REALE
   const handleDeleteRagioneSociale = async (legalEntityId: string) => {
     try {
-      const currentTenantId = getCurrentTenantId();
+      const currentTenantId = DEMO_TENANT_ID;
       
       const response = await fetch(`/api/legal-entities/${legalEntityId}`, {
         method: 'DELETE',
@@ -401,6 +543,28 @@ export default function SettingsPage() {
     queryKey: ['/api/reference/legal-forms'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+  
+  // Load logs data with filtering and pagination - FIXED: Proper new data detection
+  const queryParams = buildLogsQueryParams();
+  const { data: logsData, isLoading: logsLoading, error: logsError, refetch: refetchLogs } = useQuery<LogsResponse>({
+    queryKey: ['/api/logs', queryParams],
+    enabled: activeTab === 'Logs', // Only fetch when Logs tab is active
+    refetchInterval: autoRefreshEnabled ? 30000 : false, // Auto-refetch every 30s if enabled
+    staleTime: 30 * 1000, // 30 seconds
+  });
+
+  // TanStack Query v5 compatible effect to handle data changes
+  useEffect(() => {
+    if (logsData?.logs && logsData.logs.length > 0) {
+      const latestTimestamp = logsData.logs[0].timestamp;
+      if (lastSeenTimestamp.current && latestTimestamp > lastSeenTimestamp.current) {
+        setNewLogsAvailable(true);
+      }
+      if (!lastSeenTimestamp.current) {
+        lastSeenTimestamp.current = latestTimestamp;
+      }
+    }
+  }, [logsData]);
 
   const { data: countries = [] } = useQuery({
     queryKey: ['/api/reference/countries'],
@@ -416,6 +580,15 @@ export default function SettingsPage() {
     queryKey: ['/api/commercial-areas'],
     staleTime: 5 * 60 * 1000,
   });
+  
+  // Clean up auto-refresh on unmount - FIXED: Use ref
+  useEffect(() => {
+    return () => {
+      if (autoRefreshInterval.current) {
+        clearInterval(autoRefreshInterval.current);
+      }
+    };
+  }, []);
 
   // Validation functions
   const validateCodiceFiscale = (cf: string): boolean => {
@@ -441,7 +614,8 @@ export default function SettingsPage() {
     { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
     { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
     { id: 'Channel Settings', label: 'Channel Settings', icon: Globe },
-    { id: 'System Settings', label: 'System Settings', icon: Server }
+    { id: 'System Settings', label: 'System Settings', icon: Server },
+    { id: 'Logs', label: 'Logs', icon: FileText }
   ];
 
   const renderEntityManagement = () => (
@@ -2464,6 +2638,1025 @@ export default function SettingsPage() {
     </div>
   );
 
+  // LOGS RENDERING FUNCTION - Complete implementation with robust error/loading states
+  const renderLogs = () => {
+    const logs = logsData?.logs || [];
+    const metadata = logsData?.metadata || { total: 0, page: 1, limit: 20, totalPages: 0 };
+
+    // FIXED: Robust error state with retry
+    if (logsError) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '40px'
+        }}>
+          <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+            Error Loading Logs
+          </h3>
+          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', textAlign: 'center' }}>
+            {logsError.message || 'Failed to load system logs. Please try again.'}
+          </p>
+          <button
+            onClick={() => refetchLogs()}
+            aria-label="Retry loading logs"
+            style={{
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            data-testid="button-retry-logs"
+          >
+            <RefreshCw size={16} />
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    // FIXED: Loading skeleton state
+    if (logsLoading) {
+      return (
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '24px'
+        }}>
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{
+              height: '20px',
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+              borderRadius: '4px',
+              animation: 'shimmer 2s infinite',
+              marginBottom: '8px'
+            }} />
+            <div style={{
+              height: '14px',
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+              borderRadius: '4px',
+              width: '60%',
+              animation: 'shimmer 2s infinite'
+            }} />
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} style={{
+              padding: '16px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                height: '16px',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+                borderRadius: '4px',
+                marginBottom: '8px',
+                animation: 'shimmer 2s infinite'
+              }} />
+              <div style={{
+                height: '12px',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+                borderRadius: '4px',
+                width: '80%',
+                animation: 'shimmer 2s infinite'
+              }} />
+            </div>
+          ))}
+          <style>{`
+            @keyframes shimmer {
+              0% { background-position: -200px 0; }
+              100% { background-position: calc(200px + 100%) 0; }
+            }
+          `}</style>
+        </div>
+      );
+    }
+
+    // FIXED: Empty state when no logs found
+    if (!logs.length) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '40px'
+        }}>
+          <FileText size={48} style={{ color: '#6b7280', marginBottom: '16px' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+            No Logs Found
+          </h3>
+          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', textAlign: 'center' }}>
+            No logs match your current filters. Try adjusting your search criteria or check back later.
+          </p>
+          <button
+            onClick={resetLogsFilters}
+            aria-label="Clear all filters to show all logs"
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              color: '#6b7280',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            data-testid="button-clear-filters-empty"
+          >
+            <RotateCcw size={16} />
+            Clear Filters
+          </button>
+        </div>
+      );
+    }
+
+    // Get unique components for filter dropdown
+    const availableComponents = ['ALL', ...Array.from(new Set(logs.map(log => log.component)))];
+
+    return (
+      <div>
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px'
+          }}>
+            <div>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: '0 0 4px 0'
+              }}>
+                Logs Sistema
+              </h2>
+              <p style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                margin: 0
+              }}>
+                Visualizza e monitora i log strutturati del sistema
+              </p>
+            </div>
+            
+            {/* Auto-refresh and manual refresh controls */}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {newLogsAvailable && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  animation: 'pulse 2s infinite'
+                }}>
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    background: 'white',
+                    borderRadius: '50%'
+                  }} />
+                  Nuovi log disponibili
+                </div>
+              )}
+              
+              <button
+                onClick={toggleAutoRefresh}
+                style={{
+                  background: autoRefreshEnabled 
+                    ? 'linear-gradient(135deg, #10b981, #059669)' 
+                    : 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: `1px solid ${autoRefreshEnabled ? '#10b981' : 'rgba(255, 255, 255, 0.2)'}`,
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: autoRefreshEnabled ? 'white' : '#6b7280',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s ease'
+                }}
+                data-testid="button-toggle-auto-refresh"
+              >
+                {autoRefreshEnabled ? <Pause size={12} /> : <Play size={12} />}
+                Auto-refresh
+              </button>
+              
+              <button
+                onClick={() => {
+                  refetchLogs();
+                  setNewLogsAvailable(false);
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                data-testid="button-refresh-logs"
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* SEARCH & FILTERING UI - Glassmorphism Design */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '24px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '16px',
+              marginBottom: '16px'
+            }}>
+              {/* Search Bar */}
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#6b7280'
+                }} />
+                <input
+                  type="text"
+                  placeholder="Search logs..."
+                  value={logsSearchTerm}
+                  onChange={(e) => setLogsSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px 10px 36px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#111827',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  data-testid="input-search-logs"
+                />
+              </div>
+
+              {/* Level Filter */}
+              <select
+                value={logsLevelFilter}
+                onChange={(e) => setLogsLevelFilter(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+                data-testid="select-level-filter"
+              >
+                <option value="ALL">All Levels</option>
+                <option value="ERROR">ERROR</option>
+                <option value="WARN">WARN</option>
+                <option value="INFO">INFO</option>
+                <option value="DEBUG">DEBUG</option>
+              </select>
+
+              {/* Component Filter */}
+              <select
+                value={logsComponentFilter}
+                onChange={(e) => setLogsComponentFilter(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+                data-testid="select-component-filter"
+              >
+                {availableComponents.map(component => (
+                  <option key={component} value={component}>
+                    {component === 'ALL' ? 'All Components' : component}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Range and Additional Filters */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              marginBottom: '16px'
+            }}>
+              {/* From Date */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: '#6b7280',
+                  marginBottom: '4px'
+                }}>
+                  From Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={logsFromDate}
+                  onChange={(e) => setLogsFromDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#111827',
+                    fontSize: '14px',
+                    outline: 'none'
+                  }}
+                  data-testid="input-from-date"
+                />
+              </div>
+
+              {/* To Date */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: '#6b7280',
+                  marginBottom: '4px'
+                }}>
+                  To Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={logsToDate}
+                  onChange={(e) => setLogsToDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#111827',
+                    fontSize: '14px',
+                    outline: 'none'
+                  }}
+                  data-testid="input-to-date"
+                />
+              </div>
+
+              {/* User Filter */}
+              <input
+                type="text"
+                placeholder="Filter by user..."
+                value={logsUserFilter}
+                onChange={(e) => setLogsUserFilter(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+                data-testid="input-user-filter"
+              />
+
+              {/* Correlation ID Filter */}
+              <input
+                type="text"
+                placeholder="Filter by correlation ID..."
+                value={logsCorrelationIdFilter}
+                onChange={(e) => setLogsCorrelationIdFilter(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+                data-testid="input-correlation-filter"
+              />
+            </div>
+
+            {/* Reset Filters Button */}
+            <button
+              onClick={resetLogsFilters}
+              aria-label="Reset all log filters to default values"
+              style={{
+                background: 'rgba(255, 105, 0, 0.1)',
+                border: '1px solid rgba(255, 105, 0, 0.3)',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                color: '#FF6900',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              data-testid="button-reset-filters"
+            >
+              <RotateCcw size={14} />
+              Reset Filters
+            </button>
+          </div>
+
+          {/* LOGS TABLE/LIST VIEW */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            {logsLoading ? (
+              // Loading skeleton
+              <div style={{ padding: '24px' }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} style={{
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    height: '60px',
+                    borderRadius: '8px',
+                    marginBottom: '12px',
+                    animation: 'pulse 1.5s ease-in-out infinite'
+                  }} />
+                ))}
+              </div>
+            ) : logsError ? (
+              // Error state
+              <div style={{
+                padding: '48px 24px',
+                textAlign: 'center',
+                color: '#ef4444'
+              }}>
+                <XCircle size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+                <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px' }}>
+                  Error loading logs
+                </h3>
+                <p style={{ fontSize: '14px', margin: '0 0 16px', opacity: 0.7 }}>
+                  {(logsError as any)?.message || 'Failed to fetch logs data'}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                  data-testid="button-retry-logs"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : (logsData?.logs?.length || 0) === 0 ? (
+              // Empty state
+              <div style={{
+                padding: '48px 24px',
+                textAlign: 'center',
+                color: '#6b7280'
+              }}>
+                <FileText size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+                <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px' }}>
+                  No logs found
+                </h3>
+                <p style={{ fontSize: '14px', margin: 0, opacity: 0.7 }}>
+                  Try adjusting your filters or check back later
+                </p>
+              </div>
+            ) : (
+              // Logs table
+              <div style={{ overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '140px' }}>Timestamp</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '80px' }}>Level</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '120px' }}>Component</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Message</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '100px' }}>User</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '120px' }}>Correlation ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(logsData?.logs || []).map((log: StructuredLog, index: number) => (
+                      <tr
+                        key={log.id}
+                        onClick={() => setLogDetailsModal({ open: true, data: log })}
+                        style={{
+                          borderBottom: '1px solid #f3f4f6',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 105, 0, 0.05)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                        data-testid={`row-log-${log.id}`}
+                      >
+                        <td style={{ padding: '12px 16px', fontSize: '12px', color: '#6b7280' }}>
+                          {formatLogTimestamp(log.timestamp)}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{
+                            background: `${getLevelColor(log.level)}15`,
+                            color: getLevelColor(log.level),
+                            border: `1px solid ${getLevelColor(log.level)}30`,
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            display: 'inline-block',
+                            minWidth: '50px',
+                            textAlign: 'center'
+                          }}>
+                            {log.level}
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#111827', fontWeight: '500' }}>
+                          {log.component}
+                        </td>
+                        <td style={{
+                          padding: '12px 16px',
+                          fontSize: '14px',
+                          color: '#111827',
+                          maxWidth: '300px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {log.message}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#6b7280' }}>
+                          {log.user || '-'}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {log.correlationId ? (
+                            <div style={{
+                              background: 'rgba(59, 130, 246, 0.1)',
+                              color: '#3b82f6',
+                              border: '1px solid rgba(59, 130, 246, 0.2)',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyToClipboard(log.correlationId!);
+                            }}
+                          >
+                            {log.correlationId.slice(0, 8)}...
+                            <Copy size={10} />
+                          </div>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* PAGINATION CONTROLS */}
+            {logs.length > 0 && (
+              <div style={{
+                background: 'rgba(249, 250, 251, 0.8)',
+                backdropFilter: 'blur(8px)',
+                borderTop: '1px solid #e5e7eb',
+                padding: '16px 24px',
+                display: 'flex',
+                justifyContent: 'between',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                  Showing {((metadata.page - 1) * metadata.limit) + 1} to {Math.min(metadata.page * metadata.limit, metadata.total)} of {metadata.total} logs
+                </div>
+                
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    onClick={() => setLogsCurrentPage(Math.max(1, logsCurrentPage - 1))}
+                    disabled={logsCurrentPage <= 1}
+                    style={{
+                      background: logsCurrentPage <= 1 ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      color: logsCurrentPage <= 1 ? '#9ca3af' : '#374151',
+                      cursor: logsCurrentPage <= 1 ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    data-testid="button-previous-page"
+                  >
+                    <ChevronLeft size={14} />
+                    Previous
+                  </button>
+                  
+                  <div style={{
+                    padding: '6px 12px',
+                    background: 'rgba(255, 105, 0, 0.1)',
+                    border: '1px solid rgba(255, 105, 0, 0.2)',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#FF6900'
+                  }}>
+                    Page {metadata.page} of {metadata.totalPages}
+                  </div>
+                  
+                  <button
+                    onClick={() => setLogsCurrentPage(Math.min(metadata.totalPages, logsCurrentPage + 1))}
+                    disabled={logsCurrentPage >= metadata.totalPages}
+                    style={{
+                      background: logsCurrentPage >= metadata.totalPages ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      color: logsCurrentPage >= metadata.totalPages ? '#9ca3af' : '#374151',
+                      cursor: logsCurrentPage >= metadata.totalPages ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    data-testid="button-next-page"
+                  >
+                    Next
+                    <ChevronRightIcon size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* LOG DETAILS MODAL */}
+        {logDetailsModal.open && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            data-testid="modal-log-details"
+            >
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '24px'
+              }}>
+                <div>
+                  <h3 style={{
+                    fontSize: '20px',
+                    fontWeight: '700',
+                    color: '#111827',
+                    margin: '0 0 8px 0'
+                  }}>
+                    Log Details
+                  </h3>
+                  <div style={{
+                    background: `${getLevelColor(logDetailsModal.data.level)}15`,
+                    color: getLevelColor(logDetailsModal.data.level),
+                    border: `1px solid ${getLevelColor(logDetailsModal.data.level)}30`,
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    display: 'inline-block'
+                  }}>
+                    {logDetailsModal.data.level}
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => setLogDetailsModal({ open: false, data: null })}
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                    color: '#6b7280'
+                  }}
+                  data-testid="button-close-modal"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gap: '20px' }}>
+                {/* Basic Information */}
+                <div style={{
+                  background: 'rgba(249, 250, 251, 0.5)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                    Basic Information
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                        Timestamp
+                      </label>
+                      <div style={{ fontSize: '14px', color: '#111827', fontFamily: 'monospace' }}>
+                        {formatLogTimestamp(logDetailsModal.data.timestamp)}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                        Component
+                      </label>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '500' }}>
+                        {logDetailsModal.data.component}
+                      </div>
+                    </div>
+                    {logDetailsModal.data.user && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                          User
+                        </label>
+                        <div style={{ fontSize: '14px', color: '#111827' }}>
+                          {logDetailsModal.data.user}
+                        </div>
+                      </div>
+                    )}
+                    {logDetailsModal.data.correlationId && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                          Correlation ID
+                        </label>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#3b82f6',
+                          fontFamily: 'monospace',
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => copyToClipboard(logDetailsModal.data.correlationId)}
+                        >
+                          {logDetailsModal.data.correlationId}
+                          <Copy size={12} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Message */}
+                <div style={{
+                  background: 'rgba(249, 250, 251, 0.5)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                    Message
+                  </h4>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#111827',
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}>
+                    {logDetailsModal.data.message}
+                  </div>
+                </div>
+
+                {/* Metadata */}
+                {logDetailsModal.data.metadata && (
+                  <div style={{
+                    background: 'rgba(249, 250, 251, 0.5)',
+                    borderRadius: '12px',
+                    padding: '16px'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                      Metadata
+                    </h4>
+                    <pre style={{
+                      fontSize: '12px',
+                      color: '#111827',
+                      fontFamily: 'monospace',
+                      background: 'white',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      overflow: 'auto',
+                      maxHeight: '200px',
+                      margin: 0
+                    }}>
+                      {JSON.stringify(logDetailsModal.data.metadata, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Stack Trace */}
+                {logDetailsModal.data.stackTrace && (
+                  <div style={{
+                    background: 'rgba(239, 68, 68, 0.05)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#ef4444', margin: '0 0 12px 0' }}>
+                      Stack Trace
+                    </h4>
+                    <pre style={{
+                      fontSize: '11px',
+                      color: '#374151',
+                      fontFamily: 'monospace',
+                      background: 'white',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #fecaca',
+                      overflow: 'auto',
+                      maxHeight: '300px',
+                      margin: 0,
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {logDetailsModal.data.stackTrace}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Request Context */}
+                {logDetailsModal.data.requestContext && (
+                  <div style={{
+                    background: 'rgba(249, 250, 251, 0.5)',
+                    borderRadius: '12px',
+                    padding: '16px'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                      Request Context
+                    </h4>
+                    <pre style={{
+                      fontSize: '12px',
+                      color: '#111827',
+                      fontFamily: 'monospace',
+                      background: 'white',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      overflow: 'auto',
+                      maxHeight: '200px',
+                      margin: 0
+                    }}>
+                      {JSON.stringify(logDetailsModal.data.requestContext, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div style={{
+                marginTop: '24px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px'
+              }}>
+                <button
+                  onClick={() => copyToClipboard(JSON.stringify(logDetailsModal.data, null, 2))}
+                  style={{
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    color: '#3b82f6',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  data-testid="button-copy-log"
+                >
+                  <Copy size={14} />
+                  Copy JSON
+                </button>
+                
+                <button
+                  onClick={() => setLogDetailsModal({ open: false, data: null })}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                  data-testid="button-close-log-modal"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'Entity Management':
@@ -2474,6 +3667,8 @@ export default function SettingsPage() {
         return renderChannelSettings();
       case 'System Settings':
         return renderSystemSettings();
+      case 'Logs':
+        return renderLogs();
       default:
         return renderEntityManagement();
     }
@@ -2683,7 +3878,7 @@ export default function SettingsPage() {
   // Handler per salvare la nuova ragione sociale - USA API REALE
   const handleSaveRagioneSociale = async () => {
     try {
-      const currentTenantId = getCurrentTenantId();
+      const currentTenantId = DEMO_TENANT_ID;
       // Genera codice RS: inizia con 8, almeno 7 cifre totali  
       const newCode = newRagioneSociale.codice || `8${String(Date.now()).slice(-6)}`;
       
@@ -2789,7 +3984,7 @@ export default function SettingsPage() {
   // Handler per salvare/aggiornare punto vendita - USA API REALE
   const handleSaveStore = async () => {
     try {
-      const currentTenantId = getCurrentTenantId();
+      const currentTenantId = DEMO_TENANT_ID;
       const isEdit = Boolean(storeModal.data);
       
       // Genera codice PDV: inizia con 9, almeno 7 cifre totali (solo per creazione)

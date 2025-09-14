@@ -242,6 +242,12 @@ export const PERMISSIONS = {
       view: 'system.debug.view',
       execute: 'system.debug.execute'
     }
+  },
+
+  // ==================== LOGS ====================
+  logs: {
+    read: 'logs.read',
+    write: 'logs.write'
   }
 } as const;
 
