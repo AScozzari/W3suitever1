@@ -3985,6 +3985,23 @@ export default function SettingsPage() {
   const handleSaveStore = async () => {
     try {
       const currentTenantId = DEMO_TENANT_ID;
+      
+      // ✅ VALIDAZIONE RELAZIONI 1:1 OBBLIGATORIE
+      if (!newStore.legal_entity_id) {
+        alert('Errore: Ragione Sociale è obbligatoria per creare un punto vendita.');
+        return;
+      }
+      
+      if (!newStore.channel_id) {
+        alert('Errore: Canale di vendita è obbligatorio per creare un punto vendita.');
+        return;
+      }
+      
+      if (!newStore.commercial_area_id) {
+        alert('Errore: Area commerciale è obbligatoria per creare un punto vendita.');
+        return;
+      }
+      
       const isEdit = Boolean(storeModal.data);
       
       // Genera codice PDV: inizia con 9, almeno 7 cifre totali (solo per creazione)
