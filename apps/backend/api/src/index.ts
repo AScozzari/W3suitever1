@@ -25,20 +25,17 @@ async function startNginxAndBackend() {
   const nginxPrefix = "/tmp/w3suite-nginx";
   const nginxPidPath = `${nginxPrefix}/nginx.pid`;
   
-  console.log(`🔧 Generating nginx config for PLATFORM PORT ${port}...`);
-  console.log(`📍 REPLIT PLATFORM PORT: ${process.env.PORT || 'NOT SET - using fallback 3000'}`);
+  // Generating nginx config for platform port
   
   // Create nginx prefix directory structure for process isolation
   if (!existsSync(nginxPrefix)) {
     mkdirSync(nginxPrefix, { recursive: true });
-    console.log(`📁 Created nginx prefix directory: ${nginxPrefix}`);
   }
   
   // Create logs subdirectory
   const nginxLogsDir = `${nginxPrefix}/logs`;
   if (!existsSync(nginxLogsDir)) {
     mkdirSync(nginxLogsDir, { recursive: true });
-    console.log(`📁 Created nginx logs directory: ${nginxLogsDir}`);
   }
   
   // Workaround: Create system-level nginx directory to satisfy hardcoded compile paths
@@ -46,12 +43,9 @@ async function startNginxAndBackend() {
     const systemNginxDir = '/var/log/nginx';
     if (!existsSync(systemNginxDir)) {
       mkdirSync(systemNginxDir, { recursive: true });
-      console.log(`🔧 Created system nginx directory: ${systemNginxDir}`);
     }
   } catch (error) {
-    console.log(`⚠️ Could not create system nginx directory (may need sudo): ${error instanceof Error ? error.message : String(error)}`);
-    // Try alternative - use /tmp paths instead
-    console.log(`🔄 Using /tmp fallback paths...`);
+    // Could not create system nginx directory - using /tmp fallback paths
   }
   
   // Generate nginx.conf from template
@@ -59,61 +53,51 @@ async function startNginxAndBackend() {
     const templateContent = readFileSync(nginxTemplatePath, 'utf8');
     const generatedContent = templateContent.replace(/{{PORT}}/g, String(port));
     writeFileSync(nginxGeneratedPath, generatedContent);
-    console.log(`✅ Generated nginx config: ${nginxGeneratedPath}`);
   } catch (error) {
-    console.error("❌ Failed to generate nginx config:", error);
+    console.error("Failed to generate nginx config:", error);
     throw error;
   }
   
-  console.log("🔧 Starting nginx reverse proxy...");
+  // Starting nginx reverse proxy
   
   try {
     // 1. Preflight check - validate nginx configuration with explicit paths
-    console.log("📋 Validating nginx configuration...");
     await new Promise((resolve, reject) => {
       // Use explicit error-log and pid-path to override compile defaults
       const testCmd = `nginx -p ${nginxPrefix} -t -c ${nginxGeneratedPath} -g 'error_log ${nginxPrefix}/logs/nginx_error.log; pid ${nginxPidPath};'`;
       exec(testCmd, (error, stdout, stderr) => {
         if (error) {
-          console.error("❌ Nginx configuration validation failed:");
+          console.error("Nginx configuration validation failed:");
           console.error(stderr);
           reject(error);
           return;
         }
-        console.log("✅ Nginx configuration valid");
         resolve(stdout);
       });
     });
 
     // 2. Stop existing nginx instance safely using scoped approach
     try {
-      console.log("🛑 Stopping existing nginx instance...");
       if (existsSync(nginxPidPath)) {
-        console.log(`📋 Found existing PID file: ${nginxPidPath}`);
         try {
           const pidContent = readFileSync(nginxPidPath, 'utf8').trim();
           if (pidContent) {
-            console.log(`🎯 Sending SIGQUIT to PID ${pidContent}`);
             process.kill(parseInt(pidContent), 'SIGQUIT');
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
         } catch (pidError) {
-          console.log("⚠️ PID-based stop failed, trying scoped nginx stop...");
           await new Promise((resolve) => {
             exec(`nginx -p ${nginxPrefix} -g 'pid ${nginxPidPath};' -s quit`, () => {
               setTimeout(resolve, 1000);
             });
           });
         }
-      } else {
-        console.log("ℹ️ No existing nginx PID file found");
       }
     } catch (error) {
-      console.log("⚠️ Existing nginx cleanup completed (may not have been running)");
+      // Existing nginx cleanup completed
     }
 
     // 3. Start nginx with isolated prefix and explicit path overrides
-    console.log(`🚀 Starting nginx on port ${port} with prefix ${nginxPrefix}...`);
     const nginxProcess = spawn("nginx", [
       "-p", nginxPrefix,
       "-c", nginxGeneratedPath, 

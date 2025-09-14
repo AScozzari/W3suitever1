@@ -103,14 +103,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             capabilities: [],
             scope: 'openid profile email'
           };
-          console.log(`[AUTH-DEMO] ${req.method} ${req.path} - User: ${req.user.email} - Tenant: ${tenantId}`);
-
           // Set RLS context for demo user
           try {
             await setTenantContext(tenantId);
-            console.log(`[RLS-DEMO] ✅ Successfully set tenant context: ${tenantId}`);
           } catch (rlsError) {
-            console.error(`[RLS-DEMO] ❌ Failed to set tenant context: ${rlsError}`);
+            console.error(`[RLS-DEMO] Failed to set tenant context: ${rlsError}`);
           }
 
           return next();
@@ -129,14 +126,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             capabilities: [],
             scope: 'openid profile email'
           };
-          console.log(`[AUTH-SESSION] ${req.method} ${req.path} - Session User - Tenant: ${tenantId}`);
-
           // Set RLS context for session user
           try {
             await setTenantContext(tenantId);
-            console.log(`[RLS-SESSION] ✅ Successfully set tenant context: ${tenantId}`);
           } catch (rlsError) {
-            console.error(`[RLS-SESSION] ❌ Failed to set tenant context: ${rlsError}`);
+            console.error(`[RLS-SESSION] Failed to set tenant context: ${rlsError}`);
           }
 
           return next();
@@ -156,7 +150,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Token format validation before jwt.verify to prevent "jwt malformed" errors
       if (token === 'undefined' || token === 'null' || token === '' || token.length < 10) {
-        console.error(`[AUTH ERROR] ${req.method} ${req.path} - Invalid token format: "${token}" - Duration: ${Date.now() - startTime}ms`);
         return res.status(401).json({ 
           error: 'invalid_token',
           message: 'Invalid token format provided',
@@ -167,7 +160,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Basic JWT structure validation: should have 3 parts separated by dots
       const tokenParts = token.split('.');
       if (tokenParts.length !== 3) {
-        console.error(`[AUTH ERROR] ${req.method} ${req.path} - Malformed JWT structure (${tokenParts.length} parts): "${token.substring(0, 20)}..." - Duration: ${Date.now() - startTime}ms`);
         return res.status(401).json({ 
           error: 'invalid_token',
           message: 'Malformed JWT token structure',
@@ -178,7 +170,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Each part should be base64-like (letters, numbers, -, _)
       const base64Pattern = /^[A-Za-z0-9\-_]+$/;
       if (!tokenParts.every((part: string) => part.length > 0 && base64Pattern.test(part))) {
-        console.error(`[AUTH ERROR] ${req.method} ${req.path} - Invalid JWT encoding: "${token.substring(0, 20)}..." - Duration: ${Date.now() - startTime}ms`);
         return res.status(401).json({ 
           error: 'invalid_token',
           message: 'Invalid JWT token encoding',
@@ -222,14 +213,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         scope: decoded.scope // OAuth2 scope string
       };
 
-      // Enterprise logging for audit
-      console.log(`[AUTH] ${req.method} ${req.path} - User: ${req.user.id} - Tenant: ${req.user.tenantId} - Duration: ${Date.now() - startTime}ms`);
-
       next();
     } catch (error: any) {
-      // Enterprise error handling with detailed logging
-      console.error(`[AUTH ERROR] ${req.method} ${req.path} - Error: ${error.message} - Duration: ${Date.now() - startTime}ms`);
-
+      // Enterprise error handling
       if (error.name === 'TokenExpiredError') {
         return res.status(401).json({ 
           error: 'token_expired',
@@ -259,8 +245,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (sessionAuth === 'authenticated') {
         const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
-        console.log(`[AUTH-DEMO] ${req.method} ${req.path} - Session authentication for development`);
-        
         // Return development session data
         const sessionData = {
           user: {

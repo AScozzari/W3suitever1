@@ -31,14 +31,14 @@ export const queryClient = new QueryClient({
           try {
             const u = new URL(url, window.location.origin);
             finalUrl = u.pathname + u.search;
-            console.log('📡 Normalized absolute URL to relative:', url, '->', finalUrl);
+            // Normalized absolute URL to relative
           } catch (e) {
             console.error('Failed to normalize URL:', e);
             finalUrl = url;
           }
         }
         
-        console.log('📡 Making API request to:', finalUrl);
+        // Making API request
         
         const tenantId = getCurrentTenantId();
         let headers: Record<string, string> = {
@@ -50,7 +50,7 @@ export const queryClient = new QueryClient({
         
         if (isDevelopment) {
           // In development, use the X-Auth-Session header which is already supported by backend
-          console.log('🔧 Development mode: Using X-Auth-Session header for authentication');
+          // Development mode: Using X-Auth-Session header
           headers['X-Auth-Session'] = 'authenticated';
           headers['X-Demo-User'] = 'admin@w3suite.com';
         } else {
@@ -59,18 +59,17 @@ export const queryClient = new QueryClient({
           
           // Validate token before using it
           if (!isValidToken(token)) {
-            console.warn('⚠️ Invalid or missing access token detected:', token);
+            // Invalid or missing access token detected
             
             // If no valid token, try to refresh or redirect to login
             if (!token || token === 'undefined' || token === 'null' || token === '') {
-              console.log('🔄 Attempting token refresh or redirecting to login...');
+              // Attempting token refresh or redirecting to login
               await oauth2Client.logout();
               await oauth2Client.startAuthorizationFlow();
               throw new Error('Authentication required');
             }
             
             // If token format is invalid, logout and redirect
-            console.log('❌ Token format invalid - redirecting to login');
             await oauth2Client.logout();
             await oauth2Client.startAuthorizationFlow();
             throw new Error('Invalid token format');
@@ -79,14 +78,14 @@ export const queryClient = new QueryClient({
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        console.log('📋 Request headers:', headers);
+        // Request headers configured
         
         const res = await fetch(finalUrl, {
           credentials: "include",
           headers,
         });
         
-        console.log('📨 Response status:', res.status, res.statusText);
+        // Response received
         
         if (!res.ok) {
           if (res.status === 401) {
@@ -99,7 +98,7 @@ export const queryClient = new QueryClient({
           throw new Error(`${res.status}: ${res.statusText}`);
         }
         const data = await res.json();
-        console.log('✅ API response received, data length:', Array.isArray(data) ? data.length : 'object');
+        // API response processed
         return data;
       },
       staleTime: 1000 * 60,
@@ -118,7 +117,7 @@ export async function apiRequest(
     try {
       const u = new URL(url, window.location.origin);
       finalUrl = u.pathname + u.search;
-      console.log('📡 Normalized absolute URL to relative:', url, '->', finalUrl);
+      // Normalized absolute URL to relative
     } catch (e) {
       console.error('Failed to normalize URL:', e);
       finalUrl = url;
@@ -136,7 +135,7 @@ export async function apiRequest(
   
   if (isDevelopment) {
     // In development, use the X-Auth-Session header which is already supported by backend
-    console.log('🔧 Development mode: Using X-Auth-Session header for authentication');
+    // Development mode: Using X-Auth-Session header
     headers['X-Auth-Session'] = 'authenticated';
     headers['X-Demo-User'] = 'admin@w3suite.com';
   } else {
@@ -145,18 +144,17 @@ export async function apiRequest(
     
     // Validate token before using it
     if (!isValidToken(token)) {
-      console.warn('⚠️ Invalid or missing access token detected in apiRequest:', token);
+      // Invalid or missing access token detected in apiRequest
       
       // If no valid token, try to refresh or redirect to login
       if (!token || token === 'undefined' || token === 'null' || token === '') {
-        console.log('🔄 Attempting token refresh or redirecting to login...');
+        // Attempting token refresh or redirecting to login
         await oauth2Client.logout();
         await oauth2Client.startAuthorizationFlow();
         throw new Error('Authentication required');
       }
       
       // If token format is invalid, logout and redirect
-      console.log('❌ Token format invalid - redirecting to login');
       await oauth2Client.logout();
       await oauth2Client.startAuthorizationFlow();
       throw new Error('Invalid token format');
@@ -176,7 +174,7 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
-      console.log('❌ 401 Unauthorized in apiRequest - redirecting to login');
+      // 401 Unauthorized - redirecting to login
       // Use OAuth2 logout instead of manual token clearing
       await oauth2Client.logout();
       await oauth2Client.startAuthorizationFlow();

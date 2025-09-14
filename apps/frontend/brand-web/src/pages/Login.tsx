@@ -22,7 +22,7 @@ export default function Login() {
     try {
       const success = await login(credentials);
       if (success) {
-        console.log('🎉 Login success - SPA navigate to dashboard via wouter');
+        // Login success - navigate to dashboard
         setLocation('/dashboard');
       } else {
         setError('Credenziali non valide. Riprova.');

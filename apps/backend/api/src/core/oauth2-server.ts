@@ -134,8 +134,6 @@ function validateRedirectUri(clientId: string, redirectUri: string): boolean {
 
 async function getUserByCredentials(username: string, password: string) {
   try {
-    console.log(`🔐 Authenticating user: ${username}`);
-    
     // SECURITY: Fail-closed authentication - Query database for user by email
     const [user] = await db
       .select()
@@ -144,11 +142,8 @@ async function getUserByCredentials(username: string, password: string) {
       .limit(1);
     
     if (!user) {
-      console.log(`❌ Authentication failed: User not found in database: ${username}`);
       return null; // FAIL-CLOSED: No fallback credentials allowed
     }
-    
-    console.log(`🔍 User found in database: ${user.email} (ID: ${user.id})`);
     
     // Demo password validation - matches seed data users
     // In production, this would use bcrypt-hashed passwords
@@ -169,27 +164,21 @@ async function getUserByCredentials(username: string, password: string) {
     
     const expectedPassword = demoPasswords[user.email || ''];
     if (!expectedPassword || password !== expectedPassword) {
-      console.log(`❌ Authentication failed: Invalid password for user: ${username}`);
       return null;
     }
     
     // Check user status before allowing login
     if (user.status === 'sospeso') {
-      console.log(`🚫 Authentication blocked: User account suspended: ${username}`);
       throw new Error('Il tuo account è stato sospeso. Contatta l\'amministratore per assistenza.');
     }
     
     if (user.status === 'off-boarding') {
-      console.log(`🚫 Authentication blocked: User account in off-boarding: ${username}`);
       throw new Error('Il tuo account è in fase di off-boarding. Accesso non autorizzato.');
     }
     
     if (user.status !== 'attivo') {
-      console.log(`🚫 Authentication blocked: Invalid user status "${user.status}": ${username}`);
       throw new Error('Il tuo account non è attivo. Contatta l\'amministratore.');
     }
-    
-    console.log(`✅ User authenticated successfully: ${username}`);
     return {
       id: user.id,
       email: user.email || username,
@@ -327,9 +316,6 @@ export function setupOAuth2Server(app: express.Application) {
 
   // ==================== AUTHORIZATION PROCESSING ====================
   app.post('/oauth2/authorize', async (req: Request, res: Response) => {
-    console.log('📥 OAuth2 Authorization POST - Body:', req.body);
-    console.log('📥 OAuth2 Authorization POST - Headers:', req.headers['content-type']);
-    
     const {
       client_id,
       redirect_uri,
@@ -342,12 +328,9 @@ export function setupOAuth2Server(app: express.Application) {
       password
     } = req.body;
 
-    console.log(`🔐 Attempting login with username: ${username}, password: ${password ? '[PROVIDED]' : '[MISSING]'}`);
-
     try {
       // Authenticate user
       const user = await getUserByCredentials(username, password);
-      console.log('👤 User authentication result:', user ? 'SUCCESS' : 'FAILED');
       
       if (!user) {
         return res.status(401).send('Invalid credentials');
@@ -520,7 +503,6 @@ export function setupOAuth2Server(app: express.Application) {
       
       if (sessionAuth === 'authenticated') {
         const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
-        console.log(`[USERINFO-DEMO] Development mode - Returning demo user info`);
         
         // Return development user info matching OAuth2 standard
         const userInfo = {
@@ -600,8 +582,5 @@ export function setupOAuth2Server(app: express.Application) {
     res.status(200).json({});
   });
 
-  console.log('✅ OAuth2 Authorization Server initialized');
-  console.log('🔍 Discovery: /.well-known/oauth-authorization-server');
-  console.log('🔐 Authorize: /oauth2/authorize');
-  console.log('🎫 Token: /oauth2/token');
+  // OAuth2 Authorization Server initialized
 }

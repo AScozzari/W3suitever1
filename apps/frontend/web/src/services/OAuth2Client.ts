@@ -57,9 +57,7 @@ class OAuth2Client {
     try {
       // In a full implementation, we'd fetch /.well-known/oauth-authorization-server
       // For now, we use static config
-      console.log('✅ OAuth2 Client initialized');
-      console.log('🔧 Client ID:', this.config.clientId);
-      console.log('📍 Redirect URI:', this.config.redirectUri);
+      // OAuth2 Client initialized
     } catch (error) {
       console.error('❌ OAuth2 discovery failed:', error);
       throw error;
@@ -120,8 +118,7 @@ class OAuth2Client {
       authUrl.searchParams.set('code_challenge', codeChallenge);
       authUrl.searchParams.set('code_challenge_method', 'S256');
 
-      console.log('🔐 Starting OAuth2 flow...');
-      console.log('📍 Authorization URL:', authUrl.toString());
+      // Starting OAuth2 flow
 
       // Redirect to authorization server
       window.location.href = authUrl.toString();
@@ -180,8 +177,7 @@ class OAuth2Client {
       sessionStorage.removeItem('oauth2_code_verifier');
       sessionStorage.removeItem('oauth2_state');
 
-      console.log('✅ OAuth2 tokens received');
-      console.log('⏰ Expires in:', tokenResponse.expires_in, 'seconds');
+      // OAuth2 tokens received
 
       return tokenResponse;
     } catch (error) {
@@ -233,7 +229,7 @@ class OAuth2Client {
 
       // Development fallback: Generate a development token if no OAuth2 token exists
       if (!this.currentTokens && (window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev'))) {
-        console.log('🔧 Development mode: Creating temporary JWT token...');
+        // Development mode: Creating temporary JWT token
         
         // Create a simple base64 encoded JWT-like token for development
         const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
@@ -261,7 +257,7 @@ class OAuth2Client {
         
         this.currentTokens = devTokens;
         localStorage.setItem('oauth2_tokens', JSON.stringify(devTokens));
-        console.log('✅ Development token created and stored');
+        // Development token created and stored
       }
 
       if (!this.currentTokens) {
@@ -274,13 +270,13 @@ class OAuth2Client {
         const now = Date.now();
         const fiveMinutesBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
         
-        console.log(`🔍 Token expiry check: Current time: ${new Date(now).toLocaleTimeString()}, Token expires: ${new Date(expiryTime).toLocaleTimeString()}`);
+        // Check token expiration
         
         if (now >= (expiryTime - fiveMinutesBuffer)) {
-          console.log('🔄 Access token expired, attempting refresh...');
+          // Access token expired, attempting refresh
           const refreshedTokens = await this.refreshToken();
           if (!refreshedTokens) {
-            console.log('🚫 Refresh failed, user needs to re-login');
+            // Refresh failed, user needs to re-login
             return null;
           }
           return refreshedTokens.access_token;
@@ -339,10 +335,10 @@ class OAuth2Client {
       this.currentTokens = refreshedTokensWithExpiry;
       localStorage.setItem('oauth2_tokens', JSON.stringify(refreshedTokensWithExpiry));
 
-      console.log('✅ OAuth2 tokens refreshed');
+      // OAuth2 tokens refreshed
       return refreshedTokensWithExpiry;
     } catch (error) {
-      console.error('❌ Token refresh failed:', error);
+      // Token refresh failed
       await this.logout();
       return null;
     }
@@ -361,7 +357,7 @@ class OAuth2Client {
       
       if (isDevMode) {
         // Development mode - use session headers
-        console.log('🔐 Using development mode authentication for userinfo');
+        // Development mode authentication
         headers = {
           'X-Auth-Session': 'authenticated',
           'X-Demo-User': 'admin@w3suite.com',
@@ -395,7 +391,7 @@ class OAuth2Client {
 
       return await response.json();
     } catch (error) {
-      console.error('❌ UserInfo request failed:', error);
+      // UserInfo request failed
       return null;
     }
   }
@@ -446,7 +442,7 @@ class OAuth2Client {
         });
       }
     } catch (error) {
-      console.warn('⚠️ Token revocation failed (continuing logout):', error);
+      // Token revocation failed (continuing logout)
     }
 
     // Clear local storage
@@ -456,7 +452,7 @@ class OAuth2Client {
     sessionStorage.removeItem('oauth2_code_verifier');
     sessionStorage.removeItem('oauth2_state');
 
-    console.log('✅ OAuth2 logout completed');
+    // OAuth2 logout completed
   }
 
   /**
@@ -467,7 +463,7 @@ class OAuth2Client {
       // Set expiry to 1 minute ago to force expiration
       this.currentTokens.expires_at = Date.now() - 60000;
       localStorage.setItem('oauth2_tokens', JSON.stringify(this.currentTokens));
-      console.log('⚠️ DEBUG: Token force-expired for testing');
+      // DEBUG: Token force-expired for testing
     }
   }
 }
