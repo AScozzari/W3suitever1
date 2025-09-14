@@ -40,12 +40,12 @@ export default function Login() {
       width: '100%',
       maxWidth: '28rem',
       zIndex: '10',
-      background: 'rgba(255, 255, 255, 0.08)',
+      background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.15) 0%, rgba(123, 44, 191, 0.15) 100%)',
       backdropFilter: 'blur(12px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
+      border: '1px solid rgba(255, 105, 0, 0.3)',
       borderRadius: '12px',
       padding: '2rem',
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+      boxShadow: '0 25px 50px -12px rgba(123, 44, 191, 0.4)'
     },
     iconContainer: {
       display: 'flex',
