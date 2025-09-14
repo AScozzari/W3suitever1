@@ -16,11 +16,11 @@ export interface BrandAuthContext {
 export const BRAND_TENANT_ID = '50dbf940-5809-4094-afa1-bd699122a636';
 export const BRAND_SERVICE_ACCOUNT_ID = 'brand-service-account';
 
-// JWT Secret - required from environment in production
-const JWT_SECRET = process.env.BRAND_JWT_SECRET || (
+// JWT Secret - unified with W3 API for cross-service compatibility
+const JWT_SECRET = process.env.JWT_SECRET || (
   process.env.NODE_ENV === "development" 
-    ? "dev-brand-secret-key-change-in-production" 
-    : (() => { throw new Error("BRAND_JWT_SECRET environment variable is required in production"); })()
+    ? "w3suite-dev-secret-2025" 
+    : (() => { throw new Error("JWT_SECRET environment variable is required in production"); })()
 );
 
 // Service per autenticazione cross-tenant
