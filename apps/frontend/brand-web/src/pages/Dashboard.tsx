@@ -48,7 +48,7 @@ const categoryData = [
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['/brand-api/dashboard/stats'],
+    queryKey: ['/brand-api/analytics/cross-tenant'],
   });
 
   const metrics = [
