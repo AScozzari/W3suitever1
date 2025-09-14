@@ -40,10 +40,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Apply tenant middleware to all API routes except auth and OAuth2
   app.use((req, res, next) => {
-    // Skip tenant middleware only for auth routes and OAuth2 routes
+    // Skip tenant middleware only for auth routes, OAuth2 routes, and health endpoints
     if (req.path.startsWith('/api/auth/') || 
         req.path.startsWith('/oauth2/') || 
-        req.path.startsWith('/.well-known/')) {
+        req.path.startsWith('/.well-known/') ||
+        req.path === '/api/health' ||
+        req.path === '/health' ||
+        req.path === '/healthz') {
       return next();
     }
     // Apply tenant middleware for all other API routes (including stores, users, roles, etc.)
@@ -55,6 +58,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Only OAuth2 endpoints are available - legacy auth endpoints removed
+
+  // Public health endpoints (no authentication required)
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      service: 'W3 Suite API', 
+      timestamp: new Date().toISOString() 
+    });
+  });
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      service: 'W3 Suite API', 
+      timestamp: new Date().toISOString() 
+    });
+  });
+  app.get('/healthz', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      service: 'W3 Suite API', 
+      timestamp: new Date().toISOString() 
+    });
+  });
 
   // Enterprise JWT Authentication Middleware with OAuth2 compatibility
   const enterpriseAuth = async (req: any, res: any, next: any) => {

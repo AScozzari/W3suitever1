@@ -331,10 +331,45 @@ async function startBackend() {
   // W3 Suite backend on dedicated port 3004 (internal only)
   const backendPort = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
 
-  httpServer.listen(backendPort, "127.0.0.1", () => {
+  httpServer.listen(backendPort, "127.0.0.1", async () => {
     console.log(`🚀 W3 Suite backend running on localhost:${backendPort} (internal only)`);
     console.log(`🔌 API available internally at: http://localhost:${backendPort}/api`);
-    console.log(`🔍 Health check: http://localhost:${backendPort}/api/tenants`);
+    console.log(`🔍 Health check: http://localhost:${backendPort}/api/health`);
+    
+    // Health check retry loop (like Brand Backend)
+    const healthUrl = `http://localhost:${backendPort}/api/health`;
+    const maxRetries = 15;
+    let retryCount = 0;
+    
+    const checkHealth = async (): Promise<boolean> => {
+      try {
+        const response = await fetch(healthUrl);
+        if (response.ok) {
+          return true;
+        }
+        return false;
+      } catch (error) {
+        return false;
+      }
+    };
+    
+    while (retryCount < maxRetries) {
+      retryCount++;
+      const isHealthy = await checkHealth();
+      
+      if (isHealthy) {
+        console.log(`✅ W3 Suite backend started successfully on port ${backendPort}`);
+        console.log(`🔌 W3 Suite backend accessible at: http://localhost:${backendPort}`);
+        break;
+      } else {
+        console.log(`⏳ W3 Suite backend health check attempt ${retryCount}/${maxRetries} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      }
+    }
+    
+    if (retryCount >= maxRetries) {
+      console.log(`❌ W3 Suite backend health check failed after ${maxRetries} attempts`);
+    }
     
     // Start all frontend services and brand backend after W3 backend is ready
     startW3Frontend();
