@@ -8,7 +8,7 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [credentials, setCredentials] = useState({
     email: 'sbadmin@w3suite.com',
-    password: 'admin123'
+    password: 'Brand123!'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,12 +40,12 @@ export default function Login() {
       width: '100%',
       maxWidth: '28rem',
       zIndex: '10',
-      background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.15) 0%, rgba(123, 44, 191, 0.15) 100%)',
+      background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(12px)',
-      border: '1px solid rgba(255, 105, 0, 0.3)',
+      border: '2px solid rgba(255, 105, 0, 0.2)',
       borderRadius: '12px',
       padding: '2rem',
-      boxShadow: '0 25px 50px -12px rgba(123, 44, 191, 0.4)'
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 105, 0, 0.1)'
     },
     iconContainer: {
       display: 'flex',
@@ -61,13 +61,12 @@ export default function Login() {
     title: {
       fontSize: '1.5rem',
       fontWeight: 'bold',
-      color: 'white',
+      color: '#1f2937',
       marginBottom: '0.5rem',
-      textAlign: 'center' as const,
-      textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+      textAlign: 'center' as const
     },
     subtitle: {
-      color: 'rgba(255, 255, 255, 0.7)',
+      color: '#6b7280',
       fontSize: '0.875rem',
       textAlign: 'center' as const,
       marginBottom: '2rem'
@@ -97,7 +96,7 @@ export default function Login() {
     },
     label: {
       display: 'block',
-      color: 'rgba(255, 255, 255, 0.8)',
+      color: '#374151',
       fontSize: '0.875rem',
       fontWeight: '500',
       marginBottom: '0.5rem'
@@ -108,11 +107,11 @@ export default function Login() {
     input: {
       width: '100%',
       padding: '0.75rem 1rem 0.75rem 2.5rem',
-      background: 'rgba(255, 255, 255, 0.12)',
+      background: 'rgba(255, 255, 255, 0.8)',
       backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
+      border: '1px solid rgba(255, 105, 0, 0.3)',
       borderRadius: '0.5rem',
-      color: 'white',
+      color: '#1f2937',
       fontSize: '1rem',
       outline: 'none',
       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -126,15 +125,14 @@ export default function Login() {
       left: '0.75rem',
       top: '50%',
       transform: 'translateY(-50%)',
-      color: 'rgba(255, 255, 255, 0.6)',
-      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
+      color: '#6b7280'
     },
     eyeIcon: {
       position: 'absolute' as const,
       right: '0.75rem',
       top: '50%',
       transform: 'translateY(-50%)',
-      color: 'rgba(255, 255, 255, 0.6)',
+      color: '#6b7280',
       cursor: 'pointer',
       padding: '0.25rem'
     },
@@ -214,7 +212,7 @@ export default function Login() {
           <p style={styles.demoTitle}>🚀 Demo Credentials</p>
           <p style={styles.demoText}>
             Email: sbadmin@w3suite.com<br />
-            Password: admin123
+            Password: Brand123!
           </p>
         </div>
 
