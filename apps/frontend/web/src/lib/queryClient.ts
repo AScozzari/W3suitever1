@@ -34,14 +34,14 @@ export const queryClient = new QueryClient({
           if (!token || token === 'undefined' || token === 'null' || token === '') {
             console.log('🔄 Attempting token refresh or redirecting to login...');
             await oauth2Client.logout();
-            window.location.href = '/brandinterface/login';
+            await oauth2Client.startAuthorizationFlow();
             throw new Error('Authentication required');
           }
           
           // If token format is invalid, logout and redirect
           console.log('❌ Token format invalid - redirecting to login');
           await oauth2Client.logout();
-          window.location.href = '/brandinterface/login';
+          await oauth2Client.startAuthorizationFlow();
           throw new Error('Invalid token format');
         }
         
@@ -57,7 +57,7 @@ export const queryClient = new QueryClient({
             console.log('❌ 401 Unauthorized - redirecting to login');
             // Use OAuth2 logout instead of manual token clearing
             await oauth2Client.logout();
-            window.location.href = '/brandinterface/login';
+            await oauth2Client.startAuthorizationFlow();
             throw new Error(`401: Unauthorized`);
           }
           throw new Error(`${res.status}: ${res.statusText}`);
@@ -85,14 +85,14 @@ export async function apiRequest(
     if (!token || token === 'undefined' || token === 'null' || token === '') {
       console.log('🔄 Attempting token refresh or redirecting to login...');
       await oauth2Client.logout();
-      window.location.href = '/brandinterface/login';
+      await oauth2Client.startAuthorizationFlow();
       throw new Error('Authentication required');
     }
     
     // If token format is invalid, logout and redirect
     console.log('❌ Token format invalid - redirecting to login');
     await oauth2Client.logout();
-    window.location.href = '/brandinterface/login';
+    await oauth2Client.startAuthorizationFlow();
     throw new Error('Invalid token format');
   }
   
@@ -112,7 +112,7 @@ export async function apiRequest(
       console.log('❌ 401 Unauthorized in apiRequest - redirecting to login');
       // Use OAuth2 logout instead of manual token clearing
       await oauth2Client.logout();
-      window.location.href = '/brandinterface/login';
+      await oauth2Client.startAuthorizationFlow();
       throw new Error(`401: Unauthorized`);
     }
     throw new Error(`${res.status}: ${res.statusText}`);
