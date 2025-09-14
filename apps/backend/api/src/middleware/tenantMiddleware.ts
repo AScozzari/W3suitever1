@@ -113,6 +113,15 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
         });
       }
       req.tenantId = tenantIdHeader;
+      
+      // DEMO FIX: Set req.tenant object for rbacMiddleware compatibility
+      (req as any).tenant = {
+        id: tenantIdHeader,
+        name: 'Demo Tenant',
+        slug: 'demo'
+      };
+      
+      await setTenantContext(tenantIdHeader);
       return next();
     }
 
