@@ -100,26 +100,8 @@ function TenantRoot() {
     }
   }, [isAuthenticated, isLoading, tenant]);
 
-  // Loading screen durante il check
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-    }}>
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: '16px',
-        padding: '32px',
-        border: '1px solid rgba(255, 255, 255, 0.2)'
-      }}>
-        <h2 style={{ color: 'white', fontSize: '24px' }}>Caricamento W3 Suite...</h2>
-      </div>
-    </div>
-  );
+  // Loading screen durante il check (nascosto)
+  return null;
 }
 
 // Pagina login dedicata
@@ -136,25 +118,7 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const tenant = (params as any).tenant;
   
   if (isLoading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)',
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '16px',
-          padding: '32px',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
-          <h2 style={{ color: 'white', fontSize: '24px' }}>Caricamento W3 Suite...</h2>
-        </div>
-      </div>
-    );
+    return null; // Pagina arancione rimossa
   }
 
   if (!isAuthenticated) {
