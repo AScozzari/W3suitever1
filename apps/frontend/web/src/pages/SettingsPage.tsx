@@ -247,9 +247,14 @@ export default function SettingsPage() {
 
         // Dati caricati con successo - aggiorna state
         if (result.data) {
-          setRagioneSocialiList(result.data.legalEntities);
-          setUtentiList(result.data.users);
-          setPuntiVenditaList(result.data.stores);
+          console.log('📝 Setting state with data:', {
+            legalEntities: result.data.legalEntities?.length,
+            users: result.data.users?.length,
+            stores: result.data.stores?.length
+          });
+          setRagioneSocialiList(result.data.legalEntities || []);
+          setUtentiList(result.data.users || []);
+          setPuntiVenditaList(result.data.stores || []);
         }
 
         // Carica anche i ruoli
@@ -553,7 +558,7 @@ export default function SettingsPage() {
             color: '#111827',
             margin: 0
           }}>
-            Ragioni Sociali
+            Ragioni Sociali ({ragioneSocialiList.length} elementi)
           </h3>
           <button style={{
             background: 'linear-gradient(135deg, #FF6900, #ff8533)',
