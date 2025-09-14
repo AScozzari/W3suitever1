@@ -10,7 +10,7 @@ interface LoginProps {
  * Direct integration with OAuth2 Authorization Server
  */
 export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('admin@w3suite.com');
   const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
