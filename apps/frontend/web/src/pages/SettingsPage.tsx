@@ -4808,7 +4808,6 @@ export default function SettingsPage() {
                     <option value="Sospesa">Sospesa</option>
                     <option value="Bozza">Bozza</option>
                     <option value="Cessata">Cessata</option>
-                    <option value="Trasferita">Trasferita</option>
                   </select>
                 </div>
 
@@ -5506,7 +5505,7 @@ export default function SettingsPage() {
                     }}
                   >
                     <option value="">Seleziona ragione sociale...</option>
-                    {ragioneSocialiList.map(rs => (
+                    {ragioneSocialiList.filter(rs => rs.stato === 'Attiva').map(rs => (
                       <option key={rs.id} value={rs.id}>
                         {rs.nome} ({rs.codice})
                       </option>
@@ -7001,7 +7000,7 @@ export default function SettingsPage() {
                       padding: '12px',
                       background: '#ffffff'
                     }}>
-                      {ragioneSocialiList.map(rs => (
+                      {ragioneSocialiList.filter(rs => rs.stato === 'Attiva').map(rs => (
                         <label key={rs.id} style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -7078,7 +7077,7 @@ export default function SettingsPage() {
                             borderRadius: '12px',
                             fontWeight: '500'
                           }}>
-                            {puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id).length} negozi
+                            {puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id && (pv.status === 'active' || pv.status === 'Attivo')).length} negozi
                           </div>
                         </label>
                       ))}
@@ -7103,7 +7102,7 @@ export default function SettingsPage() {
                         color: '#6b7280',
                         marginLeft: '8px'
                       }}>
-                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id)).length} disponibili dalle ragioni sociali selezionate)
+                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id) && (pv.status === 'active' || pv.status === 'Attivo')).length} disponibili dalle ragioni sociali selezionate)
                       </span>
                     </label>
                     <div style={{
@@ -7115,7 +7114,7 @@ export default function SettingsPage() {
                       background: '#ffffff'
                     }}>
                       {puntiVenditaList
-                        .filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id))
+                        .filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id) && (pv.status === 'active' || pv.status === 'Attivo'))
                         .map(pv => (
                         <label key={pv.id} style={{
                           display: 'flex',
