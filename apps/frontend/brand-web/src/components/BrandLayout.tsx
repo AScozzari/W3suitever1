@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLocation } from 'wouter';
 import {
   User, Bell, Settings, Menu, ChevronLeft, ChevronRight,
   LogOut, Shield, Target, Users, BarChart3, Briefcase,
   Megaphone, TrendingUp, Cog, Globe, Building2, Store,
-  UserPlus, FileText, PieChart, Zap, Search
+  UserPlus, FileText, PieChart, Zap, Search, Home,
+  UserCircle, Building, ChevronDown, Activity, Package,
+  DollarSign, Calendar, CheckCircle, AlertCircle, Moon, Sun
 } from 'lucide-react';
 
 interface BrandLayoutProps {
@@ -17,180 +20,170 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   const { user, logout, workspace, setWorkspace } = useBrandAuth();
   const { currentTenant, currentTenantId, isCrossTenant, switchTenant } = useBrandTenant();
   const { isDark, toggleTheme } = useTheme();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [location, navigate] = useLocation();
+  
+  // Sidebar states
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Workspace sections for Brand Interface
+  // Navigation items for left sidebar
+  const navigationItems = [
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      icon: Home,
+      path: '/dashboard',
+      description: 'Overview generale'
+    },
+    {
+      id: 'crm',
+      name: 'CRM',
+      icon: Users,
+      path: '/crm',
+      description: 'Gestione clienti'
+    },
+    {
+      id: 'entities',
+      name: 'Entità',
+      icon: Building2,
+      path: '/entities',
+      description: 'Gestione cross-tenant'
+    }
+  ];
+
+  // Workspace sections for right sidebar
   const workspaces = [
     {
       id: 'marketing',
       name: 'Marketing',
       icon: Megaphone,
       description: 'Campagne e comunicazione',
-      color: '#FF6900'
+      color: 'var(--primary-purple)'
     },
     {
       id: 'sales',
       name: 'Vendite',
       icon: TrendingUp,
       description: 'Listini e supporto vendite',
-      color: '#7B2CBF'
+      color: 'var(--primary-blue)'
     },
     {
       id: 'operations',
       name: 'Operations',
       icon: Cog,
       description: 'Gestione operativa',
-      color: '#10b981'
+      color: 'var(--secondary-green)'
     },
     {
       id: 'admin',
       name: 'Amministrazione',
       icon: Shield,
       description: 'Tenant e configurazioni',
-      color: '#f59e0b'
+      color: 'var(--secondary-amber)'
     }
   ];
 
   const currentWorkspace = workspaces.find(w => w.id === workspace);
+  const currentNavItem = navigationItems.find(item => location.endsWith(item.path));
+
+  const handleNavigation = (path: string) => {
+    navigate(`/brandinterface${path}`);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/brandinterface/login');
+  };
 
   return (
-    <div className="h-screen flex overflow-hidden"
-         style={{
-           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-         }}>
+    <div className="h-screen flex overflow-hidden brand-gradient">
       
-      {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 glass-card border-r border-white/10 flex flex-col`}>
+      {/* Left Sidebar - Navigation */}
+      <div className={`${leftSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 sidebar-left flex flex-col`}>
         
-        {/* Sidebar Header */}
+        {/* Brand Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
-          {!sidebarCollapsed && (
+          {!leftSidebarCollapsed && (
             <div className="flex items-center space-x-3">
               <div className="glass-button rounded-lg p-2">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="font-bold text-white text-lg">Brand Interface</h1>
-                <p className="text-white/60 text-xs">W3 Suite Enterprise</p>
+                <p className="text-white/60 text-xs">Control Panel</p>
               </div>
             </div>
           )}
           <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
             className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
           >
-            {sidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+            {leftSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
           </button>
         </div>
 
-        {/* Tenant Context Indicator */}
+        {/* Tenant Context */}
         <div className="p-4 border-b border-white/10">
-          {!sidebarCollapsed && (
-            <div className="mb-3">
-              <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-2">
-                Contesto Tenant
-              </p>
-            </div>
-          )}
-          
-          <div className={`glass-button rounded-lg p-3 ${sidebarCollapsed ? 'px-3' : ''}`}
-               style={{ background: isCrossTenant ? '#10b98120' : '#FF690020' }}>
+          <div className={`glass-button rounded-lg p-3 ${leftSidebarCollapsed ? 'px-3' : ''}`}
+               style={{ background: isCrossTenant ? 'var(--glass-blue)' : 'var(--glass-purple)' }}>
             <div className="flex items-center space-x-3">
               <Globe 
                 className="w-5 h-5 flex-shrink-0"
-                style={{ color: isCrossTenant ? '#10b981' : '#FF6900' }} 
+                style={{ color: isCrossTenant ? 'var(--primary-blue)' : 'var(--primary-purple)' }} 
               />
-              {!sidebarCollapsed && (
+              {!leftSidebarCollapsed && (
                 <div className="flex-1">
                   <p className="text-white font-medium text-sm">
-                    {isCrossTenant ? 'Cross-Tenant' : currentTenant}
+                    {isCrossTenant ? 'Cross-Tenant' : currentTenant || 'Tenant'}
                   </p>
                   <p className="text-white/60 text-xs">
-                    {isCrossTenant ? 'Tutti i tenant' : `ID: ${currentTenantId?.substring(0, 8)}...`}
+                    {isCrossTenant ? 'Tutti i tenant' : `ID: ${currentTenantId?.substring(0, 8) || 'N/A'}...`}
                   </p>
-                  {!isCrossTenant && (
-                    <button
-                      onClick={() => switchTenant(null)}
-                      className="mt-2 text-xs text-white/70 hover:text-white transition-colors"
-                    >
-                      → Modalità Cross-Tenant
-                    </button>
-                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Workspace Switcher */}
-        <div className="p-4 border-b border-white/10">
-          {!sidebarCollapsed && (
-            <div className="mb-3">
-              <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-2">
-                Workspace Attivo
-              </p>
-            </div>
-          )}
-          
-          <div className={`glass-button rounded-lg p-3 ${sidebarCollapsed ? 'px-3' : ''}`}
-               style={{ background: `${currentWorkspace?.color}20` }}>
-            <div className="flex items-center space-x-3">
-              {currentWorkspace && (
-                <currentWorkspace.icon 
-                  className="w-5 h-5 flex-shrink-0"
-                  style={{ color: currentWorkspace.color }} 
-                />
-              )}
-              {!sidebarCollapsed && (
-                <div>
-                  <p className="text-white font-medium text-sm">{currentWorkspace?.name}</p>
-                  <p className="text-white/60 text-xs">{currentWorkspace?.description}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Workspace Navigation */}
+        {/* Navigation Menu */}
         <div className="flex-1 p-4 space-y-2">
-          {!sidebarCollapsed && (
+          {!leftSidebarCollapsed && (
             <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-3">
-              Settori Aziendali
+              Navigazione
             </p>
           )}
           
-          {workspaces.map((ws) => (
+          {navigationItems.map((item) => (
             <button
-              key={ws.id}
-              onClick={() => setWorkspace(ws.id)}
+              key={item.id}
+              onClick={() => handleNavigation(item.path)}
               className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left
-                ${workspace === ws.id 
+                ${location.endsWith(item.path)
                   ? 'glass-button border border-white/20' 
                   : 'hover:bg-white/5'
                 }`}
             >
-              <ws.icon 
+              <item.icon 
                 className={`w-5 h-5 flex-shrink-0 ${
-                  workspace === ws.id ? 'text-white' : 'text-white/70'
+                  location.endsWith(item.path) ? 'text-white' : 'text-white/70'
                 }`}
-                style={{ color: workspace === ws.id ? ws.color : undefined }}
               />
-              {!sidebarCollapsed && (
+              {!leftSidebarCollapsed && (
                 <div>
                   <p className={`font-medium text-sm ${
-                    workspace === ws.id ? 'text-white' : 'text-white/80'
+                    location.endsWith(item.path) ? 'text-white' : 'text-white/80'
                   }`}>
-                    {ws.name}
+                    {item.name}
                   </p>
-                  <p className="text-white/50 text-xs">{ws.description}</p>
+                  <p className="text-white/50 text-xs">{item.description}</p>
                 </div>
               )}
             </button>
           ))}
         </div>
 
-        {/* Sidebar Footer */}
+        {/* User Profile */}
         <div className="p-4 border-t border-white/10">
           <div className="relative">
             <button
@@ -200,30 +193,37 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
               <div className="glass-button rounded-full p-2">
                 <User className="w-4 h-4" />
               </div>
-              {!sidebarCollapsed && (
+              {!leftSidebarCollapsed && (
                 <div className="flex-1 text-left">
-                  <p className="font-medium text-sm text-white">{user?.name}</p>
-                  <p className="text-white/60 text-xs">{user?.role}</p>
+                  <p className="font-medium text-sm text-white">{user?.name || 'User'}</p>
+                  <p className="text-white/60 text-xs">{user?.role || 'Role'}</p>
                 </div>
               )}
             </button>
 
-            {/* User Menu */}
-            {userMenuOpen && !sidebarCollapsed && (
+            {/* User Menu Dropdown */}
+            {userMenuOpen && !leftSidebarCollapsed && (
               <div className="absolute bottom-full left-0 right-0 mb-2 glass-card border border-white/10 rounded-lg p-2">
                 <button
                   onClick={toggleTheme}
-                  className="w-full flex items-center space-x-3 p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/5"
+                  className="w-full flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/80 hover:text-white"
+                >
+                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  <span className="text-sm">Tema {isDark ? 'Chiaro' : 'Scuro'}</span>
+                </button>
+                <button
+                  onClick={() => handleNavigation('/settings')}
+                  className="w-full flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-white/80 hover:text-white"
                 >
                   <Settings className="w-4 h-4" />
                   <span className="text-sm">Impostazioni</span>
                 </button>
                 <button
-                  onClick={logout}
-                  className="w-full flex items-center space-x-3 p-2 rounded-lg text-red-300 hover:text-red-200 hover:bg-red-500/10"
+                  onClick={handleLogout}
+                  className="w-full flex items-center space-x-2 p-2 rounded hover:bg-white/10 text-red-400 hover:text-red-300"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm">Logout</span>
+                  <span className="text-sm">Esci</span>
                 </button>
               </div>
             )}
@@ -231,48 +231,162 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         
-        {/* Header */}
-        <div className="glass-card border-b border-white/10 p-4">
+        {/* Top Header Bar */}
+        <div className="glass-card border-b border-white/10 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              <h2 className="text-2xl font-bold text-white">
+                {currentNavItem?.name || 'Brand Interface'}
+              </h2>
               {currentWorkspace && (
-                <>
-                  <div className="glass-button rounded-lg p-2"
-                       style={{ background: `${currentWorkspace.color}20` }}>
-                    <currentWorkspace.icon 
-                      className="w-6 h-6"
-                      style={{ color: currentWorkspace.color }} 
-                    />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-white">
-                      {currentWorkspace.name}
-                    </h1>
-                    <p className="text-white/60 text-sm">
-                      {currentWorkspace.description}
-                    </p>
-                  </div>
-                </>
+                <div className="flex items-center space-x-2 px-3 py-1 glass-button rounded-lg"
+                     style={{ background: `${currentWorkspace.color}20` }}>
+                  <currentWorkspace.icon className="w-4 h-4" style={{ color: currentWorkspace.color }} />
+                  <span className="text-sm text-white/80">{currentWorkspace.name}</span>
+                </div>
               )}
             </div>
-
+            
             <div className="flex items-center space-x-3">
-              <button className="glass-button rounded-lg p-2 text-white/80 hover:text-white">
-                <Search className="w-5 h-5" />
-              </button>
-              <button className="glass-button rounded-lg p-2 text-white/80 hover:text-white">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
+                <input
+                  type="text"
+                  placeholder="Cerca..."
+                  className="pl-10 pr-4 py-2 glass-button rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 w-64"
+                />
+              </div>
+              
+              {/* Notifications */}
+              <button className="glass-button rounded-lg p-2 text-white/80 hover:text-white relative">
                 <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              
+              {/* Settings */}
+              <button 
+                onClick={() => handleNavigation('/settings')}
+                className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
+              >
+                <Settings className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6">
-          {children}
+        {/* Main Content with Right Sidebar */}
+        <div className="flex-1 flex overflow-hidden">
+          
+          {/* Content Area */}
+          <div className="flex-1 overflow-auto">
+            <div className="p-6">
+              {children}
+            </div>
+          </div>
+
+          {/* Right Sidebar - Workspace Selector */}
+          <div className={`${rightSidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 sidebar-right flex flex-col`}>
+            
+            {/* Workspace Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              {!rightSidebarCollapsed && (
+                <h3 className="text-white font-medium text-sm">Workspace</h3>
+              )}
+              <button
+                onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
+                className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
+              >
+                {rightSidebarCollapsed ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+              </button>
+            </div>
+
+            {/* Active Workspace */}
+            {currentWorkspace && (
+              <div className="p-4 border-b border-white/10">
+                <div className={`glass-button rounded-lg p-3 ${rightSidebarCollapsed ? 'px-3' : ''}`}
+                     style={{ background: `${currentWorkspace.color}20` }}>
+                  <div className="flex items-center space-x-3">
+                    <currentWorkspace.icon 
+                      className="w-5 h-5 flex-shrink-0"
+                      style={{ color: currentWorkspace.color }} 
+                    />
+                    {!rightSidebarCollapsed && (
+                      <div>
+                        <p className="text-white font-medium text-sm">{currentWorkspace.name}</p>
+                        <p className="text-white/60 text-xs">{currentWorkspace.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Workspace List */}
+            <div className="flex-1 p-4 space-y-2">
+              {!rightSidebarCollapsed && (
+                <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-3">
+                  Aree Funzionali
+                </p>
+              )}
+              
+              {workspaces.map((ws) => (
+                <button
+                  key={ws.id}
+                  onClick={() => setWorkspace(ws.id)}
+                  className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left
+                    ${workspace === ws.id 
+                      ? 'glass-button border border-white/20' 
+                      : 'hover:bg-white/5'
+                    }`}
+                >
+                  <ws.icon 
+                    className={`w-5 h-5 flex-shrink-0 ${
+                      workspace === ws.id ? 'text-white' : 'text-white/70'
+                    }`}
+                    style={{ color: workspace === ws.id ? ws.color : undefined }}
+                  />
+                  {!rightSidebarCollapsed && (
+                    <div>
+                      <p className={`font-medium text-sm ${
+                        workspace === ws.id ? 'text-white' : 'text-white/80'
+                      }`}>
+                        {ws.name}
+                      </p>
+                      <p className="text-white/50 text-xs">{ws.description}</p>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Quick Stats */}
+            {!rightSidebarCollapsed && (
+              <div className="p-4 border-t border-white/10 space-y-3">
+                <p className="text-white/60 text-xs font-medium uppercase tracking-wider">
+                  Quick Stats
+                </p>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70 text-sm">Tasks</span>
+                    <span className="text-white font-medium">12</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70 text-sm">Alerts</span>
+                    <span className="text-white font-medium">3</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/70 text-sm">Users</span>
+                    <span className="text-white font-medium">24</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

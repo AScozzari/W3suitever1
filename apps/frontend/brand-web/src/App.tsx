@@ -3,6 +3,8 @@ import { queryClient } from "./lib/queryClient";
 import { Router, Route, Switch } from "wouter";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import CRM from "./pages/CRM";
+import Entities from "./pages/Entities";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
@@ -36,18 +38,36 @@ function Routes() {
       <Route path="/login">
         <Login />
       </Route>
+      
+      {/* Static routes */}
+      <Route path="/dashboard">
+        <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
+      </Route>
+      <Route path="/crm">
+        <BrandTenantWrapper params={null}><CRM /></BrandTenantWrapper>
+      </Route>
+      <Route path="/entities">
+        <BrandTenantWrapper params={null}><Entities /></BrandTenantWrapper>
+      </Route>
+      
+      {/* Tenant-specific routes */}
       <Route path="/:tenant/login">
         {(params) => <BrandTenantWrapper params={params}><Login /></BrandTenantWrapper>}
       </Route>
-      
-      <Route path="/:tenant/*">
+      <Route path="/:tenant/dashboard">
         {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
+      </Route>
+      <Route path="/:tenant/crm">
+        {(params) => <BrandTenantWrapper params={params}><CRM /></BrandTenantWrapper>}
+      </Route>
+      <Route path="/:tenant/entities">
+        {(params) => <BrandTenantWrapper params={params}><Entities /></BrandTenantWrapper>}
       </Route>
       <Route path="/:tenant">
         {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
       </Route>
       
-      {/* EXACT route for base dashboard */}
+      {/* Default route */}
       <Route path="/">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
       </Route>

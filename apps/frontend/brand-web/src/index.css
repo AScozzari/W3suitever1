@@ -2,13 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* W3 Suite Brand Interface Theme - WindTre Colors */
+/* Brand Interface Theme - Custom Brand Colors */
 :root {
-  /* Colori primari WindTre */
-  --orange-primary: #FF6900;
-  --orange-light: #ff8533;
-  --purple-primary: #7B2CBF;
-  --purple-light: #9747ff;
+  /* Colori primari Brand Interface */
+  --primary-purple: #9747ff;
+  --primary-blue: #667eea;
+  --secondary-green: #10b981;
+  --secondary-amber: #f59e0b;
+  
+  /* Colori secondari e accenti */
+  --accent-pink: #ec4899;
+  --accent-indigo: #6366f1;
+  --accent-teal: #14b8a6;
   
   /* Colori semantici */
   --success: #10b981;
@@ -27,6 +32,8 @@
   --glass-white: rgba(255, 255, 255, 0.08);
   --glass-white-light: rgba(255, 255, 255, 0.03);
   --glass-white-medium: rgba(255, 255, 255, 0.12);
+  --glass-purple: rgba(151, 71, 255, 0.08);
+  --glass-blue: rgba(102, 126, 234, 0.08);
 }
 
 /* Base styles matching W3 Suite */
@@ -36,6 +43,31 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+}
+
+/* Brand Interface Specific Styles */
+.brand-gradient {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-purple) 100%);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Sidebar Styles */
+.sidebar-left {
+  background: var(--glass-white);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-right {
+  background: var(--glass-white-light);
+  backdrop-filter: blur(8px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Glassmorphism components */
