@@ -1,4 +1,7 @@
-import { query } from './database';
+import { db } from './db';
+import { sql } from 'drizzle-orm';
+import { stores, tenants, legalEntities, users } from '../db/schema/w3suite';
+import { eq, and } from 'drizzle-orm';
 
 export class DashboardService {
   async getStats(tenantId?: string) {
@@ -37,28 +40,29 @@ export class DashboardService {
     if (tenantId) {
       try {
         // Otteniamo il numero di stores attivi per questo tenant
-        const storesResult = await query(
-          `SELECT COUNT(*) as count 
-           FROM stores 
-           WHERE tenant_id = $1 AND status = 'active'`,
-          [tenantId]
-        );
+        const storesResult = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(stores)
+          .where(and(
+            eq(stores.tenantId, tenantId),
+            eq(stores.status, 'active')
+          ));
         
-        if (storesResult.rows[0]) {
-          kpiCards[1].value = storesResult.rows[0].count.toString();
+        if (storesResult[0]) {
+          kpiCards[1].value = storesResult[0].count.toString();
           kpiCards[1].title = "Punti Vendita Attivi";
         }
 
         // Otteniamo info sul tenant
-        const tenantResult = await query(
-          `SELECT name, status FROM tenants WHERE id = $1`,
-          [tenantId]
-        );
+        const tenantResult = await db
+          .select({ name: tenants.name, status: tenants.status })
+          .from(tenants)
+          .where(eq(tenants.id, tenantId));
 
-        if (tenantResult.rows[0]) {
+        if (tenantResult[0]) {
           notifications.unshift({
             type: "info" as const,
-            message: `Connesso a: ${tenantResult.rows[0].name}`,
+            message: `Connesso a: ${tenantResult[0].name}`,
             time: "ora"
           });
         }
@@ -78,25 +82,25 @@ export class DashboardService {
   async getMetrics(tenantId: string) {
     try {
       // Contiamo stores e legal entities per questo tenant
-      const storesCount = await query(
-        `SELECT COUNT(*) as count FROM stores WHERE tenant_id = $1`,
-        [tenantId]
-      );
+      const storesCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(stores)
+        .where(eq(stores.tenantId, tenantId));
 
-      const legalEntitiesCount = await query(
-        `SELECT COUNT(*) as count FROM legal_entities WHERE tenant_id = $1`,
-        [tenantId]
-      );
+      const legalEntitiesCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(legalEntities)
+        .where(eq(legalEntities.tenantId, tenantId));
 
-      const usersCount = await query(
-        `SELECT COUNT(*) as count FROM users WHERE tenant_id = $1`,
-        [tenantId]
-      );
+      const usersCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(eq(users.tenantId, tenantId));
 
       return {
-        totalUsers: usersCount.rows[0]?.count || 0,
-        activeStores: storesCount.rows[0]?.count || 0,
-        legalEntities: legalEntitiesCount.rows[0]?.count || 0,
+        totalUsers: usersCount[0]?.count || 0,
+        activeStores: storesCount[0]?.count || 0,
+        legalEntities: legalEntitiesCount[0]?.count || 0,
         monthlyRevenue: Math.floor(Math.random() * 100000), // Mock per ora
         systemHealth: 'healthy'
       };

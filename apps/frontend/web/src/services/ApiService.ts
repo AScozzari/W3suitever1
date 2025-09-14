@@ -166,16 +166,18 @@ class ApiService {
 
     // Extract successful results, fallback to empty arrays for failures
     const legalEntities = legalEntitiesResult.status === 'fulfilled' && legalEntitiesResult.value.success 
-      ? legalEntitiesResult.value : { success: false, data: [], error: 'API unavailable' };
+      ? legalEntitiesResult.value.data : [];
     
     const users = usersResult.status === 'fulfilled' && usersResult.value.success 
-      ? usersResult.value : { success: false, data: [], error: 'API unavailable' };
+      ? usersResult.value.data : [];
     
     const stores = storesResult.status === 'fulfilled' && storesResult.value.success 
-      ? storesResult.value : { success: false, data: [], error: 'API unavailable' };
+      ? storesResult.value.data : [];
 
     // Check for authentication requirements
-    const authRequired = [legalEntities, users, stores].some(result => result.needsAuth);
+    const authRequired = [legalEntitiesResult, usersResult, storesResult].some(
+      result => result.status === 'fulfilled' && result.value.needsAuth
+    );
     if (authRequired) {
       return {
         success: false,
@@ -186,9 +188,9 @@ class ApiService {
 
     // Return available data even if some APIs failed (graceful degradation)
     const data = {
-      legalEntities: legalEntities.data || [],
-      users: users.data || [],
-      stores: stores.data || []
+      legalEntities: legalEntities || [],
+      users: users || [],
+      stores: stores || []
     };
 
     const hasAnyData = data.legalEntities.length > 0 || data.users.length > 0 || data.stores.length > 0;
@@ -197,9 +199,9 @@ class ApiService {
       success: hasAnyData,
       data,
       warnings: [
-        !legalEntities.success ? 'Legal entities service unavailable' : null,
-        !users.success ? 'Users service unavailable' : null,
-        !stores.success ? 'Stores service unavailable' : null
+        legalEntitiesResult.status === 'rejected' || (legalEntitiesResult.status === 'fulfilled' && !legalEntitiesResult.value.success) ? 'Legal entities service unavailable' : null,
+        usersResult.status === 'rejected' || (usersResult.status === 'fulfilled' && !usersResult.value.success) ? 'Users service unavailable' : null,
+        storesResult.status === 'rejected' || (storesResult.status === 'fulfilled' && !storesResult.value.success) ? 'Stores service unavailable' : null
       ].filter(Boolean)
     };
   }
