@@ -7,6 +7,7 @@ import {
   roles,
   userAssignments,
   entityLogs,
+  structuredLogs,
   type User,
   type UpsertUser,
   type Tenant,
@@ -21,6 +22,8 @@ import {
   type InsertRole,
   type EntityLog,
   type InsertEntityLog,
+  type StructuredLog,
+  type InsertStructuredLog,
 } from "../db/schema/w3suite";
 
 // Import from Public schema (shared reference data)
@@ -36,7 +39,27 @@ import {
   type Country,
 } from "../db/schema/public";
 import { db, setTenantContext, withTenantContext } from "./db";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, gte, lte, desc, asc, sql } from "drizzle-orm";
+
+// Types for structured logs filtering and pagination
+export interface LogFilters {
+  level?: string;
+  component?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  correlationId?: string;
+  userId?: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+}
+
+export interface LogsResponse {
+  logs: StructuredLog[];
+  total: number;
+}
 
 // Interface for storage operations
 export interface IStorage {
@@ -82,6 +105,10 @@ export interface IStorage {
   // Entity Logs Management
   logEntityChange(log: InsertEntityLog): Promise<EntityLog>;
   getEntityLogs(tenantId: string, entityType?: string, entityId?: string): Promise<EntityLog[]>;
+  
+  // Structured Logs Management
+  getStructuredLogs(tenantId: string, filters: LogFilters, pagination: Pagination): Promise<LogsResponse>;
+  createStructuredLog(log: InsertStructuredLog): Promise<StructuredLog>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -407,6 +434,74 @@ export class DatabaseStorage implements IStorage {
       .from(entityLogs)
       .where(and(...conditions))
       .orderBy(entityLogs.createdAt);
+  }
+
+  // ==================== STRUCTURED LOGS MANAGEMENT ====================
+
+  async getStructuredLogs(tenantId: string, filters: LogFilters, pagination: Pagination): Promise<LogsResponse> {
+    console.log(`[STORAGE-RLS] 🔍 getStructuredLogs: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    // Build filtering conditions
+    const conditions = [eq(structuredLogs.tenantId, tenantId)];
+    
+    if (filters.level) {
+      conditions.push(eq(structuredLogs.level, filters.level));
+    }
+    
+    if (filters.component) {
+      conditions.push(eq(structuredLogs.component, filters.component));
+    }
+    
+    if (filters.correlationId) {
+      conditions.push(eq(structuredLogs.correlationId, filters.correlationId));
+    }
+    
+    if (filters.userId) {
+      conditions.push(eq(structuredLogs.userId, filters.userId));
+    }
+    
+    if (filters.dateFrom) {
+      conditions.push(gte(structuredLogs.timestamp, new Date(filters.dateFrom)));
+    }
+    
+    if (filters.dateTo) {
+      conditions.push(lte(structuredLogs.timestamp, new Date(filters.dateTo)));
+    }
+    
+    // Count total records for pagination
+    const [countResult] = await db
+      .select({ count: sql<string>`count(*)::text` })
+      .from(structuredLogs)
+      .where(and(...conditions));
+    
+    const total = parseInt(countResult.count, 10);
+    
+    // Calculate offset
+    const offset = (pagination.page - 1) * pagination.limit;
+    
+    // Get paginated logs
+    const logs = await db
+      .select()
+      .from(structuredLogs)
+      .where(and(...conditions))
+      .orderBy(desc(structuredLogs.timestamp))
+      .limit(pagination.limit)
+      .offset(offset);
+    
+    console.log(`[STORAGE-RLS] ✅ getStructuredLogs: Found ${logs.length} logs (total: ${total}) for tenant ${tenantId}`);
+    
+    return {
+      logs,
+      total
+    };
+  }
+
+  async createStructuredLog(logData: InsertStructuredLog): Promise<StructuredLog> {
+    const [log] = await db.insert(structuredLogs).values(logData).returning();
+    return log;
   }
 
 }

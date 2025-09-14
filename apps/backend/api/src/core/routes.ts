@@ -10,8 +10,24 @@ import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
 import { sql } from "drizzle-orm";
 import { tenants } from "../db/schema";
+import { insertStructuredLogSchema } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
+import { z } from "zod";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
+
+// Zod validation schemas for logs API
+const getLogsQuerySchema = z.object({
+  level: z.enum(['DEBUG', 'INFO', 'WARN', 'ERROR']).optional(),
+  component: z.string().min(1).max(100).optional(),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  correlationId: z.string().min(1).max(50).optional(),
+  userId: z.string().uuid().optional(),
+  page: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1)).default('1'),
+  limit: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1).max(1000)).default('50')
+});
+
+const createLogBodySchema = insertStructuredLogSchema.omit({ tenantId: true });
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -929,6 +945,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching permissions:", error);
       res.status(500).json({ error: "Failed to fetch permissions" });
+    }
+  });
+
+  // ==================== STRUCTURED LOGS API ====================
+
+  // Get structured logs with filtering and pagination
+  app.get('/api/logs', enterpriseAuth, rbacMiddleware, requirePermission('logs.read'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate query parameters with Zod
+      const validationResult = getLogsQuerySchema.safeParse(req.query);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Invalid query parameters',
+          details: validationResult.error.errors
+        });
+      }
+
+      const { level, component, dateFrom, dateTo, correlationId, userId, page, limit } = validationResult.data;
+
+      // Build filters object
+      const filters = {
+        ...(level && { level }),
+        ...(component && { component }),
+        ...(dateFrom && { dateFrom }),
+        ...(dateTo && { dateTo }),
+        ...(correlationId && { correlationId }),
+        ...(userId && { userId })
+      };
+
+      // Pagination object
+      const pagination = { page, limit };
+
+      console.log(`[API] GET /api/logs - Tenant: ${tenantId}, User: ${req.user.id}, Filters:`, filters, 'Pagination:', pagination);
+
+      // Get logs from storage (tenant-isolated)
+      const result = await storage.getStructuredLogs(tenantId, filters, pagination);
+
+      // Calculate total pages
+      const totalPages = Math.ceil(result.total / limit);
+
+      // Return logs with metadata
+      res.json({
+        logs: result.logs,
+        metadata: {
+          total: result.total,
+          page,
+          limit,
+          totalPages
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching structured logs:", error);
+      res.status(500).json({ error: "Failed to fetch structured logs" });
+    }
+  });
+
+  // Create a new structured log entry (for internal use)
+  app.post('/api/logs', enterpriseAuth, rbacMiddleware, requirePermission('logs.write'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate request body with Zod
+      const validationResult = createLogBodySchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Invalid log data',
+          details: validationResult.error.errors
+        });
+      }
+
+      // Add tenant ID to the validated log data
+      const logData = {
+        ...validationResult.data,
+        tenantId
+      };
+
+      console.log(`[API] POST /api/logs - Creating log for tenant: ${tenantId}, User: ${req.user.id}`);
+
+      const log = await storage.createStructuredLog(logData);
+      res.status(201).json(log);
+
+    } catch (error) {
+      console.error("Error creating structured log:", error);
+      res.status(500).json({ error: "Failed to create structured log" });
     }
   });
 
