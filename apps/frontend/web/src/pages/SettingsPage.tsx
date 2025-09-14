@@ -3781,10 +3781,11 @@ export default function SettingsPage() {
     puntiVendita_ids: [] as number[],  // Almeno uno obbligatorio
     puntoVenditaPreferito_id: null as number | null,  // Obbligatorio se più PdV
     
-    // Scope gerarchico
-    scopeLevel: 'organizzazione',
-    selectedLegalEntities: [] as number[],
-    selectedStores: [] as number[],
+    // ✅ SCOPE PIRAMIDALE NUOVO SISTEMA  
+    scopeLevel: 'organizzazione',          // Mantento per compatibilità
+    selectAllLegalEntities: false,         // "Seleziona tutto" ragioni sociali = accesso completo organizzazione
+    selectedLegalEntities: [] as number[], // Ragioni sociali selezionate (primo livello)
+    selectedStores: [] as number[],        // Punti vendita filtrati (secondo livello)
     
     // Informazioni personali
     nome: '',
@@ -6825,578 +6826,6 @@ export default function SettingsPage() {
 
             {/* Body Modal con sezioni */}
             <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
-              {/* SEZIONE AMBITO OPERATIVO */}
-              <div style={{ marginBottom: '28px' }}>
-                <h3 style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#111827',
-                  marginBottom: '16px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Livello di Accesso
-                </h3>
-                
-                {/* Selezione tipo scope - Più chiaro */}
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '8px',
-                    padding: '16px',
-                    background: '#f9fafb',
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    {[
-                      { 
-                        value: 'organizzazione', 
-                        label: 'Accesso Completo', 
-                        description: 'Accesso a tutta l\'organizzazione',
-                        icon: <Building2 size={18} />
-                      },
-                      { 
-                        value: 'ragioni_sociali', 
-                        label: 'Ragioni Sociali', 
-                        description: 'Accesso limitato a specifiche ragioni sociali',
-                        icon: <FileText size={18} />
-                      },
-                      { 
-                        value: 'punti_vendita', 
-                        label: 'Punti Vendita', 
-                        description: 'Accesso limitato a specifici punti vendita',
-                        icon: <Store size={18} />
-                      }
-                    ].map(option => (
-                      <label key={option.value} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px',
-                        background: newUser.scopeLevel === option.value ? '#ffffff' : 'transparent',
-                        border: `2px solid ${newUser.scopeLevel === option.value ? '#FF6900' : 'transparent'}`,
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}>
-                        <input
-                          type="radio"
-                          name="scopeLevel"
-                          value={option.value}
-                          checked={newUser.scopeLevel === option.value}
-                          onChange={(e) => {
-                            const newScope = e.target.value;
-                            // Se passiamo a organizzazione, azzeriamo tutto
-                            if (newScope === 'organizzazione') {
-                              setNewUser({ 
-                                ...newUser, 
-                                scopeLevel: newScope,
-                                selectedLegalEntities: [],
-                                selectedStores: []
-                              });
-                            } 
-                            // Se passiamo a ragioni_sociali, manteniamo le RS ma azzeriamo i PV
-                            else if (newScope === 'ragioni_sociali') {
-                              setNewUser({ 
-                                ...newUser, 
-                                scopeLevel: newScope,
-                                selectedStores: []
-                              });
-                            }
-                            // Se passiamo a punti_vendita, manteniamo tutto
-                            else {
-                              setNewUser({ 
-                                ...newUser, 
-                                scopeLevel: newScope
-                              });
-                            }
-                          }}
-                          style={{ display: 'none' }}
-                        />
-                        <div style={{
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          border: `2px solid ${newUser.scopeLevel === option.value ? '#FF6900' : '#d1d5db'}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          {newUser.scopeLevel === option.value && (
-                            <div style={{
-                              width: '10px',
-                              height: '10px',
-                              borderRadius: '50%',
-                              background: '#FF6900'
-                            }} />
-                          )}
-                        </div>
-                        <div style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '8px',
-                          background: newUser.scopeLevel === option.value ? 'linear-gradient(135deg, #FF6900, #7B2CBF)' : '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: newUser.scopeLevel === option.value ? '#ffffff' : '#6b7280'
-                        }}>
-                          {option.icon}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#111827',
-                            marginBottom: '2px'
-                          }}>
-                            {option.label}
-                          </div>
-                          <div style={{
-                            fontSize: '13px',
-                            color: '#6b7280'
-                          }}>
-                            {option.description}
-                          </div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Messaggio informativo per Organizzazione */}
-                {newUser.scopeLevel === 'organizzazione' && (
-                  <div style={{
-                    background: '#fef3c7',
-                    border: '1px solid #fbbf24',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    marginTop: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <AlertCircle size={16} style={{ color: '#f59e0b' }} />
-                    <p style={{
-                      fontSize: '13px',
-                      color: '#92400e',
-                      margin: 0
-                    }}>
-                      L'utente avrà accesso completo a tutte le entità dell'organizzazione
-                    </p>
-                  </div>
-                )}
-
-                {/* Selezione Ragioni Sociali */}
-                {(newUser.scopeLevel === 'ragioni_sociali' || newUser.scopeLevel === 'punti_vendita') && (
-                  <div style={{ marginTop: '20px' }}>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Seleziona Ragioni Sociali 
-                      {newUser.scopeLevel === 'punti_vendita' && <span style={{ color: '#ef4444' }}> *</span>}
-                      {newUser.scopeLevel === 'ragioni_sociali' && (
-                        <span style={{ 
-                          fontSize: '12px', 
-                          fontWeight: '400', 
-                          color: '#6b7280',
-                          marginLeft: '8px'
-                        }}>
-                          (Opzionale: seleziona solo alcuni punti vendita)
-                        </span>
-                      )}
-                    </label>
-                    <div style={{
-                      maxHeight: '150px',
-                      overflowY: 'auto',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      padding: '8px',
-                      background: '#f9fafb'
-                    }}>
-                      {ragioneSocialiList.map(rs => (
-                        <label key={rs.id} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          padding: '10px',
-                          cursor: 'pointer',
-                          borderRadius: '6px',
-                          transition: 'all 0.2s ease',
-                          background: newUser.selectedLegalEntities.includes(rs.id) ? '#e0e7ff' : 'transparent',
-                          border: `1px solid ${newUser.selectedLegalEntities.includes(rs.id) ? '#818cf8' : 'transparent'}`
-                        }}
-                        onMouseOver={(e) => {
-                          if (!newUser.selectedLegalEntities.includes(rs.id)) {
-                            e.currentTarget.style.background = '#f3f4f6';
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (!newUser.selectedLegalEntities.includes(rs.id)) {
-                            e.currentTarget.style.background = 'transparent';
-                          }
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={newUser.selectedLegalEntities.includes(rs.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewUser({
-                                  ...newUser,
-                                  selectedLegalEntities: [...newUser.selectedLegalEntities, rs.id]
-                                });
-                              } else {
-                                // Quando deseleziono una RS, rimuovo anche i suoi PDV selezionati
-                                const storesOfThisLegalEntity = puntiVenditaList
-                                  .filter(pv => pv.ragioneSociale_id === rs.id)
-                                  .map(pv => pv.id);
-                                setNewUser({
-                                  ...newUser,
-                                  selectedLegalEntities: newUser.selectedLegalEntities.filter(id => id !== rs.id),
-                                  selectedStores: newUser.selectedStores.filter(id => !storesOfThisLegalEntity.includes(id))
-                                });
-                              }
-                            }}
-                            style={{ 
-                              cursor: 'pointer',
-                              width: '16px',
-                              height: '16px'
-                            }}
-                          />
-                          <div style={{ flex: 1 }}>
-                            <span style={{ 
-                              fontSize: '14px', 
-                              color: '#374151',
-                              fontWeight: newUser.selectedLegalEntities.includes(rs.id) ? '600' : '400'
-                            }}>
-                              {rs.nome}
-                            </span>
-                            <span style={{ 
-                              fontSize: '12px', 
-                              color: '#6b7280',
-                              marginLeft: '8px'
-                            }}>
-                              ({rs.codice})
-                            </span>
-                          </div>
-                          {newUser.selectedLegalEntities.includes(rs.id) && (
-                            <Check size={16} style={{ color: '#4f46e5' }} />
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Selezione Punti Vendita - UI semplificata e user-friendly */}
-                {newUser.scopeLevel === 'punti_vendita' && (
-                  <div style={{ marginTop: '20px' }}>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Seleziona Punti Vendita <span style={{ color: '#ef4444' }}>*</span>
-                      {newUser.selectedLegalEntities.length > 0 && (
-                        <span style={{ 
-                          fontSize: '12px', 
-                          fontWeight: '400', 
-                          color: '#6b7280',
-                          marginLeft: '8px'
-                        }}>
-                          ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id)).length} disponibili)
-                        </span>
-                      )}
-                    </label>
-                    <div style={{
-                      maxHeight: '300px',
-                      overflowY: 'auto',
-                      border: `1px solid ${newUser.selectedLegalEntities.length === 0 ? '#fca5a5' : '#e5e7eb'}`,
-                      borderRadius: '8px',
-                      padding: '8px',
-                      background: newUser.selectedLegalEntities.length === 0 ? '#fef2f2' : '#ffffff',
-                      opacity: newUser.selectedLegalEntities.length === 0 ? 0.7 : 1,
-                      pointerEvents: newUser.selectedLegalEntities.length === 0 ? 'none' : 'auto',
-                      minHeight: '100px'
-                    }}>
-                      {newUser.selectedLegalEntities.length === 0 ? (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          height: '100px',
-                          color: '#991b1b',
-                          fontSize: '13px',
-                          gap: '8px'
-                        }}>
-                          <Lock size={16} />
-                          Seleziona prima una ragione sociale
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {/* Lista semplice e pulita dei punti vendita filtrati */}
-                          {puntiVenditaList
-                            .filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id))
-                            .map(pv => {
-                              const ragioneSociale = ragioneSocialiList.find(rs => rs.id === pv.ragioneSociale_id);
-                              return (
-                                <label key={pv.id} style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '12px',
-                                  padding: '12px',
-                                  cursor: 'pointer',
-                                  borderRadius: '6px',
-                                  transition: 'all 0.2s ease',
-                                  background: newUser.selectedStores.includes(pv.id) ? '#fef3c7' : '#ffffff',
-                                  border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#fbbf24' : '#e5e7eb'}`
-                                }}
-                                onMouseOver={(e) => {
-                                  if (!newUser.selectedStores.includes(pv.id)) {
-                                    e.currentTarget.style.background = '#f9fafb';
-                                    e.currentTarget.style.borderColor = '#d1d5db';
-                                  }
-                                }}
-                                onMouseOut={(e) => {
-                                  if (!newUser.selectedStores.includes(pv.id)) {
-                                    e.currentTarget.style.background = '#ffffff';
-                                    e.currentTarget.style.borderColor = '#e5e7eb';
-                                  }
-                                }}>
-                                  <input
-                                    type="checkbox"
-                                    checked={newUser.selectedStores.includes(pv.id)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setNewUser({
-                                          ...newUser,
-                                          selectedStores: [...newUser.selectedStores, pv.id]
-                                        });
-                                      } else {
-                                        setNewUser({
-                                          ...newUser,
-                                          selectedStores: newUser.selectedStores.filter(id => id !== pv.id)
-                                        });
-                                      }
-                                    }}
-                                    style={{ 
-                                      cursor: 'pointer',
-                                      width: '18px',
-                                      height: '18px',
-                                      accentColor: '#FF6900'
-                                    }}
-                                  />
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ 
-                                      fontSize: '14px', 
-                                      color: '#111827',
-                                      fontWeight: newUser.selectedStores.includes(pv.id) ? '600' : '500'
-                                    }}>
-                                      {pv.nome}
-                                    </div>
-                                    <div style={{
-                                      fontSize: '12px',
-                                      color: '#6b7280',
-                                      marginTop: '2px'
-                                    }}>
-                                      {ragioneSociale?.nome} • {pv.codice} • {pv.citta}
-                                    </div>
-                                  </div>
-                                  {newUser.selectedStores.includes(pv.id) && (
-                                    <Check size={18} style={{ color: '#FF6900' }} />
-                                  )}
-                                </label>
-                              );
-                            })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Selezione Punti Vendita per Ragioni Sociali */}
-                {newUser.scopeLevel === 'ragioni_sociali' && newUser.selectedLegalEntities.length > 0 && (
-                  <div style={{ marginTop: '20px' }}>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Punti Vendita 
-                      <span style={{ 
-                        fontSize: '12px', 
-                        fontWeight: '400', 
-                        color: '#6b7280',
-                        marginLeft: '8px'
-                      }}>
-                        (Opzionale: limita l'accesso solo ad alcuni punti vendita)
-                      </span>
-                    </label>
-                    <div style={{
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      padding: '8px',
-                      background: '#f9fafb'
-                    }}>
-                      {ragioneSocialiList
-                        .filter(rs => newUser.selectedLegalEntities.includes(rs.id))
-                        .map(rs => (
-                          <div key={rs.id} style={{ marginBottom: '16px' }}>
-                            <div style={{
-                              fontSize: '13px',
-                              fontWeight: '600',
-                              color: '#374151',
-                              padding: '8px',
-                              background: '#f9fafb',
-                              borderBottom: '1px solid #e5e7eb',
-                              marginBottom: '8px',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
-                            }}>
-                              <span>{rs.nome}</span>
-                              <button
-                                onClick={() => {
-                                  const storesOfThisLegalEntity = puntiVenditaList
-                                    .filter(pv => pv.ragioneSociale_id === rs.id)
-                                    .map(pv => pv.id);
-                                  const allSelected = storesOfThisLegalEntity.every(id => newUser.selectedStores.includes(id));
-                                  
-                                  if (allSelected) {
-                                    // Deselect all
-                                    setNewUser({
-                                      ...newUser,
-                                      selectedStores: newUser.selectedStores.filter(id => !storesOfThisLegalEntity.includes(id))
-                                    });
-                                  } else {
-                                    // Select all
-                                    setNewUser({
-                                      ...newUser,
-                                      selectedStores: [...new Set([...newUser.selectedStores, ...storesOfThisLegalEntity])]
-                                    });
-                                  }
-                                }}
-                                style={{
-                                  fontSize: '11px',
-                                  padding: '4px 8px',
-                                  background: '#FF6900',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                Seleziona tutti
-                              </button>
-                            </div>
-                            {puntiVenditaList
-                              .filter(pv => pv.ragioneSociale_id === rs.id)
-                              .map(pv => (
-                                <label key={pv.id} style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  padding: '10px',
-                                  paddingLeft: '20px',
-                                  cursor: 'pointer',
-                                  borderRadius: '6px',
-                                  transition: 'all 0.2s ease',
-                                  background: newUser.selectedStores.includes(pv.id) ? '#dbeafe' : 'transparent',
-                                  border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#93c5fd' : 'transparent'}`
-                                }}
-                                onMouseOver={(e) => {
-                                  if (!newUser.selectedStores.includes(pv.id)) {
-                                    e.currentTarget.style.background = '#f3f4f6';
-                                  }
-                                }}
-                                onMouseOut={(e) => {
-                                  if (!newUser.selectedStores.includes(pv.id)) {
-                                    e.currentTarget.style.background = 'transparent';
-                                  }
-                                }}>
-                                  <input
-                                    type="checkbox"
-                                    checked={newUser.selectedStores.includes(pv.id)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setNewUser({
-                                          ...newUser,
-                                          selectedStores: [...newUser.selectedStores, pv.id]
-                                        });
-                                      } else {
-                                        setNewUser({
-                                          ...newUser,
-                                          selectedStores: newUser.selectedStores.filter(id => id !== pv.id)
-                                        });
-                                      }
-                                    }}
-                                    style={{ 
-                                      cursor: 'pointer',
-                                      width: '16px',
-                                      height: '16px'
-                                    }}
-                                  />
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ 
-                                      fontSize: '14px', 
-                                      color: '#374151',
-                                      fontWeight: newUser.selectedStores.includes(pv.id) ? '600' : '400'
-                                    }}>
-                                      {pv.nome}
-                                    </span>
-                                    <span style={{ 
-                                      fontSize: '12px', 
-                                      color: '#6b7280',
-                                      marginLeft: '8px'
-                                    }}>
-                                      ({pv.codice}) - {pv.citta}
-                                    </span>
-                                  </div>
-                                  {newUser.selectedStores.includes(pv.id) && (
-                                    <Check size={16} style={{ color: '#2563eb' }} />
-                                  )}
-                                </label>
-                              ))}
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Warning se nessuna selezione per Punti Vendita */}
-                {newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length === 0 && (
-                  <div style={{
-                    background: '#fef2f2',
-                    border: '1px solid #fca5a5',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    marginTop: '16px'
-                  }}>
-                    <p style={{
-                      fontSize: '14px',
-                      color: '#991b1b',
-                      margin: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <AlertCircle size={16} />
-                      Seleziona prima almeno una ragione sociale
-                    </p>
-                  </div>
-                )}
-              </div>
 
               {/* SEZIONE DATI DI ACCESSO */}
               <div style={{ marginBottom: '24px' }}>
@@ -7658,6 +7087,387 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* ✅ NUOVO SISTEMA SCOPE PIRAMIDALE - ALLA FINE */}
+              <div style={{ marginBottom: '28px' }}>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  🎯 Scope di Accesso Piramidale
+                </h3>
+                
+                {/* 📋 PRIMO LIVELLO: Checkbox "Seleziona tutto ragioni sociali" */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '16px',
+                    background: newUser.selectAllLegalEntities ? '#ecfdf5' : '#f9fafb',
+                    border: `2px solid ${newUser.selectAllLegalEntities ? '#10b981' : '#e5e7eb'}`,
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={newUser.selectAllLegalEntities}
+                      onChange={(e) => {
+                        const selectAll = e.target.checked;
+                        setNewUser({
+                          ...newUser,
+                          selectAllLegalEntities: selectAll,
+                          selectedLegalEntities: selectAll ? [] : newUser.selectedLegalEntities,
+                          selectedStores: selectAll ? [] : newUser.selectedStores
+                        });
+                      }}
+                      style={{ 
+                        transform: 'scale(1.2)',
+                        accentColor: '#10b981'
+                      }}
+                    />
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: newUser.selectAllLegalEntities ? 'linear-gradient(135deg, #10b981, #047857)' : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white'
+                    }}>
+                      {newUser.selectAllLegalEntities ? <Shield size={20} /> : <Building2 size={20} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#111827',
+                        marginBottom: '4px'
+                      }}>
+                        {newUser.selectAllLegalEntities ? '🌟 Accesso Completo Organizzazione' : '🏢 Seleziona tutto ragioni sociali'}
+                      </div>
+                      <div style={{
+                        fontSize: '13px',
+                        color: '#6b7280'
+                      }}>
+                        {newUser.selectAllLegalEntities 
+                          ? 'L\'utente ha accesso a tutte le ragioni sociali e punti vendita dell\'organizzazione'
+                          : 'Seleziona per dare accesso a tutte le ragioni sociali (disabilita selezione specifica)'}
+                      </div>
+                    </div>
+                    {newUser.selectAllLegalEntities && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#059669',
+                        background: '#d1fae5',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontWeight: '600'
+                      }}>
+                        COMPLETO
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {/* 🏭 SECONDO LIVELLO: Multi-select ragioni sociali specifiche */}
+                {!newUser.selectAllLegalEntities && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px'
+                    }}>
+                      📋 Seleziona Ragioni Sociali Specifiche <span style={{ color: '#ef4444' }}>*</span>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '400', 
+                        color: '#6b7280',
+                        marginLeft: '8px'
+                      }}>
+                        (Primo livello - filtra i punti vendita)
+                      </span>
+                    </label>
+                    <div style={{
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      background: '#ffffff'
+                    }}>
+                      {ragioneSocialiList.map(rs => (
+                        <label key={rs.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          transition: 'all 0.2s ease',
+                          background: newUser.selectedLegalEntities.includes(rs.id) ? '#e0f2fe' : 'transparent',
+                          border: `1px solid ${newUser.selectedLegalEntities.includes(rs.id) ? '#0ea5e9' : 'transparent'}`,
+                          marginBottom: '4px'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={newUser.selectedLegalEntities.includes(rs.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedLegalEntities: [...newUser.selectedLegalEntities, rs.id],
+                                  selectedStores: [] // Reset punti vendita quando cambiano ragioni sociali
+                                });
+                              } else {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedLegalEntities: newUser.selectedLegalEntities.filter(id => id !== rs.id),
+                                  selectedStores: newUser.selectedStores.filter(storeId => {
+                                    const store = puntiVenditaList.find(pv => pv.id === storeId);
+                                    return store && store.ragioneSociale_id !== rs.id;
+                                  })
+                                });
+                              }
+                            }}
+                            style={{ 
+                              transform: 'scale(1.1)',
+                              accentColor: '#0ea5e9'
+                            }}
+                          />
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {rs.denominazione.charAt(0)}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#111827',
+                              marginBottom: '2px'
+                            }}>
+                              {rs.denominazione}
+                            </div>
+                            <div style={{
+                              fontSize: '12px',
+                              color: '#6b7280'
+                            }}>
+                              P.IVA: {rs.partitaIva}
+                            </div>
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: '#0369a1',
+                            background: '#e0f2fe',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontWeight: '500'
+                          }}>
+                            {puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id).length} negozi
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 🏪 TERZO LIVELLO: Multi-select punti vendita filtrati */}
+                {!newUser.selectAllLegalEntities && newUser.selectedLegalEntities.length > 0 && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px'
+                    }}>
+                      🏪 Seleziona Punti Vendita Specifici 
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '400', 
+                        color: '#6b7280',
+                        marginLeft: '8px'
+                      }}>
+                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id)).length} disponibili dalle ragioni sociali selezionate)
+                      </span>
+                    </label>
+                    <div style={{
+                      maxHeight: '300px',
+                      overflowY: 'auto',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      background: '#ffffff'
+                    }}>
+                      {puntiVenditaList
+                        .filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id))
+                        .map(pv => (
+                        <label key={pv.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          transition: 'all 0.2s ease',
+                          background: newUser.selectedStores.includes(pv.id) ? '#fef3c7' : 'transparent',
+                          border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#f59e0b' : 'transparent'}`,
+                          marginBottom: '4px'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={newUser.selectedStores.includes(pv.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedStores: [...newUser.selectedStores, pv.id]
+                                });
+                              } else {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedStores: newUser.selectedStores.filter(id => id !== pv.id)
+                                });
+                              }
+                            }}
+                            style={{ 
+                              transform: 'scale(1.1)',
+                              accentColor: '#f59e0b'
+                            }}
+                          />
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '11px',
+                            fontWeight: '600'
+                          }}>
+                            {pv.code}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#111827',
+                              marginBottom: '2px'
+                            }}>
+                              {pv.nome}
+                            </div>
+                            <div style={{
+                              fontSize: '12px',
+                              color: '#6b7280'
+                            }}>
+                              {pv.citta} • {ragioneSocialiList.find(rs => rs.id === pv.ragioneSociale_id)?.denominazione}
+                            </div>
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: pv.status === 'active' ? '#059669' : '#dc2626',
+                            background: pv.status === 'active' ? '#d1fae5' : '#fee2e2',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontWeight: '500'
+                          }}>
+                            {pv.status === 'active' ? 'Attivo' : 'Inattivo'}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ⚠️ MESSAGGI DI VALIDAZIONE */}
+                {!newUser.selectAllLegalEntities && newUser.selectedLegalEntities.length === 0 && (
+                  <div style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginTop: '16px'
+                  }}>
+                    <p style={{
+                      fontSize: '13px',
+                      color: '#991b1b',
+                      margin: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <AlertCircle size={16} />
+                      ⚠️ Seleziona almeno una ragione sociale o attiva "Seleziona tutto"
+                    </p>
+                  </div>
+                )}
+
+                {/* ✅ RIEPILOGO SELEZIONE */}
+                {(newUser.selectAllLegalEntities || newUser.selectedLegalEntities.length > 0) && (
+                  <div style={{
+                    background: '#f0f9ff',
+                    border: '1px solid #0ea5e9',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginTop: '16px'
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#0369a1',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <CheckCircle size={16} />
+                      ✅ Riepilogo Accesso
+                    </div>
+                    {newUser.selectAllLegalEntities ? (
+                      <p style={{
+                        fontSize: '13px',
+                        color: '#0369a1',
+                        margin: 0
+                      }}>
+                        🌟 <strong>Accesso Completo:</strong> Tutte le ragioni sociali e punti vendita dell'organizzazione
+                      </p>
+                    ) : (
+                      <div style={{
+                        fontSize: '13px',
+                        color: '#0369a1',
+                        margin: 0
+                      }}>
+                        <p style={{ margin: '0 0 4px 0' }}>
+                          📋 <strong>Ragioni Sociali:</strong> {newUser.selectedLegalEntities.length} selezionate
+                        </p>
+                        <p style={{ margin: 0 }}>
+                          🏪 <strong>Punti Vendita:</strong> {newUser.selectedStores.length} selezionati {newUser.selectedStores.length === 0 ? '(tutti disponibili dalle ragioni sociali)' : '(specifici)'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Footer con pulsanti */}

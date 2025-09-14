@@ -258,6 +258,25 @@ export const insertUserStoreSchema = createInsertSchema(userStores).omit({
 export type InsertUserStore = z.infer<typeof insertUserStoreSchema>;
 export type UserStore = typeof userStores.$inferSelect;
 
+// ==================== USER LEGAL ENTITIES (1:M Users → Legal Entities) ====================
+export const userLegalEntities = w3suiteSchema.table("user_legal_entities", {
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  legalEntityId: uuid("legal_entity_id").notNull().references(() => legalEntities.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.legalEntityId] }),
+  index("user_legal_entities_user_idx").on(table.userId),
+  index("user_legal_entities_legal_entity_idx").on(table.legalEntityId),
+  index("user_legal_entities_tenant_idx").on(table.tenantId),
+]);
+
+export const insertUserLegalEntitySchema = createInsertSchema(userLegalEntities).omit({ 
+  createdAt: true 
+});
+export type InsertUserLegalEntity = z.infer<typeof insertUserLegalEntitySchema>;
+export type UserLegalEntity = typeof userLegalEntities.$inferSelect;
+
 export const storeBrands = w3suiteSchema.table("store_brands", {
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
   brandId: uuid("brand_id").notNull().references(() => brands.id),
@@ -374,6 +393,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   entityLogs: many(entityLogs),
   structuredLogs: many(structuredLogs),
   userStores: many(userStores),
+  userLegalEntities: many(userLegalEntities),
   storeBrands: many(storeBrands),
   storeDriverPotential: many(storeDriverPotential),
 }));
@@ -383,6 +403,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, { fields: [users.tenantId], references: [tenants.id] }),
   store: one(stores, { fields: [users.storeId], references: [stores.id] }),
   userStores: many(userStores),
+  userLegalEntities: many(userLegalEntities),
   userAssignments: many(userAssignments),
   userExtraPerms: many(userExtraPerms),
   entityLogs: many(entityLogs),
@@ -393,6 +414,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 export const legalEntitiesRelations = relations(legalEntities, ({ one, many }) => ({
   tenant: one(tenants, { fields: [legalEntities.tenantId], references: [tenants.id] }),
   stores: many(stores),
+  userLegalEntities: many(userLegalEntities),
 }));
 
 // Stores Relations
@@ -461,4 +483,11 @@ export const entityLogsRelations = relations(entityLogs, ({ one }) => ({
 export const structuredLogsRelations = relations(structuredLogs, ({ one }) => ({
   tenant: one(tenants, { fields: [structuredLogs.tenantId], references: [tenants.id] }),
   user: one(users, { fields: [structuredLogs.userId], references: [users.id] }),
+}));
+
+// User Legal Entities Relations
+export const userLegalEntitiesRelations = relations(userLegalEntities, ({ one }) => ({
+  user: one(users, { fields: [userLegalEntities.userId], references: [users.id] }),
+  legalEntity: one(legalEntities, { fields: [userLegalEntities.legalEntityId], references: [legalEntities.id] }),
+  tenant: one(tenants, { fields: [userLegalEntities.tenantId], references: [tenants.id] }),
 }));
