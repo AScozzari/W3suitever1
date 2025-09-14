@@ -1,0 +1,250 @@
+📡 Making API request to: /api/reference/italian-cities
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin@w3suite.com'}
+queryClient.ts:27 📡 Making API request to: /api/commercial-areas
+queryClient.ts:39 🔧 Development mode: Using X-Auth-Session header for authentication
+queryClient.ts:68 📋 Request headers: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'admin@w3suite.com'}
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/countries 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+start @ @tanstack_react-query.js?v=776e1323:836
+fetch @ @tanstack_react-query.js?v=776e1323:1142
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+onSubscribe @ @tanstack_react-query.js?v=776e1323:1333
+subscribe @ @tanstack_react-query.js?v=776e1323:22
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3239
+subscribeToStore @ chunk-4XMIFQ3Z.js?v=776e1323:11982
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+commitRootImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19414
+commitRoot @ chunk-4XMIFQ3Z.js?v=776e1323:19275
+performSyncWorkOnRoot @ chunk-4XMIFQ3Z.js?v=776e1323:18893
+flushSyncCallbacks @ chunk-4XMIFQ3Z.js?v=776e1323:9117
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:18625
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=776e1323:101
+flush @ @tanstack_react-query.js?v=776e1323:608
+batch @ @tanstack_react-query.js?v=776e1323:626
+dispatch_fn @ @tanstack_react-query.js?v=776e1323:1258
+setData @ @tanstack_react-query.js?v=776e1323:929
+fetch @ @tanstack_react-query.js?v=776e1323:1151
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+setOptions @ @tanstack_react-query.js?v=776e1323:1390
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3249
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:19326
+workLoop @ chunk-4XMIFQ3Z.js?v=776e1323:195
+flushWork @ chunk-4XMIFQ3Z.js?v=776e1323:174
+performWorkUntilDeadline @ chunk-4XMIFQ3Z.js?v=776e1323:382Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/legal-forms 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+start @ @tanstack_react-query.js?v=776e1323:836
+fetch @ @tanstack_react-query.js?v=776e1323:1142
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+onSubscribe @ @tanstack_react-query.js?v=776e1323:1333
+subscribe @ @tanstack_react-query.js?v=776e1323:22
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3239
+subscribeToStore @ chunk-4XMIFQ3Z.js?v=776e1323:11982
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+commitRootImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19414
+commitRoot @ chunk-4XMIFQ3Z.js?v=776e1323:19275
+performSyncWorkOnRoot @ chunk-4XMIFQ3Z.js?v=776e1323:18893
+flushSyncCallbacks @ chunk-4XMIFQ3Z.js?v=776e1323:9117
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:18625
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=776e1323:101
+flush @ @tanstack_react-query.js?v=776e1323:608
+batch @ @tanstack_react-query.js?v=776e1323:626
+dispatch_fn @ @tanstack_react-query.js?v=776e1323:1258
+setData @ @tanstack_react-query.js?v=776e1323:929
+fetch @ @tanstack_react-query.js?v=776e1323:1151
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+setOptions @ @tanstack_react-query.js?v=776e1323:1390
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3249
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:19326
+workLoop @ chunk-4XMIFQ3Z.js?v=776e1323:195
+flushWork @ chunk-4XMIFQ3Z.js?v=776e1323:174
+performWorkUntilDeadline @ chunk-4XMIFQ3Z.js?v=776e1323:382Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/italian-cities 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+start @ @tanstack_react-query.js?v=776e1323:836
+fetch @ @tanstack_react-query.js?v=776e1323:1142
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+onSubscribe @ @tanstack_react-query.js?v=776e1323:1333
+subscribe @ @tanstack_react-query.js?v=776e1323:22
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3239
+subscribeToStore @ chunk-4XMIFQ3Z.js?v=776e1323:11982
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+commitRootImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19414
+commitRoot @ chunk-4XMIFQ3Z.js?v=776e1323:19275
+performSyncWorkOnRoot @ chunk-4XMIFQ3Z.js?v=776e1323:18893
+flushSyncCallbacks @ chunk-4XMIFQ3Z.js?v=776e1323:9117
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:18625
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=776e1323:101
+flush @ @tanstack_react-query.js?v=776e1323:608
+batch @ @tanstack_react-query.js?v=776e1323:626
+dispatch_fn @ @tanstack_react-query.js?v=776e1323:1258
+setData @ @tanstack_react-query.js?v=776e1323:929
+fetch @ @tanstack_react-query.js?v=776e1323:1151
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+setOptions @ @tanstack_react-query.js?v=776e1323:1390
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3249
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:19326
+workLoop @ chunk-4XMIFQ3Z.js?v=776e1323:195
+flushWork @ chunk-4XMIFQ3Z.js?v=776e1323:174
+performWorkUntilDeadline @ chunk-4XMIFQ3Z.js?v=776e1323:382Understand this error
+queryClient.ts:75 📨 Response status: 404 Not Found
+queryClient.ts:70  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/commercial-areas 404 (Not Found)
+queryFn @ queryClient.ts:70
+fetchFn @ @tanstack_react-query.js?v=776e1323:1095
+run @ @tanstack_react-query.js?v=776e1323:793
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+(anonymous) @ @tanstack_react-query.js?v=776e1323:818
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=776e1323:814
+Promise.catch
+run @ @tanstack_react-query.js?v=776e1323:797
+start @ @tanstack_react-query.js?v=776e1323:836
+fetch @ @tanstack_react-query.js?v=776e1323:1142
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+onSubscribe @ @tanstack_react-query.js?v=776e1323:1333
+subscribe @ @tanstack_react-query.js?v=776e1323:22
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3239
+subscribeToStore @ chunk-4XMIFQ3Z.js?v=776e1323:11982
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+commitRootImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19414
+commitRoot @ chunk-4XMIFQ3Z.js?v=776e1323:19275
+performSyncWorkOnRoot @ chunk-4XMIFQ3Z.js?v=776e1323:18893
+flushSyncCallbacks @ chunk-4XMIFQ3Z.js?v=776e1323:9117
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:18625
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=776e1323:101
+flush @ @tanstack_react-query.js?v=776e1323:608
+batch @ @tanstack_react-query.js?v=776e1323:626
+dispatch_fn @ @tanstack_react-query.js?v=776e1323:1258
+setData @ @tanstack_react-query.js?v=776e1323:929
+fetch @ @tanstack_react-query.js?v=776e1323:1151
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=776e1323:1637
+setOptions @ @tanstack_react-query.js?v=776e1323:1390
+(anonymous) @ @tanstack_react-query.js?v=776e1323:3249
+commitHookEffectListMount @ chunk-4XMIFQ3Z.js?v=776e1323:16913
+commitPassiveMountOnFiber @ chunk-4XMIFQ3Z.js?v=776e1323:18154
+commitPassiveMountEffects_complete @ chunk-4XMIFQ3Z.js?v=776e1323:18127
+commitPassiveMountEffects_begin @ chunk-4XMIFQ3Z.js?v=776e1323:18117
+commitPassiveMountEffects @ chunk-4XMIFQ3Z.js?v=776e1323:18107
+flushPassiveEffectsImpl @ chunk-4XMIFQ3Z.js?v=776e1323:19488
+flushPassiveEffects @ chunk-4XMIFQ3Z.js?v=776e1323:19445
+(anonymous) @ chunk-4XMIFQ3Z.js?v=776e1323:19326
+workLoop @ chunk-4XMIFQ3Z.js?v=776e1323:195
+flushWork @ chunk-4XMIFQ3Z.js?v=776e1323:174
+performWorkUntilDeadline @ chunk-4XMIFQ3Z.js?v=776e1323:382Understand this error
+queryClient.ts:75
