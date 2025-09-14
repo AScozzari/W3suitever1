@@ -6723,9 +6723,8 @@ export default function SettingsPage() {
       )}
 
       {/* Modal Nuovo Utente con Selezione Gerarchica */}
-      {userModal.open && (() => {
-        console.log('🔍 DEBUG: Modal rendering - userModal.open =', userModal.open);
-        return <div style={{
+      {userModal.open && (
+        <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -7625,8 +7624,8 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>;
-      })()}
+        </div>
+      )}
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header - Direttamente sullo sfondo */}
