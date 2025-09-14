@@ -8,7 +8,7 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [credentials, setCredentials] = useState({
     email: 'sbadmin@w3suite.com',
-    password: 'Brand123!'
+    password: 'admin123'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function Login() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '1rem',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
       fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
     },
     backgroundPattern: {
@@ -213,8 +213,8 @@ export default function Login() {
         <div style={styles.demoBox}>
           <p style={styles.demoTitle}>🚀 Demo Credentials</p>
           <p style={styles.demoText}>
-            Email: brand.superadmin@windtre.it<br />
-            Password: Brand123!
+            Email: sbadmin@w3suite.com<br />
+            Password: admin123
           </p>
         </div>
 
