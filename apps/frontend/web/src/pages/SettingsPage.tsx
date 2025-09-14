@@ -1220,6 +1220,7 @@ export default function SettingsPage() {
               transition: 'all 0.2s ease'
             }}
             onClick={() => {
+              console.log('🔍 DEBUG: Bottone Nuovo Utente cliccato');
               setNewUser({
                 username: '',
                 password: '',
@@ -1266,7 +1267,9 @@ export default function SettingsPage() {
                 oreLavoro: '40',
                 note: ''
               });
+              console.log('🔍 DEBUG: Chiamando setUserModal({ open: true, data: null })');
               setUserModal({ open: true, data: null });
+              console.log('🔍 DEBUG: setUserModal chiamato');
             }}>
               <Plus size={16} />
               Nuovo Utente
@@ -6715,8 +6718,9 @@ export default function SettingsPage() {
       )}
 
       {/* Modal Nuovo Utente con Selezione Gerarchica */}
-      {userModal.open && (
-        <div style={{
+      {userModal.open && (() => {
+        console.log('🔍 DEBUG: Modal rendering - userModal.open =', userModal.open);
+        return <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -7616,8 +7620,8 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>;
+      })()}
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header - Direttamente sullo sfondo */}
