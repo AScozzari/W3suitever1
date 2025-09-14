@@ -1,554 +1,362 @@
 import React, { useState } from 'react';
-import { useBrandAuth } from '../contexts/BrandAuthContext';
-import { useBrandTenant } from '../contexts/BrandTenantContext';
-import BrandLayout from '../components/BrandLayout';
-import CrossTenantStoreModal from '../components/CrossTenantStoreModal';
-import { 
-  Building2, Store, Users, Globe, Plus, Settings, Database,
-  Shield, Key, UserPlus, MapPin, ChevronRight, Edit, Trash2,
-  RefreshCw, CheckCircle, AlertCircle, Clock, TrendingUp, UserCircle
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-
-// Mock tenant data
-const mockTenants = [
-  {
-    id: '00000000-0000-0000-0000-000000000001',
-    slug: 'staging',
-    name: 'Staging Environment',
-    type: 'test',
-    stores: 3,
-    users: 8,
-    status: 'active'
-  },
-  {
-    id: '99999999-9999-9999-9999-999999999999',
-    slug: 'demo',
-    name: 'Demo Tenant',
-    type: 'demo',
-    stores: 5,
-    users: 12,
-    status: 'active'
-  },
-  {
-    id: '11111111-1111-1111-1111-111111111111',
-    slug: 'acme',
-    name: 'ACME Corporation',
-    type: 'production',
-    stores: 15,
-    users: 45,
-    status: 'active'
-  },
-  {
-    id: '22222222-2222-2222-2222-222222222222',
-    slug: 'tech',
-    name: 'Tech Solutions',
-    type: 'production',
-    stores: 8,
-    users: 22,
-    status: 'active'
-  }
-];
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { Building2, Store, Users, Plus, Edit2, Trash2, ChevronRight } from 'lucide-react';
 
 export default function Entities() {
-  const { isAuthenticated } = useBrandAuth();
-  const { currentTenant, isCrossTenant, switchTenant } = useBrandTenant();
-  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
-  const [selectedEntity, setSelectedEntity] = useState<string>('stores');
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null);
-
-  if (!isAuthenticated) {
-    window.location.href = '/brandinterface/login';
-    return null;
-  }
-
-  const entityTypes = [
-    {
-      id: 'stores',
-      name: 'Punti Vendita',
-      icon: Store,
-      description: 'Gestisci negozi e filiali',
-      color: 'var(--primary-orange)',
-      count: 42
-    },
-    {
-      id: 'users',
-      name: 'Utenti',
-      icon: Users,
-      description: 'Gestisci utenti e permessi',
-      color: 'var(--primary-blue)',
-      count: 87
-    },
-    {
-      id: 'tenants',
-      name: 'Tenant',
-      icon: Building2,
-      description: 'Gestisci organizzazioni',
-      color: 'var(--secondary-green)',
-      count: 4
-    },
-    {
-      id: 'settings',
-      name: 'Configurazioni',
-      icon: Settings,
-      description: 'Impostazioni cross-tenant',
-      color: 'var(--secondary-amber)',
-      count: 16
-    }
+  const [selectedRagioneSociale, setSelectedRagioneSociale] = useState<string | null>(null);
+  
+  // Mock data for demonstration
+  const tenants = [
+    { id: '1', name: 'Staging Environment', code: 'STG-001' },
+    { id: '2', name: 'Demo Tenant', code: 'DMO-001' },
+    { id: '3', name: 'ACME Corporation', code: 'ACM-001' },
+    { id: '4', name: 'Tech Solutions', code: 'TEC-001' }
   ];
-
-  const getTenantBadge = (type: string) => {
-    const styles = {
-      production: 'bg-green-100 text-green-800',
-      test: 'bg-blue-100 text-blue-800',
-      demo: 'bg-yellow-100 text-yellow-800'
-    };
-    return styles[type as keyof typeof styles] || 'bg-gray-100 text-gray-800';
-  };
+  
+  const ragioniSociali = selectedTenant ? [
+    { id: '1', name: 'WindTre S.p.A.', partitaIva: '13378520152' },
+    { id: '2', name: 'Wind Retail S.r.l.', partitaIva: '06700161002' },
+    { id: '3', name: 'WindTre Business S.p.A.', partitaIva: '08644781006' }
+  ] : [];
+  
+  const puntiVendita = selectedRagioneSociale ? [
+    { id: '1', name: 'Milano Centro', address: 'Via Roma, 123' },
+    { id: '2', name: 'Roma EUR', address: 'Viale Europa, 45' },
+    { id: '3', name: 'Napoli Centro', address: 'Piazza Garibaldi, 78' },
+    { id: '4', name: 'Torino Porta Nuova', address: 'Corso Vittorio, 12' }
+  ] : [];
 
   return (
-    <BrandLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                Gestione Entità Cross-Tenant
-              </h1>
-              <p className="text-gray-600 mt-2 flex items-center gap-2">
-                <Globe className="w-4 h-4" />
-                {isCrossTenant ? 
-                  'Modalità Cross-Tenant: gestione centralizzata di tutte le entità' : 
-                  `Gestione entità per ${currentTenant}`
-                }
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              {!isCrossTenant && (
-                <button 
-                  onClick={() => switchTenant(null)}
-                  className="px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-all flex items-center space-x-2"
-                >
-                  <Globe className="w-5 h-5" />
-                  <span>Attiva Cross-Tenant</span>
-                </button>
-              )}
-              <button className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2">
-                <RefreshCw className="w-5 h-5" />
-                <span>Sincronizza</span>
-              </button>
-            </div>
+    <div style={{ padding: '24px' }}>
+      <h1 style={{ 
+        fontSize: '24px', 
+        fontWeight: 600, 
+        color: '#1f2937',
+        marginBottom: '24px'
+      }}>
+        Gestione Entità Cross-Tenant
+      </h1>
+      
+      {/* Three column layout */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1fr 1fr', 
+        gap: '24px',
+        height: 'calc(100vh - 200px)'
+      }}>
+        
+        {/* Tenants Column */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          borderRadius: '12px',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{
+            padding: '16px',
+            borderBottom: '1px solid hsla(255, 255, 255, 0.12)',
+            background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+            color: 'white'
+          }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+              Tenant
+            </h2>
+            <p style={{ fontSize: '12px', opacity: 0.9, margin: 0 }}>
+              {tenants.length} organizzazioni
+            </p>
           </div>
-
-          {/* Entity Type Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {entityTypes.map((entity) => (
-              <Card 
-                key={entity.id}
-                className={`cursor-pointer transition-all ${
-                  selectedEntity === entity.id 
-                    ? 'ring-2 ring-orange-500 shadow-lg' 
-                    : 'hover:shadow-md'
-                }`}
-                onClick={() => setSelectedEntity(entity.id)}
+          
+          <div style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
+            {tenants.map((tenant) => (
+              <div
+                key={tenant.id}
+                onClick={() => {
+                  setSelectedTenant(tenant.id);
+                  setSelectedRagioneSociale(null); // Reset dependent selection
+                }}
+                style={{
+                  padding: '12px',
+                  marginBottom: '8px',
+                  background: selectedTenant === tenant.id ? 'rgba(255, 105, 0, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                  border: selectedTenant === tenant.id ? '1px solid #FF6900' : '1px solid rgba(255, 255, 255, 0.06)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backdropFilter: 'blur(8px)'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedTenant !== tenant.id) {
+                    e.currentTarget.style.background = 'rgba(255, 105, 0, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedTenant !== tenant.id) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  }
+                }}
               >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <entity.icon 
-                      className="w-5 h-5" 
-                      style={{ color: entity.color }}
-                    />
-                    <span className="text-2xl font-bold text-gray-800">
-                      {entity.count}
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Building2 size={20} color="#6b7280" />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: 600, color: '#1f2937', margin: 0 }}>
+                      {tenant.name}
+                    </p>
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                      Codice: {tenant.code}
+                    </p>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-medium text-gray-900">{entity.name}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{entity.description}</p>
-                </CardContent>
-              </Card>
+                  <ChevronRight size={16} color="#9ca3af" />
+                </div>
+              </div>
             ))}
           </div>
+          
+          <div style={{ padding: '16px', borderTop: '1px solid hsla(255, 255, 255, 0.12)' }}>
+            <button style={{
+              width: '100%',
+              padding: '12px',
+              background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <Plus size={16} />
+              Nuovo Tenant
+            </button>
+          </div>
         </div>
-
-        {/* Content based on selected entity */}
-        {selectedEntity === 'stores' && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Gestione Punti Vendita Cross-Tenant
-              </h2>
-              <button 
-                onClick={() => setIsStoreModalOpen(true)}
-                className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Nuovo Punto Vendita</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Store cards */}
-              <Card className="hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Store className="w-5 h-5 text-orange-600" />
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Attivo
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-medium text-gray-900">Milano Centro</h3>
-                  <p className="text-sm text-gray-500">Via Roma, 123</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-gray-600">Tenant: ACME</span>
-                    <div className="flex space-x-1">
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Edit className="w-3 h-3 text-gray-600" />
-                      </button>
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Trash2 className="w-3 h-3 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Store className="w-5 h-5 text-orange-600" />
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Attivo
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-medium text-gray-900">Roma EUR</h3>
-                  <p className="text-sm text-gray-500">Viale Europa, 45</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-gray-600">Tenant: Tech Solutions</span>
-                    <div className="flex space-x-1">
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Edit className="w-3 h-3 text-gray-600" />
-                      </button>
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Trash2 className="w-3 h-3 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Store className="w-5 h-5 text-orange-600" />
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                      In Setup
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-medium text-gray-900">Napoli Centro</h3>
-                  <p className="text-sm text-gray-500">Piazza Garibaldi, 78</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-gray-600">Tenant: Demo</span>
-                    <div className="flex space-x-1">
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Edit className="w-3 h-3 text-gray-600" />
-                      </button>
-                      <button className="p-1 hover:bg-gray-100 rounded">
-                        <Trash2 className="w-3 h-3 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {selectedEntity === 'tenants' && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Gestione Tenant
-              </h2>
-              <button className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2">
-                <Plus className="w-5 h-5" />
-                <span>Nuovo Tenant</span>
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Tenant</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Tipo</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Punti Vendita</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Utenti</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Stato</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Azioni</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockTenants.map((tenant) => (
-                    <tr key={tenant.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium text-gray-900">{tenant.name}</p>
-                          <p className="text-sm text-gray-500">/{tenant.slug}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTenantBadge(tenant.type)}`}>
-                          {tenant.type}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <Store className="w-4 h-4 text-gray-400" />
-                          <span>{tenant.stores}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span>{tenant.users}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-1">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm text-gray-600">Attivo</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <button 
-                            onClick={() => switchTenant(tenant.id)}
-                            className="px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 text-sm"
-                          >
-                            Entra
-                          </button>
-                          <button className="p-1 hover:bg-gray-100 rounded">
-                            <Settings className="w-4 h-4 text-gray-600" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {selectedEntity === 'users' && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
-                Gestione Utenti Cross-Tenant
-              </h2>
-              <button className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2">
-                <UserPlus className="w-5 h-5" />
-                <span>Nuovo Utente</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <UserCircle className="w-8 h-8 text-orange-600" />
-                    <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
-                      Admin
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-medium text-gray-900">Marco Rossi</h3>
-                  <p className="text-sm text-gray-500">m.rossi@brandinterface.com</p>
-                  <div className="mt-3 space-y-1">
-                    <p className="text-xs text-gray-600">Accesso: Tutti i tenant</p>
-                    <p className="text-xs text-gray-600">Ultimo login: 2 ore fa</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <UserCircle className="w-8 h-8 text-blue-600" />
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      Manager
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-medium text-gray-900">Laura Bianchi</h3>
-                  <p className="text-sm text-gray-500">l.bianchi@acme.com</p>
-                  <div className="mt-3 space-y-1">
-                    <p className="text-xs text-gray-600">Tenant: ACME Corp</p>
-                    <p className="text-xs text-gray-600">Ultimo login: 1 giorno fa</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-lg transition-all">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <UserCircle className="w-8 h-8 text-green-600" />
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Operatore
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-medium text-gray-900">Giuseppe Verdi</h3>
-                  <p className="text-sm text-gray-500">g.verdi@techsolutions.it</p>
-                  <div className="mt-3 space-y-1">
-                    <p className="text-xs text-gray-600">Tenant: Tech Solutions</p>
-                    <p className="text-xs text-gray-600">Ultimo login: 3 ore fa</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {selectedEntity === 'settings' && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Configurazioni Cross-Tenant
+        
+        {/* Ragioni Sociali Column */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          borderRadius: '12px',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          opacity: selectedTenant ? 1 : 0.5
+        }}>
+          <div style={{
+            padding: '16px',
+            borderBottom: '1px solid hsla(255, 255, 255, 0.12)',
+            background: 'linear-gradient(135deg, #7B2CBF, #9747ff)',
+            color: 'white'
+          }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+              Ragioni Sociali
             </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Database className="w-5 h-5 text-orange-600" />
-                    <span>Database Sync</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Sincronizzazione dati tra tenant
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Auto-sync attivo</span>
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Ultima sync</span>
-                      <span className="text-sm text-gray-500">15 min fa</span>
-                    </div>
-                    <button className="w-full mt-3 px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50">
-                      Configura
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Shield className="w-5 h-5 text-blue-600" />
-                    <span>Permessi Globali</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Gestione ruoli e permessi cross-tenant
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Ruoli definiti</span>
-                      <span className="font-medium">8</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Permessi attivi</span>
-                      <span className="font-medium">124</span>
-                    </div>
-                    <button className="w-full mt-3 px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50">
-                      Gestisci
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Key className="w-5 h-5 text-green-600" />
-                    <span>API Keys</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Chiavi API per integrazioni esterne
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Chiavi attive</span>
-                      <span className="font-medium">3</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Rate limit</span>
-                      <span className="text-sm text-gray-500">1000/ora</span>
-                    </div>
-                    <button className="w-full mt-3 px-4 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-50">
-                      Gestisci
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5 text-amber-600" />
-                    <span>Analytics</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Report e analisi cross-tenant
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Report disponibili</span>
-                      <span className="font-medium">12</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Export schedulati</span>
-                      <span className="font-medium">5</span>
-                    </div>
-                    <button className="w-full mt-3 px-4 py-2 border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50">
-                      Visualizza
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <p style={{ fontSize: '12px', opacity: 0.9, margin: 0 }}>
+              {ragioniSociali.length} entità giuridiche
+            </p>
           </div>
-        )}
+          
+          <div style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
+            {!selectedTenant ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>
+                Seleziona un tenant
+              </div>
+            ) : (
+              ragioniSociali.map((rs) => (
+                <div
+                  key={rs.id}
+                  onClick={() => setSelectedRagioneSociale(rs.id)}
+                  style={{
+                    padding: '12px',
+                    marginBottom: '8px',
+                    background: selectedRagioneSociale === rs.id ? 'rgba(123, 44, 191, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                    border: selectedRagioneSociale === rs.id ? '1px solid #7B2CBF' : '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    backdropFilter: 'blur(8px)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedRagioneSociale !== rs.id) {
+                      e.currentTarget.style.background = 'rgba(123, 44, 191, 0.05)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedRagioneSociale !== rs.id) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Building2 size={20} color="#6b7280" />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 600, color: '#1f2937', margin: 0 }}>
+                        {rs.name}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                        P.IVA: {rs.partitaIva}
+                      </p>
+                    </div>
+                    <ChevronRight size={16} color="#9ca3af" />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <div style={{ padding: '16px', borderTop: '1px solid hsla(255, 255, 255, 0.12)' }}>
+            <button 
+              disabled={!selectedTenant}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: selectedTenant ? 'linear-gradient(135deg, #7B2CBF, #9747ff)' : '#e5e7eb',
+                color: selectedTenant ? 'white' : '#9ca3af',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 600,
+                cursor: selectedTenant ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedTenant) {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedTenant) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              <Plus size={16} />
+              Nuova Ragione Sociale
+            </button>
+          </div>
+        </div>
+        
+        {/* Punti Vendita Column */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          borderRadius: '12px',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          opacity: selectedRagioneSociale ? 1 : 0.5
+        }}>
+          <div style={{
+            padding: '16px',
+            borderBottom: '1px solid hsla(255, 255, 255, 0.12)',
+            background: 'linear-gradient(135deg, #10b981, #34d399)',
+            color: 'white'
+          }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+              Punti Vendita
+            </h2>
+            <p style={{ fontSize: '12px', opacity: 0.9, margin: 0 }}>
+              {puntiVendita.length} stores
+            </p>
+          </div>
+          
+          <div style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
+            {!selectedRagioneSociale ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>
+                Seleziona una ragione sociale
+              </div>
+            ) : (
+              puntiVendita.map((pv) => (
+                <div
+                  key={pv.id}
+                  style={{
+                    padding: '12px',
+                    marginBottom: '8px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s',
+                    backdropFilter: 'blur(8px)',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Store size={20} color="#6b7280" />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 600, color: '#1f2937', margin: 0 }}>
+                        {pv.name}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                        {pv.address}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <div style={{ padding: '16px', borderTop: '1px solid hsla(255, 255, 255, 0.12)' }}>
+            <button 
+              disabled={!selectedRagioneSociale}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: selectedRagioneSociale ? 'linear-gradient(135deg, #10b981, #34d399)' : '#e5e7eb',
+                color: selectedRagioneSociale ? 'white' : '#9ca3af',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 600,
+                cursor: selectedRagioneSociale ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedRagioneSociale) {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedRagioneSociale) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              <Plus size={16} />
+              Nuovo Punto Vendita
+            </button>
+          </div>
+        </div>
+        
       </div>
-
-      {/* Store Modal */}
-      {isStoreModalOpen && (
-        <CrossTenantStoreModal
-          isOpen={isStoreModalOpen}
-          onClose={() => setIsStoreModalOpen(false)}
-        />
-      )}
-    </BrandLayout>
+    </div>
   );
 }

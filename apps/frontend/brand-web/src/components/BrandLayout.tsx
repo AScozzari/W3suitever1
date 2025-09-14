@@ -181,137 +181,216 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
 
   return (
     <div style={{
-      height: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
+      minHeight: '100vh',
       background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))',
-      fontFamily: 'Inter, system-ui, sans-serif'
+      fontFamily: 'Inter, system-ui, sans-serif',
+      position: 'relative'
     }}>
       
-      {/* Header clean and professional like W3 Suite */}
+      {/* Header fisso - Glassmorphism Enhanced - EXACT COPY FROM W3 SUITE */}
       <header style={{
-        position: 'relative',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: isMobile ? '56px' : '64px',
+        background: 'hsla(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+        borderBottom: '1px solid hsla(255, 255, 255, 0.25)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: isMobile ? '0 16px' : '0 24px',
         zIndex: 50,
-        background: 'white',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '16px 24px',
-        flexShrink: 0,
-        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)'
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+        borderRadius: '0 0 20px 20px'
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <h1 style={{
-              fontSize: '20px',
-              fontWeight: 600,
-              color: COLORS.neutral.dark,  // DARK TEXT for readability
-              margin: 0
-            }}>
-              {currentNavItem?.name || 'Brand Interface'}
-            </h1>
-            {currentWorkspace && (
-              <div style={{
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <currentWorkspace.icon size={16} color={COLORS.neutral.medium} />
-                <span style={{ fontSize: '14px', fontWeight: 500, color: COLORS.neutral.dark }}>
-                  {currentWorkspace.name}
-                </span>
-              </div>
-            )}
+        {/* Logo e Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '16px'
+          }}>B</div>
+          <div>
+            <p style={{ fontSize: '16px', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>Brand Interface</p>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: 1 }}>Control Panel</p>
           </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Search clean style */}
+        </div>
+
+        {/* Barra di ricerca centrale - Hidden on mobile */}
+        {!isMobile && (
+          <div style={{ flex: 1, maxWidth: '400px', margin: '0 32px' }}>
             <div style={{ position: 'relative' }}>
-              <Search style={{
-                position: 'absolute',
-                left: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: COLORS.neutral.medium  // Gray icon
-              }} size={16} />
+              <Search size={16} style={{ 
+                position: 'absolute', 
+                left: '12px', 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                color: '#6b7280' 
+              }} />
               <input
-                type="text"
-                placeholder="Cerca..."
+                placeholder="Cerca tenant, store, utenti..."
                 style={{
-                  background: '#f9fafb',
-                  border: '1px solid #e5e7eb',
+                  width: '100%',
+                  padding: '8px 12px 8px 40px',
+                  background: 'hsla(0, 0%, 100%, 0.25)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.18)',
                   borderRadius: '8px',
-                  padding: '12px 16px 12px 40px',
-                  color: COLORS.neutral.dark,  // Dark text
                   fontSize: '14px',
-                  width: '240px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s'
+                  outline: 'none'
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
               />
             </div>
-            
-            {/* Notification button */}
-            <button style={{
-              background: 'transparent',
-              border: 'none',
-              padding: '8px',
-              cursor: 'pointer',
-              position: 'relative',
-              borderRadius: '8px',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              <Bell size={20} color={COLORS.neutral.medium} />
-              <span style={{
-                position: 'absolute',
-                top: '6px',
-                right: '6px',
-                width: '8px',
-                height: '8px',
-                background: COLORS.primary.orange,
-                borderRadius: '50%'
-              }} />
-            </button>
-            
-            {/* Settings button */}
-            <button 
-              onClick={() => handleNavigation('/settings')}
+          </div>
+        )}
+        
+        {/* Mobile search button */}
+        {isMobile && (
+          <button style={{
+            background: 'transparent',
+            border: 'none',
+            padding: '8px',
+            cursor: 'pointer',
+            borderRadius: '8px'
+          }}>
+            <Search size={20} />
+          </button>
+        )}
+
+        {/* Sezione destra - Responsive */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+          {/* Notifiche */}
+          <button style={{
+            position: 'relative',
+            background: 'transparent',
+            border: 'none',
+            padding: '8px',
+            cursor: 'pointer',
+            borderRadius: '8px'
+          }}>
+            <Bell size={20} />
+            <div style={{
+              position: 'absolute',
+              top: '6px',
+              right: '6px',
+              width: '8px',
+              height: '8px',
+              background: '#ef4444',
+              borderRadius: '50%'
+            }}></div>
+          </button>
+
+          {/* Avatar utente con dropdown menu */}
+          <div style={{ position: 'relative' }} data-user-menu>
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
               style={{
-                background: 'transparent',
+                width: '32px',
+                height: '32px',
+                background: 'linear-gradient(135deg, #7B2CBF, #a855f7)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 600,
                 border: 'none',
-                padding: '8px',
                 cursor: 'pointer',
-                borderRadius: '8px',
-                transition: 'background 0.2s'
+                transition: 'transform 0.2s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <Settings size={20} color={COLORS.neutral.medium} />
+              {user?.email?.[0]?.toUpperCase() || 'A'}
             </button>
+
+            {/* Dropdown Menu */}
+            {userMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  marginTop: '8px',
+                  width: '220px',
+                  background: 'hsla(0, 0%, 100%, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid hsla(0, 0%, 100%, 0.2)',
+                  borderRadius: '12px',
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  zIndex: 1000,
+                  padding: '8px'
+                }}
+              >
+                {/* Header utente */}
+                <div style={{
+                  padding: '12px',
+                  borderBottom: '1px solid hsla(0, 0%, 0%, 0.1)',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                    {user?.name || 'Utente'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>
+                    {user?.email || 'admin@brandinterface.com'}
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      handleLogout();
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#ef4444',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(239, 84%, 67%, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Main Layout - Struttura tre colonne esatta W3 Suite */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      {/* Layout principale - Responsive - EXACT COPY FROM W3 SUITE */}
+      <div style={{ 
+        display: 'flex', 
+        paddingTop: isMobile ? '56px' : '64px',
+        flexDirection: isMobile ? 'column' : 'row'
+      }}>
         
-        {/* Left Sidebar - Navigation con auto-collapse */}
-        <aside
+        {/* Sidebar sinistra - Smart Hover Glassmorphism - EXACT COPY FROM W3 SUITE */}
+        <aside 
           onMouseEnter={() => {
-            if (leftSidebarCollapsed) {
+            if (!isMobile && leftSidebarCollapsed) {
               setLeftSidebarCollapsed(false);
             }
             if (leftSidebarTimer) {
@@ -320,528 +399,284 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             }
           }}
           onMouseLeave={() => {
-            if (!leftSidebarCollapsed) {
+            if (!isMobile && !leftSidebarCollapsed) {
               if (leftSidebarTimer) {
                 clearTimeout(leftSidebarTimer);
               }
               const timer = setTimeout(() => {
                 setLeftSidebarCollapsed(true);
                 setLeftSidebarTimer(null);
-              }, 1500);
+              }, 1500); // Delay aumentato per usabilità
               setLeftSidebarTimer(timer);
             }
           }}
           style={{
-            width: leftSidebarCollapsed ? '64px' : '256px',
-            background: 'white',
-            borderRight: '1px solid #e5e7eb',
+            position: isMobile ? 'static' : 'fixed',
+            left: 0,
+            top: isMobile ? '0' : '64px',
+            height: isMobile ? 'auto' : 'calc(100vh - 64px)',
+            width: isMobile ? '100%' : (leftSidebarCollapsed ? '64px' : '256px'),
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            borderRight: isMobile ? 'none' : '1px solid hsla(255, 255, 255, 0.12)',
+            borderBottom: isMobile ? '1px solid hsla(255, 255, 255, 0.12)' : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '16px 8px',
-            boxShadow: '1px 0 3px 0 rgb(0 0 0 / 0.05)'
+            zIndex: 40,
+            display: isMobile && leftSidebarCollapsed ? 'none' : 'flex',
+            flexDirection: isMobile ? 'row' : 'column',
+            overflowX: isMobile ? 'auto' : 'visible',
+            padding: isMobile ? '12px' : '0',
+            boxShadow: isMobile ? 'none' : '4px 0 24px rgba(0, 0, 0, 0.04)'
           }}
         >
-          {/* Brand header */}
-          <div style={{
-            padding: '16px',
-            borderBottom: '1px solid #e5e7eb',
-            marginBottom: '16px'
+          {/* Navigation */}
+          <nav style={{ 
+            padding: '16px 12px',
+            display: 'flex',
+            flexDirection: isMobile ? 'row' : 'column',
+            gap: '4px',
+            flex: 1
           }}>
-            {!leftSidebarCollapsed && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  background: '#f9fafb',
-                  borderRadius: '8px',
-                  padding: '8px'
-                }}>
-                  <Shield size={20} color={COLORS.neutral.medium} />
-                </div>
-                <div>
-                  <h2 style={{ color: COLORS.neutral.dark, fontSize: '16px', fontWeight: 600, margin: 0 }}>
-                    Brand Interface
-                  </h2>
-                  <p style={{ color: COLORS.neutral.medium, fontSize: '12px', margin: 0 }}>
-                    Control Panel
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Tenant context */}
-          <div style={{
-            padding: '12px',
-            marginBottom: '16px',
-            background: isCrossTenant ? 'rgba(255, 105, 0, 0.05)' : '#f9fafb',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Globe size={16} color={COLORS.neutral.medium} />
-              {!leftSidebarCollapsed && (
-                <div>
-                  <p style={{ color: COLORS.neutral.dark, fontSize: '14px', fontWeight: 600, margin: 0 }}>
-                    {isCrossTenant ? 'Cross-Tenant' : currentTenant || 'Tenant'}
-                  </p>
-                  <p style={{ color: COLORS.neutral.medium, fontSize: '12px', margin: 0 }}>
-                    {isCrossTenant ? 'Tutti i tenant' : `ID: ${currentTenantId?.substring(0, 8) || 'N/A'}...`}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Navigation menu */}
-          <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {navigationItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleNavigation(item.path)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: leftSidebarCollapsed ? '0' : '12px',
-                  padding: '12px',
-                  background: location.endsWith(item.path) 
-                    ? 'rgba(255, 105, 0, 0.1)' 
-                    : 'transparent',
-                  border: location.endsWith(item.path) ? `1px solid ${COLORS.primary.orange}` : 'none',
-                  borderRadius: '8px',
-                  color: location.endsWith(item.path) ? COLORS.primary.orange : COLORS.neutral.dark,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start'
-                }}
-                onMouseEnter={(e) => {
-                  if (!location.endsWith(item.path)) {
-                    e.currentTarget.style.background = '#f9fafb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!location.endsWith(item.path)) {
-                    e.currentTarget.style.background = 'transparent';
-                  }
-                }}
-              >
-                <item.icon size={20} color={location.endsWith(item.path) ? COLORS.primary.orange : COLORS.neutral.medium} />
-                {!leftSidebarCollapsed && (
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'inherit' }}>
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.endsWith(item.path);
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavigation(item.path)}
+                  style={{
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    background: isActive 
+                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
+                      : 'transparent',
+                    borderRadius: '8px',
+                    color: isActive ? 'white' : '#374151',
+                    transition: 'all 0.2s ease',
+                    border: 'none',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                    }
+                  }}
+                >
+                  <div style={{ 
+                    minWidth: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Icon size={20} color={isActive ? 'white' : '#6b7280'} />
+                  </div>
+                  {!leftSidebarCollapsed && (
+                    <span style={{ 
+                      fontSize: '14px',
+                      fontWeight: isActive ? 600 : 400
+                    }}>
                       {item.name}
-                    </p>
-                    <p style={{ margin: 0, fontSize: '12px', color: COLORS.neutral.medium }}>
-                      {item.description}
-                    </p>
-                  </div>
-                )}
-              </button>
-            ))}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
-
-          {/* User profile */}
-          <div style={{
-            borderTop: '1px solid #e5e7eb',
-            paddingTop: '16px',
-            position: 'relative'
-          }}>
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: leftSidebarCollapsed ? '0' : '12px',
-                padding: '12px',
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                color: COLORS.neutral.dark,
-                cursor: 'pointer',
-                justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#f9fafb'}
-            >
-              <div style={{
-                background: 'linear-gradient(135deg, #7B2CBF, #a855f7)',
-                borderRadius: '50%',
-                padding: '6px'
-              }}>
-                <User size={16} color="white" />
-              </div>
-              {!leftSidebarCollapsed && (
-                <>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: COLORS.neutral.dark }}>
-                      {user?.name || 'User'}
-                    </p>
-                    <p style={{ margin: 0, fontSize: '12px', color: COLORS.neutral.medium }}>
-                      {user?.role || 'Role'}
-                    </p>
-                  </div>
-                  <ChevronDown size={16} color={COLORS.neutral.medium} style={{
-                    transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease'
-                  }} />
-                </>
-              )}
-            </button>
-
-            {/* User menu dropdown */}
-            {userMenuOpen && !leftSidebarCollapsed && (
-              <div style={{
-                position: 'absolute',
-                bottom: '100%',
-                left: 0,
-                right: 0,
-                marginBottom: '8px',
-                background: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                padding: '8px',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-              }}>
-                <button
-                  onClick={toggleTheme}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '8px 12px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: COLORS.neutral.dark,
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  {isDark ? <Sun size={16} color={COLORS.neutral.medium} /> : <Moon size={16} color={COLORS.neutral.medium} />}
-                  Tema {isDark ? 'Chiaro' : 'Scuro'}
-                </button>
-                <button
-                  onClick={() => handleNavigation('/settings')}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '8px 12px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: COLORS.neutral.dark,
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <Settings size={16} color={COLORS.neutral.medium} />
-                  Impostazioni
-                </button>
-                <div style={{
-                  height: '1px',
-                  background: '#e5e7eb',
-                  margin: '8px 0'
-                }} />
-                <button
-                  onClick={handleLogout}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '8px 12px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: COLORS.semantic.error,
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <LogOut size={16} color={COLORS.semantic.error} />
-                  Esci
-                </button>
-              </div>
-            )}
-          </div>
         </aside>
 
-        {/* Main Content Area - Identico W3 Suite */}
+        {/* Main Content - EXACT margins from W3 Suite */}
         <main style={{
           flex: 1,
-          overflow: 'auto',
-          background: 'white',
-          padding: '24px'
+          marginLeft: isMobile ? '0' : (leftSidebarCollapsed ? '64px' : '256px'),
+          marginRight: isMobile ? '0' : (!workspaceCollapsed ? '320px' : '64px'),
+          padding: isMobile ? '16px' : '24px',
+          transition: 'all 0.3s ease',
+          minHeight: isMobile ? 'calc(100vh - 120px)' : 'auto'
         }}>
           {children}
         </main>
 
-        {/* Right Sidebar - Workspace con auto-collapse */}
-        <aside
-          onMouseEnter={() => {
-            if (workspaceCollapsed) {
-              setWorkspaceCollapsed(false);
-            }
-            if (workspaceTimer) {
-              clearTimeout(workspaceTimer);
-              setWorkspaceTimer(null);
-            }
-          }}
-          onMouseLeave={() => {
-            if (!workspaceCollapsed) {
+        {/* Workspace Sidebar destra - EXACT COPY FROM W3 SUITE */}
+        {!isMobile && !isTablet && (
+          <aside 
+            onMouseEnter={() => {
+              if (workspaceCollapsed) {
+                setWorkspaceCollapsed(false);
+              }
               if (workspaceTimer) {
                 clearTimeout(workspaceTimer);
-              }
-              const timer = setTimeout(() => {
-                setWorkspaceCollapsed(true);
                 setWorkspaceTimer(null);
-              }, 1500);
-              setWorkspaceTimer(timer);
-            }
-          }}
-          style={{
-            width: workspaceCollapsed ? '64px' : '320px',
-            background: 'white',
-            borderLeft: '1px solid #e5e7eb',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '16px 8px',
-            boxShadow: '-1px 0 3px 0 rgb(0 0 0 / 0.05)'
-          }}
-        >
-          {/* Workspace header */}
-          <div style={{
-            padding: '16px',
-            borderBottom: '1px solid #e5e7eb',
-            marginBottom: '16px'
-          }}>
-            {!workspaceCollapsed && (
-              <h3 style={{
-                color: COLORS.neutral.dark,
-                fontSize: '14px',
-                fontWeight: 600,
-                margin: 0,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+              }
+            }}
+            onMouseLeave={() => {
+              if (!workspaceCollapsed) {
+                if (workspaceTimer) {
+                  clearTimeout(workspaceTimer);
+                }
+                const timer = setTimeout(() => {
+                  setWorkspaceCollapsed(true);
+                  setWorkspaceTimer(null);
+                }, 1500); // Delay aumentato per usabilità
+                setWorkspaceTimer(timer);
+              }
+            }}
+            style={{
+              position: 'fixed',
+              right: 0,
+              top: '64px',
+              height: 'calc(100vh - 64px)',
+              width: workspaceCollapsed ? '64px' : '320px',
+              background: 'hsla(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(24px) saturate(140%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+              borderLeft: '1px solid hsla(255, 255, 255, 0.12)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              zIndex: 40,
+              boxShadow: '4px 0 24px rgba(0, 0, 0, 0.04)',
+              overflow: 'visible'
+            }}
+          >
+            {workspaceCollapsed ? (
+              <div style={{
+                padding: '16px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px'
               }}>
-                WORKSPACE
-              </h3>
-            )}
-          </div>
-
-          {/* Active workspace display */}
-          {currentWorkspace && (
-            <div style={{
-              padding: '12px',
-              marginBottom: '16px',
-              background: '#f9fafb',
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  background: 'white',
-                  borderRadius: '8px',
-                  padding: '8px',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <currentWorkspace.icon size={16} color={COLORS.neutral.medium} />
-                </div>
-                {!workspaceCollapsed && (
-                  <div>
-                    <p style={{ color: COLORS.neutral.dark, fontSize: '14px', fontWeight: 600, margin: 0 }}>
-                      {currentWorkspace.name}
-                    </p>
-                    <p style={{ color: COLORS.neutral.medium, fontSize: '12px', margin: 0 }}>
-                      {currentWorkspace.description}
-                    </p>
-                  </div>
-                )}
+                {workspaces.map((ws) => {
+                  const Icon = ws.icon;
+                  const isActive = workspace === ws.id;
+                  
+                  return (
+                    <button
+                      key={ws.id}
+                      onClick={() => handleWorkspaceTabClick(ws.id)}
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        background: isActive 
+                          ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`
+                          : 'transparent',
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: isActive ? 'white' : '#6b7280',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Icon size={18} />
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          )}
-
-          {/* Workspace list */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {!workspaceCollapsed && (
-              <p style={{
-                color: COLORS.neutral.medium,
-                fontSize: '12px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                margin: '0 0 16px 0'
-              }}>
-                Aree Funzionali
-              </p>
-            )}
-            
-            {workspaces.map((ws) => (
-              <button
-                key={ws.id}
-                onClick={() => handleWorkspaceTabClick(ws.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: workspaceCollapsed ? '0' : '12px',
-                  padding: '12px',
-                  background: workspace === ws.id 
-                    ? 'rgba(255, 105, 0, 0.1)' 
-                    : 'transparent',
-                  border: workspace === ws.id 
-                    ? `1px solid ${COLORS.primary.orange}` 
-                    : '1px solid transparent',
-                  borderRadius: '8px',
-                  color: workspace === ws.id ? COLORS.primary.orange : COLORS.neutral.dark,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  justifyContent: workspaceCollapsed ? 'center' : 'flex-start'
-                }}
-                onMouseEnter={(e) => {
-                  if (workspace !== ws.id) {
-                    e.currentTarget.style.background = '#f9fafb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (workspace !== ws.id) {
-                    e.currentTarget.style.background = 'transparent';
-                  }
-                }}
-              >
+            ) : (
+              <div style={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div style={{
-                  background: workspace === ws.id ? 'rgba(255, 105, 0, 0.1)' : '#f9fafb',
-                  borderRadius: '8px',
-                  padding: '6px'
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '20px'
                 }}>
-                  <ws.icon size={16} color={workspace === ws.id ? COLORS.primary.orange : COLORS.neutral.medium} />
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    color: '#1f2937',
+                    margin: 0
+                  }}>Workspace</h3>
                 </div>
-                {!workspaceCollapsed && (
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'inherit' }}>
+
+                <div style={{
+                  display: 'flex',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  borderRadius: '12px',
+                  padding: '4px',
+                  marginBottom: '20px',
+                  gap: '4px'
+                }}>
+                  {workspaces.map((ws) => (
+                    <button
+                      key={ws.id}
+                      onClick={() => handleWorkspaceTabClick(ws.id)}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        background: workspace === ws.id 
+                          ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
+                          : 'transparent',
+                        color: workspace === ws.id ? 'white' : '#6b7280',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
                       {ws.name}
-                    </p>
-                    <p style={{ margin: 0, fontSize: '12px', color: COLORS.neutral.medium }}>
-                      {ws.description}
-                    </p>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
+                    </button>
+                  ))}
+                </div>
 
-          {/* Quick stats */}
-          {!workspaceCollapsed && (
-            <div style={{
-              borderTop: '1px solid #e5e7eb',
-              paddingTop: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
-              <p style={{
-                color: COLORS.neutral.medium,
-                fontSize: '12px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                margin: 0
-              }}>
-                Quick Stats
-              </p>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background: '#f9fafb',
-                  borderRadius: '8px',
-                  border: '1px solid #e5e7eb'
+                {/* Workspace content based on selection */}
+                <div style={{ 
+                  flex: 1, 
+                  overflowY: 'auto',
+                  overflowX: 'visible',
+                  paddingRight: '8px',
+                  marginRight: '-8px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CheckCircle size={14} color={COLORS.neutral.medium} />
-                    <span style={{ color: COLORS.neutral.dark, fontSize: '12px' }}>Tasks</span>
-                  </div>
-                  <span style={{
-                    background: COLORS.semantic.success,
-                    color: 'white',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    padding: '2px 8px',
-                    borderRadius: '4px'
-                  }}>
-                    12
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background: '#f9fafb',
-                  borderRadius: '8px',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <AlertTriangle size={14} color={COLORS.neutral.medium} />
-                    <span style={{ color: COLORS.neutral.dark, fontSize: '12px' }}>Alerts</span>
-                  </div>
-                  <span style={{
-                    background: COLORS.semantic.warning,
-                    color: 'white',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    padding: '2px 8px',
-                    borderRadius: '4px'
-                  }}>
-                    3
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background: '#f9fafb',
-                  borderRadius: '8px',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Users size={14} color={COLORS.neutral.medium} />
-                    <span style={{ color: COLORS.neutral.dark, fontSize: '12px' }}>Users</span>
-                  </div>
-                  <span style={{
-                    background: COLORS.semantic.info,
-                    color: 'white',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    padding: '2px 8px',
-                    borderRadius: '4px'
-                  }}>
-                    24
-                  </span>
+                  {currentWorkspace && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      border: '1px solid rgba(255, 255, 255, 0.06)'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '12px'
+                      }}>
+                        <currentWorkspace.icon size={20} color={currentWorkspace.color} />
+                        <h4 style={{
+                          fontSize: '15px',
+                          fontWeight: 600,
+                          color: '#1f2937',
+                          margin: 0
+                        }}>{currentWorkspace.name}</h4>
+                      </div>
+                      <p style={{
+                        fontSize: '13px',
+                        color: '#6b7280',
+                        margin: 0,
+                        lineHeight: 1.4
+                      }}>
+                        {currentWorkspace.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
-        </aside>
+            )}
+          </aside>
+        )}
       </div>
     </div>
   );

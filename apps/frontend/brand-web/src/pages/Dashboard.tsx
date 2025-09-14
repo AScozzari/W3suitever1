@@ -94,7 +94,7 @@ export default function Dashboard() {
 
   return (
     <BrandLayout>
-      <div style={{ padding: '24px', background: '#f9fafb', minHeight: '100vh' }}>
+      <div style={{ padding: '24px', minHeight: '100vh' }}>
         {/* Header */}
         <div style={{ marginBottom: '24px' }}>
           <h1 style={{ 
@@ -121,11 +121,13 @@ export default function Dashboard() {
             const Icon = metric.icon;
             return (
               <div key={idx} style={{
-                background: 'white',
+                background: 'hsla(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(24px) saturate(140%)',
+                WebkitBackdropFilter: 'blur(24px) saturate(140%)',
                 borderRadius: '12px',
                 padding: '20px',
-                boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
-                border: '1px solid #e5e7eb'
+                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+                border: '1px solid hsla(255, 255, 255, 0.12)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
@@ -142,7 +144,7 @@ export default function Dashboard() {
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    background: '#f9fafb',  // Light gray background
+                    background: 'rgba(255, 255, 255, 0.1)',
                     borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'center',
@@ -158,12 +160,14 @@ export default function Dashboard() {
 
         {/* Tabs */}
         <div style={{
-          background: 'white',
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
           borderRadius: '12px',
           padding: '20px',
           marginBottom: '24px',
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
-          border: '1px solid #e5e7eb'
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
+          border: '1px solid hsla(255, 255, 255, 0.12)'
         }}>
           <div style={{
             display: 'flex',
