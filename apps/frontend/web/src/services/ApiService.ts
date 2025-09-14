@@ -14,47 +14,96 @@ export interface ApiResponse<T> {
 
 class ApiService {
   private baseUrl = '';
-  private maxRetries = 3;
-  private retryDelay = 1000; // 1 secondo
+  private readonly REQUEST_TIMEOUT = 8000; // 8 seconds timeout
+  private readonly BASE_RETRY_DELAY = 500; // Reduced to 500ms
 
   /**
-   * Gestione enterprise per chiamate API con retry automatico
+   * Optimized API request handling with timeout and reduced retry logic
    */
   private async makeRequest<T>(
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    console.log(`🌐 ApiService: Making request to ${endpoint}`);
+    const method = options.method?.toUpperCase() || 'GET';
+    const isReadOperation = ['GET', 'HEAD', 'OPTIONS'].includes(method);
+    
+    // Reduce retries: 1 for GET requests, 2 for mutations
+    const maxRetries = isReadOperation ? 1 : 2;
+    
     let lastError: Error | null = null;
+    const abortController = new AbortController();
 
-    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
-      try {
-        console.log(`  Attempt ${attempt}/${this.maxRetries}...`);
-        const response = await apiRequest(endpoint, options);
-        return {
-          success: true,
-          data: response
-        };
-      } catch (error: any) {
-        lastError = error;
-        
-        // Se è un errore 401, non fare retry - serve nuova autenticazione
-        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-          return {
-            success: false,
-            error: 'Authentication required',
-            needsAuth: true
+    // Set request timeout
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+    }, this.REQUEST_TIMEOUT);
+
+    try {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const requestOptions = {
+            ...options,
+            signal: abortController.signal
           };
+
+          const response = await apiRequest(endpoint, requestOptions);
+          clearTimeout(timeoutId);
+          return {
+            success: true,
+            data: response
+          };
+        } catch (error: any) {
+          lastError = error;
+          
+          // Handle aborted requests
+          if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+            clearTimeout(timeoutId);
+            return {
+              success: false,
+              error: 'Request timeout',
+              needsAuth: false
+            };
+          }
+          
+          // Authentication errors - no retry needed
+          if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+            clearTimeout(timeoutId);
+            return {
+              success: false,
+              error: 'Authentication required',
+              needsAuth: true
+            };
+          }
+
+          // Server errors that shouldn't be retried
+          if (error.message?.includes('404') || error.message?.includes('400')) {
+            clearTimeout(timeoutId);
+            return {
+              success: false,
+              error: error.message || 'Client error',
+              needsAuth: false
+            };
+          }
+
+          // If this is the last attempt, don't wait
+          if (attempt === maxRetries) break;
+
+          // Small jitter backoff (500ms + random 0-200ms)
+          const jitter = Math.random() * 200;
+          await new Promise(resolve => 
+            setTimeout(resolve, this.BASE_RETRY_DELAY + jitter)
+          );
         }
-
-        // Se è l'ultimo tentativo, non aspettare
-        if (attempt === this.maxRetries) break;
-
-        // Aspetta prima del prossimo tentativo (exponential backoff)
-        await new Promise(resolve => 
-          setTimeout(resolve, this.retryDelay * Math.pow(2, attempt - 1))
-        );
       }
+    } catch (error: any) {
+      lastError = error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    // Log only final errors for debugging
+    if (lastError) {
+      console.warn(`⚠️ ApiService: Failed request to ${endpoint}:`, lastError.message);
     }
 
     return {
@@ -149,18 +198,15 @@ class ApiService {
   }
 
   /**
-   * Carica tutti i dati per Settings Page in parallelo
-   * Con gestione enterprise robusta
+   * Loads all settings data in parallel with optimized error handling
    */
   async loadSettingsData() {
-    console.log('🚀 ApiService: Loading settings data...');
-    // Enterprise pattern: Graceful degradation with individual error handling
+    // Optimized parallel loading with graceful degradation
     const apiCalls = await Promise.allSettled([
       this.getLegalEntities(),
       this.getUsers(), 
       this.getStores()
     ]);
-    console.log('🔍 ApiService: All API calls completed');
 
     const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
 
