@@ -61,7 +61,7 @@ export const users = w3suiteSchema.table("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
   isSystemAdmin: boolean("is_system_admin").default(false),
   lastLoginAt: timestamp("last_login_at"),
-  tenantId: uuid("tenant_id").references(() => tenants.id),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   status: varchar("status", { length: 50 }).default("active"),
   mfaEnabled: boolean("mfa_enabled").default(false),
   // Extended enterprise fields
@@ -72,7 +72,9 @@ export const users = w3suiteSchema.table("users", {
   department: varchar("department", { length: 100 }),
   hireDate: date("hire_date"),
   contractType: varchar("contract_type", { length: 50 }),
-});
+}, (table) => [
+  index("users_tenant_idx").on(table.tenantId),
+]);
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
   createdAt: true, 
@@ -122,7 +124,9 @@ export const legalEntities = w3suiteSchema.table("legal_entities", {
   refAmminPaese: varchar("refAmminPaese", { length: 100 }),
   // Dynamic notes field
   note: text("note"),
-});
+}, (table) => [
+  uniqueIndex("legal_entities_tenant_unique").on(table.tenantId),
+]);
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
   id: true, 
@@ -230,6 +234,23 @@ export const userExtraPerms = w3suiteSchema.table("user_extra_perms", {
 ]);
 
 // ==================== STORE ASSOCIATIONS ====================
+export const userStores = w3suiteSchema.table("user_stores", {
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  isPrimary: boolean("is_primary").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.storeId] }),
+  index("user_stores_user_idx").on(table.userId),
+  index("user_stores_store_idx").on(table.storeId),
+]);
+
+export const insertUserStoreSchema = createInsertSchema(userStores).omit({ 
+  createdAt: true 
+});
+export type InsertUserStore = z.infer<typeof insertUserStoreSchema>;
+export type UserStore = typeof userStores.$inferSelect;
+
 export const storeBrands = w3suiteSchema.table("store_brands", {
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
   brandId: uuid("brand_id").notNull(), // References public.brands
@@ -260,7 +281,7 @@ export const entityLogs = w3suiteSchema.table('entity_logs', {
   previousStatus: varchar('previous_status', { length: 50 }),
   newStatus: varchar('new_status', { length: 50 }),
   changes: jsonb('changes'), // JSON con tutti i cambiamenti
-  userId: uuid('user_id'), // Chi ha fatto il cambio
+  userId: varchar('user_id').references(() => users.id), // Chi ha fatto il cambio
   userEmail: varchar('user_email', { length: 255 }),
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow(),
@@ -285,7 +306,7 @@ export const structuredLogs = w3suiteSchema.table('structured_logs', {
   
   // Context tracking
   correlationId: varchar('correlation_id', { length: 50 }),
-  userId: uuid('user_id').references(() => users.id),
+  userId: varchar('user_id').references(() => users.id),
   userEmail: varchar('user_email', { length: 255 }),
   
   // Business context
