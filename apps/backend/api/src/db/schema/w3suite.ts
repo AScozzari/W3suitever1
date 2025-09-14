@@ -15,6 +15,7 @@ import {
   uuid,
   primaryKey,
   smallint,
+  integer,
   date,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -271,3 +272,61 @@ export const insertEntityLogSchema = createInsertSchema(entityLogs).omit({
 });
 export type InsertEntityLog = z.infer<typeof insertEntityLogSchema>;
 export type EntityLog = typeof entityLogs.$inferSelect;
+
+// ==================== STRUCTURED LOGS ====================
+export const structuredLogs = w3suiteSchema.table('structured_logs', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  
+  // Core log fields
+  level: varchar('level', { length: 10 }).notNull(), // INFO, WARN, ERROR, DEBUG
+  message: text('message').notNull(),
+  component: varchar('component', { length: 100 }).notNull(),
+  
+  // Context tracking
+  correlationId: varchar('correlation_id', { length: 50 }),
+  userId: uuid('user_id').references(() => users.id),
+  userEmail: varchar('user_email', { length: 255 }),
+  
+  // Business context
+  action: varchar('action', { length: 100 }),
+  entityType: varchar('entity_type', { length: 50 }), // 'tenant', 'legal_entity', 'store', 'user'
+  entityId: uuid('entity_id'),
+  
+  // Performance metrics
+  duration: integer('duration'), // in milliseconds
+  
+  // Request context
+  httpMethod: varchar('http_method', { length: 10 }),
+  httpPath: varchar('http_path', { length: 255 }),
+  httpStatusCode: integer('http_status_code'),
+  ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
+  userAgent: text('user_agent'),
+  
+  // Error context
+  errorStack: text('error_stack'),
+  errorCode: varchar('error_code', { length: 50 }),
+  
+  // Additional metadata
+  metadata: jsonb('metadata'), // Flexible JSON data
+  
+  // Timestamps
+  timestamp: timestamp('timestamp').notNull().defaultNow(),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  // Indexes for performance
+  index('structured_logs_tenant_timestamp_idx').on(table.tenantId, table.timestamp),
+  index('structured_logs_level_timestamp_idx').on(table.level, table.timestamp),
+  index('structured_logs_component_timestamp_idx').on(table.component, table.timestamp),
+  index('structured_logs_correlation_idx').on(table.correlationId),
+  index('structured_logs_user_timestamp_idx').on(table.userId, table.timestamp),
+  index('structured_logs_entity_idx').on(table.entityType, table.entityId),
+]);
+
+export const insertStructuredLogSchema = createInsertSchema(structuredLogs).omit({ 
+  id: true, 
+  createdAt: true,
+  timestamp: true
+});
+export type InsertStructuredLog = z.infer<typeof insertStructuredLogSchema>;
+export type StructuredLog = typeof structuredLogs.$inferSelect;
