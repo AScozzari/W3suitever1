@@ -41,10 +41,133 @@ export default function DashboardModule() {
     { label: "Ordini Oggi", value: stats?.todayOrders || '0' },
   ];
 
+  // Skeleton component with glassmorphism design
+  const SkeletonPulse = ({ width, height, style = {} }) => (
+    <div
+      style={{
+        width,
+        height,
+        background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.5s infinite',
+        borderRadius: '8px',
+        ...style
+      }}
+    />
+  );
+
+  // Add shimmer animation keyframes to document head if not already present
+  if (isLoading && !document.getElementById('shimmer-styles')) {
+    const style = document.createElement('style');
+    style.id = 'shimmer-styles';
+    style.textContent = `
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   if (isLoading) {
     return (
-      <div style={{ padding: '32px', color: 'white' }}>
-        <h2>Caricamento dashboard...</h2>
+      <div style={{ padding: '32px' }}>
+        {/* Skeleton Title */}
+        <div style={{ marginBottom: '32px' }}>
+          <SkeletonPulse width="300px" height="40px" />
+        </div>
+
+        {/* Skeleton Main Metrics Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '24px',
+          marginBottom: '40px'
+        }}>
+          {[1, 2, 3, 4].map((idx) => (
+            <div
+              key={idx}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <SkeletonPulse width="120px" height="16px" style={{ marginBottom: '12px' }} />
+                  <SkeletonPulse width="100px" height="32px" style={{ marginBottom: '16px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <SkeletonPulse width="40px" height="16px" />
+                    <SkeletonPulse width="80px" height="12px" />
+                  </div>
+                </div>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <SkeletonPulse width="24px" height="24px" style={{ borderRadius: '50%' }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Skeleton Today's Performance */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          marginBottom: '24px'
+        }}>
+          <SkeletonPulse width="200px" height="24px" style={{ marginBottom: '20px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            {[1, 2].map((idx) => (
+              <div key={idx}>
+                <SkeletonPulse width="120px" height="16px" style={{ marginBottom: '8px' }} />
+                <SkeletonPulse width="80px" height="28px" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton Activity Feed */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <SkeletonPulse width="180px" height="24px" style={{ marginBottom: '20px' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {[1, 2, 3, 4].map((idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '12px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderRadius: '8px'
+              }}>
+                <SkeletonPulse width="20px" height="20px" style={{ borderRadius: '50%' }} />
+                <div style={{ flex: 1 }}>
+                  <SkeletonPulse width="200px" height="16px" style={{ marginBottom: '4px' }} />
+                  <SkeletonPulse width="100px" height="12px" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
