@@ -7,8 +7,8 @@ export default function Login() {
   const { login } = useBrandAuth();
   const [, setLocation] = useLocation();
   const [credentials, setCredentials] = useState({
-    email: '',
-    password: ''
+    email: 'sbadmin@w3suite.com',
+    password: 'Brand123!'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
