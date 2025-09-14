@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';
+import { apiService } from '../services/ApiService';
 import {
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
   Target, Zap, Shield, Calendar, Clock,
@@ -15,6 +16,37 @@ export default function DashboardPage() {
   const [currentModule, setCurrentModule] = useState('dashboard');
   const [isMobile, setIsMobile] = useState(false);
   const { data: dashboardStats } = useQuery({ queryKey: ["/api/dashboard/stats"] });
+  
+  // Fetch real data from database
+  const { data: legalEntities = [], isLoading: legalEntitiesLoading } = useQuery({
+    queryKey: ['/api/legal-entities'],
+    queryFn: async () => {
+      const result = await apiService.getLegalEntities();
+      return result.success ? result.data : [];
+    }
+  });
+  
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/users'],
+    queryFn: async () => {
+      const result = await apiService.getUsers();
+      return result.success ? result.data : [];
+    }
+  });
+  
+  const { data: stores = [], isLoading: storesLoading } = useQuery({
+    queryKey: ['/api/stores'],
+    queryFn: async () => {
+      const result = await apiService.getStores();
+      return result.success ? result.data : [];
+    }
+  });
+  
+  // Calculate totals from real data
+  const totalClients = legalEntities.length + stores.length; // Legal entities + stores as clients
+  const totalUsers = users.length;
+  const totalStores = stores.length;
+  const totalLegalEntities = legalEntities.length;
 
   useEffect(() => {
     const checkDevice = () => {
@@ -63,42 +95,42 @@ export default function DashboardPage() {
     }
   ];
 
-  // Statistiche come da screenshot originale
+  // Statistiche con dati reali dal database
   const statistiche = [
     {
-      title: 'Clienti Attivi',
-      value: '12,483',
-      subtitle: 'Utenti registrati',
+      title: 'Utenti Sistema',
+      value: usersLoading ? '...' : totalUsers.toLocaleString('it-IT'),
+      subtitle: 'Utenti attivi',
       trend: '+12.5%',
       trendUp: true,
       icon: Users,
       color: '#FF6900'
     },
     {
-      title: 'Linee Mobile',
-      value: '8,927',
-      subtitle: 'Contratti attivi',
+      title: 'Punti Vendita',
+      value: storesLoading ? '...' : totalStores.toLocaleString('it-IT'),
+      subtitle: 'Stores attivi',
       trend: '+8.2%',
       trendUp: true,
-      icon: Smartphone,
+      icon: Building,
       color: '#7B2CBF'
     },
     {
-      title: 'Connessioni Fibra',
-      value: '3,556',
-      subtitle: 'Installazioni attive',
+      title: 'Ragioni Sociali',
+      value: legalEntitiesLoading ? '...' : totalLegalEntities.toLocaleString('it-IT'),
+      subtitle: 'Entità legali',
       trend: '+2.1%',
       trendUp: true,
-      icon: Wifi,
+      icon: Briefcase,
       color: '#10B981'
     },
     {
-      title: 'Servizi Energia',
-      value: '1,284',
-      subtitle: 'Forniture attive',
+      title: 'Clienti Totali',
+      value: (usersLoading || storesLoading || legalEntitiesLoading) ? '...' : totalClients.toLocaleString('it-IT'),
+      subtitle: 'Entities + Stores',
       trend: '+24.3%',
       trendUp: true,
-      icon: Zap,
+      icon: Target,
       color: '#F59E0B'
     }
   ];
@@ -443,12 +475,12 @@ export default function DashboardPage() {
                   fontWeight: 600,
                   color: '#1f2937',
                   margin: '0 0 4px 0'
-                }}>Andamento Ricavi</h3>
+                }}>Panoramica Sistema</h3>
                 <p style={{
                   fontSize: '14px',
                   color: '#374151',
                   margin: 0
-                }}>Fatturato mensile per servizio</p>
+                }}>Entità attive nel database</p>
               </div>
               <MoreHorizontal size={16} style={{ color: '#9ca3af' }} />
             </div>
@@ -463,7 +495,7 @@ export default function DashboardPage() {
                 fontSize: '28px',
                 fontWeight: 'bold',
                 color: '#1f2937'
-              }}>€2.4M</span>
+              }}>{(usersLoading || storesLoading || legalEntitiesLoading) ? '...' : `${totalClients + totalUsers} Totali`}</span>
               <span style={{
                 background: 'rgba(123, 44, 191, 0.1)',
                 color: '#7B2CBF',
@@ -486,8 +518,8 @@ export default function DashboardPage() {
             }}>
               <div style={{ textAlign: 'center', color: '#6b7280' }}>
                 <BarChart size={48} style={{ margin: '0 auto 8px' }} />
-                <p style={{ fontSize: '14px', margin: 0 }}>Grafico ricavi in sviluppo</p>
-                <p style={{ fontSize: '12px', margin: '4px 0 0 0' }}>I dati verranno visualizzati qui</p>
+                <p style={{ fontSize: '14px', margin: 0 }}>Dati reali dal database</p>
+                <p style={{ fontSize: '12px', margin: '4px 0 0 0' }}>{`${totalStores} stores, ${totalUsers} users, ${totalLegalEntities} entities`}</p>
               </div>
             </div>
           </div>
