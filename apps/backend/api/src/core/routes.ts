@@ -72,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: demoUser || 'admin@w3suite.com',
             tenantId: tenantId,
             roles: ['admin'],
-            permissions: [],
+            permissions: ['logs.read', 'logs.write'],
             capabilities: [],
             scope: 'openid profile email'
           };
