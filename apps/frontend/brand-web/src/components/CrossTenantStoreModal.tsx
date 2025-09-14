@@ -612,8 +612,8 @@ export default function CrossTenantStoreModal({ isOpen, onClose, onSuccess }: Cr
             </div>
 
             {/* Social Media */}
-            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-              <h3 className="font-semibold text-purple-800 mb-3">Social Media & Web</h3>
+            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+              <h3 className="font-semibold text-orange-800 mb-3">Social Media & Web</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Facebook */}
                 <div>
@@ -624,7 +624,7 @@ export default function CrossTenantStoreModal({ isOpen, onClose, onSuccess }: Cr
                     {...form.register('facebook')}
                     type="url"
                     placeholder="https://facebook.com/..."
-                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                     data-testid="input-facebook"
                   />
                 </div>
@@ -638,7 +638,7 @@ export default function CrossTenantStoreModal({ isOpen, onClose, onSuccess }: Cr
                     {...form.register('instagram')}
                     type="url"
                     placeholder="https://instagram.com/..."
-                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                     data-testid="input-instagram"
                   />
                 </div>
@@ -652,7 +652,7 @@ export default function CrossTenantStoreModal({ isOpen, onClose, onSuccess }: Cr
                     {...form.register('tiktok')}
                     type="url"
                     placeholder="https://tiktok.com/..."
-                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                     data-testid="input-tiktok"
                   />
                 </div>
@@ -666,7 +666,7 @@ export default function CrossTenantStoreModal({ isOpen, onClose, onSuccess }: Cr
                     {...form.register('telegram')}
                     type="url"
                     placeholder="https://t.me/..."
-                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                     data-testid="input-telegram"
                   />
                 </div>
@@ -680,7 +680,7 @@ export default function CrossTenantStoreModal({ isOpen, onClose, onSuccess }: Cr
                     {...form.register('google_maps_url')}
                     type="url"
                     placeholder="https://maps.google.com/..."
-                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full p-3 bg-white/80 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                     data-testid="input-google-maps"
                   />
                   {form.formState.errors.google_maps_url && (

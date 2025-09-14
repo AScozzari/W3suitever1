@@ -68,7 +68,7 @@ export default function Entities() {
       name: 'Punti Vendita',
       icon: Store,
       description: 'Gestisci negozi e filiali',
-      color: 'var(--primary-purple)',
+      color: 'var(--primary-orange)',
       count: 42
     },
     {
@@ -129,13 +129,13 @@ export default function Entities() {
               {!isCrossTenant && (
                 <button 
                   onClick={() => switchTenant(null)}
-                  className="px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition-all flex items-center space-x-2"
+                  className="px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-all flex items-center space-x-2"
                 >
                   <Globe className="w-5 h-5" />
                   <span>Attiva Cross-Tenant</span>
                 </button>
               )}
-              <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all flex items-center space-x-2">
+              <button className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2">
                 <RefreshCw className="w-5 h-5" />
                 <span>Sincronizza</span>
               </button>
@@ -149,7 +149,7 @@ export default function Entities() {
                 key={entity.id}
                 className={`cursor-pointer transition-all ${
                   selectedEntity === entity.id 
-                    ? 'ring-2 ring-purple-500 shadow-lg' 
+                    ? 'ring-2 ring-orange-500 shadow-lg' 
                     : 'hover:shadow-md'
                 }`}
                 onClick={() => setSelectedEntity(entity.id)}
@@ -183,7 +183,7 @@ export default function Entities() {
               </h2>
               <button 
                 onClick={() => setIsStoreModalOpen(true)}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all flex items-center space-x-2"
+                className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2"
               >
                 <Plus className="w-5 h-5" />
                 <span>Nuovo Punto Vendita</span>
@@ -195,7 +195,7 @@ export default function Entities() {
               <Card className="hover:shadow-lg transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <Store className="w-5 h-5 text-purple-600" />
+                    <Store className="w-5 h-5 text-orange-600" />
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                       Attivo
                     </span>
@@ -221,7 +221,7 @@ export default function Entities() {
               <Card className="hover:shadow-lg transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <Store className="w-5 h-5 text-purple-600" />
+                    <Store className="w-5 h-5 text-orange-600" />
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                       Attivo
                     </span>
@@ -247,7 +247,7 @@ export default function Entities() {
               <Card className="hover:shadow-lg transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <Store className="w-5 h-5 text-purple-600" />
+                    <Store className="w-5 h-5 text-orange-600" />
                     <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
                       In Setup
                     </span>
@@ -279,7 +279,7 @@ export default function Entities() {
               <h2 className="text-xl font-bold text-gray-900">
                 Gestione Tenant
               </h2>
-              <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all flex items-center space-x-2">
+              <button className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2">
                 <Plus className="w-5 h-5" />
                 <span>Nuovo Tenant</span>
               </button>
@@ -333,7 +333,7 @@ export default function Entities() {
                         <div className="flex items-center space-x-2">
                           <button 
                             onClick={() => switchTenant(tenant.id)}
-                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 text-sm"
+                            className="px-3 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 text-sm"
                           >
                             Entra
                           </button>
@@ -356,7 +356,7 @@ export default function Entities() {
               <h2 className="text-xl font-bold text-gray-900">
                 Gestione Utenti Cross-Tenant
               </h2>
-              <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all flex items-center space-x-2">
+              <button className="px-4 py-2 bg-gradient-to-r from-orange-600 to-blue-600 text-white rounded-lg hover:from-orange-700 hover:to-blue-700 transition-all flex items-center space-x-2">
                 <UserPlus className="w-5 h-5" />
                 <span>Nuovo Utente</span>
               </button>
@@ -366,8 +366,8 @@ export default function Entities() {
               <Card className="hover:shadow-lg transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <UserCircle className="w-8 h-8 text-purple-600" />
-                    <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                    <UserCircle className="w-8 h-8 text-orange-600" />
+                    <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
                       Admin
                     </span>
                   </div>
@@ -433,7 +433,7 @@ export default function Entities() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
-                    <Database className="w-5 h-5 text-purple-600" />
+                    <Database className="w-5 h-5 text-orange-600" />
                     <span>Database Sync</span>
                   </CardTitle>
                   <CardDescription>
@@ -450,7 +450,7 @@ export default function Entities() {
                       <span className="text-sm">Ultima sync</span>
                       <span className="text-sm text-gray-500">15 min fa</span>
                     </div>
-                    <button className="w-full mt-3 px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50">
+                    <button className="w-full mt-3 px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50">
                       Configura
                     </button>
                   </div>

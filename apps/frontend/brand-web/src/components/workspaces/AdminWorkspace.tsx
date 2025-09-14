@@ -206,7 +206,7 @@ export default function AdminWorkspace() {
                   <td className="py-4 text-white font-medium">{user.name}</td>
                   <td className="py-4 text-white/80">{user.email}</td>
                   <td className="py-4">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-500/20 text-orange-300">
                       {user.role}
                     </span>
                   </td>

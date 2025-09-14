@@ -22,8 +22,8 @@ const COLORS = {
   primary: {
     orange: '#FF6900',      // Arancione WindTre
     orangeLight: '#ff8533', // Arancione chiaro
-    purple: '#7B2CBF',      // Viola WindTre
-    purpleLight: '#9747ff', // Viola chiaro
+    purple: '#FF6900',      // Orange (temporarily keeping name for compatibility)
+    purpleLight: '#ff8533', // Orange light (temporarily keeping name for compatibility)
   },
   // Colori semantici per stati e feedback
   semantic: {
