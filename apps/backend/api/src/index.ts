@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { exec, spawn } from "child_process";
+import { exec, spawn, ChildProcess } from "child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { registerRoutes } from "./core/routes.js";
 import { seedCommercialAreas } from "./core/seed-areas.js";
@@ -11,9 +11,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Global process references for lifecycle management
-let brandFrontendProcess = null;
-let w3FrontendProcess = null;
-let brandBackendProcess = null;
+let brandFrontendProcess: ChildProcess | null = null;
+let w3FrontendProcess: ChildProcess | null = null;
+let brandBackendProcess: ChildProcess | null = null;
 
 // Start nginx reverse proxy and backend
 startNginxAndBackend();
@@ -49,7 +49,7 @@ async function startNginxAndBackend() {
       console.log(`🔧 Created system nginx directory: ${systemNginxDir}`);
     }
   } catch (error) {
-    console.log(`⚠️ Could not create system nginx directory (may need sudo): ${error.message}`);
+    console.log(`⚠️ Could not create system nginx directory (may need sudo): ${error instanceof Error ? error.message : String(error)}`);
     // Try alternative - use /tmp paths instead
     console.log(`🔄 Using /tmp fallback paths...`);
   }
@@ -398,7 +398,7 @@ async function startBrandFrontend() {
     while (retries < maxRetries) {
       try {
         await new Promise((resolve, reject) => {
-          const testReq = exec("curl -s -f http://localhost:3001", (error, stdout, stderr) => {
+          const testReq = exec("curl -s -f http://localhost:3001/brandinterface/", (error, stdout, stderr) => {
             if (error) {
               reject(error);
               return;
