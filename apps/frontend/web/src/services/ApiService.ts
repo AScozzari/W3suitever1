@@ -24,10 +24,12 @@ class ApiService {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    console.log(`🌐 ApiService: Making request to ${endpoint}`);
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
+        console.log(`  Attempt ${attempt}/${this.maxRetries}...`);
         const response = await apiRequest(endpoint, options);
         return {
           success: true,
@@ -151,12 +153,14 @@ class ApiService {
    * Con gestione enterprise robusta
    */
   async loadSettingsData() {
+    console.log('🚀 ApiService: Loading settings data...');
     // Enterprise pattern: Graceful degradation with individual error handling
     const apiCalls = await Promise.allSettled([
       this.getLegalEntities(),
       this.getUsers(), 
       this.getStores()
     ]);
+    console.log('🔍 ApiService: All API calls completed');
 
     const [legalEntitiesResult, usersResult, storesResult] = apiCalls;
 

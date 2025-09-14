@@ -23,6 +23,9 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
+        const url = queryKey[0] as string;
+        console.log('📡 Making API request to:', url);
+        
         const tenantId = getCurrentTenantId();
         let headers: Record<string, string> = {
           'X-Tenant-ID': tenantId, // Header per il tenant ID
@@ -62,10 +65,15 @@ export const queryClient = new QueryClient({
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const res = await fetch(queryKey[0] as string, {
+        console.log('📋 Request headers:', headers);
+        
+        const res = await fetch(url, {
           credentials: "include",
           headers,
         });
+        
+        console.log('📨 Response status:', res.status, res.statusText);
+        
         if (!res.ok) {
           if (res.status === 401) {
             console.log('❌ 401 Unauthorized - redirecting to login');
@@ -76,7 +84,9 @@ export const queryClient = new QueryClient({
           }
           throw new Error(`${res.status}: ${res.statusText}`);
         }
-        return res.json();
+        const data = await res.json();
+        console.log('✅ API response received, data length:', Array.isArray(data) ? data.length : 'object');
+        return data;
       },
       staleTime: 1000 * 60,
       gcTime: 1000 * 60 * 5,

@@ -229,9 +229,12 @@ export default function SettingsPage() {
   
   // Caricamento dati enterprise con service layer
   useEffect(() => {
+    console.log('🆕 SettingsPage: useEffect triggered - loading data...');
     const loadData = async () => {
       try {
+        console.log('🌎 SettingsPage: Calling apiService.loadSettingsData()...');
         const result = await apiService.loadSettingsData();
+        console.log('📦 SettingsPage: loadSettingsData result:', result);
         
         if (!result.success) {
           if (result.needsAuth) {
