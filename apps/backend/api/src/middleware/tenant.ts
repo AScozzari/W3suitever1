@@ -73,7 +73,10 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
 
 export async function rbacMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
+    console.log(`[RBAC-DEBUG] Middleware called - User: ${req.user?.id} - Tenant: ${req.tenant?.id}`);
+    
     if (!req.user || !req.tenant) {
+      console.log(`[RBAC-DEBUG] Missing user or tenant, skipping middleware`);
       return next();
     }
     
