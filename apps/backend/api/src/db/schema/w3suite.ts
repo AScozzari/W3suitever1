@@ -22,6 +22,9 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Import public schema tables for FK references
+import { brands, channels, commercialAreas, drivers } from './public';
+
 // ==================== W3 SUITE SCHEMA ====================
 export const w3suiteSchema = pgSchema("w3suite");
 
@@ -88,7 +91,7 @@ export type UpsertUser = InsertUser;
 export const legalEntities = w3suiteSchema.table("legal_entities", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  codice: varchar("codice", { length: 20 }).notNull().unique(),
+  codice: varchar("codice", { length: 20 }).notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   pIva: varchar("piva", { length: 50 }),
   billingProfileId: uuid("billing_profile_id"),
@@ -125,7 +128,7 @@ export const legalEntities = w3suiteSchema.table("legal_entities", {
   // Dynamic notes field
   note: text("note"),
 }, (table) => [
-  uniqueIndex("legal_entities_tenant_unique").on(table.tenantId),
+  uniqueIndex("legal_entities_tenant_codice_unique").on(table.tenantId, table.codice),
 ]);
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
@@ -141,10 +144,10 @@ export const stores = w3suiteSchema.table("stores", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   legalEntityId: uuid("legal_entity_id").notNull().references(() => legalEntities.id),
-  code: varchar("code", { length: 50 }).notNull().unique(),
+  code: varchar("code", { length: 50 }).notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
-  channelId: uuid("channel_id").notNull(), // References public.channels
-  commercialAreaId: uuid("commercial_area_id"), // References public.commercial_areas
+  channelId: uuid("channel_id").notNull().references(() => channels.id),
+  commercialAreaId: uuid("commercial_area_id").references(() => commercialAreas.id),
   address: text("address"),
   citta: varchar("citta", { length: 100 }),
   provincia: varchar("provincia", { length: 10 }),
@@ -169,7 +172,9 @@ export const stores = w3suiteSchema.table("stores", {
   tiktok: varchar("tiktok", { length: 255 }),
   googleMapsUrl: text("google_maps_url"),
   telegram: varchar("telegram", { length: 255 }),
-});
+}, (table) => [
+  uniqueIndex("stores_tenant_code_unique").on(table.tenantId, table.code),
+]);
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ 
   id: true, 
@@ -237,12 +242,14 @@ export const userExtraPerms = w3suiteSchema.table("user_extra_perms", {
 export const userStores = w3suiteSchema.table("user_stores", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   isPrimary: boolean("is_primary").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.userId, table.storeId] }),
   index("user_stores_user_idx").on(table.userId),
   index("user_stores_store_idx").on(table.storeId),
+  index("user_stores_tenant_idx").on(table.tenantId),
 ]);
 
 export const insertUserStoreSchema = createInsertSchema(userStores).omit({ 
@@ -253,22 +260,26 @@ export type UserStore = typeof userStores.$inferSelect;
 
 export const storeBrands = w3suiteSchema.table("store_brands", {
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  brandId: uuid("brand_id").notNull(), // References public.brands
+  brandId: uuid("brand_id").notNull().references(() => brands.id),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   isPrimary: boolean("is_primary").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.storeId, table.brandId] }),
+  index("store_brands_tenant_idx").on(table.tenantId),
 ]);
 
 export const storeDriverPotential = w3suiteSchema.table("store_driver_potential", {
   storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  driverId: uuid("driver_id").notNull(), // References public.drivers
+  driverId: uuid("driver_id").notNull().references(() => drivers.id),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   potentialScore: smallint("potential_score").notNull(),
   clusterLabel: varchar("cluster_label", { length: 50 }),
   kpis: jsonb("kpis"),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   primaryKey({ columns: [table.storeId, table.driverId] }),
+  index("store_driver_potential_tenant_idx").on(table.tenantId),
 ]);
 
 // ==================== ENTITY LOGS ====================
