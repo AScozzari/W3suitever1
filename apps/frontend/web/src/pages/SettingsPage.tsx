@@ -1220,8 +1220,6 @@ export default function SettingsPage() {
               transition: 'all 0.2s ease'
             }}
             onClick={() => {
-              console.log('🔍 DEBUG: Bottone Nuovo Utente cliccato!');
-              console.log('🔍 DEBUG: userModal prima:', userModal);
               setNewUser({
                 username: '',
                 password: '',
@@ -1268,9 +1266,7 @@ export default function SettingsPage() {
                 oreLavoro: '40',
                 note: ''
               });
-              console.log('🔍 DEBUG: Chiamando setUserModal...');
               setUserModal({ open: true, data: null });
-              console.log('🔍 DEBUG: setUserModal chiamato, userModal dovrebbe essere open!');
             }}>
               <Plus size={16} />
               Nuovo Utente
@@ -7298,7 +7294,7 @@ export default function SettingsPage() {
                             fontSize: '12px',
                             fontWeight: '600'
                           }}>
-                            {rs.denominazione.charAt(0)}
+                            {rs.denominazione ? rs.denominazione.charAt(0) : '?'}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{
@@ -7307,13 +7303,13 @@ export default function SettingsPage() {
                               color: '#111827',
                               marginBottom: '2px'
                             }}>
-                              {rs.denominazione}
+                              {rs.denominazione || 'Denominazione non disponibile'}
                             </div>
                             <div style={{
                               fontSize: '12px',
                               color: '#6b7280'
                             }}>
-                              P.IVA: {rs.partitaIva}
+                              P.IVA: {rs.partitaIva || 'N/A'}
                             </div>
                           </div>
                           <div style={{
