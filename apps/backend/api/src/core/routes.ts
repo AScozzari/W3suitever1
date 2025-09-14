@@ -11,9 +11,10 @@ import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
 import { sql } from "drizzle-orm";
 import { tenants } from "../db/schema";
-import { insertStructuredLogSchema } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, InsertTenant, InsertLegalEntity, InsertStore, InsertUser, InsertUserAssignment, InsertRole } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
+import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 
 // Zod validation schemas for logs API
@@ -98,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: demoUser || 'admin@w3suite.com',
             tenantId: tenantId,
             roles: ['admin'],
-            permissions: ['logs.read', 'logs.write'],
+            permissions: ['logs.read', 'logs.write', 'stores.create', 'stores.update', 'stores.delete', 'users.create', 'users.update', 'users.delete', 'legal_entities.create', 'legal_entities.update', 'legal_entities.delete'],
             capabilities: [],
             scope: 'openid profile email'
           };
@@ -379,25 +380,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get tenant info
   app.get('/api/tenants/:id', enterpriseAuth, async (req, res) => {
     try {
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'ID organizzazione', res)) return;
+
       const tenant = await storage.getTenant(req.params.id);
       if (!tenant) {
-        return res.status(404).json({ error: 'tenant_not_found' });
+        return res.status(404).json({ 
+          error: 'not_found',
+          message: 'Organizzazione non trovata' 
+        });
       }
       res.json(tenant);
     } catch (error) {
-      console.error("Error fetching tenant:", error);
-      res.status(500).json({ error: "Failed to fetch tenant" });
+      handleApiError(error, res, 'recupero informazioni organizzazione');
     }
   });
 
   // Create tenant
   app.post('/api/tenants', enterpriseAuth, async (req, res) => {
     try {
-      const tenant = await storage.createTenant(req.body);
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertTenantSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      const tenant = await storage.createTenant(validatedData as InsertTenant);
       res.status(201).json(tenant);
     } catch (error) {
-      console.error("Error creating tenant:", error);
-      res.status(500).json({ error: "Failed to create tenant" });
+      handleApiError(error, res, 'creazione organizzazione');
     }
   });
 
@@ -409,8 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const areas = await storage.getCommercialAreas();
       res.json(areas);
     } catch (error) {
-      console.error("Error fetching commercial areas:", error);
-      res.status(500).json({ error: "Failed to fetch commercial areas" });
+      handleApiError(error, res, 'recupero aree commerciali');
     }
   });
 
@@ -421,32 +429,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
 
       if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
       }
 
-      // Valida che il tenantId sia un UUID valido
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(tenantId)) {
-        console.error("Invalid tenant ID format:", tenantId);
-        return res.status(400).json({ error: "Invalid tenant ID format" });
-      }
+      // Valida che il tenantId sia un UUID valido usando utility function
+      if (!validateUUIDParam(tenantId, 'Identificativo organizzazione', res)) return;
 
       const stores = await storage.getStoresByTenant(tenantId);
       res.json(stores);
     } catch (error) {
-      console.error("Error fetching stores:", error);
-      res.status(500).json({ error: "Failed to fetch stores" });
+      handleApiError(error, res, 'recupero negozi');
     }
   });
 
   // Get stores for tenant
   app.get('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
     try {
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.tenantId, 'ID organizzazione', res)) return;
+
       const stores = await storage.getStoresByTenant(req.params.tenantId);
       res.json(stores);
     } catch (error) {
-      console.error("Error fetching stores:", error);
-      res.status(500).json({ error: "Failed to fetch stores" });
+      handleApiError(error, res, 'recupero negozi per organizzazione');
     }
   });
 
@@ -456,177 +464,251 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
 
       if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
       }
 
-      const storeData = { ...req.body, tenantId };
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertStoreSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      const storeData = { ...(validatedData as InsertStore), tenantId };
       const store = await storage.createStore(storeData);
       res.status(201).json(store);
     } catch (error) {
-      console.error("Error creating store:", error);
-      res.status(500).json({ error: "Failed to create store" });
+      handleApiError(error, res, 'creazione negozio');
     }
   });
 
   // Update store
   app.put('/api/stores/:id', ...authWithRBAC, requirePermission('stores.update'), async (req: any, res) => {
     try {
-      const store = await storage.updateStore(req.params.id, req.body);
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'ID negozio', res)) return;
+
+      // Validate request body with Zod (make all fields optional for updates)
+      const updateSchema = insertStoreSchema.partial();
+      const validatedData = validateRequestBody(updateSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      const store = await storage.updateStore(req.params.id, validatedData);
       res.json(store);
     } catch (error: any) {
-      console.error("Error updating store:", error);
-      if (error.message?.includes('not found')) {
-        res.status(404).json({ error: "Store not found" });
-      } else {
-        res.status(500).json({ error: "Failed to update store" });
-      }
+      handleApiError(error, res, 'aggiornamento negozio');
     }
   });
 
   // Delete store
   app.delete('/api/stores/:id', ...authWithRBAC, requirePermission('stores.delete'), async (req: any, res) => {
     try {
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'ID negozio', res)) return;
+
       await storage.deleteStore(req.params.id);
       res.status(204).send();
     } catch (error: any) {
-      console.error("Error deleting store:", error);
-      if (error.message?.includes('not found')) {
-        res.status(404).json({ error: "Store not found" });
-      } else {
-        res.status(500).json({ error: "Failed to delete store" });
-      }
+      handleApiError(error, res, 'eliminazione negozio');
     }
   });
 
   // Create store (legacy endpoint with tenantId parameter)
   app.post('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
     try {
-      const storeData = { ...req.body, tenantId: req.params.tenantId };
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.tenantId, 'ID organizzazione', res)) return;
+
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertStoreSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      const storeData = { ...(validatedData as InsertStore), tenantId: req.params.tenantId };
       const store = await storage.createStore(storeData);
       res.status(201).json(store);
     } catch (error) {
-      console.error("Error creating store:", error);
-      res.status(500).json({ error: "Failed to create store" });
+      handleApiError(error, res, 'creazione negozio legacy');
     }
   });
 
   // ==================== LEGAL ENTITIES API ====================
 
   // Get legal entities for current tenant
-  app.get('/api/legal-entities', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/legal-entities', ...authWithRBAC, requirePermission('legal_entities.read'), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
 
       if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
       }
 
       const legalEntities = await storage.getLegalEntitiesByTenant(tenantId);
       res.json(legalEntities);
     } catch (error) {
-      console.error("Error fetching legal entities:", error);
-      res.status(500).json({ error: "Failed to fetch legal entities" });
+      handleApiError(error, res, 'recupero entità legali');
     }
   });
 
   // Create legal entity
-  app.post('/api/legal-entities', enterpriseAuth, async (req: any, res) => {
+  app.post('/api/legal-entities', ...authWithRBAC, requirePermission('legal_entities.create'), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      const legalEntityData = { ...req.body, tenantId };
+
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertLegalEntitySchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      const legalEntityData = { ...(validatedData as InsertLegalEntity), tenantId };
       const legalEntity = await storage.createLegalEntity(legalEntityData);
       res.status(201).json(legalEntity);
     } catch (error) {
-      console.error("Error creating legal entity:", error);
-      res.status(500).json({ error: "Failed to create legal entity" });
+      handleApiError(error, res, 'creazione entità legale');
     }
   });
 
   // Update legal entity
-  app.put('/api/legal-entities/:id', enterpriseAuth, async (req: any, res) => {
+  app.put('/api/legal-entities/:id', ...authWithRBAC, requirePermission('legal_entities.update'), async (req: any, res) => {
     try {
-      const legalEntity = await storage.updateLegalEntity(req.params.id, req.body);
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'ID entità legale', res)) return;
+
+      // Validate request body with Zod (make tenantId optional for updates)
+      const updateSchema = insertLegalEntitySchema.partial();
+      const validatedData = validateRequestBody(updateSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      const legalEntity = await storage.updateLegalEntity(req.params.id, validatedData);
       res.json(legalEntity);
     } catch (error: any) {
-      console.error("Error updating legal entity:", error);
-      if (error.message?.includes('not found')) {
-        res.status(404).json({ error: "Legal entity not found" });
-      } else {
-        res.status(500).json({ error: "Failed to update legal entity" });
-      }
+      handleApiError(error, res, 'aggiornamento entità legale');
     }
   });
 
   // Delete legal entity
-  app.delete('/api/legal-entities/:id', enterpriseAuth, async (req: any, res) => {
+  app.delete('/api/legal-entities/:id', ...authWithRBAC, requirePermission('legal_entities.delete'), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const legalEntityId = req.params.id;
 
       if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
       }
 
+      // Validate UUID parameter
+      if (!validateUUIDParam(legalEntityId, 'ID entità legale', res)) return;
+
       await storage.deleteLegalEntity(legalEntityId, tenantId);
-      res.status(200).json({ message: "Legal entity deleted successfully" });
+      res.status(200).json({ 
+        message: "Entità legale eliminata con successo" 
+      });
     } catch (error) {
-      console.error("Error deleting legal entity:", error);
-      res.status(500).json({ error: "Failed to delete legal entity" });
+      handleApiError(error, res, 'eliminazione entità legale');
     }
   });
 
   // ==================== USER MANAGEMENT API ====================
 
   // Get users for current tenant
-  app.get('/api/users', enterpriseAuth, async (req: any, res) => {
+  app.get('/api/users', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
 
       if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
       }
 
       const users = await storage.getUsersByTenant(tenantId);
       res.json(users);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ error: "Failed to fetch users" });
+      handleApiError(error, res, 'recupero utenti');
     }
   });
 
   // Create user
-  app.post('/api/users', enterpriseAuth, async (req: any, res) => {
+  app.post('/api/users', ...authWithRBAC, requirePermission('users.create'), async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      const userData = { ...req.body, tenantId, id: `user-${Date.now()}` };
+
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertUserSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      // Generate proper user ID if not provided
+      const validatedUser = validatedData as InsertUser;
+      const userData = { 
+        ...validatedUser, 
+        tenantId, 
+        id: validatedUser.id || `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      };
+      
       const user = await storage.upsertUser(userData);
       res.status(201).json(user);
     } catch (error) {
-      console.error("Error creating user:", error);
-      res.status(500).json({ error: "Failed to create user" });
+      handleApiError(error, res, 'creazione utente');
     }
   });
 
   // Get user roles
-  app.get('/api/users/:userId/roles', enterpriseAuth, async (req, res) => {
+  app.get('/api/users/:userId/roles', ...authWithRBAC, requirePermission('users.read'), async (req, res) => {
     try {
+      // Basic validation for userId parameter
+      if (!req.params.userId || req.params.userId.trim() === '') {
+        return res.status(400).json({
+          error: 'missing_parameter',
+          message: 'ID utente non specificato'
+        });
+      }
+
       const assignments = await storage.getUserAssignments(req.params.userId);
       res.json(assignments);
     } catch (error) {
-      console.error("Error fetching user roles:", error);
-      res.status(500).json({ error: "Failed to fetch user roles" });
+      handleApiError(error, res, 'recupero ruoli utente');
     }
   });
 
   // Assign user role
-  app.post('/api/users/:userId/roles', enterpriseAuth, async (req, res) => {
+  app.post('/api/users/:userId/roles', ...authWithRBAC, requirePermission('users.update'), async (req, res) => {
     try {
-      const assignmentData = { ...req.body, userId: req.params.userId };
+      // Basic validation for userId parameter
+      if (!req.params.userId || req.params.userId.trim() === '') {
+        return res.status(400).json({
+          error: 'missing_parameter',
+          message: 'ID utente non specificato'
+        });
+      }
+
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertUserAssignmentSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      const assignmentData = { ...(validatedData as InsertUserAssignment), userId: req.params.userId };
       const assignment = await storage.createUserAssignment(assignmentData);
       res.status(201).json(assignment);
     } catch (error) {
-      console.error("Error assigning user role:", error);
-      res.status(500).json({ error: "Failed to assign user role" });
+      handleApiError(error, res, 'assegnazione ruolo utente');
     }
   });
 
@@ -638,8 +720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cities = await storage.getItalianCities();
       res.json(cities);
     } catch (error) {
-      console.error("Error fetching Italian cities:", error);
-      res.status(500).json({ error: "Failed to fetch Italian cities" });
+      handleApiError(error, res, 'recupero città italiane');
     }
   });
 
@@ -739,8 +820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const legalForms = await storage.getLegalForms();
       res.json(legalForms);
     } catch (error) {
-      console.error("Error fetching legal forms:", error);
-      res.status(500).json({ error: "Failed to fetch legal forms" });
+      handleApiError(error, res, 'recupero forme giuridiche');
     }
   });
 
@@ -750,8 +830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const countries = await storage.getCountries();
       res.json(countries);
     } catch (error) {
-      console.error("Error fetching countries:", error);
-      res.status(500).json({ error: "Failed to fetch countries" });
+      handleApiError(error, res, 'recupero paesi');
     }
   });
 
@@ -761,8 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cities = await storage.getItalianCities();
       res.json(cities);
     } catch (error) {
-      console.error("Error fetching Italian cities:", error);
-      res.status(500).json({ error: "Failed to fetch Italian cities" });
+      handleApiError(error, res, 'recupero città italiane');
     }
   });
 
@@ -774,14 +852,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
 
       if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
       }
 
       const roles = await storage.getRolesByTenant(tenantId);
       res.json(roles);
     } catch (error) {
-      console.error("Error fetching roles:", error);
-      res.status(500).json({ error: "Failed to fetch roles" });
+      handleApiError(error, res, 'recupero ruoli');
     }
   });
 
@@ -791,43 +871,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
 
       if (!tenantId) {
-        return res.status(400).json({ error: "No tenant ID available" });
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
       }
 
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertRoleSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
       const { rbacStorage } = await import('../core/rbac-storage.js');
-      const role = await rbacStorage.createRole(tenantId, req.body);
+      const role = await rbacStorage.createRole(tenantId, validatedData as InsertRole);
       res.status(201).json(role);
     } catch (error) {
-      console.error("Error creating role:", error);
-      res.status(500).json({ error: "Failed to create role" });
+      handleApiError(error, res, 'creazione ruolo');
     }
   });
 
   // Update a role
   app.put('/api/roles/:roleId', ...authWithRBAC, requirePermission('admin.roles.update'), async (req: any, res) => {
     try {
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.roleId, 'ID ruolo', res)) return;
+
+      // Validate request body with Zod (make fields optional for updates)
+      const updateSchema = insertRoleSchema.partial();
+      const validatedData = validateRequestBody(updateSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
       const { rbacStorage } = await import('../core/rbac-storage.js');
-      const role = await rbacStorage.updateRole(req.params.roleId, req.body);
+      const role = await rbacStorage.updateRole(req.params.roleId, validatedData);
       res.json(role);
     } catch (error) {
-      console.error("Error updating role:", error);
-      res.status(500).json({ error: "Failed to update role" });
+      handleApiError(error, res, 'aggiornamento ruolo');
     }
   });
 
   // Delete a role
   app.delete('/api/roles/:roleId', ...authWithRBAC, requirePermission('admin.roles.delete'), async (req: any, res) => {
     try {
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.roleId, 'ID ruolo', res)) return;
+
       const { rbacStorage } = await import('../core/rbac-storage.js');
       await rbacStorage.deleteRole(req.params.roleId);
       res.status(204).send();
     } catch (error: any) {
-      console.error("Error deleting role:", error);
+      // Handle specific business logic errors
       if (error.message?.includes('system role')) {
-        res.status(403).json({ error: "Cannot delete system role" });
-      } else {
-        res.status(500).json({ error: "Failed to delete role" });
+        return res.status(403).json({ 
+          error: 'forbidden',
+          message: 'Non è possibile eliminare un ruolo di sistema' 
+        });
       }
+      handleApiError(error, res, 'eliminazione ruolo');
     }
   });
 
