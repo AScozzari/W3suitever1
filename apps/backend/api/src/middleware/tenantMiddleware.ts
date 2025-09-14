@@ -41,6 +41,11 @@ const extractSubdomain = (hostname: string): string | null => {
     return null; // Useremo l'header X-Tenant-Subdomain per testing
   }
   
+  // Bypass per Replit URLs (contengono .replit.dev)
+  if (hostname.includes('.replit.dev')) {
+    return null; // Usa headers per tenant identification su Replit
+  }
+  
   // Estrai il primo segmento del dominio
   const parts = hostname.split('.');
   if (parts.length >= 3) { // es: acme.w3suite.com
