@@ -97,10 +97,57 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden brand-gradient">
+    <div className="h-screen flex flex-col overflow-hidden brand-gradient">
       
-      {/* Left Sidebar - Navigation */}
-      <div className={`${leftSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 sidebar-left flex flex-col`}>
+      {/* Fixed Top Header Bar */}
+      <div className="glass-card border-b border-white/10 px-6 py-4 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h2 className="text-2xl font-bold text-white">
+              {currentNavItem?.name || 'Brand Interface'}
+            </h2>
+            {currentWorkspace && (
+              <div className="flex items-center space-x-2 px-3 py-1 glass-button rounded-lg"
+                   style={{ background: `${currentWorkspace.color}20` }}>
+                <currentWorkspace.icon className="w-4 h-4" style={{ color: currentWorkspace.color }} />
+                <span className="text-sm text-white/80">{currentWorkspace.name}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
+              <input
+                type="text"
+                placeholder="Cerca..."
+                className="pl-10 pr-4 py-2 glass-button rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 w-64"
+              />
+            </div>
+            
+            {/* Notifications */}
+            <button className="glass-button rounded-lg p-2 text-white/80 hover:text-white relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            
+            {/* Settings */}
+            <button 
+              onClick={() => handleNavigation('/settings')}
+              className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Layout - Three Column Structure */}
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* Left Sidebar - Navigation */}
+        <div className={`${leftSidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 sidebar-left flex flex-col flex-shrink-0`}>
         
         {/* Brand Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -229,67 +276,16 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        
-        {/* Top Header Bar */}
-        <div className="glass-card border-b border-white/10 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-2xl font-bold text-white">
-                {currentNavItem?.name || 'Brand Interface'}
-              </h2>
-              {currentWorkspace && (
-                <div className="flex items-center space-x-2 px-3 py-1 glass-button rounded-lg"
-                     style={{ background: `${currentWorkspace.color}20` }}>
-                  <currentWorkspace.icon className="w-4 h-4" style={{ color: currentWorkspace.color }} />
-                  <span className="text-sm text-white/80">{currentWorkspace.name}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
-                <input
-                  type="text"
-                  placeholder="Cerca..."
-                  className="pl-10 pr-4 py-2 glass-button rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 w-64"
-                />
-              </div>
-              
-              {/* Notifications */}
-              <button className="glass-button rounded-lg p-2 text-white/80 hover:text-white relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              
-              {/* Settings */}
-              <button 
-                onClick={() => handleNavigation('/settings')}
-                className="glass-button rounded-lg p-2 text-white/80 hover:text-white"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            </div>
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-auto">
+          <div className="p-6">
+            {children}
           </div>
         </div>
 
-        {/* Main Content with Right Sidebar */}
-        <div className="flex-1 flex overflow-hidden">
-          
-          {/* Content Area */}
-          <div className="flex-1 overflow-auto">
-            <div className="p-6">
-              {children}
-            </div>
-          </div>
-
-          {/* Right Sidebar - Workspace Selector */}
-          <div className={`${rightSidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 sidebar-right flex flex-col`}>
+        {/* Right Sidebar - Workspace Selector */}
+        <div className={`${rightSidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 sidebar-right flex flex-col flex-shrink-0`}>
             
             {/* Workspace Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
