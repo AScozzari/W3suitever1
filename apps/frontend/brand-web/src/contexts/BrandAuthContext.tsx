@@ -116,7 +116,8 @@ export function BrandAuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('brand-token');
     localStorage.removeItem('brand-workspace');
     delete window.brandAuthToken;
-    window.location.href = '/login';
+    // ✅ Manteniamo SPA navigation anche per logout
+    // Il componente che usa logout dovrebbe gestire la navigazione
   };
 
   const updateWorkspace = (newWorkspace: string) => {

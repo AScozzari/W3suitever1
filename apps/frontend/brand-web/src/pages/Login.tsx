@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
+import { useLocation } from 'wouter';
 import { Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const { login } = useBrandAuth();
+  const [, setLocation] = useLocation();
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
@@ -178,10 +180,9 @@ export default function Login() {
     try {
       const success = await login(credentials);
       if (success) {
-        // SPA navigation invece di full page reload
-        console.log('🎉 Login success - SPA navigate to dashboard');
-        window.history.replaceState({}, '', '/brandinterface');
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        // ✅ SPA navigation usando wouter - navigazione fluida senza refresh
+        console.log('🎉 Login success - SPA navigate to dashboard via wouter');
+        setLocation('/');
       } else {
         setError('Credenziali non valide. Riprova.');
       }
