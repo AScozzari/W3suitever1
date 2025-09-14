@@ -179,6 +179,14 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Initialize collapsed on mobile/tablet
+  useEffect(() => {
+    if (isMobile || isTablet) {
+      setLeftSidebarCollapsed(true);
+      setWorkspaceCollapsed(true);
+    }
+  }, [isMobile, isTablet]);
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -208,6 +216,24 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       }}>
         {/* Logo e Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Hamburger menu for mobile */}
+          {isMobile && (
+            <button
+              onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: '8px',
+                cursor: 'pointer',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Menu size={20} />
+            </button>
+          )}
           <div style={{
             width: '32px',
             height: '32px',
@@ -220,10 +246,12 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             fontWeight: 'bold',
             fontSize: '16px'
           }}>B</div>
-          <div>
-            <p style={{ fontSize: '16px', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>Brand Interface</p>
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: 1 }}>Control Panel</p>
-          </div>
+          {!isMobile && (
+            <div>
+              <p style={{ fontSize: '16px', fontWeight: 600, color: '#1f2937', margin: 0, lineHeight: 1 }}>Brand Interface</p>
+              <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: 1 }}>Control Panel</p>
+            </div>
+          )}
         </div>
 
         {/* Barra di ricerca centrale - Hidden on mobile */}
@@ -435,8 +463,9 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
             padding: '16px 12px',
             display: 'flex',
             flexDirection: isMobile ? 'row' : 'column',
-            gap: '4px',
-            flex: 1
+            gap: isMobile ? '8px' : '4px',
+            flex: 1,
+            whiteSpace: isMobile ? 'nowrap' : 'normal'
           }}>
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -459,8 +488,10 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
                     transition: 'all 0.2s ease',
                     border: 'none',
                     cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left'
+                    width: isMobile ? 'auto' : '100%',
+                    minWidth: isMobile ? '120px' : 'auto',
+                    textAlign: 'left',
+                    whiteSpace: isMobile ? 'nowrap' : 'normal'
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
@@ -507,7 +538,7 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
           {children}
         </main>
 
-        {/* Workspace Sidebar destra - EXACT COPY FROM W3 SUITE */}
+        {/* Workspace Sidebar destra - Hidden on mobile/tablet - EXACT COPY FROM W3 SUITE */}
         {!isMobile && !isTablet && (
           <aside 
             onMouseEnter={() => {
