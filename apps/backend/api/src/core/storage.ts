@@ -4,6 +4,7 @@ import {
   tenants,
   legalEntities,
   stores,
+  suppliers,
   roles,
   userAssignments,
   userStores,
@@ -18,6 +19,8 @@ import {
   type InsertLegalEntity,
   type Store,
   type InsertStore,
+  type Supplier,
+  type InsertSupplier,
   type UserAssignment,
   type InsertUserAssignment,
   type UserStore,
@@ -39,6 +42,7 @@ import {
   legalForms,
   countries,
   italianCities,
+  paymentMethods,
   type CommercialArea,
   type InsertCommercialArea,
   type LegalForm,
@@ -109,6 +113,12 @@ export interface IStorage {
   createStore(store: InsertStore): Promise<Store>;
   updateStore(id: string, store: Partial<InsertStore>): Promise<Store>;
   deleteStore(id: string): Promise<void>;
+  
+  // Supplier Management (Brand Base + Tenant Override Pattern)
+  getSuppliersByTenant(tenantId: string): Promise<any[]>;
+  createSupplier(supplier: InsertSupplier): Promise<Supplier>;
+  updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier>;
+  deleteSupplier(id: string): Promise<void>;
   
   // User Assignment Management
   getUserAssignments(userId: string): Promise<UserAssignment[]>;
@@ -416,6 +426,120 @@ export class DatabaseStorage implements IStorage {
     
     if (result.rowCount === 0) {
       throw new Error(`Store with id ${id} not found`);
+    }
+  }
+
+  // ==================== SUPPLIER OPERATIONS ====================
+  // Brand Base + Tenant Override Pattern Implementation
+  
+  async getSuppliersByTenant(tenantId: string): Promise<any[]> {
+    console.log(`[STORAGE-RLS] 🔍 getSuppliersByTenant: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .select({
+        // Identità & Classificazione
+        id: suppliers.id,
+        origin: suppliers.origin,
+        tenantId: suppliers.tenantId,
+        externalId: suppliers.externalId,
+        code: suppliers.code,
+        name: suppliers.name,
+        legal_name: suppliers.legalName,
+        supplier_type: suppliers.supplierType,
+        
+        // Dati fiscali
+        vat_number: suppliers.vatNumber,
+        tax_code: suppliers.taxCode,
+        sdi_code: suppliers.sdiCode,
+        pec_email: suppliers.pecEmail,
+        rea_number: suppliers.reaNumber,
+        chamber_of_commerce: suppliers.chamberOfCommerce,
+        
+        // Indirizzo
+        registered_address: suppliers.registeredAddress,
+        city_id: suppliers.cityId,
+        country_id: suppliers.countryId,
+        
+        // Relazioni con nomi delle entità correlate
+        country: {
+          id: countries.id,
+          name: countries.name
+        },
+        city_name: italianCities.name,
+        payment_method: {
+          id: paymentMethods.id,
+          name: paymentMethods.name,
+          code: paymentMethods.code
+        },
+        
+        // Pagamenti
+        preferred_payment_method_id: suppliers.preferredPaymentMethodId,
+        payment_terms: suppliers.paymentTerms,
+        currency: suppliers.currency,
+        
+        // Controllo & Stato
+        status: suppliers.status,
+        locked_fields: suppliers.lockedFields,
+        
+        // Metadati
+        created_by: suppliers.createdBy,
+        updated_by: suppliers.updatedBy,
+        created_at: suppliers.createdAt,
+        updated_at: suppliers.updatedAt,
+        notes: suppliers.notes
+      })
+      .from(suppliers)
+      .leftJoin(countries, eq(suppliers.countryId, countries.id))
+      .leftJoin(italianCities, eq(suppliers.cityId, italianCities.id))
+      .leftJoin(paymentMethods, eq(suppliers.preferredPaymentMethodId, paymentMethods.id))
+      .where(
+        or(
+          eq(suppliers.origin, 'brand'), // Brand suppliers - visible to all tenants
+          and(
+            eq(suppliers.origin, 'tenant'), // Tenant-specific suppliers
+            eq(suppliers.tenantId, tenantId)
+          )
+        )
+      )
+      .orderBy(suppliers.origin, suppliers.name);
+    
+    console.log(`[STORAGE-RLS] ✅ getSuppliersByTenant: Found ${result.length} suppliers for tenant ${tenantId}`);
+    return result;
+  }
+
+  async createSupplier(supplierData: InsertSupplier): Promise<Supplier> {
+    const [supplier] = await db.insert(suppliers).values(supplierData).returning();
+    return supplier;
+  }
+
+  async updateSupplier(id: string, supplierData: Partial<InsertSupplier>): Promise<Supplier> {
+    const [supplier] = await db
+      .update(suppliers)
+      .set({ ...supplierData, updatedAt: new Date() })
+      .where(eq(suppliers.id, id))
+      .returning();
+    
+    if (!supplier) {
+      throw new Error(`Supplier with id ${id} not found`);
+    }
+    
+    return supplier;
+  }
+
+  async deleteSupplier(id: string): Promise<void> {
+    // Solo tenant overrides possono essere eliminati
+    const result = await db
+      .delete(suppliers)
+      .where(and(
+        eq(suppliers.id, id),
+        eq(suppliers.origin, 'tenant') // Solo supplier tenant-specific
+      ));
+    
+    if (result.rowCount === 0) {
+      throw new Error(`Supplier with id ${id} not found or cannot be deleted (only tenant suppliers can be deleted)`);
     }
   }
 

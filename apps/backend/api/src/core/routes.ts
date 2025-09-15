@@ -10,13 +10,14 @@ import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
 import { sql, eq } from "drizzle-orm";
 import { tenants, users } from "../db/schema";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, InsertTenant, InsertLegalEntity, InsertStore, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
 import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
 import { objectAclService } from "./objectAcl";
 import multer from "multer";
+import { v4 as uuidv4 } from "uuid";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 
 // Zod validation schemas for logs API
@@ -47,6 +48,25 @@ const createNotificationBodySchema = insertNotificationSchema.omit({ tenantId: t
 
 const bulkMarkReadBodySchema = z.object({
   notificationIds: z.array(z.string().uuid()).min(1).max(100)
+});
+
+// Zod validation schemas for file upload and ACL routes
+const uploadInitBody = z.object({ 
+  fileName: z.string().min(1), 
+  contentType: z.string().min(1), 
+  fileSize: z.union([z.number().int().positive(), z.string().regex(/^\d+$/).transform((v)=>parseInt(v,10))]) 
+});
+
+const objectPathBody = z.object({ 
+  objectPath: objectPathSchema 
+});
+
+const avatarUpdateBody = z.object({ 
+  avatarUrl: z.string().url() 
+});
+
+const aclScopeBody = z.object({ 
+  scopeId: z.string().uuid() 
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -574,6 +594,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== SUPPLIERS API ENDPOINTS ====================
+  // Brand Base + Tenant Override Pattern Implementation
+  
+  // GET /api/suppliers - Lista fornitori (Brand + Tenant specific)
+  app.get('/api/suppliers', ...authWithRBAC, async (req: any, res) => {
+    try {
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
+
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      // Valida che il tenantId sia un UUID valido usando utility function
+      if (!validateUUIDParam(tenantId, 'Identificativo organizzazione', res)) return;
+
+      const suppliers = await storage.getSuppliersByTenant(tenantId);
+      res.json({ suppliers, success: true });
+    } catch (error) {
+      handleApiError(error, res, 'recupero fornitori');
+    }
+  });
+
+  // POST /api/suppliers - Crea nuovo fornitore (tenant-specific)
+  app.post('/api/suppliers', ...authWithRBAC, requirePermission('suppliers.create'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertSupplierSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      // Force tenant origin and tenantId for new suppliers
+      const supplierData = { 
+        ...(validatedData as InsertSupplier), 
+        tenantId, 
+        origin: 'tenant' as const,
+        createdBy: req.user?.id || 'system'
+      };
+      
+      const supplier = await storage.createSupplier(supplierData);
+      res.status(201).json(supplier);
+    } catch (error) {
+      handleApiError(error, res, 'creazione fornitore');
+    }
+  });
+
+  // PUT /api/suppliers/:id - Aggiorna fornitore esistente
+  app.put('/api/suppliers/:id', ...authWithRBAC, requirePermission('suppliers.update'), async (req: any, res) => {
+    try {
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'ID fornitore', res)) return;
+
+      // Validate request body with Zod (make all fields optional for updates)
+      const updateSchema = insertSupplierSchema.partial();
+      const validatedData = validateRequestBody(updateSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      // Add updatedBy field
+      const supplierData = {
+        ...validatedData,
+        updatedBy: req.user?.id || 'system'
+      };
+
+      const supplier = await storage.updateSupplier(req.params.id, supplierData);
+      res.json(supplier);
+    } catch (error: any) {
+      handleApiError(error, res, 'aggiornamento fornitore');
+    }
+  });
+
+  // DELETE /api/suppliers/:id - Elimina fornitore (solo tenant overrides)
+  app.delete('/api/suppliers/:id', ...authWithRBAC, requirePermission('suppliers.delete'), async (req: any, res) => {
+    try {
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'ID fornitore', res)) return;
+
+      await storage.deleteSupplier(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      handleApiError(error, res, 'eliminazione fornitore');
+    }
+  });
+
   // Create store (legacy endpoint with tenantId parameter)
   app.post('/api/tenants/:tenantId/stores', enterpriseAuth, async (req, res) => {
     try {
@@ -877,7 +991,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Extract metadata from request headers or body
-      const objectPath = req.headers['x-object-path'] || req.body.objectPath;
+      const body = validateRequestBody(objectPathBody, req.body, res); if (!body) return;
+      const objectPath = (req.headers['x-object-path'] as string) || body.objectPath;
       const visibility = req.headers['x-visibility'] || req.body.visibility || 'public';
 
       if (!objectPath) {
@@ -1478,11 +1593,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/users/:userId/roles/:roleId', enterpriseAuth, async (req: any, res) => {
     try {
       const { rbacStorage } = await import('../core/rbac-storage.js');
+      const body = validateRequestBody(aclScopeBody, req.body, res); if (!body) return;
       const assignmentData = {
         userId: req.params.userId,
         roleId: req.params.roleId,
         scopeType: req.body.scopeType || 'tenant',
-        scopeId: req.body.scopeId || req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID,
+        scopeId: body.scopeId || (req.headers['x-tenant-id'] as string) || req.user?.tenantId || DEMO_TENANT_ID,
         expiresAt: req.body.expiresAt
       };
 

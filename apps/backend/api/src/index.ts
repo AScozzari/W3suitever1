@@ -16,7 +16,7 @@ let w3FrontendProcess: ChildProcess | null = null;
 let brandBackendProcess: ChildProcess | null = null;
 
 // Feature flag for nginx management  
-const ENABLE_EMBEDDED_NGINX = true;
+const ENABLE_EMBEDDED_NGINX = false;
 
 // Start application based on feature flag
 if (ENABLE_EMBEDDED_NGINX) {
@@ -288,10 +288,30 @@ async function startBackendOnly() {
   process.on("SIGTERM", gracefulShutdown);
   process.on("SIGINT", gracefulShutdown);
 
-  // W3 Suite backend on platform port (when nginx disabled)
-  const backendPort = Number(process.env.PORT || process.env.W3_BACKEND_PORT || 3004);
+  // W3 Suite backend on dedicated port (when nginx disabled)
+  let backendPort = Number(process.env.W3_BACKEND_PORT || 3004);
+  
+  // Resilient startup with EADDRINUSE fallback
+  const tryListen = (port: number): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const server = httpServer.listen(port, "0.0.0.0", () => resolve());
+      server.on('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(`⚠️ Port ${port} in use, trying next port...`);
+          if (port === 3004) tryListen(3005).then(resolve).catch(reject);
+          else if (port === 3005) tryListen(0).then(resolve).catch(reject); // Let system assign port
+          else reject(err);
+        } else {
+          reject(err);
+        }
+      });
+    });
+  };
 
-  httpServer.listen(backendPort, "0.0.0.0", async () => {
+  try {
+    await tryListen(backendPort);
+    // Get the actual port if system-assigned
+    backendPort = (httpServer.address() as any)?.port || backendPort;
     console.log(`🚀 W3 Suite backend running on 0.0.0.0:${backendPort} (pure backend mode)`);
     console.log(`🔌 API available at: http://localhost:${backendPort}/api`);
     console.log(`🔍 Health check: http://localhost:${backendPort}/api/health`);
@@ -332,7 +352,10 @@ async function startBackendOnly() {
     if (retryCount >= maxRetries) {
       console.log(`❌ W3 Suite backend health check failed after ${maxRetries} attempts`);
     }
-  });
+  } catch (error) {
+    console.error(`❌ Failed to start backend on port ${backendPort}:`, error);
+    process.exit(1);
+  }
 }
 
 async function startBackend() {
