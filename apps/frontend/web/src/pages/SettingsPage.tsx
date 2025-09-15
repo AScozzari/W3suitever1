@@ -8479,7 +8479,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Modal Nuovo Fornitore */}
+      {/* Modal Nuovo Fornitore Completo */}
       {supplierModal.open && (
         <div style={{
           position: 'fixed',
@@ -8498,22 +8498,23 @@ export default function SettingsPage() {
             background: 'white',
             borderRadius: '16px',
             padding: '32px',
-            width: '90%',
-            maxWidth: '600px',
-            maxHeight: '90vh',
+            width: '95%',
+            maxWidth: '1200px',
+            maxHeight: '95vh',
             overflow: 'auto',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
+            {/* Header */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '24px'
+              marginBottom: '32px'
             }}>
               <div>
                 <h2 style={{
-                  fontSize: '24px',
+                  fontSize: '28px',
                   fontWeight: '700',
                   color: '#111827',
                   margin: '0 0 8px 0'
@@ -8521,11 +8522,11 @@ export default function SettingsPage() {
                   {supplierModal.data ? 'Modifica Fornitore' : 'Nuovo Fornitore'}
                 </h2>
                 <p style={{
-                  fontSize: '14px',
+                  fontSize: '15px',
                   color: '#6b7280',
                   margin: 0
                 }}>
-                  {supplierModal.data ? 'Modifica i dati del fornitore' : 'Compila i dettagli del nuovo fornitore'}
+                  {supplierModal.data ? 'Modifica i dati del fornitore' : 'Compila tutti i dettagli per configurare il nuovo fornitore'}
                 </p>
               </div>
               <button
@@ -8548,179 +8549,634 @@ export default function SettingsPage() {
                   e.currentTarget.style.color = '#6b7280';
                 }}
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '20px',
-              marginBottom: '24px'
-            }}>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
+            {/* Sezioni Organizzate */}
+            <div style={{ display: 'grid', gap: '32px' }}>
+              
+              {/* SEZIONE 1: Anagrafica & Identificativi */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
                   fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '8px'
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  Codice Fornitore *
-                </label>
-                <input
-                  type="text"
-                  placeholder="es. FOR001"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    transition: 'border-color 0.2s'
-                  }}
-                />
+                  <Building2 size={20} />
+                  Anagrafica & Identificativi
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px'
+                }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice Fornitore *
+                    </label>
+                    <input type="text" placeholder="es. FOR001"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Nome/Ragione Sociale *
+                    </label>
+                    <input type="text" placeholder="es. Acme Suppliers SpA"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Forma Giuridica
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="SRL">S.r.l.</option>
+                      <option value="SPA">S.p.A.</option>
+                      <option value="SRLS">S.r.l.s.</option>
+                      <option value="DI">Ditta Individuale</option>
+                      <option value="SNC">S.n.c.</option>
+                      <option value="SAS">S.a.s.</option>
+                      <option value="COOP">Cooperativa</option>
+                      <option value="ALTRO">Altro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Partita IVA
+                    </label>
+                    <input type="text" placeholder="es. IT12345678901"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice Fiscale
+                    </label>
+                    <input type="text" placeholder="es. ACMSPP95L01H501Z"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Categoria Merceologica
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="ELETTRONICA">Elettronica</option>
+                      <option value="ABBIGLIAMENTO">Abbigliamento</option>
+                      <option value="ALIMENTARE">Alimentare</option>
+                      <option value="SERVIZI">Servizi</option>
+                      <option value="LOGISTICA">Logistica</option>
+                      <option value="CONSULENZA">Consulenza</option>
+                      <option value="ALTRO">Altro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice ERP/Esterno
+                    </label>
+                    <input type="text" placeholder="Codice nel sistema ERP"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Stato *
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="Attivo">Attivo</option>
+                      <option value="Sospeso">Sospeso</option>
+                      <option value="Archiviato">Archiviato</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
+
+              {/* SEZIONE 2: Indirizzi */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
                   fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '8px'
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  Nome Fornitore *
-                </label>
-                <input
-                  type="text"
-                  placeholder="es. Acme Suppliers SpA"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    transition: 'border-color 0.2s'
-                  }}
-                />
+                  <MapPin size={20} />
+                  Indirizzi
+                </h3>
+                
+                {/* Sede Legale */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Sede Legale</h4>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Via e Civico *
+                      </label>
+                      <input type="text" placeholder="es. Via Roma, 123"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        CAP *
+                      </label>
+                      <input type="text" placeholder="20100"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Città *
+                      </label>
+                      <input type="text" placeholder="Milano"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Provincia *
+                      </label>
+                      <input type="text" placeholder="MI"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Nazione *
+                      </label>
+                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                        <option value="IT">Italia</option>
+                        <option value="DE">Germania</option>
+                        <option value="FR">Francia</option>
+                        <option value="ES">Spagna</option>
+                        <option value="ALTRO">Altro</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sede Operativa */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', margin: 0 }}>Sede Operativa/Spedizioni</h4>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                      <input type="checkbox" style={{ margin: 0 }} />
+                      Uguale alla sede legale
+                    </label>
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Via e Civico
+                      </label>
+                      <input type="text" placeholder="es. Via Industria, 45"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        CAP
+                      </label>
+                      <input type="text" placeholder="20151"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Città
+                      </label>
+                      <input type="text" placeholder="Milano"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Note Consegna
+                      </label>
+                      <input type="text" placeholder="Specificare reparto/piano"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
+
+              {/* SEZIONE 3: Contatti */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
                   fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '8px'
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  Partita IVA
-                </label>
-                <input
-                  type="text"
-                  placeholder="es. IT12345678901"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    transition: 'border-color 0.2s'
-                  }}
-                />
+                  <Phone size={20} />
+                  Contatti & Comunicazione
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px',
+                  marginBottom: '24px'
+                }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Email Principale *
+                    </label>
+                    <input type="email" placeholder="info@fornitore.it"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      PEC (Fatturazione Elettronica)
+                    </label>
+                    <input type="email" placeholder="fatture@pec.fornitore.it"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice SDI
+                    </label>
+                    <input type="text" placeholder="es. ABCDEFG"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Telefono Fisso
+                    </label>
+                    <input type="tel" placeholder="+39 02 12345678"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Cellulare
+                    </label>
+                    <input type="tel" placeholder="+39 334 1234567"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Sito Web
+                    </label>
+                    <input type="url" placeholder="https://www.fornitore.it"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                </div>
+
+                {/* Referenti */}
+                <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Referenti</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#FF6900', marginBottom: '12px' }}>Referente Commerciale</h5>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <input type="text" placeholder="Nome e Cognome"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="email" placeholder="Email"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="tel" placeholder="Telefono"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                    </div>
+                  </div>
+                  <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#7B2CBF', marginBottom: '12px' }}>Referente Amministrativo</h5>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <input type="text" placeholder="Nome e Cognome"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="email" placeholder="Email"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="tel" placeholder="Telefono"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                    </div>
+                  </div>
+                  <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#10b981', marginBottom: '12px' }}>Referente Logistico</h5>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <input type="text" placeholder="Nome e Cognome"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="email" placeholder="Email"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="tel" placeholder="Telefono"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
+
+              {/* SEZIONE 4: Fatturazione & Pagamenti */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
                   fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '8px'
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  Codice Fiscale
-                </label>
-                <input
-                  type="text"
-                  placeholder="es. ACMSPP95L01H501Z"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    transition: 'border-color 0.2s'
-                  }}
-                />
+                  <CreditCard size={20} />
+                  Fatturazione & Pagamenti
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px'
+                }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Condizioni di Pagamento
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="30GG">30 giorni</option>
+                      <option value="60GG">60 giorni</option>
+                      <option value="90GG">90 giorni</option>
+                      <option value="FM">Fine mese</option>
+                      <option value="ANTICIPO">Anticipo</option>
+                      <option value="PERSONALIZZATO">Personalizzato</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Metodo di Pagamento
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="BONIFICO">Bonifico Bancario</option>
+                      <option value="RIBA">RiBa/SDD</option>
+                      <option value="CARTA">Carta di Credito</option>
+                      <option value="CONTANTI">Contanti</option>
+                      <option value="ASSEGNO">Assegno</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      IBAN
+                    </label>
+                    <input type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      BIC/SWIFT
+                    </label>
+                    <input type="text" placeholder="BCITITMM"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Listino Associato
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="STANDARD">Listino Standard</option>
+                      <option value="PREMIUM">Listino Premium</option>
+                      <option value="VOLUME">Listino Volume</option>
+                      <option value="PERSONALIZZATO">Personalizzato</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Sconto Base (%)
+                    </label>
+                    <input type="number" placeholder="0" min="0" max="100" step="0.01"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                </div>
+
+                {/* Flags fiscali */}
+                <div style={{ marginTop: '20px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>Regime Fiscale</h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input type="checkbox" />
+                      Split Payment
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input type="checkbox" />
+                      Ritenuta d'Acconto
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input type="checkbox" />
+                      Cassa Previdenziale
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input type="checkbox" />
+                      Reverse Charge
+                    </label>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
+
+              {/* SEZIONE 5: Logistica */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
                   fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '8px'
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  Città
-                </label>
-                <input
-                  type="text"
-                  placeholder="es. Milano"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    transition: 'border-color 0.2s'
-                  }}
-                />
+                  <Truck size={20} />
+                  Logistica & Consegne
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px'
+                }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Corriere Preferito
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="DHL">DHL</option>
+                      <option value="UPS">UPS</option>
+                      <option value="FEDEX">FedEx</option>
+                      <option value="BRT">BRT</option>
+                      <option value="SDA">SDA</option>
+                      <option value="TNT">TNT</option>
+                      <option value="ALTRO">Altro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Incoterm
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="EXW">EXW - Ex Works</option>
+                      <option value="FCA">FCA - Free Carrier</option>
+                      <option value="CPT">CPT - Carriage Paid To</option>
+                      <option value="CIP">CIP - Carriage Insurance Paid</option>
+                      <option value="DDP">DDP - Delivered Duty Paid</option>
+                      <option value="DDU">DDU - Delivered Duty Unpaid</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Lead Time (giorni)
+                    </label>
+                    <input type="number" placeholder="7" min="0"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      MOQ (Minimo d'Ordine)
+                    </label>
+                    <input type="number" placeholder="100" min="0"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Multiplo d'Ordine
+                    </label>
+                    <input type="number" placeholder="50" min="1"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Orari Consegna
+                    </label>
+                    <input type="text" placeholder="Lun-Ven 9:00-17:00"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
+
+              {/* SEZIONE 6: Note & Valutazione */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
                   fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '8px'
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  Stato
-                </label>
-                <select
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-                    background: 'white',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="Attivo">Attivo</option>
-                  <option value="Sospeso">Sospeso</option>
-                  <option value="Archiviato">Archiviato</option>
-                </select>
+                  <FileText size={20} />
+                  Note & Valutazione
+                </h3>
+                <div style={{ display: 'grid', gap: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Rating Qualità (1-5)
+                      </label>
+                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                        <option value="">Non valutato</option>
+                        <option value="5">⭐⭐⭐⭐⭐ Eccellente</option>
+                        <option value="4">⭐⭐⭐⭐ Buono</option>
+                        <option value="3">⭐⭐⭐ Sufficiente</option>
+                        <option value="2">⭐⭐ Scarso</option>
+                        <option value="1">⭐ Pessimo</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Livello Rischio
+                      </label>
+                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                        <option value="BASSO">🟢 Basso</option>
+                        <option value="MEDIO">🟡 Medio</option>
+                        <option value="ALTO">🔴 Alto</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Owner/Assegnatario
+                      </label>
+                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                        <option value="">Seleziona...</option>
+                        <option value="mario.rossi">Mario Rossi</option>
+                        <option value="anna.verdi">Anna Verdi</option>
+                        <option value="luca.bianchi">Luca Bianchi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Note Interne
+                    </label>
+                    <textarea 
+                      placeholder="Note riservate per uso interno..."
+                      rows={4}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px', 
+                        fontSize: '14px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        resize: 'vertical'
+                      }} 
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
+            {/* Footer Actions */}
             <div style={{
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '12px',
-              marginTop: '24px',
-              paddingTop: '20px',
-              borderTop: '1px solid #e5e7eb'
+              marginTop: '32px',
+              paddingTop: '24px',
+              borderTop: '2px solid #e5e7eb'
             }}>
               <button
                 onClick={() => setSupplierModal({ open: false, data: null })}
                 style={{
-                  padding: '10px 20px',
+                  padding: '12px 24px',
                   border: '1px solid #d1d5db',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   background: '#ffffff',
                   color: '#6b7280',
                   fontSize: '14px',
@@ -8742,17 +9198,17 @@ export default function SettingsPage() {
               </button>
               <button
                 onClick={() => {
-                  // TODO: Implementare salvataggio fornitore
-                  console.log('Salvando fornitore...');
-                  alert('Funzionalità di salvataggio in fase di implementazione');
+                  // TODO: Implementare salvataggio fornitore completo
+                  console.log('Salvando fornitore completo...');
+                  alert('Salvataggio fornitore completo - Funzionalità in fase di implementazione');
                   setSupplierModal({ open: false, data: null });
                 }}
                 style={{
-                  padding: '10px 24px',
+                  padding: '12px 32px',
                   background: 'linear-gradient(135deg, #FF6900, #ff8533)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
                   fontSize: '14px',
                   fontWeight: '600',
                   cursor: 'pointer',
