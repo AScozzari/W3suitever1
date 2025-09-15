@@ -1167,7 +1167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== UNIFIED RBAC API ====================
 
   // Get all permissions from registry (flat list for UI)
-  app.get('/api/rbac/permissions', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.view'), async (req: any, res) => {
+  app.get('/api/rbac/permissions', ...authWithRBAC, async (req: any, res) => {
     try {
       const { getAllPermissions } = await import('../core/permissions/registry.js');
       const permissions = getAllPermissions();
@@ -1183,7 +1183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all roles for the current tenant
-  app.get('/api/rbac/roles', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.view'), async (req: any, res) => {
+  app.get('/api/rbac/roles', ...authWithRBAC, async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       if (!tenantId) {
@@ -1202,7 +1202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new custom role
-  app.post('/api/rbac/roles', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.create'), async (req: any, res) => {
+  app.post('/api/rbac/roles', ...authWithRBAC, async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       if (!tenantId) {
@@ -1222,7 +1222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update an existing role
-  app.patch('/api/rbac/roles/:id', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.edit'), async (req: any, res) => {
+  app.patch('/api/rbac/roles/:id', ...authWithRBAC, async (req: any, res) => {
     try {
       if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
 
@@ -1251,7 +1251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a role (only non-system roles)
-  app.delete('/api/rbac/roles/:id', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.delete'), async (req: any, res) => {
+  app.delete('/api/rbac/roles/:id', ...authWithRBAC, async (req: any, res) => {
     try {
       if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
 
@@ -1270,7 +1270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get permissions for a specific role
-  app.get('/api/rbac/roles/:id/permissions', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.view'), async (req: any, res) => {
+  app.get('/api/rbac/roles/:id/permissions', ...authWithRBAC, async (req: any, res) => {
     try {
       if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
 
@@ -1287,7 +1287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Set permissions for a role (replace all permissions)
-  app.put('/api/rbac/roles/:id/permissions', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.edit'), async (req: any, res) => {
+  app.put('/api/rbac/roles/:id/permissions', ...authWithRBAC, async (req: any, res) => {
     try {
       if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
 
@@ -1324,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user role assignments
-  app.get('/api/rbac/users/:userId/assignments', enterpriseAuth, rbacMiddleware, requirePermission('settings.users.view'), async (req: any, res) => {
+  app.get('/api/rbac/users/:userId/assignments', ...authWithRBAC, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const tenantId = req.user?.tenantId;
@@ -1353,7 +1353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assign role to user
-  app.post('/api/rbac/users/:userId/assignments', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.assign'), async (req: any, res) => {
+  app.post('/api/rbac/users/:userId/assignments', ...authWithRBAC, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const tenantId = req.user?.tenantId;
@@ -1387,7 +1387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remove role assignment from user
-  app.delete('/api/rbac/users/:userId/assignments/:assignmentId', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.assign'), async (req: any, res) => {
+  app.delete('/api/rbac/users/:userId/assignments/:assignmentId', ...authWithRBAC, async (req: any, res) => {
     try {
       const { userId, assignmentId } = req.params;
       

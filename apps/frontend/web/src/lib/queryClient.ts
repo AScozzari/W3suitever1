@@ -52,7 +52,7 @@ export const queryClient = new QueryClient({
           // In development, use the X-Auth-Session header which is already supported by backend
           // Development mode: Using X-Auth-Session header
           headers['X-Auth-Session'] = 'authenticated';
-          headers['X-Demo-User'] = 'admin@w3suite.com';
+          headers['X-Demo-User'] = 'demo-user';
         } else {
           // In production, use OAuth2 token
           const token = await oauth2Client.getAccessToken();
@@ -137,7 +137,7 @@ export async function apiRequest(
     // In development, use the X-Auth-Session header which is already supported by backend
     // Development mode: Using X-Auth-Session header
     headers['X-Auth-Session'] = 'authenticated';
-    headers['X-Demo-User'] = 'admin@w3suite.com';
+    headers['X-Demo-User'] = 'demo-user';
   } else {
     // In production, use OAuth2 token
     const token = await oauth2Client.getAccessToken();
