@@ -92,9 +92,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Construct object path for public avatar
-      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJECT_STORE_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
-      const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS ? JSON.parse(process.env.PUBLIC_OBJECT_SEARCH_PATHS) : [];
-      const publicPath = Array.isArray(publicPaths) && publicPaths.length > 0 ? publicPaths[0] : `/${bucketId}/public`;
+      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      const publicPath = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
       const objectPath = `${publicPath}/avatars/${tenantId}/${fileName}`;
 
       // Check if the avatar is actually public by querying database

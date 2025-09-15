@@ -5,16 +5,9 @@ import path from 'path';
 import { config } from './config';
 
 // Object Storage configuration from environment variables set by setup_object_storage
-const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJECT_STORE_ID;
-const PUBLIC_PATHS = process.env.PUBLIC_OBJECT_SEARCH_PATHS ? JSON.parse(process.env.PUBLIC_OBJECT_SEARCH_PATHS) : [];
-const PRIVATE_PATH = process.env.PRIVATE_OBJECT_DIR;
-
-// Fallback to hardcoded values if env vars not set (shouldn't happen after setup_object_storage)
-const PUBLIC_PATH = Array.isArray(PUBLIC_PATHS) && PUBLIC_PATHS.length > 0 
-  ? PUBLIC_PATHS[0] 
-  : `/replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc/public`;
-
-const PRIVATE_DIR = PRIVATE_PATH || `/replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc/.private`;
+const BUCKET_ID = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+const PUBLIC_PATH = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+const PRIVATE_DIR = process.env.PRIVATE_OBJECT_DIR;
 
 // Validation schemas
 export const uploadConfigSchema = z.object({
@@ -70,9 +63,9 @@ class ReplitObjectStorageService implements ObjectStorageService {
   private privateBasePath: string;
 
   constructor() {
-    this.bucketId = BUCKET_ID;
-    this.publicBasePath = PUBLIC_PATH;
-    this.privateBasePath = PRIVATE_DIR;
+    this.bucketId = BUCKET_ID || '';
+    this.publicBasePath = PUBLIC_PATH || '';
+    this.privateBasePath = PRIVATE_DIR || '';
   }
 
   async generatePresignedUploadUrl(

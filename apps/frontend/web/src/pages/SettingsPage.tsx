@@ -3,6 +3,7 @@ import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import AvatarSelector from '../components/AvatarSelector';
 import {
   StandardEmailField,
   StandardCityField,
@@ -291,6 +292,18 @@ export default function SettingsPage() {
   const [storeModal, setStoreModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [userModal, setUserModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [logDetailsModal, setLogDetailsModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+
+  // Avatar change handler
+  const handleAvatarChange = (avatarData: { url?: string; blob?: Blob; type: 'upload' | 'generated' }) => {
+    setNewUser(prevUser => ({
+      ...prevUser,
+      avatar: {
+        url: avatarData.url || null,
+        blob: avatarData.blob || null,
+        type: avatarData.type
+      }
+    }));
+  };
   
   // Logs state variables
   const [logsSearchTerm, setLogsSearchTerm] = useState('');
@@ -4111,6 +4124,11 @@ export default function SettingsPage() {
     // Informazioni personali
     nome: '',
     cognome: '',
+    avatar: {
+      url: null as string | null,
+      blob: null as Blob | null,
+      type: null as 'upload' | 'generated' | null
+    },
     codiceFiscale: '',
     dataNascita: '',
     luogoNascita: '',
@@ -7329,6 +7347,23 @@ export default function SettingsPage() {
                 }}>
                   Informazioni Personali
                 </h3>
+
+                {/* Avatar Selector */}
+                <div style={{ 
+                  marginBottom: '24px', 
+                  display: 'flex', 
+                  justifyContent: 'center'
+                }}>
+                  <AvatarSelector
+                    currentAvatarUrl={newUser.avatar.url || undefined}
+                    firstName={newUser.nome}
+                    lastName={newUser.cognome}
+                    username={newUser.username}
+                    onAvatarChange={handleAvatarChange}
+                    loading={false}
+                    size={120}
+                  />
+                </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>

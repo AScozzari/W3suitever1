@@ -8,6 +8,7 @@ import {
 import { oauth2Client } from '../../services/OAuth2Client';
 import { queryClient } from '../../lib/queryClient';
 import { apiService } from '../../services/ApiService';
+import { useUserAvatar } from '../../hooks/useUserAvatar';
 
 // Palette colori W3 Suite - Consistent con Layout
 const COLORS = {
@@ -43,6 +44,12 @@ export default function Header({
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   
   const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
+  
+  // Use avatar hook for enhanced avatar functionality
+  const userAvatar = useUserAvatar(user, {
+    size: isMobile ? 28 : 32,
+    enabled: !!user
+  });
 
   // Notification queries
   const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery({
@@ -611,21 +618,69 @@ export default function Header({
               transition: 'all 0.2s ease'
             }}
           >
-            <div style={{
-              width: '28px',
-              height: '28px',
-              background: user?.profileImageUrl ? `url(${user.profileImageUrl})` : `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '12px',
-              fontWeight: 600
-            }}>
-              {!user?.profileImageUrl && (user?.firstName?.[0] || user?.email?.[0] || 'U')}
+            {/* Enhanced User Avatar with API Integration */}
+            <div 
+              style={{
+                width: isMobile ? '28px' : '32px',
+                height: isMobile ? '28px' : '32px',
+                background: userAvatar.hasImage 
+                  ? `url(${userAvatar.avatarUrl}) center/cover`
+                  : userAvatar.gradient,
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: isMobile ? '12px' : '13px',
+                fontWeight: 600,
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+                textShadow: userAvatar.hasImage ? 'none' : '0 1px 2px rgba(0, 0, 0, 0.3)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                border: userAvatar.hasImage ? '1px solid hsla(255, 255, 255, 0.2)' : 'none',
+                transition: 'all 0.2s ease',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              data-testid="header-user-avatar"
+              title={user?.firstName && user?.lastName 
+                ? `${user.firstName} ${user.lastName}` 
+                : user?.email || 'User Avatar'}
+            >
+              {/* Loading overlay */}
+              {userAvatar.isLoading && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '6px'
+                }}>
+                  <div style={{
+                    width: '10px',
+                    height: '10px',
+                    border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '1.5px solid white',
+                    borderRadius: '50%',
+                    animation: 'rotate 1s linear infinite'
+                  }} />
+                </div>
+              )}
+              
+              {/* Show initials when no image */}
+              {!userAvatar.hasImage && !userAvatar.isLoading && (
+                <span style={{
+                  fontSize: 'inherit',
+                  fontWeight: 'inherit',
+                  textShadow: 'inherit'
+                }}>
+                  {userAvatar.initials}
+                </span>
+              )}
             </div>
             {!isMobile && (
               <>
