@@ -9,7 +9,7 @@ import { rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware } from "./logger";
 import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { tenants } from "../db/schema";
 import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, InsertTenant, InsertLegalEntity, InsertStore, InsertUser, InsertUserAssignment, InsertRole } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
@@ -1057,6 +1057,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching permissions:", error);
       res.status(500).json({ error: "Failed to fetch permissions" });
+    }
+  });
+
+  // ==================== TENANT SETTINGS API ====================
+
+  // Get tenant settings (including RBAC configuration)
+  app.get('/api/tenant/settings', enterpriseAuth, rbacMiddleware, requirePermission('admin.settings.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      const tenantResult = await db
+        .select({ 
+          settings: tenants.settings,
+          features: tenants.features,
+          name: tenants.name,
+          status: tenants.status 
+        })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+
+      if (tenantResult.length === 0) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const tenant = tenantResult[0];
+      const settings = tenant.settings as any || {};
+      
+      res.json({
+        tenantId,
+        name: tenant.name,
+        status: tenant.status,
+        settings: {
+          rbac_enabled: settings.rbac_enabled === true,
+          ...settings
+        },
+        features: tenant.features || {}
+      });
+
+    } catch (error) {
+      console.error("Error fetching tenant settings:", error);
+      res.status(500).json({ error: "Failed to fetch tenant settings" });
+    }
+  });
+
+  // Update tenant settings (including RBAC toggle)
+  app.put('/api/tenant/settings', enterpriseAuth, rbacMiddleware, requirePermission('admin.settings.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      const { settings, features } = req.body;
+      
+      // Validate settings object
+      if (!settings || typeof settings !== 'object') {
+        return res.status(400).json({ error: 'Invalid settings object' });
+      }
+
+      // Update tenant settings
+      const updatedData: any = {};
+      if (settings) {
+        updatedData.settings = settings;
+      }
+      if (features) {
+        updatedData.features = features;
+      }
+      updatedData.updatedAt = new Date();
+
+      await db
+        .update(tenants)
+        .set(updatedData)
+        .where(eq(tenants.id, tenantId));
+
+      console.log(`[TENANT-SETTINGS] Updated tenant ${tenantId} settings - RBAC enabled: ${settings.rbac_enabled}`);
+
+      res.json({ 
+        message: "Tenant settings updated successfully",
+        settings: settings,
+        features: features || {}
+      });
+
+    } catch (error) {
+      console.error("Error updating tenant settings:", error);
+      res.status(500).json({ error: "Failed to update tenant settings" });
     }
   });
 

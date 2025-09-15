@@ -85,6 +85,23 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
       return next();
     }
     
+    // Check if tenant has granular RBAC enabled - default is simplified admin permissions
+    const tenantResult = await db
+      .select({ settings: tenants.settings })
+      .from(tenants)
+      .where(eq(tenants.id, req.tenant.id))
+      .limit(1);
+    
+    const tenantSettings = tenantResult[0]?.settings as any || {};
+    const rbacEnabled = tenantSettings.rbac_enabled === true;
+    
+    // If RBAC is not enabled (default), give admin users wildcard permissions
+    if (!rbacEnabled && req.user.roles?.includes('admin')) {
+      req.userPermissions = ['*'];
+      console.log(`[RBAC-SIMPLE] Admin user with wildcard permissions (RBAC disabled for tenant)`);
+      return next();
+    }
+    
     // Determina lo scope dal contesto della richiesta
     let scopeType = 'tenant';
     let scopeId = req.tenant.id;
