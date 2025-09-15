@@ -658,6 +658,45 @@ export default function SettingsPage() {
     setLegalEntityModal({ open: true, data: null });
   };
   
+  // Handler per eliminare un utente - USA API REALE
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const currentTenantId = DEMO_TENANT_ID;
+      
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-Tenant-ID': currentTenantId
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete user: ${response.statusText}`);
+      }
+
+      console.log('✅ User deleted successfully');
+      
+      // Refresh the list dopo l'eliminazione
+      await refetchUserData();
+      
+    } catch (error) {
+      console.error('❌ Error deleting user:', error);
+      alert('Errore nell\'eliminazione dell\'utente. Riprova.');
+    }
+  };
+
+  // Funzione per ricaricare i dati utenti
+  const refetchUserData = async () => {
+    try {
+      const result = await apiService.loadSettingsData();
+      if (result.success && result.data) {
+        setUtentiList(result.data.users);
+      }
+    } catch (error) {
+      console.error('Error refetching users:', error);
+    }
+  };
+
   // Handler per eliminare una ragione sociale - USA API REALE
   const handleDeleteRagioneSociale = async (legalEntityId: string) => {
     try {
@@ -1789,7 +1828,9 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button style={{
+                        <button
+                          onClick={() => setUserModal({ open: true, data: user })}
+                          style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
                           borderRadius: '6px',
@@ -1807,10 +1848,13 @@ export default function SettingsPage() {
                         onMouseOut={(e) => {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.borderColor = '#e5e7eb';
-                        }}>
+                        }}
+                        title="Modifica utente">
                           <Edit3 size={14} style={{ color: '#6b7280' }} />
                         </button>
-                        <button style={{
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          style={{
                           background: 'transparent',
                           border: '1px solid #e5e7eb',
                           borderRadius: '6px',
@@ -1828,7 +1872,8 @@ export default function SettingsPage() {
                         onMouseOut={(e) => {
                           e.currentTarget.style.background = 'transparent';
                           e.currentTarget.style.borderColor = '#e5e7eb';
-                        }}>
+                        }}
+                        title="Elimina utente">
                           <Trash2 size={14} style={{ color: '#ef4444' }} />
                         </button>
                       </div>
@@ -4266,7 +4311,7 @@ export default function SettingsPage() {
     avatar: {
       url: null as string | null,
       blob: null as Blob | null,
-      type: null as 'upload' | 'generated' | null
+      type: 'upload' as 'upload' | 'generated'
     },
     codiceFiscale: '',
     dataNascita: '',
