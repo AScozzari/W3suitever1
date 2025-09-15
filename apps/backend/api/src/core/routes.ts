@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
 import { sql, eq } from "drizzle-orm";
 import { tenants } from "../db/schema";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, InsertTenant, InsertLegalEntity, InsertStore, InsertUser, InsertUserAssignment, InsertRole } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, InsertTenant, InsertLegalEntity, InsertStore, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -29,6 +29,22 @@ const getLogsQuerySchema = z.object({
 });
 
 const createLogBodySchema = insertStructuredLogSchema.omit({ tenantId: true });
+
+// Zod validation schemas for notifications API
+const getNotificationsQuerySchema = z.object({
+  type: z.enum(['system', 'security', 'data', 'custom']).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  status: z.enum(['unread', 'read']).optional(),
+  targetUserId: z.string().uuid().optional(),
+  page: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1)).default('1'),
+  limit: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1).max(100)).default('20')
+});
+
+const createNotificationBodySchema = insertNotificationSchema.omit({ tenantId: true });
+
+const bulkMarkReadBodySchema = z.object({
+  notificationIds: z.array(z.string().uuid()).min(1).max(100)
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -1542,6 +1558,265 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating structured log:", error);
       res.status(500).json({ error: "Failed to create structured log" });
+    }
+  });
+
+  // ==================== NOTIFICATION ENDPOINTS ====================
+
+  // Get notifications for tenant with filtering and pagination
+  app.get('/api/notifications', ...authWithRBAC, requirePermission('notifications.read'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate query parameters with Zod
+      const validationResult = getNotificationsQuerySchema.safeParse(req.query);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Invalid query parameters',
+          details: validationResult.error.errors
+        });
+      }
+
+      const { type, priority, status, targetUserId, page, limit } = validationResult.data;
+
+      // Build filters object
+      const filters = {
+        ...(type && { type }),
+        ...(priority && { priority }),
+        ...(status && { status }),
+        ...(targetUserId && { targetUserId })
+      };
+
+      // Pagination object
+      const pagination = { page, limit };
+
+      console.log(`[API] GET /api/notifications - Tenant: ${tenantId}, User: ${userId}, Filters:`, filters, 'Pagination:', pagination);
+
+      // Get notifications from storage (tenant-isolated with user visibility)
+      const result = await storage.getNotificationsByTenant(tenantId, userId, filters, pagination);
+
+      // Calculate total pages
+      const totalPages = Math.ceil(result.total / limit);
+
+      // Return notifications with metadata
+      res.json({
+        notifications: result.notifications,
+        unreadCount: result.unreadCount,
+        metadata: {
+          total: result.total,
+          page,
+          limit,
+          totalPages
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Get unread notification count for current user
+  app.get('/api/notifications/unread-count', ...authWithRBAC, requirePermission('notifications.read'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      console.log(`[API] GET /api/notifications/unread-count - Tenant: ${tenantId}, User: ${userId}`);
+
+      const unreadCount = await storage.getUnreadNotificationCount(tenantId, userId);
+
+      res.json({ unreadCount });
+
+    } catch (error) {
+      console.error("Error fetching unread notification count:", error);
+      res.status(500).json({ error: "Failed to fetch unread notification count" });
+    }
+  });
+
+  // Create a new notification (admin/system only)
+  app.post('/api/notifications', ...authWithRBAC, requirePermission('notifications.create'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate request body with Zod
+      const validationResult = createNotificationBodySchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Invalid notification data',
+          details: validationResult.error.errors
+        });
+      }
+
+      // Add tenant ID to the validated notification data
+      const notificationData = {
+        ...validationResult.data,
+        tenantId
+      } as InsertNotification;
+
+      console.log(`[API] POST /api/notifications - Creating notification for tenant: ${tenantId}, User: ${req.user.id}`);
+
+      const notification = await storage.createNotification(notificationData);
+      res.status(201).json(notification);
+
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      res.status(500).json({ error: "Failed to create notification" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch('/api/notifications/:id/read', ...authWithRBAC, requirePermission('notifications.markRead'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'Notification ID', res)) return;
+
+      console.log(`[API] PATCH /api/notifications/${req.params.id}/read - Tenant: ${tenantId}, User: ${req.user.id}`);
+
+      const notification = await storage.markNotificationRead(req.params.id, tenantId);
+      
+      if (!notification) {
+        return res.status(404).json({ error: 'Notification not found or access denied' });
+      }
+
+      res.json(notification);
+
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  // Mark notification as unread
+  app.patch('/api/notifications/:id/unread', ...authWithRBAC, requirePermission('notifications.markRead'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'Notification ID', res)) return;
+
+      console.log(`[API] PATCH /api/notifications/${req.params.id}/unread - Tenant: ${tenantId}, User: ${req.user.id}`);
+
+      const notification = await storage.markNotificationUnread(req.params.id, tenantId);
+      
+      if (!notification) {
+        return res.status(404).json({ error: 'Notification not found or access denied' });
+      }
+
+      res.json(notification);
+
+    } catch (error) {
+      console.error("Error marking notification as unread:", error);
+      res.status(500).json({ error: "Failed to mark notification as unread" });
+    }
+  });
+
+  // Bulk mark notifications as read
+  app.patch('/api/notifications/bulk-read', ...authWithRBAC, requirePermission('notifications.bulkActions'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate request body with Zod
+      const validationResult = bulkMarkReadBodySchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Invalid bulk read data',
+          details: validationResult.error.errors
+        });
+      }
+
+      const { notificationIds } = validationResult.data;
+
+      console.log(`[API] PATCH /api/notifications/bulk-read - Marking ${notificationIds.length} notifications as read for tenant: ${tenantId}, User: ${req.user.id}`);
+
+      const updatedCount = await storage.bulkMarkNotificationsRead(notificationIds, tenantId);
+
+      res.json({ 
+        success: true,
+        updatedCount,
+        message: `Marked ${updatedCount} notifications as read`
+      });
+
+    } catch (error) {
+      console.error("Error bulk marking notifications as read:", error);
+      res.status(500).json({ error: "Failed to bulk mark notifications as read" });
+    }
+  });
+
+  // Delete notification (admin/manage only)
+  app.delete('/api/notifications/:id', ...authWithRBAC, requirePermission('notifications.delete'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate UUID parameter
+      if (!validateUUIDParam(req.params.id, 'Notification ID', res)) return;
+
+      console.log(`[API] DELETE /api/notifications/${req.params.id} - Tenant: ${tenantId}, User: ${req.user.id}`);
+
+      await storage.deleteNotification(req.params.id, tenantId);
+      res.status(204).send();
+
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ error: "Failed to delete notification" });
+    }
+  });
+
+  // Delete expired notifications (cleanup operation)
+  app.delete('/api/notifications/expired', ...authWithRBAC, requirePermission('notifications.manage'), async (req: any, res) => {
+    try {
+      // SECURE: Use ONLY authenticated user's tenant ID
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      console.log(`[API] DELETE /api/notifications/expired - Cleaning up expired notifications for tenant: ${tenantId}, User: ${req.user.id}`);
+
+      const deletedCount = await storage.deleteExpiredNotifications(tenantId);
+
+      res.json({ 
+        success: true,
+        deletedCount,
+        message: `Cleaned up ${deletedCount} expired notifications`
+      });
+
+    } catch (error) {
+      console.error("Error deleting expired notifications:", error);
+      res.status(500).json({ error: "Failed to delete expired notifications" });
     }
   });
 

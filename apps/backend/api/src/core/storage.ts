@@ -9,6 +9,7 @@ import {
   userStores,
   entityLogs,
   structuredLogs,
+  notifications,
   type User,
   type UpsertUser,
   type Tenant,
@@ -27,6 +28,8 @@ import {
   type InsertEntityLog,
   type StructuredLog,
   type InsertStructuredLog,
+  type Notification,
+  type InsertNotification,
 } from "../db/schema/w3suite";
 
 // Import from Public schema (shared reference data)
@@ -62,6 +65,20 @@ export interface Pagination {
 export interface LogsResponse {
   logs: StructuredLog[];
   total: number;
+}
+
+// Types for notification filtering and pagination
+export interface NotificationFilters {
+  type?: string;
+  priority?: string;
+  status?: string;
+  targetUserId?: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  total: number;
+  unreadCount: number;
 }
 
 // Interface for storage operations
@@ -119,6 +136,16 @@ export interface IStorage {
   // Structured Logs Management
   getStructuredLogs(tenantId: string, filters: LogFilters, pagination: Pagination): Promise<LogsResponse>;
   createStructuredLog(log: InsertStructuredLog): Promise<StructuredLog>;
+
+  // Notification Management
+  getNotificationsByTenant(tenantId: string, userId?: string, filters?: NotificationFilters, pagination?: Pagination): Promise<NotificationsResponse>;
+  getUnreadNotificationCount(tenantId: string, userId?: string): Promise<number>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationRead(notificationId: string, tenantId: string): Promise<Notification | undefined>;
+  markNotificationUnread(notificationId: string, tenantId: string): Promise<Notification | undefined>;
+  bulkMarkNotificationsRead(notificationIds: string[], tenantId: string): Promise<number>;
+  deleteNotification(notificationId: string, tenantId: string): Promise<void>;
+  deleteExpiredNotifications(tenantId: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -666,6 +693,242 @@ export class DatabaseStorage implements IStorage {
   async createStructuredLog(logData: InsertStructuredLog): Promise<StructuredLog> {
     const [log] = await db.insert(structuredLogs).values(logData).returning();
     return log;
+  }
+
+  // ==================== NOTIFICATION MANAGEMENT ====================
+
+  async getNotificationsByTenant(
+    tenantId: string, 
+    userId?: string, 
+    filters?: NotificationFilters, 
+    pagination?: Pagination
+  ): Promise<NotificationsResponse> {
+    console.log(`[STORAGE-RLS] 🔔 getNotificationsByTenant: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    // Build filtering conditions
+    const conditions = [eq(notifications.tenantId, tenantId)];
+    
+    // User-specific notifications: broadcast or targeted to specific user
+    if (userId) {
+      conditions.push(
+        or(
+          eq(notifications.broadcast, true),
+          eq(notifications.targetUserId, userId),
+          sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))`
+        )
+      );
+    }
+    
+    // Apply filters
+    if (filters?.type) {
+      conditions.push(eq(notifications.type, filters.type));
+    }
+    
+    if (filters?.priority) {
+      conditions.push(eq(notifications.priority, filters.priority));
+    }
+    
+    if (filters?.status) {
+      conditions.push(eq(notifications.status, filters.status));
+    }
+    
+    if (filters?.targetUserId) {
+      conditions.push(eq(notifications.targetUserId, filters.targetUserId));
+    }
+    
+    // Filter out expired notifications
+    conditions.push(
+      or(
+        eq(notifications.expiresAt, null),
+        gte(notifications.expiresAt, new Date())
+      )
+    );
+    
+    // Count total and unread records
+    const [countResult] = await db
+      .select({ 
+        total: sql<string>`count(*)::text`,
+        unread: sql<string>`count(case when status = 'unread' then 1 end)::text`
+      })
+      .from(notifications)
+      .where(and(...conditions));
+    
+    const total = parseInt(countResult.total, 10);
+    const unreadCount = parseInt(countResult.unread, 10);
+    
+    // Default pagination
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Get paginated notifications
+    const notificationsList = await db
+      .select()
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    console.log(`[STORAGE-RLS] ✅ getNotificationsByTenant: Found ${notificationsList.length} notifications (total: ${total}, unread: ${unreadCount}) for tenant ${tenantId}`);
+    
+    return {
+      notifications: notificationsList,
+      total,
+      unreadCount
+    };
+  }
+
+  async getUnreadNotificationCount(tenantId: string, userId?: string): Promise<number> {
+    console.log(`[STORAGE-RLS] 🔔 getUnreadNotificationCount: Setting tenant context for ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const conditions = [
+      eq(notifications.tenantId, tenantId),
+      eq(notifications.status, 'unread')
+    ];
+    
+    // User-specific notifications: broadcast or targeted to specific user
+    if (userId) {
+      conditions.push(
+        or(
+          eq(notifications.broadcast, true),
+          eq(notifications.targetUserId, userId),
+          sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))`
+        )
+      );
+    }
+    
+    // Filter out expired notifications
+    conditions.push(
+      or(
+        eq(notifications.expiresAt, null),
+        gte(notifications.expiresAt, new Date())
+      )
+    );
+    
+    const [result] = await db
+      .select({ count: sql<string>`count(*)::text` })
+      .from(notifications)
+      .where(and(...conditions));
+    
+    const count = parseInt(result.count, 10);
+    console.log(`[STORAGE-RLS] ✅ getUnreadNotificationCount: Found ${count} unread notifications for tenant ${tenantId}`);
+    
+    return count;
+  }
+
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    console.log(`[STORAGE-RLS] 🔔 createNotification: Creating notification for tenant ${notificationData.tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(notificationData.tenantId);
+    
+    const [notification] = await db.insert(notifications).values(notificationData).returning();
+    
+    console.log(`[STORAGE-RLS] ✅ createNotification: Created notification ${notification.id} for tenant ${notificationData.tenantId}`);
+    
+    return notification;
+  }
+
+  async markNotificationRead(notificationId: string, tenantId: string): Promise<Notification | undefined> {
+    console.log(`[STORAGE-RLS] 🔔 markNotificationRead: Marking notification ${notificationId} as read for tenant ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const [notification] = await db
+      .update(notifications)
+      .set({ status: 'read' })
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.tenantId, tenantId)
+      ))
+      .returning();
+    
+    console.log(`[STORAGE-RLS] ✅ markNotificationRead: ${notification ? 'Successfully marked' : 'Failed to mark'} notification ${notificationId} as read`);
+    
+    return notification;
+  }
+
+  async markNotificationUnread(notificationId: string, tenantId: string): Promise<Notification | undefined> {
+    console.log(`[STORAGE-RLS] 🔔 markNotificationUnread: Marking notification ${notificationId} as unread for tenant ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const [notification] = await db
+      .update(notifications)
+      .set({ status: 'unread' })
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.tenantId, tenantId)
+      ))
+      .returning();
+    
+    console.log(`[STORAGE-RLS] ✅ markNotificationUnread: ${notification ? 'Successfully marked' : 'Failed to mark'} notification ${notificationId} as unread`);
+    
+    return notification;
+  }
+
+  async bulkMarkNotificationsRead(notificationIds: string[], tenantId: string): Promise<number> {
+    console.log(`[STORAGE-RLS] 🔔 bulkMarkNotificationsRead: Marking ${notificationIds.length} notifications as read for tenant ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .update(notifications)
+      .set({ status: 'read' })
+      .where(and(
+        sql`${notifications.id} = ANY(${notificationIds})`,
+        eq(notifications.tenantId, tenantId)
+      ));
+    
+    const updatedCount = result.rowCount || 0;
+    console.log(`[STORAGE-RLS] ✅ bulkMarkNotificationsRead: Marked ${updatedCount} notifications as read for tenant ${tenantId}`);
+    
+    return updatedCount;
+  }
+
+  async deleteNotification(notificationId: string, tenantId: string): Promise<void> {
+    console.log(`[STORAGE-RLS] 🔔 deleteNotification: Deleting notification ${notificationId} for tenant ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    await db
+      .delete(notifications)
+      .where(and(
+        eq(notifications.id, notificationId),
+        eq(notifications.tenantId, tenantId)
+      ));
+    
+    console.log(`[STORAGE-RLS] ✅ deleteNotification: Deleted notification ${notificationId} for tenant ${tenantId}`);
+  }
+
+  async deleteExpiredNotifications(tenantId: string): Promise<number> {
+    console.log(`[STORAGE-RLS] 🔔 deleteExpiredNotifications: Cleaning up expired notifications for tenant ${tenantId}`);
+    
+    // Ensure tenant context is set for RLS
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .delete(notifications)
+      .where(and(
+        eq(notifications.tenantId, tenantId),
+        lte(notifications.expiresAt, new Date())
+      ));
+    
+    const deletedCount = result.rowCount || 0;
+    console.log(`[STORAGE-RLS] ✅ deleteExpiredNotifications: Cleaned up ${deletedCount} expired notifications for tenant ${tenantId}`);
+    
+    return deletedCount;
   }
 
 }

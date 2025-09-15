@@ -251,6 +251,116 @@ class ApiService {
       ].filter(Boolean)
     };
   }
+
+  /**
+   * Notification API Methods
+   */
+  
+  // Get notifications with filtering and pagination
+  async getNotifications(params?: {
+    type?: 'system' | 'security' | 'data' | 'custom';
+    priority?: 'low' | 'medium' | 'high' | 'critical';
+    status?: 'unread' | 'read';
+    targetUserId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.type) searchParams.append('type', params.type);
+    if (params?.priority) searchParams.append('priority', params.priority);
+    if (params?.status) searchParams.append('status', params.status);
+    if (params?.targetUserId) searchParams.append('targetUserId', params.targetUserId);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+
+    const queryString = searchParams.toString();
+    const endpoint = queryString ? `/api/notifications?${queryString}` : '/api/notifications';
+    
+    return this.makeRequest<{
+      notifications: any[];
+      unreadCount: number;
+      metadata: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>(endpoint);
+  }
+
+  // Get unread notification count
+  async getUnreadNotificationCount() {
+    return this.makeRequest<{ unreadCount: number }>('/api/notifications/unread-count');
+  }
+
+  // Create a new notification (admin only)
+  async createNotification(notificationData: {
+    type: 'system' | 'security' | 'data' | 'custom';
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    title: string;
+    message: string;
+    data?: Record<string, any>;
+    url?: string;
+    targetUserId?: string;
+    targetRoles?: string[];
+    broadcast?: boolean;
+    expiresAt?: string;
+  }) {
+    return this.makeRequest<any>('/api/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(notificationData),
+    });
+  }
+
+  // Mark notification as read
+  async markNotificationRead(notificationId: string) {
+    return this.makeRequest<any>(`/api/notifications/${notificationId}/read`, {
+      method: 'PATCH',
+    });
+  }
+
+  // Mark notification as unread
+  async markNotificationUnread(notificationId: string) {
+    return this.makeRequest<any>(`/api/notifications/${notificationId}/unread`, {
+      method: 'PATCH',
+    });
+  }
+
+  // Bulk mark notifications as read
+  async bulkMarkNotificationsRead(notificationIds: string[]) {
+    return this.makeRequest<{
+      success: boolean;
+      updatedCount: number;
+      message: string;
+    }>('/api/notifications/bulk-read', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ notificationIds }),
+    });
+  }
+
+  // Delete notification
+  async deleteNotification(notificationId: string) {
+    return this.makeRequest<void>(`/api/notifications/${notificationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Delete expired notifications
+  async deleteExpiredNotifications() {
+    return this.makeRequest<{
+      success: boolean;
+      deletedCount: number;
+      message: string;
+    }>('/api/notifications/expired', {
+      method: 'DELETE',
+    });
+  }
 }
 
 // Singleton pattern per service enterprise

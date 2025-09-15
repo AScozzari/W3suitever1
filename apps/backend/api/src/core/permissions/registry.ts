@@ -248,6 +248,16 @@ export const PERMISSIONS = {
   logs: {
     read: 'logs.read',
     write: 'logs.write'
+  },
+
+  // ==================== NOTIFICATIONS ====================
+  notifications: {
+    read: 'notifications.read',
+    manage: 'notifications.manage',
+    create: 'notifications.create',
+    markRead: 'notifications.markRead',
+    bulkActions: 'notifications.bulkActions',
+    delete: 'notifications.delete'
   }
 } as const;
 
@@ -391,7 +401,11 @@ export const ROLE_TEMPLATES = {
       PERMISSIONS.reports.view,
       PERMISSIONS.reports.generate,
       // Settings limitato
-      PERMISSIONS.settings.view
+      PERMISSIONS.settings.view,
+      // Notifications
+      PERMISSIONS.notifications.read,
+      PERMISSIONS.notifications.markRead,
+      PERMISSIONS.notifications.manage
     ]
   },
 
@@ -425,7 +439,10 @@ export const ROLE_TEMPLATES = {
       PERMISSIONS.hr.timesheet.view,
       PERMISSIONS.hr.timesheet.edit,
       PERMISSIONS.hr.leave.view,
-      PERMISSIONS.hr.leave.request
+      PERMISSIONS.hr.leave.request,
+      // Notifications
+      PERMISSIONS.notifications.read,
+      PERMISSIONS.notifications.markRead
     ]
   },
 
@@ -446,7 +463,10 @@ export const ROLE_TEMPLATES = {
       PERMISSIONS.magazzino.products.view,
       PERMISSIONS.magazzino.stock.view,
       // HR self view
-      PERMISSIONS.hr.timesheet.view
+      PERMISSIONS.hr.timesheet.view,
+      // Notifications
+      PERMISSIONS.notifications.read,
+      PERMISSIONS.notifications.markRead
     ]
   },
 

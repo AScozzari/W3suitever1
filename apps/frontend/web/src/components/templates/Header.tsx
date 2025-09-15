@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   User, Search, Bell, Settings, Menu, ChevronDown,
-  Store, LogOut, UserCircle
+  Store, LogOut, UserCircle, CheckCircle, Circle,
+  AlertTriangle, AlertCircle, Info
 } from 'lucide-react';
 import { oauth2Client } from '../../services/OAuth2Client';
 import { queryClient } from '../../lib/queryClient';
+import { apiService } from '../../services/ApiService';
 
 // Palette colori W3 Suite - Consistent con Layout
 const COLORS = {
@@ -41,6 +43,91 @@ export default function Header({
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   
   const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
+
+  // Notification queries
+  const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery({
+    queryKey: ['/api/notifications/unread-count'],
+    queryFn: async () => {
+      const response = await apiService.getUnreadNotificationCount();
+      return response.success ? response.data : { unreadCount: 0 };
+    },
+    refetchInterval: 15000, // Poll every 15 seconds
+    enabled: !!user
+  });
+
+  const { data: notificationsData, refetch: refetchNotifications } = useQuery({
+    queryKey: ['/api/notifications', { status: 'unread', limit: 10 }],
+    queryFn: async () => {
+      const response = await apiService.getNotifications({ 
+        status: 'unread', 
+        limit: 10,
+        page: 1 
+      });
+      return response.success ? response.data : { notifications: [], unreadCount: 0, metadata: {} };
+    },
+    enabled: !!user && notificationMenuOpen
+  });
+
+  // Mark notification as read mutation
+  const markReadMutation = useMutation({
+    mutationFn: (notificationId: string) => apiService.markNotificationRead(notificationId),
+    onSuccess: () => {
+      // Refetch both queries to update the UI
+      refetchUnreadCount();
+      refetchNotifications();
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+    }
+  });
+
+  const unreadCount = unreadCountData?.unreadCount || 0;
+  const notifications = notificationsData?.notifications || [];
+
+  // Utility functions for notifications
+  const getNotificationIcon = (type: string, priority: string) => {
+    if (priority === 'critical' || type === 'security') {
+      return <AlertTriangle size={16} style={{ color: '#ef4444' }} />;
+    }
+    if (priority === 'high') {
+      return <AlertCircle size={16} style={{ color: '#f59e0b' }} />;
+    }
+    return <Info size={16} style={{ color: '#3b82f6' }} />;
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return '#ef4444';
+      case 'high': return '#f59e0b';
+      case 'medium': return '#3b82f6';
+      case 'low': return '#6b7280';
+      default: return '#6b7280';
+    }
+  };
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Ora';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min fa`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} ore fa`;
+    return `${Math.floor(diffInSeconds / 86400)} giorni fa`;
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    if (notification.status === 'unread') {
+      try {
+        await markReadMutation.mutateAsync(notification.id);
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
+    }
+    
+    // Navigate to URL if provided
+    if (notification.url) {
+      window.location.href = notification.url;
+    }
+  };
 
   // Chiudi menu quando clicchi fuori
   useEffect(() => {
@@ -279,41 +366,230 @@ export default function Header({
             }}
           >
             <Bell size={isMobile ? 18 : 20} />
-            {/* Badge notifiche */}
-            <div style={{
-              position: 'absolute',
-              top: '4px',
-              right: '4px',
-              width: '8px',
-              height: '8px',
-              background: '#ef4444',
-              borderRadius: '50%',
-              border: '2px solid white'
-            }} />
+            {/* Dynamic notification badge */}
+            {unreadCount > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                minWidth: unreadCount > 9 ? '18px' : '16px',
+                height: '16px',
+                background: '#ef4444',
+                borderRadius: '8px',
+                border: '2px solid white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '10px',
+                fontWeight: 600,
+                color: 'white',
+                padding: unreadCount > 9 ? '0 4px' : '0'
+              }}
+              data-testid="notification-badge">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </div>
+            )}
           </button>
 
-          {/* Menu Notifiche */}
+          {/* Enhanced Notification Menu */}
           {notificationMenuOpen && (
             <div style={{
               position: 'absolute',
               right: 0,
               top: '100%',
               marginTop: '8px',
-              width: '320px',
+              width: isMobile ? '300px' : '360px',
+              maxHeight: '400px',
               background: 'hsla(0, 0%, 100%, 0.95)',
               backdropFilter: 'blur(20px)',
               border: '1px solid hsla(0, 0%, 100%, 0.2)',
               borderRadius: '12px',
               boxShadow: '0 16px 48px rgba(0, 0, 0, 0.1)',
               zIndex: 1000,
-              padding: '16px'
-            }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: '#1f2937', marginBottom: '12px' }}>
-                Notifiche
+              overflow: 'hidden'
+            }} data-testid="notification-dropdown">
+              {/* Header */}
+              <div style={{
+                padding: '16px 16px 12px',
+                borderBottom: '1px solid hsla(0, 0%, 0%, 0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#1f2937' }}>
+                  Notifiche {unreadCount > 0 && `(${unreadCount})`}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const unreadIds = notifications.filter(n => n.status === 'unread').map(n => n.id);
+                        if (unreadIds.length > 0) {
+                          await apiService.bulkMarkNotificationsRead(unreadIds);
+                          refetchUnreadCount();
+                          refetchNotifications();
+                        }
+                      } catch (error) {
+                        console.error('Failed to mark all as read:', error);
+                      }
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#3b82f6',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}
+                    data-testid="mark-all-read-button"
+                  >
+                    Segna tutte come lette
+                  </button>
+                )}
               </div>
-              <div style={{ fontSize: '13px', color: '#6b7280', textAlign: 'center', padding: '20px' }}>
-                Nessuna notifica al momento
+
+              {/* Notification List */}
+              <div style={{ 
+                maxHeight: '320px',
+                overflowY: 'auto',
+                padding: notifications.length === 0 ? '20px' : '0'
+              }}>
+                {notifications.length === 0 ? (
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#6b7280', 
+                    textAlign: 'center',
+                    padding: '20px'
+                  }}>
+                    {notificationsData ? 'Nessuna notifica non letta' : 'Caricamento notifiche...'}
+                  </div>
+                ) : (
+                  notifications.map((notification: any, index: number) => (
+                    <div
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      style={{
+                        padding: '12px 16px',
+                        borderBottom: index < notifications.length - 1 ? '1px solid hsla(0, 0%, 0%, 0.05)' : 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        background: notification.status === 'unread' ? 'hsla(59, 100%, 96%, 0.5)' : 'transparent',
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = notification.status === 'unread' 
+                          ? 'hsla(59, 100%, 94%, 0.8)' 
+                          : 'hsla(0, 0%, 0%, 0.02)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = notification.status === 'unread' 
+                          ? 'hsla(59, 100%, 96%, 0.5)' 
+                          : 'transparent';
+                      }}
+                      data-testid={`notification-item-${notification.id}`}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                        {/* Icon */}
+                        <div style={{ 
+                          marginTop: '2px',
+                          flexShrink: 0
+                        }}>
+                          {getNotificationIcon(notification.type, notification.priority)}
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            marginBottom: '4px'
+                          }}>
+                            <div style={{
+                              fontSize: '13px',
+                              fontWeight: 600,
+                              color: '#1f2937',
+                              lineHeight: 1.2,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              flex: 1
+                            }}>
+                              {notification.title}
+                            </div>
+                            <div style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              background: getPriorityColor(notification.priority),
+                              flexShrink: 0
+                            }} />
+                          </div>
+                          
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            lineHeight: 1.3,
+                            marginBottom: '6px',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {notification.message}
+                          </div>
+
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}>
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#9ca3af'
+                            }}>
+                              {formatRelativeTime(notification.createdAt)}
+                            </div>
+                            
+                            {notification.status === 'unread' && (
+                              <div style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background: '#3b82f6'
+                              }} />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
+
+              {/* Footer */}
+              {notifications.length > 0 && (
+                <div style={{
+                  padding: '12px 16px',
+                  borderTop: '1px solid hsla(0, 0%, 0%, 0.05)',
+                  textAlign: 'center'
+                }}>
+                  <button
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#3b82f6',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      fontWeight: 500
+                    }}
+                    data-testid="view-all-notifications-button"
+                  >
+                    Vedi tutte le notifiche
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

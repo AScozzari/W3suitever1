@@ -33,6 +33,11 @@ export const scopeTypeEnum = pgEnum('scope_type', ['tenant', 'legal_entity', 'st
 export const permModeEnum = pgEnum('perm_mode', ['grant', 'revoke']);
 export const userStatusEnum = pgEnum('user_status', ['attivo', 'sospeso', 'off-boarding']);
 
+// Notification System Enums
+export const notificationTypeEnum = pgEnum('notification_type', ['system', 'security', 'data', 'custom']);
+export const notificationPriorityEnum = pgEnum('notification_priority', ['low', 'medium', 'high', 'critical']);
+export const notificationStatusEnum = pgEnum('notification_status', ['unread', 'read']);
+
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -383,6 +388,46 @@ export const insertStructuredLogSchema = createInsertSchema(structuredLogs).omit
 export type InsertStructuredLog = z.infer<typeof insertStructuredLogSchema>;
 export type StructuredLog = typeof structuredLogs.$inferSelect;
 
+// ==================== NOTIFICATIONS SYSTEM ====================
+export const notifications = w3suiteSchema.table("notifications", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Notification Classification
+  type: notificationTypeEnum("type").notNull().default("system"),
+  priority: notificationPriorityEnum("priority").notNull().default("medium"),
+  status: notificationStatusEnum("status").notNull().default("unread"),
+  
+  // Content
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  data: jsonb("data").default({}), // Extra structured data
+  url: varchar("url", { length: 500 }), // Deep link URL
+  
+  // Targeting
+  targetUserId: varchar("target_user_id").references(() => users.id), // Specific user (null = broadcast)
+  targetRoles: text("target_roles").array(), // Role-based targeting
+  broadcast: boolean("broadcast").default(false), // Send to all tenant users
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"), // Auto-cleanup for temp notifications
+}, (table) => [
+  // Performance indexes for common queries
+  index("notifications_tenant_status_created_idx").on(table.tenantId, table.status, table.createdAt.desc()),
+  index("notifications_tenant_user_status_idx").on(table.tenantId, table.targetUserId, table.status),
+  index("notifications_target_roles_gin_idx").using("gin", table.targetRoles),
+  index("notifications_expires_at_idx").on(table.expiresAt),
+  index("notifications_tenant_priority_created_idx").on(table.tenantId, table.priority, table.createdAt.desc()),
+]);
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
 // ==================== DRIZZLE RELATIONS ====================
 
 // Tenants Relations
@@ -397,6 +442,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   userLegalEntities: many(userLegalEntities),
   storeBrands: many(storeBrands),
   storeDriverPotential: many(storeDriverPotential),
+  notifications: many(notifications),
 }));
 
 // Users Relations
@@ -409,6 +455,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   userExtraPerms: many(userExtraPerms),
   entityLogs: many(entityLogs),
   structuredLogs: many(structuredLogs),
+  notifications: many(notifications),
 }));
 
 // Legal Entities Relations
@@ -491,4 +538,10 @@ export const userLegalEntitiesRelations = relations(userLegalEntities, ({ one })
   user: one(users, { fields: [userLegalEntities.userId], references: [users.id] }),
   legalEntity: one(legalEntities, { fields: [userLegalEntities.legalEntityId], references: [legalEntities.id] }),
   tenant: one(tenants, { fields: [userLegalEntities.tenantId], references: [tenants.id] }),
+}));
+
+// Notifications Relations
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  tenant: one(tenants, { fields: [notifications.tenantId], references: [tenants.id] }),
+  targetUser: one(users, { fields: [notifications.targetUserId], references: [users.id] }),
 }));
