@@ -1148,6 +1148,308 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== UNIFIED RBAC API ====================
+
+  // Get all permissions from registry (flat list for UI)
+  app.get('/api/rbac/permissions', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.view'), async (req: any, res) => {
+    try {
+      const { getAllPermissions } = await import('../core/permissions/registry.js');
+      const permissions = getAllPermissions();
+      
+      // Return as flat array of permission strings for easy UI consumption
+      res.json({
+        permissions: permissions.sort(),
+        total: permissions.length
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero permessi');
+    }
+  });
+
+  // Get all roles for the current tenant
+  app.get('/api/rbac/roles', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const roles = await rbacStorage.getRolesByTenant(tenantId);
+      res.json({
+        roles,
+        total: roles.length
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero ruoli RBAC');
+    }
+  });
+
+  // Create a new custom role
+  app.post('/api/rbac/roles', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.create'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(insertRoleSchema.omit({ tenantId: true }), req.body, res);
+      if (!validatedData) return;
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const role = await rbacStorage.createRole(tenantId, validatedData as any);
+      res.status(201).json(role);
+    } catch (error) {
+      handleApiError(error, res, 'creazione ruolo RBAC');
+    }
+  });
+
+  // Update an existing role
+  app.patch('/api/rbac/roles/:id', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.edit'), async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
+
+      // Validate request body - allow partial updates
+      const updateSchema = insertRoleSchema.omit({ tenantId: true }).partial();
+      const validatedData = validateRequestBody(updateSchema, req.body, res);
+      if (!validatedData) return;
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const role = await rbacStorage.updateRole(req.params.id, validatedData);
+      
+      if (!role) {
+        return res.status(404).json({ error: 'Ruolo non trovato' });
+      }
+      
+      res.json(role);
+    } catch (error) {
+      if (error.message?.includes('system role')) {
+        return res.status(403).json({ 
+          error: 'forbidden',
+          message: 'Non è possibile modificare un ruolo di sistema' 
+        });
+      }
+      handleApiError(error, res, 'aggiornamento ruolo RBAC');
+    }
+  });
+
+  // Delete a role (only non-system roles)
+  app.delete('/api/rbac/roles/:id', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.delete'), async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.deleteRole(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      if (error.message?.includes('system role')) {
+        return res.status(403).json({ 
+          error: 'forbidden',
+          message: 'Non è possibile eliminare un ruolo di sistema' 
+        });
+      }
+      handleApiError(error, res, 'eliminazione ruolo RBAC');
+    }
+  });
+
+  // Get permissions for a specific role
+  app.get('/api/rbac/roles/:id/permissions', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.view'), async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const permissions = await rbacStorage.getRolePermissions(req.params.id);
+      res.json({
+        roleId: req.params.id,
+        permissions,
+        total: permissions.length
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero permessi ruolo');
+    }
+  });
+
+  // Set permissions for a role (replace all permissions)
+  app.put('/api/rbac/roles/:id/permissions', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.edit'), async (req: any, res) => {
+    try {
+      if (!validateUUIDParam(req.params.id, 'ID ruolo', res)) return;
+
+      const { permissions } = req.body;
+      if (!Array.isArray(permissions)) {
+        return res.status(400).json({
+          error: 'invalid_permissions',
+          message: 'Il campo permissions deve essere un array'
+        });
+      }
+
+      // Validate that all permissions exist
+      const { getAllPermissions } = await import('../core/permissions/registry.js');
+      const validPermissions = getAllPermissions();
+      const invalidPermissions = permissions.filter(p => !validPermissions.includes(p));
+      
+      if (invalidPermissions.length > 0) {
+        return res.status(400).json({
+          error: 'invalid_permissions',
+          message: `Permessi non validi: ${invalidPermissions.join(', ')}`
+        });
+      }
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.setRolePermissions(req.params.id, permissions);
+      res.json({
+        roleId: req.params.id,
+        permissions,
+        message: 'Permessi aggiornati con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento permessi ruolo');
+    }
+  });
+
+  // Get user role assignments
+  app.get('/api/rbac/users/:userId/assignments', enterpriseAuth, rbacMiddleware, requirePermission('settings.users.view'), async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      const assignments = await rbacStorage.getUserRoles(userId, tenantId);
+      const permissions = await rbacStorage.getUserPermissions(userId, tenantId);
+
+      res.json({
+        userId,
+        assignments: assignments.map(a => ({
+          id: `${a.assignment.userId}-${a.assignment.roleId}-${a.assignment.scopeType}-${a.assignment.scopeId}`,
+          role: a.role,
+          assignment: a.assignment
+        })),
+        effectivePermissions: permissions,
+        total: assignments.length
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero assegnazioni utente');
+    }
+  });
+
+  // Assign role to user
+  app.post('/api/rbac/users/:userId/assignments', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.assign'), async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate request body
+      const assignmentSchema = insertUserAssignmentSchema.omit({ userId: true });
+      const validatedData = validateRequestBody(assignmentSchema, req.body, res);
+      if (!validatedData) return;
+
+      const assignmentData = {
+        ...validatedData as any,
+        userId,
+        scopeId: validatedData.scopeId || tenantId // Default to tenant scope if not specified
+      };
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.assignRoleToUser(assignmentData);
+      
+      res.status(201).json({
+        userId,
+        assignment: assignmentData,
+        message: 'Ruolo assegnato con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'assegnazione ruolo utente');
+    }
+  });
+
+  // Remove role assignment from user
+  app.delete('/api/rbac/users/:userId/assignments/:assignmentId', enterpriseAuth, rbacMiddleware, requirePermission('settings.roles.assign'), async (req: any, res) => {
+    try {
+      const { userId, assignmentId } = req.params;
+      
+      // Parse compound assignment ID: userId-roleId-scopeType-scopeId
+      const parts = assignmentId.split('-');
+      if (parts.length < 4) {
+        return res.status(400).json({
+          error: 'invalid_assignment_id',
+          message: 'Format ID assegnazione non valido'
+        });
+      }
+      
+      const [, roleId, scopeType, ...scopeIdParts] = parts;
+      const scopeId = scopeIdParts.join('-'); // Handle UUIDs with hyphens
+
+      const { rbacStorage } = await import('../core/rbac-storage.js');
+      await rbacStorage.removeRoleFromUser(userId, roleId, scopeType, scopeId);
+      
+      res.status(204).send();
+    } catch (error) {
+      handleApiError(error, res, 'rimozione assegnazione ruolo');
+    }
+  });
+
+  // Update tenant RBAC settings
+  app.patch('/api/tenants/:id/settings', enterpriseAuth, rbacMiddleware, requirePermission('settings.organization.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.params.id;
+      const currentUserTenantId = req.user?.tenantId;
+      
+      // Users can only modify their own tenant settings
+      if (tenantId !== currentUserTenantId) {
+        return res.status(403).json({ 
+          error: 'forbidden',
+          message: 'Non autorizzato a modificare le impostazioni di questo tenant' 
+        });
+      }
+
+      const { settings } = req.body;
+      if (!settings || typeof settings !== 'object') {
+        return res.status(400).json({ 
+          error: 'invalid_settings',
+          message: 'Campo settings richiesto e deve essere un oggetto' 
+        });
+      }
+
+      // Get current tenant settings
+      const [currentTenant] = await db
+        .select({ settings: tenants.settings })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId));
+
+      if (!currentTenant) {
+        return res.status(404).json({ error: 'Tenant non trovato' });
+      }
+
+      const currentSettings = currentTenant.settings || {};
+      const updatedSettings = { ...currentSettings, ...settings };
+
+      // Update tenant settings
+      await db
+        .update(tenants)
+        .set({ 
+          settings: updatedSettings,
+          updatedAt: new Date() 
+        })
+        .where(eq(tenants.id, tenantId));
+
+      res.json({
+        tenantId,
+        settings: updatedSettings,
+        message: 'Impostazioni tenant aggiornate con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento impostazioni tenant');
+    }
+  });
+
   // ==================== STRUCTURED LOGS API ====================
 
   // Get structured logs with filtering and pagination
