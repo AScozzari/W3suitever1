@@ -342,63 +342,37 @@ export class RBACStorage {
   // ==================== INITIALIZATION ====================
   
   async initializeSystemRoles(tenantId: string) {
-    // Create default system roles based on ROLE_TEMPLATES from registry
-    const systemRoles = [
-      {
-        name: 'admin',
-        description: 'Full system access',
-        isSystem: true,
-        level: 1
-      },
-      {
-        name: 'store_manager',
-        description: 'Store management access',
-        isSystem: true,
-        level: 10
-      },
-      {
-        name: 'finance',
-        description: 'Financial operations access',
-        isSystem: true,
-        level: 20
-      },
-      {
-        name: 'marketing',
-        description: 'Marketing and CRM access',
-        isSystem: true,
-        level: 30
-      },
-      {
-        name: 'operations',
-        description: 'Operations and inventory access',
-        isSystem: true,
-        level: 40
-      },
-      {
-        name: 'viewer',
-        description: 'Read-only access',
-        isSystem: true,
-        level: 100
-      }
-    ];
-
-    for (const roleData of systemRoles) {
-      const [existingRole] = await db
+    // Use the comprehensive RBAC seeding system instead of duplicating role definitions
+    const { seedRBACForTenant } = await import('../db/seed-rbac');
+    
+    console.log(`[RBAC-INIT] Initializing system roles for tenant ${tenantId} using comprehensive seed data`);
+    
+    try {
+      await seedRBACForTenant(tenantId);
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize system roles:', error);
+      // Fallback: create minimal admin role if seeding fails
+      const [existingAdmin] = await db
         .select()
         .from(roles)
         .where(
           and(
             eq(roles.tenantId, tenantId),
-            eq(roles.name, roleData.name)
+            eq(roles.name, 'admin')
           )
         );
 
-      if (!existingRole) {
-        await this.createRole(tenantId, roleData);
+      if (!existingAdmin) {
+        await this.createRole(tenantId, {
+          name: 'admin',
+          description: 'Full system access',
+          isSystem: true
+        });
       }
+      
+      return false;
     }
-
-    return true;
   }
 }
 

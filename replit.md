@@ -68,6 +68,39 @@ The project is structured as an enterprise monorepo, separating tenant-facing ap
   - **1:Many Relations**: Punto vendita→Brand (store_brands join table), Utente→Punti vendita (user_stores join table with isPrimary flag)
 - **Brand Interface Features**: Centralized Super Admin role, cross-tenant campaign creation, pricing management, business driver definition, and selective deployment via BullMQ event propagation.
 
+# RBAC System (Current State - In Need of Consolidation)
+
+## Current RBAC Components (Multiple Implementations - NEEDS CLEANUP)
+
+**Backend Components:**
+- **permissions/registry.ts**: Central registry of all system permissions (source of truth), includes ROLE_TEMPLATES with predefined roles (admin, finance, direttore, store_manager, etc.)
+- **rbac-storage.ts**: Complete CRUD operations for roles, permissions, user assignments, supports hierarchical scopes (tenant/legal_entity/store), wildcard permissions, extra permissions with expiration
+- **middleware/tenant.ts**: Main RBAC middleware with rbac_enabled flag support, wildcard admin permissions when disabled, granular when enabled
+- **middleware/tenantMiddleware.ts**: DUPLICATE middleware (needs removal)
+- **Database seeding**: Both SQL seed files AND initializeSystemRoles code (potential conflicts)
+
+**Frontend Components:**
+- **SettingsPage.tsx**: Monolithic UI with "Gestione Ruoli" section, role templates display, permission toggles, "Crea Ruolo Custom" button (has runtime crashes, needs API connection)
+
+**Critical Issues Identified:**
+1. **Middleware Duplication**: tenant.ts vs tenantMiddleware.ts creates confusion
+2. **Double Seeding**: SQL seeds vs code initialization may create duplicates
+3. **Disconnected UI**: Frontend hardcoded, not connected to backend APIs
+4. **Missing REST APIs**: No unified /api/rbac endpoints for frontend consumption
+5. **Runtime Errors**: SettingsPage crashes, needs fixing
+
+**Consolidation Plan (Step-by-Step):**
+1. **Backend Unification**: Remove duplicate middleware, unify seeding, create REST APIs
+2. **Frontend Alignment**: Connect UI to APIs, fix crashes, add real functionality
+3. **Data Migration**: Cleanup duplicates, ensure consistency
+
+**Current Functional Status:**
+- ✅ Backend logic complete but fragmented
+- ✅ Database schema solid
+- ❌ Frontend-backend integration broken
+- ❌ Multiple implementation conflicts
+- ❌ API endpoints not exposed
+
 # External Dependencies
 
 ## Database Services

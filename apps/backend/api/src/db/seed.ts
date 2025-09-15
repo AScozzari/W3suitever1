@@ -27,7 +27,7 @@ async function seedDatabase() {
     const [tenant] = await db.insert(tenants).values({
       id: DEMO_TENANT_ID,
       name: 'Demo Organization',
-      slug: 'demo-org',
+      slug: 'w3-demo',
       status: 'active',
       settings: {
         theme: 'windtre',

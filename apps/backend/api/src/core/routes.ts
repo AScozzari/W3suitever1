@@ -4,8 +4,7 @@ import { storage } from "./storage";
 // OAuth legacy system removed - using only OAuth2 enterprise
 import { setupOAuth2Server } from "./oauth2-server";
 import { dashboardService } from "./dashboard-service";
-import { tenantMiddleware, validateTenantAccess, addTenantToData } from "../middleware/tenantMiddleware";
-import { rbacMiddleware, requirePermission } from "../middleware/tenant";
+import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware } from "./logger";
 import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
