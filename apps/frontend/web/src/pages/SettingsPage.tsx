@@ -1170,12 +1170,7 @@ export default function SettingsPage() {
             { id: 'ragione-sociale', icon: Building2, label: 'Ragione Sociale', color: '#FF6900' },
             { id: 'punti-vendita', icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
-            { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
-            { id: 'smart-automation', icon: Server, label: 'Smart Automation', color: '#10b981' },
-            { id: 'servizi', icon: Activity, label: 'Servizi', color: '#f59e0b' },
-            { id: 'auto-reporting', icon: FileText, label: 'Auto Reporting', color: '#ef4444' },
-            { id: 'gdpr', icon: Shield, label: 'GDPR', color: '#8b5cf6' },
-            { id: 'alert-notifications', icon: Bell, label: 'Alert Notifications', color: '#06b6d4' }
+            { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' }
           ].map((item, index) => {
             const Icon = item.icon;
             return (
@@ -2386,7 +2381,7 @@ export default function SettingsPage() {
                     </div>
                   ))
                 ) : (
-                  organizePermissionsByCategory(rbacPermissionsData.permissions || []).map((cat) => (
+                  organizePermissionsByCategory(rbacPermissionsData?.permissions || []).map((cat) => (
                     <div
                     key={cat.category}
                     style={{
@@ -2497,16 +2492,6 @@ export default function SettingsPage() {
         </div>
       )}
       
-      {(selectedEntity === 'smart-automation' || 
-        selectedEntity === 'servizi' || 
-        selectedEntity === 'auto-reporting' || 
-        selectedEntity === 'gdpr' || 
-        selectedEntity === 'alert-notifications') && (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>In Sviluppo</h3>
-          <p>Questa funzionalità sarà disponibile a breve</p>
-        </div>
-      )}
     </div>
   );
 

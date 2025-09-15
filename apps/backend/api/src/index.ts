@@ -15,8 +15,8 @@ let brandFrontendProcess: ChildProcess | null = null;
 let w3FrontendProcess: ChildProcess | null = null;
 let brandBackendProcess: ChildProcess | null = null;
 
-// Feature flag for nginx management
-const ENABLE_EMBEDDED_NGINX = true;
+// Feature flag for nginx management  
+const ENABLE_EMBEDDED_NGINX = process.env.ENABLE_EMBEDDED_NGINX === 'true' || false;
 
 // Start application based on feature flag
 if (ENABLE_EMBEDDED_NGINX) {
@@ -28,7 +28,7 @@ if (ENABLE_EMBEDDED_NGINX) {
   console.log("🔧 Starting in PURE BACKEND mode (nginx-external)");
   console.log("📋 Nginx process management: DISABLED");
   console.log("🎯 Frontend services management: DISABLED");
-  console.log("🚀 Backend will run standalone on port 3004");
+  console.log("🚀 Backend will run standalone on platform port (ENV PORT)");
   startBackendOnly();
 }
 
@@ -288,8 +288,8 @@ async function startBackendOnly() {
   process.on("SIGTERM", gracefulShutdown);
   process.on("SIGINT", gracefulShutdown);
 
-  // W3 Suite backend on dedicated port 3004 (for external nginx proxy)
-  const backendPort = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
+  // W3 Suite backend on platform port (when nginx disabled)
+  const backendPort = Number(process.env.PORT || process.env.W3_BACKEND_PORT || 3004);
 
   httpServer.listen(backendPort, "0.0.0.0", async () => {
     console.log(`🚀 W3 Suite backend running on 0.0.0.0:${backendPort} (pure backend mode)`);
