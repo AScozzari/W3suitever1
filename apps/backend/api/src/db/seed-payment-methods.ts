@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { db } from "../core/db";
 import { paymentMethods } from "./schema/public";
 
@@ -6,6 +7,37 @@ import { paymentMethods } from "./schema/public";
  */
 export async function seedPaymentMethods() {
   console.log("💳 Seeding payment methods...");
+
+  // ==================== CREATE TABLE IF NOT EXISTS (IDEMPOTENT) ====================
+  console.log("🔧 Ensuring payment_methods table exists...");
+  
+  // Enable UUID generation
+  await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+  
+  // Create payment_methods table if it doesn't exist
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS public.payment_methods (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      code varchar(50) UNIQUE NOT NULL,
+      name varchar(100) NOT NULL,
+      description text,
+      category varchar(50) NOT NULL,
+      requires_iban boolean DEFAULT false,
+      requires_auth boolean DEFAULT false,
+      supports_batching boolean DEFAULT false,
+      country_code varchar(3),
+      active boolean DEFAULT true,
+      is_default boolean DEFAULT false,
+      sort_order smallint DEFAULT 0,
+      created_at timestamp DEFAULT now()
+    );
+  `);
+
+  // Create indexes if they don't exist
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_payment_methods_category ON public.payment_methods(category);`);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_payment_methods_country ON public.payment_methods(country_code);`);
+  
+  console.log("✅ payment_methods table ready!");
 
   const paymentMethodsData = [
     // ==================== BONIFICI E TRASFERIMENTI ====================

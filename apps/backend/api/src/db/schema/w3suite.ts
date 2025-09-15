@@ -23,7 +23,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Import public schema tables for FK references
-import { brands, channels, commercialAreas, drivers } from './public';
+import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods } from './public';
 
 // ==================== W3 SUITE SCHEMA ====================
 export const w3suiteSchema = pgSchema("w3suite");
@@ -41,6 +41,11 @@ export const notificationStatusEnum = pgEnum('notification_status', ['unread', '
 // Object Storage Enums
 export const objectVisibilityEnum = pgEnum('object_visibility', ['public', 'private']);
 export const objectTypeEnum = pgEnum('object_type', ['avatar', 'document', 'image', 'file']);
+
+// Supplier Enums
+export const supplierOriginEnum = pgEnum('supplier_origin', ['brand', 'tenant']);
+export const supplierTypeEnum = pgEnum('supplier_type', ['distributore', 'produttore', 'servizi', 'logistica']);
+export const supplierStatusEnum = pgEnum('supplier_status', ['active', 'suspended', 'blocked']);
 
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
@@ -494,6 +499,99 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
+// ==================== SUPPLIERS (Brand Base + Tenant Override Pattern) ====================
+export const suppliers = w3suiteSchema.table("suppliers", {
+  // ==================== IDENTITÀ & CLASSIFICAZIONE ====================
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  origin: supplierOriginEnum("origin").notNull(), // 'brand' | 'tenant'
+  tenantId: uuid("tenant_id").references(() => tenants.id), // NULL per supplier brand-managed
+  externalId: varchar("external_id", { length: 100 }), // ID da Brand Interface
+  code: varchar("code", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // Nome commerciale
+  legalName: varchar("legal_name", { length: 255 }), // Ragione sociale legale
+  supplierType: supplierTypeEnum("supplier_type").notNull(),
+  
+  // ==================== DATI FISCALI ITALIA ====================
+  vatNumber: varchar("vat_number", { length: 20 }), // P.IVA
+  taxCode: varchar("tax_code", { length: 20 }), // Codice Fiscale (opzionale)
+  sdiCode: varchar("sdi_code", { length: 20 }), // Codice SDI fatturazione elettronica
+  pecEmail: varchar("pec_email", { length: 255 }), // PEC (alternativa a SDI)
+  reaNumber: varchar("rea_number", { length: 50 }), // Numero REA
+  chamberOfCommerce: varchar("chamber_of_commerce", { length: 255 }),
+  
+  // ==================== INDIRIZZO SEDE LEGALE ====================
+  registeredAddress: jsonb("registered_address"), // { via, civico, cap, citta, provincia }
+  cityId: uuid("city_id").references(() => italianCities.id), // FK to public.italian_cities
+  countryId: uuid("country_id").references(() => countries.id).notNull(), // FK to public.countries
+  
+  // ==================== PAGAMENTI ====================
+  preferredPaymentMethodId: uuid("preferred_payment_method_id").references(() => paymentMethods.id),
+  paymentTerms: varchar("payment_terms", { length: 100 }), // "30DFFM", "60GGDF", etc.
+  currency: varchar("currency", { length: 3 }).default("EUR"),
+  
+  // ==================== CONTROLLO & STATO ====================
+  status: supplierStatusEnum("status").notNull().default("active"),
+  lockedFields: text("locked_fields").array().default([]), // Campi bloccati dal brand
+  
+  // ==================== METADATI ====================
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  notes: text("notes"),
+}, (table) => [
+  // Performance indexes
+  index("suppliers_tenant_code_idx").on(table.tenantId, table.code),
+  index("suppliers_origin_status_idx").on(table.origin, table.status),
+  index("suppliers_vat_number_idx").on(table.vatNumber),
+  index("suppliers_name_idx").on(table.name),
+  uniqueIndex("suppliers_code_unique").on(table.code),
+]);
+
+export const insertSupplierSchema = createInsertSchema(suppliers).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+export type Supplier = typeof suppliers.$inferSelect;
+
+// ==================== SUPPLIER OVERRIDES (Tenant Customizations) ====================
+export const supplierOverrides = w3suiteSchema.table("supplier_overrides", {
+  supplierId: uuid("supplier_id").notNull().references(() => suppliers.id),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // ==================== OVERRIDE FIELDS ====================
+  overrides: jsonb("overrides").notNull().default({}), // Campi personalizzabili dal tenant
+  /* Esempio overrides:
+  {
+    "note_interne": "Fornitore preferito per elettronica",
+    "referente_locale": "Mario Rossi", 
+    "telefono_diretto": "+39 02 1234567",
+    "email_ordini": "ordini@tenant.com",
+    "condizioni_speciali": "Sconto 5% su ordini >1000€",
+    "priorita": "alta",
+    "giorni_consegna_custom": 3
+  }
+  */
+  
+  // ==================== METADATI OVERRIDE ====================
+  updatedBy: varchar("updated_by").notNull().references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  // Chiave primaria composta
+  primaryKey({ columns: [table.supplierId, table.tenantId] }),
+  // Performance indexes
+  index("supplier_overrides_tenant_idx").on(table.tenantId),
+  index("supplier_overrides_updated_idx").on(table.updatedAt.desc()),
+]);
+
+export const insertSupplierOverrideSchema = createInsertSchema(supplierOverrides).omit({ 
+  updatedAt: true 
+});
+export type InsertSupplierOverride = z.infer<typeof insertSupplierOverrideSchema>;
+export type SupplierOverride = typeof supplierOverrides.$inferSelect;
+
 // ==================== DRIZZLE RELATIONS ====================
 
 // Tenants Relations
@@ -623,4 +721,27 @@ export const objectAclsRelations = relations(objectAcls, ({ one }) => ({
   tenant: one(tenants, { fields: [objectAcls.tenantId], references: [tenants.id] }),
   ownerTenant: one(tenants, { fields: [objectAcls.ownerTenantId], references: [tenants.id] }),
   owner: one(users, { fields: [objectAcls.ownerId], references: [users.id] }),
+}));
+
+// ==================== SUPPLIERS RELATIONS ====================
+export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
+  // Relations verso w3suite schema
+  tenant: one(tenants, { fields: [suppliers.tenantId], references: [tenants.id] }),
+  createdByUser: one(users, { fields: [suppliers.createdBy], references: [users.id] }),
+  updatedByUser: one(users, { fields: [suppliers.updatedBy], references: [users.id] }),
+  
+  // Relations verso public schema (reference tables)
+  city: one(italianCities, { fields: [suppliers.cityId], references: [italianCities.id] }),
+  country: one(countries, { fields: [suppliers.countryId], references: [countries.id] }),
+  preferredPaymentMethod: one(paymentMethods, { fields: [suppliers.preferredPaymentMethodId], references: [paymentMethods.id] }),
+  
+  // Relations verso overrides
+  overrides: many(supplierOverrides),
+}));
+
+// Supplier Overrides Relations
+export const supplierOverridesRelations = relations(supplierOverrides, ({ one }) => ({
+  supplier: one(suppliers, { fields: [supplierOverrides.supplierId], references: [suppliers.id] }),
+  tenant: one(tenants, { fields: [supplierOverrides.tenantId], references: [tenants.id] }),
+  updatedByUser: one(users, { fields: [supplierOverrides.updatedBy], references: [users.id] }),
 }));
