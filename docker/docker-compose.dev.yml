@@ -41,7 +41,7 @@ services:
     networks:
       - w3suite-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -56,7 +56,7 @@ services:
     networks:
       - w3suite-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9000/minio/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -85,7 +85,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3004/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3004/api/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -109,7 +109,7 @@ services:
     networks:
       - w3suite-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000 || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -137,7 +137,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3002/brand-api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3002/brand-api/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -161,7 +161,7 @@ services:
     networks:
       - w3suite-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001 || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001 || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -190,7 +190,7 @@ services:
       brand-frontend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:5000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -1,11 +1,11 @@
-# W3 Suite Enterprise - Nginx Development Configuration
-# Development setup with Vite HMR support and proxy to dev servers
-# Static configuration for development environment
+# W3 Suite Enterprise - Nginx Reverse Proxy Configuration
+# Professional setup replacing Node.js reverse proxy architecture
+# Runtime template - {{PORT}} will be replaced with process.env.PORT
 
 # Basic configuration
 worker_processes auto;
-error_log /var/log/nginx/error.log warn;
-pid /var/run/nginx/nginx.pid;
+error_log logs/nginx_error.log warn;
+# PID managed by -p prefix and -g directive for isolation
 
 events {
     worker_connections 1024;
@@ -14,7 +14,7 @@ events {
 
 http {
     # MIME types and basic settings
-    include /etc/nginx/mime.types;
+    include /nix/store/i5qvccn7s52qfzq14400wzf98jinibvm-nginx-1.26.1/conf/mime.types;
     default_type application/octet-stream;
     
     # WebSocket connection upgrade mapping for Vite HMR
@@ -23,8 +23,8 @@ http {
         '' close;
     }
     
-    # Logging
-    access_log /var/log/nginx/access.log;
+    # Logging - using prefix-relative paths
+    access_log logs/nginx_access.log;
     
     # Performance optimizations
     sendfile on;
@@ -48,35 +48,39 @@ http {
     
     # Upstream backends
     upstream w3_backend {
-        server w3-backend:3004;
+        server localhost:3004;
         keepalive 8;
     }
     
     upstream brand_backend {
-        server brand-backend:3002;
+        server localhost:3002;
         keepalive 8;
     }
     
     # Frontend Vite dev servers for development
     upstream w3_frontend {
-        server w3-frontend:3000;
+        server localhost:3000;
         keepalive 8;
     }
     
     upstream brand_frontend {
-        server brand-frontend:3001;
+        server localhost:3001;
         keepalive 8;
     }
     
     # Main server configuration
     server {
-        listen 0.0.0.0:5000;
+        listen 0.0.0.0:{{PORT}};
         server_name localhost;
         
         # Security headers
         add_header X-Frame-Options "SAMEORIGIN" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-XSS-Protection "1; mode=block" always;
+        
+        # Development mode - proxy to Vite servers
+        # root /tmp/nginx_static;
+        # index index.html;
         
         # Health check endpoint
         location = /health {
@@ -85,7 +89,9 @@ http {
             add_header Content-Type text/plain;
         }
         
-        # API Routing - W3 Suite Backend - Using simple prefix locations for reliability
+        # Removed hardcoded root fallback to enable W3 Suite frontend proxy
+        
+        # API Routing - W3 Suite Backend (localhost:3004) - Using simple prefix locations for reliability
         location /api/ {
             proxy_pass http://w3_backend;
             proxy_http_version 1.1;
@@ -126,7 +132,7 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
         
-        # Brand API Routing
+        # Brand API Routing (localhost:3002)
         location /brand-api/ {
             proxy_pass http://brand_backend;
             proxy_http_version 1.1;
@@ -144,8 +150,6 @@ http {
         
         # Brand Interface SPA - Direct proxy for Vite HMR compatibility
         location ^~ /brandinterface/ {
-            # Remove /brandinterface prefix when proxying to backend
-            rewrite ^/brandinterface/(.*) /$1 break;
             proxy_pass http://brand_frontend;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
@@ -162,23 +166,6 @@ http {
             
             # Fallback message if brand frontend is not available
             error_page 502 503 504 @brand_fallback;
-        }
-        
-        # Brand Interface SPA - Handle Vite HMR WebSocket connections
-        location ^~ /brandinterface/@vite/ {
-            rewrite ^/brandinterface/(.*) /$1 break;
-            proxy_pass http://brand_frontend;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection $connection_upgrade;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_cache_bypass $http_upgrade;
-            proxy_connect_timeout 60s;
-            proxy_send_timeout 60s;
-            proxy_read_timeout 3600s;
         }
         
         location @brand_fallback {
