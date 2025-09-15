@@ -7355,7 +7355,7 @@ export default function SettingsPage() {
                   justifyContent: 'center'
                 }}>
                   <AvatarSelector
-                    currentAvatarUrl={newUser.avatar.url || undefined}
+                    currentAvatarUrl={newUser.avatar?.url || undefined}
                     firstName={newUser.nome}
                     lastName={newUser.cognome}
                     username={newUser.username}
