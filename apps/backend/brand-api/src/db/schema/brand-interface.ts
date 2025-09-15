@@ -1,5 +1,7 @@
 import { pgTable, varchar, text, boolean, uuid, timestamp, smallint, date, integer, jsonb, pgSchema, pgEnum } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { z } from "zod";
 
 // Create brand_interface schema
 export const brandInterfaceSchema = pgSchema("brand_interface");
@@ -91,3 +93,119 @@ export type BrandRole = typeof brandRoles.$inferSelect;
 export type NewBrandRole = typeof brandRoles.$inferInsert;
 export type BrandAuditLog = typeof brandAuditLogs.$inferSelect;
 export type NewBrandAuditLog = typeof brandAuditLogs.$inferInsert;
+
+// ==================== MANAGEMENT DTOs ====================
+
+// Store/PDV DTOs for Management Structure tab
+export interface StoreListDTO {
+  id: string;
+  codigo: string;
+  ragioneSocialeId: string;
+  ragioneSocialeName: string;
+  nome: string;
+  via: string;
+  citta: string;
+  provincia: string;
+  stato: 'active' | 'inactive' | 'pending';
+  canale: string;
+  areaCommerciale: string;
+  dataApertura?: string;
+  manager?: string;
+  telefono?: string;
+  email?: string;
+  tenantId: string;
+  tenantName: string;
+}
+
+// Store list filters DTO
+export interface StoreFiltersDTO {
+  areaCommerciale?: string;
+  canale?: string;
+  citta?: string;
+  provincia?: string;
+  stato?: 'active' | 'inactive' | 'pending' | 'all';
+  search?: string;
+  tenantId?: string;
+  page?: number;
+  limit?: number;
+}
+
+// Store list response DTO
+export interface StoreListResponseDTO {
+  stores: StoreListDTO[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  filters: StoreFiltersDTO;
+}
+
+// Structure stats DTO
+export interface StructureStatsDTO {
+  totalStores: number;
+  activeStores: number;
+  storesByChannel: Array<{
+    canale: string;
+    count: number;
+    percentage: number;
+  }>;
+  storesByArea: Array<{
+    areaCommerciale: string;
+    count: number;
+    percentage: number;
+  }>;
+  recentStores: Array<{
+    id: string;
+    nome: string;
+    dataApertura: string;
+    stato: string;
+  }>;
+  growth: {
+    thisMonth: number;
+    lastMonth: number;
+    percentage: number;
+  };
+}
+
+// Organization creation DTO
+export interface CreateOrganizationDTO {
+  name: string;
+  slug?: string;
+  type?: string;
+  brandAdminEmail: string;
+  settings?: Record<string, any>;
+  features?: Record<string, any>;
+  maxConcurrentUsers?: number;
+  allowedIpRanges?: string[];
+}
+
+// Export CSV DTO
+export interface ExportStoresDTO {
+  format: 'csv' | 'xlsx';
+  filters?: StoreFiltersDTO;
+  columns?: string[];
+  includeStats?: boolean;
+}
+
+// Bulk operations DTO
+export interface BulkOperationDTO {
+  operation: 'activate' | 'deactivate' | 'delete' | 'update_channel' | 'update_area';
+  storeIds: string[];
+  values?: Record<string, any>;
+  reason?: string;
+}
+
+// Bulk operation result DTO
+export interface BulkOperationResultDTO {
+  success: boolean;
+  processedCount: number;
+  errorCount: number;
+  errors: Array<{
+    storeId: string;
+    error: string;
+  }>;
+  operation: string;
+  timestamp: string;
+}

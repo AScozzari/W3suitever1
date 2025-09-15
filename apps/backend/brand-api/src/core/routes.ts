@@ -518,9 +518,402 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== MANAGEMENT/STRUCTURE ENDPOINTS ====================
+  // New Management structure endpoints for Brand Interface
+
+  // Get structure stores with filters and pagination
+  app.get("/brand-api/structure/stores", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for structure management" });
+    }
+
+    try {
+      const filters = {
+        tenantId: req.query.tenantId as string,
+        areaCommerciale: req.query.areaCommerciale as string,
+        canale: req.query.canale as string,
+        citta: req.query.citta as string,
+        provincia: req.query.provincia as string,
+        stato: req.query.stato as 'active' | 'inactive' | 'pending' | 'all',
+        search: req.query.search as string,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20
+      };
+
+      const storesData = await brandStorage.getStructureStores(filters);
+
+      // Log the access for audit
+      await brandStorage.createAuditLog({
+        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'VIEW_STRUCTURE_STORES',
+        resourceType: 'stores',
+        resourceIds: storesData.stores.map(s => s.id),
+        metadata: {
+          filters,
+          resultsCount: storesData.stores.length,
+          totalCount: storesData.pagination.total
+        }
+      });
+
+      res.json({
+        success: true,
+        data: storesData,
+        message: `Retrieved ${storesData.stores.length} stores`
+      });
+    } catch (error) {
+      console.error("Error fetching structure stores:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch structure stores",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // SSE endpoint for real-time structure statistics
+  app.get("/brand-api/structure/stats/stream", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for structure statistics" });
+    }
+
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    const tenantId = req.query.tenantId as string;
+
+    // Function to send stats data
+    const sendStats = async () => {
+      try {
+        const stats = await brandStorage.getStructureStats(tenantId);
+        const data = {
+          success: true,
+          data: stats,
+          timestamp: new Date().toISOString()
+        };
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      } catch (error) {
+        console.error("Error fetching real-time stats:", error);
+        const errorData = {
+          success: false,
+          error: "Failed to fetch statistics",
+          timestamp: new Date().toISOString()
+        };
+        res.write(`data: ${JSON.stringify(errorData)}\n\n`);
+      }
+    };
+
+    // Send initial data immediately
+    await sendStats();
+
+    // Set up interval for real-time updates (every 30 seconds)
+    const interval = setInterval(sendStats, 30000);
+
+    // Clean up on client disconnect
+    req.on('close', () => {
+      clearInterval(interval);
+      res.end();
+    });
+
+    req.on('aborted', () => {
+      clearInterval(interval);
+      res.end();
+    });
+  });
+
+  // Get structure stores with filtering and pagination
+  app.get("/brand-api/structure/stores", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for structure data" });
+    }
+
+    try {
+      const filters = {
+        tenantId: req.query.tenantId as string,
+        areaCommerciale: req.query.areaCommerciale as string,
+        canale: req.query.canale as string,
+        citta: req.query.citta as string,
+        provincia: req.query.provincia as string,
+        stato: req.query.stato as 'active' | 'inactive' | 'pending' | 'all',
+        search: req.query.search as string,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 25
+      };
+
+      const storesData = await brandStorage.getStructureStores(filters);
+
+      res.json({
+        success: true,
+        data: storesData,
+        message: "Structure stores retrieved successfully"
+      });
+    } catch (error) {
+      console.error("Error fetching structure stores:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch structure stores",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Get audit logs
+  app.get("/brand-api/audit-logs", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for audit logs" });
+    }
+
+    try {
+      const tenantId = req.query.tenantId as string;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const auditLogs = await brandStorage.getAuditLogs(tenantId, limit);
+
+      res.json({
+        success: true,
+        data: { auditLogs },
+        message: "Audit logs retrieved successfully"
+      });
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch audit logs",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Get structure statistics
+  app.get("/brand-api/structure/stats", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for structure statistics" });
+    }
+
+    try {
+      const tenantId = req.query.tenantId as string;
+      const stats = await brandStorage.getStructureStats(tenantId);
+
+      // Log the access for audit
+      await brandStorage.createAuditLog({
+        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'VIEW_STRUCTURE_STATS',
+        resourceType: 'statistics',
+        metadata: {
+          tenantId,
+          totalStores: stats.totalStores,
+          activeStores: stats.activeStores
+        }
+      });
+
+      res.json({
+        success: true,
+        data: stats,
+        message: "Structure statistics retrieved successfully"
+      });
+    } catch (error) {
+      console.error("Error fetching structure stats:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch structure statistics",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Create new organization/tenant
+  app.post("/brand-api/tenants", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Only super_admin can create new organizations
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super administrators can create organizations" });
+    }
+
+    const organizationData = req.body;
+
+    // Validate required fields
+    if (!organizationData.name || !organizationData.brandAdminEmail) {
+      return res.status(400).json({ 
+        error: "Missing required fields: name and brandAdminEmail are required" 
+      });
+    }
+
+    try {
+      const newOrganization = await brandStorage.createOrganization(organizationData);
+
+      // Log the creation for audit
+      await brandStorage.createAuditLog({
+        tenantId: newOrganization.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'CREATE_ORGANIZATION',
+        resourceType: 'organization',
+        resourceIds: [newOrganization.id],
+        metadata: {
+          organizationName: newOrganization.name,
+          organizationSlug: newOrganization.slug,
+          brandAdminEmail: newOrganization.brandAdminEmail,
+          createdByUserId: user.id
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          id: newOrganization.id,
+          name: newOrganization.name,
+          slug: newOrganization.slug,
+          status: newOrganization.status,
+          brandAdminEmail: newOrganization.brandAdminEmail,
+          createdAt: newOrganization.createdAt
+        },
+        message: `Organization '${newOrganization.name}' created successfully`
+      });
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      res.status(500).json({ 
+        error: "Failed to create organization",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Export stores to CSV
+  app.get("/brand-api/structure/export.csv", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for data export" });
+    }
+
+    try {
+      const filters = {
+        tenantId: req.query.tenantId as string,
+        areaCommerciale: req.query.areaCommerciale as string,
+        canale: req.query.canale as string,
+        citta: req.query.citta as string,
+        provincia: req.query.provincia as string,
+        stato: req.query.stato as 'active' | 'inactive' | 'pending' | 'all',
+        search: req.query.search as string
+      };
+
+      const csvContent = await brandStorage.exportStoresCSV(filters);
+
+      // Log the export for audit
+      await brandStorage.createAuditLog({
+        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'EXPORT_STRUCTURE_STORES_CSV',
+        resourceType: 'export',
+        metadata: {
+          filters,
+          exportFormat: 'csv',
+          exportTimestamp: new Date().toISOString()
+        }
+      });
+
+      // Set CSV response headers
+      const filename = `stores-export-${new Date().toISOString().split('T')[0]}.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error exporting stores CSV:", error);
+      res.status(500).json({ 
+        error: "Failed to export stores data",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Perform bulk operations on stores
+  app.post("/brand-api/structure/bulk", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Only super_admin and national_manager can perform bulk operations
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions for bulk operations" });
+    }
+
+    const bulkOperation = req.body;
+
+    // Validate required fields
+    if (!bulkOperation.operation || !bulkOperation.storeIds || !Array.isArray(bulkOperation.storeIds)) {
+      return res.status(400).json({ 
+        error: "Missing required fields: operation and storeIds array are required" 
+      });
+    }
+
+    try {
+      const result = await brandStorage.performBulkOperation(bulkOperation);
+
+      // Log the bulk operation for audit
+      await brandStorage.createAuditLog({
+        tenantId: context.tenantId || '00000000-0000-0000-0000-000000000000',
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'PERFORM_BULK_OPERATION',
+        resourceType: 'stores',
+        resourceIds: bulkOperation.storeIds,
+        metadata: {
+          operation: bulkOperation.operation,
+          storeCount: bulkOperation.storeIds.length,
+          processedCount: result.processedCount,
+          errorCount: result.errorCount,
+          reason: bulkOperation.reason,
+          values: bulkOperation.values
+        }
+      });
+
+      res.json({
+        success: result.success,
+        data: result,
+        message: `Bulk ${bulkOperation.operation} completed: ${result.processedCount} processed, ${result.errorCount} errors`
+      });
+    } catch (error) {
+      console.error("Error performing bulk operation:", error);
+      res.status(500).json({ 
+        error: "Failed to perform bulk operation",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 
-  console.log("✅ Brand Interface API routes registered");
+  console.log("✅ Brand Interface API routes registered (including Management/Structure endpoints)");
   return server;
 }
