@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import {
   StandardEmailField,
   StandardCityField,
@@ -240,6 +241,42 @@ interface LogsResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+// Types for RBAC data
+interface RBACRole {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  isSystemRole: boolean;
+  color?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface RBACPermission {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  resource: string;
+  action: string;
+}
+
+interface RBACRolesResponse {
+  roles: RBACRole[];
+  success: boolean;
+}
+
+interface RBACPermissionsResponse {
+  permissions: string[];
+  success: boolean;
+}
+
+interface RolePermissionsResponse {
+  permissions: string[];
+  success: boolean;
 }
 
 // Dati caricati dal database
@@ -543,6 +580,24 @@ export default function SettingsPage() {
     queryKey: ['/api/reference/legal-forms'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Load RBAC data from API
+  const { data: rbacRolesData, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery<RBACRolesResponse>({
+    queryKey: ['/api/rbac/roles'],
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const { data: rbacPermissionsData, isLoading: permissionsLoading } = useQuery<RBACPermissionsResponse>({
+    queryKey: ['/api/rbac/permissions'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Get permissions for selected role
+  const { data: selectedRolePermissions, isLoading: rolePermissionsLoading } = useQuery<RolePermissionsResponse>({
+    queryKey: ['/api/rbac/roles', selectedRole, 'permissions'],
+    enabled: !!selectedRole,
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
   
   // Load logs data with filtering and pagination - FIXED: Proper new data detection
   const queryParams = buildLogsQueryParams();
@@ -589,6 +644,236 @@ export default function SettingsPage() {
       }
     };
   }, []);
+
+  // Helper functions for role defaults
+  const getDefaultRoleColor = (roleCode: string): string => {
+    const colorMap: { [key: string]: string } = {
+      'admin': '#ef4444',
+      'finance': '#10b981',
+      'direttore': '#3b82f6',
+      'store_manager': '#f59e0b',
+      'store_specialist': '#8b5cf6',
+      'student': '#06b6d4',
+      'marketing': '#ec4899',
+      'hr_management': '#14b8a6',
+      'custom': '#6b7280'
+    };
+    return colorMap[roleCode] || '#6b7280';
+  };
+
+  const getDefaultRoleDescription = (roleCode: string): string => {
+    const descriptionMap: { [key: string]: string } = {
+      'admin': 'Accesso completo al sistema',
+      'finance': 'Gestione finanziaria e contabile',
+      'direttore': 'Supervisione strategica e decisionale',
+      'store_manager': 'Gestione completa punto vendita',
+      'store_specialist': 'Operazioni quotidiane del negozio',
+      'student': 'Accesso limitato per formazione',
+      'marketing': 'Campagne e comunicazione aziendale',
+      'hr_management': 'Gestione risorse umane',
+      'custom': 'Ruolo personalizzato'
+    };
+    return descriptionMap[roleCode] || 'Ruolo personalizzato';
+  };
+
+  // Organize permissions by category for UI display
+  const organizePermissionsByCategory = (permissions: string[]) => {
+    const categories: { [key: string]: string[] } = {};
+    
+    permissions.forEach(permission => {
+      // Extract category from permission string (e.g., "dashboard.view" -> "dashboard")
+      const parts = permission.split('.');
+      const category = parts[0] || 'other';
+      
+      if (!categories[category]) {
+        categories[category] = [];
+      }
+      categories[category].push(permission);
+    });
+
+    // Convert to array format expected by UI
+    return Object.entries(categories).map(([category, perms]) => ({
+      category: category.charAt(0).toUpperCase() + category.slice(1),
+      permissions: perms
+    }));
+  };
+
+  // Permission management state and functions
+  const [tempPermissions, setTempPermissions] = useState<string[]>([]);
+  const [isPermissionsDirty, setIsPermissionsDirty] = useState(false);
+
+  // Initialize temp permissions when role permissions are loaded
+  useEffect(() => {
+    if (selectedRolePermissions?.permissions) {
+      setTempPermissions(selectedRolePermissions.permissions);
+      setIsPermissionsDirty(false);
+    }
+  }, [selectedRolePermissions]);
+
+  // Check if a permission is currently enabled
+  const isPermissionEnabled = (permission: string): boolean => {
+    return tempPermissions.includes(permission);
+  };
+
+  // Check if all permissions in a category are enabled
+  const isCategoryEnabled = (category: string): boolean => {
+    const categoryPermissions = organizePermissionsByCategory(rbacPermissionsData?.permissions || [])
+      .find(cat => cat.category === category)?.permissions || [];
+    return categoryPermissions.length > 0 && categoryPermissions.every(perm => isPermissionEnabled(perm));
+  };
+
+  // Toggle individual permission
+  const togglePermission = (permission: string) => {
+    const newPermissions = isPermissionEnabled(permission)
+      ? tempPermissions.filter(p => p !== permission)
+      : [...tempPermissions, permission];
+    
+    setTempPermissions(newPermissions);
+    setIsPermissionsDirty(true);
+  };
+
+  // Toggle all permissions in a category
+  const toggleCategoryPermissions = (category: string, enabled: boolean) => {
+    const categoryPermissions = organizePermissionsByCategory(rbacPermissionsData?.permissions || [])
+      .find(cat => cat.category === category)?.permissions || [];
+    
+    let newPermissions = [...tempPermissions];
+    
+    if (enabled) {
+      // Add all category permissions
+      categoryPermissions.forEach(perm => {
+        if (!newPermissions.includes(perm)) {
+          newPermissions.push(perm);
+        }
+      });
+    } else {
+      // Remove all category permissions
+      newPermissions = newPermissions.filter(perm => !categoryPermissions.includes(perm));
+    }
+    
+    setTempPermissions(newPermissions);
+    setIsPermissionsDirty(true);
+  };
+
+  // Save permissions for selected role
+  const saveRolePermissions = async () => {
+    if (!selectedRole) return;
+
+    try {
+      const response = await apiRequest(`/api/rbac/roles/${selectedRole}/permissions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ permissions: tempPermissions })
+      });
+
+      if (response.ok) {
+        // Refresh the role permissions data
+        const queryClient = (await import('@/lib/queryClient')).queryClient;
+        await queryClient.invalidateQueries({ queryKey: ['/api/rbac/roles', selectedRole, 'permissions'] });
+        
+        setIsPermissionsDirty(false);
+        
+        // Show success message
+        console.log('✅ Permessi aggiornati con successo');
+        // TODO: Add toast notification here
+      } else {
+        throw new Error('Failed to save permissions');
+      }
+    } catch (error) {
+      console.error('❌ Errore nel salvataggio dei permessi:', error);
+      // TODO: Add error toast notification here
+    }
+  };
+
+  // Create custom role modal state and functions
+  const [createRoleModalOpen, setCreateRoleModalOpen] = useState(false);
+  const [newRoleData, setNewRoleData] = useState({
+    code: '',
+    name: '',
+    description: '',
+    isSystemRole: false
+  });
+
+  const createCustomRole = async () => {
+    try {
+      const response = await apiRequest('/api/rbac/roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newRoleData)
+      });
+
+      if (response.ok) {
+        // Refresh roles data
+        const queryClient = (await import('@/lib/queryClient')).queryClient;
+        await queryClient.invalidateQueries({ queryKey: ['/api/rbac/roles'] });
+        
+        setCreateRoleModalOpen(false);
+        setNewRoleData({ code: '', name: '', description: '', isSystemRole: false });
+        
+        console.log('✅ Ruolo personalizzato creato con successo');
+        showNotification('Ruolo personalizzato creato con successo', 'success');
+      } else {
+        throw new Error('Failed to create role');
+      }
+    } catch (error) {
+      console.error('❌ Errore nella creazione del ruolo:', error);
+      showNotification('Errore nella creazione del ruolo', 'error');
+    }
+  };
+
+  // Delete role functionality
+  const deleteRole = async (roleId: string, roleName: string, isSystemRole: boolean) => {
+    if (isSystemRole) {
+      showNotification('Non è possibile eliminare un ruolo di sistema', 'error');
+      return;
+    }
+
+    if (!confirm(`Sei sicuro di voler eliminare il ruolo "${roleName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await apiRequest(`/api/rbac/roles/${roleId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Refresh roles data
+        const queryClient = (await import('@/lib/queryClient')).queryClient;
+        await queryClient.invalidateQueries({ queryKey: ['/api/rbac/roles'] });
+        
+        // If the deleted role was selected, clear selection
+        if (selectedRole === roleId) {
+          setSelectedRole(null);
+          setTempPermissions([]);
+          setIsPermissionsDirty(false);
+        }
+        
+        console.log(`✅ Ruolo "${roleName}" eliminato con successo`);
+        showNotification(`Ruolo "${roleName}" eliminato con successo`, 'success');
+      } else {
+        throw new Error('Failed to delete role');
+      }
+    } catch (error) {
+      console.error('❌ Errore nell\'eliminazione del ruolo:', error);
+      showNotification('Errore nell\'eliminazione del ruolo', 'error');
+    }
+  };
+
+  // Simple notification system
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; id: number } | null>(null);
+  
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    const id = Date.now();
+    setNotification({ message, type, id });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  };
 
   // Validation functions
   const validateCodiceFiscale = (cf: string): boolean => {
@@ -1452,7 +1737,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <button
-                onClick={() => setShowCreateRoleModal(true)}
+                onClick={() => setCreateRoleModalOpen(true)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1488,19 +1773,54 @@ export default function SettingsPage() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
               gap: '16px'
             }}>
-              {[
-                { code: 'admin', name: 'Admin', description: 'Accesso completo', users: 2, color: '#ef4444' },
-                { code: 'finance', name: 'Finance', description: 'Gestione finanziaria', users: 5, color: '#10b981' },
-                { code: 'direttore', name: 'Direttore', description: 'Supervisione strategica', users: 3, color: '#3b82f6' },
-                { code: 'store_manager', name: 'Store Manager', description: 'Gestione punto vendita', users: 12, color: '#f59e0b' },
-                { code: 'store_specialist', name: 'Store Specialist', description: 'Operazioni quotidiane', users: 45, color: '#8b5cf6' },
-                { code: 'student', name: 'Student', description: 'Accesso limitato formazione', users: 8, color: '#06b6d4' },
-                { code: 'marketing', name: 'Marketing', description: 'Campagne e comunicazione', users: 6, color: '#ec4899' },
-                { code: 'hr_management', name: 'HR Management', description: 'Gestione risorse umane', users: 4, color: '#14b8a6' },
-                { code: 'custom', name: 'Custom', description: 'Ruolo personalizzato', users: 0, color: '#6b7280' }
-              ].map((role) => (
+              {rolesLoading ? (
+                // Loading skeleton for roles
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} style={{
+                    background: 'hsla(255, 255, 255, 0.05)',
+                    border: '1px solid hsla(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    animation: 'pulse 2s infinite'
+                  }}>
+                    <div style={{ height: '3px', background: '#e5e7eb', borderRadius: '2px', marginBottom: '12px' }} />
+                    <div style={{ height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '4px', width: '60%' }} />
+                    <div style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '12px', width: '80%' }} />
+                    <div style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', width: '40%' }} />
+                  </div>
+                ))
+              ) : rolesError ? (
+                <div style={{
+                  gridColumn: '1 / -1',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#dc2626'
+                }}>
+                  <AlertTriangle size={20} style={{ marginBottom: '8px' }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    Errore nel caricamento dei ruoli. <button onClick={() => refetchRoles()} style={{ color: '#dc2626', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Riprova</button>
+                  </p>
+                </div>
+              ) : (
+                (rbacRolesData?.roles || []).map((role: any) => {
+                  // Add default colors and fallback data
+                  const roleWithDefaults = {
+                    ...role,
+                    color: role.color || getDefaultRoleColor(role.code),
+                    users: role.userCount || 0,
+                    description: role.description || getDefaultRoleDescription(role.code)
+                  };
+                  return roleWithDefaults;
+                })
+              ).map((role: any) => (
                 <div
                   key={role.code}
+                  onClick={() => setSelectedRole(role.code)}
                   style={{
                     background: selectedRole === role.code 
                       ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
@@ -1521,7 +1841,6 @@ export default function SettingsPage() {
                       ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
                       : '0 2px 8px rgba(0, 0, 0, 0.05)'
                   }}
-                  onClick={() => setSelectedRole(role.code)}
                   onMouseEnter={(e) => {
                     const card = e.currentTarget;
                     const colorBar = card.querySelector('.color-bar') as HTMLElement;
@@ -1646,17 +1965,48 @@ export default function SettingsPage() {
                         {role.description}
                       </p>
                     </div>
-                    {role.code === 'admin' && (
-                      <Star 
-                        size={16} 
-                        className="role-icon"
-                        style={{ 
-                          color: role.color,
-                          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                          transform: 'rotate(0deg) scale(1)'
-                        }} 
-                      />
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {role.code === 'admin' && (
+                        <Star 
+                          size={16} 
+                          className="role-icon"
+                          style={{ 
+                            color: role.color,
+                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transform: 'rotate(0deg) scale(1)'
+                          }} 
+                        />
+                      )}
+                      {!role.isSystemRole && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteRole(role.id || role.code, role.name, role.isSystemRole || false);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#dc2626',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            transition: 'all 0.2s ease',
+                            opacity: 0.6
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                            e.currentTarget.style.background = '#fef2f2';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.opacity = '0.6';
+                            e.currentTarget.style.background = 'none';
+                          }}
+                          title="Elimina ruolo personalizzato"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   <div style={{
@@ -1717,7 +2067,7 @@ export default function SettingsPage() {
                   color: '#111827',
                   margin: 0
                 }}>
-                  Permessi del Ruolo: {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1).replace('_', ' ')}
+                  Permessi del Ruolo: {selectedRole ? selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1).replace('_', ' ') : 'Nessun ruolo selezionato'}
                 </h4>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button
@@ -1735,19 +2085,25 @@ export default function SettingsPage() {
                     Duplica
                   </button>
                   <button
+                    onClick={saveRolePermissions}
+                    disabled={!isPermissionsDirty || rolePermissionsLoading}
                     style={{
                       padding: '8px 16px',
-                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
-                      color: '#111827',
+                      background: isPermissionsDirty 
+                        ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
+                        : '#e5e7eb',
+                      color: isPermissionsDirty ? 'white' : '#6b7280',
                       border: 'none',
                       borderRadius: '6px',
                       fontSize: '14px',
                       fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      cursor: isPermissionsDirty ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s ease',
+                      opacity: rolePermissionsLoading ? 0.7 : 1
                     }}
                   >
-                    Salva Modifiche
+                    {rolePermissionsLoading ? 'Salvando...' : 'Salva Modifiche'}
+                    {isPermissionsDirty && <span style={{ marginLeft: '4px' }}>•</span>}
                   </button>
                 </div>
               </div>
@@ -1758,15 +2114,25 @@ export default function SettingsPage() {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                 gap: '20px'
               }}>
-                {[
-                  { category: 'Dashboard', permissions: ['View', 'Analytics', 'Export'] },
-                  { category: 'CRM', permissions: ['Leads View', 'Leads Edit', 'Customers View', 'Customers Edit', 'Deals'] },
-                  { category: 'Cassa', permissions: ['Transactions', 'Refund', 'Shifts', 'Drawer'] },
-                  { category: 'Magazzino', permissions: ['Products View', 'Stock Adjust', 'Orders'] },
-                  { category: 'Finance', permissions: ['Invoices', 'Payments', 'Reports', 'Budget'] },
-                  { category: 'Settings', permissions: ['Organization', 'Users', 'Roles', 'Integrations'] }
-                ].map((cat) => (
-                  <div
+                {permissionsLoading ? (
+                  // Loading skeleton for permissions
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} style={{
+                      background: 'hsla(255, 255, 255, 0.05)',
+                      border: '1px solid hsla(255, 255, 255, 0.08)',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      animation: 'pulse 2s infinite'
+                    }}>
+                      <div style={{ height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '12px', width: '60%' }} />
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px', width: `${60 + Math.random() * 30}%` }} />
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  organizePermissionsByCategory(rbacPermissionsData?.permissions || []).map((cat) => (
+                    <div
                     key={cat.category}
                     style={{
                       background: 'hsla(255, 255, 255, 0.05)',
@@ -1795,22 +2161,13 @@ export default function SettingsPage() {
                       }}>
                         <input
                           type="checkbox"
-                          defaultChecked={selectedRole === 'admin'}
+                          checked={isCategoryEnabled(cat.category)}
                           style={{
                             opacity: 0,
                             width: 0,
                             height: 0
                           }}
-                          onChange={(e) => {
-                            const slider = e.target.nextSibling as HTMLElement;
-                            if (e.target.checked) {
-                              slider.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
-                              (slider.firstChild as HTMLElement).style.transform = 'translateX(20px)';
-                            } else {
-                              slider.style.background = '#e5e7eb';
-                              (slider.firstChild as HTMLElement).style.transform = 'translateX(2px)';
-                            }
-                          }}
+                          onChange={(e) => toggleCategoryPermissions(cat.category, e.target.checked)}
                         />
                         <span style={{
                           position: 'absolute',
@@ -1863,7 +2220,8 @@ export default function SettingsPage() {
                         >
                           <input
                             type="checkbox"
-                            defaultChecked={selectedRole === 'admin' || (selectedRole === 'finance' && cat.category === 'Finance')}
+                            checked={isPermissionEnabled(perm)}
+                            onChange={() => togglePermission(perm)}
                             style={{ 
                               cursor: 'pointer',
                               width: '16px',
@@ -1876,7 +2234,8 @@ export default function SettingsPage() {
                       ))}
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </div>
           )}
@@ -3411,6 +3770,208 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Create Custom Role Modal */}
+        {createRoleModalOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px'
+              }}>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: 0
+                }}>
+                  Crea Ruolo Personalizzato
+                </h3>
+                <button
+                  onClick={() => setCreateRoleModalOpen(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '20px',
+                    cursor: 'pointer',
+                    color: '#6b7280'
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                  Codice Ruolo
+                </label>
+                <input
+                  type="text"
+                  value={newRoleData.code}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, code: e.target.value })}
+                  placeholder="es. custom_role"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                  Nome Ruolo
+                </label>
+                <input
+                  type="text"
+                  value={newRoleData.name}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, name: e.target.value })}
+                  placeholder="es. Custom Role"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                  Descrizione
+                </label>
+                <textarea
+                  value={newRoleData.description}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, description: e.target.value })}
+                  placeholder="Descrizione del ruolo personalizzato..."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={() => setCreateRoleModalOpen(false)}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={createCustomRole}
+                  disabled={!newRoleData.code || !newRoleData.name}
+                  style={{
+                    padding: '10px 20px',
+                    background: newRoleData.code && newRoleData.name 
+                      ? 'linear-gradient(135deg, #8339ff, #6b2cbf)' 
+                      : '#e5e7eb',
+                    color: newRoleData.code && newRoleData.name ? 'white' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: newRoleData.code && newRoleData.name ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Crea Ruolo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Notification Toast */}
+        {notification && (
+          <div style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            background: notification.type === 'success' ? '#10b981' : '#dc2626',
+            color: 'white',
+            padding: '16px 20px',
+            borderRadius: '8px',
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            maxWidth: '400px',
+            animation: 'slideIn 0.3s ease'
+          }}>
+            {notification.type === 'success' ? (
+              <CheckCircle size={20} />
+            ) : (
+              <AlertCircle size={20} />
+            )}
+            <span style={{ fontSize: '14px', fontWeight: '600' }}>
+              {notification.message}
+            </span>
+            <button
+              onClick={() => setNotification(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                marginLeft: 'auto',
+                padding: '4px'
+              }}
+            >
+              <X size={16} />
+            </button>
           </div>
         )}
       </div>
