@@ -33,12 +33,39 @@ W3 Suite is a comprehensive, multi-tenant enterprise platform for business manag
 
 The project is structured as an enterprise monorepo, separating tenant-facing applications (W3 Suite) from a centralized Brand Interface HQ system.
 
+**EMBEDDED NGINX ARCHITECTURE (ACTIVE):**
+```
+📦 Node.js Master Process (apps/backend/api/src/index.ts)
+├─► 🌐 Nginx Reverse Proxy → Port 5000 (Public Entry Point)
+├─► 🚀 W3 Suite Frontend   → Port 3000 (Internal, Vite HMR)
+├─► 🔧 W3 Suite Backend    → Port 3004 (Internal, Express API)
+├─► 🎨 Brand Frontend      → Port 3001 (Internal, Vite HMR)
+└─► 🏭 Brand Backend       → Port 3002 (Internal, Express API)
+```
+
+**Process Management:**
+- **Single Command**: `npm run dev` starts entire ecosystem
+- **Master Process**: Node.js orchestrates all child processes (spawn)
+- **Feature Flag**: `ENABLE_EMBEDDED_NGINX = true` (hardcoded for stability)
+- **Health Checks**: Automated retry loops ensure all services are ready
+- **Graceful Shutdown**: SIGTERM/SIGINT handlers for clean process termination
+
+**Routing Flow:**
+```
+User Request → nginx:5000 → proxy_pass → internal services
+                   ↓
+              ┌─── /api/         → w3_backend:3004
+              ├─── /             → w3_frontend:3000  
+              ├─── /brandinterface/ → brand_frontend:3001
+              └─── /brand-api/   → brand_backend:3002
+```
+
 **Monorepo Structure:**
 - **apps/**: Contains distinct applications:
     - **frontend/web/**: W3 Suite SPA (React) with glassmorphism UI for tenants.
     - **frontend/brand-web/**: Brand Interface SPA (React) for HQ operations, with multi-workspace dashboard and dedicated authentication.
-    - **backend/api/**: NestJS API for W3 Suite, handling authentication, RBAC, tenancy (RLS), and audit logs.
-    - **backend/brand-api/**: NestJS API for Brand Interface, managing analytics, pricing, campaigns, and event propagation.
+    - **backend/api/**: Express API for W3 Suite, handling authentication, RBAC, tenancy (RLS), and audit logs.
+    - **backend/brand-api/**: Express API for Brand Interface, managing analytics, pricing, campaigns, and event propagation.
     - **backend/workers/brand-propagation/**: BullMQ consumer for brand-to-tenant event propagation.
     - **backend/cms-render/**: Edge renderer (Astro/Workers) for public landing pages.
 - **packages/**: Shared libraries and components:
@@ -94,12 +121,20 @@ The project is structured as an enterprise monorepo, separating tenant-facing ap
 2. **Frontend Alignment**: Connect UI to APIs, fix crashes, add real functionality
 3. **Data Migration**: Cleanup duplicates, ensure consistency
 
+**Recent Progress (September 2025):**
+- ✅ **Architecture Stabilized**: Embedded Nginx Architecture fully operational
+- ✅ **UI Fixes**: Fixed TypeScript undefined error in SettingsPage.tsx (rbacPermissionsData optional chaining)
+- ✅ **Entity Management**: Removed 4 unwanted tabs (Smart Automation, Servizi, Auto Reporting, GDPR, Alert Notifications) with dynamic redistribution
+- ✅ **Nginx Configuration**: Corrected server_name from 'localhost' to '_' for external reachability
+- ✅ **Process Management**: All 5 services (nginx, 2 frontends, 2 backends) running successfully
+- ✅ **Health Monitoring**: Real-time health checks and automated retries implemented
+
 **Current Functional Status:**
-- ✅ Backend logic complete but fragmented
-- ✅ Database schema solid
-- ❌ Frontend-backend integration broken
-- ❌ Multiple implementation conflicts
-- ❌ API endpoints not exposed
+- ✅ **Full Stack Operational**: All services healthy and communicating
+- ✅ **Backend APIs**: W3 Suite and Brand Interface APIs fully functional
+- ✅ **Frontend SPAs**: Both React applications with Vite HMR working
+- ✅ **Database Integration**: PostgreSQL with RLS, RBAC, and multi-tenancy active
+- ✅ **Architecture Scalable**: Mono-process orchestration proven stable
 
 # External Dependencies
 
