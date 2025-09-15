@@ -1,5 +1,11 @@
 version: '3.8'
+
+networks:
+  w3suite-network:
+    driver: bridge
+
 services:
+  # Infrastructure Services
   postgres:
     image: postgres:15
     environment:
@@ -8,19 +14,186 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+    networks:
+      - w3suite-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    networks:
+      - w3suite-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     ports:
       - "8080:8080"
+    networks:
+      - w3suite-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
   
   minio:
     image: minio/minio
+    command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
+    networks:
+      - w3suite-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Application Services
+  
+  # W3 Suite Backend API - Pure Backend Mode
+  w3-backend:
+    build:
+      context: ../apps/backend/api
+      dockerfile: ../../docker/api.Dockerfile
+    container_name: w3-backend
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=w3suite-dev-secret-2025
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/w3suite_dev
+      - REDIS_URL=redis://redis:6379
+      - PORT=3004
+    ports:
+      - "3004:3004"
+    networks:
+      - w3suite-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3004/api/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    working_dir: /app
+    command: ["npm", "run", "dev:backend"]
+
+  # W3 Suite Frontend - Vite Dev Server
+  w3-frontend:
+    build:
+      context: ../apps/frontend/web
+      dockerfile: ../../docker/web.Dockerfile
+    container_name: w3-frontend
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5000/api
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    networks:
+      - w3suite-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+
+  # Brand API Backend
+  brand-backend:
+    build:
+      context: ../apps/backend/brand-api
+      dockerfile: ../../docker/brand-api.Dockerfile
+    container_name: brand-backend
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=w3suite-dev-secret-2025
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/w3suite_dev
+      - PORT=3002
+    ports:
+      - "3002:3002"
+    networks:
+      - w3suite-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/brand-api/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+
+  # Brand Frontend - Vite Dev Server
+  brand-frontend:
+    build:
+      context: ../apps/frontend/brand-web
+      dockerfile: ../../docker/brand-web.Dockerfile
+    container_name: brand-frontend
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5000/brand-api
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    networks:
+      - w3suite-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+
+  # Nginx Reverse Proxy - Main Entry Point
+  nginx:
+    image: nginx:alpine
+    container_name: w3suite-nginx
+    ports:
+      - "5000:5000"
+    networks:
+      - w3suite-network
+    volumes:
+      - ../configs/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      w3-backend:
+        condition: service_healthy
+      w3-frontend:
+        condition: service_healthy
+      brand-backend:
+        condition: service_healthy
+      brand-frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    command: ["nginx", "-g", "daemon off;"]
