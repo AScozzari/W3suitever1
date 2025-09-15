@@ -15,8 +15,22 @@ let brandFrontendProcess: ChildProcess | null = null;
 let w3FrontendProcess: ChildProcess | null = null;
 let brandBackendProcess: ChildProcess | null = null;
 
-// Start nginx reverse proxy and backend
-startNginxAndBackend();
+// Feature flag for nginx management
+const ENABLE_EMBEDDED_NGINX = process.env.ENABLE_EMBEDDED_NGINX === 'true';
+
+// Start application based on feature flag
+if (ENABLE_EMBEDDED_NGINX) {
+  console.log("🔧 Starting in EMBEDDED NGINX mode (legacy/rollback)");
+  console.log("📋 Nginx process management: ENABLED");
+  console.log("🎯 Frontend services management: ENABLED");
+  startNginxAndBackend();
+} else {
+  console.log("🔧 Starting in PURE BACKEND mode (nginx-external)");
+  console.log("📋 Nginx process management: DISABLED");
+  console.log("🎯 Frontend services management: DISABLED");
+  console.log("🚀 Backend will run standalone on port 3004");
+  startBackendOnly();
+}
 
 async function startNginxAndBackend() {
   const port = Number(process.env.PORT || 3000);
@@ -240,6 +254,87 @@ async function startNginxAndBackend() {
   await startBackend();
 }
 
+async function startBackendOnly() {
+  const app = express();
+
+  // W3 Suite backend in Pure Backend mode
+
+  // CORS configuration - accept requests from external nginx proxy
+  app.use(cors({
+    origin: true, // Accept all origins since external nginx handles routing
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Demo-User', 'X-Auth-Session']
+  }));
+
+  app.use(express.json());
+
+  // Serve static files from public directory
+  const publicPath = path.join(__dirname, "../../../../public");
+  app.use(express.static(publicPath));
+
+  // Seed dati di riferimento
+  await seedCommercialAreas();
+
+  // Crea il server HTTP
+  const httpServer = await registerRoutes(app);
+
+  // Pure backend mode - clean shutdown without frontend processes
+  const gracefulShutdown = () => {
+    console.log("🛑 W3 Suite backend shutting down (pure backend mode)");
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", gracefulShutdown);
+  process.on("SIGINT", gracefulShutdown);
+
+  // W3 Suite backend on dedicated port 3004 (for external nginx proxy)
+  const backendPort = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
+
+  httpServer.listen(backendPort, "0.0.0.0", async () => {
+    console.log(`🚀 W3 Suite backend running on 0.0.0.0:${backendPort} (pure backend mode)`);
+    console.log(`🔌 API available at: http://localhost:${backendPort}/api`);
+    console.log(`🔍 Health check: http://localhost:${backendPort}/api/health`);
+    console.log(`📡 Ready for external nginx proxy connections`);
+    
+    // Health check retry loop
+    const healthUrl = `http://localhost:${backendPort}/api/health`;
+    const maxRetries = 15;
+    let retryCount = 0;
+    
+    const checkHealth = async (): Promise<boolean> => {
+      try {
+        const response = await fetch(healthUrl);
+        if (response.ok) {
+          return true;
+        }
+        return false;
+      } catch (error) {
+        return false;
+      }
+    };
+    
+    while (retryCount < maxRetries) {
+      retryCount++;
+      const isHealthy = await checkHealth();
+      
+      if (isHealthy) {
+        console.log(`✅ W3 Suite backend started successfully on port ${backendPort}`);
+        console.log(`🔌 W3 Suite backend accessible at: http://localhost:${backendPort}`);
+        console.log(`🎯 No frontend services will be started (pure backend mode)`);
+        break;
+      } else {
+        console.log(`⏳ W3 Suite backend health check attempt ${retryCount}/${maxRetries} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      }
+    }
+    
+    if (retryCount >= maxRetries) {
+      console.log(`❌ W3 Suite backend health check failed after ${maxRetries} attempts`);
+    }
+  });
+}
+
 async function startBackend() {
   const app = express();
 
@@ -271,46 +366,36 @@ async function startBackend() {
   // API-only backend - frontend apps handle their own routing
   // Only serve API, OAuth2, and well-known endpoints
 
-  // W3 Suite backend cleanup
-  process.on("SIGTERM", () => {
+  // W3 Suite backend cleanup - conditionally manage frontend processes
+  const gracefulBackendShutdown = () => {
     console.log("🚫 W3 Suite backend shutting down");
-    if (w3FrontendProcess) {
-      console.log("🌐 Stopping W3 Suite Frontend from backend shutdown...");
-      w3FrontendProcess.kill("SIGTERM");
-      w3FrontendProcess = null;
+    
+    // Only manage frontend processes if in embedded nginx mode
+    if (ENABLE_EMBEDDED_NGINX) {
+      if (w3FrontendProcess) {
+        console.log("🌐 Stopping W3 Suite Frontend from backend shutdown...");
+        w3FrontendProcess.kill("SIGTERM");
+        w3FrontendProcess = null;
+      }
+      if (brandBackendProcess) {
+        console.log("🏭 Stopping Brand Backend from backend shutdown...");
+        brandBackendProcess.kill("SIGTERM");
+        brandBackendProcess = null;
+      }
+      if (brandFrontendProcess) {
+        console.log("🎨 Stopping Brand Frontend from backend shutdown...");
+        brandFrontendProcess.kill("SIGTERM");
+        brandFrontendProcess = null;
+      }
+    } else {
+      console.log("🎯 No frontend processes to stop (pure backend mode)");
     }
-    if (brandBackendProcess) {
-      console.log("🏭 Stopping Brand Backend from backend shutdown...");
-      brandBackendProcess.kill("SIGTERM");
-      brandBackendProcess = null;
-    }
-    if (brandFrontendProcess) {
-      console.log("🎨 Stopping Brand Frontend from backend shutdown...");
-      brandFrontendProcess.kill("SIGTERM");
-      brandFrontendProcess = null;
-    }
+    
     process.exit(0);
-  });
+  };
 
-  process.on("SIGINT", () => {
-    console.log("🚫 W3 Suite backend shutting down");
-    if (w3FrontendProcess) {
-      console.log("🌐 Stopping W3 Suite Frontend from backend shutdown...");
-      w3FrontendProcess.kill("SIGTERM");
-      w3FrontendProcess = null;
-    }
-    if (brandBackendProcess) {
-      console.log("🏭 Stopping Brand Backend from backend shutdown...");
-      brandBackendProcess.kill("SIGTERM");
-      brandBackendProcess = null;
-    }
-    if (brandFrontendProcess) {
-      console.log("🎨 Stopping Brand Frontend from backend shutdown...");
-      brandFrontendProcess.kill("SIGTERM");
-      brandFrontendProcess = null;
-    }
-    process.exit(0);
-  });
+  process.on("SIGTERM", gracefulBackendShutdown);
+  process.on("SIGINT", gracefulBackendShutdown);
 
   // W3 Suite backend on dedicated port 3004 (internal only)
   const backendPort = parseInt(process.env.W3_BACKEND_PORT || '3004', 10);
@@ -355,10 +440,15 @@ async function startBackend() {
       console.log(`❌ W3 Suite backend health check failed after ${maxRetries} attempts`);
     }
     
-    // Start all frontend services and brand backend after W3 backend is ready
-    startW3Frontend();
-    startBrandBackend();
-    startBrandFrontend();
+    // Start frontend services only in embedded nginx mode
+    if (ENABLE_EMBEDDED_NGINX) {
+      console.log("🎯 Starting frontend services (embedded nginx mode)");
+      startW3Frontend();
+      startBrandBackend();
+      startBrandFrontend();
+    } else {
+      console.log("🎯 Skipping frontend services (embedded nginx mode disabled)");
+    }
   });
 }
 
