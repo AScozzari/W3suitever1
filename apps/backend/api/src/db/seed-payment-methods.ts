@@ -1,5 +1,5 @@
 import { db } from "../core/db";
-import { paymentMethods } from "./schema";
+import { paymentMethods } from "./schema/public";
 
 /**
  * Seed Payment Methods - Metodi di pagamento standard per Italia/Europa
