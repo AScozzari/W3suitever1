@@ -115,11 +115,11 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       description: 'Gestione clienti'
     },
     {
-      id: 'entities',
-      name: 'Entità',
+      id: 'management',
+      name: 'Gestione',
       icon: Building2,
-      path: '/entities',
-      description: 'Gestione cross-tenant'
+      path: '/management',
+      description: 'Gestione enterprise multi-tenant'
     }
   ];
 
