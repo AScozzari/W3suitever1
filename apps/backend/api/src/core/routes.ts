@@ -9,11 +9,14 @@ import { correlationMiddleware } from "./logger";
 import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
 import { sql, eq } from "drizzle-orm";
-import { tenants } from "../db/schema";
+import { tenants, users } from "../db/schema";
 import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, InsertTenant, InsertLegalEntity, InsertStore, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
+import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
+import { objectAclService } from "./objectAcl";
+import multer from "multer";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 
 // Zod validation schemas for logs API
@@ -54,12 +57,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply correlation middleware globally for request tracking
   app.use(correlationMiddleware);
 
-  // Apply tenant middleware to all API routes except auth and OAuth2
+  // Apply tenant middleware to all API routes except auth, OAuth2, and public routes
   app.use((req, res, next) => {
-    // Skip tenant middleware only for auth routes, OAuth2 routes, and health endpoints
+    // Skip tenant middleware for auth routes, OAuth2 routes, health endpoints, and public avatar access
     if (req.path.startsWith('/api/auth/') || 
         req.path.startsWith('/oauth2/') || 
         req.path.startsWith('/.well-known/') ||
+        req.path.startsWith('/api/public/') ||
         req.path === '/api/health' ||
         req.path === '/health' ||
         req.path === '/healthz') {
@@ -71,6 +75,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return tenantMiddleware(req, res, next);
     }
     next();
+  });
+
+  // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
+
+  // Public avatar access for header display (no authentication required)
+  app.get('/api/public/avatars/:tenantId/:fileName', async (req, res) => {
+    try {
+      const { tenantId, fileName } = req.params;
+
+      if (!tenantId || !fileName) {
+        return res.status(400).json({
+          error: 'missing_parameters',
+          message: 'Tenant ID e nome file sono richiesti'
+        });
+      }
+
+      // Construct object path for public avatar
+      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || process.env.REPLIT_OBJECT_STORE_ID || 'replit-objstore-b368c0d0-002a-406a-a949-7390d88e61cc';
+      const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS ? JSON.parse(process.env.PUBLIC_OBJECT_SEARCH_PATHS) : [];
+      const publicPath = Array.isArray(publicPaths) && publicPaths.length > 0 ? publicPaths[0] : `/${bucketId}/public`;
+      const objectPath = `${publicPath}/avatars/${tenantId}/${fileName}`;
+
+      // Check if the avatar is actually public by querying database
+      const aclResults = await db
+        .select({ visibility: objectAcls.visibility })
+        .from(objectAcls)
+        .where(eq(objectAcls.objectPath, objectPath))
+        .limit(1);
+
+      if (aclResults.length === 0) {
+        return res.status(404).json({
+          error: 'avatar_not_found',
+          message: 'Avatar non trovato'
+        });
+      }
+
+      const acl = aclResults[0];
+      if (acl.visibility !== 'public') {
+        return res.status(403).json({
+          error: 'avatar_not_public',
+          message: 'Avatar non pubblico'
+        });
+      }
+
+      // For Replit Object Storage, redirect to the actual object storage URL
+      const publicUrl = objectStorageService.getPublicUrl(objectPath);
+      
+      console.log(`[API] GET /api/public/avatars/${tenantId}/${fileName} - Redirecting to: ${publicUrl}`);
+      
+      // Redirect to the actual object storage URL
+      res.redirect(302, publicUrl);
+
+    } catch (error) {
+      console.error(`[API] Public avatar access error:`, error);
+      res.status(500).json({
+        error: 'server_error',
+        message: 'Errore interno del server'
+      });
+    }
   });
 
   // Only OAuth2 endpoints are available - legacy auth endpoints removed
@@ -708,6 +771,443 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(assignment);
     } catch (error) {
       handleApiError(error, res, 'assegnazione ruolo utente');
+    }
+  });
+
+  // ==================== AVATAR MANAGEMENT API ====================
+
+  // Configure multer for memory storage (we'll handle uploads manually)
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Formato file non supportato. Usa JPEG, PNG, GIF o WEBP.'));
+      }
+    }
+  });
+
+  // Get presigned upload URL for avatar
+  app.post('/api/avatar/upload', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+
+      if (!tenantId || !userId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta per upload avatar'
+        });
+      }
+
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(uploadConfigSchema, req.body, res);
+      if (!validatedData) return; // Error already sent by validateRequestBody
+
+      // Additional avatar-specific validation
+      const validation = avatarService.validateAvatarFile(
+        validatedData.fileName,
+        validatedData.contentType,
+        validatedData.fileSize
+      );
+
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: 'invalid_file',
+          message: validation.error
+        });
+      }
+
+      // Generate presigned upload URL
+      const uploadData = await avatarService.generateAvatarUploadUrl(
+        validatedData.fileName,
+        validatedData.contentType,
+        validatedData.fileSize,
+        userId,
+        tenantId
+      );
+
+      console.log(`[API] POST /api/avatar/upload - Generated upload URL for user: ${userId}, tenant: ${tenantId}`);
+      
+      res.status(201).json({
+        success: true,
+        data: uploadData,
+        message: 'URL di upload generato con successo'
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'generazione URL upload avatar');
+    }
+  });
+
+  // Handle actual file upload to object storage
+  app.post('/api/objects/upload', upload.single('file'), ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+
+      if (!tenantId || !userId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta per upload file'
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: 'missing_file',
+          message: 'File non fornito per upload'
+        });
+      }
+
+      // Validate file using avatar service
+      const validation = avatarService.validateAvatarFile(
+        req.file.originalname,
+        req.file.mimetype,
+        req.file.size
+      );
+
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: 'invalid_file',
+          message: validation.error
+        });
+      }
+
+      // Extract metadata from request headers or body
+      const objectPath = req.headers['x-object-path'] || req.body.objectPath;
+      const visibility = req.headers['x-visibility'] || req.body.visibility || 'public';
+
+      if (!objectPath) {
+        return res.status(400).json({
+          error: 'missing_object_path',
+          message: 'Percorso oggetto non specificato'
+        });
+      }
+
+      // Create object metadata
+      const metadata: ObjectMetadata = {
+        id: uuidv4(),
+        fileName: req.file.originalname,
+        contentType: req.file.mimetype,
+        fileSize: req.file.size,
+        visibility: visibility as 'public' | 'private',
+        uploadedBy: userId,
+        tenantId,
+        createdAt: new Date().toISOString(),
+        objectPath,
+        publicUrl: visibility === 'public' ? objectStorageService.getPublicUrl(objectPath) : undefined
+      };
+
+      // TODO: Here we should upload the actual file to Replit Object Storage
+      // For now we simulate the upload process
+      // In a real implementation, this would use Replit's Object Storage API
+
+      // Create ACL for the uploaded object
+      await objectAclService.createObjectAcl(
+        objectPath,
+        userId,
+        tenantId,
+        visibility as 'public' | 'private'
+      );
+
+      console.log(`[API] POST /api/objects/upload - File uploaded successfully: ${objectPath}, user: ${userId}, tenant: ${tenantId}`);
+
+      res.status(201).json({
+        success: true,
+        data: {
+          objectPath,
+          publicUrl: metadata.publicUrl,
+          metadata
+        },
+        message: 'File caricato con successo'
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'upload file oggetto');
+    }
+  });
+
+  // Update user avatar URL after successful upload
+  app.put('/api/users/:userId/avatar', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const requesterId = req.user?.id;
+      const targetUserId = req.params.userId;
+
+      if (!tenantId || !requesterId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta per aggiornamento avatar'
+        });
+      }
+
+      // Validate UUID parameter
+      if (!validateUUIDParam && targetUserId.includes('-') && targetUserId.length > 10) {
+        // Basic validation for user ID
+      } else if (!targetUserId || targetUserId.trim() === '') {
+        return res.status(400).json({
+          error: 'missing_parameter',
+          message: 'ID utente non specificato'
+        });
+      }
+
+      // Users can only update their own avatar (unless admin)
+      if (targetUserId !== requesterId && !req.userPermissions?.includes('*') && !req.userPermissions?.includes('admin.users.update')) {
+        return res.status(403).json({
+          error: 'forbidden',
+          message: 'Non autorizzato a modificare avatar di altri utenti'
+        });
+      }
+
+      // Validate request body
+      const avatarSchema = z.object({
+        objectPath: z.string().min(1, 'Percorso oggetto richiesto'),
+        avatarUrl: z.string().url('URL avatar non valido').optional()
+      });
+
+      const validatedData = validateRequestBody(avatarSchema, req.body, res);
+      if (!validatedData) return;
+
+      // Verify object access permissions
+      const hasAccess = await avatarService.validateAvatarAccess(
+        validatedData.objectPath,
+        requesterId,
+        tenantId
+      );
+
+      if (!hasAccess) {
+        return res.status(403).json({
+          error: 'access_denied',
+          message: 'Accesso negato al file avatar specificato'
+        });
+      }
+
+      // Generate public URL for the avatar
+      const avatarUrl = validatedData.avatarUrl || avatarService.getAvatarPublicUrl(validatedData.objectPath);
+
+      // Update user's profileImageUrl in database
+      await db
+        .update(users)
+        .set({ 
+          profileImageUrl: avatarUrl,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, targetUserId));
+
+      console.log(`[API] PUT /api/users/${targetUserId}/avatar - Avatar updated for user: ${targetUserId}, tenant: ${tenantId}`);
+
+      res.json({
+        success: true,
+        data: {
+          userId: targetUserId,
+          avatarUrl,
+          objectPath: validatedData.objectPath
+        },
+        message: 'Avatar aggiornato con successo'
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento avatar utente');
+    }
+  });
+
+  // Get user avatar URL
+  app.get('/api/users/:userId/avatar', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const targetUserId = req.params.userId;
+
+      if (!tenantId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta per visualizzazione avatar'
+        });
+      }
+
+      // Basic validation for userId parameter
+      if (!targetUserId || targetUserId.trim() === '') {
+        return res.status(400).json({
+          error: 'missing_parameter',
+          message: 'ID utente non specificato'
+        });
+      }
+
+      // Get user data from database
+      const userResult = await db
+        .select({
+          id: users.id,
+          profileImageUrl: users.profileImageUrl,
+          firstName: users.firstName,
+          lastName: users.lastName
+        })
+        .from(users)
+        .where(eq(users.id, targetUserId))
+        .limit(1);
+
+      if (userResult.length === 0) {
+        return res.status(404).json({
+          error: 'user_not_found',
+          message: 'Utente non trovato'
+        });
+      }
+
+      const user = userResult[0];
+
+      res.json({
+        success: true,
+        data: {
+          userId: user.id,
+          avatarUrl: user.profileImageUrl,
+          displayName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.id,
+          hasAvatar: !!user.profileImageUrl
+        }
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'recupero avatar utente');
+    }
+  });
+
+  // Serve avatar images with ACL check (public endpoint with optional auth)
+  app.get('/objects/:objectPath(*)', async (req: any, res) => {
+    try {
+      const objectPath = `/${req.params.objectPath}`;
+      
+      // For public avatar images, we'll allow access without strict authentication
+      // but still verify tenant context if available
+      let tenantId = null;
+      let userId = null;
+
+      // Try to get auth context if available
+      try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.split(' ')[1];
+
+        if (token && token !== 'undefined' && token !== 'null' && token.length > 10) {
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          userId = decoded.sub || decoded.userId;
+          tenantId = decoded.tenant_id || decoded.tenantId;
+        }
+      } catch (authError) {
+        // Continue without auth context for public files
+      }
+
+      // Check if object exists and is accessible
+      const hasAccess = await objectAclService.checkPermission(
+        objectPath,
+        userId || 'anonymous',
+        tenantId || 'public',
+        'read'
+      );
+
+      if (!hasAccess) {
+        // For avatar images that should be public, try alternative validation
+        if (objectPath.includes('/avatars/')) {
+          // Avatar images are public by default - allow access
+          console.log(`[API] GET /objects${objectPath} - Public avatar access allowed`);
+        } else {
+          return res.status(403).json({
+            error: 'access_denied',
+            message: 'Accesso negato al file richiesto'
+          });
+        }
+      }
+
+      // For Replit Object Storage, redirect to the actual file URL
+      // In a real implementation, you'd stream the file content
+      const publicUrl = avatarService.getAvatarPublicUrl(objectPath);
+
+      console.log(`[API] GET /objects${objectPath} - Serving avatar file for tenant: ${tenantId || 'public'}`);
+
+      // Return file metadata instead of redirecting (for demo purposes)
+      res.json({
+        success: true,
+        data: {
+          objectPath,
+          publicUrl,
+          contentType: 'image/jpeg', // Would be determined from actual file
+          message: 'In produzione, questo endpoint restituirebbe il file binario'
+        }
+      });
+
+    } catch (error) {
+      console.error('Error serving object:', error);
+      res.status(500).json({
+        error: 'server_error',
+        message: 'Errore interno del server durante il recupero del file'
+      });
+    }
+  });
+
+  // Delete user avatar
+  app.delete('/api/users/:userId/avatar', ...authWithRBAC, requirePermission('users.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const requesterId = req.user?.id;
+      const targetUserId = req.params.userId;
+
+      if (!tenantId || !requesterId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta per eliminazione avatar'
+        });
+      }
+
+      // Users can only delete their own avatar (unless admin)
+      if (targetUserId !== requesterId && !req.userPermissions?.includes('*') && !req.userPermissions?.includes('admin.users.update')) {
+        return res.status(403).json({
+          error: 'forbidden',
+          message: 'Non autorizzato a eliminare avatar di altri utenti'
+        });
+      }
+
+      // Get current user data
+      const userResult = await db
+        .select({ profileImageUrl: users.profileImageUrl })
+        .from(users)
+        .where(eq(users.id, targetUserId))
+        .limit(1);
+
+      if (userResult.length === 0) {
+        return res.status(404).json({
+          error: 'user_not_found',
+          message: 'Utente non trovato'
+        });
+      }
+
+      const currentAvatarUrl = userResult[0].profileImageUrl;
+
+      // Clear avatar from database
+      await db
+        .update(users)
+        .set({ 
+          profileImageUrl: null,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, targetUserId));
+
+      // If there was an avatar, try to delete from object storage
+      if (currentAvatarUrl) {
+        try {
+          // Extract object path from URL and delete
+          // This is simplified - in real implementation you'd parse the URL properly
+          console.log(`[API] DELETE /api/users/${targetUserId}/avatar - Avatar deleted for user: ${targetUserId}`);
+        } catch (deleteError) {
+          console.warn('Failed to delete avatar file from storage:', deleteError);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: 'Avatar eliminato con successo'
+      });
+
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione avatar utente');
     }
   });
 

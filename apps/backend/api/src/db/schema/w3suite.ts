@@ -38,6 +38,10 @@ export const notificationTypeEnum = pgEnum('notification_type', ['system', 'secu
 export const notificationPriorityEnum = pgEnum('notification_priority', ['low', 'medium', 'high', 'critical']);
 export const notificationStatusEnum = pgEnum('notification_status', ['unread', 'read']);
 
+// Object Storage Enums
+export const objectVisibilityEnum = pgEnum('object_visibility', ['public', 'private']);
+export const objectTypeEnum = pgEnum('object_type', ['avatar', 'document', 'image', 'file']);
+
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -66,6 +70,11 @@ export const users = w3suiteSchema.table("users", {
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
   profileImageUrl: varchar("profile_image_url", { length: 500 }),
+  // Avatar metadata fields
+  avatarObjectPath: varchar("avatar_object_path", { length: 500 }),
+  avatarVisibility: objectVisibilityEnum("avatar_visibility").default("public"),
+  avatarUploadedAt: timestamp("avatar_uploaded_at"),
+  avatarUploadedBy: varchar("avatar_uploaded_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   isSystemAdmin: boolean("is_system_admin").default(false),
@@ -388,6 +397,63 @@ export const insertStructuredLogSchema = createInsertSchema(structuredLogs).omit
 export type InsertStructuredLog = z.infer<typeof insertStructuredLogSchema>;
 export type StructuredLog = typeof structuredLogs.$inferSelect;
 
+// ==================== OBJECT STORAGE METADATA ====================
+export const objectMetadata = w3suiteSchema.table("object_metadata", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  objectPath: varchar("object_path", { length: 500 }).notNull().unique(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  contentType: varchar("content_type", { length: 100 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  visibility: objectVisibilityEnum("visibility").notNull().default("private"),
+  objectType: objectTypeEnum("object_type").notNull().default("file"),
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  publicUrl: varchar("public_url", { length: 500 }),
+  bucketId: varchar("bucket_id", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  metadata: jsonb("metadata").default({}), // Additional custom metadata
+}, (table) => [
+  index("object_metadata_tenant_idx").on(table.tenantId),
+  index("object_metadata_uploaded_by_idx").on(table.uploadedBy),
+  index("object_metadata_object_type_idx").on(table.objectType),
+]);
+
+export const insertObjectMetadataSchema = createInsertSchema(objectMetadata).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertObjectMetadata = z.infer<typeof insertObjectMetadataSchema>;
+export type ObjectMetadata = typeof objectMetadata.$inferSelect;
+
+// ==================== OBJECT ACCESS CONTROL (ACL) ====================
+export const objectAcls = w3suiteSchema.table("object_acls", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  objectPath: varchar("object_path", { length: 500 }).notNull(),
+  ownerId: varchar("owner_id").notNull().references(() => users.id),
+  ownerTenantId: uuid("owner_tenant_id").notNull().references(() => tenants.id),
+  visibility: objectVisibilityEnum("visibility").notNull().default("private"),
+  accessRules: jsonb("access_rules").default([]), // Array of access rules
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("object_acls_tenant_idx").on(table.tenantId),
+  index("object_acls_object_path_idx").on(table.objectPath),
+  index("object_acls_owner_idx").on(table.ownerId),
+  uniqueIndex("object_acls_object_path_unique").on(table.objectPath),
+]);
+
+export const insertObjectAclSchema = createInsertSchema(objectAcls).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertObjectAcl = z.infer<typeof insertObjectAclSchema>;
+export type ObjectAcl = typeof objectAcls.$inferSelect;
+
 // ==================== NOTIFICATIONS SYSTEM ====================
 export const notifications = w3suiteSchema.table("notifications", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -544,4 +610,17 @@ export const userLegalEntitiesRelations = relations(userLegalEntities, ({ one })
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   tenant: one(tenants, { fields: [notifications.tenantId], references: [tenants.id] }),
   targetUser: one(users, { fields: [notifications.targetUserId], references: [users.id] }),
+}));
+
+// Object Metadata Relations
+export const objectMetadataRelations = relations(objectMetadata, ({ one }) => ({
+  tenant: one(tenants, { fields: [objectMetadata.tenantId], references: [tenants.id] }),
+  uploadedByUser: one(users, { fields: [objectMetadata.uploadedBy], references: [users.id] }),
+}));
+
+// Object ACLs Relations  
+export const objectAclsRelations = relations(objectAcls, ({ one }) => ({
+  tenant: one(tenants, { fields: [objectAcls.tenantId], references: [tenants.id] }),
+  ownerTenant: one(tenants, { fields: [objectAcls.ownerTenantId], references: [tenants.id] }),
+  owner: one(users, { fields: [objectAcls.ownerId], references: [users.id] }),
 }));
