@@ -764,7 +764,7 @@ export default function SettingsPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Use hardcoded RBAC data combined with custom roles instead of API
+  // HYBRID SYSTEM: Show 10 specific roles but use REAL backend permissions 
   const allRoles = [...HARDCODED_ROLES, ...customRoles];
   const rbacRolesData = {
     roles: allRoles,
@@ -774,19 +774,18 @@ export default function SettingsPage() {
   const rolesError = null;
   const refetchRoles = () => Promise.resolve();
 
-  const rbacPermissionsData = {
-    permissions: ALL_PERMISSIONS,
-    success: true
-  };
-  const permissionsLoading = false;
+  // REAL permissions from backend API - NOT hardcoded!
+  const { data: rbacPermissionsData, isLoading: permissionsLoading } = useQuery<RBACPermissionsResponse>({
+    queryKey: ['/api/rbac/permissions'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  // Get permissions for selected role from hardcoded data + custom roles
-  const selectedRoleData = selectedRole ? allRoles.find(r => r.code === selectedRole) : null;
-  const selectedRolePermissions = selectedRoleData ? {
-    permissions: selectedRoleData.permissions.includes('*') ? ALL_PERMISSIONS : selectedRoleData.permissions,
-    success: true
-  } : null;
-  const rolePermissionsLoading = false;
+  // REAL permissions for selected role from backend API
+  const { data: selectedRolePermissions, isLoading: rolePermissionsLoading } = useQuery<RolePermissionsResponse>({
+    queryKey: ['/api/rbac/roles', selectedRole, 'permissions'],
+    enabled: !!selectedRole,
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
   
   // Load logs data with filtering and pagination - FIXED: Proper new data detection
   const queryParams = buildLogsQueryParams();
@@ -1706,6 +1705,11 @@ export default function SettingsPage() {
                 puntoVenditaPreferito_id: null,
                 nome: '',
                 cognome: '',
+                avatar: {
+                  url: null,
+                  blob: null,
+                  type: 'upload' as 'upload' | 'generated'
+                },
                 codiceFiscale: '',
                 dataNascita: '',
                 luogoNascita: '',
