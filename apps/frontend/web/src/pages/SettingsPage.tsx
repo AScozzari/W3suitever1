@@ -864,6 +864,42 @@ export default function SettingsPage() {
     return descriptionMap[roleCode] || 'Ruolo personalizzato';
   };
 
+  // Get role color based on role name/code
+  const getRoleColor = (roleName: string | undefined): string => {
+    if (!roleName) return '#6b7280';
+    const normalizedRole = roleName.toLowerCase();
+    const roleMapping: { [key: string]: string } = {
+      'amministratore': '#ef4444',
+      'area manager': '#3b82f6', 
+      'store manager': '#10b981',
+      'store specialist': '#f59e0b',
+      'finance': '#8b5cf6',
+      'hr manager': '#06b6d4',
+      'sales agent': '#84cc16',
+      'cassiere': '#f97316',
+      'magazziniere': '#6366f1',
+      'marketing': '#ec4899'
+    };
+    return roleMapping[normalizedRole] || '#6b7280';
+  };
+
+  // Get status color based on status value
+  const getStatusColor = (status: string | undefined): {bg: string, color: string, border: string} => {
+    if (!status) return { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' };
+    const normalizedStatus = status.toLowerCase();
+    const statusMapping: { [key: string]: {bg: string, color: string, border: string} } = {
+      'active': { bg: '#dcfce7', color: '#15803d', border: '#bbf7d0' },
+      'attivo': { bg: '#dcfce7', color: '#15803d', border: '#bbf7d0' },
+      'suspended': { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+      'sospeso': { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+      'inactive': { bg: '#fee2e2', color: '#dc2626', border: '#fecaca' },
+      'inattivo': { bg: '#fee2e2', color: '#dc2626', border: '#fecaca' },
+      'pending': { bg: '#e0e7ff', color: '#3730a3', border: '#c7d2fe' },
+      'in_attesa': { bg: '#e0e7ff', color: '#3730a3', border: '#c7d2fe' }
+    };
+    return statusMapping[normalizedStatus] || { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' };
+  };
+
   // Organize permissions by category for UI display
   const organizePermissionsByCategory = (permissions: string[]) => {
     const categories: { [key: string]: string[] } = {};
@@ -1791,14 +1827,23 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '16px', fontSize: '14px' }}>
                       <span style={{
-                        background: user.role_name?.includes('Manager') ? '#e0e7ff' : (user.role_name?.includes('Amministratore') ? '#fee2e2' : '#f3f4f6'),
-                        color: user.role_name?.includes('Manager') ? '#3730a3' : (user.role_name?.includes('Amministratore') ? '#991b1b' : '#059669'),
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
                         fontWeight: '600',
-                        border: `1px solid ${user.role_name?.includes('Manager') ? '#c7d2fe' : (user.role_name?.includes('Amministratore') ? '#fecaca' : '#d1fae5')}`
+                        backgroundColor: getRoleColor(user.role_name || user.role) + '20',
+                        color: getRoleColor(user.role_name || user.role),
+                        border: `1px solid ${getRoleColor(user.role_name || user.role)}40`
                       }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: getRoleColor(user.role_name || user.role)
+                        }}></div>
                         {user.role_name || user.role || 'Operatore'}
                       </span>
                     </td>
@@ -1819,14 +1864,23 @@ export default function SettingsPage() {
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span style={{
-                        background: user.status === 'Active' ? '#dcfce7' : (user.status === 'Suspended' ? '#fef3c7' : '#f3f4f6'),
-                        color: user.status === 'Active' ? '#15803d' : (user.status === 'Suspended' ? '#92400e' : '#6b7280'),
-                        border: `1px solid ${user.status === 'Active' ? '#bbf7d0' : (user.status === 'Suspended' ? '#fde68a' : '#e5e7eb')}`,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
                         padding: '4px 12px',
                         borderRadius: '20px',
                         fontSize: '12px',
-                        fontWeight: '600'
+                        fontWeight: '600',
+                        backgroundColor: getStatusColor(user.status).bg,
+                        color: getStatusColor(user.status).color,
+                        border: `1px solid ${getStatusColor(user.status).border}`
                       }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: getStatusColor(user.status).color
+                        }}></div>
                         {user.status === 'Active' ? 'Attivo' : (user.status === 'Suspended' ? 'Sospeso' : user.status || 'Inattivo')}
                       </span>
                     </td>
