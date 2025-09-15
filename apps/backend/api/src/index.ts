@@ -16,7 +16,7 @@ let w3FrontendProcess: ChildProcess | null = null;
 let brandBackendProcess: ChildProcess | null = null;
 
 // Feature flag for nginx management  
-const ENABLE_EMBEDDED_NGINX = false;
+const ENABLE_EMBEDDED_NGINX = true;
 
 // Start application based on feature flag
 if (ENABLE_EMBEDDED_NGINX) {
