@@ -8479,6 +8479,305 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* Modal Nuovo Fornitore */}
+      {supplierModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            width: '90%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '24px'
+            }}>
+              <div>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: '#111827',
+                  margin: '0 0 8px 0'
+                }}>
+                  {supplierModal.data ? 'Modifica Fornitore' : 'Nuovo Fornitore'}
+                </h2>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: 0
+                }}>
+                  {supplierModal.data ? 'Modifica i dati del fornitore' : 'Compila i dettagli del nuovo fornitore'}
+                </p>
+              </div>
+              <button
+                onClick={() => setSupplierModal({ open: false, data: null })}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f3f4f6';
+                  e.currentTarget.style.color = '#111827';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '20px',
+              marginBottom: '24px'
+            }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Codice Fornitore *
+                </label>
+                <input
+                  type="text"
+                  placeholder="es. FOR001"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Nome Fornitore *
+                </label>
+                <input
+                  type="text"
+                  placeholder="es. Acme Suppliers SpA"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Partita IVA
+                </label>
+                <input
+                  type="text"
+                  placeholder="es. IT12345678901"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Codice Fiscale
+                </label>
+                <input
+                  type="text"
+                  placeholder="es. ACMSPP95L01H501Z"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Città
+                </label>
+                <input
+                  type="text"
+                  placeholder="es. Milano"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  Stato
+                </label>
+                <select
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    background: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="Attivo">Attivo</option>
+                  <option value="Sospeso">Sospeso</option>
+                  <option value="Archiviato">Archiviato</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              marginTop: '24px',
+              paddingTop: '20px',
+              borderTop: '1px solid #e5e7eb'
+            }}>
+              <button
+                onClick={() => setSupplierModal({ open: false, data: null })}
+                style={{
+                  padding: '10px 20px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: '#ffffff',
+                  color: '#6b7280',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f9fafb';
+                  e.currentTarget.style.borderColor = '#9ca3af';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = '#ffffff';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implementare salvataggio fornitore
+                  console.log('Salvando fornitore...');
+                  alert('Funzionalità di salvataggio in fase di implementazione');
+                  setSupplierModal({ open: false, data: null });
+                }}
+                style={{
+                  padding: '10px 24px',
+                  background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  boxShadow: '0 4px 15px -3px rgba(255, 105, 0, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #ff7a1f, #ff9547)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(255, 105, 0, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px -3px rgba(255, 105, 0, 0.3)';
+                }}
+              >
+                Salva Fornitore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header - Direttamente sullo sfondo */}
         <div style={{
