@@ -362,5 +362,32 @@ export const insertEntityLogSchema = createInsertSchema(entityLogs).omit({
 export type InsertEntityLog = z.infer<typeof insertEntityLogSchema>;
 export type EntityLog = typeof entityLogs.$inferSelect;
 
+// ==================== PAYMENT METHODS ====================
+export const paymentMethods = pgTable("payment_methods", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(), // 'bank_transfer', 'direct_debit', 'card', 'digital', 'cash', 'check'
+  requiresIban: boolean("requires_iban").default(false),
+  requiresAuth: boolean("requires_auth").default(false),
+  supportsBatching: boolean("supports_batching").default(false),
+  countryCode: varchar("country_code", { length: 3 }), // ISO 3166-1 (NULL = international)
+  active: boolean("active").default(true),
+  isDefault: boolean("is_default").default(false),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_payment_methods_category").on(table.category),
+  index("idx_payment_methods_country").on(table.countryCode),
+]);
+
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+
 // ==================== BRAND INTERFACE MOVED TO SEPARATE SCHEMA ====================
 // Brand Interface tables are now in brand-interface.ts with dedicated 'brand_interface' schema

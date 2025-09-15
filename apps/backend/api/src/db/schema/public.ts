@@ -136,3 +136,10 @@ export const italianCities = pgTable("italian_cities", {
   index("idx_italian_cities_province").on(table.province),
   uniqueIndex("italian_cities_unique").on(table.name, table.province),
 ]);
+
+export const insertItalianCitySchema = createInsertSchema(italianCities).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertItalianCity = z.infer<typeof insertItalianCitySchema>;
+export type ItalianCity = typeof italianCities.$inferSelect;
