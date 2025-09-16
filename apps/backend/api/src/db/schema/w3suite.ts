@@ -529,6 +529,20 @@ export const suppliers = w3suiteSchema.table("suppliers", {
   paymentTerms: varchar("payment_terms", { length: 100 }), // "30DFFM", "60GGDF", etc.
   currency: varchar("currency", { length: 3 }).default("EUR"),
   
+  // ==================== CONTATTI ====================
+  email: varchar("email", { length: 255 }), // Email principale
+  phone: varchar("phone", { length: 50 }), // Telefono principale
+  website: varchar("website", { length: 255 }), // Sito web
+  // Referenti strutturati (JSONB per flessibilità)
+  contacts: jsonb("contacts").default({}), // { commerciale: {...}, amministrativo: {...}, logistico: {...} }
+  
+  // ==================== AMMINISTRATIVI ESTESI ====================
+  iban: varchar("iban", { length: 34 }), // Codice IBAN
+  bic: varchar("bic", { length: 11 }), // Codice BIC/SWIFT
+  splitPayment: boolean("split_payment").default(false), // Split Payment
+  withholdingTax: boolean("withholding_tax").default(false), // Ritenuta d'Acconto
+  taxRegime: varchar("tax_regime", { length: 100 }), // Regime fiscale
+  
   // ==================== CONTROLLO & STATO ====================
   status: supplierStatusEnum("status").notNull().default("active"),
   lockedFields: text("locked_fields").array().default([]), // Campi bloccati dal brand
