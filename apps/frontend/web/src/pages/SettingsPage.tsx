@@ -9291,20 +9291,6 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      MOQ (Minimo d'Ordine)
-                    </label>
-                    <input type="number" placeholder="100" min="0"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      Multiplo d'Ordine
-                    </label>
-                    <input type="number" placeholder="50" min="1"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Orari Consegna
                     </label>
                     <input type="text" placeholder="Lun-Ven 9:00-17:00"
