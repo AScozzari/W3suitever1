@@ -479,7 +479,8 @@ export default function SettingsPage() {
     queryFn: async () => {
       const response = await fetch('/api/payment-methods', {
         headers: {
-          'X-Tenant-ID': DEMO_TENANT_ID
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'x-demo-user': 'admin@w3suite.com'
         }
       });
       if (!response.ok) throw new Error('Failed to fetch payment methods');
@@ -493,7 +494,8 @@ export default function SettingsPage() {
     queryFn: async () => {
       const response = await fetch('/api/payment-conditions', {
         headers: {
-          'X-Tenant-ID': DEMO_TENANT_ID
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'x-demo-user': 'admin@w3suite.com'
         }
       });
       if (!response.ok) throw new Error('Failed to fetch payment conditions');
