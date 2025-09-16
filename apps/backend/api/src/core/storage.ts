@@ -970,7 +970,10 @@ export class DatabaseStorage implements IStorage {
       ].filter(Boolean);
       
       if (userConditions.length > 0) {
-        conditions.push(or(...userConditions));
+        const userCondition = or(...userConditions);
+        if (userCondition) {
+          conditions.push(userCondition);
+        }
       }
     }
     
@@ -998,7 +1001,10 @@ export class DatabaseStorage implements IStorage {
     ].filter(Boolean);
     
     if (expiryConditions.length > 0) {
-      conditions.push(or(...expiryConditions));
+      const expiryCondition = or(...expiryConditions);
+      if (expiryCondition) {
+        conditions.push(expiryCondition);
+      }
     }
     
     // Count total and unread records
@@ -1056,7 +1062,10 @@ export class DatabaseStorage implements IStorage {
       ].filter(Boolean);
       
       if (userConditions.length > 0) {
-        conditions.push(or(...userConditions));
+        const userCondition = or(...userConditions);
+        if (userCondition) {
+          conditions.push(userCondition);
+        }
       }
     }
     
@@ -1067,7 +1076,10 @@ export class DatabaseStorage implements IStorage {
     ].filter(Boolean);
     
     if (expiryConditions.length > 0) {
-      conditions.push(or(...expiryConditions));
+      const expiryCondition = or(...expiryConditions);
+      if (expiryCondition) {
+        conditions.push(expiryCondition);
+      }
     }
     
     const [result] = await db
