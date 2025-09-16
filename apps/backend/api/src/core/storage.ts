@@ -436,13 +436,17 @@ export class DatabaseStorage implements IStorage {
   // Brand Base + Tenant Override Pattern Implementation
   
   async getSuppliersByTenant(tenantId: string): Promise<any[]> {
-    console.log(`[STORAGE-RLS] 🔍 getSuppliersByTenant: Setting tenant context for ${tenantId}`);
+    console.log(`[STORAGE-RLS] 🔍 getSuppliersByTenant: Getting suppliers for tenant ${tenantId}`);
     
-    // Ensure tenant context is set for RLS
+    // Set the tenant context for RLS
     await setTenantContext(tenantId);
     
-    // Use the original working query structure with proper joins
-    const result = await db
+    // CRITICAL FIX: Proper Union Query with Precedence Logic
+    // 1. Get brand suppliers (origin='brand', tenantId is NULL)
+    // 2. Get tenant suppliers (from supplier_overrides)
+    // 3. Apply precedence: tenant suppliers shadow brand suppliers with same code
+    
+    const brandSuppliersQuery = db
       .select({
         // Identità & Classificazione
         id: suppliers.id,
@@ -470,7 +474,8 @@ export class DatabaseStorage implements IStorage {
         // Relazioni con nomi delle entità correlate
         country: {
           id: countries.id,
-          name: countries.name
+          name: countries.name,
+          code: countries.code
         },
         city_name: italianCities.name,
         payment_method: {
@@ -500,51 +505,168 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(italianCities, eq(suppliers.cityId, italianCities.id))
       .leftJoin(paymentMethods, eq(suppliers.preferredPaymentMethodId, paymentMethods.id))
       .where(
-        or(
-          eq(suppliers.origin, 'brand'), // Brand suppliers - visible to all tenants
-          and(
-            eq(suppliers.origin, 'tenant'), // Tenant-specific suppliers
-            eq(suppliers.tenantId, tenantId)
-          )
+        and(
+          eq(suppliers.origin, 'brand'), // Only brand suppliers
+          isNull(suppliers.tenantId) // Brand suppliers have NULL tenantId
         )
-      )
-      .orderBy(suppliers.origin, suppliers.name);
+      );
     
-    console.log(`[STORAGE-RLS] ✅ getSuppliersByTenant: Found ${result.length} suppliers for tenant ${tenantId}`);
+    const tenantSuppliersQuery = db
+      .select({
+        // Identità & Classificazione
+        id: supplierOverrides.id,
+        origin: supplierOverrides.origin,
+        tenantId: supplierOverrides.tenantId,
+        externalId: supplierOverrides.externalId,
+        code: supplierOverrides.code,
+        name: supplierOverrides.name,
+        legal_name: supplierOverrides.legalName,
+        supplier_type: supplierOverrides.supplierType,
+        
+        // Dati fiscali
+        vat_number: supplierOverrides.vatNumber,
+        tax_code: supplierOverrides.taxCode,
+        sdi_code: supplierOverrides.sdiCode,
+        pec_email: supplierOverrides.pecEmail,
+        rea_number: supplierOverrides.reaNumber,
+        chamber_of_commerce: supplierOverrides.chamberOfCommerce,
+        
+        // Indirizzo
+        registered_address: supplierOverrides.registeredAddress,
+        city_id: supplierOverrides.cityId,
+        country_id: supplierOverrides.countryId,
+        
+        // Relazioni con nomi delle entità correlate
+        country: {
+          id: countries.id,
+          name: countries.name,
+          code: countries.code
+        },
+        city_name: italianCities.name,
+        payment_method: {
+          id: paymentMethods.id,
+          name: paymentMethods.name,
+          code: paymentMethods.code
+        },
+        
+        // Pagamenti
+        preferred_payment_method_id: supplierOverrides.preferredPaymentMethodId,
+        payment_terms: supplierOverrides.paymentTerms,
+        currency: supplierOverrides.currency,
+        
+        // Controllo & Stato
+        status: supplierOverrides.status,
+        locked_fields: supplierOverrides.lockedFields,
+        
+        // Metadati
+        created_by: supplierOverrides.createdBy,
+        updated_by: supplierOverrides.updatedBy,
+        created_at: supplierOverrides.createdAt,
+        updated_at: supplierOverrides.updatedAt,
+        notes: supplierOverrides.notes
+      })
+      .from(supplierOverrides)
+      .leftJoin(countries, eq(supplierOverrides.countryId, countries.id))
+      .leftJoin(italianCities, eq(supplierOverrides.cityId, italianCities.id))
+      .leftJoin(paymentMethods, eq(supplierOverrides.preferredPaymentMethodId, paymentMethods.id))
+      .where(
+        and(
+          eq(supplierOverrides.origin, 'tenant'), // Only tenant suppliers
+          eq(supplierOverrides.tenantId, tenantId) // For this specific tenant
+        )
+      );
+    
+    // Execute both queries
+    const [brandSuppliers, tenantSuppliers] = await Promise.all([
+      brandSuppliersQuery,
+      tenantSuppliersQuery
+    ]);
+    
+    // Apply precedence logic: tenant suppliers override brand suppliers with same code
+    const tenantSupplierCodes = new Set(tenantSuppliers.map(s => s.code));
+    const filteredBrandSuppliers = brandSuppliers.filter(supplier => 
+      !tenantSupplierCodes.has(supplier.code)
+    );
+    
+    // Combine with precedence: tenant suppliers first, then non-overridden brand suppliers
+    const result = [...tenantSuppliers, ...filteredBrandSuppliers]
+      .sort((a, b) => {
+        // Sort by origin (tenant first), then by name
+        if (a.origin !== b.origin) {
+          return a.origin === 'tenant' ? -1 : 1;
+        }
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    
+    console.log(`[STORAGE-RLS] ✅ getSuppliersByTenant: Found ${result.length} suppliers for tenant ${tenantId} (${tenantSuppliers.length} tenant, ${filteredBrandSuppliers.length} brand)`);
     return result;
   }
 
   async createTenantSupplier(supplierData: InsertSupplierOverride): Promise<SupplierOverride> {
-    const [supplier] = await db.insert(supplierOverrides).values(supplierData).returning();
+    console.log(`[STORAGE-SECURITY] 🔒 createTenantSupplier: Creating tenant supplier for tenant ${supplierData.tenantId}`);
+    
+    // SECURITY: Ensure we're writing to the correct table (supplier_overrides)
+    // NEVER allow writing to the brand suppliers table from tenant API
+    await setTenantContext(supplierData.tenantId!);
+    
+    const [supplier] = await db.insert(supplierOverrides).values({
+      ...supplierData,
+      origin: 'tenant', // Force tenant origin
+      tenantId: supplierData.tenantId // Ensure tenantId is set
+    }).returning();
+    
+    console.log(`[STORAGE-SECURITY] ✅ createTenantSupplier: Created tenant supplier ${supplier.id} with code ${supplier.code}`);
     return supplier;
   }
 
   async updateTenantSupplier(id: string, supplierData: Partial<InsertSupplierOverride>): Promise<SupplierOverride> {
+    console.log(`[STORAGE-SECURITY] 🔒 updateTenantSupplier: Updating tenant supplier ${id}`);
+    
+    // SECURITY: Only allow updating tenant suppliers, never brand suppliers
+    // CRITICAL: Ensure we cannot update brand suppliers through this method
     const [supplier] = await db
       .update(supplierOverrides)
-      .set({ ...supplierData, updatedAt: new Date() })
-      .where(eq(supplierOverrides.id, id))
+      .set({ 
+        ...supplierData, 
+        updatedAt: new Date(),
+        origin: 'tenant' // Prevent origin change
+      })
+      .where(
+        and(
+          eq(supplierOverrides.id, id),
+          eq(supplierOverrides.origin, 'tenant') // SECURITY: Only tenant suppliers
+        )
+      )
       .returning();
     
     if (!supplier) {
-      throw new Error(`Tenant supplier with id ${id} not found`);
+      throw new Error(`Tenant supplier with id ${id} not found or access denied`);
     }
     
+    console.log(`[STORAGE-SECURITY] ✅ updateTenantSupplier: Updated tenant supplier ${supplier.id}`);
     return supplier;
   }
 
   async deleteTenantSupplier(id: string, tenantId: string): Promise<void> {
-    // Only tenant-specific suppliers from supplier_overrides can be deleted
+    console.log(`[STORAGE-SECURITY] 🔒 deleteTenantSupplier: Deleting tenant supplier ${id} for tenant ${tenantId}`);
+    
+    // SECURITY: Only tenant-specific suppliers from supplier_overrides can be deleted
+    // CRITICAL: Brand suppliers CANNOT be deleted through this method
+    await setTenantContext(tenantId);
+    
     const result = await db
       .delete(supplierOverrides)
       .where(and(
         eq(supplierOverrides.id, id),
-        eq(supplierOverrides.tenantId, tenantId)
+        eq(supplierOverrides.tenantId, tenantId),
+        eq(supplierOverrides.origin, 'tenant') // SECURITY: Only tenant suppliers
       ));
     
     if (result.rowCount === 0) {
-      throw new Error(`Tenant supplier with id ${id} not found or not owned by tenant ${tenantId}`);
+      throw new Error(`Tenant supplier with id ${id} not found or access denied for tenant ${tenantId}`);
     }
+    
+    console.log(`[STORAGE-SECURITY] ✅ deleteTenantSupplier: Deleted tenant supplier ${id}`);
   }
 
   // ==================== USER ASSIGNMENT MANAGEMENT ====================
