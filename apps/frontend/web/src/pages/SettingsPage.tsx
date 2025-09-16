@@ -9345,18 +9345,6 @@ export default function SettingsPage() {
                       data-testid="input-pec-email"
                     />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      Codice SDI
-                    </label>
-                    <input 
-                      type="text" 
-                      placeholder="es. ABCDEFG"
-                      value={newSupplier.sdiCode}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, sdiCode: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
-                    />
-                  </div>
                   {/* Phone with Italian phone number validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
@@ -9595,6 +9583,21 @@ export default function SettingsPage() {
                       }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
                       data-testid="input-iban"
+                    />
+                  </div>
+
+                  {/* Codice SDI */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice SDI
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="es. ABCDEFG"
+                      value={newSupplier.sdiCode}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, sdiCode: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-codice-sdi"
                     />
                   </div>
 
