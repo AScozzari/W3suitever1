@@ -168,8 +168,51 @@ class ApiService {
     });
   }
 
+  async getSuppliers() {
+    return this.makeRequest<any[]>('/api/suppliers');
+  }
+
+  async createSupplier(supplierData: any) {
+    return this.makeRequest<any>('/api/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(supplierData)
+    });
+  }
+
+  async updateSupplier(id: string, supplierData: any) {
+    return this.makeRequest<any>(`/api/suppliers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(supplierData)
+    });
+  }
+
+  async deleteSupplier(id: string) {
+    return this.makeRequest<void>(`/api/suppliers/${id}`, {
+      method: 'DELETE'
+    });
+  }
+
   async getCommercialAreas() {
     return this.makeRequest<any[]>('/api/commercial-areas');
+  }
+
+  /**
+   * REFERENCE DATA APIs
+   */
+  async getLegalForms() {
+    return this.makeRequest<any[]>('/api/reference/legal-forms');
+  }
+
+  async getItalianCities() {
+    return this.makeRequest<any[]>('/api/reference/italian-cities');
+  }
+
+  async getCountries() {
+    return this.makeRequest<any[]>('/api/reference/countries');
+  }
+
+  async getPaymentMethods() {
+    return this.makeRequest<any[]>('/api/reference/payment-methods');
   }
 
   /**

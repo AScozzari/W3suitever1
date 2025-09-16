@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import AvatarSelector from '../components/AvatarSelector';
 import {
   StandardEmailField,
@@ -463,7 +463,7 @@ export default function SettingsPage() {
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
   const [puntiVenditaList, setPuntiVenditaList] = useState<any[]>([]);
-  const [fornitoriList, setFornitoriList] = useState<any[]>([]);
+  // Note: fornitoriList is now managed by TanStack Query as suppliersList
   
   
   // Caricamento dati enterprise con service layer
@@ -499,8 +499,8 @@ export default function SettingsPage() {
         // Carica anche i ruoli
         await fetchRoles();
 
-        // Carica i fornitori 
-        await refetchSuppliers();
+        // Carica i fornitori usando TanStack Query
+        console.log('📋 Suppliers will be loaded via TanStack Query automatically');
 
       } catch (error) {
         console.error('Enterprise service error:', error);
@@ -522,28 +522,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Funzione per ricaricare i dati dei fornitori
-  const refetchSuppliers = async () => {
-    try {
-      const currentTenantId = DEMO_TENANT_ID;
-      
-      const response = await fetch('/api/suppliers', {
-        method: 'GET',
-        headers: {
-          'X-Tenant-ID': currentTenantId
-        }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setFornitoriList(result.suppliers || []);
-      } else {
-        console.error('Failed to refetch suppliers:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error refetching suppliers:', error);
-    }
-  };
   
   // Roles loading function - kept separate as it's not in the main service
   const fetchRoles = async () => {
@@ -753,27 +731,23 @@ export default function SettingsPage() {
     }
   };
 
-  // Handler per eliminare un fornitore - Solo tenant overrides possono essere eliminati
+  // Handler per eliminare un fornitore - USA API AUTENTICATA con cache invalidation
   const handleDeleteSupplier = async (supplierId: string) => {
     try {
-      const currentTenantId = DEMO_TENANT_ID;
-      
-      const response = await fetch(`/api/suppliers/${supplierId}`, {
-        method: 'DELETE',
-        headers: {
-          'X-Tenant-ID': currentTenantId
+      console.log('🗑️ Deleting supplier using authenticated API:', supplierId);
+      const result = await apiService.deleteSupplier(supplierId);
+      if (result.success) {
+        console.log('✅ Supplier deleted successfully');
+        // Invalidate suppliers cache per refresh automatico
+        await queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
+        console.log('🔄 Suppliers cache invalidated - data will refresh automatically');
+      } else {
+        console.error('❌ Error deleting supplier:', result.error);
+        if (result.needsAuth) {
+          console.log('🔒 Authentication required for supplier deletion');
         }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete supplier: ${response.statusText}`);
+        alert('Errore nell\'eliminazione del fornitore. Riprova.');
       }
-
-      console.log('✅ Supplier deleted successfully');
-      
-      // Refresh the list dopo l'eliminazione
-      await refetchSuppliers();
-      
     } catch (error) {
       console.error('❌ Error deleting supplier:', error);
       alert('Errore nell\'eliminazione del fornitore. Riprova.');
@@ -878,6 +852,18 @@ export default function SettingsPage() {
   const { data: commercialAreas = [] } = useQuery({
     queryKey: ['/api/commercial-areas'],
     staleTime: 5 * 60 * 1000,
+  });
+
+  // Load payment methods reference data
+  const { data: paymentMethods = [] } = useQuery({
+    queryKey: ['/api/reference/payment-methods'],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Load suppliers data with TanStack Query for proper cache management
+  const { data: suppliersList = [], isLoading: suppliersLoading, refetch: refetchSuppliersQuery } = useQuery({
+    queryKey: ['/api/suppliers'],
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
   
   // Clean up auto-refresh on unmount - FIXED: Use ref
@@ -1764,7 +1750,7 @@ export default function SettingsPage() {
               color: '#111827',
               margin: 0
             }}>
-              Fornitori ({fornitoriList.length} elementi)
+              Fornitori ({(suppliersList as any[]).length} elementi)
             </h3>
             <button style={{
               background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -1807,7 +1793,7 @@ export default function SettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {fornitoriList.map((supplier, index) => (
+                {(suppliersList as any[]).map((supplier: any, index: number) => (
                   <tr
                     key={supplier.id}
                     data-testid={`row-supplier-${supplier.id}`}
@@ -1950,7 +1936,7 @@ export default function SettingsPage() {
                     </td>
                   </tr>
                 ))}
-                {fornitoriList.length === 0 && (
+                {(suppliersList as any[]).length === 0 && (
                   <tr>
                     <td colSpan={6} style={{ 
                       padding: '48px 16px', 
@@ -4716,6 +4702,38 @@ export default function SettingsPage() {
     note: ''
   });
 
+  // State per il modal fornitore
+  const [newSupplier, setNewSupplier] = useState({
+    // ANAGRAFICI
+    code: '',
+    name: '',
+    legalName: '',
+    legalForm: '',
+    vatNumber: '',
+    taxCode: '',
+    status: 'active',
+    // GEOGRAFICI
+    address: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    country: 'Italia',
+    // CONTATTI
+    email: '',
+    phone: '',
+    website: '',
+    pec: '',
+    // AMMINISTRATIVI
+    codiceSDI: '',
+    iban: '',
+    bic: '',
+    splitPayment: false,
+    ritenuta: false,
+    paymentMethodId: '',
+    // NOTE
+    notes: ''
+  });
+
   // Ottieni il tenant ID dal localStorage o usa il demo tenant
   const getCurrentTenantId = () => {
     const tenantId = localStorage.getItem('currentTenantId');
@@ -4825,6 +4843,102 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('❌ Error creating legal entity:', error);
       alert('Errore nella creazione della ragione sociale. Riprova.');
+    }
+  };
+
+  // Handler per salvare il fornitore - USA API REALE
+  const handleSaveSupplier = async () => {
+    try {
+      const currentTenantId = DEMO_TENANT_ID;
+      
+      // Validation: Ragione Sociale is required
+      if (!newSupplier.name.trim()) {
+        alert('Errore: Nome/Ragione Sociale è obbligatorio per creare un fornitore.');
+        return;
+      }
+
+      const isEdit = Boolean(supplierModal.data);
+      
+      // Genera codice fornitore: inizia con FOR, almeno 6 cifre totali (solo per creazione)
+      const newCode = newSupplier.code || (isEdit ? supplierModal.data.code : `FOR${String(Date.now()).slice(-3)}`);
+      
+      const supplierData = {
+        tenantId: currentTenantId,
+        code: newCode,
+        name: newSupplier.name,
+        legalName: newSupplier.legalName,
+        legalForm: newSupplier.legalForm,
+        vatNumber: newSupplier.vatNumber,
+        taxCode: newSupplier.taxCode,
+        status: newSupplier.status,
+        address: newSupplier.address,
+        city: newSupplier.city,
+        province: newSupplier.province,
+        postalCode: newSupplier.postalCode,
+        country: newSupplier.country,
+        email: newSupplier.email,
+        phone: newSupplier.phone,
+        website: newSupplier.website,
+        pec: newSupplier.pec,
+        codiceSDI: newSupplier.codiceSDI,
+        iban: newSupplier.iban,
+        bic: newSupplier.bic,
+        splitPayment: newSupplier.splitPayment,
+        ritenuta: newSupplier.ritenuta,
+        paymentMethodId: newSupplier.paymentMethodId,
+        notes: newSupplier.notes
+      };
+
+      let result;
+      if (isEdit) {
+        // Modalità UPDATE
+        result = await apiService.updateSupplier(supplierModal.data.id, supplierData);
+      } else {
+        // Modalità CREATE
+        result = await apiService.createSupplier(supplierData);
+      }
+      
+      if (result.success) {
+        // Chiudi modal e reset form
+        setSupplierModal({ open: false, data: null });
+        
+        // Reset form
+        setNewSupplier({
+          code: '',
+          name: '',
+          legalName: '',
+          legalForm: '',
+          vatNumber: '',
+          taxCode: '',
+          status: 'active',
+          address: '',
+          city: '',
+          province: '',
+          postalCode: '',
+          country: 'Italia',
+          email: '',
+          phone: '',
+          website: '',
+          pec: '',
+          codiceSDI: '',
+          iban: '',
+          bic: '',
+          splitPayment: false,
+          ritenuta: false,
+          paymentMethodId: '',
+          notes: ''
+        });
+
+        // Ricarica i dati per mostrare le modifiche
+        await refetchSuppliersQuery();
+        
+      } else {
+        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} supplier:`, result.error);
+        alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} del fornitore. Riprova.`);
+      }
+    } catch (error) {
+      console.error(`❌ Error ${supplierModal.data ? 'updating' : 'creating'} supplier:`, error);
+      alert(`Errore nella ${supplierModal.data ? 'modifica' : 'creazione'} del fornitore. Riprova.`);
     }
   };
 
@@ -8585,45 +8699,66 @@ export default function SettingsPage() {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Codice Fornitore *
                     </label>
-                    <input type="text" placeholder="es. FOR001"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="text" 
+                      placeholder="es. FOR001"
+                      value={newSupplier.code}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, code: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Nome/Ragione Sociale *
                     </label>
-                    <input type="text" placeholder="es. Acme Suppliers SpA"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="text" 
+                      placeholder="es. Acme Suppliers SpA"
+                      value={newSupplier.name}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Forma Giuridica
                     </label>
-                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                    <select 
+                      value={newSupplier.legalForm}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, legalForm: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                    >
                       <option value="">Seleziona...</option>
-                      <option value="SRL">S.r.l.</option>
-                      <option value="SPA">S.p.A.</option>
-                      <option value="SRLS">S.r.l.s.</option>
-                      <option value="DI">Ditta Individuale</option>
-                      <option value="SNC">S.n.c.</option>
-                      <option value="SAS">S.a.s.</option>
-                      <option value="COOP">Cooperativa</option>
-                      <option value="ALTRO">Altro</option>
+                      {legalForms.map((form: any) => (
+                        <option key={form.id} value={form.code}>
+                          {form.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Partita IVA
                     </label>
-                    <input type="text" placeholder="es. IT12345678901"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="text" 
+                      placeholder="es. IT12345678901"
+                      value={newSupplier.vatNumber}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, vatNumber: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Codice Fiscale
                     </label>
-                    <input type="text" placeholder="es. ACMSPP95L01H501Z"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="text" 
+                      placeholder="es. ACMSPP95L01H501Z"
+                      value={newSupplier.taxCode}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, taxCode: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
@@ -8651,10 +8786,14 @@ export default function SettingsPage() {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Stato *
                     </label>
-                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-                      <option value="Attivo">Attivo</option>
-                      <option value="Sospeso">Sospeso</option>
-                      <option value="Archiviato">Archiviato</option>
+                    <select 
+                      value={newSupplier.status}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, status: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                    >
+                      <option value="active">Attivo</option>
+                      <option value="suspended">Sospeso</option>
+                      <option value="archived">Archiviato</option>
                     </select>
                   </div>
                 </div>
@@ -8693,40 +8832,84 @@ export default function SettingsPage() {
                       <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                         Via e Civico *
                       </label>
-                      <input type="text" placeholder="es. Via Roma, 123"
-                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                      <input 
+                        type="text" 
+                        placeholder="es. Via Roma, 123"
+                        value={newSupplier.address}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, address: e.target.value })}
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      />
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                         CAP *
                       </label>
-                      <input type="text" placeholder="20100"
-                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                      <input 
+                        type="text" 
+                        placeholder="20100"
+                        value={newSupplier.postalCode}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, postalCode: e.target.value })}
+                        readOnly={italianCities.length > 0}
+                        style={{ 
+                          width: '100%', 
+                          padding: '12px', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '8px', 
+                          fontSize: '14px',
+                          background: italianCities.length > 0 ? '#f9fafb' : 'white',
+                          cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                        }} 
+                      />
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                         Città *
                       </label>
-                      <input type="text" placeholder="Milano"
-                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                      <StandardCityField
+                        value={newSupplier.city}
+                        onChange={(cityName) => setNewSupplier({ ...newSupplier, city: cityName })}
+                        onCapChange={(cap) => setNewSupplier(prev => ({ ...prev, postalCode: cap }))}
+                        onProvinciaChange={(provincia) => setNewSupplier(prev => ({ ...prev, province: provincia }))}
+                        required={true}
+                      />
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                         Provincia *
                       </label>
-                      <input type="text" placeholder="MI"
-                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                      <input 
+                        type="text" 
+                        placeholder="MI"
+                        value={newSupplier.province}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, province: e.target.value.toUpperCase() })}
+                        readOnly={italianCities.length > 0}
+                        style={{ 
+                          width: '100%', 
+                          padding: '12px', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '8px', 
+                          fontSize: '14px',
+                          background: italianCities.length > 0 ? '#f9fafb' : 'white',
+                          cursor: italianCities.length > 0 ? 'not-allowed' : 'text',
+                          textTransform: 'uppercase'
+                        }} 
+                      />
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                         Nazione *
                       </label>
-                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-                        <option value="IT">Italia</option>
-                        <option value="DE">Germania</option>
-                        <option value="FR">Francia</option>
-                        <option value="ES">Spagna</option>
-                        <option value="ALTRO">Altro</option>
+                      <select 
+                        value={newSupplier.country}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, country: e.target.value })}
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                      >
+                        <option value="">Seleziona paese...</option>
+                        {(countries as any[])?.map((country: any) => (
+                          <option key={country.id} value={country.code}>
+                            {country.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -8808,29 +8991,49 @@ export default function SettingsPage() {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Email Principale *
                     </label>
-                    <input type="email" placeholder="info@fornitore.it"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="email" 
+                      placeholder="info@fornitore.it"
+                      value={newSupplier.email}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, email: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       PEC (Fatturazione Elettronica)
                     </label>
-                    <input type="email" placeholder="fatture@pec.fornitore.it"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="email" 
+                      placeholder="fatture@pec.fornitore.it"
+                      value={newSupplier.pec}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, pec: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Codice SDI
                     </label>
-                    <input type="text" placeholder="es. ABCDEFG"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="text" 
+                      placeholder="es. ABCDEFG"
+                      value={newSupplier.codiceSDI}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, codiceSDI: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Telefono Fisso
                     </label>
-                    <input type="tel" placeholder="+39 02 12345678"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="tel" 
+                      placeholder="+39 02 12345678"
+                      value={newSupplier.phone}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, phone: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
@@ -8843,8 +9046,13 @@ export default function SettingsPage() {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Sito Web
                     </label>
-                    <input type="url" placeholder="https://www.fornitore.it"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="url" 
+                      placeholder="https://www.fornitore.it"
+                      value={newSupplier.website}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, website: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                 </div>
 
@@ -8930,28 +9138,42 @@ export default function SettingsPage() {
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Metodo di Pagamento
                     </label>
-                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                    <select 
+                      value={newSupplier.paymentMethodId}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, paymentMethodId: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                    >
                       <option value="">Seleziona...</option>
-                      <option value="BONIFICO">Bonifico Bancario</option>
-                      <option value="RIBA">RiBa/SDD</option>
-                      <option value="CARTA">Carta di Credito</option>
-                      <option value="CONTANTI">Contanti</option>
-                      <option value="ASSEGNO">Assegno</option>
+                      {(paymentMethods as any[])?.map((method: any) => (
+                        <option key={method.id} value={method.id}>
+                          {method.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       IBAN
                     </label>
-                    <input type="text" placeholder="IT60 X054 2811 1010 0000 0123 456"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="text" 
+                      placeholder="IT60 X054 2811 1010 0000 0123 456"
+                      value={newSupplier.iban}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, iban: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       BIC/SWIFT
                     </label>
-                    <input type="text" placeholder="BCITITMM"
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    <input 
+                      type="text" 
+                      placeholder="BCITITMM"
+                      value={newSupplier.bic}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, bic: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
@@ -8979,11 +9201,19 @@ export default function SettingsPage() {
                   <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>Regime Fiscale</h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <input type="checkbox" />
+                      <input 
+                        type="checkbox" 
+                        checked={newSupplier.splitPayment}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, splitPayment: e.target.checked })}
+                      />
                       Split Payment
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <input type="checkbox" />
+                      <input 
+                        type="checkbox" 
+                        checked={newSupplier.ritenuta}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, ritenuta: e.target.checked })}
+                      />
                       Ritenuta d'Acconto
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
