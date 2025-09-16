@@ -575,19 +575,51 @@ export const supplierOverrides = w3suiteSchema.table("supplier_overrides", {
   supplierId: uuid("supplier_id").notNull().references(() => suppliers.id),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   
-  // ==================== OVERRIDE FIELDS ====================
-  overrides: jsonb("overrides").notNull().default({}), // Campi personalizzabili dal tenant
-  /* Esempio overrides:
-  {
-    "note_interne": "Fornitore preferito per elettronica",
-    "referente_locale": "Mario Rossi", 
-    "telefono_diretto": "+39 02 1234567",
-    "email_ordini": "ordini@tenant.com",
-    "condizioni_speciali": "Sconto 5% su ordini >1000€",
-    "priorita": "alta",
-    "giorni_consegna_custom": 3
-  }
-  */
+  // ==================== OVERRIDE FIELDS (mirror suppliers table) ====================
+  // All fields are nullable since they're overrides
+  
+  // Identity & Classification Overrides
+  code: varchar("code", { length: 50 }),
+  name: varchar("name", { length: 255 }),
+  legalName: varchar("legal_name", { length: 255 }),
+  supplierType: supplierTypeEnum("supplier_type"),
+  
+  // Tax Data (Italy) Overrides
+  vatNumber: varchar("vat_number", { length: 20 }),
+  taxCode: varchar("tax_code", { length: 20 }),
+  sdiCode: varchar("sdi_code", { length: 20 }),
+  pecEmail: varchar("pec_email", { length: 255 }),
+  reaNumber: varchar("rea_number", { length: 50 }),
+  chamberOfCommerce: varchar("chamber_of_commerce", { length: 255 }),
+  
+  // Address Overrides
+  registeredAddress: jsonb("registered_address"),
+  cityId: uuid("city_id").references(() => italianCities.id),
+  countryId: uuid("country_id").references(() => countries.id),
+  
+  // Payment Overrides
+  preferredPaymentMethodId: uuid("preferred_payment_method_id").references(() => paymentMethods.id),
+  paymentTerms: varchar("payment_terms", { length: 100 }),
+  currency: varchar("currency", { length: 3 }),
+  
+  // Contact Overrides
+  email: varchar("email", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  website: varchar("website", { length: 255 }),
+  contacts: jsonb("contacts"), // Structured contacts like { commerciale: {...}, amministrativo: {...} }
+  
+  // Administrative Extended Overrides
+  iban: varchar("iban", { length: 34 }),
+  bic: varchar("bic", { length: 11 }),
+  splitPayment: boolean("split_payment"),
+  withholdingTax: boolean("withholding_tax"),
+  taxRegime: varchar("tax_regime", { length: 100 }),
+  
+  // Control & Status Overrides
+  status: supplierStatusEnum("status"),
+  
+  // Notes Override
+  notes: text("notes"),
   
   // ==================== METADATI OVERRIDE ====================
   updatedBy: varchar("updated_by").notNull().references(() => users.id),
@@ -598,6 +630,7 @@ export const supplierOverrides = w3suiteSchema.table("supplier_overrides", {
   // Performance indexes
   index("supplier_overrides_tenant_idx").on(table.tenantId),
   index("supplier_overrides_updated_idx").on(table.updatedAt.desc()),
+  index("supplier_overrides_supplier_idx").on(table.supplierId),
 ]);
 
 export const insertSupplierOverrideSchema = createInsertSchema(supplierOverrides).omit({ 
@@ -755,7 +788,13 @@ export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
 
 // Supplier Overrides Relations
 export const supplierOverridesRelations = relations(supplierOverrides, ({ one }) => ({
+  // Relations verso w3suite schema
   supplier: one(suppliers, { fields: [supplierOverrides.supplierId], references: [suppliers.id] }),
   tenant: one(tenants, { fields: [supplierOverrides.tenantId], references: [tenants.id] }),
   updatedByUser: one(users, { fields: [supplierOverrides.updatedBy], references: [users.id] }),
+  
+  // Relations verso public schema (reference tables) - nullable fields
+  city: one(italianCities, { fields: [supplierOverrides.cityId], references: [italianCities.id] }),
+  country: one(countries, { fields: [supplierOverrides.countryId], references: [countries.id] }),
+  preferredPaymentMethod: one(paymentMethods, { fields: [supplierOverrides.preferredPaymentMethodId], references: [paymentMethods.id] }),
 }));
