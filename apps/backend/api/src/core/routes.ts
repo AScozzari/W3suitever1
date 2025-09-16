@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
 import { sql, eq } from "drizzle-orm";
 import { tenants, users } from "../db/schema";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -58,7 +58,7 @@ const uploadInitBody = z.object({
 });
 
 const objectPathBody = z.object({ 
-  objectPath: objectPathSchema 
+  objectPath: z.string().min(1).max(500)
 });
 
 const avatarUpdateBody = z.object({ 
@@ -632,19 +632,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Validate request body with Zod
-      const validatedData = validateRequestBody(insertSupplierSchema, req.body, res);
+      // Validate request body with Zod (use supplier override schema for tenant suppliers)
+      const validatedData = validateRequestBody(insertSupplierOverrideSchema, req.body, res);
       if (!validatedData) return; // Error already sent by validateRequestBody
 
-      // Force tenant origin and tenantId for new suppliers
+      // Force tenant origin and tenantId for new tenant suppliers
       const supplierData = { 
-        ...(validatedData as InsertSupplier), 
+        ...(validatedData as InsertSupplierOverride), 
         tenantId, 
         origin: 'tenant' as const,
         createdBy: req.user?.id || 'system'
       };
       
-      const supplier = await storage.createSupplier(supplierData);
+      const supplier = await storage.createTenantSupplier(supplierData);
       res.status(201).json(supplier);
     } catch (error) {
       handleApiError(error, res, 'creazione fornitore');
@@ -658,7 +658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!validateUUIDParam(req.params.id, 'ID fornitore', res)) return;
 
       // Validate request body with Zod (make all fields optional for updates)
-      const updateSchema = insertSupplierSchema.partial();
+      const updateSchema = insertSupplierOverrideSchema.partial();
       const validatedData = validateRequestBody(updateSchema, req.body, res);
       if (!validatedData) return; // Error already sent by validateRequestBody
 
@@ -668,7 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedBy: req.user?.id || 'system'
       };
 
-      const supplier = await storage.updateSupplier(req.params.id, supplierData);
+      const supplier = await storage.updateTenantSupplier(req.params.id, supplierData);
       res.json(supplier);
     } catch (error: any) {
       handleApiError(error, res, 'aggiornamento fornitore');
@@ -681,7 +681,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate UUID parameter
       if (!validateUUIDParam(req.params.id, 'ID fornitore', res)) return;
 
-      await storage.deleteSupplier(req.params.id);
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({
+          error: 'missing_tenant',
+          message: 'Identificativo organizzazione non disponibile'
+        });
+      }
+
+      await storage.deleteTenantSupplier(req.params.id, tenantId);
       res.status(204).send();
     } catch (error: any) {
       handleApiError(error, res, 'eliminazione fornitore');
@@ -917,7 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate request body with Zod
-      const validatedData = validateRequestBody(uploadConfigSchema, req.body, res);
+      const validatedData = validateRequestBody<z.infer<typeof uploadConfigSchema>>(uploadConfigSchema, req.body, res);
       if (!validatedData) return; // Error already sent by validateRequestBody
 
       // Additional avatar-specific validation
@@ -991,7 +999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Extract metadata from request headers or body
-      const body = validateRequestBody(objectPathBody, req.body, res); if (!body) return;
+      const body = validateRequestBody<z.infer<typeof objectPathBody>>(objectPathBody, req.body, res); if (!body) return;
       const objectPath = (req.headers['x-object-path'] as string) || body.objectPath;
       const visibility = req.headers['x-visibility'] || req.body.visibility || 'public';
 
@@ -1083,7 +1091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         avatarUrl: z.string().url('URL avatar non valido').optional()
       });
 
-      const validatedData = validateRequestBody(avatarSchema, req.body, res);
+      const validatedData = validateRequestBody<z.infer<typeof avatarSchema>>(avatarSchema, req.body, res);
       if (!validatedData) return;
 
       // Verify object access permissions
@@ -1593,7 +1601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/users/:userId/roles/:roleId', enterpriseAuth, async (req: any, res) => {
     try {
       const { rbacStorage } = await import('../core/rbac-storage.js');
-      const body = validateRequestBody(aclScopeBody, req.body, res); if (!body) return;
+      const body = validateRequestBody<z.infer<typeof aclScopeBody>>(aclScopeBody, req.body, res); if (!body) return;
       const assignmentData = {
         userId: req.params.userId,
         roleId: req.params.roleId,
@@ -1854,7 +1862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(role);
-    } catch (error) {
+    } catch (error: any) {
       if (error.message?.includes('system role')) {
         return res.status(403).json({ 
           error: 'forbidden',
@@ -1979,7 +1987,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate request body
       const assignmentSchema = insertUserAssignmentSchema.omit({ userId: true });
-      const validatedData = validateRequestBody(assignmentSchema, req.body, res);
+      const validatedData = validateRequestBody<z.infer<typeof assignmentSchema>>(assignmentSchema, req.body, res);
       if (!validatedData) return;
 
       const assignmentData = {

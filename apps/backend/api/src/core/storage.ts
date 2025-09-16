@@ -5,6 +5,7 @@ import {
   legalEntities,
   stores,
   suppliers,
+  supplierOverrides,
   roles,
   userAssignments,
   userStores,
@@ -21,6 +22,8 @@ import {
   type InsertStore,
   type Supplier,
   type InsertSupplier,
+  type SupplierOverride,
+  type InsertSupplierOverride,
   type UserAssignment,
   type InsertUserAssignment,
   type UserStore,
@@ -49,7 +52,7 @@ import {
   type Country,
 } from "../db/schema/public";
 import { db, setTenantContext, withTenantContext } from "./db";
-import { eq, and, or, gte, lte, desc, asc, sql } from "drizzle-orm";
+import { eq, and, or, gte, lte, desc, asc, sql, isNull, isNotNull } from "drizzle-orm";
 
 // Types for structured logs filtering and pagination
 export interface LogFilters {
@@ -116,9 +119,9 @@ export interface IStorage {
   
   // Supplier Management (Brand Base + Tenant Override Pattern)
   getSuppliersByTenant(tenantId: string): Promise<any[]>;
-  createSupplier(supplier: InsertSupplier): Promise<Supplier>;
-  updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier>;
-  deleteSupplier(id: string): Promise<void>;
+  createTenantSupplier(supplier: InsertSupplierOverride): Promise<SupplierOverride>;
+  updateTenantSupplier(id: string, supplier: Partial<InsertSupplierOverride>): Promise<SupplierOverride>;
+  deleteTenantSupplier(id: string, tenantId: string): Promise<void>;
   
   // User Assignment Management
   getUserAssignments(userId: string): Promise<UserAssignment[]>;
@@ -438,6 +441,7 @@ export class DatabaseStorage implements IStorage {
     // Ensure tenant context is set for RLS
     await setTenantContext(tenantId);
     
+    // Use the original working query structure with proper joins
     const result = await db
       .select({
         // Identità & Classificazione
@@ -510,36 +514,36 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async createSupplier(supplierData: InsertSupplier): Promise<Supplier> {
-    const [supplier] = await db.insert(suppliers).values(supplierData).returning();
+  async createTenantSupplier(supplierData: InsertSupplierOverride): Promise<SupplierOverride> {
+    const [supplier] = await db.insert(supplierOverrides).values(supplierData).returning();
     return supplier;
   }
 
-  async updateSupplier(id: string, supplierData: Partial<InsertSupplier>): Promise<Supplier> {
+  async updateTenantSupplier(id: string, supplierData: Partial<InsertSupplierOverride>): Promise<SupplierOverride> {
     const [supplier] = await db
-      .update(suppliers)
+      .update(supplierOverrides)
       .set({ ...supplierData, updatedAt: new Date() })
-      .where(eq(suppliers.id, id))
+      .where(eq(supplierOverrides.id, id))
       .returning();
     
     if (!supplier) {
-      throw new Error(`Supplier with id ${id} not found`);
+      throw new Error(`Tenant supplier with id ${id} not found`);
     }
     
     return supplier;
   }
 
-  async deleteSupplier(id: string): Promise<void> {
-    // Solo tenant overrides possono essere eliminati
+  async deleteTenantSupplier(id: string, tenantId: string): Promise<void> {
+    // Only tenant-specific suppliers from supplier_overrides can be deleted
     const result = await db
-      .delete(suppliers)
+      .delete(supplierOverrides)
       .where(and(
-        eq(suppliers.id, id),
-        eq(suppliers.origin, 'tenant') // Solo supplier tenant-specific
+        eq(supplierOverrides.id, id),
+        eq(supplierOverrides.tenantId, tenantId)
       ));
     
     if (result.rowCount === 0) {
-      throw new Error(`Supplier with id ${id} not found or cannot be deleted (only tenant suppliers can be deleted)`);
+      throw new Error(`Tenant supplier with id ${id} not found or not owned by tenant ${tenantId}`);
     }
   }
 
@@ -837,26 +841,28 @@ export class DatabaseStorage implements IStorage {
     
     // User-specific notifications: broadcast or targeted to specific user
     if (userId) {
-      conditions.push(
-        or(
-          eq(notifications.broadcast, true),
-          eq(notifications.targetUserId, userId),
-          sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))`
-        )
-      );
+      const userConditions = [
+        eq(notifications.broadcast, true),
+        eq(notifications.targetUserId, userId),
+        sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))` as any
+      ].filter(Boolean);
+      
+      if (userConditions.length > 0) {
+        conditions.push(or(...userConditions));
+      }
     }
     
     // Apply filters
     if (filters?.type) {
-      conditions.push(eq(notifications.type, filters.type));
+      conditions.push(eq(notifications.type, filters.type as any));
     }
     
     if (filters?.priority) {
-      conditions.push(eq(notifications.priority, filters.priority));
+      conditions.push(eq(notifications.priority, filters.priority as any));
     }
     
     if (filters?.status) {
-      conditions.push(eq(notifications.status, filters.status));
+      conditions.push(eq(notifications.status, filters.status as any));
     }
     
     if (filters?.targetUserId) {
@@ -864,12 +870,14 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Filter out expired notifications
-    conditions.push(
-      or(
-        eq(notifications.expiresAt, null),
-        gte(notifications.expiresAt, new Date())
-      )
-    );
+    const expiryConditions = [
+      isNull(notifications.expiresAt),
+      gte(notifications.expiresAt, new Date())
+    ].filter(Boolean);
+    
+    if (expiryConditions.length > 0) {
+      conditions.push(or(...expiryConditions));
+    }
     
     // Count total and unread records
     const [countResult] = await db
@@ -919,22 +927,26 @@ export class DatabaseStorage implements IStorage {
     
     // User-specific notifications: broadcast or targeted to specific user
     if (userId) {
-      conditions.push(
-        or(
-          eq(notifications.broadcast, true),
-          eq(notifications.targetUserId, userId),
-          sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))`
-        )
-      );
+      const userConditions = [
+        eq(notifications.broadcast, true),
+        eq(notifications.targetUserId, userId),
+        sql`EXISTS(SELECT 1 FROM ${users} WHERE id = ${userId} AND role = ANY(${notifications.targetRoles}))` as any
+      ].filter(Boolean);
+      
+      if (userConditions.length > 0) {
+        conditions.push(or(...userConditions));
+      }
     }
     
     // Filter out expired notifications
-    conditions.push(
-      or(
-        eq(notifications.expiresAt, null),
-        gte(notifications.expiresAt, new Date())
-      )
-    );
+    const expiryConditions = [
+      isNull(notifications.expiresAt),
+      gte(notifications.expiresAt, new Date())
+    ].filter(Boolean);
+    
+    if (expiryConditions.length > 0) {
+      conditions.push(or(...expiryConditions));
+    }
     
     const [result] = await db
       .select({ count: sql<string>`count(*)::text` })

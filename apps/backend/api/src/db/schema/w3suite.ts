@@ -570,70 +570,73 @@ export const insertSupplierSchema = createInsertSchema(suppliers).omit({
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
 export type Supplier = typeof suppliers.$inferSelect;
 
-// ==================== SUPPLIER OVERRIDES (Tenant Customizations) ====================
+// ==================== SUPPLIER OVERRIDES (Tenant-Specific Suppliers) ====================
+// Full table for tenant-created suppliers (not just overrides)
 export const supplierOverrides = w3suiteSchema.table("supplier_overrides", {
-  supplierId: uuid("supplier_id").notNull().references(() => suppliers.id),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  // ==================== IDENTITÀ & CLASSIFICAZIONE ====================
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  origin: supplierOriginEnum("origin").notNull().default("tenant"), // Always 'tenant' for this table
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id), // Always required for tenant suppliers
+  externalId: varchar("external_id", { length: 100 }), // ID from Brand Interface (usually NULL for tenant suppliers)
+  code: varchar("code", { length: 50 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // Nome commerciale
+  legalName: varchar("legal_name", { length: 255 }), // Ragione sociale legale
+  supplierType: supplierTypeEnum("supplier_type").notNull(),
   
-  // ==================== OVERRIDE FIELDS (mirror suppliers table) ====================
-  // All fields are nullable since they're overrides
-  
-  // Identity & Classification Overrides
-  code: varchar("code", { length: 50 }),
-  name: varchar("name", { length: 255 }),
-  legalName: varchar("legal_name", { length: 255 }),
-  supplierType: supplierTypeEnum("supplier_type"),
-  
-  // Tax Data (Italy) Overrides
-  vatNumber: varchar("vat_number", { length: 20 }),
-  taxCode: varchar("tax_code", { length: 20 }),
-  sdiCode: varchar("sdi_code", { length: 20 }),
-  pecEmail: varchar("pec_email", { length: 255 }),
-  reaNumber: varchar("rea_number", { length: 50 }),
+  // ==================== DATI FISCALI ITALIA ====================
+  vatNumber: varchar("vat_number", { length: 20 }), // P.IVA
+  taxCode: varchar("tax_code", { length: 20 }), // Codice Fiscale (opzionale)
+  sdiCode: varchar("sdi_code", { length: 20 }), // Codice SDI fatturazione elettronica
+  pecEmail: varchar("pec_email", { length: 255 }), // PEC (alternativa a SDI)
+  reaNumber: varchar("rea_number", { length: 50 }), // Numero REA
   chamberOfCommerce: varchar("chamber_of_commerce", { length: 255 }),
   
-  // Address Overrides
-  registeredAddress: jsonb("registered_address"),
-  cityId: uuid("city_id").references(() => italianCities.id),
-  countryId: uuid("country_id").references(() => countries.id),
+  // ==================== INDIRIZZO SEDE LEGALE ====================
+  registeredAddress: jsonb("registered_address"), // { via, civico, cap, citta, provincia }
+  cityId: uuid("city_id").references(() => italianCities.id), // FK to public.italian_cities
+  countryId: uuid("country_id").references(() => countries.id).notNull(), // FK to public.countries
   
-  // Payment Overrides
+  // ==================== PAGAMENTI ====================
   preferredPaymentMethodId: uuid("preferred_payment_method_id").references(() => paymentMethods.id),
-  paymentTerms: varchar("payment_terms", { length: 100 }),
-  currency: varchar("currency", { length: 3 }),
+  paymentTerms: varchar("payment_terms", { length: 100 }), // "30DFFM", "60GGDF", etc.
+  currency: varchar("currency", { length: 3 }).default("EUR"),
   
-  // Contact Overrides
-  email: varchar("email", { length: 255 }),
-  phone: varchar("phone", { length: 50 }),
-  website: varchar("website", { length: 255 }),
-  contacts: jsonb("contacts"), // Structured contacts like { commerciale: {...}, amministrativo: {...} }
+  // ==================== CONTATTI ====================
+  email: varchar("email", { length: 255 }), // Email principale
+  phone: varchar("phone", { length: 50 }), // Telefono principale
+  website: varchar("website", { length: 255 }), // Sito web
+  // Referenti strutturati (JSONB per flessibilità)
+  contacts: jsonb("contacts").default({}), // { commerciale: {...}, amministrativo: {...}, logistico: {...} }
   
-  // Administrative Extended Overrides
-  iban: varchar("iban", { length: 34 }),
-  bic: varchar("bic", { length: 11 }),
-  splitPayment: boolean("split_payment"),
-  withholdingTax: boolean("withholding_tax"),
-  taxRegime: varchar("tax_regime", { length: 100 }),
+  // ==================== AMMINISTRATIVI ESTESI ====================
+  iban: varchar("iban", { length: 34 }), // Codice IBAN
+  bic: varchar("bic", { length: 11 }), // Codice BIC/SWIFT
+  splitPayment: boolean("split_payment").default(false), // Split Payment
+  withholdingTax: boolean("withholding_tax").default(false), // Ritenuta d'Acconto
+  taxRegime: varchar("tax_regime", { length: 100 }), // Regime fiscale
   
-  // Control & Status Overrides
-  status: supplierStatusEnum("status"),
+  // ==================== CONTROLLO & STATO ====================
+  status: supplierStatusEnum("status").notNull().default("active"),
+  lockedFields: text("locked_fields").array().default([]), // Campi bloccati dal brand (usually empty for tenant suppliers)
   
-  // Notes Override
-  notes: text("notes"),
-  
-  // ==================== METADATI OVERRIDE ====================
-  updatedBy: varchar("updated_by").notNull().references(() => users.id),
+  // ==================== METADATI ====================
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  notes: text("notes"),
 }, (table) => [
-  // Chiave primaria composta
-  primaryKey({ columns: [table.supplierId, table.tenantId] }),
   // Performance indexes
-  index("supplier_overrides_tenant_idx").on(table.tenantId),
-  index("supplier_overrides_updated_idx").on(table.updatedAt.desc()),
-  index("supplier_overrides_supplier_idx").on(table.supplierId),
+  index("supplier_overrides_tenant_code_idx").on(table.tenantId, table.code),
+  index("supplier_overrides_origin_status_idx").on(table.origin, table.status),
+  index("supplier_overrides_vat_number_idx").on(table.vatNumber),
+  index("supplier_overrides_name_idx").on(table.name),
+  uniqueIndex("supplier_overrides_tenant_code_unique").on(table.tenantId, table.code),
 ]);
 
 export const insertSupplierOverrideSchema = createInsertSchema(supplierOverrides).omit({ 
+  id: true, 
+  createdAt: true,
   updatedAt: true 
 });
 export type InsertSupplierOverride = z.infer<typeof insertSupplierOverrideSchema>;
@@ -786,14 +789,14 @@ export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
   overrides: many(supplierOverrides),
 }));
 
-// Supplier Overrides Relations
+// Supplier Overrides Relations (now full table for tenant-specific suppliers)
 export const supplierOverridesRelations = relations(supplierOverrides, ({ one }) => ({
   // Relations verso w3suite schema
-  supplier: one(suppliers, { fields: [supplierOverrides.supplierId], references: [suppliers.id] }),
   tenant: one(tenants, { fields: [supplierOverrides.tenantId], references: [tenants.id] }),
+  createdByUser: one(users, { fields: [supplierOverrides.createdBy], references: [users.id] }),
   updatedByUser: one(users, { fields: [supplierOverrides.updatedBy], references: [users.id] }),
   
-  // Relations verso public schema (reference tables) - nullable fields
+  // Relations verso public schema (reference tables)
   city: one(italianCities, { fields: [supplierOverrides.cityId], references: [italianCities.id] }),
   country: one(countries, { fields: [supplierOverrides.countryId], references: [countries.id] }),
   preferredPaymentMethod: one(paymentMethods, { fields: [supplierOverrides.preferredPaymentMethodId], references: [paymentMethods.id] }),
