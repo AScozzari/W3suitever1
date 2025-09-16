@@ -12,6 +12,13 @@ import {
   StandardPartitaIVAField,
   StandardPaeseField
 } from '../components/forms/StandardFields';
+import { 
+  supplierValidationSchema, 
+  legalEntityValidationSchema,
+  storeValidationSchema,
+  userValidationSchema,
+  type SupplierValidation 
+} from '../lib/validation/italian-business-validation';
 
 // Tenant ID per staging environment
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -466,6 +473,35 @@ export default function SettingsPage() {
   // Note: fornitoriList is now managed by TanStack Query as suppliersList
   
   
+  // TanStack Query hooks for payment data (renamed to avoid conflicts)
+  const { data: paymentMethodsList, isLoading: paymentMethodsLoading } = useQuery({
+    queryKey: ['paymentMethods'],
+    queryFn: async () => {
+      const response = await fetch('/api/payment-methods', {
+        headers: {
+          'X-Tenant-ID': DEMO_TENANT_ID
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch payment methods');
+      const data = await response.json();
+      return data.paymentMethods || [];
+    }
+  });
+
+  const { data: paymentConditionsList, isLoading: paymentConditionsLoading } = useQuery({
+    queryKey: ['paymentConditions'],
+    queryFn: async () => {
+      const response = await fetch('/api/payment-conditions', {
+        headers: {
+          'X-Tenant-ID': DEMO_TENANT_ID
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch payment conditions');
+      const data = await response.json();
+      return data.paymentConditions || [];
+    }
+  });
+
   // Caricamento dati enterprise con service layer
   useEffect(() => {
     console.log('🆕 SettingsPage: useEffect triggered - loading data...');
@@ -855,7 +891,7 @@ export default function SettingsPage() {
   });
 
   // Load payment methods reference data
-  const { data: paymentMethods = [] } = useQuery({
+  const { data: referencePaymentMethods = [] } = useQuery({
     queryKey: ['/api/reference/payment-methods'],
     staleTime: 5 * 60 * 1000,
   });
@@ -4757,8 +4793,8 @@ export default function SettingsPage() {
     note: ''
   });
 
-  // State per il modal fornitore
-  const [newSupplier, setNewSupplier] = useState({
+  // State per il modal fornitore - updated with separate payment fields
+  const [newSupplier, setNewSupplier] = useState<SupplierValidation>({
     // ANAGRAFICI
     code: '',
     name: '',
@@ -4772,7 +4808,6 @@ export default function SettingsPage() {
     city: '',
     province: '',
     postalCode: '',
-    country: 'Italia',
     // CONTATTI
     email: '',
     phone: '',
@@ -4784,7 +4819,9 @@ export default function SettingsPage() {
     bic: '',
     splitPayment: false,
     withholdingTax: false,
+    // SEPARATE PAYMENT FIELDS
     preferredPaymentMethodId: '',
+    paymentConditionId: '',
     // NOTE
     notes: ''
   });
@@ -4906,47 +4943,56 @@ export default function SettingsPage() {
     try {
       const currentTenantId = DEMO_TENANT_ID;
       
-      // Validation: Ragione Sociale is required
-      if (!newSupplier.name.trim()) {
-        alert('Errore: Nome/Ragione Sociale è obbligatorio per creare un fornitore.');
+      // Comprehensive validation using Zod schema
+      const validationResult = supplierValidationSchema.safeParse(newSupplier);
+      
+      if (!validationResult.success) {
+        // Show validation errors
+        const errors = validationResult.error.errors.map(err => 
+          `${err.path.join('.')}: ${err.message}`
+        ).join('\n');
+        alert(`Errori di validazione:\n${errors}`);
         return;
       }
 
+      const validatedData = validationResult.data;
       const isEdit = Boolean(supplierModal.data);
       
       // Genera codice fornitore: inizia con FOR, almeno 6 cifre totali (solo per creazione)
-      const newCode = newSupplier.code || (isEdit ? supplierModal.data.code : `FOR${String(Date.now()).slice(-3)}`);
+      const newCode = validatedData.code || (isEdit ? supplierModal.data.code : `FOR${String(Date.now()).slice(-3)}`);
       
       const supplierData = {
         tenantId: currentTenantId,
         origin: 'tenant',
         code: newCode,
-        name: newSupplier.name,
-        legalName: newSupplier.legalName,
-        legalForm: newSupplier.legalForm,
+        name: validatedData.name,
+        legalName: validatedData.legalName,
+        legalForm: validatedData.legalForm,
         supplierType: 'distributore', // Default type, can be made dynamic later
-        vatNumber: newSupplier.vatNumber,
-        taxCode: newSupplier.taxCode,
-        status: newSupplier.status,
+        vatNumber: validatedData.vatNumber,
+        taxCode: validatedData.taxCode,
+        status: validatedData.status,
         // Address structure - JSONB + FK pattern
         registeredAddress: {
-          via: newSupplier.address,
-          citta: newSupplier.city,
-          provincia: newSupplier.province,
-          cap: newSupplier.postalCode
+          via: validatedData.address,
+          citta: validatedData.city,
+          provincia: validatedData.province,
+          cap: validatedData.postalCode
         },
         countryId: '00000000-0000-0000-0000-000000000001', // Default Italy UUID - should be dynamic
-        email: newSupplier.email,
-        phone: newSupplier.phone,
-        website: newSupplier.website,
-        pecEmail: newSupplier.pecEmail,
-        sdiCode: newSupplier.sdiCode,
-        iban: newSupplier.iban,
-        bic: newSupplier.bic,
-        splitPayment: newSupplier.splitPayment,
-        withholdingTax: newSupplier.withholdingTax,
-        preferredPaymentMethodId: newSupplier.preferredPaymentMethodId || null,
-        notes: newSupplier.notes,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        website: validatedData.website,
+        pecEmail: validatedData.pecEmail,
+        sdiCode: validatedData.sdiCode,
+        iban: validatedData.iban,
+        bic: validatedData.bic,
+        splitPayment: validatedData.splitPayment,
+        withholdingTax: validatedData.withholdingTax,
+        // SEPARATE PAYMENT FIELDS
+        preferredPaymentMethodId: validatedData.preferredPaymentMethodId || null,
+        paymentConditionId: validatedData.paymentConditionId || null,
+        notes: validatedData.notes,
         createdBy: 'system' // Should be current user ID
       };
 
@@ -5387,7 +5433,38 @@ export default function SettingsPage() {
                     type="text"
                     placeholder="IT12345678901"
                     value={newRagioneSociale.pIva}
-                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, pIva: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      setNewRagioneSociale({ ...newRagioneSociale, pIva: value });
+                    }}
+                    onBlur={(e) => {
+                      // Real-time P.IVA validation for legal entities
+                      if (e.target.value) {
+                        const vatValidation = legalEntityValidationSchema.shape.pIva?.safeParse(e.target.value);
+                        if (!vatValidation?.success) {
+                          e.target.style.borderColor = '#ef4444';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          if (!errorDiv) {
+                            errorDiv = document.createElement('div');
+                            errorDiv.className = 'validation-error';
+                            e.target.parentElement?.appendChild(errorDiv);
+                          }
+                          errorDiv.textContent = 'P.IVA non valida (formato: IT + 11 cifre)';
+                          errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                        } else {
+                          e.target.style.borderColor = '#10b981';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      } else {
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.boxShadow = 'none';
+                        const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                        errorDiv?.remove();
+                      }
+                    }}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -5954,7 +6031,39 @@ export default function SettingsPage() {
                     type="email"
                     placeholder="info@azienda.it"
                     value={newRagioneSociale.email}
-                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, email: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value.toLowerCase();
+                      setNewRagioneSociale({ ...newRagioneSociale, email: value });
+                    }}
+                    onBlur={(e) => {
+                      // Real-time email validation for legal entities
+                      if (e.target.value) {
+                        const emailValidation = legalEntityValidationSchema.shape.email?.safeParse(e.target.value);
+                        if (!emailValidation?.success) {
+                          e.target.style.borderColor = '#ef4444';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          if (!errorDiv) {
+                            errorDiv = document.createElement('div');
+                            errorDiv.className = 'validation-error';
+                            e.target.parentElement?.appendChild(errorDiv);
+                          }
+                          errorDiv.textContent = 'Formato email non valido';
+                          errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                        } else {
+                          e.target.style.borderColor = '#10b981';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      } else {
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.boxShadow = 'none';
+                        const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                        errorDiv?.remove();
+                      }
+                    }}
+                    data-testid="input-legal-entity-email"
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -5998,7 +6107,40 @@ export default function SettingsPage() {
                     type="email"
                     placeholder="azienda@pec.it"
                     value={newRagioneSociale.pec}
-                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, pec: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value.toLowerCase();
+                      setNewRagioneSociale({ ...newRagioneSociale, pec: value });
+                    }}
+                    onBlur={(e) => {
+                      // Real-time PEC email validation for legal entities
+                      if (e.target.value) {
+                        const pecValidation = legalEntityValidationSchema.shape.pec?.safeParse(e.target.value);
+                        if (!pecValidation?.success) {
+                          e.target.style.borderColor = '#ef4444';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          if (!errorDiv) {
+                            errorDiv = document.createElement('div');
+                            errorDiv.className = 'validation-error';
+                            e.target.parentElement?.appendChild(errorDiv);
+                          }
+                          errorDiv.textContent = 'PEC non valida - deve terminare con domini certificati PEC';
+                          errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                        } else {
+                          e.target.style.borderColor = '#10b981';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      } else {
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.background = '#fafbfc';
+                        e.target.style.boxShadow = 'none';
+                        const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                        errorDiv?.remove();
+                      }
+                    }}
+                    data-testid="input-legal-entity-pec"
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -6017,11 +6159,6 @@ export default function SettingsPage() {
                       e.target.style.borderColor = '#3b82f6';
                       e.target.style.background = '#ffffff';
                       e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -8797,28 +8934,95 @@ export default function SettingsPage() {
                       ))}
                     </select>
                   </div>
+                  {/* P.IVA with Italian VAT validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      Partita IVA
+                      Partita IVA <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input 
                       type="text" 
                       placeholder="es. IT12345678901"
                       value={newSupplier.vatNumber}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, vatNumber: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setNewSupplier({ ...newSupplier, vatNumber: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time P.IVA validation
+                        if (e.target.value) {
+                          const vatValidation = supplierValidationSchema.shape.vatNumber?.safeParse(e.target.value);
+                          if (!vatValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            // Add error message below field
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'P.IVA non valida (formato: IT + 11 cifre)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-vat-number"
                     />
                   </div>
+                  {/* Codice Fiscale with Italian tax code validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      Codice Fiscale
+                      Codice Fiscale <span style={{ color: '#ef4444' }}>*</span>
                     </label>
                     <input 
                       type="text" 
-                      placeholder="es. ACMSPP95L01H501Z"
+                      placeholder="es. RSSMRA85M01H501Z"
                       value={newSupplier.taxCode}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, taxCode: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setNewSupplier({ ...newSupplier, taxCode: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time Codice Fiscale validation
+                        if (e.target.value) {
+                          const taxCodeValidation = supplierValidationSchema.shape.taxCode?.safeParse(e.target.value);
+                          if (!taxCodeValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'Codice fiscale non valido (16 caratteri)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-tax-code"
                     />
                   </div>
                   <div>
@@ -9048,6 +9252,7 @@ export default function SettingsPage() {
                   gap: '16px',
                   marginBottom: '24px'
                 }}>
+                  {/* Email with validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Email Principale *
@@ -9056,20 +9261,88 @@ export default function SettingsPage() {
                       type="email" 
                       placeholder="info@fornitore.it"
                       value={newSupplier.email}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, email: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value.toLowerCase();
+                        setNewSupplier({ ...newSupplier, email: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time email validation
+                        if (e.target.value) {
+                          const emailValidation = supplierValidationSchema.shape.email?.safeParse(e.target.value);
+                          if (!emailValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'Formato email non valido';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-email"
                     />
                   </div>
+                  {/* PEC Email with specialized Italian PEC validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      PEC (Fatturazione Elettronica)
+                      PEC (Fatturazione Elettronica) *
+                      <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '400', marginTop: '2px' }}>
+                        Deve terminare con domini PEC certificati (es. @pec.it, @legalmail.it)
+                      </div>
                     </label>
                     <input 
                       type="email" 
                       placeholder="fatture@pec.fornitore.it"
                       value={newSupplier.pecEmail}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, pecEmail: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value.toLowerCase();
+                        setNewSupplier({ ...newSupplier, pecEmail: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time PEC email validation
+                        if (e.target.value) {
+                          const pecValidation = supplierValidationSchema.shape.pecEmail?.safeParse(e.target.value);
+                          if (!pecValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'PEC non valida - deve terminare con domini certificati PEC';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-pec-email"
                     />
                   </div>
                   <div>
@@ -9084,16 +9357,56 @@ export default function SettingsPage() {
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
                     />
                   </div>
+                  {/* Phone with Italian phone number validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      Telefono Fisso
+                      Telefono Fisso *
+                      <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '400', marginTop: '2px' }}>
+                        Formato: +39 02 12345678 o +39 334 1234567
+                      </div>
                     </label>
                     <input 
                       type="tel" 
                       placeholder="+39 02 12345678"
                       value={newSupplier.phone}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, phone: e.target.value })}
+                      onChange={(e) => {
+                        // Automatic formatting for Italian phone numbers
+                        let value = e.target.value.replace(/[^0-9+\s]/g, '');
+                        if (value && !value.startsWith('+39')) {
+                          value = value.startsWith('0') ? `+39 ${value}` : value.startsWith('3') ? `+39 ${value}` : value;
+                        }
+                        setNewSupplier({ ...newSupplier, phone: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time Italian phone validation
+                        if (e.target.value) {
+                          const phoneValidation = supplierValidationSchema.shape.phone?.safeParse(e.target.value);
+                          if (!phoneValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'Numero di telefono non valido (formato: +39 seguito da numero valido)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-phone"
                     />
                   </div>
                   <div>
@@ -9181,20 +9494,7 @@ export default function SettingsPage() {
                   gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                   gap: '16px'
                 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
-                      Condizioni di Pagamento
-                    </label>
-                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
-                      <option value="">Seleziona...</option>
-                      <option value="30GG">30 giorni</option>
-                      <option value="60GG">60 giorni</option>
-                      <option value="90GG">90 giorni</option>
-                      <option value="FM">Fine mese</option>
-                      <option value="ANTICIPO">Anticipo</option>
-                      <option value="PERSONALIZZATO">Personalizzato</option>
-                    </select>
-                  </div>
+                  {/* Payment Method Dropdown - Connected to Database */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       Metodo di Pagamento
@@ -9202,28 +9502,103 @@ export default function SettingsPage() {
                     <select 
                       value={newSupplier.preferredPaymentMethodId}
                       onChange={(e) => setNewSupplier({ ...newSupplier, preferredPaymentMethodId: e.target.value })}
-                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px', 
+                        fontSize: '14px', 
+                        background: paymentMethodsLoading ? '#f9fafb' : 'white',
+                        cursor: paymentMethodsLoading ? 'wait' : 'pointer'
+                      }}
+                      disabled={paymentMethodsLoading}
+                      data-testid="select-payment-method"
                     >
-                      <option value="">Seleziona...</option>
-                      {(paymentMethods as any[])?.map((method: any) => (
-                        <option key={method.id} value={method.id}>
-                          {method.name}
+                      <option value="">{paymentMethodsLoading ? 'Caricamento...' : 'Seleziona metodo...'}</option>
+                      {paymentMethodsList?.map((method: any) => (
+                        <option key={method.id} value={method.id} title={method.description}>
+                          {method.name} {method.requiresIban ? '(IBAN richiesto)' : ''}
                         </option>
                       ))}
                     </select>
+                    {paymentMethodsLoading && (
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                        Caricamento metodi di pagamento...
+                      </div>
+                    )}
                   </div>
+
+                  {/* Payment Conditions Dropdown - Connected to Database */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Condizioni di Pagamento
+                    </label>
+                    <select 
+                      value={newSupplier.paymentConditionId}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, paymentConditionId: e.target.value })}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px', 
+                        fontSize: '14px', 
+                        background: paymentConditionsLoading ? '#f9fafb' : 'white',
+                        cursor: paymentConditionsLoading ? 'wait' : 'pointer'
+                      }}
+                      disabled={paymentConditionsLoading}
+                      data-testid="select-payment-condition"
+                    >
+                      <option value="">{paymentConditionsLoading ? 'Caricamento...' : 'Seleziona condizioni...'}</option>
+                      {paymentConditionsList?.map((condition: any) => (
+                        <option key={condition.id} value={condition.id} title={condition.description}>
+                          {condition.name} {condition.days ? `(${condition.days} giorni)` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {paymentConditionsLoading && (
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                        Caricamento condizioni di pagamento...
+                      </div>
+                    )}
+                  </div>
+                  {/* IBAN with Validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       IBAN
+                      {newSupplier.preferredPaymentMethodId && paymentMethodsList?.find(m => m.id === newSupplier.preferredPaymentMethodId)?.requiresIban && (
+                        <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>
+                      )}
                     </label>
                     <input 
                       type="text" 
                       placeholder="IT60 X054 2811 1010 0000 0123 456"
                       value={newSupplier.iban}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, iban: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase().replace(/\s/g, '');
+                        setNewSupplier({ ...newSupplier, iban: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time IBAN validation
+                        if (e.target.value) {
+                          const ibanValidation = supplierValidationSchema.shape.iban?.safeParse(e.target.value);
+                          if (!ibanValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }
+                      }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-iban"
                     />
                   </div>
+
+                  {/* BIC/SWIFT with Validation */}
                   <div>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                       BIC/SWIFT
@@ -9232,8 +9607,28 @@ export default function SettingsPage() {
                       type="text" 
                       placeholder="BCITITMM"
                       value={newSupplier.bic}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, bic: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setNewSupplier({ ...newSupplier, bic: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time BIC validation
+                        if (e.target.value) {
+                          const bicValidation = supplierValidationSchema.shape.bic?.safeParse(e.target.value);
+                          if (!bicValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }
+                      }}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-bic"
                     />
                   </div>
                   <div>

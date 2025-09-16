@@ -714,6 +714,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== PAYMENT METHODS API ====================
+  
+  // GET /api/payment-methods - Get all active payment methods from public schema
+  app.get('/api/payment-methods', ...authWithRBAC, async (req: any, res) => {
+    try {
+      // Import the paymentMethods table from the public schema
+      const { paymentMethods: paymentMethodsTable } = await import("../db/schema/public");
+      
+      const paymentMethodsData = await db
+        .select({
+          id: paymentMethodsTable.id,
+          code: paymentMethodsTable.code,
+          name: paymentMethodsTable.name,
+          description: paymentMethodsTable.description,
+          category: paymentMethodsTable.category,
+          requiresIban: paymentMethodsTable.requiresIban,
+          requiresAuth: paymentMethodsTable.requiresAuth,
+          supportsBatching: paymentMethodsTable.supportsBatching,
+          countryCode: paymentMethodsTable.countryCode,
+          sortOrder: paymentMethodsTable.sortOrder
+        })
+        .from(paymentMethodsTable)
+        .where(eq(paymentMethodsTable.active, true))
+        .orderBy(paymentMethodsTable.sortOrder, paymentMethodsTable.name);
+
+      res.json({ 
+        paymentMethods: paymentMethodsData, 
+        success: true,
+        total: paymentMethodsData.length 
+      });
+    } catch (error: any) {
+      handleApiError(error, res, 'recupero metodi di pagamento');
+    }
+  });
+
+  // GET /api/payment-conditions - Get all active payment conditions from w3suite schema
+  app.get('/api/payment-conditions', ...authWithRBAC, async (req: any, res) => {
+    try {
+      // Import the paymentMethodsConditions table from the w3suite schema
+      const { paymentMethodsConditions } = await import("../db/schema/w3suite");
+      
+      const paymentConditionsData = await db
+        .select({
+          id: paymentMethodsConditions.id,
+          code: paymentMethodsConditions.code,
+          name: paymentMethodsConditions.name,
+          description: paymentMethodsConditions.description,
+          days: paymentMethodsConditions.days,
+          type: paymentMethodsConditions.type,
+          calculation: paymentMethodsConditions.calculation,
+          sortOrder: paymentMethodsConditions.sortOrder
+        })
+        .from(paymentMethodsConditions)
+        .where(eq(paymentMethodsConditions.active, true))
+        .orderBy(paymentMethodsConditions.sortOrder, paymentMethodsConditions.name);
+
+      res.json({ 
+        paymentConditions: paymentConditionsData, 
+        success: true,
+        total: paymentConditionsData.length 
+      });
+    } catch (error: any) {
+      handleApiError(error, res, 'recupero condizioni di pagamento');
+    }
+  });
+
   // ==================== LEGAL ENTITIES API ====================
 
   // Get legal entities for current tenant
