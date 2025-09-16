@@ -16,6 +16,28 @@ W3 Suite is a multi-tenant enterprise platform within a structured monorepo, off
   2. **Copy & Paste workflow** - `npx shadcn@latest add [component-name]`
   3. **No component reinvention** - usa Button, Card, Dialog, Form, Table esistenti
   4. **Accessibility built-in** - Radix primitives garantiscono WCAG compliance
+- **ITALIAN BUSINESS VALIDATION (OBBLIGATORIO PER TUTTI I MODAL)**:
+  📧 **Email**: Validazione RFC standard con formatting automatico lowercase
+  🏢 **PEC Email**: Domini certificati (.pec.it, .legalmail.it, .postacert.it, .ingpec.eu, etc.)
+  🔢 **Partita IVA**: Formato IT + 11 cifre con algoritmo checksum italiano completo
+  📋 **Codice Fiscale**: 16 caratteri con validazione formato e checksum italiano
+  📱 **Telefono**: Formato italiano (+39) con auto-formatting e validazione lunghezza
+  💳 **IBAN**: Validazione formato internazionale con algoritmo checksum MOD-97
+  🌐 **Website**: Validazione URL HTTP/HTTPS con formato corretto
+  🏛️ **BIC/SWIFT**: Codice bancario internazionale 8-11 caratteri
+  📍 **Indirizzi**: Validazione CAP italiano (5 cifre) e province (2 caratteri)
+- **MODAL VALIDATION STATUS** (Updated: December 2024):
+  ✅ **Modal Fornitori**: Tutte le validazioni implementate con feedback real-time
+  ✅ **Modal Ragioni Sociali**: Campi business chiave validati (P.IVA, CF, PEC)
+  ✅ **Modal Punti Vendita**: Validazioni complete implementate (email, telefono, social media)
+  ✅ **Modal Utenti**: Validazioni email e telefono italiane implementate
+  ✅ **Comprehensive Coverage**: Tutti i modal principali hanno validazioni complete
+- **VALIDATION IMPLEMENTATION RULES**:
+  - **Real-time feedback**: Bordi verdi (successo) / rossi (errore) con messaggi
+  - **Italian language**: Tutti i messaggi di errore in italiano
+  - **Zod schemas**: Usare `apps/frontend/web/src/lib/validation/italian-business-validation.ts`
+  - **Auto-formatting**: Maiuscolo per codici fiscali, formattazione telefoni
+  - **Visual indicators**: Campi obbligatori con asterisco rosso (*)
 - **ERROR PREVENTION**:
   ❌ **Non fare**: Inline hex colors (#ff6900)
   ❌ **Non fare**: Custom components quando shadcn esiste

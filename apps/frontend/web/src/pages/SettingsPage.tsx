@@ -4623,6 +4623,221 @@ export default function SettingsPage() {
     closed_at: null as string | null       // Database: closed_at
   });
 
+  // 📋 VALIDATION STATE FOR STORE MODAL
+  const [storeValidationErrors, setStoreValidationErrors] = useState<Record<string, string>>({});
+  const [storeValidationState, setStoreValidationState] = useState<Record<string, 'valid' | 'invalid' | 'untouched'>>({
+    phone: 'untouched',
+    email: 'untouched',
+    whatsapp1: 'untouched',
+    whatsapp2: 'untouched',
+    facebook: 'untouched',
+    instagram: 'untouched',
+    tiktok: 'untouched',
+    google_maps_url: 'untouched',
+    telegram: 'untouched'
+  });
+
+  // 🔍 VALIDATION FUNCTIONS FOR STORE MODAL
+  const validateStoreField = (fieldName: string, value: string): { isValid: boolean; error?: string } => {
+    try {
+      switch (fieldName) {
+        case 'email':
+          if (!value) return { isValid: true }; // Optional field
+          z.string().email("Email non valida").parse(value);
+          return { isValid: true };
+
+        case 'phone':
+          if (!value) return { isValid: true }; // Optional field
+          italianPhoneSchema.parse(value);
+          return { isValid: true };
+
+        case 'whatsapp1':
+        case 'whatsapp2':
+          if (!value) return { isValid: true }; // Optional field
+          italianPhoneSchema.parse(value);
+          return { isValid: true };
+
+        case 'facebook':
+        case 'instagram':
+        case 'tiktok':
+        case 'google_maps_url':
+        case 'telegram':
+          if (!value) return { isValid: true }; // Optional field
+          websiteUrlSchema.parse(value);
+          return { isValid: true };
+
+        default:
+          return { isValid: true };
+      }
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || error.message || 'Valore non valido';
+      return { isValid: false, error: errorMessage };
+    }
+  };
+
+  // 🎯 HANDLE STORE FIELD VALIDATION ON BLUR
+  const handleStoreFieldValidation = (fieldName: string, value: string) => {
+    const validation = validateStoreField(fieldName, value);
+    
+    setStoreValidationState(prev => ({
+      ...prev,
+      [fieldName]: validation.isValid ? 'valid' : 'invalid'
+    }));
+
+    setStoreValidationErrors(prev => ({
+      ...prev,
+      [fieldName]: validation.error || ''
+    }));
+
+    // Auto-format phone numbers
+    if ((fieldName === 'phone' || fieldName === 'whatsapp1' || fieldName === 'whatsapp2') && validation.isValid && value) {
+      try {
+        const formatted = italianPhoneSchema.parse(value);
+        setNewStore(prev => ({ ...prev, [fieldName]: formatted }));
+      } catch {
+        // If formatting fails, keep original value
+      }
+    }
+
+    // Auto-format URLs  
+    if (['facebook', 'instagram', 'tiktok', 'google_maps_url', 'telegram'].includes(fieldName) && validation.isValid && value) {
+      try {
+        const formatted = websiteUrlSchema.parse(value);
+        setNewStore(prev => ({ ...prev, [fieldName]: formatted }));
+      } catch {
+        // If formatting fails, keep original value
+      }
+    }
+  };
+
+  // 🎨 GET FIELD BORDER STYLE BASED ON VALIDATION STATE
+  const getStoreFieldStyle = (fieldName: string, baseStyle: React.CSSProperties): React.CSSProperties => {
+    const state = storeValidationState[fieldName];
+    let borderColor = baseStyle.borderColor || '#d1d5db';
+    let boxShadow = 'none';
+
+    if (state === 'valid') {
+      borderColor = '#10b981'; // Green for valid
+      boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+    } else if (state === 'invalid') {
+      borderColor = '#ef4444'; // Red for invalid
+      boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+    }
+
+    return {
+      ...baseStyle,
+      borderColor,
+      boxShadow: storeValidationState[fieldName] !== 'untouched' ? boxShadow : baseStyle.boxShadow || 'none'
+    };
+  };
+
+  // 🔄 RESET STORE VALIDATION ON MODAL OPEN/CLOSE
+  useEffect(() => {
+    if (storeModal.open) {
+      // Reset validation state when modal opens
+      setStoreValidationErrors({});
+      setStoreValidationState({
+        phone: 'untouched',
+        email: 'untouched', 
+        whatsapp1: 'untouched',
+        whatsapp2: 'untouched',
+        facebook: 'untouched',
+        instagram: 'untouched',
+        tiktok: 'untouched',
+        google_maps_url: 'untouched',
+        telegram: 'untouched'
+      });
+    }
+  }, [storeModal.open]);
+
+  // 🆔 USER MODAL VALIDATION STATE MANAGEMENT
+  const [userValidationErrors, setUserValidationErrors] = useState<Record<string, string>>({});
+  const [userValidationState, setUserValidationState] = useState<Record<string, 'valid' | 'invalid' | 'untouched'>>({
+    email: 'untouched',
+    telefono: 'untouched'
+  });
+
+  // 🔍 VALIDATION FUNCTIONS FOR USER MODAL
+  const validateUserField = (fieldName: string, value: string): { isValid: boolean; error?: string } => {
+    try {
+      switch (fieldName) {
+        case 'email':
+          if (!value) return { isValid: false, error: 'Email richiesta' }; // Required field
+          z.string().email("Email non valida").parse(value);
+          return { isValid: true };
+
+        case 'telefono':
+          if (!value) return { isValid: false, error: 'Telefono richiesto' }; // Required field
+          italianPhoneSchema.parse(value);
+          return { isValid: true };
+
+        default:
+          return { isValid: true };
+      }
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || error.message || 'Valore non valido';
+      return { isValid: false, error: errorMessage };
+    }
+  };
+
+  // 🎯 HANDLE USER FIELD VALIDATION ON BLUR
+  const handleUserFieldValidation = (fieldName: string, value: string) => {
+    const validation = validateUserField(fieldName, value);
+    
+    setUserValidationState(prev => ({
+      ...prev,
+      [fieldName]: validation.isValid ? 'valid' : 'invalid'
+    }));
+
+    setUserValidationErrors(prev => ({
+      ...prev,
+      [fieldName]: validation.error || ''
+    }));
+
+    // Auto-format phone numbers
+    if (fieldName === 'telefono' && validation.isValid && value) {
+      try {
+        const formatted = italianPhoneSchema.parse(value);
+        setNewUser(prev => ({ ...prev, [fieldName]: formatted }));
+      } catch {
+        // If formatting fails, keep original value
+      }
+    }
+  };
+
+  // 🎨 GET USER FIELD BORDER STYLE BASED ON VALIDATION STATE
+  const getUserFieldStyle = (fieldName: string, baseStyle: React.CSSProperties): React.CSSProperties => {
+    const state = userValidationState[fieldName];
+    let borderColor = baseStyle.borderColor || '#d1d5db';
+    let boxShadow = 'none';
+
+    if (state === 'valid') {
+      borderColor = '#10b981'; // Green for valid
+      boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+    } else if (state === 'invalid') {
+      borderColor = '#ef4444'; // Red for invalid
+      boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+    }
+
+    return {
+      ...baseStyle,
+      borderColor,
+      boxShadow: userValidationState[fieldName] !== 'untouched' ? boxShadow : baseStyle.boxShadow || 'none'
+    };
+  };
+
+  // 🔄 RESET USER VALIDATION ON MODAL OPEN/CLOSE
+  useEffect(() => {
+    if (userModal.open) {
+      // Reset validation state when modal opens
+      setUserValidationErrors({});
+      setUserValidationState({
+        email: 'untouched',
+        telefono: 'untouched'
+      });
+    }
+  }, [userModal.open]);
+
   // Precompila i campi del modal quando è in modalità edit
   useEffect(() => {
     if (storeModal.open && storeModal.data) {
@@ -7429,7 +7644,8 @@ export default function SettingsPage() {
                     placeholder="+39 02 1234567"
                     value={newStore.phone}
                     onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('phone', e.target.value)}
+                    style={getStoreFieldStyle('phone', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7441,16 +7657,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.phone === 'untouched') {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.phone && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.phone}
+                    </div>
+                  )}
+                  {storeValidationState.phone === 'valid' && newStore.phone && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#10b981',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ Numero di telefono valido
+                    </div>
+                  )}
                 </div>
 
                 {/* Email */}
@@ -7470,7 +7704,8 @@ export default function SettingsPage() {
                     placeholder="punto.vendita@windtre.it"
                     value={newStore.email}
                     onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('email', e.target.value)}
+                    style={getStoreFieldStyle('email', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7482,16 +7717,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.email === 'untouched') {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.email && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.email}
+                    </div>
+                  )}
+                  {storeValidationState.email === 'valid' && newStore.email && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#10b981',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ Email valida
+                    </div>
+                  )}
                 </div>
 
                 {/* WhatsApp 1 */}
@@ -7514,7 +7767,8 @@ export default function SettingsPage() {
                     placeholder="+39 333 1234567"
                     value={newStore.whatsapp1}
                     onChange={(e) => setNewStore({ ...newStore, whatsapp1: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('whatsapp1', e.target.value)}
+                    style={getStoreFieldStyle('whatsapp1', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7526,16 +7780,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#25D366';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.whatsapp1 === 'untouched') {
+                        e.target.style.borderColor = '#25D366';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.whatsapp1 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.whatsapp1}
+                    </div>
+                  )}
+                  {storeValidationState.whatsapp1 === 'valid' && newStore.whatsapp1 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#25D366',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ WhatsApp valido
+                    </div>
+                  )}
                 </div>
 
                 {/* WhatsApp 2 */}
@@ -7558,7 +7830,8 @@ export default function SettingsPage() {
                     placeholder="+39 333 7654321"
                     value={newStore.whatsapp2}
                     onChange={(e) => setNewStore({ ...newStore, whatsapp2: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('whatsapp2', e.target.value)}
+                    style={getStoreFieldStyle('whatsapp2', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7570,16 +7843,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#25D366';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.whatsapp2 === 'untouched') {
+                        e.target.style.borderColor = '#25D366';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.whatsapp2 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.whatsapp2}
+                    </div>
+                  )}
+                  {storeValidationState.whatsapp2 === 'valid' && newStore.whatsapp2 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#25D366',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ WhatsApp valido
+                    </div>
+                  )}
                 </div>
 
                 {/* Facebook */}
@@ -7602,7 +7893,8 @@ export default function SettingsPage() {
                     placeholder="facebook.com/windtrestore"
                     value={newStore.facebook}
                     onChange={(e) => setNewStore({ ...newStore, facebook: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('facebook', e.target.value)}
+                    style={getStoreFieldStyle('facebook', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7614,16 +7906,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#1877F2';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(24, 119, 242, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.facebook === 'untouched') {
+                        e.target.style.borderColor = '#1877F2';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(24, 119, 242, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.facebook && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.facebook}
+                    </div>
+                  )}
+                  {storeValidationState.facebook === 'valid' && newStore.facebook && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#1877F2',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Facebook valido
+                    </div>
+                  )}
                 </div>
 
                 {/* Instagram */}
@@ -7646,7 +7956,8 @@ export default function SettingsPage() {
                     placeholder="instagram.com/windtrestore"
                     value={newStore.instagram}
                     onChange={(e) => setNewStore({ ...newStore, instagram: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('instagram', e.target.value)}
+                    style={getStoreFieldStyle('instagram', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7658,16 +7969,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#E4405F';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(228, 64, 95, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.instagram === 'untouched') {
+                        e.target.style.borderColor = '#E4405F';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(228, 64, 95, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.instagram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.instagram}
+                    </div>
+                  )}
+                  {storeValidationState.instagram === 'valid' && newStore.instagram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#E4405F',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Instagram valido
+                    </div>
+                  )}
                 </div>
 
                 {/* TikTok */}
@@ -7690,7 +8019,8 @@ export default function SettingsPage() {
                     placeholder="tiktok.com/@windtrestore"
                     value={newStore.tiktok}
                     onChange={(e) => setNewStore({ ...newStore, tiktok: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('tiktok', e.target.value)}
+                    style={getStoreFieldStyle('tiktok', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7702,16 +8032,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#FF0050';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 0, 80, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.tiktok === 'untouched') {
+                        e.target.style.borderColor = '#FF0050';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 0, 80, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.tiktok && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.tiktok}
+                    </div>
+                  )}
+                  {storeValidationState.tiktok === 'valid' && newStore.tiktok && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#FF0050',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL TikTok valido
+                    </div>
+                  )}
                 </div>
 
                 {/* Google Maps URL */}
@@ -7734,7 +8082,8 @@ export default function SettingsPage() {
                     placeholder="https://maps.google.com/..."
                     value={newStore.google_maps_url}
                     onChange={(e) => setNewStore({ ...newStore, google_maps_url: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('google_maps_url', e.target.value)}
+                    style={getStoreFieldStyle('google_maps_url', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7746,16 +8095,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#4285F4';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.google_maps_url === 'untouched') {
+                        e.target.style.borderColor = '#4285F4';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.google_maps_url && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.google_maps_url}
+                    </div>
+                  )}
+                  {storeValidationState.google_maps_url === 'valid' && newStore.google_maps_url && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#4285F4',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Google Maps valido
+                    </div>
+                  )}
                 </div>
 
                 {/* Telegram */}
@@ -7778,7 +8145,8 @@ export default function SettingsPage() {
                     placeholder="t.me/windtrestore"
                     value={newStore.telegram}
                     onChange={(e) => setNewStore({ ...newStore, telegram: e.target.value })}
-                    style={{
+                    onBlur={(e) => handleStoreFieldValidation('telegram', e.target.value)}
+                    style={getStoreFieldStyle('telegram', {
                       width: '100%',
                       padding: '6px 10px',
                       border: '1px solid #d1d5db',
@@ -7790,16 +8158,34 @@ export default function SettingsPage() {
                       fontWeight: '400',
                       outline: 'none',
                       color: '#1f2937'
-                    }}
+                    })}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#0088CC';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 136, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                      e.target.style.boxShadow = 'none';
+                      if (storeValidationState.telegram === 'untouched') {
+                        e.target.style.borderColor = '#0088CC';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 136, 204, 0.1)';
+                      }
                     }}
                   />
+                  {storeValidationErrors.telegram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.telegram}
+                    </div>
+                  )}
+                  {storeValidationState.telegram === 'valid' && newStore.telegram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#0088CC',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Telegram valido
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -8256,7 +8642,8 @@ export default function SettingsPage() {
                       placeholder="mario.rossi@windtre.it"
                       value={newUser.email}
                       onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      style={{
+                      onBlur={(e) => handleUserFieldValidation('email', e.target.value)}
+                      style={getUserFieldStyle('email', {
                         width: '100%',
                         padding: '10px 12px',
                         border: '1px solid #d1d5db',
@@ -8265,8 +8652,28 @@ export default function SettingsPage() {
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
-                      }}
+                      })}
                     />
+                    {userValidationErrors.email && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#ef4444',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        {userValidationErrors.email}
+                      </div>
+                    )}
+                    {userValidationState.email === 'valid' && newUser.email && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#10b981',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        ✓ Email valida
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -8284,7 +8691,8 @@ export default function SettingsPage() {
                       placeholder="+39 333 1234567"
                       value={newUser.telefono}
                       onChange={(e) => setNewUser({ ...newUser, telefono: e.target.value })}
-                      style={{
+                      onBlur={(e) => handleUserFieldValidation('telefono', e.target.value)}
+                      style={getUserFieldStyle('telefono', {
                         width: '100%',
                         padding: '10px 12px',
                         border: '1px solid #d1d5db',
@@ -8293,8 +8701,28 @@ export default function SettingsPage() {
                         background: '#fafafa',
                         transition: 'all 0.2s ease',
                         outline: 'none'
-                      }}
+                      })}
                     />
+                    {userValidationErrors.telefono && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#ef4444',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        {userValidationErrors.telefono}
+                      </div>
+                    )}
+                    {userValidationState.telefono === 'valid' && newUser.telefono && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#10b981',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        ✓ Telefono valido
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -8716,14 +9144,37 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => {
-                    // Validazione base
-                    if (!newUser.username || !newUser.password || !newUser.nome || !newUser.cognome || !newUser.email || !newUser.ruolo) {
+                    // 🔍 COMPREHENSIVE ITALIAN BUSINESS VALIDATION
+                    let hasValidationErrors = false;
+
+                    // Validate email field
+                    const emailValidation = validateUserField('email', newUser.email);
+                    if (!emailValidation.isValid) {
+                      handleUserFieldValidation('email', newUser.email);
+                      hasValidationErrors = true;
+                    }
+
+                    // Validate telefono field
+                    const telefonoValidation = validateUserField('telefono', newUser.telefono);
+                    if (!telefonoValidation.isValid) {
+                      handleUserFieldValidation('telefono', newUser.telefono);
+                      hasValidationErrors = true;
+                    }
+
+                    // Basic required field validation
+                    if (!newUser.username || !newUser.password || !newUser.nome || !newUser.cognome || !newUser.ruolo) {
                       alert('Compila tutti i campi obbligatori');
                       return;
                     }
                     
                     if (newUser.password !== newUser.confirmPassword) {
                       alert('Le password non corrispondono');
+                      return;
+                    }
+
+                    // Stop submission if validation errors exist
+                    if (hasValidationErrors) {
+                      alert('Correggi gli errori di validazione prima di procedere');
                       return;
                     }
 
