@@ -499,6 +499,31 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
+// ==================== PAYMENT CONDITIONS ====================
+export const paymentMethodsConditions = w3suiteSchema.table("payment_methods_conditions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  days: smallint("days"), // Number of days for payment (30, 60, 90, etc.)
+  type: varchar("type", { length: 50 }).notNull(), // 'standard', 'dffm', 'immediate', 'custom'
+  calculation: varchar("calculation", { length: 50 }), // 'from_invoice', 'from_month_end', 'immediate'
+  active: boolean("active").default(true),
+  isDefault: boolean("is_default").default(false),
+  sortOrder: smallint("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_payment_conditions_type").on(table.type),
+  index("idx_payment_conditions_days").on(table.days),
+]);
+
+export const insertPaymentMethodsConditionSchema = createInsertSchema(paymentMethodsConditions).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertPaymentMethodsCondition = z.infer<typeof insertPaymentMethodsConditionSchema>;
+export type PaymentMethodsCondition = typeof paymentMethodsConditions.$inferSelect;
+
 // ==================== SUPPLIERS (Brand Base + Tenant Override Pattern) ====================
 export const suppliers = w3suiteSchema.table("suppliers", {
   // ==================== IDENTITÀ & CLASSIFICAZIONE ====================
@@ -527,7 +552,8 @@ export const suppliers = w3suiteSchema.table("suppliers", {
   
   // ==================== PAGAMENTI ====================
   preferredPaymentMethodId: uuid("preferred_payment_method_id").references(() => paymentMethods.id),
-  paymentTerms: varchar("payment_terms", { length: 100 }), // "30DFFM", "60GGDF", etc.
+  paymentConditionId: uuid("payment_condition_id").references(() => paymentMethodsConditions.id),
+  paymentTerms: varchar("payment_terms", { length: 100 }), // "30DFFM", "60GGDF", etc. - DEPRECATED, use paymentConditionId
   currency: varchar("currency", { length: 3 }).default("EUR"),
   
   // ==================== CONTATTI ====================
@@ -600,7 +626,8 @@ export const supplierOverrides = w3suiteSchema.table("supplier_overrides", {
   
   // ==================== PAGAMENTI ====================
   preferredPaymentMethodId: uuid("preferred_payment_method_id").references(() => paymentMethods.id),
-  paymentTerms: varchar("payment_terms", { length: 100 }), // "30DFFM", "60GGDF", etc.
+  paymentConditionId: uuid("payment_condition_id").references(() => paymentMethodsConditions.id),
+  paymentTerms: varchar("payment_terms", { length: 100 }), // "30DFFM", "60GGDF", etc. - DEPRECATED, use paymentConditionId
   currency: varchar("currency", { length: 3 }).default("EUR"),
   
   // ==================== CONTATTI ====================
@@ -786,6 +813,7 @@ export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
   city: one(italianCities, { fields: [suppliers.cityId], references: [italianCities.id] }),
   country: one(countries, { fields: [suppliers.countryId], references: [countries.id] }),
   preferredPaymentMethod: one(paymentMethods, { fields: [suppliers.preferredPaymentMethodId], references: [paymentMethods.id] }),
+  paymentCondition: one(paymentMethodsConditions, { fields: [suppliers.paymentConditionId], references: [paymentMethodsConditions.id] }),
   
   // Relations verso overrides
   overrides: many(supplierOverrides),
@@ -802,4 +830,5 @@ export const supplierOverridesRelations = relations(supplierOverrides, ({ one })
   city: one(italianCities, { fields: [supplierOverrides.cityId], references: [italianCities.id] }),
   country: one(countries, { fields: [supplierOverrides.countryId], references: [countries.id] }),
   preferredPaymentMethod: one(paymentMethods, { fields: [supplierOverrides.preferredPaymentMethodId], references: [paymentMethods.id] }),
+  paymentCondition: one(paymentMethodsConditions, { fields: [supplierOverrides.paymentConditionId], references: [paymentMethodsConditions.id] }),
 }));
