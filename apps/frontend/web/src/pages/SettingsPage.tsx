@@ -861,10 +861,15 @@ export default function SettingsPage() {
   });
 
   // Load suppliers data with TanStack Query for proper cache management
-  const { data: suppliersList = [], isLoading: suppliersLoading, refetch: refetchSuppliersQuery } = useQuery({
+  const { data: suppliersList = [], isLoading: suppliersLoading, error: suppliersError, isError: suppliersIsError, refetch: refetchSuppliersQuery } = useQuery({
     queryKey: ['/api/suppliers'],
     staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: 3, // Retry failed requests 3 times
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+
+  // Ensure suppliersList is always an array
+  const safeSuppliersList = Array.isArray(suppliersList) ? suppliersList : [];
   
   // Clean up auto-refresh on unmount - FIXED: Use ref
   useEffect(() => {
@@ -1750,7 +1755,7 @@ export default function SettingsPage() {
               color: '#111827',
               margin: 0
             }}>
-              Fornitori ({(suppliersList as any[]).length} elementi)
+              Fornitori ({suppliersLoading ? '...' : safeSuppliersList.length} elementi)
             </h3>
             <button style={{
               background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -1781,19 +1786,68 @@ export default function SettingsPage() {
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
             border: '1px solid #e5e7eb'
           }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
-                  <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(suppliersList as any[]).map((supplier: any, index: number) => (
+            {suppliersLoading ? (
+              <div style={{ 
+                padding: '48px 16px', 
+                textAlign: 'center', 
+                color: '#6b7280',
+                fontSize: '14px'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <RefreshCw size={32} style={{ color: '#d1d5db', animation: 'spin 1s linear infinite' }} />
+                  <div>Caricamento fornitori...</div>
+                </div>
+                <style>{`
+                  @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                `}</style>
+              </div>
+            ) : suppliersIsError ? (
+              <div style={{ 
+                padding: '48px 16px', 
+                textAlign: 'center', 
+                color: '#ef4444',
+                fontSize: '14px'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <AlertCircle size={32} style={{ color: '#ef4444' }} />
+                  <div>Errore nel caricamento dei fornitori</div>
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                    {suppliersError?.message || 'Si è verificato un errore imprevisto'}
+                  </div>
+                  <button
+                    onClick={() => refetchSuppliersQuery()}
+                    style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      marginTop: '8px'
+                    }}
+                  >
+                    Riprova
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                    <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {safeSuppliersList.map((supplier: any, index: number) => (
                   <tr
                     key={supplier.id}
                     data-testid={`row-supplier-${supplier.id}`}
@@ -1936,24 +1990,25 @@ export default function SettingsPage() {
                     </td>
                   </tr>
                 ))}
-                {(suppliersList as any[]).length === 0 && (
-                  <tr>
-                    <td colSpan={6} style={{ 
-                      padding: '48px 16px', 
-                      textAlign: 'center', 
-                      color: '#6b7280',
-                      fontSize: '14px'
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                        <Truck size={32} style={{ color: '#d1d5db' }} />
-                        <div>Nessun fornitore configurato</div>
-                        <div style={{ fontSize: '12px' }}>Crea il primo fornitore per iniziare</div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  {safeSuppliersList.length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ 
+                        padding: '48px 16px', 
+                        textAlign: 'center', 
+                        color: '#6b7280',
+                        fontSize: '14px'
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                          <Truck size={32} style={{ color: '#d1d5db' }} />
+                          <div>Nessun fornitore configurato</div>
+                          <div style={{ fontSize: '12px' }}>Crea il primo fornitore per iniziare</div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
