@@ -752,8 +752,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/payment-conditions - Get all active payment conditions from w3suite schema
   app.get('/api/payment-conditions', ...authWithRBAC, async (req: any, res) => {
     try {
-      // Import the paymentMethodsConditions table from the w3suite schema
-      const { paymentMethodsConditions } = await import("../db/schema/w3suite");
+      // Import the paymentMethodsConditions table from the public schema
+      const { paymentMethodsConditions } = await import("../db/schema/public");
       
       const paymentConditionsData = await db
         .select({

@@ -23,7 +23,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Import public schema tables for FK references
-import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods } from './public';
+import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods, paymentMethodsConditions } from './public';
 
 // ==================== W3 SUITE SCHEMA ====================
 export const w3suiteSchema = pgSchema("w3suite");
@@ -499,30 +499,6 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
-// ==================== PAYMENT CONDITIONS ====================
-export const paymentMethodsConditions = w3suiteSchema.table("payment_methods_conditions", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 50 }).unique().notNull(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  days: smallint("days"), // Number of days for payment (30, 60, 90, etc.)
-  type: varchar("type", { length: 50 }).notNull(), // 'standard', 'dffm', 'immediate', 'custom'
-  calculation: varchar("calculation", { length: 50 }), // 'from_invoice', 'from_month_end', 'immediate'
-  active: boolean("active").default(true),
-  isDefault: boolean("is_default").default(false),
-  sortOrder: smallint("sort_order").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_payment_conditions_type").on(table.type),
-  index("idx_payment_conditions_days").on(table.days),
-]);
-
-export const insertPaymentMethodsConditionSchema = createInsertSchema(paymentMethodsConditions).omit({ 
-  id: true, 
-  createdAt: true 
-});
-export type InsertPaymentMethodsCondition = z.infer<typeof insertPaymentMethodsConditionSchema>;
-export type PaymentMethodsCondition = typeof paymentMethodsConditions.$inferSelect;
 
 // ==================== SUPPLIERS (Brand Base + Tenant Override Pattern) ====================
 export const suppliers = w3suiteSchema.table("suppliers", {
