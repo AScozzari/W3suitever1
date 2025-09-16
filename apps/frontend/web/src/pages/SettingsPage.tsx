@@ -901,6 +901,17 @@ export default function SettingsPage() {
   // Load suppliers data with TanStack Query for proper cache management
   const { data: suppliersList = [], isLoading: suppliersLoading, error: suppliersError, isError: suppliersIsError, refetch: refetchSuppliersQuery } = useQuery({
     queryKey: ['/api/suppliers'],
+    queryFn: async () => {
+      const response = await fetch('/api/suppliers', {
+        headers: {
+          'X-Tenant-ID': DEMO_TENANT_ID,
+          'x-demo-user': 'admin@w3suite.com'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch suppliers');
+      const data = await response.json();
+      return data.suppliers || [];
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 3, // Retry failed requests 3 times
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
