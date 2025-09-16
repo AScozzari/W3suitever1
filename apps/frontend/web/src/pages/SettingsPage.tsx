@@ -4722,14 +4722,14 @@ export default function SettingsPage() {
     email: '',
     phone: '',
     website: '',
-    pec: '',
+    pecEmail: '',
     // AMMINISTRATIVI
-    codiceSDI: '',
+    sdiCode: '',
     iban: '',
     bic: '',
     splitPayment: false,
-    ritenuta: false,
-    paymentMethodId: '',
+    withholdingTax: false,
+    preferredPaymentMethodId: '',
     // NOTE
     notes: ''
   });
@@ -4864,29 +4864,35 @@ export default function SettingsPage() {
       
       const supplierData = {
         tenantId: currentTenantId,
+        origin: 'tenant',
         code: newCode,
         name: newSupplier.name,
         legalName: newSupplier.legalName,
         legalForm: newSupplier.legalForm,
+        supplierType: 'distributore', // Default type, can be made dynamic later
         vatNumber: newSupplier.vatNumber,
         taxCode: newSupplier.taxCode,
         status: newSupplier.status,
-        address: newSupplier.address,
-        city: newSupplier.city,
-        province: newSupplier.province,
-        postalCode: newSupplier.postalCode,
-        country: newSupplier.country,
+        // Address structure - JSONB + FK pattern
+        registeredAddress: {
+          via: newSupplier.address,
+          citta: newSupplier.city,
+          provincia: newSupplier.province,
+          cap: newSupplier.postalCode
+        },
+        countryId: '00000000-0000-0000-0000-000000000001', // Default Italy UUID - should be dynamic
         email: newSupplier.email,
         phone: newSupplier.phone,
         website: newSupplier.website,
-        pec: newSupplier.pec,
-        codiceSDI: newSupplier.codiceSDI,
+        pecEmail: newSupplier.pecEmail,
+        sdiCode: newSupplier.sdiCode,
         iban: newSupplier.iban,
         bic: newSupplier.bic,
         splitPayment: newSupplier.splitPayment,
-        ritenuta: newSupplier.ritenuta,
-        paymentMethodId: newSupplier.paymentMethodId,
-        notes: newSupplier.notes
+        withholdingTax: newSupplier.withholdingTax,
+        preferredPaymentMethodId: newSupplier.preferredPaymentMethodId || null,
+        notes: newSupplier.notes,
+        createdBy: 'system' // Should be current user ID
       };
 
       let result;
@@ -4919,13 +4925,13 @@ export default function SettingsPage() {
           email: '',
           phone: '',
           website: '',
-          pec: '',
-          codiceSDI: '',
+          pecEmail: '',
+          sdiCode: '',
           iban: '',
           bic: '',
           splitPayment: false,
-          ritenuta: false,
-          paymentMethodId: '',
+          withholdingTax: false,
+          preferredPaymentMethodId: '',
           notes: ''
         });
 
@@ -9006,8 +9012,8 @@ export default function SettingsPage() {
                     <input 
                       type="email" 
                       placeholder="fatture@pec.fornitore.it"
-                      value={newSupplier.pec}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, pec: e.target.value })}
+                      value={newSupplier.pecEmail}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, pecEmail: e.target.value })}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
                     />
                   </div>
@@ -9018,8 +9024,8 @@ export default function SettingsPage() {
                     <input 
                       type="text" 
                       placeholder="es. ABCDEFG"
-                      value={newSupplier.codiceSDI}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, codiceSDI: e.target.value })}
+                      value={newSupplier.sdiCode}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, sdiCode: e.target.value })}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
                     />
                   </div>
@@ -9139,8 +9145,8 @@ export default function SettingsPage() {
                       Metodo di Pagamento
                     </label>
                     <select 
-                      value={newSupplier.paymentMethodId}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, paymentMethodId: e.target.value })}
+                      value={newSupplier.preferredPaymentMethodId}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, preferredPaymentMethodId: e.target.value })}
                       style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
                     >
                       <option value="">Seleziona...</option>
@@ -9211,8 +9217,8 @@ export default function SettingsPage() {
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
                       <input 
                         type="checkbox" 
-                        checked={newSupplier.ritenuta}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, ritenuta: e.target.checked })}
+                        checked={newSupplier.withholdingTax}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, withholdingTax: e.target.checked })}
                       />
                       Ritenuta d'Acconto
                     </label>

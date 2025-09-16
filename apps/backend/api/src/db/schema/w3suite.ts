@@ -509,6 +509,7 @@ export const suppliers = w3suiteSchema.table("suppliers", {
   code: varchar("code", { length: 50 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(), // Nome commerciale
   legalName: varchar("legal_name", { length: 255 }), // Ragione sociale legale
+  legalForm: varchar("legal_form", { length: 100 }), // Forma giuridica (SRL, SPA, etc.)
   supplierType: supplierTypeEnum("supplier_type").notNull(),
   
   // ==================== DATI FISCALI ITALIA ====================
@@ -581,6 +582,7 @@ export const supplierOverrides = w3suiteSchema.table("supplier_overrides", {
   code: varchar("code", { length: 50 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(), // Nome commerciale
   legalName: varchar("legal_name", { length: 255 }), // Ragione sociale legale
+  legalForm: varchar("legal_form", { length: 100 }), // Forma giuridica (SRL, SPA, etc.)
   supplierType: supplierTypeEnum("supplier_type").notNull(),
   
   // ==================== DATI FISCALI ITALIA ====================
