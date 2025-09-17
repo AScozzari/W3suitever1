@@ -312,7 +312,7 @@ function ModuleCard({ module, onClick }: { module: any; onClick: () => void }) {
 
 export default function HRDashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentModule, setCurrentModule] = useState<string>('hr-dashboard');
+  const [currentModule, setCurrentModule] = useState<string>('hr');
   
   console.log('HRDashboardPage rendering - Active Tab:', activeTab);
   console.log('Component mounted successfully');
