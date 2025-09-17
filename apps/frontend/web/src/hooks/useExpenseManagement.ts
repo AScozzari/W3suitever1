@@ -413,6 +413,39 @@ export const useExpenseReport = (id: string) => {
   };
 };
 
+// Hook for expense categories - Export verified
+export const useExpenseCategories = () => {
+  const {
+    data: categories = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['expenseCategories'],
+    queryFn: async () => {
+      // Return default expense categories
+      return [
+        { id: 'travel', name: 'Viaggi', color: '#3b82f6', limit: 1000 },
+        { id: 'meals', name: 'Pasti', color: '#10b981', limit: 500 },
+        { id: 'accommodation', name: 'Alloggio', color: '#8b5cf6', limit: 1500 },
+        { id: 'transport', name: 'Trasporti', color: '#f59e0b', limit: 300 },
+        { id: 'office', name: 'Ufficio', color: '#6366f1', limit: 200 },
+        { id: 'training', name: 'Formazione', color: '#ec4899', limit: 2000 },
+        { id: 'client', name: 'Cliente', color: '#14b8a6', limit: 1000 },
+        { id: 'other', name: 'Altro', color: '#64748b', limit: 500 }
+      ];
+    },
+    staleTime: 30 * 60 * 1000
+  });
+
+  return {
+    categories,
+    isLoading,
+    error,
+    refetch
+  };
+};
+
 // Hook for expense stats
 export const useExpenseStats = () => {
   const { reports } = useExpenseReports();
