@@ -20,6 +20,15 @@ import {
   type SupplierValidation 
 } from '../lib/validation/italian-business-validation';
 
+// Utility per unificare multiple event handlers onBlur
+const composeEventHandlers = (...handlers: Array<((e: React.FocusEvent<HTMLElement>) => void) | undefined>) => (e: React.FocusEvent<HTMLElement>) => {
+  for (const h of handlers) { 
+    if (!h) continue; 
+    h(e as any); 
+    if ((e as any).defaultPrevented) break; 
+  }
+};
+
 // Tenant ID per staging environment
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 import {
@@ -5665,34 +5674,42 @@ export default function SettingsPage() {
                       const value = e.target.value.toUpperCase();
                       setNewRagioneSociale({ ...newRagioneSociale, pIva: value });
                     }}
-                    onBlur={(e) => {
-                      // Real-time P.IVA validation for legal entities
-                      if (e.target.value) {
-                        const vatValidation = legalEntityValidationSchema.shape.pIva?.safeParse(e.target.value);
-                        if (!vatValidation?.success) {
-                          e.target.style.borderColor = '#ef4444';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
-                          let errorDiv = e.target.parentElement?.querySelector('.validation-error');
-                          if (!errorDiv) {
-                            errorDiv = document.createElement('div');
-                            errorDiv.className = 'validation-error';
-                            e.target.parentElement?.appendChild(errorDiv);
+                    onBlur={composeEventHandlers(
+                      (e) => {
+                        // Real-time P.IVA validation for legal entities
+                        if (e.target.value) {
+                          const vatValidation = legalEntityValidationSchema.shape.pIva?.safeParse(e.target.value);
+                          if (!vatValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'P.IVA non valida (formato: IT + 11 cifre)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
                           }
-                          errorDiv.textContent = 'P.IVA non valida (formato: IT + 11 cifre)';
-                          errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
                         } else {
-                          e.target.style.borderColor = '#10b981';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.boxShadow = 'none';
                           const errorDiv = e.target.parentElement?.querySelector('.validation-error');
                           errorDiv?.remove();
                         }
-                      } else {
-                        e.target.style.borderColor = '#e5e7eb';
+                      },
+                      (e) => {
+                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                        e.target.style.background = 'rgba(255, 255, 255, 0.7)';
                         e.target.style.boxShadow = 'none';
-                        const errorDiv = e.target.parentElement?.querySelector('.validation-error');
-                        errorDiv?.remove();
+                        e.target.style.transform = 'translateY(0)';
                       }
-                    }}
+                    )}
                     style={{
                       width: '100%',
                       padding: '6px 10px',
@@ -5709,12 +5726,6 @@ export default function SettingsPage() {
                       e.target.style.background = 'rgba(255, 255, 255, 0.9)';
                       e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
                       e.target.style.transform = 'translateY(-1px)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
-                      e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'translateY(0)';
                     }}
                   />
                 </div>
