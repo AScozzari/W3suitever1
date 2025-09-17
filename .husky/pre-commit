@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running pre-commit validations..."
+
+# Run validation scripts
+echo "📋 Checking for forbidden shared/ folder references..."
+node scripts/validate-no-shared-refs.js || exit 1
+
+echo "📋 Validating frontend consistency rules..."
+node scripts/validate-frontend-rules.js || exit 1
+
+echo "📋 Validating schema import paths..."
+node scripts/validate-schema-imports.js || exit 1
+
+echo "📋 Checking HR system completeness..."
+node scripts/validate-hr-system.js || exit 1
+
+echo "📋 Checking for console statements..."
+node scripts/validate-no-console.js
+
+echo "✅ All pre-commit checks passed!"
