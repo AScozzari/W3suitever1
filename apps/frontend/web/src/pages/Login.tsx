@@ -87,11 +87,11 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
       console.log('🔍 Auth Response Status:', authResponse.status);
       console.log('🔍 Auth Response URL:', authResponse.url);
 
-      if (authResponse.ok && authResponse.redirected) {
-        // The server redirected us to the callback URL with the authorization code
-        const redirectUrl = new URL(authResponse.url);
-        const authCode = redirectUrl.searchParams.get('code');
-        console.log('🔑 Authorization code from redirect:', authCode ? 'YES' : 'NO');
+      if (authResponse.ok) {
+        // In development mode, we get a JSON response with the code
+        const authData = await authResponse.json();
+        const authCode = authData.code;
+        console.log('🔑 Authorization code from response:', authCode ? 'YES' : 'NO');
         
         if (authCode) {
           // Step 2: Exchange authorization code for access token
