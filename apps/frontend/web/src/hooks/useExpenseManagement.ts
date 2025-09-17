@@ -1,12 +1,13 @@
 // Expense Management Hooks
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { expenseService, ExpenseReport, ExpenseItem, ExpenseAnalytics, ExpensePolicy } from '@/services/expenseService';
 
 // Hook for managing expense reports
 export const useExpenseReports = (filters?: any) => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const {
     data: reports = [],
@@ -92,6 +93,7 @@ export const useExpenseReports = (filters?: any) => {
 // Hook for managing expense items
 export const useExpenseItems = (reportId: string) => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const {
     data: items = [],
@@ -173,6 +175,7 @@ export const useExpenseItems = (reportId: string) => {
 // Hook for expense approvals
 export const useExpenseApprovals = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const {
     data: pendingApprovals = [],
@@ -290,6 +293,7 @@ export const useExpenseAnalytics = (startDate?: Date, endDate?: Date) => {
 // Hook for expense policies
 export const useExpensePolicy = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const {
     data: policy,
@@ -330,6 +334,7 @@ export const useExpensePolicy = () => {
 
 // Hook for receipt scanning
 export const useReceiptScanner = () => {
+  const { toast } = useToast();
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [error, setError] = useState(null);
