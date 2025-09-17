@@ -8,7 +8,7 @@ import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middlewa
 import { correlationMiddleware } from "./logger";
 import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, inArray } from "drizzle-orm";
 import { tenants, users } from "../db/schema";
 import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
@@ -2070,6 +2070,614 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(shift);
     } catch (error) {
       handleApiError(error, res, 'assegnazione utente a turno');
+    }
+  });
+
+  // ==================== HR DOCUMENTS API ====================
+
+  // Configure multer for file uploads
+  const documentUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024 // 10MB max file size
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type'));
+      }
+    }
+  });
+
+  // Get all HR documents
+  app.get('/api/hr/documents', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      // Build query based on user permissions
+      let query = db.select().from(hrDocuments).where(eq(hrDocuments.tenantId, tenantId));
+      
+      // Apply filters
+      const conditions = [eq(hrDocuments.tenantId, tenantId)];
+      
+      // Non-HR users can only see their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      if (req.query.documentType) {
+        conditions.push(eq(hrDocuments.documentType, req.query.documentType));
+      }
+      
+      if (req.query.year) {
+        conditions.push(eq(hrDocuments.year, parseInt(req.query.year)));
+      }
+      
+      if (req.query.month) {
+        conditions.push(eq(hrDocuments.month, parseInt(req.query.month)));
+      }
+      
+      const documents = await db.select()
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .orderBy(desc(hrDocuments.createdAt));
+      
+      res.json(documents);
+    } catch (error) {
+      handleApiError(error, res, 'recupero documenti HR');
+    }
+  });
+
+  // Upload HR document
+  app.post('/api/hr/documents/upload', enterpriseAuth, documentUpload.single('file'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      if (!req.file) {
+        return res.status(400).json({
+          error: 'no_file',
+          message: 'Nessun file fornito'
+        });
+      }
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      // Generate storage path
+      const documentId = uuidv4();
+      const year = req.body.year || new Date().getFullYear();
+      const storagePath = `.private/hr-documents/${tenantId}/${userId}/${year}/${documentId}`;
+      
+      // Upload to object storage
+      const uploadResult = await objectStorageService.uploadDocument({
+        buffer: req.file.buffer,
+        path: storagePath,
+        contentType: req.file.mimetype,
+        metadata: {
+          userId,
+          tenantId,
+          documentType: req.body.documentType,
+          originalName: req.file.originalname
+        }
+      });
+      
+      // Save document metadata to database
+      const document = await db.insert(hrDocuments).values({
+        tenantId,
+        userId,
+        documentType: req.body.documentType || 'other',
+        title: req.body.title || req.file.originalname,
+        description: req.body.description,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        storagePath,
+        year: req.body.year ? parseInt(req.body.year) : null,
+        month: req.body.month ? parseInt(req.body.month) : null,
+        isConfidential: req.body.isConfidential === 'true',
+        expiryDate: req.body.expiryDate || null,
+        metadata: req.body.metadata ? JSON.parse(req.body.metadata) : {},
+        uploadedBy: userId
+      }).returning();
+      
+      res.status(201).json(document[0]);
+    } catch (error) {
+      handleApiError(error, res, 'caricamento documento HR');
+    }
+  });
+
+  // Get single HR document
+  app.get('/api/hr/documents/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [
+        eq(hrDocuments.id, id),
+        eq(hrDocuments.tenantId, tenantId)
+      ];
+      
+      // Non-HR users can only see their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const document = await db.select()
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .limit(1);
+      
+      if (!document[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Documento non trovato'
+        });
+      }
+      
+      // Update last accessed timestamp
+      await db.update(hrDocuments)
+        .set({ lastAccessedAt: new Date() })
+        .where(eq(hrDocuments.id, id));
+      
+      res.json(document[0]);
+    } catch (error) {
+      handleApiError(error, res, 'recupero documento HR');
+    }
+  });
+
+  // Download HR document
+  app.get('/api/hr/documents/:id/download', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [
+        eq(hrDocuments.id, id),
+        eq(hrDocuments.tenantId, tenantId)
+      ];
+      
+      // Non-HR users can only download their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const document = await db.select()
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .limit(1);
+      
+      if (!document[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Documento non trovato'
+        });
+      }
+      
+      // Generate signed URL for download
+      const downloadUrl = await objectStorageService.getSignedDownloadUrl(document[0].storagePath);
+      
+      // Update last accessed timestamp
+      await db.update(hrDocuments)
+        .set({ lastAccessedAt: new Date() })
+        .where(eq(hrDocuments.id, id));
+      
+      // Redirect to signed URL or stream file
+      res.redirect(downloadUrl);
+    } catch (error) {
+      handleApiError(error, res, 'download documento HR');
+    }
+  });
+
+  // Get document preview (for inline viewing)
+  app.get('/api/hr/documents/:id/preview', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [
+        eq(hrDocuments.id, id),
+        eq(hrDocuments.tenantId, tenantId)
+      ];
+      
+      // Non-HR users can only preview their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const document = await db.select()
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .limit(1);
+      
+      if (!document[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Documento non trovato'
+        });
+      }
+      
+      // Generate signed URL for preview
+      const previewUrl = await objectStorageService.getSignedPreviewUrl(document[0].storagePath);
+      
+      // Set appropriate headers for inline display
+      res.setHeader('Content-Type', document[0].mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${document[0].fileName}"`);
+      
+      // Redirect to signed URL
+      res.redirect(previewUrl);
+    } catch (error) {
+      handleApiError(error, res, 'preview documento HR');
+    }
+  });
+
+  // Update HR document metadata
+  app.put('/api/hr/documents/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [
+        eq(hrDocuments.id, id),
+        eq(hrDocuments.tenantId, tenantId)
+      ];
+      
+      // Only HR and Admin can update documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        return res.status(403).json({
+          error: 'forbidden',
+          message: 'Non autorizzato'
+        });
+      }
+      
+      const updated = await db.update(hrDocuments)
+        .set({
+          ...req.body,
+          updatedAt: new Date()
+        })
+        .where(and(...conditions))
+        .returning();
+      
+      if (!updated[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Documento non trovato'
+        });
+      }
+      
+      res.json(updated[0]);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento documento HR');
+    }
+  });
+
+  // Delete HR document
+  app.delete('/api/hr/documents/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [
+        eq(hrDocuments.id, id),
+        eq(hrDocuments.tenantId, tenantId)
+      ];
+      
+      // Only document owner, HR and Admin can delete
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const document = await db.select()
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .limit(1);
+      
+      if (!document[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Documento non trovato'
+        });
+      }
+      
+      // Delete from object storage
+      await objectStorageService.deleteObject(document[0].storagePath);
+      
+      // Delete from database
+      await db.delete(hrDocuments).where(eq(hrDocuments.id, id));
+      
+      res.status(204).send();
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione documento HR');
+    }
+  });
+
+  // Share HR document
+  app.post('/api/hr/documents/:id/share', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { expiresIn = 168, password, maxDownloads } = req.body; // Default 7 days
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const document = await db.select()
+        .from(hrDocuments)
+        .where(and(
+          eq(hrDocuments.id, id),
+          eq(hrDocuments.tenantId, tenantId),
+          eq(hrDocuments.userId, userId)
+        ))
+        .limit(1);
+      
+      if (!document[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Documento non trovato'
+        });
+      }
+      
+      // Generate share token
+      const shareToken = uuidv4();
+      const expiresAt = new Date(Date.now() + expiresIn * 60 * 60 * 1000);
+      
+      // Store share info (could be in Redis or DB)
+      // For now, encode in JWT
+      const shareData = jwt.sign({
+        documentId: id,
+        tenantId,
+        expiresAt: expiresAt.toISOString(),
+        maxDownloads,
+        password: password ? true : false
+      }, JWT_SECRET, { expiresIn: `${expiresIn}h` });
+      
+      const shareUrl = `${req.protocol}://${req.get('host')}/shared/documents/${shareData}`;
+      
+      res.json({
+        shareUrl,
+        expiresAt: expiresAt.toISOString()
+      });
+    } catch (error) {
+      handleApiError(error, res, 'condivisione documento HR');
+    }
+  });
+
+  // Search HR documents
+  app.get('/api/hr/documents/search', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      const { query } = req.query;
+      
+      if (!query) {
+        return res.json([]);
+      }
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [
+        eq(hrDocuments.tenantId, tenantId),
+        or(
+          sql`${hrDocuments.title} ILIKE ${`%${query}%`}`,
+          sql`${hrDocuments.fileName} ILIKE ${`%${query}%`}`,
+          sql`${hrDocuments.description} ILIKE ${`%${query}%`}`
+        )
+      ];
+      
+      // Non-HR users can only search their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const documents = await db.select()
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .limit(50);
+      
+      res.json(documents);
+    } catch (error) {
+      handleApiError(error, res, 'ricerca documenti HR');
+    }
+  });
+
+  // Get document categories with counts
+  app.get('/api/hr/documents/categories', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [eq(hrDocuments.tenantId, tenantId)];
+      
+      // Non-HR users can only see stats for their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const categories = await db
+        .select({
+          type: hrDocuments.documentType,
+          count: sql<number>`COUNT(*)`,
+          totalSize: sql<number>`SUM(${hrDocuments.fileSize})`
+        })
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .groupBy(hrDocuments.documentType);
+      
+      res.json(categories);
+    } catch (error) {
+      handleApiError(error, res, 'recupero categorie documenti');
+    }
+  });
+
+  // Get storage quota
+  app.get('/api/hr/documents/storage-quota', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const usage = await db
+        .select({
+          used: sql<number>`COALESCE(SUM(${hrDocuments.fileSize}), 0)`
+        })
+        .from(hrDocuments)
+        .where(and(
+          eq(hrDocuments.tenantId, tenantId),
+          eq(hrDocuments.userId, userId)
+        ));
+      
+      const used = Number(usage[0]?.used || 0);
+      const total = 1073741824; // 1GB per user default
+      const percentage = Math.round((used / total) * 100);
+      
+      res.json({
+        used,
+        total,
+        percentage
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero quota storage');
+    }
+  });
+
+  // Get payslips for a specific year
+  app.get('/api/hr/documents/payslips', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const year = parseInt(req.query.year as string) || new Date().getFullYear();
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const payslips = await db.select()
+        .from(hrDocuments)
+        .where(and(
+          eq(hrDocuments.tenantId, tenantId),
+          eq(hrDocuments.userId, userId),
+          eq(hrDocuments.documentType, 'payslip'),
+          eq(hrDocuments.year, year)
+        ))
+        .orderBy(hrDocuments.month);
+      
+      res.json(payslips);
+    } catch (error) {
+      handleApiError(error, res, 'recupero buste paga');
+    }
+  });
+
+  // Bulk operations on documents
+  app.post('/api/hr/documents/bulk-operation', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { operation, documentIds } = req.body;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      if (!Array.isArray(documentIds) || documentIds.length === 0) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'Document IDs richiesti'
+        });
+      }
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      switch (operation) {
+        case 'delete':
+          if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+            // Regular users can only delete their own documents
+            await db.delete(hrDocuments)
+              .where(and(
+                inArray(hrDocuments.id, documentIds),
+                eq(hrDocuments.tenantId, tenantId),
+                eq(hrDocuments.userId, userId)
+              ));
+          } else {
+            // HR and Admin can delete any document in tenant
+            await db.delete(hrDocuments)
+              .where(and(
+                inArray(hrDocuments.id, documentIds),
+                eq(hrDocuments.tenantId, tenantId)
+              ));
+          }
+          res.json({ success: true, operation: 'delete', count: documentIds.length });
+          break;
+          
+        case 'download':
+          // Generate zip file with all documents
+          // This would involve fetching all files from storage and creating a zip
+          res.json({ 
+            success: true, 
+            operation: 'download',
+            message: 'Download bulk in preparazione...' 
+          });
+          break;
+          
+        default:
+          res.status(400).json({
+            error: 'invalid_operation',
+            message: 'Operazione non valida'
+          });
+      }
+    } catch (error) {
+      handleApiError(error, res, 'operazione bulk documenti');
+    }
+  });
+
+  // Get CUD document for a year
+  app.get('/api/hr/documents/cud/:year', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { year } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      // This would generate a CUD document based on payslips
+      // For now, return a mock response
+      res.json({
+        message: 'CUD generation not yet implemented',
+        year,
+        userId
+      });
+    } catch (error) {
+      handleApiError(error, res, 'generazione CUD');
     }
   });
   
