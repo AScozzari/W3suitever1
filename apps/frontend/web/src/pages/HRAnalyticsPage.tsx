@@ -1,7 +1,7 @@
-// HR Analytics Dashboard - Comprehensive analytics for HR management
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Layout from '@/components/Layout';
+// HR Analytics Page - Enterprise HR Management System with frontend-kit
+import { useState, useMemo, useEffect } from 'react';
+import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
+import { Column } from '@/components/templates/DataTable';
 import {
   BarChart3,
   TrendingUp,
@@ -21,12 +21,19 @@ import {
   PieChart,
   Zap,
   CheckCircle,
+  UserCheck,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Building2,
+  HeartHandshake,
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -35,15 +42,46 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useStores } from '@/hooks/useStores';
+import {
+  useDashboardMetrics,
+  useAttendanceAnalytics,
+  useLeaveAnalytics,
+  useLaborCostAnalytics,
+  useShiftAnalytics,
+  useEmployeeDemographics,
+  useComplianceMetrics,
+  useExportDashboard,
+  useCurrentAttendance,
+  useActiveShifts,
+  useUpcomingEvents,
+  useHistoricalTrends,
+  usePredictions,
+  useAnomalies,
+  useBenchmarks,
+  useRefreshAnalytics,
+} from '@/hooks/useHRAnalytics';
+import { queryClient } from '@/lib/queryClient';
 
-// Import UI components and utilities
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
+// Define local types
+interface MetricCard {
+  id: string;
+  title: string;
+  value: string | number;
+  description?: string;
+  trend?: {
+    value: number;
+    label?: string;
+  };
+  icon?: React.ReactNode;
+  color?: string;
+}
 
 type PeriodType = 'day' | 'week' | 'month' | 'quarter' | 'year';
 type ViewType = 'overview' | 'attendance' | 'leave' | 'costs' | 'shifts' | 'demographics' | 'compliance';
@@ -61,6 +99,7 @@ export default function HRAnalyticsPage() {
   const [activeView, setActiveView] = useState<ViewType>('overview');
   const [isAutoRefresh, setIsAutoRefresh] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState(() => {
     const now = new Date();
     return {
@@ -101,510 +140,596 @@ export default function HRAnalyticsPage() {
     setDateRange({ start, end });
   }, [selectedPeriod]);
 
-  // Mock data for display - replace with real API calls when available
-  const [isLoading, setIsLoading] = useState(false);
-  const mockMetrics = {
-    totalEmployees: 156,
-    presentToday: 142,
-    absentToday: 6,
-    onLeave: 8,
-    attendanceRate: 91.0,
-    overtimeHours: 234,
-    pendingApprovals: 12,
-    complianceScore: 94.2
+  // Check permissions
+  const userRole = user?.role || '';
+  const canViewFullAnalytics = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE'].includes(userRole);
+  const canExport = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE', 'TEAM_LEADER'].includes(userRole);
+
+  // Build filters
+  const filters = {
+    storeId: selectedStore !== 'all' ? selectedStore : undefined,
+    departmentId: selectedDepartment !== 'all' ? selectedDepartment : undefined,
+    period: selectedPeriod,
   };
 
-  // Auto-refresh simulation
+  // Hooks for analytics data
+  const { data: dashboardMetrics, isLoading: metricsLoading } = useDashboardMetrics(selectedPeriod, filters);
+  const { data: attendance, isLoading: attendanceLoading } = useAttendanceAnalytics(selectedPeriod, filters.storeId);
+  const { data: leaveData, isLoading: leaveLoading } = useLeaveAnalytics(selectedPeriod, filters.departmentId);
+  const { data: laborCosts, isLoading: costsLoading } = useLaborCostAnalytics(selectedPeriod, filters);
+  const { data: shiftData, isLoading: shiftsLoading } = useShiftAnalytics(selectedPeriod, filters.storeId);
+  const { data: demographics, isLoading: demographicsLoading } = useEmployeeDemographics(filters);
+  const { data: compliance, isLoading: complianceLoading } = useComplianceMetrics();
+  const { data: currentAttendance } = useCurrentAttendance(filters.storeId);
+  const { data: activeShifts } = useActiveShifts(filters.storeId);
+  const { data: upcomingEvents } = useUpcomingEvents(7);
+  const exportDashboard = useExportDashboard();
+  const refreshAnalytics = useRefreshAnalytics();
+
+  // Auto-refresh
   useEffect(() => {
     if (!isAutoRefresh) return;
 
     const interval = setInterval(() => {
-      // Simulate refresh - replace with real API calls when available
-      setIsLoading(true);
-      setTimeout(() => setIsLoading(false), 1000);
+      refreshAnalytics();
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [isAutoRefresh, refreshInterval]);
+  }, [isAutoRefresh, refreshInterval, refreshAnalytics]);
+
+  // Prepare metrics for dashboard
+  const metrics: MetricCard[] = useMemo(() => {
+    const baseMetrics = [
+      {
+        id: 'total-employees',
+        title: 'Dipendenti Totali',
+        value: dashboardMetrics?.totalEmployees || 0,
+        description: `${dashboardMetrics?.activeEmployees || 0} attivi`,
+        icon: <Users className="h-4 w-4" />,
+        color: 'text-blue-600',
+      },
+      {
+        id: 'attendance-rate',
+        title: 'Tasso Presenza',
+        value: `${attendance?.attendanceRate || 0}%`,
+        description: `${currentAttendance?.presentToday || 0} presenti oggi`,
+        trend: attendance?.attendanceRate < 90 ? { value: attendance?.attendanceRate - 90, label: 'Sotto target' } : undefined,
+        icon: <UserCheck className="h-4 w-4" />,
+        color: 'text-green-600',
+      },
+      {
+        id: 'labor-costs',
+        title: 'Costi del Lavoro',
+        value: `€${(laborCosts?.totalCost || 0).toFixed(0)}`,
+        description: `${laborCosts?.costPerEmployee ? `€${laborCosts.costPerEmployee.toFixed(0)}/dipendente` : ''}`,
+        icon: <DollarSign className="h-4 w-4" />,
+        color: 'text-purple-600',
+      },
+      {
+        id: 'compliance-score',
+        title: 'Compliance Score',
+        value: `${compliance?.overallScore || 0}%`,
+        description: compliance?.criticalIssues > 0 ? `${compliance.criticalIssues} problemi critici` : 'Tutto in regola',
+        trend: compliance?.criticalIssues > 0 ? { value: -100, label: 'Richiede attenzione' } : undefined,
+        icon: <Shield className="h-4 w-4" />,
+        color: compliance?.overallScore >= 90 ? 'text-green-600' : 'text-orange-600',
+      },
+    ];
+
+    // Add view-specific metrics
+    switch (activeView) {
+      case 'attendance':
+        return [
+          ...baseMetrics.filter(m => ['attendance-rate', 'total-employees'].includes(m.id)),
+          {
+            id: 'absent-today',
+            title: 'Assenti Oggi',
+            value: currentAttendance?.absentToday || 0,
+            description: `${currentAttendance?.onLeave || 0} in ferie`,
+            icon: <AlertTriangle className="h-4 w-4" />,
+            color: 'text-red-600',
+          },
+          {
+            id: 'overtime-hours',
+            title: 'Ore Straordinario',
+            value: attendance?.overtimeHours || 0,
+            description: 'Questo periodo',
+            icon: <Clock className="h-4 w-4" />,
+            color: 'text-orange-600',
+          },
+        ];
+      case 'leave':
+        return [
+          {
+            id: 'pending-requests',
+            title: 'Richieste in Attesa',
+            value: leaveData?.pendingRequests || 0,
+            description: 'Da approvare',
+            icon: <Clock className="h-4 w-4" />,
+            color: 'text-orange-600',
+          },
+          {
+            id: 'approved-leave',
+            title: 'Ferie Approvate',
+            value: leaveData?.approvedDays || 0,
+            description: 'Giorni totali',
+            icon: <CheckCircle className="h-4 w-4" />,
+            color: 'text-green-600',
+          },
+          {
+            id: 'avg-leave-days',
+            title: 'Media Giorni',
+            value: leaveData?.avgDaysPerRequest || 0,
+            description: 'Per richiesta',
+            icon: <Calendar className="h-4 w-4" />,
+            color: 'text-blue-600',
+          },
+          {
+            id: 'utilization-rate',
+            title: 'Utilizzo Ferie',
+            value: `${leaveData?.utilizationRate || 0}%`,
+            description: 'Del totale disponibile',
+            icon: <TrendingUp className="h-4 w-4" />,
+            color: 'text-purple-600',
+          },
+        ];
+      case 'shifts':
+        return [
+          {
+            id: 'active-shifts',
+            title: 'Turni Attivi',
+            value: activeShifts?.count || 0,
+            description: 'In corso ora',
+            icon: <Activity className="h-4 w-4" />,
+            color: 'text-green-600',
+          },
+          {
+            id: 'coverage-rate',
+            title: 'Copertura',
+            value: `${shiftData?.coverageRate || 0}%`,
+            description: shiftData?.understaffedShifts > 0 ? `${shiftData.understaffedShifts} turni scoperti` : 'Completa',
+            icon: <Users className="h-4 w-4" />,
+            color: 'text-blue-600',
+          },
+          {
+            id: 'shift-hours',
+            title: 'Ore Totali',
+            value: shiftData?.totalHours || 0,
+            description: 'Questo periodo',
+            icon: <Clock className="h-4 w-4" />,
+            color: 'text-purple-600',
+          },
+          {
+            id: 'shift-efficiency',
+            title: 'Efficienza',
+            value: `${shiftData?.efficiency || 0}%`,
+            description: 'Utilizzo risorse',
+            icon: <Target className="h-4 w-4" />,
+            color: 'text-orange-600',
+          },
+        ];
+      default:
+        return baseMetrics;
+    }
+  }, [activeView, dashboardMetrics, attendance, currentAttendance, compliance, leaveData, activeShifts, shiftData]);
 
   // Handle manual refresh
-  const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Dashboard aggiornato",
-        description: "Tutti i dati sono stati aggiornati",
-      });
-    }, 1000);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['hr-analytics'] }),
+    ]);
+    setIsRefreshing(false);
+    toast({
+      title: "Dashboard aggiornato",
+      description: "Tutti i dati sono stati aggiornati",
+    });
   };
 
-  // Handle export (mock implementation)
-  const handleExport = async (exportFormat: 'pdf' | 'excel' | 'csv') => {
-    try {
-      // Simulate export - replace with real implementation when available
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Export completato",
-        description: `Dashboard esportato in formato ${exportFormat.toUpperCase()}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Errore nell'export",
-        description: "Si è verificato un errore durante l'export",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  // Handle export
+  const handleExport = async (exportFormat: 'pdf' | 'excel' | 'csv' = 'pdf') => {
+    exportDashboard.mutate({
+      format: exportFormat,
+      period: selectedPeriod,
+      filters,
+    });
+  };
+
+  // Quick actions for dashboard
+  const quickActions = [
+    {
+      label: 'Auto-Refresh',
+      icon: isAutoRefresh ? <Zap className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />,
+      onClick: () => setIsAutoRefresh(!isAutoRefresh),
+      variant: isAutoRefresh ? 'default' as const : 'outline' as const,
+    },
+    {
+      label: 'Export PDF',
+      icon: <Download className="h-4 w-4" />,
+      onClick: () => handleExport('pdf'),
+      variant: 'outline' as const,
+      disabled: !canExport,
+    },
+  ];
+
+  // Render content based on view
+  const renderContent = () => {
+    switch (activeView) {
+      case 'overview':
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Attendance Summary */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-green-600" />
+                  Presenze
+                </CardTitle>
+                <CardDescription>Riepilogo presenze in tempo reale</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Presenti</span>
+                    <span className="font-medium">{currentAttendance?.presentToday || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Assenti</span>
+                    <span className="font-medium">{currentAttendance?.absentToday || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">In ferie</span>
+                    <span className="font-medium">{currentAttendance?.onLeave || 0}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Tasso presenza</span>
+                    <span className="text-lg font-bold">{attendance?.attendanceRate || 0}%</span>
+                  </div>
+                  <Progress value={attendance?.attendanceRate || 0} className="h-2" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Labor Costs */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-purple-600" />
+                  Costi del Lavoro
+                </CardTitle>
+                <CardDescription>Analisi costi {selectedPeriod === 'month' ? 'mensili' : selectedPeriod === 'year' ? 'annuali' : 'del periodo'}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Costo totale</span>
+                    <span className="font-medium">€{(laborCosts?.totalCost || 0).toFixed(0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Costo medio/dipendente</span>
+                    <span className="font-medium">€{(laborCosts?.costPerEmployee || 0).toFixed(0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Straordinari</span>
+                    <span className="font-medium">€{(laborCosts?.overtimeCost || 0).toFixed(0)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Trend vs periodo precedente</span>
+                    <Badge variant={laborCosts?.trend > 0 ? 'destructive' : 'default'}>
+                      {laborCosts?.trend > 0 ? '+' : ''}{laborCosts?.trend || 0}%
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Compliance Status */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-green-600" />
+                  Stato Compliance
+                </CardTitle>
+                <CardDescription>Conformità normativa e contrattuale</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Documenti</p>
+                      <p className="text-xl font-bold">{compliance?.documentCompliance || 0}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Contratti</p>
+                      <p className="text-xl font-bold">{compliance?.contractCompliance || 0}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Formazione</p>
+                      <p className="text-xl font-bold">{compliance?.trainingCompliance || 0}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Orario</p>
+                      <p className="text-xl font-bold">{compliance?.workingTimeCompliance || 0}%</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-medium">Score totale</span>
+                      <span className="font-bold">{compliance?.overallScore || 0}%</span>
+                    </div>
+                    <Progress value={compliance?.overallScore || 0} className="h-2" />
+                  </div>
+                  {compliance?.criticalIssues > 0 && (
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Attenzione</AlertTitle>
+                      <AlertDescription>
+                        {compliance.criticalIssues} problemi critici richiedono intervento
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Employee Demographics */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Demografia Dipendenti
+                </CardTitle>
+                <CardDescription>Composizione workforce</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Genere</p>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline">M: {demographics?.genderDistribution?.male || 0}%</Badge>
+                        <Badge variant="outline">F: {demographics?.genderDistribution?.female || 0}%</Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Età media</p>
+                      <p className="text-xl font-bold">{demographics?.avgAge || 0} anni</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Tipologia contratto</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Indeterminato</span>
+                        <span className="text-sm font-medium">{demographics?.contractTypes?.permanent || 0}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Determinato</span>
+                        <span className="text-sm font-medium">{demographics?.contractTypes?.temporary || 0}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Part-time</span>
+                        <span className="text-sm font-medium">{demographics?.contractTypes?.partTime || 0}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+        
+      case 'attendance':
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="glass-card col-span-2">
+              <CardHeader>
+                <CardTitle>Trend Presenze</CardTitle>
+                <CardDescription>Andamento presenze nel periodo</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Chart would be rendered here */}
+                <div className="h-64 flex items-center justify-center text-gray-500">
+                  <BarChart3 className="h-12 w-12" />
+                  <span className="ml-2">Grafico presenze</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Additional attendance cards */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle>Dettaglio Assenze</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Malattia</span>
+                    <span className="text-sm font-medium">{attendance?.absenceByType?.sick || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Ferie</span>
+                    <span className="text-sm font-medium">{attendance?.absenceByType?.vacation || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Permessi</span>
+                    <span className="text-sm font-medium">{attendance?.absenceByType?.personal || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Altri</span>
+                    <span className="text-sm font-medium">{attendance?.absenceByType?.other || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle>Straordinari</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Ore totali</span>
+                    <span className="text-sm font-medium">{attendance?.overtimeHours || 0}h</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Dipendenti coinvolti</span>
+                    <span className="text-sm font-medium">{attendance?.overtimeEmployees || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Media per dipendente</span>
+                    <span className="text-sm font-medium">{attendance?.avgOvertimePerEmployee || 0}h</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+        
+      default:
+        return (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Seleziona una vista dal menu per visualizzare i dettagli</p>
+          </div>
+        );
     }
   };
 
-  // Check permissions
-  const userRole = (user as any)?.role || '';
-  const canViewFullAnalytics = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE'].includes(userRole);
-  const canExport = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE', 'TEAM_LEADER'].includes(userRole);
-
   if (!canViewFullAnalytics) {
     return (
-      <div className="container mx-auto p-6">
-        <Alert variant="warning">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Non hai i permessi necessari per visualizzare il dashboard HR Analytics completo.
-            Contatta l'amministratore per maggiori informazioni.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        <div className="container mx-auto p-6">
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Accesso limitato</AlertTitle>
+            <AlertDescription>
+              Non hai i permessi necessari per visualizzare il dashboard HR Analytics completo.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </Layout>
     );
   }
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="p-6 space-y-6 max-w-[1400px] mx-auto" data-testid="hr-analytics-page">
-        {/* Header with Enhanced WindTre Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/50 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-white/20 hover:bg-white/60 transition-all duration-300"
-          data-testid="analytics-header"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
-                HR Analytics Dashboard
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                Analisi completa delle metriche HR e workforce management
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Auto-refresh toggle */}
-              <Button
-                variant={isAutoRefresh ? "default" : "outline"}
-                size="sm"
-                className={isAutoRefresh ? "bg-gradient-to-r from-orange-500 to-purple-600" : "bg-white/60 backdrop-blur border-white/30"}
-                onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-                data-testid="button-auto-refresh"
-              >
-                <RefreshCw className={cn("h-4 w-4 mr-2", isAutoRefresh && "animate-spin")} />
-                {isAutoRefresh ? "Auto-refresh ON" : "Auto-refresh OFF"}
-              </Button>
-
-              {/* Manual refresh */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white/60 backdrop-blur border-white/30"
-                onClick={handleRefresh}
-                data-testid="button-refresh"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Aggiorna
-              </Button>
-
-              {/* Export menu */}
-              {canExport && (
-                <div className="relative group">
-                  <Button
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-                    data-testid="button-export"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Esporta
-                  </Button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-sm rounded-md shadow-lg border border-white/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <button
-                      onClick={() => handleExport('pdf')}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-white/60 backdrop-blur transition-all duration-200 first:rounded-t-md text-gray-700 hover:text-orange-600"
-                      data-testid="export-pdf"
-                    >
-                      <FileText className="inline h-4 w-4 mr-2" />
-                      Esporta PDF
-                    </button>
-                    <button
-                      onClick={() => handleExport('excel')}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-white/60 backdrop-blur transition-all duration-200 text-gray-700 hover:text-orange-600"
-                      data-testid="export-excel"
-                    >
-                      <FileText className="inline h-4 w-4 mr-2" />
-                      Esporta Excel
-                    </button>
-                    <button
-                      onClick={() => handleExport('csv')}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-white/60 backdrop-blur transition-all duration-200 last:rounded-b-md text-gray-700 hover:text-orange-600"
-                      data-testid="export-csv"
-                    >
-                      <FileText className="inline h-4 w-4 mr-2" />
-                      Esporta CSV
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+      <div className="p-6 space-y-6" data-testid="hr-analytics-page">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+              HR Analytics Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Analisi completa delle risorse umane
+            </p>
           </div>
-
-          {/* Enhanced Filters with Consistent Glassmorphism */}
-          <div className="flex flex-wrap items-center gap-4 p-4 bg-white/30 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/40 transition-all duration-300" data-testid="analytics-filters">
-            {/* Period selector */}
-            <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as PeriodType)}>
-              <SelectTrigger className="w-[150px]" data-testid="select-period">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Giornaliero</SelectItem>
-                <SelectItem value="week">Settimanale</SelectItem>
-                <SelectItem value="month">Mensile</SelectItem>
-                <SelectItem value="quarter">Trimestrale</SelectItem>
-                <SelectItem value="year">Annuale</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Store filter */}
-            <Select value={selectedStore} onValueChange={setSelectedStore}>
-              <SelectTrigger className="w-[200px]" data-testid="select-store">
-                <SelectValue placeholder="Tutti i negozi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i negozi</SelectItem>
-                {stores?.map((store: any) => (
-                  <SelectItem key={store.id} value={store.id}>
-                    {store.name}
-                  </SelectItem>
+          <div className="flex items-center gap-2">
+            <Badge variant={isAutoRefresh ? 'default' : 'outline'}>
+              {isAutoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
+            </Badge>
+          </div>
+        </div>
+        
+        {/* Tabs Navigation */}
+        <Tabs value={activeView} onValueChange={(v) => setActiveView(v as ViewType)}>
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="attendance">Presenze</TabsTrigger>
+            <TabsTrigger value="leave">Ferie</TabsTrigger>
+            <TabsTrigger value="costs">Costi</TabsTrigger>
+            <TabsTrigger value="shifts">Turni</TabsTrigger>
+            <TabsTrigger value="demographics">Demografia</TabsTrigger>
+            <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={activeView} className="mt-6">
+            <DashboardTemplate
+              title={`Analytics ${activeView === 'overview' ? 'Generale' : activeView.charAt(0).toUpperCase() + activeView.slice(1)}`}
+              subtitle={`Periodo: ${format(dateRange.start, 'dd MMM', { locale: it })} - ${format(dateRange.end, 'dd MMM yyyy', { locale: it })}`}
+              metrics={metrics}
+              metricsLoading={metricsLoading || attendanceLoading || costsLoading || complianceLoading}
+              quickActions={quickActions}
+              showFilters={true}
+              filters={[
+                <Select key="period" value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as PeriodType)}>
+                  <SelectTrigger className="w-[150px]" data-testid="select-period">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Giorno</SelectItem>
+                    <SelectItem value="week">Settimana</SelectItem>
+                    <SelectItem value="month">Mese</SelectItem>
+                    <SelectItem value="quarter">Trimestre</SelectItem>
+                    <SelectItem value="year">Anno</SelectItem>
+                  </SelectContent>
+                </Select>,
+                <Select key="store" value={selectedStore} onValueChange={setSelectedStore}>
+                  <SelectTrigger className="w-[200px]" data-testid="select-store">
+                    <SelectValue placeholder="Tutti i negozi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i negozi</SelectItem>
+                    {stores?.map(store => (
+                      <SelectItem key={store.id} value={store.id}>
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>,
+                <Select key="department" value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                  <SelectTrigger className="w-[200px]" data-testid="select-department">
+                    <SelectValue placeholder="Tutti i reparti" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i reparti</SelectItem>
+                    <SelectItem value="sales">Vendite</SelectItem>
+                    <SelectItem value="support">Assistenza</SelectItem>
+                    <SelectItem value="tech">Tecnico</SelectItem>
+                    <SelectItem value="admin">Amministrazione</SelectItem>
+                  </SelectContent>
+                </Select>,
+              ]}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+              onExport={() => handleExport('pdf')}
+              lastUpdated={new Date()}
+            >
+              {renderContent()}
+            </DashboardTemplate>
+          </TabsContent>
+        </Tabs>
+        
+        {/* Upcoming Events Widget */}
+        {upcomingEvents && upcomingEvents.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                Eventi Imminenti
+              </CardTitle>
+              <CardDescription>Prossimi 7 giorni</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {upcomingEvents.slice(0, 5).map((event: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <div>
+                      <p className="font-medium">{event.title}</p>
+                      <p className="text-sm text-gray-500">{format(new Date(event.date), 'dd/MM/yyyy')}</p>
+                    </div>
+                    <Badge variant="outline">{event.type}</Badge>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
-
-            {/* Department filter */}
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-[200px]" data-testid="select-department">
-                <SelectValue placeholder="Tutti i dipartimenti" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tutti i dipartimenti</SelectItem>
-                <SelectItem value="sales">Vendite</SelectItem>
-                <SelectItem value="warehouse">Magazzino</SelectItem>
-                <SelectItem value="administration">Amministrazione</SelectItem>
-                <SelectItem value="management">Management</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Date range display with enhanced styling */}
-            <div className="ml-auto flex items-center gap-2 text-sm text-gray-700 font-medium px-3 py-2 bg-white/40 backdrop-blur rounded-lg border border-white/20">
-              <Calendar className="h-4 w-4 text-orange-500" />
-              <span>
-                {format(dateRange.start, 'dd MMM yyyy', { locale: it })} - {format(dateRange.end, 'dd MMM yyyy', { locale: it })}
-              </span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Enhanced Main Content with WindTre Styling */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Tabs value={activeView} onValueChange={(v) => setActiveView(v as ViewType)} className="space-y-6">
-            <TabsList className="grid grid-cols-7 w-full max-w-[800px] mx-auto bg-white/50 backdrop-blur-sm border border-white/20 shadow-lg hover:bg-white/60 transition-all duration-300">
-            <TabsTrigger value="overview" data-testid="tab-overview">
-              <BarChart3 className="h-4 w-4 mr-1" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="attendance" data-testid="tab-attendance">
-              <Clock className="h-4 w-4 mr-1" />
-              Presenze
-            </TabsTrigger>
-            <TabsTrigger value="leave" data-testid="tab-leave">
-              <Calendar className="h-4 w-4 mr-1" />
-              Ferie
-            </TabsTrigger>
-            <TabsTrigger value="costs" data-testid="tab-costs">
-              <DollarSign className="h-4 w-4 mr-1" />
-              Costi
-            </TabsTrigger>
-            <TabsTrigger value="shifts" data-testid="tab-shifts">
-              <Users className="h-4 w-4 mr-1" />
-              Turni
-            </TabsTrigger>
-            <TabsTrigger value="demographics" data-testid="tab-demographics">
-              <PieChart className="h-4 w-4 mr-1" />
-              Demografia
-            </TabsTrigger>
-            <TabsTrigger value="compliance" data-testid="tab-compliance">
-              <Shield className="h-4 w-4 mr-1" />
-              Compliance
-            </TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab with Mock Analytics Content */}
-            <TabsContent value="overview" className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                {/* KPI Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="kpi-grid">
-                  <Card className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/60 transition-all duration-300">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-2xl font-bold text-gray-900">{mockMetrics.totalEmployees}</div>
-                          <div className="text-sm text-gray-600">Dipendenti Totali</div>
-                        </div>
-                        <Users className="h-8 w-8 text-orange-500 opacity-50" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/60 transition-all duration-300">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-2xl font-bold text-gray-900">{mockMetrics.presentToday}</div>
-                          <div className="text-sm text-gray-600">Presenti Oggi</div>
-                        </div>
-                        <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/60 transition-all duration-300">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-2xl font-bold text-gray-900">{mockMetrics.attendanceRate}%</div>
-                          <div className="text-sm text-gray-600">Tasso Presenza</div>
-                        </div>
-                        <TrendingUp className="h-8 w-8 text-purple-500 opacity-50" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/60 transition-all duration-300">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-2xl font-bold text-gray-900">{mockMetrics.pendingApprovals}</div>
-                          <div className="text-sm text-gray-600">Approvazioni Pendenti</div>
-                        </div>
-                        <AlertTriangle className="h-8 w-8 text-orange-500 opacity-50" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </motion.div>
-              
-              <motion.div 
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {/* Attendance Overview */}
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-orange-500" />
-                      Analisi Presenze
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between text-sm">
-                        <span>Tasso di presenza generale</span>
-                        <span className="font-semibold">{mockMetrics.attendanceRate}%</span>
-                      </div>
-                      <Progress value={mockMetrics.attendanceRate} className="h-2" />
-                      <div className="border-t border-white/20 pt-4 mt-4"></div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-gray-600">Presenti</div>
-                          <div className="font-semibold text-green-600">{mockMetrics.presentToday}</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-600">Assenti</div>
-                          <div className="font-semibold text-red-600">{mockMetrics.absentToday}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* Labor Cost Overview */}
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-green-500" />
-                      Costi del Lavoro
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between text-sm">
-                        <span>Ore straordinarie</span>
-                        <span className="font-semibold">{mockMetrics.overtimeHours}h</span>
-                      </div>
-                      <Progress value={75} className="h-2" />
-                      <div className="border-t border-white/20 pt-4 mt-4"></div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-gray-600">Budget utilizzato</div>
-                          <div className="font-semibold text-orange-600">78%</div>
-                        </div>
-                        <div>
-                          <div className="text-gray-600">Efficienza</div>
-                          <div className="font-semibold text-green-600">92%</div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            {/* Other Tabs with Placeholder Content */}
-            <TabsContent value="attendance">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20 p-8 text-center">
-                  <Clock className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Analisi Presenze Dettagliata</h3>
-                  <p className="text-gray-600 mb-4">Dashboard completa delle presenze per periodo: {selectedPeriod}</p>
-                  {isLoading ? <Skeleton className="h-32 w-full" /> : <div className="h-32 bg-gradient-to-r from-orange-100 to-purple-100 rounded-lg flex items-center justify-center text-gray-500">Grafici e metriche presenze</div>}
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="leave">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20 p-8 text-center">
-                  <Calendar className="h-12 w-12 text-purple-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Gestione Ferie e Permessi</h3>
-                  <p className="text-gray-600 mb-4">Analisi completa delle richieste di ferie per dipartimento: {selectedDepartment === 'all' ? 'Tutti' : selectedDepartment}</p>
-                  {isLoading ? <Skeleton className="h-32 w-full" /> : <div className="h-32 bg-gradient-to-r from-blue-100 to-green-100 rounded-lg flex items-center justify-center text-gray-500">Dashboard ferie e permessi</div>}
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="costs">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20 p-8 text-center">
-                  <DollarSign className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Analisi Costi del Lavoro</h3>
-                  <p className="text-gray-600 mb-4">Monitoraggio completo dei costi per periodo: {selectedPeriod}</p>
-                  {isLoading ? <Skeleton className="h-32 w-full" /> : <div className="h-32 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg flex items-center justify-center text-gray-500">Analisi costi e budget</div>}
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="shifts">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20 p-8 text-center">
-                  <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Pianificazione Turni</h3>
-                  <p className="text-gray-600 mb-4">Gestione e analisi turni per punto vendita: {selectedStore === 'all' ? 'Tutti i negozi' : 'Negozio selezionato'}</p>
-                  {isLoading ? <Skeleton className="h-32 w-full" /> : <div className="h-32 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg flex items-center justify-center text-gray-500">Gestione turni e coperture</div>}
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="demographics">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20 p-8 text-center">
-                  <PieChart className="h-12 w-12 text-indigo-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Demografia Dipendenti</h3>
-                  <p className="text-gray-600 mb-4">Analisi demografica e distribuzione del personale</p>
-                  {isLoading ? <Skeleton className="h-32 w-full" /> : <div className="h-32 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center text-gray-500">Grafici demografici e statistiche</div>}
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="compliance">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="bg-white/50 backdrop-blur-sm border-white/20 p-8 text-center">
-                  <Shield className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Dashboard Compliance</h3>
-                  <p className="text-gray-600 mb-4">Monitoraggio conformità normative e procedure HR</p>
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Compliance Score: {mockMetrics.complianceScore}%</Badge>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Stato: Conforme</Badge>
-                  </div>
-                  {isLoading ? <Skeleton className="h-32 w-full" /> : <div className="h-32 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-lg flex items-center justify-center text-gray-500">Indicatori compliance e audit</div>}
-                </Card>
-              </motion.div>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
-
-        {/* Enhanced Real-time status indicator */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="fixed bottom-6 right-6 z-50"
-          data-testid="status-indicator"
-        >
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full shadow-xl border border-white/30 hover:bg-white/70 transition-all duration-300">
-            <div className={cn(
-              "w-3 h-3 rounded-full shadow-sm",
-              isAutoRefresh ? "bg-green-500 animate-pulse shadow-green-200" : "bg-gray-400"
-            )} />
-            <span className="text-xs font-medium text-gray-700">
-              {isAutoRefresh ? "Live" : "Manual"}
-            </span>
-            {isAutoRefresh && (
-              <Badge variant="secondary" className="text-xs px-2 py-0 bg-green-100 text-green-700">
-                {refreshInterval / 1000}s
-              </Badge>
-            )}
-          </div>
-        </motion.div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );

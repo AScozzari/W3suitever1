@@ -1,59 +1,199 @@
-// Leave Management Page - Main page for leave requests and management
-import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar as CalendarIcon, Plus, Download, Filter, Users, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import Layout from '@/components/Layout';
-import { LeaveBalanceWidget } from '@/components/Leave/LeaveBalanceWidget';
-import { LeaveRequestModal } from '@/components/Leave/LeaveRequestModal';
-import { ApprovalQueue } from '@/components/Leave/ApprovalQueue';
-import { LeaveCalendar } from '@/components/Leave/LeaveCalendar';
-import { useLeaveRequests, useLeaveStatistics, useApprovalQueue, useDeleteLeaveRequest } from '@/hooks/useLeaveManagement';
-import { useAuth } from '@/hooks/useAuth';
-import { leaveService } from '@/services/leaveService';
+// Leave Management Page - Enterprise HR Management System with frontend-kit
+import { useState, useMemo } from 'react';
+import { ListPageTemplate } from '../../../../../packages/frontend-kit/templates';
+import { DashboardTemplate } from '../../../../../packages/frontend-kit/templates';
+import { Column } from '../../../../../packages/frontend-kit/components/blocks/DataTable';
+import {
+  Calendar,
+  CalendarDays,
+  Plus,
+  Download,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Users,
+  FileText,
+  TrendingUp,
+  RefreshCw,
+  Plane,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import Layout from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  useLeaveBalance,
+  useLeaveRequests,
+  useCreateLeaveRequest,
+  useUpdateLeaveRequest,
+  useDeleteLeaveRequest,
+  useApproveLeaveRequest,
+  useRejectLeaveRequest,
+  useApprovalQueue,
+  useLeaveStatistics,
+  useLeavePolicies,
+  useTeamCalendar,
+} from '@/hooks/useLeaveManagement';
+import { leaveService } from '@/services/leaveService';
+import { LeaveRequestModal } from '@/components/Leave/LeaveRequestModal';
+import { LeaveBalanceWidget } from '@/components/Leave/LeaveBalanceWidget';
+import { queryClient } from '@/lib/queryClient';
+
+// Define local types
+interface MetricCard {
+  id: string;
+  title: string;
+  value: string | number;
+  description?: string;
+  trend?: {
+    value: number;
+    label?: string;
+  };
+  icon?: React.ReactNode;
+}
 
 export function LeaveManagementPage() {
   const [currentModule, setCurrentModule] = useState('leave-management');
   const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // State
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'approval' | 'calendar'>('dashboard');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'vacation' | 'sick' | 'personal' | 'other'>('all');
   const [showRequestModal, setShowRequestModal] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [activeTab, setActiveTab] = useState('my-requests');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Determine if user is a manager
+  const isManager = user?.role === 'TEAM_LEADER' || user?.role === 'HR_MANAGER' || user?.role === 'ADMIN';
   
   // Hooks
-  const { data: requests = [], isLoading, filters, setFilters } = useLeaveRequests({
-    userId: activeTab === 'my-requests' ? user?.id : undefined,
+  const { data: balance, isLoading: balanceLoading } = useLeaveBalance(user?.id);
+  const { data: requests = [], isLoading: requestsLoading, filters, setFilters } = useLeaveRequests({
+    userId: activeTab === 'requests' ? user?.id : undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
-    leaveType: typeFilter !== 'all' ? typeFilter : undefined
+    leaveType: typeFilter !== 'all' ? typeFilter : undefined,
   });
+  const { data: statistics, isLoading: statsLoading } = useLeaveStatistics();
+  const { data: policies } = useLeavePolicies();
+  const { requests: approvalRequests = [], pendingCount, urgentCount } = useApprovalQueue();
+  const { data: teamCalendar = [] } = useTeamCalendar();
   
-  const { data: statistics } = useLeaveStatistics();
-  const { pendingCount, urgentCount } = useApprovalQueue();
+  const createRequest = useCreateLeaveRequest();
+  const updateRequest = useUpdateLeaveRequest();
   const deleteRequest = useDeleteLeaveRequest();
+  const approveRequest = useApproveLeaveRequest();
+  const rejectRequest = useRejectLeaveRequest();
   
-  const isManager = user?.role === 'TEAM_LEADER' || user?.role === 'HR_MANAGER' || user?.role === 'ADMIN';
+  // Prepare metrics for dashboard
+  const metrics: MetricCard[] = useMemo(() => [
+    {
+      id: 'balance',
+      title: 'Saldo Ferie',
+      value: balance?.vacationDaysRemaining || 0,
+      description: `Su ${balance?.vacationDaysEntitled || 0} giorni totali`,
+      trend: balance ? { 
+        value: Math.round((balance.vacationDaysRemaining / balance.vacationDaysEntitled) * 100),
+        label: '% disponibile'
+      } : undefined,
+      icon: <Plane className="h-4 w-4 text-green-600" />,
+    },
+    {
+      id: 'used',
+      title: 'Giorni Utilizzati',
+      value: balance?.vacationDaysUsed || 0,
+      description: 'Quest\'anno',
+      icon: <Calendar className="h-4 w-4 text-blue-600" />,
+    },
+    {
+      id: 'pending',
+      title: 'Richieste in Attesa',
+      value: statistics?.pendingRequests || 0,
+      description: urgentCount > 0 ? `${urgentCount} urgenti` : 'Nessuna urgente',
+      icon: <Clock className="h-4 w-4 text-orange-600" />,
+    },
+    {
+      id: 'upcoming',
+      title: 'Assenze Prossime',
+      value: statistics?.upcomingAbsences || 0,
+      description: 'Nei prossimi 30 giorni',
+      icon: <Users className="h-4 w-4 text-purple-600" />,
+    },
+  ], [balance, statistics, urgentCount]);
+  
+  // Prepare columns for requests list
+  const requestsColumns: Column[] = useMemo(() => [
+    {
+      key: 'period',
+      label: 'Periodo',
+      render: (request: any) => leaveService.formatDateRange(request.startDate, request.endDate),
+    },
+    {
+      key: 'type',
+      label: 'Tipo',
+      render: (request: any) => {
+        const config = leaveService.getLeaveTypeConfig(request.leaveType);
+        return (
+          <span className="flex items-center gap-1">
+            <span>{config.icon}</span>
+            <span>{config.label}</span>
+          </span>
+        );
+      },
+    },
+    {
+      key: 'days',
+      label: 'Giorni',
+      render: (request: any) => request.totalDays,
+    },
+    {
+      key: 'status',
+      label: 'Stato',
+      render: (request: any) => {
+        const config = leaveService.getStatusConfig(request.status);
+        return (
+          <Badge 
+            variant="outline" 
+            style={{ 
+              backgroundColor: config.bgColor,
+              color: config.color,
+              borderColor: config.color 
+            }}
+          >
+            {config.icon} {config.label}
+          </Badge>
+        );
+      },
+    },
+    ...(isManager ? [{
+      key: 'employee',
+      label: 'Dipendente',
+      render: (request: any) => request.userName || 'N/A',
+    }] : []),
+    {
+      key: 'submitted',
+      label: 'Richiesta',
+      render: (request: any) => request.submittedAt 
+        ? format(new Date(request.submittedAt), 'dd/MM/yyyy', { locale: it })
+        : 'Bozza',
+    },
+  ], [isManager]);
   
   // Handlers
   const handleCreateRequest = () => {
@@ -61,24 +201,46 @@ export function LeaveManagementPage() {
     setShowRequestModal(true);
   };
   
-  const handleEditRequest = (request) => {
+  const handleEditRequest = (request: any) => {
     setSelectedRequest(request);
     setShowRequestModal(true);
   };
   
-  const handleDeleteRequest = (id: string) => {
+  const handleDeleteRequest = (request: any) => {
     if (confirm('Sei sicuro di voler eliminare questa richiesta?')) {
-      deleteRequest.mutate(id);
+      deleteRequest.mutate(request.id);
     }
   };
   
+  const handleApproveRequest = (request: any) => {
+    approveRequest.mutate({ id: request.id });
+  };
+  
+  const handleRejectRequest = (request: any) => {
+    const reason = prompt('Motivo del rifiuto:');
+    if (reason) {
+      rejectRequest.mutate({ id: request.id, reason });
+    }
+  };
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/leave'] }),
+    ]);
+    setIsRefreshing(false);
+    toast({
+      title: 'Dashboard aggiornato',
+      description: 'Tutti i dati sono stati aggiornati',
+    });
+  };
+  
   const handleExport = () => {
-    // Export to CSV
     const csv = [
       ['ID', 'Data Richiesta', 'Tipo', 'Data Inizio', 'Data Fine', 'Giorni', 'Stato', 'Note'],
       ...requests.map(r => [
         r.id,
-        format(new Date(r.createdAt), 'dd/MM/yyyy'),
+        r.createdAt ? format(new Date(r.createdAt), 'dd/MM/yyyy') : '',
         leaveService.getLeaveTypeConfig(r.leaveType).label,
         format(new Date(r.startDate), 'dd/MM/yyyy'),
         format(new Date(r.endDate), 'dd/MM/yyyy'),
@@ -97,350 +259,407 @@ export function LeaveManagementPage() {
     a.click();
   };
   
-  // Statistics cards
-  const statsCards = [
+  // Quick actions for dashboard
+  const quickActions = [
     {
-      title: 'Richieste Totali',
-      value: statistics?.totalRequests || 0,
-      icon: CalendarIcon,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      label: 'Nuova Richiesta',
+      icon: <Plus className="h-4 w-4" />,
+      onClick: handleCreateRequest,
+      variant: 'default' as const,
     },
     {
-      title: 'In Attesa',
-      value: statistics?.pendingRequests || 0,
-      icon: Clock,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
+      label: 'Visualizza Calendario',
+      icon: <Calendar className="h-4 w-4" />,
+      onClick: () => setActiveTab('calendar'),
+      variant: 'outline' as const,
     },
-    {
-      title: 'Approvate',
-      value: statistics?.approvedRequests || 0,
-      icon: CheckCircle,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
-    },
-    {
-      title: 'Rifiutate',
-      value: statistics?.rejectedRequests || 0,
-      icon: XCircle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50'
-    }
   ];
   
-  return (
-    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="leave-management-page">
-        {/* Header with Glassmorphism */}
-        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
-                Gestione Ferie e Permessi
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                Richiedi e gestisci le tue ferie e permessi aziendali
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={handleExport}
-                className="bg-white/60 backdrop-blur border-white/30"
-                data-testid="button-export"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Esporta
-              </Button>
-              <Button
-                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                onClick={handleCreateRequest}
-                data-testid="button-new-request"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuova Richiesta
-              </Button>
-            </div>
-          </div>
-        </div>
-      
-        {/* Statistics Cards with Glassmorphism */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {statsCards.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card 
-                key={stat.title}
-                className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200"
-                data-testid={`stat-card-${index}`}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{stat.title}</p>
-                      <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">{stat.value}</p>
-                    </div>
-                    <div className={cn(
-                      "p-3 rounded-full",
-                      stat.bgColor
-                    )}>
-                      <Icon className={cn("h-6 w-6", stat.color)} />
-                    </div>
+  // Render content based on tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <DashboardTemplate
+            title="Dashboard Ferie"
+            subtitle={`Anno ${new Date().getFullYear()} • ${user?.fullName || user?.email}`}
+            metrics={metrics}
+            metricsLoading={balanceLoading || statsLoading}
+            quickActions={quickActions}
+            showFilters={false}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            onExport={handleExport}
+            lastUpdated={new Date()}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* Leave Balance Widget */}
+              <LeaveBalanceWidget
+                balance={balance}
+                loading={balanceLoading}
+                onRequestLeave={handleCreateRequest}
+              />
+              
+              {/* Recent Requests */}
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle>Richieste Recenti</CardTitle>
+                  <CardDescription>Le tue ultime richieste di ferie</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {requests.slice(0, 5).map((request: any) => {
+                      const config = leaveService.getStatusConfig(request.status);
+                      return (
+                        <div key={request.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                          <div>
+                            <p className="font-medium">
+                              {leaveService.formatDateRange(request.startDate, request.endDate)}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {leaveService.getLeaveTypeConfig(request.leaveType).label} • {request.totalDays} giorni
+                            </p>
+                          </div>
+                          <Badge 
+                            variant="outline"
+                            style={{
+                              backgroundColor: config.bgColor,
+                              color: config.color,
+                              borderColor: config.color
+                            }}
+                          >
+                            {config.label}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                    {requests.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        Nessuna richiesta recente
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-      
-        {/* Main Content with Glassmorphism */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Side - Balance and Calendar */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Balance Widget */}
-            <Card className="bg-white/80 backdrop-blur-md border-white/20">
-              <LeaveBalanceWidget />
-            </Card>
-            
-            {/* Mini Calendar */}
-            <Card className="bg-white/80 backdrop-blur-md border-white/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
-                  Calendario Ferie
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LeaveCalendar compact />
-              </CardContent>
-            </Card>
-          
-            {/* Approval Queue for Managers */}
-            {isManager && (
-              <Card className="bg-white/80 backdrop-blur-md border-white/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Da Approvare</span>
-                    {urgentCount > 0 && (
-                      <Badge variant="destructive">
-                        {urgentCount} urgenti
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ApprovalQueue compact />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-          
-          {/* Right Side - Requests List */}
-          <div className="lg:col-span-2">
-            <Card className="bg-white/80 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Richieste Ferie</CardTitle>
-                <div className="flex gap-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[140px]" data-testid="filter-status">
-                      <SelectValue placeholder="Stato" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutti</SelectItem>
-                      <SelectItem value="draft">Bozza</SelectItem>
-                      <SelectItem value="pending">In Attesa</SelectItem>
-                      <SelectItem value="approved">Approvate</SelectItem>
-                      <SelectItem value="rejected">Rifiutate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-[140px]" data-testid="filter-type">
-                      <SelectValue placeholder="Tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutti</SelectItem>
-                      <SelectItem value="vacation">Ferie</SelectItem>
-                      <SelectItem value="sick">Malattia</SelectItem>
-                      <SelectItem value="personal">Personale</SelectItem>
-                      <SelectItem value="maternity">Maternità</SelectItem>
-                      <SelectItem value="paternity">Paternità</SelectItem>
-                      <SelectItem value="other">Altro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                {isManager && (
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="my-requests">Le Mie Richieste</TabsTrigger>
-                    <TabsTrigger value="team-requests" className="relative">
-                      Richieste Team
-                      {pendingCount > 0 && (
-                        <Badge 
-                          variant="destructive" 
-                          className="ml-2 h-5 px-1 text-xs"
-                        >
-                          {pendingCount}
-                        </Badge>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
-                )}
-                
-                <TabsContent value={activeTab === 'team-requests' ? 'team-requests' : 'my-requests'}>
-                  {isLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+              
+              {/* Policies Info */}
+              {policies && (
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Policy Aziendali</CardTitle>
+                    <CardDescription>Regole e limiti per le richieste</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between p-2 rounded bg-gray-50">
+                      <span className="text-sm">Giorni di preavviso</span>
+                      <span className="text-sm font-medium">{policies.minimumAdvanceDays} giorni</span>
                     </div>
-                  ) : requests.length === 0 ? (
-                    <div className="text-center py-8">
-                      <CalendarIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">Nessuna richiesta trovata</p>
-                      <Button 
-                        variant="link" 
-                        className="mt-2"
-                        onClick={handleCreateRequest}
-                      >
-                        Crea la tua prima richiesta
-                      </Button>
+                    <div className="flex justify-between p-2 rounded bg-gray-50">
+                      <span className="text-sm">Giorni consecutivi max</span>
+                      <span className="text-sm font-medium">{policies.maximumConsecutiveDays} giorni</span>
                     </div>
-                  ) : (
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Periodo</TableHead>
-                            <TableHead className="text-center">Giorni</TableHead>
-                            <TableHead>Stato</TableHead>
-                            {activeTab === 'team-requests' && (
-                              <TableHead>Richiedente</TableHead>
-                            )}
-                            <TableHead>Data Richiesta</TableHead>
-                            <TableHead className="text-right">Azioni</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {requests.map((request) => {
-                            const typeConfig = leaveService.getLeaveTypeConfig(request.leaveType);
-                            const statusConfig = leaveService.getStatusConfig(request.status);
-                            
-                            return (
-                              <TableRow key={request.id} data-testid={`row-request-${request.id}`}>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <span>{typeConfig.icon}</span>
-                                    <span className="font-medium">{typeConfig.label}</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="text-sm">
-                                    {leaveService.formatDateRange(request.startDate, request.endDate)}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <Badge variant="outline">{request.totalDays}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    style={{
-                                      backgroundColor: statusConfig.bgColor,
-                                      color: statusConfig.color,
-                                      borderColor: statusConfig.color
-                                    }}
-                                  >
-                                    {statusConfig.icon} {statusConfig.label}
-                                  </Badge>
-                                </TableCell>
-                                {activeTab === 'team-requests' && (
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      {request.userAvatar && (
-                                        <img
-                                          src={request.userAvatar}
-                                          alt={request.userName}
-                                          className="h-6 w-6 rounded-full"
-                                        />
-                                      )}
-                                      <span className="text-sm">{request.userName}</span>
-                                    </div>
-                                  </TableCell>
-                                )}
-                                <TableCell>
-                                  <span className="text-sm text-gray-500">
-                                    {format(new Date(request.createdAt), 'dd MMM yyyy', { locale: it })}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-1">
-                                    {request.status === 'draft' && (
-                                      <>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleEditRequest(request)}
-                                          data-testid={`button-edit-${request.id}`}
-                                        >
-                                          Modifica
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="text-red-600"
-                                          onClick={() => handleDeleteRequest(request.id)}
-                                          data-testid={`button-delete-${request.id}`}
-                                        >
-                                          Elimina
-                                        </Button>
-                                      </>
-                                    )}
-                                    {request.status === 'pending' && activeTab === 'my-requests' && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-orange-600"
-                                        data-testid={`button-cancel-${request.id}`}
-                                      >
-                                        Annulla
-                                      </Button>
-                                    )}
-                                    {activeTab === 'team-requests' && request.status === 'pending' && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEditRequest(request)}
-                                        data-testid={`button-review-${request.id}`}
-                                      >
-                                        Esamina
-                                      </Button>
-                                    )}
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
+                    <div className="flex justify-between p-2 rounded bg-gray-50">
+                      <span className="text-sm">Giorni riportabili</span>
+                      <span className="text-sm font-medium">{policies.carryoverDays} giorni</span>
                     </div>
-                  )}
-                </TabsContent>
-              </Tabs>
+                    <div className="flex justify-between p-2 rounded bg-gray-50">
+                      <span className="text-sm">Certificato malattia dopo</span>
+                      <span className="text-sm font-medium">{policies.sickDaysRequireCertificate} giorni</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Upcoming Team Absences */}
+              {teamCalendar.length > 0 && (
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Assenze Team</CardTitle>
+                    <CardDescription>Prossime assenze nel tuo team</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {teamCalendar.slice(0, 5).map((event: any) => (
+                        <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                          <div>
+                            <p className="font-medium">{event.userName}</p>
+                            <p className="text-sm text-gray-500">
+                              {leaveService.formatDateRange(event.startDate, event.endDate)}
+                            </p>
+                          </div>
+                          <Badge variant="outline">
+                            {leaveService.getLeaveTypeConfig(event.leaveType).label}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </DashboardTemplate>
+        );
+        
+      case 'requests':
+        return (
+          <ListPageTemplate
+            title="Le Mie Richieste"
+            subtitle="Gestisci le tue richieste di ferie e permessi"
+            data={requests}
+            columns={requestsColumns}
+            isLoading={requestsLoading}
+            searchPlaceholder="Cerca richieste..."
+            filters={[
+              {
+                id: 'status',
+                label: 'Stato',
+                type: 'select',
+                options: [
+                  { value: 'all', label: 'Tutti' },
+                  { value: 'pending', label: 'In attesa' },
+                  { value: 'approved', label: 'Approvate' },
+                  { value: 'rejected', label: 'Rifiutate' },
+                ],
+                value: statusFilter,
+                onChange: (value: string) => setStatusFilter(value as any),
+              },
+              {
+                id: 'type',
+                label: 'Tipo',
+                type: 'select',
+                options: [
+                  { value: 'all', label: 'Tutti' },
+                  { value: 'vacation', label: 'Ferie' },
+                  { value: 'sick', label: 'Malattia' },
+                  { value: 'personal', label: 'Personale' },
+                  { value: 'other', label: 'Altro' },
+                ],
+                value: typeFilter,
+                onChange: (value: string) => setTypeFilter(value as any),
+              },
+            ]}
+            itemActions={(request) => {
+              const actions = [];
+              
+              if (request.status === 'draft' || request.status === 'pending') {
+                actions.push({
+                  id: 'edit',
+                  label: 'Modifica',
+                  onClick: () => handleEditRequest(request),
+                });
+                actions.push({
+                  id: 'delete',
+                  label: 'Elimina',
+                  onClick: () => handleDeleteRequest(request),
+                });
+              }
+              
+              if (request.status === 'approved') {
+                const startDate = new Date(request.startDate);
+                const today = new Date();
+                if (startDate > today) {
+                  actions.push({
+                    id: 'cancel',
+                    label: 'Annulla',
+                    onClick: () => {
+                      if (confirm('Sei sicuro di voler annullare questa richiesta approvata?')) {
+                        updateRequest.mutate({ 
+                          id: request.id, 
+                          updates: { status: 'cancelled' } 
+                        });
+                      }
+                    },
+                  });
+                }
+              }
+              
+              return actions;
+            }}
+            primaryAction={{
+              label: 'Nuova Richiesta',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: handleCreateRequest,
+            }}
+            emptyStateProps={{
+              title: 'Nessuna richiesta',
+              description: 'Non hai ancora fatto richieste di ferie',
+              icon: <Calendar className="h-8 w-8 text-gray-400" />,
+              primaryAction: {
+                label: 'Crea la prima richiesta',
+                onClick: handleCreateRequest,
+              },
+            }}
+          />
+        );
+        
+      case 'approval':
+        return isManager ? (
+          <ListPageTemplate
+            title="Coda di Approvazione"
+            subtitle={`${pendingCount} richieste in attesa${urgentCount > 0 ? ` • ${urgentCount} urgenti` : ''}`}
+            data={approvalRequests}
+            columns={[
+              {
+                key: 'employee',
+                label: 'Dipendente',
+                render: (request: any) => request.userName || 'N/A',
+              },
+              ...requestsColumns,
+            ]}
+            isLoading={false}
+            itemActions={(request) => [
+              {
+                id: 'approve',
+                label: 'Approva',
+                onClick: () => handleApproveRequest(request),
+              },
+              {
+                id: 'reject',
+                label: 'Rifiuta',
+                onClick: () => handleRejectRequest(request),
+              },
+              {
+                id: 'view',
+                label: 'Dettagli',
+                onClick: () => handleEditRequest(request),
+              },
+            ]}
+            emptyStateProps={{
+              title: 'Nessuna richiesta in attesa',
+              description: 'Non ci sono richieste da approvare',
+              icon: <CheckCircle className="h-8 w-8 text-gray-400" />,
+            }}
+          />
+        ) : (
+          <Card className="glass-card">
+            <CardContent className="py-8">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Non hai i permessi per approvare le richieste.
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
+        );
+        
+      case 'calendar':
+        return (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Calendario Team</CardTitle>
+              <CardDescription>Visualizzazione delle assenze del team</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {teamCalendar.length > 0 ? (
+                  <div className="grid gap-3">
+                    {teamCalendar.map((event: any) => {
+                      const config = leaveService.getLeaveTypeConfig(event.leaveType);
+                      return (
+                        <div key={event.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                              <Users className="h-6 w-6 text-gray-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{event.userName}</p>
+                              <p className="text-sm text-gray-500">
+                                {leaveService.formatDateRange(event.startDate, event.endDate)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant="outline"
+                              style={{ 
+                                backgroundColor: `${config.color}20`,
+                                color: config.color,
+                                borderColor: config.color 
+                              }}
+                            >
+                              {config.icon} {config.label}
+                            </Badge>
+                            {event.status === 'approved' && (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nessuna assenza programmata</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+        
+      default:
+        return null;
+    }
+  };
+  
+  return (
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6" data-testid="leave-management-page">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+              Gestione Ferie
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Richieste, approvazioni e calendario assenze
+            </p>
+          </div>
         </div>
-        </div>
-
+        
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="requests">Le Mie Richieste</TabsTrigger>
+            {isManager && (
+              <TabsTrigger value="approval">
+                Approvazioni
+                {pendingCount > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {pendingCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="calendar">Calendario</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={activeTab} className="mt-6">
+            {renderContent()}
+          </TabsContent>
+        </Tabs>
+        
         {/* Request Modal */}
         {showRequestModal && (
           <LeaveRequestModal
             request={selectedRequest}
-            onClose={() => setShowRequestModal(false)}
+            open={showRequestModal}
+            onClose={() => {
+              setShowRequestModal(false);
+              setSelectedRequest(null);
+            }}
+            onSave={(data) => {
+              if (selectedRequest) {
+                updateRequest.mutate({ id: selectedRequest.id, updates: data });
+              } else {
+                createRequest.mutate(data);
+              }
+              setShowRequestModal(false);
+              setSelectedRequest(null);
+            }}
           />
         )}
       </div>

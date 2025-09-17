@@ -1,28 +1,45 @@
-// Time Tracking Page - Enterprise HR Management System
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// Time Tracking Page - Enterprise HR Management System with frontend-kit
+import { useState, useEffect, useMemo } from 'react';
+import { ListPageTemplate } from '@/components/templates/ListPageTemplate';
+import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
+import { Column } from '@/components/templates/DataTable';
+import { queryClient } from '@/lib/queryClient';
+
+// Define local types
+interface MetricCard {
+  id: string;
+  title: string;
+  value: string | number;
+  description?: string;
+  trend?: {
+    value: number;
+    label?: string;
+  };
+  icon?: React.ReactNode;
+}
 import {
   Clock,
   Calendar,
   Download,
-  Filter,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-  MapPin,
+  Timer,
+  LogIn,
+  LogOut,
+  Coffee,
   Activity,
   TrendingUp,
+  CheckCircle,
   AlertCircle,
-  Info,
+  MapPin,
+  Users,
+  FileText,
+  BarChart3,
   RefreshCw,
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -32,12 +49,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import ClockWidget from '@/components/TimeTracking/ClockWidget';
-import TimeEntriesList from '@/components/TimeTracking/TimeEntriesList';
-import TimeReports from '@/components/TimeTracking/TimeReports';
-import DeviceSimulator from '@/components/TimeTracking/DeviceSimulator';
 import {
   useCurrentSession,
   useTimeBalance,
@@ -49,8 +65,10 @@ import {
   useUpdateEntry,
   useApproveEntry,
   useDisputeEntry,
+  useClockIn,
+  useClockOut,
 } from '@/hooks/useTimeTracking';
-import { geolocationManager, ITALY_STORE_ZONES } from '@/utils/geolocationManager';
+import { useStores } from '@/hooks/useStores';
 import { timeTrackingService } from '@/services/timeTrackingService';
 
 export default function TimeTrackingPage() {
@@ -60,8 +78,11 @@ export default function TimeTrackingPage() {
   const currentUser = user;
   
   // State
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'entries' | 'reports'>('dashboard');
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('today');
   const [selectedStore, setSelectedStore] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'disputed'>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState(() => {
     const now = new Date();
     return {
@@ -69,17 +90,18 @@ export default function TimeTrackingPage() {
       end: format(now, 'yyyy-MM-dd'),
     };
   });
-  const [activeTab, setActiveTab] = useState<'clock' | 'entries' | 'reports' | 'settings'>('clock');
-  const [showDeviceSimulator, setShowDeviceSimulator] = useState(false);
 
-  // Get user permissions
+  // Get stores and permissions
+  const { stores = [], isLoading: storesLoading } = useStores();
   const permissions = useTimeTrackingPermissions(
     currentUser?.id,
     currentUser?.role || 'EMPLOYEE'
   );
 
   // Queries & Mutations
-  const { session, isActive, elapsedMinutes, requiresBreak, isOvertime } = useCurrentSession();
+  const { session, isActive, elapsedMinutes, requiresBreak, isOvertime, refetch: refetchSession } = useCurrentSession();
+  const clockIn = useClockIn();
+  const clockOut = useClockOut();
   
   const { balance, isLoading: balanceLoading } = useTimeBalance(
     currentUser?.id,
@@ -91,6 +113,7 @@ export default function TimeTrackingPage() {
     storeId: selectedStore || undefined,
     startDate: dateRange.start,
     endDate: dateRange.end,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
   });
 
   const { data: report, isLoading: reportLoading } = useTimeReports(
@@ -137,251 +160,232 @@ export default function TimeTrackingPage() {
     });
   }, [selectedPeriod]);
 
-  // Handle entry edit
-  const handleEditEntry = async (entry: any) => {
+  // Prepare metrics for dashboard
+  const metrics: MetricCard[] = useMemo(() => [
+    {
+      id: 'status',
+      title: 'Stato Corrente',
+      value: isActive ? 'In Turno' : 'Fuori Turno',
+      description: isActive ? `Da ${timeTrackingService.formatDuration(elapsedMinutes)}` : 'Non in servizio',
+      trend: isActive ? { value: elapsedMinutes, label: 'minuti' } : undefined,
+      icon: <Activity className={`h-4 w-4 ${isActive ? 'text-green-600' : 'text-gray-400'}`} />,
+    },
+    {
+      id: 'total-hours',
+      title: 'Ore Totali',
+      value: `${balance.totalHours.toFixed(1)}h`,
+      description: `Target: ${balance.targetHours.toFixed(0)}h`,
+      trend: balance.percentComplete > 0 ? { value: balance.percentComplete, label: '%' } : undefined,
+      icon: <Clock className="h-4 w-4 text-purple-600" />,
+    },
+    {
+      id: 'overtime',
+      title: 'Straordinari',
+      value: `${balance.overtimeHours > 0 ? '+' : ''}${balance.overtimeHours.toFixed(1)}h`,
+      description: balance.overtimeHours > 0 ? 'Da recuperare' : 'Nessuno',
+      icon: <TrendingUp className={`h-4 w-4 ${balance.overtimeHours > 0 ? 'text-orange-600' : 'text-gray-400'}`} />,
+    },
+    {
+      id: 'balance',
+      title: 'Saldo Ore',
+      value: `${balance.balanceHours > 0 ? '+' : ''}${balance.balanceHours.toFixed(1)}h`,
+      description: balance.balanceHours > 0 ? 'Credito' : balance.balanceHours < 0 ? 'Debito' : 'In pari',
+      icon: <BarChart3 className={`h-4 w-4 ${
+        balance.balanceHours > 0 ? 'text-green-600' : 
+        balance.balanceHours < 0 ? 'text-red-600' : 'text-gray-400'
+      }`} />,
+    },
+  ], [isActive, elapsedMinutes, balance]);
+
+  // Prepare columns for entries list
+  const entriesColumns = useMemo(() => [
+    {
+      key: 'date',
+      label: 'Data',
+      render: (entry: any) => format(new Date(entry.clockIn), 'dd/MM/yyyy', { locale: it }),
+    },
+    {
+      key: 'clockIn',
+      label: 'Entrata',
+      render: (entry: any) => format(new Date(entry.clockIn), 'HH:mm'),
+    },
+    {
+      key: 'clockOut',
+      label: 'Uscita',
+      render: (entry: any) => entry.clockOut ? format(new Date(entry.clockOut), 'HH:mm') : '-',
+    },
+    {
+      key: 'duration',
+      label: 'Durata',
+      render: (entry: any) => timeTrackingService.formatDuration(entry.totalMinutes || 0),
+    },
+    {
+      key: 'status',
+      label: 'Stato',
+      render: (entry: any) => {
+        const statusConfig = {
+          active: { label: 'Attivo', variant: 'default' as const },
+          completed: { label: 'Completato', variant: 'secondary' as const },
+          edited: { label: 'Modificato', variant: 'outline' as const },
+          disputed: { label: 'Contestato', variant: 'destructive' as const },
+        };
+        const config = statusConfig[entry.status as keyof typeof statusConfig] || statusConfig.active;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
+      },
+    },
+    {
+      key: 'trackingMethod',
+      label: 'Metodo',
+      render: (entry: any) => {
+        const methodIcons = {
+          badge: '🪪',
+          nfc: '📱',
+          app: '📲',
+          gps: '📍',
+          manual: '✍️',
+          biometric: '👆',
+        };
+        return (
+          <span className="text-sm">
+            {methodIcons[entry.trackingMethod as keyof typeof methodIcons] || '❓'} {entry.trackingMethod}
+          </span>
+        );
+      },
+    },
+  ], []);
+
+  // Handle actions
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      refetchSession(),
+      refetchEntries(),
+    ]);
+    setIsRefreshing(false);
+    toast({
+      title: 'Dashboard aggiornato',
+      description: 'Tutti i dati sono stati aggiornati',
+    });
+  };
+
+  const handleExport = () => {
+    exportEntries.mutate({
+      filters: {
+        userId: currentUser?.id,
+        storeId: selectedStore || undefined,
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+      },
+      format: 'csv',
+    });
+  };
+
+  const handleApproveEntry = (entry: any) => {
+    approveEntry.mutate({ id: entry.id });
+  };
+
+  const handleDisputeEntry = (entry: any) => {
+    const reason = prompt('Motivo della contestazione:');
+    if (reason) {
+      disputeEntry.mutate({ id: entry.id, reason });
+    }
+  };
+
+  const handleEditEntry = (entry: any) => {
     updateEntry.mutate({
       id: entry.id,
       data: entry,
     });
   };
 
-  // Handle entry approve
-  const handleApproveEntry = async (entryId: string) => {
-    approveEntry.mutate({ id: entryId });
-  };
-
-  // Handle entry dispute
-  const handleDisputeEntry = async (entryId: string, reason: string) => {
-    disputeEntry.mutate({ id: entryId, reason });
-  };
-
-  // Handle export
-  const handleExport = async (format: 'csv' | 'pdf') => {
-    exportEntries.mutate({
-      filters: {
-        userId: currentUser?.id,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
+  // Prepare quick actions for dashboard
+  const quickActions = [
+    {
+      label: isActive ? 'Timbra Uscita' : 'Timbra Entrata',
+      icon: isActive ? <LogOut className="h-4 w-4" /> : <LogIn className="h-4 w-4" />,
+      onClick: () => {
+        if (isActive && session) {
+          clockOut.mutate({ id: session.id });
+        } else {
+          clockIn.mutate({
+            storeId: currentUser?.storeId || '',
+            trackingMethod: 'app',
+          });
+        }
       },
-      format,
-    });
-  };
+      variant: 'default' as const,
+    },
+    ...(isActive && !session?.currentBreak ? [{
+      label: 'Inizia Pausa',
+      icon: <Coffee className="h-4 w-4" />,
+      onClick: () => {
+        if (session) {
+          timeTrackingService.startBreak(session.id);
+        }
+      },
+      variant: 'outline' as const,
+    }] : []),
+    ...(isActive && session?.currentBreak ? [{
+      label: 'Termina Pausa',
+      icon: <Timer className="h-4 w-4" />,
+      onClick: () => {
+        if (session) {
+          timeTrackingService.endBreak(session.id);
+        }
+      },
+      variant: 'outline' as const,
+    }] : []),
+  ];
 
-  // Handle device simulation
-  const handleDeviceRead = (type: string, data: any) => {
-    console.log('Device read:', type, data);
-    toast({
-      title: `${type.toUpperCase()} Letto`,
-      description: `ID: ${data.id || data.uid || data.code}`,
-    });
-  };
-
-  return (
-    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="time-tracking-page">
-        {/* Header with Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                Time Tracking
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Sistema di rilevazione presenze multi-device
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Period Selector */}
-              <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as any)}>
-                <SelectTrigger className="w-32 bg-white/60 backdrop-blur border-white/30" data-testid="select-period">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Oggi</SelectItem>
-                  <SelectItem value="week">Settimana</SelectItem>
-                  <SelectItem value="month">Mese</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Settings */}
-              {permissions.canManageSettings && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setActiveTab('settings')}
-                  className="bg-white/60 backdrop-blur border-white/30"
-                  data-testid="button-settings"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Date Range Display */}
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Calendar className="w-4 h-4" />
-            <span>
-              {format(new Date(dateRange.start), 'd MMM', { locale: it })}
-              {dateRange.start !== dateRange.end && (
-                <>
-                  {' - '}
-                  {format(new Date(dateRange.end), 'd MMM yyyy', { locale: it })}
-                </>
-              )}
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Quick Stats */}
-        {!balanceLoading && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+  // Render page content based on active tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <DashboardTemplate
+            title="Time Tracking Dashboard"
+            subtitle={`Periodo: ${format(new Date(dateRange.start), 'd MMM', { locale: it })} - ${format(new Date(dateRange.end), 'd MMM yyyy', { locale: it })}`}
+            metrics={metrics}
+            metricsLoading={balanceLoading}
+            quickActions={quickActions}
+            showFilters={true}
+            filterOptions={
+              <div className="flex gap-2">
+                <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as any)}>
+                  <SelectTrigger className="w-32" data-testid="select-period">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Oggi</SelectItem>
+                    <SelectItem value="week">Settimana</SelectItem>
+                    <SelectItem value="month">Mese</SelectItem>
+                  </SelectContent>
+                </Select>
+                {stores.length > 0 && (
+                  <Select value={selectedStore} onValueChange={setSelectedStore}>
+                    <SelectTrigger className="w-40" data-testid="select-store">
+                      <SelectValue placeholder="Tutti gli store" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Tutti gli store</SelectItem>
+                      {stores.map((store: any) => (
+                        <SelectItem key={store.id} value={store.id}>
+                          {store.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            }
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            onExport={handleExport}
+            lastUpdated={new Date()}
           >
-            {/* Today's Status */}
-            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-today-status">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Stato Oggi</p>
-                  <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
-                    {isActive ? 'In Turno' : 'Fuori Turno'}
-                  </p>
-                  {isActive && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Da {Math.floor(elapsedMinutes / 60)}h {elapsedMinutes % 60}min
-                    </p>
-                  )}
-                </div>
-                <div className={cn(
-                  "p-2 rounded-lg",
-                  isActive ? "bg-green-100" : "bg-gray-100"
-                )}>
-                  <Activity className={cn(
-                    "w-5 h-5",
-                    isActive ? "text-green-600" : "text-gray-600"
-                  )} />
-                </div>
-              </div>
-              {requiresBreak && (
-                <div className="mt-3 p-2 bg-orange-100 rounded text-xs text-orange-700">
-                  <AlertCircle className="w-3 h-3 inline mr-1" />
-                  Pausa obbligatoria richiesta
-                </div>
-              )}
-            </Card>
-
-            {/* Total Hours */}
-            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-total-hours">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Ore Totali</p>
-                  <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
-                    {balance.totalHours.toFixed(1)}h
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Target: {balance.targetHours.toFixed(0)}h
-                  </p>
-                </div>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-600">{balance.percentComplete.toFixed(0)}%</span>
-                </div>
-                <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all"
-                    style={{ width: `${Math.min(100, balance.percentComplete)}%` }}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* Overtime */}
-            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-overtime">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Straordinari</p>
-                  <p className={cn(
-                    "text-2xl font-bold mt-1",
-                    balance.overtimeHours > 0 ? "text-orange-600" : "text-gray-900 dark:text-white"
-                  )}>
-                    {balance.overtimeHours > 0 ? '+' : ''}{balance.overtimeHours.toFixed(1)}h
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {balance.overtimeHours > 0 ? 'Da recuperare' : 'Nessuno'}
-                  </p>
-                </div>
-                <div className={cn(
-                  "p-2 rounded-lg",
-                  balance.overtimeHours > 0 ? "bg-orange-100" : "bg-gray-100"
-                )}>
-                  <TrendingUp className={cn(
-                    "w-5 h-5",
-                    balance.overtimeHours > 0 ? "text-orange-600" : "text-gray-600"
-                  )} />
-                </div>
-              </div>
-            </Card>
-
-            {/* Balance */}
-            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-balance">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Saldo Ore</p>
-                  <p className={cn(
-                    "text-2xl font-bold mt-1",
-                    balance.balanceHours > 0 ? "text-green-600" : balance.balanceHours < 0 ? "text-red-600" : "text-gray-900 dark:text-white"
-                  )}>
-                    {balance.balanceHours > 0 ? '+' : ''}{balance.balanceHours.toFixed(1)}h
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {balance.balanceHours > 0 ? 'Credito' : balance.balanceHours < 0 ? 'Debito' : 'In pari'}
-                  </p>
-                </div>
-                <div className={cn(
-                  "p-2 rounded-lg",
-                  balance.balanceHours > 0 ? "bg-green-100" : 
-                  balance.balanceHours < 0 ? "bg-red-100" : "bg-gray-100"
-                )}>
-                  <Activity className={cn(
-                    "w-5 h-5",
-                    balance.balanceHours > 0 ? "text-green-600" : 
-                    balance.balanceHours < 0 ? "text-red-600" : "text-gray-600"
-                  )} />
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="clock">Timbratura</TabsTrigger>
-            <TabsTrigger value="entries">Registrazioni</TabsTrigger>
-            <TabsTrigger value="reports">Report</TabsTrigger>
-            <TabsTrigger value="settings">Impostazioni</TabsTrigger>
-          </TabsList>
-
-          {/* Clock Tab */}
-          <TabsContent value="clock" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-            >
-              {/* Clock Widget */}
+            {/* Clock Widget and Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               <ClockWidget
                 storeId={selectedStore || currentUser?.storeId || ''}
                 storeName={currentUser?.storeName}
@@ -390,146 +394,285 @@ export default function TimeTrackingPage() {
                 onClockIn={refetchEntries}
                 onClockOut={refetchEntries}
               />
-
-              {/* Quick Info */}
-              <Card className="p-6 bg-white/5 backdrop-blur-xl border-white/10">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Info className="w-5 h-5 text-blue-400" />
-                  Informazioni Utili
-                </h3>
-                
-                <div className="space-y-4">
-                  {/* Store Info */}
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              
+              {/* Quick Info Card */}
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle>Informazioni Rapide</CardTitle>
+                  <CardDescription>Dettagli del tuo profilo di lavoro</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <MapPin className="h-4 w-4 text-gray-500" />
                       <span className="text-sm">Store Assegnato</span>
                     </div>
                     <span className="text-sm font-medium">
                       {currentUser?.storeName || 'Non assegnato'}
                     </span>
                   </div>
-
-                  {/* Working Hours */}
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
+                      <Clock className="h-4 w-4 text-gray-500" />
                       <span className="text-sm">Orario Standard</span>
                     </div>
                     <span className="text-sm font-medium">09:00 - 18:00</span>
                   </div>
-
-                  {/* Break Time */}
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm">Pausa Obbligatoria</span>
-                    </div>
-                    <span className="text-sm font-medium">Dopo 6 ore</span>
-                  </div>
-
-                  {/* User Role */}
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-400" />
+                      <Users className="h-4 w-4 text-gray-500" />
                       <span className="text-sm">Ruolo</span>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {currentUser?.role || 'EMPLOYEE'}
-                    </Badge>
+                    <Badge variant="outline">{currentUser?.role || 'EMPLOYEE'}</Badge>
                   </div>
-                </div>
-
-                {/* Actions */}
-                <div className="mt-6 space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setShowDeviceSimulator(!showDeviceSimulator)}
+                  
+                  {requiresBreak && (
+                    <Alert className="border-orange-200 bg-orange-50">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-orange-800">
+                        Hai lavorato per oltre 6 ore. È richiesta una pausa obbligatoria.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {isOvertime && (
+                    <Alert className="border-purple-200 bg-purple-50">
+                      <TrendingUp className="h-4 w-4 text-purple-600" />
+                      <AlertDescription className="text-purple-800">
+                        Stai accumulando ore di straordinario.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </DashboardTemplate>
+        );
+        
+      case 'entries':
+        return (
+          <ListPageTemplate
+            title="Registrazioni Presenze"
+            subtitle="Gestisci le tue timbrature e presenze"
+            data={entries}
+            columns={entriesColumns}
+            isLoading={entriesLoading}
+            searchPlaceholder="Cerca registrazioni..."
+            filters={[
+              {
+                id: 'status',
+                label: 'Stato',
+                type: 'select',
+                options: [
+                  { value: 'all', label: 'Tutti' },
+                  { value: 'active', label: 'Attivo' },
+                  { value: 'completed', label: 'Completato' },
+                  { value: 'disputed', label: 'Contestato' },
+                ],
+                value: statusFilter,
+                onChange: (value) => setStatusFilter(value as any),
+              },
+              {
+                id: 'period',
+                label: 'Periodo',
+                type: 'select',
+                options: [
+                  { value: 'today', label: 'Oggi' },
+                  { value: 'week', label: 'Settimana' },
+                  { value: 'month', label: 'Mese' },
+                ],
+                value: selectedPeriod,
+                onChange: (value) => setSelectedPeriod(value as any),
+              },
+            ]}
+            itemActions={(entry) => {
+              const actions = [];
+              
+              if (permissions.canEditOwn && entry.userId === currentUser?.id) {
+                actions.push({
+                  id: 'edit',
+                  label: 'Modifica',
+                  onClick: () => handleEditEntry(entry),
+                });
+              }
+              
+              if (!entry.clockOut) {
+                actions.push({
+                  id: 'close',
+                  label: 'Chiudi',
+                  onClick: () => clockOut.mutate({ id: entry.id }),
+                });
+              }
+              
+              if (permissions.canApproveTeam && entry.status === 'completed') {
+                actions.push({
+                  id: 'approve',
+                  label: 'Approva',
+                  onClick: () => handleApproveEntry(entry),
+                });
+              }
+              
+              if (entry.status !== 'disputed') {
+                actions.push({
+                  id: 'dispute',
+                  label: 'Contesta',
+                  onClick: () => handleDisputeEntry(entry),
+                });
+              }
+              
+              return actions;
+            }}
+            primaryAction={{
+              label: 'Esporta',
+              icon: <Download className="h-4 w-4" />,
+              onClick: handleExport,
+            }}
+            emptyStateProps={{
+              title: 'Nessuna registrazione',
+              description: 'Non ci sono timbrature per il periodo selezionato',
+              icon: <Clock className="h-8 w-8 text-gray-400" />,
+            }}
+          />
+        );
+        
+      case 'reports':
+        return (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Report Time Tracking</CardTitle>
+              <CardDescription>Analisi dettagliata delle presenze</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Individual Report */}
+                {report && (
+                  <div className="p-6 rounded-lg border">
+                    <h3 className="font-semibold mb-4">Report Personale</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Ore Totali</p>
+                        <p className="text-xl font-bold">{report.totalHours.toFixed(1)}h</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Ore Regolari</p>
+                        <p className="text-xl font-bold">{report.regularHours.toFixed(1)}h</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Straordinari</p>
+                        <p className="text-xl font-bold text-orange-600">
+                          {report.overtimeHours.toFixed(1)}h
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Giorni Lavorati</p>
+                        <p className="text-xl font-bold">{report.daysWorked}</p>
+                      </div>
+                    </div>
+                    
+                    {report.disputedEntries > 0 && (
+                      <Alert className="mt-4 border-yellow-200 bg-yellow-50">
+                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                        <AlertDescription className="text-yellow-800">
+                          Hai {report.disputedEntries} registrazioni contestate da rivedere.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+                
+                {/* Team Reports */}
+                {teamReports.length > 0 && permissions.canViewReports && (
+                  <div className="p-6 rounded-lg border">
+                    <h3 className="font-semibold mb-4">Report Team</h3>
+                    <div className="space-y-3">
+                      {teamReports.map((teamReport: any) => (
+                        <div key={teamReport.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <p className="font-medium">{teamReport.userName}</p>
+                            <p className="text-sm text-gray-500">
+                              {teamReport.totalHours.toFixed(1)}h totali • {teamReport.daysWorked} giorni
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {teamReport.overtimeHours > 0 && (
+                              <Badge variant="outline" className="text-orange-600">
+                                +{teamReport.overtimeHours.toFixed(1)}h extra
+                              </Badge>
+                            )}
+                            <Progress 
+                              value={(teamReport.totalHours / (teamReport.daysWorked * 8)) * 100}
+                              className="w-20 h-2"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Export Actions */}
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleExport()}
+                    data-testid="button-export-csv"
                   >
-                    {showDeviceSimulator ? 'Nascondi' : 'Mostra'} Simulatore Dispositivi
+                    <FileText className="h-4 w-4 mr-2" />
+                    Esporta CSV
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => exportEntries.mutate({ 
+                      filters: {
+                        userId: currentUser?.id,
+                        startDate: dateRange.start,
+                        endDate: dateRange.end,
+                      },
+                      format: 'pdf',
+                    })}
+                    data-testid="button-export-pdf"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Esporta PDF
                   </Button>
                 </div>
-              </Card>
-            </motion.div>
-
-            {/* Device Simulator (Development) */}
-            {showDeviceSimulator && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <DeviceSimulator
-                  onDeviceRead={handleDeviceRead}
-                  showInProduction={false}
-                />
-              </motion.div>
-            )}
-          </TabsContent>
-
-          {/* Entries Tab */}
-          <TabsContent value="entries" className="space-y-6">
-            <TimeEntriesList
-              entries={entries}
-              loading={entriesLoading}
-              userId={currentUser?.id}
-              canEdit={permissions.canEditOwn}
-              canApprove={permissions.canApproveTeam}
-              onEdit={handleEditEntry}
-              onApprove={handleApproveEntry}
-              onDispute={handleDisputeEntry}
-              onExport={handleExport}
-            />
-          </TabsContent>
-
-          {/* Reports Tab */}
-          <TabsContent value="reports" className="space-y-6">
-            <TimeReports
-              userId={currentUser?.id}
-              storeId={selectedStore || currentUser?.storeId}
-              startDate={dateRange.start}
-              endDate={dateRange.end}
-              reports={report ? [report] : []}
-              teamReports={teamReports}
-              loading={reportLoading || teamReportsLoading}
-              onExport={handleExport}
-            />
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card className="p-6 bg-white/5 backdrop-blur-xl border-white/10">
-              <h3 className="text-lg font-semibold mb-4">Impostazioni Time Tracking</h3>
-              
-              <div className="space-y-4">
-                <div className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                  <div className="flex items-center gap-2 text-orange-400 mb-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <span className="font-medium">In Sviluppo</span>
-                  </div>
-                  <p className="text-sm text-gray-400">
-                    Le impostazioni avanzate del sistema Time Tracking saranno disponibili prossimamente.
-                  </p>
-                </div>
-
-                {/* Placeholder Settings */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                    <span className="text-sm">Notifiche Timbratura</span>
-                    <Badge variant="outline">Attivo</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                    <span className="text-sm">Geolocalizzazione</span>
-                    <Badge variant="outline">Permesso</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                    <span className="text-sm">Validazione Automatica</span>
-                    <Badge variant="outline">Disattivato</Badge>
-                  </div>
-                </div>
               </div>
-            </Card>
+            </CardContent>
+          </Card>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6" data-testid="time-tracking-page">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+              Time Tracking
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Sistema di rilevazione presenze aziendale
+            </p>
+          </div>
+        </div>
+        
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="entries">Registrazioni</TabsTrigger>
+            <TabsTrigger value="reports">Report</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value={activeTab} className="mt-6">
+            {renderContent()}
           </TabsContent>
         </Tabs>
       </div>
