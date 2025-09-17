@@ -1,5 +1,5 @@
 // HR Analytics Service - Enterprise Analytics for HR Management
-import { ApiService } from './ApiService';
+import { apiService } from './ApiService';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 
 export interface DashboardMetrics {
