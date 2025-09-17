@@ -1,12 +1,13 @@
 // Leave Management Page - Main page for leave requests and management
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar as CalendarIcon, Plus, Download, Filter, Users, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import Layout from '@/components/Layout';
 import { LeaveBalanceWidget } from '@/components/Leave/LeaveBalanceWidget';
 import { LeaveRequestModal } from '@/components/Leave/LeaveRequestModal';
 import { ApprovalQueue } from '@/components/Leave/ApprovalQueue';
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/select";
 
 export function LeaveManagementPage() {
+  const [currentModule, setCurrentModule] = useState('leave-management');
   const { user } = useAuth();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -129,50 +131,65 @@ export function LeaveManagementPage() {
   ];
   
   return (
-    <div className="container mx-auto p-6 max-w-7xl" data-testid="leave-management-page">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestione Ferie e Permessi</h1>
-          <p className="text-gray-600 mt-1">Richiedi e gestisci le tue ferie e permessi</p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            data-testid="button-export"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Esporta
-          </Button>
-          <Button
-            className="bg-orange-600 hover:bg-orange-700"
-            onClick={handleCreateRequest}
-            data-testid="button-new-request"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova Richiesta
-          </Button>
-        </div>
-      </div>
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="leave-management-page">
+        {/* Header with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
+                Gestione Ferie e Permessi
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                Richiedi e gestisci le tue ferie e permessi aziendali
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                className="bg-white/60 backdrop-blur border-white/30"
+                data-testid="button-export"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Esporta
+              </Button>
+              <Button
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                onClick={handleCreateRequest}
+                data-testid="button-new-request"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuova Richiesta
+              </Button>
+            </div>
+          </div>
+        </motion.div>
       
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        {statsCards.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow">
+        {/* Statistics Cards with Glassmorphism */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-4 gap-6"
+        >
+          {statsCards.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card 
+                key={stat.title}
+                className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200"
+                data-testid={`stat-card-${index}`}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">{stat.title}</p>
-                      <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{stat.title}</p>
+                      <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">{stat.value}</p>
                     </div>
                     <div className={cn(
                       "p-3 rounded-full",
@@ -183,54 +200,60 @@ export function LeaveManagementPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </motion.div>
       
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Side - Balance and Calendar */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Balance Widget */}
-          <LeaveBalanceWidget />
-          
-          {/* Mini Calendar */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
-                Calendario Ferie
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <LeaveCalendar compact />
-            </CardContent>
-          </Card>
-          
-          {/* Approval Queue for Managers */}
-          {isManager && (
-            <Card>
+        {/* Main Content with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        >
+          {/* Left Side - Balance and Calendar */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Balance Widget */}
+            <Card className="bg-white/80 backdrop-blur-md border-white/20">
+              <LeaveBalanceWidget />
+            </Card>
+            
+            {/* Mini Calendar */}
+            <Card className="bg-white/80 backdrop-blur-md border-white/20">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Da Approvare</span>
-                  {urgentCount > 0 && (
-                    <Badge variant="destructive">
-                      {urgentCount} urgenti
-                    </Badge>
-                  )}
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5" />
+                  Calendario Ferie
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ApprovalQueue compact />
+                <LeaveCalendar compact />
               </CardContent>
             </Card>
-          )}
-        </div>
-        
-        {/* Right Side - Requests List */}
-        <div className="lg:col-span-2">
-          <Card>
+          
+            {/* Approval Queue for Managers */}
+            {isManager && (
+              <Card className="bg-white/80 backdrop-blur-md border-white/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Da Approvare</span>
+                    {urgentCount > 0 && (
+                      <Badge variant="destructive">
+                        {urgentCount} urgenti
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ApprovalQueue compact />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          {/* Right Side - Requests List */}
+          <div className="lg:col-span-2">
+            <Card className="bg-white/80 backdrop-blur-md border-white/20">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Richieste Ferie</CardTitle>
@@ -428,13 +451,17 @@ export function LeaveManagementPage() {
         </div>
       </div>
       
-      {/* Request Modal */}
-      {showRequestModal && (
-        <LeaveRequestModal
-          request={selectedRequest}
-          onClose={() => setShowRequestModal(false)}
-        />
-      )}
-    </div>
+          </div>
+        </motion.div>
+
+        {/* Request Modal */}
+        {showRequestModal && (
+          <LeaveRequestModal
+            request={selectedRequest}
+            onClose={() => setShowRequestModal(false)}
+          />
+        )}
+      </div>
+    </Layout>
   );
 }

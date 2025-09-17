@@ -1,6 +1,7 @@
 // HR Analytics Dashboard - Comprehensive analytics for HR management
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Layout from '@/components/Layout';
 import {
   BarChart3,
   TrendingUp,
@@ -64,6 +65,7 @@ type PeriodType = 'day' | 'week' | 'month' | 'quarter' | 'year';
 type ViewType = 'overview' | 'attendance' | 'leave' | 'costs' | 'shifts' | 'demographics' | 'compliance';
 
 export default function HRAnalyticsPage() {
+  const [currentModule, setCurrentModule] = useState('hr-analytics');
   const { toast } = useToast();
   const { user } = useAuth();
   const { stores, isLoading: storesLoading } = useStores();
@@ -236,20 +238,20 @@ export default function HRAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/10 to-gray-50 dark:from-gray-900 dark:via-orange-900/10 dark:to-gray-900">
-      <div className="container mx-auto p-6 max-w-[1400px]">
-        {/* Header */}
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6 max-w-[1400px] mx-auto" data-testid="hr-analytics-page">
+        {/* Header with Glassmorphism */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
         >
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
                 HR Analytics Dashboard
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
+              <p className="text-gray-600 dark:text-gray-300">
                 Analisi completa delle metriche HR e workforce management
               </p>
             </div>
@@ -259,6 +261,7 @@ export default function HRAnalyticsPage() {
               <Button
                 variant={isAutoRefresh ? "default" : "outline"}
                 size="sm"
+                className={isAutoRefresh ? "bg-gradient-to-r from-orange-500 to-purple-600" : "bg-white/60 backdrop-blur border-white/30"}
                 onClick={() => setIsAutoRefresh(!isAutoRefresh)}
                 data-testid="button-auto-refresh"
               >
@@ -270,6 +273,7 @@ export default function HRAnalyticsPage() {
               <Button
                 variant="outline"
                 size="sm"
+                className="bg-white/60 backdrop-blur border-white/30"
                 onClick={handleRefresh}
                 data-testid="button-refresh"
               >
@@ -499,7 +503,7 @@ export default function HRAnalyticsPage() {
           animate={{ opacity: 1 }}
           className="fixed bottom-6 right-6"
         >
-          <div className="flex items-center gap-2 px-3 py-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/20">
             <div className={cn(
               "w-2 h-2 rounded-full",
               isAutoRefresh ? "bg-green-500 animate-pulse" : "bg-gray-400"
@@ -515,6 +519,6 @@ export default function HRAnalyticsPage() {
           </div>
         </motion.div>
       </div>
-    </div>
+    </Layout>
   );
 }

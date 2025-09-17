@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
   Upload,
@@ -16,6 +17,7 @@ import {
   Shield,
   HardDrive
 } from 'lucide-react';
+import Layout from '@/components/Layout';
 import { useDocumentDrive } from '../hooks/useDocumentDrive';
 import DocumentUploadModal from '../components/Documents/DocumentUploadModal';
 import DocumentGrid from '../components/Documents/DocumentGrid';
@@ -25,6 +27,7 @@ import PayslipManager from '../components/Documents/PayslipManager';
 import { formatBytes } from '../utils/formatters';
 
 export default function DocumentDrivePage() {
+  const [currentModule, setCurrentModule] = useState('document-drive');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -108,21 +111,30 @@ export default function DocumentDrivePage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="backdrop-blur-lg bg-white/80 shadow-sm border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="document-drive-page">
+        {/* Header with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <FileText className="h-8 w-8 text-indigo-600" />
-              <h1 className="text-2xl font-semibold text-gray-900">
-                Document Drive HR
-              </h1>
+              <FileText className="h-8 w-8 text-orange-500" />
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
+                  Document Drive HR
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Gestisci documenti aziendali e buste paga
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-3">
               {/* Storage Usage */}
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 rounded-lg backdrop-blur">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 rounded-lg backdrop-blur border-white/30">
                 <HardDrive className="h-4 w-4 text-gray-500" />
                 <div className="text-sm">
                   <span className="font-medium">{formatBytes(storageUsage.used)}</span>
@@ -279,24 +291,25 @@ export default function DocumentDrivePage() {
         </div>
       </div>
 
-      {/* Modals */}
-      {isUploadModalOpen && (
-        <DocumentUploadModal
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-          onUploadComplete={() => {
-            setIsUploadModalOpen(false);
-            refetch();
-          }}
-        />
-      )}
+        {/* Modals */}
+        {isUploadModalOpen && (
+          <DocumentUploadModal
+            isOpen={isUploadModalOpen}
+            onClose={() => setIsUploadModalOpen(false)}
+            onUploadComplete={() => {
+              setIsUploadModalOpen(false);
+              refetch();
+            }}
+          />
+        )}
 
-      {viewingDocument && (
-        <DocumentViewer
-          document={viewingDocument}
-          onClose={() => setViewingDocument(null)}
-        />
-      )}
-    </div>
+        {viewingDocument && (
+          <DocumentViewer
+            document={viewingDocument}
+            onClose={() => setViewingDocument(null)}
+          />
+        )}
+      </div>
+    </Layout>
   );
 }

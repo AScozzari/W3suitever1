@@ -1,5 +1,6 @@
 // Expense Management Page
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import Layout from '@/components/Layout';
 import { useExpenseReports, useExpenseStats, useExpenseApprovals } from '@/hooks/useExpenseManagement';
 import { expenseService } from '@/services/expenseService';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +44,7 @@ import { it } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
 const ExpenseManagementPage = () => {
+  const [currentModule, setCurrentModule] = useState('expense-management');
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('all');
@@ -142,58 +145,73 @@ const ExpenseManagementPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl" data-testid="expense-management-page">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Gestione Note Spese</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestisci le tue note spese, carica scontrini e monitora i rimborsi
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            data-testid="button-export"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Esporta
-          </Button>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary" data-testid="button-new-expense">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuova Nota Spese
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Crea Nuova Nota Spese</DialogTitle>
-              </DialogHeader>
-              <ExpenseReportForm
-                onSuccess={() => setShowCreateDialog(false)}
-                onCancel={() => setShowCreateDialog(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Attesa</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-pending">
-              {expenseService.formatCurrency(stats?.totalPending || 0)}
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="expense-management-page">
+        {/* Header with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
+                Gestione Note Spese
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                Gestisci le tue note spese, carica scontrini e monitora i rimborsi
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {pendingApprovals.length} report da approvare
-            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="bg-white/60 backdrop-blur border-white/30"
+                onClick={handleExport}
+                data-testid="button-export"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Esporta
+              </Button>
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700" data-testid="button-new-expense">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuova Nota Spese
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Crea Nuova Nota Spese</DialogTitle>
+                  </DialogHeader>
+                  <ExpenseReportForm
+                    onSuccess={() => setShowCreateDialog(false)}
+                    onCancel={() => setShowCreateDialog(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stats Cards with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          <Card className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">In Attesa</CardTitle>
+              <Clock className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="stat-pending">
+                {expenseService.formatCurrency(stats?.totalPending || 0)}
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {pendingApprovals.length} report da approvare
+              </p>
           </CardContent>
         </Card>
 
@@ -447,24 +465,25 @@ const ExpenseManagementPage = () => {
         )}
       </Tabs>
 
-      {/* Report Detail Modal */}
-      {selectedReport && (
-        <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedReport.status === 'draft' ? 'Modifica' : 'Visualizza'} Nota Spese
-              </DialogTitle>
-            </DialogHeader>
-            <ExpenseReportForm
-              report={selectedReport}
-              onSuccess={() => setSelectedReport(null)}
-              onCancel={() => setSelectedReport(null)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+        {/* Report Detail Modal */}
+        {selectedReport && (
+          <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedReport.status === 'draft' ? 'Modifica' : 'Visualizza'} Nota Spese
+                </DialogTitle>
+              </DialogHeader>
+              <ExpenseReportForm
+                report={selectedReport}
+                onSuccess={() => setSelectedReport(null)}
+                onCancel={() => setSelectedReport(null)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    </Layout>
   );
 };
 

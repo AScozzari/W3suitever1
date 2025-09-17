@@ -20,6 +20,7 @@ import {
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,9 +54,10 @@ import { geolocationManager, ITALY_STORE_ZONES } from '@/utils/geolocationManage
 import { timeTrackingService } from '@/services/timeTrackingService';
 
 export default function TimeTrackingPage() {
+  const [currentModule, setCurrentModule] = useState('time-tracking');
   const { toast } = useToast();
-  const { user, getUser } = useAuth();
-  const currentUser = getUser();
+  const { user } = useAuth();
+  const currentUser = user;
   
   // State
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('today');
@@ -175,27 +177,27 @@ export default function TimeTrackingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
-      <div className="container mx-auto p-6 max-w-7xl">
-        {/* Header */}
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="time-tracking-page">
+        {/* Header with Glassmorphism */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
                 Time Tracking
               </h1>
-              <p className="text-gray-400 mt-1">
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
                 Sistema di rilevazione presenze multi-device
               </p>
             </div>
             <div className="flex items-center gap-2">
               {/* Period Selector */}
               <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as any)}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-32 bg-white/60 backdrop-blur border-white/30" data-testid="select-period">
                   <Calendar className="w-4 h-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
@@ -212,6 +214,8 @@ export default function TimeTrackingPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => setActiveTab('settings')}
+                  className="bg-white/60 backdrop-blur border-white/30"
+                  data-testid="button-settings"
                 >
                   <Settings className="w-4 h-4" />
                 </Button>
@@ -220,7 +224,7 @@ export default function TimeTrackingPage() {
           </div>
 
           {/* Date Range Display */}
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Calendar className="w-4 h-4" />
             <span>
               {format(new Date(dateRange.start), 'd MMM', { locale: it })}
@@ -243,11 +247,11 @@ export default function TimeTrackingPage() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
           >
             {/* Today's Status */}
-            <Card className="p-4 bg-white/5 backdrop-blur-xl border-white/10">
+            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-today-status">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Stato Oggi</p>
-                  <p className="text-2xl font-bold mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Stato Oggi</p>
+                  <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                     {isActive ? 'In Turno' : 'Fuori Turno'}
                   </p>
                   {isActive && (
@@ -258,43 +262,43 @@ export default function TimeTrackingPage() {
                 </div>
                 <div className={cn(
                   "p-2 rounded-lg",
-                  isActive ? "bg-green-500/20" : "bg-gray-500/20"
+                  isActive ? "bg-green-100" : "bg-gray-100"
                 )}>
                   <Activity className={cn(
                     "w-5 h-5",
-                    isActive ? "text-green-400" : "text-gray-400"
+                    isActive ? "text-green-600" : "text-gray-600"
                   )} />
                 </div>
               </div>
               {requiresBreak && (
-                <div className="mt-3 p-2 bg-orange-500/10 rounded text-xs">
-                  <AlertCircle className="w-3 h-3 text-orange-400 inline mr-1" />
+                <div className="mt-3 p-2 bg-orange-100 rounded text-xs text-orange-700">
+                  <AlertCircle className="w-3 h-3 inline mr-1" />
                   Pausa obbligatoria richiesta
                 </div>
               )}
             </Card>
 
             {/* Total Hours */}
-            <Card className="p-4 bg-white/5 backdrop-blur-xl border-white/10">
+            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-total-hours">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Ore Totali</p>
-                  <p className="text-2xl font-bold mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Ore Totali</p>
+                  <p className="text-2xl font-bold mt-1 text-gray-900 dark:text-white">
                     {balance.totalHours.toFixed(1)}h
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Target: {balance.targetHours.toFixed(0)}h
                   </p>
                 </div>
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <Clock className="w-5 h-5 text-purple-400" />
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Clock className="w-5 h-5 text-purple-600" />
                 </div>
               </div>
               <div className="mt-3">
                 <div className="flex justify-between text-xs mb-1">
-                  <span>{balance.percentComplete.toFixed(0)}%</span>
+                  <span className="text-gray-600">{balance.percentComplete.toFixed(0)}%</span>
                 </div>
-                <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all"
                     style={{ width: `${Math.min(100, balance.percentComplete)}%` }}
@@ -304,13 +308,13 @@ export default function TimeTrackingPage() {
             </Card>
 
             {/* Overtime */}
-            <Card className="p-4 bg-white/5 backdrop-blur-xl border-white/10">
+            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-overtime">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Straordinari</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Straordinari</p>
                   <p className={cn(
                     "text-2xl font-bold mt-1",
-                    balance.overtimeHours > 0 ? "text-orange-400" : ""
+                    balance.overtimeHours > 0 ? "text-orange-600" : "text-gray-900 dark:text-white"
                   )}>
                     {balance.overtimeHours > 0 ? '+' : ''}{balance.overtimeHours.toFixed(1)}h
                   </p>
@@ -320,24 +324,24 @@ export default function TimeTrackingPage() {
                 </div>
                 <div className={cn(
                   "p-2 rounded-lg",
-                  balance.overtimeHours > 0 ? "bg-orange-500/20" : "bg-gray-500/20"
+                  balance.overtimeHours > 0 ? "bg-orange-100" : "bg-gray-100"
                 )}>
                   <TrendingUp className={cn(
                     "w-5 h-5",
-                    balance.overtimeHours > 0 ? "text-orange-400" : "text-gray-400"
+                    balance.overtimeHours > 0 ? "text-orange-600" : "text-gray-600"
                   )} />
                 </div>
               </div>
             </Card>
 
             {/* Balance */}
-            <Card className="p-4 bg-white/5 backdrop-blur-xl border-white/10">
+            <Card className="p-4 bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200" data-testid="stat-balance">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Saldo Ore</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Saldo Ore</p>
                   <p className={cn(
                     "text-2xl font-bold mt-1",
-                    balance.balanceHours > 0 ? "text-green-400" : balance.balanceHours < 0 ? "text-red-400" : ""
+                    balance.balanceHours > 0 ? "text-green-600" : balance.balanceHours < 0 ? "text-red-600" : "text-gray-900 dark:text-white"
                   )}>
                     {balance.balanceHours > 0 ? '+' : ''}{balance.balanceHours.toFixed(1)}h
                   </p>
@@ -347,13 +351,13 @@ export default function TimeTrackingPage() {
                 </div>
                 <div className={cn(
                   "p-2 rounded-lg",
-                  balance.balanceHours > 0 ? "bg-green-500/20" : 
-                  balance.balanceHours < 0 ? "bg-red-500/20" : "bg-gray-500/20"
+                  balance.balanceHours > 0 ? "bg-green-100" : 
+                  balance.balanceHours < 0 ? "bg-red-100" : "bg-gray-100"
                 )}>
                   <Activity className={cn(
                     "w-5 h-5",
-                    balance.balanceHours > 0 ? "text-green-400" : 
-                    balance.balanceHours < 0 ? "text-red-400" : "text-gray-400"
+                    balance.balanceHours > 0 ? "text-green-600" : 
+                    balance.balanceHours < 0 ? "text-red-600" : "text-gray-600"
                   )} />
                 </div>
               </div>
@@ -529,6 +533,6 @@ export default function TimeTrackingPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </Layout>
   );
 }

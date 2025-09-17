@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Clock, Users, AlertTriangle, FileText, Settings, TrendingUp, Download } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
+import Layout from '@/components/Layout';
 import ShiftCalendar from '../components/Shifts/ShiftCalendar';
 import ShiftTemplateManager from '../components/Shifts/ShiftTemplateManager';
 import StaffAssignment from '../components/Shifts/StaffAssignment';
@@ -21,6 +23,7 @@ type ViewMode = 'week' | 'month' | 'day';
 type TabView = 'calendar' | 'templates' | 'coverage' | 'reports';
 
 export default function ShiftPlanningPage() {
+  const [currentModule, setCurrentModule] = useState('shift-planning');
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedStore, setSelectedStore] = useState<string>('');
@@ -178,134 +181,155 @@ export default function ShiftPlanningPage() {
   }
   
   return (
-    <div className="container mx-auto p-6 space-y-6" data-testid="shift-planning-page">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Pianificazione Turni</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestisci turni e assegnazioni del personale
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <Select value={selectedStore} onValueChange={setSelectedStore} data-testid="select-store">
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Seleziona negozio" />
-            </SelectTrigger>
-            <SelectContent>
-              {stores?.map(store => (
-                <SelectItem key={store.id} value={store.id}>
-                  {store.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            onClick={handleAutoSchedule}
-            variant="outline"
-            data-testid="button-auto-schedule"
-          >
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Auto-Schedule
-          </Button>
-          
-          <Button 
-            onClick={handleExport}
-            variant="outline"
-            data-testid="button-export"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Esporta
-          </Button>
-          
-          <Button 
-            onClick={handleCreateShift}
-            className="bg-gradient-to-r from-orange-500 to-orange-600"
-            data-testid="button-create-shift"
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Nuovo Turno
-          </Button>
-        </div>
-      </div>
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="shift-planning-page">
+        {/* Header with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
+                Pianificazione Turni
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                Gestisci turni e assegnazioni del personale
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <Select value={selectedStore} onValueChange={setSelectedStore} data-testid="select-store">
+                <SelectTrigger className="w-[200px] bg-white/60 backdrop-blur border-white/30">
+                  <SelectValue placeholder="Seleziona negozio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores?.map(store => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                onClick={handleAutoSchedule}
+                variant="outline"
+                className="bg-white/60 backdrop-blur border-white/30"
+                data-testid="button-auto-schedule"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Auto-Schedule
+              </Button>
+              
+              <Button 
+                onClick={handleExport}
+                variant="outline"
+                className="bg-white/60 backdrop-blur border-white/30"
+                data-testid="button-export"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Esporta
+              </Button>
+              
+              <Button 
+                onClick={handleCreateShift}
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                data-testid="button-create-shift"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Nuovo Turno
+              </Button>
+            </div>
+          </div>
+        </motion.div>
       
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-orange-200 dark:border-orange-900">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Turni Totali
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold" data-testid="stat-total-shifts">
-                {totalShifts}
-              </span>
-              <Calendar className="h-5 w-5 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-blue-200 dark:border-blue-900">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Copertura
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold" data-testid="stat-coverage">
-                {coverageRate}%
-              </span>
-              <Users className="h-5 w-5 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-purple-200 dark:border-purple-900">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Ore Totali
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold" data-testid="stat-total-hours">
-                {Math.round(totalHours)}
-              </span>
-              <Clock className="h-5 w-5 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-red-200 dark:border-red-900">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Conflitti
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold" data-testid="stat-conflicts">
-                {conflicts?.length || 0}
-              </span>
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-            </div>
-            {conflicts?.length > 0 && (
-              <Badge variant="destructive" className="mt-2">
-                Richiede attenzione
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+        {/* Stats Cards with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-4 gap-4"
+        >
+          <Card className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Turni Totali
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="stat-total-shifts">
+                  {totalShifts}
+                </span>
+                <Calendar className="h-5 w-5 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Copertura
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="stat-coverage">
+                  {coverageRate}%
+                </span>
+                <Users className="h-5 w-5 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Ore Totali
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="stat-total-hours">
+                  {Math.round(totalHours)}
+                </span>
+                <Clock className="h-5 w-5 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Conflitti
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold text-red-600" data-testid="stat-conflicts">
+                  {conflicts?.length || 0}
+                </span>
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              {conflicts?.length > 0 && (
+                <Badge variant="destructive" className="mt-2">
+                  Richiede attenzione
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       
-      {/* Main Content Tabs */}
-      <Card className="min-h-[600px]">
-        <CardContent className="p-6">
+        {/* Main Content Tabs with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="bg-white/80 backdrop-blur-md border-white/20 min-h-[600px]">
+            <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabView)}>
             <div className="flex items-center justify-between mb-6">
               <TabsList className="grid grid-cols-4 w-[500px]">
@@ -395,20 +419,22 @@ export default function ShiftPlanningPage() {
                 shifts={shifts || []}
               />
             </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-      
-      {/* Shift Editor Modal */}
-      {isShiftModalOpen && (
-        <ShiftEditorModal
-          isOpen={isShiftModalOpen}
-          onClose={() => setIsShiftModalOpen(false)}
-          shift={selectedShift}
-          storeId={selectedStore}
-          onSave={handleSaveShift}
-        />
-      )}
-    </div>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </motion.div>
+        
+        {/* Shift Editor Modal */}
+        {isShiftModalOpen && (
+          <ShiftEditorModal
+            isOpen={isShiftModalOpen}
+            onClose={() => setIsShiftModalOpen(false)}
+            shift={selectedShift}
+            storeId={selectedStore}
+            onSave={handleSaveShift}
+          />
+        )}
+      </div>
+    </Layout>
   );
 }
