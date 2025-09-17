@@ -90,6 +90,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     setupOAuth2Server(app);
   } else {
     console.log('🔓 Skipping OAuth2 setup (AUTH_MODE=development)');
+    
+    // Development mode authentication endpoints to simulate OAuth2 flow
+    app.post('/oauth2/authorize', async (req, res) => {
+      console.log('📋 Development auth - authorize endpoint called');
+      
+      // In development, accept any credentials
+      const { username, password } = req.body;
+      
+      if (username && password) {
+        const mockCode = 'dev-auth-code-' + Date.now();
+        const redirectUri = req.body.redirect_uri || `${req.protocol}://${req.get('host')}/auth/callback`;
+        
+        // Simulate OAuth2 redirect with authorization code
+        const redirectUrl = new URL(redirectUri);
+        redirectUrl.searchParams.append('code', mockCode);
+        if (req.body.state) {
+          redirectUrl.searchParams.append('state', req.body.state);
+        }
+        
+        console.log('✅ Development auth successful, redirecting to:', redirectUrl.toString());
+        return res.redirect(302, redirectUrl.toString());
+      }
+      
+      return res.status(401).json({
+        error: 'invalid_credentials',
+        message: 'Invalid username or password'
+      });
+    });
+
+    app.post('/oauth2/token', async (req, res) => {
+      console.log('🎫 Development auth - token endpoint called');
+      
+      // Generate mock JWT token for development
+      const mockToken = jwt.sign({
+        sub: 'dev-user-id',
+        id: 'dev-user-id',
+        email: req.body.username || 'admin@w3suite.com',
+        tenantId: '00000000-0000-0000-0000-000000000001',
+        tenant_id: '00000000-0000-0000-0000-000000000001',
+        roles: ['admin', 'manager'],
+        permissions: ['*'],
+        capabilities: [],
+        scope: 'openid profile email tenant_access',
+        client_id: 'w3suite-frontend',
+        aud: 'w3suite-frontend',
+        iss: 'w3suite-auth-dev',
+        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+        iat: Math.floor(Date.now() / 1000)
+      }, JWT_SECRET);
+
+      console.log('✅ Development token generated successfully');
+      
+      return res.json({
+        access_token: mockToken,
+        token_type: 'Bearer',
+        expires_in: 86400,
+        refresh_token: 'dev-refresh-token-' + Date.now(),
+        scope: 'openid profile email tenant_access',
+        id_token: mockToken // Same as access token for simplicity in dev mode
+      });
+    });
+    
+    // Development mode session endpoint
+    app.get('/oauth2/userinfo', async (req, res) => {
+      console.log('👤 Development auth - userinfo endpoint called');
+      
+      // Return mock user info for development
+      return res.json({
+        sub: 'dev-user-id',
+        email: 'admin@w3suite.com',
+        email_verified: true,
+        name: 'Admin User',
+        preferred_username: 'admin',
+        given_name: 'Admin',
+        family_name: 'User',
+        tenant_id: '00000000-0000-0000-0000-000000000001',
+        tenant_name: 'Demo Organization',
+        roles: ['admin', 'manager'],
+        permissions: ['*']
+      });
+    });
+    
+    console.log('✅ Development authentication routes configured');
   }
 
   // Apply correlation middleware globally for request tracking
