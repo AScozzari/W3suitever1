@@ -3,7 +3,10 @@ import { useLocation } from 'wouter';
 import { 
   Home, Users, Zap, Briefcase, Building, UserPlus, 
   FileText, ShoppingBag, Settings, ChevronLeft, 
-  ChevronRight, Menu, Calendar, Clock, CalendarDays
+  ChevronRight, Menu, Calendar, Clock, CalendarDays,
+  BarChart3, UserCheck, Award, DollarSign, BookOpen,
+  FileBarChart, Receipt, ChevronDown, ChevronUp,
+  Target, Clipboard, TrendingUp, Shield
 } from 'lucide-react';
 
 // Palette colori W3 Suite - Consistent con Header
@@ -22,6 +25,8 @@ export interface MenuItem {
   icon: React.ComponentType<any>;
   path?: string;
   active?: boolean;
+  hasSubmenu?: boolean;
+  submenuItems?: MenuItem[];
 }
 
 interface LeftSidebarProps {
@@ -47,7 +52,24 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'documents', label: 'Document Drive', icon: FileText, path: '/documents' },
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
-  { id: 'hr', label: 'Human Resources', icon: UserPlus, path: '/hr' },
+  { 
+    id: 'hr', 
+    label: 'Human Resources', 
+    icon: UserPlus, 
+    path: '/hr',
+    hasSubmenu: true,
+    submenuItems: [
+      { id: 'hr-dashboard', label: 'HR Overview', icon: Home, path: '/hr' },
+      { id: 'employee-management', label: 'Employee Management', icon: Users, path: '/hr/employee-management' },
+      { id: 'performance-reviews', label: 'Performance Reviews', icon: Award, path: '/hr/performance-reviews' },
+      { id: 'payroll-management', label: 'Payroll Management', icon: DollarSign, path: '/hr/payroll-management' },
+      { id: 'training-development', label: 'Training & Development', icon: BookOpen, path: '/hr/training-development' },
+      { id: 'hr-compliance', label: 'HR Compliance', icon: Shield, path: '/hr/compliance' },
+      { id: 'hr-reports', label: 'HR Reports', icon: FileBarChart, path: '/hr/reports' },
+      { id: 'hr-expense', label: 'HR Expenses', icon: Receipt, path: '/hr/expense' },
+      { id: 'hr-analytics', label: 'HR Analytics', icon: TrendingUp, path: '/hr/analytics' }
+    ]
+  },
   { id: 'listini', label: 'Listini', icon: FileText },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
   { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
@@ -66,6 +88,7 @@ export default function LeftSidebar({
 }: LeftSidebarProps) {
   const [location, navigate] = useLocation();
   const [collapseTimer, setCollapseTimer] = useState<NodeJS.Timeout | null>(null);
+  const [expandedSubmenus, setExpandedSubmenus] = useState<Set<string>>(new Set());
 
   // Auto-collapse logic
   const handleMouseEnter = () => {
@@ -103,6 +126,17 @@ export default function LeftSidebar({
     };
   }, [collapseTimer]);
 
+  // Handle submenu toggle
+  const toggleSubmenu = (itemId: string) => {
+    const newExpanded = new Set(expandedSubmenus);
+    if (newExpanded.has(itemId)) {
+      newExpanded.delete(itemId);
+    } else {
+      newExpanded.add(itemId);
+    }
+    setExpandedSubmenus(newExpanded);
+  };
+
   // Handle menu item click
   const handleMenuClick = (item: MenuItem) => {
     // Get tenant from localStorage or use 'staging' as fallback
@@ -111,6 +145,25 @@ export default function LeftSidebar({
     const urlTenant = pathSegments[0];
     const tenant = storedTenant || urlTenant || 'staging';
     
+    // If item has both submenu and path, navigate to path and toggle submenu
+    if (item.hasSubmenu && item.path) {
+      // Navigate to the main path (HR overview)
+      if (item.path === '/') {
+        navigate(`/${tenant}`);
+      } else {
+        navigate(`/${tenant}${item.path}`);
+      }
+      // Also toggle submenu for access to sub-items
+      toggleSubmenu(item.id);
+      return;
+    }
+    
+    // If item has submenu only, toggle it
+    if (item.hasSubmenu) {
+      toggleSubmenu(item.id);
+      return;
+    }
+
     // Debug log in development
     if (process.env.NODE_ENV === 'development') {
       console.log('[LeftSidebar] Navigation:', {
@@ -138,7 +191,15 @@ export default function LeftSidebar({
   const isItemActive = (item: MenuItem) => {
     if (item.path === '/' && currentModule === 'dashboard') return true;
     if (item.id === 'impostazioni' && location.includes('/settings')) return true;
-    return currentModule === item.id;
+    if (item.hasSubmenu) {
+      return item.submenuItems?.some(subItem => location.includes(subItem.path || ''));
+    }
+    return currentModule === item.id || location.includes(item.path || '');
+  };
+
+  // Check if submenu item is active
+  const isSubmenuItemActive = (item: MenuItem) => {
+    return location.includes(item.path || '');
   };
 
   return (
@@ -239,110 +300,179 @@ export default function LeftSidebar({
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = isItemActive(item);
+            const isExpanded = expandedSubmenus.has(item.id);
             
             return (
-              <button
-                key={item.id}
-                onClick={() => handleMenuClick(item)}
-                style={{
-                  width: isMobile ? 'auto' : (collapsed ? '40px' : '100%'),
-                  height: collapsed && !isMobile ? '40px' : 'auto',
-                  minWidth: isMobile ? '80px' : 'auto',
-                  padding: isMobile ? '12px' : (collapsed ? '12px' : '12px 16px'),
-                  marginBottom: isMobile ? '0' : (collapsed ? '0' : '8px'),
-                  background: isActive 
-                    ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
-                    : 'transparent',
-                  backdropFilter: 'none',
-                  WebkitBackdropFilter: 'none',
-                  border: 'none',
-                  borderRadius: collapsed ? '12px' : '8px',
-                  color: isActive ? 'white' : '#374151',
-                  fontSize: isMobile ? '12px' : '14px',
-                  fontWeight: isActive ? 600 : 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  flexDirection: isMobile ? 'column' : 'row',
-                  gap: isMobile ? '4px' : (collapsed ? '0' : '12px'),
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  textAlign: collapsed ? 'center' : 'left',
-                  justifyContent: collapsed ? 'center' : 'flex-start',
-                  boxShadow: 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = '#6b7280';
-                    e.currentTarget.style.transform = collapsed ? 'scale(1.1)' : 'translateX(4px)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = '#374151';
-                    e.currentTarget.style.transform = 'scale(1) translateX(0)';
-                  }
-                }}
-              >
-                {/* Icon con effetti speciali per dashboard */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative'
-                }}>
-                  <Icon size={isMobile ? 16 : 20} />
-                  {/* Glow effect per item attivo */}
-                  {isActive && (
+              <div key={item.id}>
+                {/* Main menu item */}
+                <button
+                  onClick={() => handleMenuClick(item)}
+                  style={{
+                    width: isMobile ? 'auto' : (collapsed ? '40px' : '100%'),
+                    height: collapsed && !isMobile ? '40px' : 'auto',
+                    minWidth: isMobile ? '80px' : 'auto',
+                    padding: isMobile ? '12px' : (collapsed ? '12px' : '12px 16px'),
+                    marginBottom: isMobile ? '0' : (collapsed ? '0' : '4px'),
+                    background: isActive 
+                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
+                      : 'transparent',
+                    backdropFilter: 'none',
+                    WebkitBackdropFilter: 'none',
+                    border: 'none',
+                    borderRadius: collapsed ? '12px' : '8px',
+                    color: isActive ? 'white' : '#374151',
+                    fontSize: isMobile ? '12px' : '14px',
+                    fontWeight: isActive ? 600 : 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? '4px' : (collapsed ? '0' : '12px'),
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: collapsed ? 'center' : 'left',
+                    justifyContent: collapsed ? 'center' : 'space-between',
+                    boxShadow: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.transform = collapsed ? 'scale(1.1)' : 'translateX(4px)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.transform = 'scale(1) translateX(0)';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? '0' : '12px' }}>
+                    {/* Icon */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative'
+                    }}>
+                      <Icon size={isMobile ? 16 : 20} />
+                      {/* Glow effect per item attivo */}
+                      {isActive && (
+                        <div style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+                          borderRadius: '50%',
+                          opacity: 0.3,
+                          filter: 'blur(8px)',
+                          zIndex: -1
+                        }} />
+                      )}
+                    </div>
+                    
+                    {/* Label */}
+                    {(!collapsed || isMobile) && (
+                      <span style={{
+                        fontSize: 'inherit',
+                        fontWeight: 'inherit',
+                        lineHeight: 1.2,
+                        textAlign: isMobile ? 'center' : 'left'
+                      }}>
+                        {item.label}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Submenu chevron */}
+                  {item.hasSubmenu && !collapsed && !isMobile && (
+                    <div style={{ transition: 'transform 0.2s ease', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                      <ChevronDown size={16} />
+                    </div>
+                  )}
+                  
+                  {/* Tooltip per collapsed desktop */}
+                  {collapsed && !isMobile && (
                     <div style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
-                      background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
-                      borderRadius: '50%',
-                      opacity: 0.3,
-                      filter: 'blur(8px)',
-                      zIndex: -1
-                    }} />
+                      left: '60px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'rgba(0, 0, 0, 0.8)',
+                      color: 'white',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      opacity: 0,
+                      pointerEvents: 'none',
+                      transition: 'opacity 0.2s ease',
+                      zIndex: 1000
+                    }}
+                    className="sidebar-tooltip"
+                    >
+                      {item.label}
+                    </div>
                   )}
-                </div>
-                
-                {/* Label */}
-                {(!collapsed || isMobile) && (
-                  <span style={{
-                    fontSize: 'inherit',
-                    fontWeight: 'inherit',
-                    lineHeight: 1.2,
-                    textAlign: isMobile ? 'center' : 'left'
-                  }}>
-                    {item.label}
-                  </span>
-                )}
-                
-                {/* Tooltip per collapsed desktop */}
-                {collapsed && !isMobile && (
+                </button>
+
+                {/* Submenu items */}
+                {item.hasSubmenu && isExpanded && !collapsed && (
                   <div style={{
-                    position: 'absolute',
-                    left: '60px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'rgba(0, 0, 0, 0.8)',
-                    color: 'white',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    opacity: 0,
-                    pointerEvents: 'none',
-                    transition: 'opacity 0.2s ease',
-                    zIndex: 1000
-                  }}
-                  className="sidebar-tooltip"
-                  >
-                    {item.label}
+                    marginLeft: '16px',
+                    borderLeft: '2px solid hsla(255, 255, 255, 0.1)',
+                    paddingLeft: '16px',
+                    marginBottom: '8px'
+                  }}>
+                    {item.submenuItems?.map((subItem) => {
+                      const SubIcon = subItem.icon;
+                      const isSubActive = isSubmenuItemActive(subItem);
+                      
+                      return (
+                        <button
+                          key={subItem.id}
+                          onClick={() => handleMenuClick(subItem)}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            marginBottom: '2px',
+                            background: isSubActive 
+                              ? `linear-gradient(135deg, ${COLORS.primary.purple}, ${COLORS.primary.purpleLight})` 
+                              : 'transparent',
+                            border: 'none',
+                            borderRadius: '6px',
+                            color: isSubActive ? 'white' : '#6b7280',
+                            fontSize: '13px',
+                            fontWeight: isSubActive ? 600 : 500,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            textAlign: 'left',
+                            justifyContent: 'flex-start'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSubActive) {
+                              e.currentTarget.style.color = '#374151';
+                              e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSubActive) {
+                              e.currentTarget.style.color = '#6b7280';
+                              e.currentTarget.style.background = 'transparent';
+                            }
+                          }}
+                        >
+                          <SubIcon size={16} />
+                          <span>{subItem.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </nav>

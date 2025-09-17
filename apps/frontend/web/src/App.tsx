@@ -13,8 +13,15 @@ import ShiftPlanningPage from "./pages/ShiftPlanningPage";
 import DocumentDrivePage from "./pages/DocumentDrivePage";
 import ExpenseManagementPage from "./pages/ExpenseManagementPage";
 import HRAnalyticsPage from "./pages/HRAnalyticsPage";
-import HRDashboardSimple from "./pages/HRDashboardSimple";
+import HRDashboard from "./pages/HRDashboard";
+import EmployeeManagement from "./pages/EmployeeManagement";
+import PerformanceReviews from "./pages/PerformanceReviews";
+import PayrollManagement from "./pages/PayrollManagement";
+import TrainingDevelopment from "./pages/TrainingDevelopment";
 import HRTestPage from "./pages/HRTestPage";
+import HRCompliance from "./pages/HRCompliance";
+import HRReports from "./pages/HRReports";
+import HRExpense from "./pages/HRExpense";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -65,8 +72,35 @@ function Router() {
       <Route path="/:tenant/hr-analytics">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
+      <Route path="/:tenant/hr/dashboard">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/employee-management">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeManagement /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/performance-reviews">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><PerformanceReviews /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/payroll-management">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><PayrollManagement /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/training-development">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><TrainingDevelopment /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/compliance">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRCompliance /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/reports">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRReports /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/expense">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRExpense /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/analytics">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
       <Route path="/:tenant/hr">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboardSimple /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr-test">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRTestPage /></AuthenticatedApp></TenantWrapper>}
