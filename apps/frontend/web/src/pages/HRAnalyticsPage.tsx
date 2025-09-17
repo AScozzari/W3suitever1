@@ -1,4 +1,4 @@
-// HR Analytics Page - Enterprise HR Management System with frontend-kit
+// HR Analytics Page - Enterprise HR Management System
 import { useState, useMemo, useEffect } from 'react';
 import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
 import { Column } from '@/components/templates/DataTable';

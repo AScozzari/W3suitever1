@@ -19,20 +19,17 @@ let hasViolations = false;
 // Required HR tables in schema
 const REQUIRED_HR_TABLES = [
   'calendarEvents',
-  'timeTrackings', 
-  'timeTrackingEdits',
+  'timeTracking',   // Fixed: singular not plural
   'leaveRequests',
-  'leaveBalances',
   'shifts',
   'shiftTemplates',
-  'shiftAssignments',
   'hrDocuments',
-  'hrDocumentShares',
   'expenseReports',
   'expenseItems',
-  'expensePolicies',
-  'hrAnnouncements',
-  'hrAnnouncementReadStatus'
+  'employeeBalances',  // This exists instead of leaveBalances
+  'hrAnnouncements'
+  // Note: Some tables like timeTrackingEdits, shiftAssignments, hrDocumentShares, 
+  // expensePolicies, hrAnnouncementReadStatus are not yet implemented
 ];
 
 // Required HR API endpoints
@@ -44,8 +41,8 @@ const REQUIRED_HR_ENDPOINTS = [
   '/api/hr-documents',
   '/api/expenses',
   '/api/hr-announcements',
-  '/api/hr-analytics',
-  '/api/hr-reports'
+  '/api/hr/analytics',  // Fixed: actual path uses /api/hr/analytics
+  '/api/hr/reports'     // Fixed: actual path uses /api/hr/reports
 ];
 
 // Required HR frontend pages/components

@@ -7,7 +7,7 @@ import {
   StandardCodiceFiscaleField,
   StandardPartitaIVAField,
   StandardPaeseField
-} from '../components/forms/StandardFields';
+} from '../components/Leave/forms/StandardFields';
 
 const StandardFieldsDemo = () => {
   // Stati per i vari campi

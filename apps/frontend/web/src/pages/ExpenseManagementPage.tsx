@@ -1,4 +1,4 @@
-// Expense Management Page - Enterprise HR Management System with frontend-kit
+// Expense Management Page - Enterprise HR Management System
 import { useState, useMemo } from 'react';
 import { ListPageTemplate } from '@/components/templates/ListPageTemplate';
 import { DashboardTemplate } from '@/components/templates/DashboardTemplate';

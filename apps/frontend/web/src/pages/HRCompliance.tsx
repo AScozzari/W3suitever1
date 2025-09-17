@@ -1,4 +1,4 @@
-// HR Compliance Page - Enterprise HR Management System with frontend-kit
+// HR Compliance Page - Enterprise HR Management System
 import { useState, useMemo } from 'react';
 import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
 import { ListPageTemplate } from '@/components/templates/ListPageTemplate';

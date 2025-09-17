@@ -1,4 +1,4 @@
-// Shift Planning Page - Enterprise HR Management System with frontend-kit
+// Shift Planning Page - Enterprise HR Management System
 import { useState, useMemo, useEffect } from 'react';
 import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
 import { ListPageTemplate } from '@/components/templates/ListPageTemplate';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useItalianCities, type ItalianCity } from '../../hooks/useItalianCities';
+import { useItalianCities, type ItalianCity } from '../../../hooks/useItalianCities';
 
 // ==================== VALIDATION UTILITIES ====================
 
