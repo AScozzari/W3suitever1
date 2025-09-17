@@ -12,6 +12,16 @@ import {
   entityLogs,
   structuredLogs,
   notifications,
+  // HR tables
+  calendarEvents,
+  leaveRequests,
+  shifts,
+  shiftTemplates,
+  timeTracking,
+  hrDocuments,
+  expenseReports,
+  hrAnnouncements,
+  employeeBalances,
   type User,
   type UpsertUser,
   type Tenant,
@@ -36,6 +46,20 @@ import {
   type InsertStructuredLog,
   type Notification,
   type InsertNotification,
+  // HR types
+  type CalendarEvent,
+  type LeaveRequest,
+  type Shift,
+  type ShiftTemplate,
+  type TimeTracking,
+  type HrDocument,
+  type ExpenseReport,
+  type HrAnnouncement,
+  type EmployeeBalance,
+  type InsertCalendarEvent,
+  type InsertLeaveRequest,
+  type InsertShift,
+  type InsertTimeTracking,
 } from "../db/schema/w3suite";
 
 // Import from Public schema (shared reference data)
@@ -53,6 +77,7 @@ import {
 } from "../db/schema/public";
 import { db, setTenantContext, withTenantContext } from "./db";
 import { eq, and, or, gte, lte, desc, asc, sql, isNull, isNotNull } from "drizzle-orm";
+import { CalendarScope, CALENDAR_PERMISSIONS } from "./hr-storage";
 
 // Types for structured logs filtering and pagination
 export interface LogFilters {
@@ -89,7 +114,10 @@ export interface NotificationsResponse {
 }
 
 // Interface for storage operations
-export interface IStorage {
+// Import HR Storage
+import { IHRStorage } from "./hr-storage";
+
+export interface IStorage extends IHRStorage {
   // User operations (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
@@ -1199,6 +1227,320 @@ export class DatabaseStorage implements IStorage {
     console.log(`[STORAGE-RLS] ✅ deleteExpiredNotifications: Cleaned up ${deletedCount} expired notifications for tenant ${tenantId}`);
     
     return deletedCount;
+  }
+
+  // ==================== HR CALENDAR OPERATIONS ====================
+  
+  async getCalendarEvents(
+    tenantId: string,
+    userId: string,
+    userRole: string,
+    filters?: any
+  ): Promise<CalendarEvent[]> {
+    console.log(`[HR] 📅 Getting calendar events for user ${userId} with role ${userRole}`);
+    
+    await setTenantContext(tenantId);
+    
+    const conditions = [eq(calendarEvents.tenantId, tenantId)];
+    
+    // Add visibility filters based on role
+    const permissions = (CALENDAR_PERMISSIONS as any)[userRole] || CALENDAR_PERMISSIONS.USER;
+    const visibilityConditions = [];
+    
+    if (permissions.view.includes(CalendarScope.OWN)) {
+      visibilityConditions.push(eq(calendarEvents.ownerId, userId));
+    }
+    if (permissions.view.includes(CalendarScope.STORE) && filters?.storeId) {
+      visibilityConditions.push(eq(calendarEvents.storeId, filters.storeId));
+    }
+    if (permissions.view.includes(CalendarScope.TENANT)) {
+      visibilityConditions.push(eq(calendarEvents.visibility, 'tenant'));
+    }
+    
+    if (visibilityConditions.length > 0) {
+      conditions.push(or(...visibilityConditions));
+    }
+    
+    // Add date filters if provided
+    if (filters?.startDate) {
+      conditions.push(gte(calendarEvents.startDate, new Date(filters.startDate)));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(calendarEvents.endDate, new Date(filters.endDate)));
+    }
+    
+    const events = await db
+      .select()
+      .from(calendarEvents)
+      .where(and(...conditions))
+      .orderBy(desc(calendarEvents.startDate));
+    
+    return events;
+  }
+  
+  async getCalendarEventById(id: string, tenantId: string): Promise<CalendarEvent | null> {
+    await setTenantContext(tenantId);
+    
+    const [event] = await db
+      .select()
+      .from(calendarEvents)
+      .where(and(
+        eq(calendarEvents.id, id),
+        eq(calendarEvents.tenantId, tenantId)
+      ));
+    
+    return event || null;
+  }
+  
+  async createCalendarEvent(data: InsertCalendarEvent): Promise<CalendarEvent> {
+    console.log(`[HR] 📅 Creating calendar event for tenant ${data.tenantId}`);
+    
+    await setTenantContext(data.tenantId);
+    
+    const [event] = await db
+      .insert(calendarEvents)
+      .values(data)
+      .returning();
+    
+    return event;
+  }
+  
+  async updateCalendarEvent(id: string, data: Partial<InsertCalendarEvent>, tenantId: string): Promise<CalendarEvent> {
+    await setTenantContext(tenantId);
+    
+    const [event] = await db
+      .update(calendarEvents)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(calendarEvents.id, id),
+        eq(calendarEvents.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return event;
+  }
+  
+  async deleteCalendarEvent(id: string, tenantId: string): Promise<void> {
+    await setTenantContext(tenantId);
+    
+    await db
+      .delete(calendarEvents)
+      .where(and(
+        eq(calendarEvents.id, id),
+        eq(calendarEvents.tenantId, tenantId)
+      ));
+  }
+  
+  // ==================== LEAVE REQUESTS ====================
+  
+  async getLeaveRequests(
+    tenantId: string,
+    userId: string,
+    userRole: string,
+    filters?: any
+  ): Promise<LeaveRequest[]> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [eq(leaveRequests.tenantId, tenantId)];
+    
+    // Add visibility filters based on role
+    const permissions = (CALENDAR_PERMISSIONS as any)[userRole] || CALENDAR_PERMISSIONS.USER;
+    
+    if (!permissions.approveLeave) {
+      // Non-approvers can only see their own requests
+      conditions.push(eq(leaveRequests.userId, userId));
+    }
+    
+    if (filters?.status) {
+      conditions.push(eq(leaveRequests.status, filters.status));
+    }
+    
+    const requests = await db
+      .select()
+      .from(leaveRequests)
+      .where(and(...conditions))
+      .orderBy(desc(leaveRequests.createdAt));
+    
+    return requests;
+  }
+  
+  async createLeaveRequest(data: InsertLeaveRequest): Promise<LeaveRequest> {
+    await setTenantContext(data.tenantId);
+    
+    const [request] = await db
+      .insert(leaveRequests)
+      .values(data)
+      .returning();
+    
+    return request;
+  }
+  
+  async approveLeaveRequest(id: string, approverId: string, comments?: string): Promise<LeaveRequest> {
+    const [request] = await db
+      .update(leaveRequests)
+      .set({
+        status: 'approved',
+        processedAt: new Date(),
+        approvalChain: sql`${leaveRequests.approvalChain} || jsonb_build_array(jsonb_build_object('approverId', ${approverId}, 'status', 'approved', 'timestamp', ${new Date().toISOString()}, 'comments', ${comments || ''}))`
+      })
+      .where(eq(leaveRequests.id, id))
+      .returning();
+    
+    return request;
+  }
+  
+  async rejectLeaveRequest(id: string, approverId: string, reason: string): Promise<LeaveRequest> {
+    const [request] = await db
+      .update(leaveRequests)
+      .set({
+        status: 'rejected',
+        processedAt: new Date(),
+        approvalChain: sql`${leaveRequests.approvalChain} || jsonb_build_array(jsonb_build_object('approverId', ${approverId}, 'status', 'rejected', 'timestamp', ${new Date().toISOString()}, 'comments', ${reason}))`
+      })
+      .where(eq(leaveRequests.id, id))
+      .returning();
+    
+    return request;
+  }
+  
+  // ==================== SHIFTS ====================
+  
+  async getShifts(tenantId: string, storeId: string, dateRange: any): Promise<Shift[]> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [
+      eq(shifts.tenantId, tenantId),
+      eq(shifts.storeId, storeId)
+    ];
+    
+    if (dateRange?.startDate) {
+      conditions.push(gte(shifts.date, dateRange.startDate));
+    }
+    if (dateRange?.endDate) {
+      conditions.push(lte(shifts.date, dateRange.endDate));
+    }
+    
+    return await db
+      .select()
+      .from(shifts)
+      .where(and(...conditions))
+      .orderBy(asc(shifts.date));
+  }
+  
+  async createShift(data: InsertShift): Promise<Shift> {
+    await setTenantContext(data.tenantId);
+    
+    const [shift] = await db
+      .insert(shifts)
+      .values(data)
+      .returning();
+    
+    return shift;
+  }
+  
+  async assignUserToShift(shiftId: string, userId: string): Promise<Shift> {
+    const [shift] = await db
+      .update(shifts)
+      .set({
+        assignedUsers: sql`${shifts.assignedUsers} || jsonb_build_array(${userId})`
+      })
+      .where(eq(shifts.id, shiftId))
+      .returning();
+    
+    return shift;
+  }
+  
+  async removeUserFromShift(shiftId: string, userId: string): Promise<Shift> {
+    const [shift] = await db
+      .update(shifts)
+      .set({
+        assignedUsers: sql`${shifts.assignedUsers} - ${userId}`
+      })
+      .where(eq(shifts.id, shiftId))
+      .returning();
+    
+    return shift;
+  }
+  
+  // ==================== TIME TRACKING ====================
+  
+  async clockIn(data: InsertTimeTracking): Promise<TimeTracking> {
+    await setTenantContext(data.tenantId);
+    
+    const [entry] = await db
+      .insert(timeTracking)
+      .values({
+        ...data,
+        clockIn: new Date(),
+        status: 'active'
+      })
+      .returning();
+    
+    return entry;
+  }
+  
+  async clockOut(id: string, tenantId: string, notes?: string): Promise<TimeTracking> {
+    await setTenantContext(tenantId);
+    
+    const [entry] = await db
+      .update(timeTracking)
+      .set({
+        clockOut: new Date(),
+        status: 'completed',
+        notes
+      })
+      .where(and(
+        eq(timeTracking.id, id),
+        eq(timeTracking.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return entry;
+  }
+  
+  async getActiveTimeTracking(userId: string, tenantId: string): Promise<TimeTracking | null> {
+    await setTenantContext(tenantId);
+    
+    const [entry] = await db
+      .select()
+      .from(timeTracking)
+      .where(and(
+        eq(timeTracking.userId, userId),
+        eq(timeTracking.tenantId, tenantId),
+        eq(timeTracking.status, 'active'),
+        isNull(timeTracking.clockOut)
+      ));
+    
+    return entry || null;
+  }
+  
+  async getTimeTrackingHistory(
+    userId: string,
+    tenantId: string,
+    dateRange: any
+  ): Promise<TimeTracking[]> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [
+      eq(timeTracking.userId, userId),
+      eq(timeTracking.tenantId, tenantId)
+    ];
+    
+    if (dateRange?.startDate) {
+      conditions.push(gte(timeTracking.clockIn, new Date(dateRange.startDate)));
+    }
+    if (dateRange?.endDate) {
+      conditions.push(lte(timeTracking.clockIn, new Date(dateRange.endDate)));
+    }
+    
+    return await db
+      .select()
+      .from(timeTracking)
+      .where(and(...conditions))
+      .orderBy(desc(timeTracking.clockIn));
   }
 
 }

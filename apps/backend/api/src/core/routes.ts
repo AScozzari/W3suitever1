@@ -2250,6 +2250,286 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== HR CALENDAR ENDPOINTS ====================
+  
+  // Get calendar events
+  app.get('/api/hr/calendar/events', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const filters = {
+        startDate: req.query.startDate as string,
+        endDate: req.query.endDate as string,
+        type: req.query.type as string,
+        visibility: req.query.visibility as string,
+        storeId: req.query.storeId as string,
+      };
+      
+      const events = await storage.getCalendarEvents(tenantId, userId, userRole, filters);
+      
+      res.json({
+        success: true,
+        data: events,
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero eventi calendario');
+    }
+  });
+  
+  // Create calendar event
+  app.post('/api/hr/calendar/events', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const eventData = {
+        ...req.body,
+        tenantId,
+        ownerId: userId,
+        createdBy: userId,
+      };
+      
+      const event = await storage.createCalendarEvent(eventData);
+      
+      res.status(201).json({
+        success: true,
+        data: event,
+        message: 'Evento creato con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'creazione evento calendario');
+    }
+  });
+  
+  // Update calendar event
+  app.put('/api/hr/calendar/events/:id', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const eventId = req.params.id;
+      
+      if (!tenantId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const event = await storage.updateCalendarEvent(eventId, req.body, tenantId);
+      
+      res.json({
+        success: true,
+        data: event,
+        message: 'Evento aggiornato con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento evento calendario');
+    }
+  });
+  
+  // Delete calendar event
+  app.delete('/api/hr/calendar/events/:id', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const eventId = req.params.id;
+      
+      if (!tenantId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      await storage.deleteCalendarEvent(eventId, tenantId);
+      
+      res.json({
+        success: true,
+        message: 'Evento eliminato con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione evento calendario');
+    }
+  });
+  
+  // Get calendar permissions
+  app.get('/api/hr/calendar/permissions', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const userRole = req.user?.role || 'USER';
+      
+      // Map user role to calendar permissions
+      const roleMapping: Record<string, any> = {
+        USER: { canViewScopes: ['own'], canCreateScopes: ['own'], canApproveLeave: false },
+        TEAM_LEADER: { canViewScopes: ['own', 'team'], canCreateScopes: ['own', 'team'], canApproveLeave: true },
+        STORE_MANAGER: { canViewScopes: ['own', 'team', 'store'], canCreateScopes: ['own', 'team', 'store'], canApproveLeave: true },
+        AREA_MANAGER: { canViewScopes: ['own', 'team', 'store', 'area'], canCreateScopes: ['own', 'team', 'store', 'area'], canApproveLeave: true },
+        HR_MANAGER: { canViewScopes: ['own', 'team', 'store', 'area', 'tenant'], canCreateScopes: ['own', 'team', 'store', 'area', 'tenant'], canApproveLeave: true },
+        ADMIN: { canViewScopes: ['own', 'team', 'store', 'area', 'tenant'], canCreateScopes: ['own', 'team', 'store', 'area', 'tenant'], canApproveLeave: true },
+      };
+      
+      const permissions = roleMapping[userRole.toUpperCase()] || roleMapping.USER;
+      
+      res.json({
+        success: true,
+        data: permissions,
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero permessi calendario');
+    }
+  });
+  
+  // Get leave requests
+  app.get('/api/hr/leave-requests', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const filters = {
+        status: req.query.status as string,
+      };
+      
+      const requests = await storage.getLeaveRequests(tenantId, userId, userRole, filters);
+      
+      res.json({
+        success: true,
+        data: requests,
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero richieste ferie');
+    }
+  });
+  
+  // Create leave request
+  app.post('/api/hr/leave-requests', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const requestData = {
+        ...req.body,
+        tenantId,
+        userId,
+        status: 'pending',
+      };
+      
+      const request = await storage.createLeaveRequest(requestData);
+      
+      res.status(201).json({
+        success: true,
+        data: request,
+        message: 'Richiesta ferie creata con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'creazione richiesta ferie');
+    }
+  });
+  
+  // Approve leave request
+  app.post('/api/hr/leave-requests/:id/approve', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const requestId = req.params.id;
+      const approverId = req.user?.id;
+      
+      if (!approverId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const request = await storage.approveLeaveRequest(requestId, approverId, req.body.comments);
+      
+      res.json({
+        success: true,
+        data: request,
+        message: 'Richiesta ferie approvata'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'approvazione richiesta ferie');
+    }
+  });
+  
+  // Reject leave request
+  app.post('/api/hr/leave-requests/:id/reject', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const requestId = req.params.id;
+      const approverId = req.user?.id;
+      
+      if (!approverId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const request = await storage.rejectLeaveRequest(requestId, approverId, req.body.reason);
+      
+      res.json({
+        success: true,
+        data: request,
+        message: 'Richiesta ferie respinta'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'rifiuto richiesta ferie');
+    }
+  });
+  
+  // Get pending leave requests count
+  app.get('/api/hr/leave-requests/pending-count', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({
+          error: 'authentication_required',
+          message: 'Autenticazione richiesta'
+        });
+      }
+      
+      const requests = await storage.getLeaveRequests(tenantId, userId, userRole, { status: 'pending' });
+      
+      res.json({
+        success: true,
+        data: {
+          count: requests.length,
+        },
+      });
+    } catch (error) {
+      handleApiError(error, res, 'conteggio richieste ferie pendenti');
+    }
+  });
+
   // ==================== NOTIFICATION ENDPOINTS ====================
 
   // Get notifications for tenant with filtering and pagination

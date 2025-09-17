@@ -17,6 +17,50 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Export HR-related tables and types from w3suite schema
+export {
+  // HR tables
+  calendarEvents,
+  leaveRequests,
+  shifts,
+  shiftTemplates,
+  timeTracking,
+  hrDocuments,
+  expenseReports,
+  expenseItems,
+  hrAnnouncements,
+  employeeBalances,
+  // HR types
+  type CalendarEvent,
+  type LeaveRequest,
+  type Shift,
+  type ShiftTemplate,
+  type TimeTracking,
+  type HrDocument,
+  type ExpenseReport,
+  type ExpenseItem,
+  type HrAnnouncement,
+  type EmployeeBalance,
+  // HR insert schemas
+  type InsertCalendarEvent,
+  type InsertLeaveRequest,
+  type InsertShift,
+  type InsertShiftTemplate,
+  type InsertTimeTracking,
+  type InsertHrDocument,
+  type InsertExpenseReport,
+  type InsertExpenseItem,
+  type InsertHrAnnouncement,
+  type InsertEmployeeBalance,
+  // Other w3suite tables needed for storage
+  users as w3suiteUsers,
+  tenants as w3suiteTenants,
+  legalEntities as w3suiteLegalEntities,
+  stores as w3suiteStores,
+  userAssignments as w3suiteUserAssignments,
+  userStores as w3suiteUserStores
+} from './w3suite';
+
 // ==================== ENUMS ====================
 export const scopeTypeEnum = pgEnum('scope_type', ['tenant', 'legal_entity', 'store']);
 export const permModeEnum = pgEnum('perm_mode', ['grant', 'revoke']);
