@@ -1,6 +1,5 @@
 // Leave Management Page - Main page for leave requests and management
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -134,11 +133,7 @@ export function LeaveManagementPage() {
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="leave-management-page">
         {/* Header with Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
-        >
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
@@ -168,15 +163,10 @@ export function LeaveManagementPage() {
               </Button>
             </div>
           </div>
-        </motion.div>
+        </div>
       
         {/* Statistics Cards with Glassmorphism */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {statsCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -202,15 +192,10 @@ export function LeaveManagementPage() {
               </Card>
             );
           })}
-        </motion.div>
+        </div>
       
         {/* Main Content with Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Side - Balance and Calendar */}
           <div className="lg:col-span-1 space-y-6">
             {/* Balance Widget */}
@@ -449,10 +434,7 @@ export function LeaveManagementPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-      
-          </div>
-        </motion.div>
+        </div>
 
         {/* Request Modal */}
         {showRequestModal && (

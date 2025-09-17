@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
   Upload,
@@ -114,11 +113,7 @@ export default function DocumentDrivePage() {
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="document-drive-page">
         {/* Header with Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
-        >
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <FileText className="h-8 w-8 text-orange-500" />
@@ -309,7 +304,6 @@ export default function DocumentDrivePage() {
             onClose={() => setViewingDocument(null)}
           />
         )}
-      </div>
     </Layout>
   );
 }

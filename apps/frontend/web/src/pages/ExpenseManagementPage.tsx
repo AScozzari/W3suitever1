@@ -1,6 +1,5 @@
 // Expense Management Page
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -148,11 +147,7 @@ const ExpenseManagementPage = () => {
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="p-6 space-y-6 max-w-7xl mx-auto" data-testid="expense-management-page">
         {/* Header with Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20"
-        >
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mb-2">
@@ -191,15 +186,10 @@ const ExpenseManagementPage = () => {
               </Dialog>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats Cards with Glassmorphism */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-white/80 backdrop-blur-md border-white/20 hover:shadow-lg transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">In Attesa</CardTitle>
