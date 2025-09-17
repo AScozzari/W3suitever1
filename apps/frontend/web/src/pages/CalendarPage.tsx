@@ -23,9 +23,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function CalendarPage() {
   const [currentModule, setCurrentModule] = useState('calendar');
-  const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
-  const { data: stores } = useQuery({ queryKey: ["/api/stores"] });
+  const { data: user, isLoading: userLoading } = useQuery({ queryKey: ["/api/auth/session"] });
+  const { data: stores, isLoading: storesLoading } = useQuery({ queryKey: ["/api/stores"] });
   const { toast } = useToast();
+  
+  // Ensure stores is an array
+  const storesList = Array.isArray(stores) ? stores : [];
 
   // State for calendar management
   const [selectedStore, setSelectedStore] = useState<string>('all');
@@ -60,7 +63,7 @@ export default function CalendarPage() {
     },
     {
       title: 'Store Attivi',
-      value: stores?.length?.toString() || '18',
+      value: storesList.length.toString() || '18',
       icon: MapPin,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
@@ -81,6 +84,33 @@ export default function CalendarPage() {
       description: "Eventi e turni sono stati sincronizzati"
     });
   };
+
+  // Show loading state if critical data is still loading
+  if (userLoading || storesLoading) {
+    return (
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        <div className="p-6 space-y-6" data-testid="calendar-page">
+          <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl p-6 border border-white/20">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-md w-1/3 mb-4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-2/3"></div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white/80 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-md w-1/2 mb-2"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-md w-1/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-md w-1/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
@@ -109,7 +139,7 @@ export default function CalendarPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutti gli store</SelectItem>
-                  {stores?.map(store => (
+                  {storesList.map((store: any) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
                     </SelectItem>
@@ -230,9 +260,8 @@ export default function CalendarPage() {
               <Card className="bg-white/80 backdrop-blur-md border-white/20">
                 <CardContent className="p-6">
                   <Calendar 
-                    selectedStore={selectedStore === 'all' ? stores?.[0] : stores?.find(s => s.id === selectedStore)}
+                    selectedStore={selectedStore === 'all' ? storesList[0] : storesList.find((s: any) => s.id === selectedStore)}
                     compactMode={false}
-                    viewMode={viewMode}
                   />
                 </CardContent>
               </Card>

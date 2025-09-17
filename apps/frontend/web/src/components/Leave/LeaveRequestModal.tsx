@@ -34,8 +34,16 @@ export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) 
   const isEditing = !!request;
   
   // Form state
-  const [formData, setFormData] = useState({
-    leaveType: request?.leaveType || 'vacation',
+  const [formData, setFormData] = useState<{
+    leaveType: 'vacation' | 'sick' | 'personal' | 'maternity' | 'paternity' | 'bereavement' | 'unpaid' | 'other';
+    startDate: Date | null;
+    endDate: Date | null;
+    reason: string;
+    notes: string;
+    coveredBy: string;
+    attachments: File[];
+  }>({
+    leaveType: (request?.leaveType as any) || 'vacation',
     startDate: request?.startDate ? new Date(request.startDate) : null,
     endDate: request?.endDate ? new Date(request.endDate) : null,
     reason: request?.reason || '',
@@ -74,7 +82,7 @@ export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) 
   
   // Validate form
   const handleValidation = () => {
-    const validation = validateRequest(formData as any, null, policies);
+    const validation = validateRequest(formData, null, policies);
     setErrors(validation.errors);
     return validation.valid;
   };
@@ -145,7 +153,7 @@ export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) 
             <Label>Tipo di Permesso</Label>
             <Select
               value={formData.leaveType}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, leaveType: value }))}
+              onValueChange={(value: typeof formData.leaveType) => setFormData(prev => ({ ...prev, leaveType: value }))}
             >
               <SelectTrigger data-testid="select-leave-type">
                 <SelectValue />
@@ -200,7 +208,7 @@ export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) 
                     from: formData.startDate,
                     to: formData.endDate
                   }}
-                  onSelect={(range) => {
+                  onSelect={(range: any) => {
                     setFormData(prev => ({
                       ...prev,
                       startDate: range?.from || null,
@@ -209,7 +217,7 @@ export function LeaveRequestModal({ request, onClose }: LeaveRequestModalProps) 
                   }}
                   locale={it}
                   initialFocus
-                  disabled={(date) => {
+                  disabled={(date: Date) => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     return date < today;

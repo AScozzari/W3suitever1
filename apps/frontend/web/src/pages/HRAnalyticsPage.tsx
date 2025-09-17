@@ -118,12 +118,12 @@ export default function HRAnalyticsPage() {
   }, [selectedPeriod]);
 
   // Fetch analytics data - hooks don't accept parameters
-  const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useDashboardMetrics();
-  const { data: attendanceData, refetch: refetchAttendance } = useAttendanceAnalytics();
-  const { data: leaveData, refetch: refetchLeave } = useLeaveAnalytics();
-  const { data: laborCostData, refetch: refetchLabor } = useLaborCostAnalytics();
-  const { data: shiftData, refetch: refetchShifts } = useShiftAnalytics();
-  const { data: demographicsData } = useEmployeeDemographics();
+  const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useDashboardMetrics(selectedPeriod);
+  const { data: attendanceData, refetch: refetchAttendance } = useAttendanceAnalytics(selectedPeriod, selectedStore !== 'all' ? selectedStore : undefined);
+  const { data: leaveData, refetch: refetchLeave } = useLeaveAnalytics(selectedPeriod, selectedDepartment !== 'all' ? selectedDepartment : undefined);
+  const { data: laborCostData, refetch: refetchLabor } = useLaborCostAnalytics(selectedPeriod);
+  const { data: shiftData, refetch: refetchShifts } = useShiftAnalytics(selectedPeriod, selectedStore !== 'all' ? selectedStore : undefined);
+  const { data: demographicsData } = useEmployeeDemographics({ storeId: selectedStore !== 'all' ? selectedStore : undefined, department: selectedDepartment !== 'all' ? selectedDepartment : undefined });
   const { data: complianceData, refetch: refetchCompliance } = useComplianceMetrics();
 
   const exportDashboard = useExportDashboard();
@@ -163,7 +163,7 @@ export default function HRAnalyticsPage() {
     try {
       await exportDashboard.mutateAsync({
         format: exportFormat,
-        view: activeView,
+        period: selectedPeriod,
         filters: {
           storeId: selectedStore !== 'all' ? selectedStore : undefined,
           department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
@@ -386,23 +386,24 @@ export default function HRAnalyticsPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AttendanceAnalytics
-                data={attendanceData as any}
+                period={selectedPeriod}
+                storeId={selectedStore !== 'all' ? selectedStore : undefined}
                 compact={true}
               />
               <LaborCostAnalytics
-                data={laborCostData as any}
+                period={selectedPeriod}
+                storeId={selectedStore !== 'all' ? selectedStore : undefined}
                 compact={true}
               />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ShiftAnalytics
-                data={shiftData as any}
-                compact={true}
+                period={selectedPeriod}
+                storeId={selectedStore !== 'all' ? selectedStore : undefined}
               />
               <ComplianceDashboard
-                data={complianceData as any}
-                compact={true}
+                showDetails={false}
               />
             </div>
           </TabsContent>
@@ -410,7 +411,6 @@ export default function HRAnalyticsPage() {
           {/* Attendance Tab */}
           <TabsContent value="attendance">
             <AttendanceAnalytics
-              data={attendanceData as any}
               period={selectedPeriod}
               storeId={selectedStore !== 'all' ? selectedStore : undefined}
             />
@@ -419,26 +419,25 @@ export default function HRAnalyticsPage() {
           {/* Leave Tab */}
           <TabsContent value="leave">
             <LeaveAnalytics
-              data={leaveData as any}
               period={selectedPeriod}
-              storeId={selectedStore !== 'all' ? selectedStore : undefined}
+              departmentId={selectedDepartment !== 'all' ? selectedDepartment : undefined}
             />
           </TabsContent>
 
           {/* Costs Tab */}
           <TabsContent value="costs">
             <LaborCostAnalytics
-              data={laborCostData as any}
               period={selectedPeriod}
-              storeId={selectedStore !== 'all' ? selectedStore : undefined}
-              department={selectedDepartment !== 'all' ? selectedDepartment : undefined}
+              filters={{
+                storeId: selectedStore !== 'all' ? selectedStore : undefined,
+                department: selectedDepartment !== 'all' ? selectedDepartment : undefined
+              }}
             />
           </TabsContent>
 
           {/* Shifts Tab */}
           <TabsContent value="shifts">
             <ShiftAnalytics
-              data={shiftData}
               period={selectedPeriod}
               storeId={selectedStore !== 'all' ? selectedStore : undefined}
             />
@@ -447,18 +446,17 @@ export default function HRAnalyticsPage() {
           {/* Demographics Tab */}
           <TabsContent value="demographics">
             <EmployeeDemographics
-              data={demographicsData}
-              storeId={selectedStore !== 'all' ? selectedStore : undefined}
-              department={selectedDepartment !== 'all' ? selectedDepartment : undefined}
+              filters={{
+                storeId: selectedStore !== 'all' ? selectedStore : undefined,
+                department: selectedDepartment !== 'all' ? selectedDepartment : undefined
+              }}
             />
           </TabsContent>
 
           {/* Compliance Tab */}
           <TabsContent value="compliance">
             <ComplianceDashboard
-              data={complianceData}
-              period={selectedPeriod}
-              storeId={selectedStore !== 'all' ? selectedStore : undefined}
+              showDetails={true}
             />
           </TabsContent>
         </Tabs>

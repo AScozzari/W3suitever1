@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, Copy, Edit, Trash, Plus, FileText, Clock, Users } from 'lucide-react';
+import { CalendarIcon, Copy, Edit, Trash, Plus, FileText, Clock, Users, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -65,6 +65,9 @@ export default function ShiftTemplateManager({
   const [selectedTemplate, setSelectedTemplate] = useState<ShiftTemplate | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState<string | null>(null);
   const [applyDateRange, setApplyDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -92,6 +95,7 @@ export default function ShiftTemplateManager({
       return;
     }
     
+    setIsCreatingTemplate(true);
     try {
       const response = await fetch('/api/hr/shift-templates', {
         method: 'POST',
@@ -125,6 +129,8 @@ export default function ShiftTemplateManager({
         description: "Impossibile creare il template",
         variant: "destructive"
       });
+    } finally {
+      setIsCreatingTemplate(false);
     }
   };
   
@@ -138,6 +144,7 @@ export default function ShiftTemplateManager({
       return;
     }
     
+    setIsApplyingTemplate(true);
     try {
       await onApplyTemplate(selectedTemplate.id, applyDateRange.from, applyDateRange.to);
       setIsApplyModalOpen(false);
@@ -149,10 +156,13 @@ export default function ShiftTemplateManager({
         description: "Impossibile applicare il template",
         variant: "destructive"
       });
+    } finally {
+      setIsApplyingTemplate(false);
     }
   };
   
   const handleDeleteTemplate = async (templateId: string) => {
+    setIsDeletingTemplate(templateId);
     try {
       const response = await fetch(`/api/hr/shift-templates/${templateId}`, {
         method: 'DELETE'
@@ -173,6 +183,8 @@ export default function ShiftTemplateManager({
         description: "Impossibile eliminare il template",
         variant: "destructive"
       });
+    } finally {
+      setIsDeletingTemplate(null);
     }
   };
   
@@ -234,6 +246,7 @@ export default function ShiftTemplateManager({
               setSelectedTemplate(template);
               setIsApplyModalOpen(true);
             }}
+            disabled={isApplyingTemplate}
             data-testid={`button-apply-${template.id}`}
           >
             <CalendarIcon className="h-4 w-4 mr-1" />
@@ -258,9 +271,14 @@ export default function ShiftTemplateManager({
             variant="ghost"
             size="sm"
             onClick={() => handleDeleteTemplate(template.id)}
+            disabled={isDeletingTemplate === template.id}
             data-testid={`button-delete-${template.id}`}
           >
-            <Trash className="h-4 w-4 text-red-500" />
+            {isDeletingTemplate === template.id ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash className="h-4 w-4 text-red-500" />
+            )}
           </Button>
         </div>
       </CardContent>
@@ -414,7 +432,7 @@ export default function ShiftTemplateManager({
                     >
                       <Checkbox
                         checked={newTemplate.rules?.daysOfWeek?.includes(day.value)}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={(checked: boolean) => {
                           const days = newTemplate.rules?.daysOfWeek || [];
                           setNewTemplate({
                             ...newTemplate,
@@ -438,8 +456,17 @@ export default function ShiftTemplateManager({
             <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
               Annulla
             </Button>
-            <Button onClick={handleCreateTemplate} className="bg-gradient-to-r from-orange-500 to-orange-600">
-              Crea Template
+            <Button 
+              onClick={handleCreateTemplate} 
+              disabled={isCreatingTemplate}
+              className="bg-gradient-to-r from-orange-500 to-orange-600"
+            >
+              {isCreatingTemplate ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              {isCreatingTemplate ? 'Creando...' : 'Crea Template'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -525,9 +552,14 @@ export default function ShiftTemplateManager({
             <Button 
               onClick={handleApplyTemplate} 
               className="bg-gradient-to-r from-orange-500 to-orange-600"
-              disabled={!applyDateRange.from || !applyDateRange.to}
+              disabled={!applyDateRange.from || !applyDateRange.to || isApplyingTemplate}
             >
-              Applica Template
+              {isApplyingTemplate ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CalendarIcon className="h-4 w-4 mr-2" />
+              )}
+              {isApplyingTemplate ? 'Applicando...' : 'Applica Template'}
             </Button>
           </DialogFooter>
         </DialogContent>

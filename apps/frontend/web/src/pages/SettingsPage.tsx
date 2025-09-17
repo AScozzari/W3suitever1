@@ -12,11 +12,14 @@ import {
   StandardPartitaIVAField,
   StandardPaeseField
 } from '../components/forms/StandardFields';
+import { z } from 'zod';
 import { 
   supplierValidationSchema, 
   legalEntityValidationSchema,
   storeValidationSchema,
   userValidationSchema,
+  italianPhoneSchema,
+  websiteUrlSchema,
   type SupplierValidation 
 } from '../lib/validation/italian-business-validation';
 
