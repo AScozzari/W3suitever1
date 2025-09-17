@@ -51,6 +51,81 @@ W3 Suite is a multi-tenant enterprise platform within a structured monorepo, off
   - **`[PUBLIC]`** = Schema dati riferimento (commercial_areas, countries, channels, etc.)
   - **`[brand_interface]`** = Schema Brand Interface (brand_users, brand_tenants, etc.)
 
+## 🎯 FRONTEND-KIT USAGE (OBBLIGATORIO)
+**Always use @w3suite/frontend-kit package for rapid development:**
+
+### Available Templates (Copy & Customize):
+- **ListPageTemplate**: For data tables and lists with sorting/filtering
+- **FormPageTemplate**: For create/edit forms with validation  
+- **DashboardTemplate**: For metrics dashboards with charts
+- **DetailPageTemplate**: For viewing entity details with tabs
+- **SettingsPageTemplate**: For configuration pages with sections
+- **EmptyPageTemplate**: For empty states with actions
+- **SafePageShell**: Error boundary wrapper for all pages
+
+### Development Workflow:
+1. **ALWAYS START WITH A TEMPLATE** - Never create pages from scratch
+2. **Copy the appropriate template** from packages/frontend-kit/templates/
+3. **Customize with your data** - Change endpoints, columns, fields
+4. **Use existing blocks** - DataTable, StatsCard, PageHeader, etc.
+5. **Apply design tokens** - Use CSS variables from frontend-kit
+
+### Time Savings:
+| Task | Old Way | With Frontend-kit |
+|------|---------|------------------|
+| List Page | 2-3 hours | 15 minutes |
+| Dashboard | 3-4 hours | 20 minutes |
+| Form Page | 2 hours | 10 minutes |
+| Settings | 2 hours | 15 minutes |
+
+### Import Pattern:
+```typescript
+// CORRECT - Import from frontend-kit
+import { ListPageTemplate } from '@w3suite/frontend-kit/templates';
+import { DataTable } from '@w3suite/frontend-kit/components/blocks';
+import { glassmorphism } from '@w3suite/frontend-kit/design-system';
+
+// WRONG - Don't recreate components
+const MyTable = () => { /* custom implementation */ }
+```
+
+### CSS Variables Available:
+- `--brand-orange`: WindTre orange (#FF6900 in HSL)
+- `--brand-purple`: WindTre purple (#7B2CBF in HSL)
+- `--glass-bg`: Glassmorphism background
+- `--glass-border`: Glassmorphism border
+- Spacing: `--space-xs`, `--space-sm`, `--space-md`, `--space-lg`
+- Shadows: `--shadow-sm`, `--shadow-md`, `--shadow-lg`
+
+### Component Blocks Available:
+- **DataTable**: Complete table with sort/filter/pagination
+- **StatsCard**: Metric display with trend
+- **PageHeader**: Standard page header
+- **EmptyState**: Empty data display
+- **ErrorState**: Error display
+- **LoadingState**: Loading skeletons
+- **FormSection**: Form with validation
+- **SearchBar**: Search with filters
+- **ActionBar**: Actions toolbar
+
+### Shadcn/UI Components (31 total):
+All components available in apps/frontend/web/src/components/ui/:
+accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox, command, dialog, dropdown-menu, form, hover-card, input, label, navigation-menu, popover, progress, radio-group, scroll-area, select, separator, sheet, skeleton, switch, table, tabs, textarea, toast, tooltip
+
+### DEVELOPMENT RULES:
+1. **NO custom components** when frontend-kit has one
+2. **NO inline styles** - use design tokens
+3. **NO custom layouts** - use templates
+4. **ALWAYS data-testid** on interactive elements
+5. **ALWAYS use TypeScript** interfaces
+
+### Error Prevention:
+- ✅ Check frontend-kit first before creating anything
+- ✅ Use templates to avoid structural issues
+- ✅ Import from @w3suite/frontend-kit, not create new
+- ❌ Never duplicate existing components
+- ❌ Never use hex colors directly - use CSS variables
+
 # System Architecture
 
 The project employs an enterprise monorepo structure, separating tenant-facing applications (W3 Suite) from a centralized Brand Interface HQ system.
@@ -82,6 +157,15 @@ A Node.js master process orchestrates an embedded Nginx reverse proxy, routing t
 - **Data Architecture Patterns**:
     - **Brand Base + Tenant Override**: For entities managed by both Brand and Tenants (e.g., Suppliers, Products), using a base table and an override table.
     - **Brand-Only**: For entities exclusively managed by Brand (e.g., Stores, Legal Entities), with tenant read-only access controlled by `assigned_tenants` array.
+
+**Frontend Package Structure:**
+- **@w3suite/frontend-kit**: Centralized frontend package with:
+  - Design system with WindTre tokens and glassmorphism
+  - 7 page templates for rapid development
+  - 9 reusable component blocks
+  - 3 UI patterns (forms, search, actions)
+  - 3 custom React hooks
+  - Complete shadcn/ui component library (31 components)
 
 # External Dependencies
 
