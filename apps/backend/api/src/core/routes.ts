@@ -16,9 +16,11 @@ import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
 import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
 import { objectAclService } from "./objectAcl";
+import { HRStorage } from "./hr-storage";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
+const hrStorage = new HRStorage();
 
 // Zod validation schemas for logs API
 const getLogsQuerySchema = z.object({
@@ -2786,6 +2788,399 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting expired notifications:", error);
       res.status(500).json({ error: "Failed to delete expired notifications" });
+    }
+  });
+
+  // ==================== HR TIME TRACKING ROUTES ====================
+  
+  // Clock In
+  app.post('/api/hr/time-tracking/clock-in', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { storeId, trackingMethod, geoLocation, deviceInfo, shiftId, notes } = req.body;
+      
+      if (!storeId || !trackingMethod) {
+        return res.status(400).json({ error: 'Store ID and tracking method are required' });
+      }
+
+      // Check for active session
+      const activeSession = await hrStorage.getActiveSession(userId, tenantId);
+      if (activeSession) {
+        return res.status(409).json({ error: 'Active session already exists. Clock out first.' });
+      }
+
+      const entry = await hrStorage.clockIn({
+        tenantId,
+        userId,
+        storeId,
+        trackingMethod,
+        geoLocation,
+        deviceInfo,
+        shiftId,
+        notes,
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error('Clock in error:', error);
+      res.status(500).json({ error: 'Failed to clock in' });
+    }
+  });
+
+  // Clock Out
+  app.post('/api/hr/time-tracking/:id/clock-out', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { notes, geoLocation } = req.body;
+      
+      // Verify entry belongs to user
+      const entry = await hrStorage.getTimeTrackingById(req.params.id, tenantId);
+      if (!entry || entry.userId !== userId) {
+        return res.status(404).json({ error: 'Time tracking entry not found' });
+      }
+
+      if (entry.clockOut) {
+        return res.status(400).json({ error: 'Already clocked out' });
+      }
+
+      const updated = await hrStorage.clockOut(req.params.id, tenantId, notes);
+      res.json(updated);
+    } catch (error) {
+      console.error('Clock out error:', error);
+      res.status(500).json({ error: 'Failed to clock out' });
+    }
+  });
+
+  // Get Current Session
+  app.get('/api/hr/time-tracking/current', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const session = await hrStorage.getActiveSession(userId, tenantId);
+      
+      if (!session) {
+        return res.json(null);
+      }
+
+      // Calculate elapsed time
+      const elapsedMinutes = Math.floor((Date.now() - new Date(session.clockIn).getTime()) / 60000);
+      
+      res.json({
+        ...session,
+        elapsedMinutes,
+        isOvertime: elapsedMinutes > 480,
+        requiresBreak: elapsedMinutes > 360,
+      });
+    } catch (error) {
+      console.error('Get current session error:', error);
+      res.status(500).json({ error: 'Failed to get current session' });
+    }
+  });
+
+  // Get Time Tracking Entries
+  app.get('/api/hr/time-tracking/entries', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'EMPLOYEE';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const filters = {
+        userId: req.query.userId || userId,
+        storeId: req.query.storeId,
+        startDate: req.query.startDate,
+        endDate: req.query.endDate,
+        status: req.query.status,
+      };
+
+      // Check permissions for viewing other users' entries
+      if (filters.userId !== userId && userRole !== 'ADMIN' && userRole !== 'HR_MANAGER') {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+
+      const entries = await hrStorage.getTimeTrackingForUser(
+        filters.userId,
+        { startDate: filters.startDate, endDate: filters.endDate }
+      );
+
+      res.json(entries);
+    } catch (error) {
+      console.error('Get entries error:', error);
+      res.status(500).json({ error: 'Failed to get time tracking entries' });
+    }
+  });
+
+  // Update Time Tracking Entry
+  app.put('/api/hr/time-tracking/entries/:id', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'EMPLOYEE';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const entry = await hrStorage.getTimeTrackingById(req.params.id, tenantId);
+      if (!entry) {
+        return res.status(404).json({ error: 'Entry not found' });
+      }
+
+      // Check permissions
+      const canEdit = entry.userId === userId || 
+                     userRole === 'ADMIN' || 
+                     userRole === 'HR_MANAGER' ||
+                     (userRole === 'STORE_MANAGER' && entry.storeId === req.user?.storeId);
+      
+      if (!canEdit) {
+        return res.status(403).json({ error: 'Insufficient permissions to edit' });
+      }
+
+      const updated = await hrStorage.updateTimeTracking(req.params.id, req.body, tenantId);
+      res.json(updated);
+    } catch (error) {
+      console.error('Update entry error:', error);
+      res.status(500).json({ error: 'Failed to update entry' });
+    }
+  });
+
+  // Approve Time Tracking Entry
+  app.post('/api/hr/time-tracking/entries/:id/approve', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'EMPLOYEE';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check approval permissions
+      const canApprove = userRole === 'ADMIN' || 
+                        userRole === 'HR_MANAGER' ||
+                        userRole === 'STORE_MANAGER' ||
+                        userRole === 'TEAM_LEADER';
+      
+      if (!canApprove) {
+        return res.status(403).json({ error: 'Insufficient permissions to approve' });
+      }
+
+      const { comments } = req.body;
+      
+      const approved = await hrStorage.approveTimeTracking(req.params.id, userId, comments, tenantId);
+      res.json(approved);
+    } catch (error) {
+      console.error('Approve entry error:', error);
+      res.status(500).json({ error: 'Failed to approve entry' });
+    }
+  });
+
+  // Dispute Time Tracking Entry
+  app.post('/api/hr/time-tracking/entries/:id/dispute', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const { reason } = req.body;
+      
+      if (!reason) {
+        return res.status(400).json({ error: 'Dispute reason is required' });
+      }
+
+      const disputed = await hrStorage.disputeTimeTracking(req.params.id, reason, tenantId);
+      res.json(disputed);
+    } catch (error) {
+      console.error('Dispute entry error:', error);
+      res.status(500).json({ error: 'Failed to dispute entry' });
+    }
+  });
+
+  // Start Break
+  app.post('/api/hr/time-tracking/:id/break/start', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const entry = await hrStorage.getTimeTrackingById(req.params.id, tenantId);
+      if (!entry || entry.userId !== userId) {
+        return res.status(404).json({ error: 'Entry not found' });
+      }
+
+      const updated = await hrStorage.startBreak(req.params.id, tenantId);
+      res.json(updated);
+    } catch (error) {
+      console.error('Start break error:', error);
+      res.status(500).json({ error: 'Failed to start break' });
+    }
+  });
+
+  // End Break
+  app.post('/api/hr/time-tracking/:id/break/end', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const entry = await hrStorage.getTimeTrackingById(req.params.id, tenantId);
+      if (!entry || entry.userId !== userId) {
+        return res.status(404).json({ error: 'Entry not found' });
+      }
+
+      const updated = await hrStorage.endBreak(req.params.id, tenantId);
+      res.json(updated);
+    } catch (error) {
+      console.error('End break error:', error);
+      res.status(500).json({ error: 'Failed to end break' });
+    }
+  });
+
+  // Get Time Tracking Reports
+  app.get('/api/hr/time-tracking/reports', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userRole = req.user?.role || 'EMPLOYEE';
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check report permissions
+      const canViewReports = userRole === 'ADMIN' || 
+                           userRole === 'HR_MANAGER' ||
+                           userRole === 'STORE_MANAGER' ||
+                           userRole === 'AREA_MANAGER';
+      
+      if (!canViewReports) {
+        return res.status(403).json({ error: 'Insufficient permissions for reports' });
+      }
+
+      const { userId, startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: 'Start date and end date are required' });
+      }
+
+      const entries = await hrStorage.getTimeTrackingForUser(
+        userId as string,
+        { startDate: startDate as string, endDate: endDate as string }
+      );
+
+      // Calculate report metrics
+      const totalMinutes = entries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0);
+      const overtimeMinutes = entries.reduce((sum, e) => sum + (e.overtimeMinutes || 0), 0);
+      const breakMinutes = entries.reduce((sum, e) => sum + (e.breakMinutes || 0), 0);
+      const holidayMinutes = entries.filter(e => e.holidayBonus).reduce((sum, e) => sum + (e.totalMinutes || 0), 0);
+
+      const report = {
+        userId,
+        period: `${startDate} - ${endDate}`,
+        totalHours: totalMinutes / 60,
+        regularHours: (totalMinutes - overtimeMinutes) / 60,
+        overtimeHours: overtimeMinutes / 60,
+        holidayHours: holidayMinutes / 60,
+        breakMinutes,
+        daysWorked: entries.length,
+        averageHoursPerDay: entries.length > 0 ? (totalMinutes / 60) / entries.length : 0,
+        entriesCount: entries.length,
+        disputedEntries: entries.filter(e => e.status === 'disputed').length,
+      };
+
+      res.json(report);
+    } catch (error) {
+      console.error('Get reports error:', error);
+      res.status(500).json({ error: 'Failed to get reports' });
+    }
+  });
+
+  // Get Team Reports
+  app.get('/api/hr/time-tracking/reports/team', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userRole = req.user?.role || 'EMPLOYEE';
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Check team report permissions
+      const canViewTeamReports = userRole === 'ADMIN' || 
+                                userRole === 'HR_MANAGER' ||
+                                userRole === 'STORE_MANAGER' ||
+                                userRole === 'AREA_MANAGER';
+      
+      if (!canViewTeamReports) {
+        return res.status(403).json({ error: 'Insufficient permissions for team reports' });
+      }
+
+      const { storeId, startDate, endDate } = req.query;
+      
+      if (!storeId || !startDate || !endDate) {
+        return res.status(400).json({ error: 'Store ID, start date and end date are required' });
+      }
+
+      // Get all users for the store
+      const storeUsers = await storage.getUsersByStore(storeId as string, tenantId);
+      
+      const teamReports = await Promise.all(
+        storeUsers.map(async (user) => {
+          const entries = await hrStorage.getTimeTrackingForUser(
+            user.id,
+            { startDate: startDate as string, endDate: endDate as string }
+          );
+
+          const totalMinutes = entries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0);
+          const overtimeMinutes = entries.reduce((sum, e) => sum + (e.overtimeMinutes || 0), 0);
+
+          return {
+            userId: user.id,
+            userName: `${user.firstName} ${user.lastName}`,
+            period: `${startDate} - ${endDate}`,
+            totalHours: totalMinutes / 60,
+            regularHours: (totalMinutes - overtimeMinutes) / 60,
+            overtimeHours: overtimeMinutes / 60,
+            daysWorked: entries.length,
+            averageHoursPerDay: entries.length > 0 ? (totalMinutes / 60) / entries.length : 0,
+            entriesCount: entries.length,
+            disputedEntries: entries.filter(e => e.status === 'disputed').length,
+          };
+        })
+      );
+
+      res.json(teamReports);
+    } catch (error) {
+      console.error('Get team reports error:', error);
+      res.status(500).json({ error: 'Failed to get team reports' });
     }
   });
 

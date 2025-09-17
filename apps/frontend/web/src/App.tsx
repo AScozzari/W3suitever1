@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 import CalendarPage from "./pages/CalendarPage";
+import TimeTrackingPage from "./pages/TimeTrackingPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -38,6 +39,9 @@ function Router() {
       </Route>
       <Route path="/:tenant/calendar">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><CalendarPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/time-tracking">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><TimeTrackingPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/demo-fields">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><StandardFieldsDemo /></AuthenticatedApp></TenantWrapper>}

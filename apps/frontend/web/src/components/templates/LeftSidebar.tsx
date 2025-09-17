@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { 
   Home, Users, Zap, Briefcase, Building, UserPlus, 
   FileText, ShoppingBag, Settings, ChevronLeft, 
-  ChevronRight, Menu, Calendar
+  ChevronRight, Menu, Calendar, Clock
 } from 'lucide-react';
 
 // Palette colori W3 Suite - Consistent con Header
@@ -41,6 +41,7 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'crm', label: 'CRM', icon: Users },
   { id: 'ai', label: 'AI Tools', icon: Zap },
   { id: 'calendario', label: 'Calendario', icon: Calendar, path: '/calendar' },
+  { id: 'time-tracking', label: 'Time Tracking', icon: Clock, path: '/time-tracking' },
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
   { id: 'hr', label: 'Human Resources', icon: UserPlus },
