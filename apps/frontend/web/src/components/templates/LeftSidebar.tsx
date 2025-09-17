@@ -56,6 +56,7 @@ const defaultMenuItems: MenuItem[] = [
     id: 'hr', 
     label: 'Human Resources', 
     icon: UserPlus, 
+    path: '/hr/dashboard',
     hasSubmenu: true,
     submenuItems: [
       { id: 'hr-dashboard', label: 'HR Overview', icon: Home, path: '/hr/dashboard' },
@@ -82,8 +83,8 @@ export default function LeftSidebar({
   currentModule = 'dashboard',
   onModuleChange,
   menuItems = defaultMenuItems,
-  autoCollapse = true,
-  autoCollapseDelay = 1500
+  autoCollapse = false,
+  autoCollapseDelay = 3000
 }: LeftSidebarProps) {
   const [location, navigate] = useLocation();
   const [collapseTimer, setCollapseTimer] = useState<NodeJS.Timeout | null>(null);

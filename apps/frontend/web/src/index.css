@@ -1,4 +1,68 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* W3 Suite WindTre Design System - Glassmorphism Integration */
+
+:root {
+  /* WindTre Brand Colors - HSL Format */
+  --brand-orange: 24 100% 50%; /* #FF6900 */
+  --brand-purple: 273 58% 46%; /* #7B2CBF */
+  --brand-white: 0 0% 100%; /* #FFFFFF */
+  --brand-black: 0 0% 10%; /* #1A1A1A */
+  
+  /* Semantic Colors - HSL Format */
+  --primary: 24 100% 50%; /* var(--brand-orange) */
+  --primary-hover: 24 100% 45%;
+  --primary-active: 24 100% 40%;
+  --secondary: 273 58% 46%; /* var(--brand-purple) */
+  --secondary-hover: 273 58% 42%;
+  --secondary-active: 273 58% 38%;
+  --success: 162 47% 40%; /* #10b981 */
+  --warning: 35 92% 50%; /* #f59e0b */
+  --error: 0 72% 61%; /* #ef4444 */
+  --info: 217 91% 60%; /* #3b82f6 */
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-heavy: rgba(255, 255, 255, 0.12);
+  --glass-bg-light: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-blur: 24px;
+  --glass-blur-heavy: 32px;
+  --glass-blur-light: 16px;
+  
+  /* Shadows */
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --shadow-glass-sm: 0 4px 16px 0 rgba(31, 38, 135, 0.25);
+  --shadow-glass-lg: 0 12px 48px 0 rgba(31, 38, 135, 0.45);
+  
+  /* Text Colors */
+  --text-primary: hsl(0 0% 10%);
+  --text-secondary: hsl(0 0% 32%);
+  --text-tertiary: hsl(0 0% 45%);
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* Spacing */
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  
+  /* Transitions */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
 
 * {
   margin: 0;
@@ -10,6 +74,80 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* Glassmorphism Classes */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-heavy {
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--glass-blur-heavy));
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-light {
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--glass-blur-light));
+  -webkit-backdrop-filter: blur(var(--glass-blur-light));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-heavy);
+  box-shadow: var(--shadow-glass-lg);
+  transform: translateY(-2px);
+  transition: all var(--duration-base) var(--ease-in-out);
+}
+
+/* WindTre Gradient Background */
+.windtre-bg {
+  background: linear-gradient(135deg, hsl(24, 100%, 50%) 0%, hsl(273, 58%, 46%) 100%);
+}
+
+.windtre-glow {
+  box-shadow: 0 0 40px rgba(255, 105, 0, 0.3), 0 0 80px rgba(123, 44, 191, 0.2);
+}
+
+/* Override Tailwind Colors for WindTre */
+.text-windtre-orange {
+  color: hsl(24, 100%, 50%);
+}
+
+.text-windtre-purple {
+  color: hsl(273, 58%, 46%);
+}
+
+.bg-windtre-orange {
+  background-color: hsl(24, 100%, 50%);
+}
+
+.bg-windtre-purple {
+  background-color: hsl(273, 58%, 46%);
+}
+
+.border-windtre-orange {
+  border-color: hsl(24, 100%, 50%);
+}
+
+.border-windtre-purple {
+  border-color: hsl(273, 58%, 46%);
 }
 
 /* Animazioni fluide per modal e transizioni */
@@ -72,6 +210,63 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Glass Shimmer Effect */
+.glass-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shimmer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+/* Glass Glow Effect */
+.glass-glow {
+  position: relative;
+}
+
+.glass-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    45deg,
+    hsl(24, 100%, 50%),
+    hsl(273, 58%, 46%),
+    hsl(24, 100%, 50%)
+  );
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-in-out);
+  z-index: -1;
+  filter: blur(10px);
+}
+
+.glass-glow:hover::after {
+  opacity: 0.3;
 }
 
 /* Transizioni globali fluide */

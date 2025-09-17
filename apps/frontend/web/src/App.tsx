@@ -100,11 +100,7 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr">
-        {(params) => {
-          // Redirect to canonical HR dashboard path
-          window.location.href = `/${params.tenant}/hr/dashboard`;
-          return null;
-        }}
+        {(params) => <Redirect to={`/${params.tenant}/hr/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/hr-test">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRTestPage /></AuthenticatedApp></TenantWrapper>}
@@ -161,13 +157,8 @@ function TenantRoot() {
   const params = useParams();
   const tenant = (params as any).tenant;
   
-  useEffect(() => {
-    // Sempre vai alla dashboard
-    window.location.href = `/${tenant}/dashboard`;
-  }, [tenant]);
-
-  // Loading screen durante il check (nascosto)
-  return null;
+  // Redirect SPA senza reload
+  return <Redirect to={`/${tenant}/dashboard`} replace />;
 }
 
 // Pagina login dedicata
