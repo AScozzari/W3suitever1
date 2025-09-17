@@ -9,7 +9,7 @@ import { useState, useEffect, useMemo } from 'react';
 // Hook for leave balance
 export function useLeaveBalance(userId?: string) {
   const { user } = useAuth();
-  const targetUserId = userId || user?.id;
+  const targetUserId = userId || (user && typeof user === 'object' && 'id' in user ? (user as any).id : undefined);
   
   return useQuery({
     queryKey: ['/api/hr/leave/balance', targetUserId],
@@ -227,7 +227,7 @@ export function useTeamCalendar(filters?: {
 
 // Hook for approval queue
 export function useApprovalQueue() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: any };
   
   const { data: requests = [], ...query } = useQuery({
     queryKey: ['/api/hr/leave/requests', { status: 'pending' }],

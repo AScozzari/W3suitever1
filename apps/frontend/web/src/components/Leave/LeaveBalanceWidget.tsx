@@ -19,7 +19,7 @@ interface LeaveBalanceWidgetProps {
 
 export function LeaveBalanceWidget({ userId, compact = false, className }: LeaveBalanceWidgetProps) {
   const { user } = useAuth();
-  const targetUserId = userId || user?.id;
+  const targetUserId = userId || (user && typeof user === 'object' && 'id' in user ? (user as any).id : undefined);
   const { data: balance, isLoading, error } = useLeaveBalance(targetUserId);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 

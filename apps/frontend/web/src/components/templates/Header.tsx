@@ -643,8 +643,8 @@ export default function Header({
               }}
               data-testid="header-user-avatar"
               title={user?.firstName && user?.lastName 
-                ? `${user.firstName} ${user.lastName}` 
-                : user?.email || 'User Avatar'}
+                ? `${(user as any)?.firstName} ${(user as any)?.lastName}` 
+                : (user as any)?.email || 'User Avatar'}
             >
               {/* Loading overlay */}
               {userAvatar.isLoading && (
@@ -685,7 +685,7 @@ export default function Header({
             {!isMobile && (
               <>
                 <div style={{ fontSize: '14px', fontWeight: 500, color: '#1f2937' }}>
-                  {user?.firstName || user?.email?.split('@')[0] || 'Utente'}
+                  {(user && typeof user === 'object' && 'firstName' in user ? user.firstName : null) || (user && typeof user === 'object' && 'email' in user ? (user as any).email?.split('@')[0] : null) || 'Utente'}
                 </div>
                 <ChevronDown size={14} style={{ 
                   transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',

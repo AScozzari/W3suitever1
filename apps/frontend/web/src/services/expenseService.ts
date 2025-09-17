@@ -1,5 +1,5 @@
 // Expense Management Service
-import { apiClient } from '@/lib/api';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
 
 export interface ExpenseReport {
   id: string;
@@ -98,115 +98,56 @@ class ExpenseService {
       });
     }
     
-    const response = await apiClient(`/api/hr/expenses/reports?${params.toString()}`);
-    if (!response.ok) throw new Error('Failed to fetch expense reports');
-    return response.json();
+    return apiGet(`/api/hr/expenses/reports?${params.toString()}`);
   }
 
   async getExpenseReport(id: string): Promise<ExpenseReport> {
-    const response = await apiClient(`/api/hr/expenses/reports/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch expense report');
-    return response.json();
+    return apiGet(`/api/hr/expenses/reports/${id}`);
   }
 
   async createExpenseReport(data: Partial<ExpenseReport>): Promise<ExpenseReport> {
-    const response = await apiClient('/api/hr/expenses/reports', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to create expense report');
-    return response.json();
+    return apiPost('/api/hr/expenses/reports', data);
   }
 
   async updateExpenseReport(id: string, data: Partial<ExpenseReport>): Promise<ExpenseReport> {
-    const response = await apiClient(`/api/hr/expenses/reports/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to update expense report');
-    return response.json();
+    return apiPut(`/api/hr/expenses/reports/${id}`, data);
   }
 
   async deleteExpenseReport(id: string): Promise<void> {
-    const response = await apiClient(`/api/hr/expenses/reports/${id}`, {
-      method: 'DELETE'
-    });
-    if (!response.ok) throw new Error('Failed to delete expense report');
+    await apiDelete(`/api/hr/expenses/reports/${id}`);
   }
 
   async submitExpenseReport(id: string): Promise<ExpenseReport> {
-    const response = await apiClient(`/api/hr/expenses/reports/${id}/submit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (!response.ok) throw new Error('Failed to submit expense report');
-    return response.json();
+    return apiPost(`/api/hr/expenses/reports/${id}/submit`);
   }
 
   async approveExpenseReport(id: string, comments?: string): Promise<ExpenseReport> {
-    const response = await apiClient(`/api/hr/expenses/reports/${id}/approve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comments })
-    });
-    if (!response.ok) throw new Error('Failed to approve expense report');
-    return response.json();
+    return apiPost(`/api/hr/expenses/reports/${id}/approve`, { comments });
   }
 
   async rejectExpenseReport(id: string, reason: string): Promise<ExpenseReport> {
-    const response = await apiClient(`/api/hr/expenses/reports/${id}/reject`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason })
-    });
-    if (!response.ok) throw new Error('Failed to reject expense report');
-    return response.json();
+    return apiPost(`/api/hr/expenses/reports/${id}/reject`, { reason });
   }
 
   async reimburseExpenseReport(id: string, paymentMethod: string): Promise<ExpenseReport> {
-    const response = await apiClient(`/api/hr/expenses/reports/${id}/reimburse`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paymentMethod })
-    });
-    if (!response.ok) throw new Error('Failed to reimburse expense report');
-    return response.json();
+    return apiPost(`/api/hr/expenses/reports/${id}/reimburse`, { paymentMethod });
   }
 
   // Expense Items
   async getExpenseItems(reportId: string): Promise<ExpenseItem[]> {
-    const response = await apiClient(`/api/hr/expenses/reports/${reportId}/items`);
-    if (!response.ok) throw new Error('Failed to fetch expense items');
-    return response.json();
+    return apiGet(`/api/hr/expenses/reports/${reportId}/items`);
   }
 
   async createExpenseItem(data: Partial<ExpenseItem>): Promise<ExpenseItem> {
-    const response = await apiClient('/api/hr/expenses/items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to create expense item');
-    return response.json();
+    return apiPost('/api/hr/expenses/items', data);
   }
 
   async updateExpenseItem(id: string, data: Partial<ExpenseItem>): Promise<ExpenseItem> {
-    const response = await apiClient(`/api/hr/expenses/items/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to update expense item');
-    return response.json();
+    return apiPut(`/api/hr/expenses/items/${id}`, data);
   }
 
   async deleteExpenseItem(id: string): Promise<void> {
-    const response = await apiClient(`/api/hr/expenses/items/${id}`, {
-      method: 'DELETE'
-    });
-    if (!response.ok) throw new Error('Failed to delete expense item');
+    await apiDelete(`/api/hr/expenses/items/${id}`);
   }
 
   // Analytics
@@ -215,9 +156,7 @@ class ExpenseService {
     if (startDate) params.append('startDate', startDate.toISOString());
     if (endDate) params.append('endDate', endDate.toISOString());
     
-    const response = await apiClient(`/api/hr/expenses/analytics?${params.toString()}`);
-    if (!response.ok) throw new Error('Failed to fetch expense analytics');
-    return response.json();
+    return apiGet(`/api/hr/expenses/analytics?${params.toString()}`);
   }
 
   async getExpensesByCategory(startDate?: Date, endDate?: Date): Promise<Array<{ category: string; amount: number; count: number }>> {
@@ -225,37 +164,21 @@ class ExpenseService {
     if (startDate) params.append('startDate', startDate.toISOString());
     if (endDate) params.append('endDate', endDate.toISOString());
     
-    const response = await apiClient(`/api/hr/expenses/categories?${params.toString()}`);
-    if (!response.ok) throw new Error('Failed to fetch expenses by category');
-    return response.json();
+    return apiGet(`/api/hr/expenses/categories?${params.toString()}`);
   }
 
   // Policies
   async getExpensePolicy(): Promise<ExpensePolicy> {
-    const response = await apiClient('/api/hr/expenses/policy');
-    if (!response.ok) throw new Error('Failed to fetch expense policy');
-    return response.json();
+    return apiGet('/api/hr/expenses/policy');
   }
 
   async updateExpensePolicy(policy: Partial<ExpensePolicy>): Promise<ExpensePolicy> {
-    const response = await apiClient('/api/hr/expenses/policy', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(policy)
-    });
-    if (!response.ok) throw new Error('Failed to update expense policy');
-    return response.json();
+    return apiPut('/api/hr/expenses/policy', policy);
   }
 
   // Receipt Scanning (Mock)
   async scanReceipt(imageData: string): Promise<OCRResult> {
-    const response = await apiClient('/api/hr/expenses/receipts/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageData })
-    });
-    if (!response.ok) throw new Error('Failed to scan receipt');
-    return response.json();
+    return apiPost('/api/hr/expenses/receipts/scan', { imageData });
   }
 
   // Receipt Upload
@@ -264,7 +187,7 @@ class ExpenseService {
     formData.append('file', file);
     formData.append('reportId', reportId);
     
-    const response = await apiClient('/api/hr/expenses/receipts/upload', {
+    const response = await fetch('/api/hr/expenses/receipts/upload', {
       method: 'POST',
       body: formData
     });

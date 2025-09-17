@@ -117,49 +117,14 @@ export default function HRAnalyticsPage() {
     setDateRange({ start, end });
   }, [selectedPeriod]);
 
-  // Fetch analytics data
-  const { metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useDashboardMetrics({
-    storeId: selectedStore !== 'all' ? selectedStore : undefined,
-    department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
-    startDate: format(dateRange.start, 'yyyy-MM-dd'),
-    endDate: format(dateRange.end, 'yyyy-MM-dd'),
-  });
-
-  const { data: attendanceData, refetch: refetchAttendance } = useAttendanceAnalytics({
-    storeId: selectedStore !== 'all' ? selectedStore : undefined,
-    startDate: format(dateRange.start, 'yyyy-MM-dd'),
-    endDate: format(dateRange.end, 'yyyy-MM-dd'),
-  });
-
-  const { data: leaveData, refetch: refetchLeave } = useLeaveAnalytics({
-    storeId: selectedStore !== 'all' ? selectedStore : undefined,
-    startDate: format(dateRange.start, 'yyyy-MM-dd'),
-    endDate: format(dateRange.end, 'yyyy-MM-dd'),
-  });
-
-  const { data: laborCostData, refetch: refetchLabor } = useLaborCostAnalytics({
-    storeId: selectedStore !== 'all' ? selectedStore : undefined,
-    department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
-    startDate: format(dateRange.start, 'yyyy-MM-dd'),
-    endDate: format(dateRange.end, 'yyyy-MM-dd'),
-  });
-
-  const { data: shiftData, refetch: refetchShifts } = useShiftAnalytics({
-    storeId: selectedStore !== 'all' ? selectedStore : undefined,
-    startDate: format(dateRange.start, 'yyyy-MM-dd'),
-    endDate: format(dateRange.end, 'yyyy-MM-dd'),
-  });
-
-  const { data: demographicsData } = useEmployeeDemographics({
-    storeId: selectedStore !== 'all' ? selectedStore : undefined,
-    department: selectedDepartment !== 'all' ? selectedDepartment : undefined,
-  });
-
-  const { data: complianceData, refetch: refetchCompliance } = useComplianceMetrics({
-    storeId: selectedStore !== 'all' ? selectedStore : undefined,
-    startDate: format(dateRange.start, 'yyyy-MM-dd'),
-    endDate: format(dateRange.end, 'yyyy-MM-dd'),
-  });
+  // Fetch analytics data - hooks don't accept parameters
+  const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useDashboardMetrics();
+  const { data: attendanceData, refetch: refetchAttendance } = useAttendanceAnalytics();
+  const { data: leaveData, refetch: refetchLeave } = useLeaveAnalytics();
+  const { data: laborCostData, refetch: refetchLabor } = useLaborCostAnalytics();
+  const { data: shiftData, refetch: refetchShifts } = useShiftAnalytics();
+  const { data: demographicsData } = useEmployeeDemographics();
+  const { data: complianceData, refetch: refetchCompliance } = useComplianceMetrics();
 
   const exportDashboard = useExportDashboard();
 
@@ -194,10 +159,10 @@ export default function HRAnalyticsPage() {
   };
 
   // Handle export
-  const handleExport = async (format: 'pdf' | 'excel' | 'csv') => {
+  const handleExport = async (exportFormat: 'pdf' | 'excel' | 'csv') => {
     try {
       await exportDashboard.mutateAsync({
-        format,
+        format: exportFormat,
         view: activeView,
         filters: {
           storeId: selectedStore !== 'all' ? selectedStore : undefined,
@@ -208,7 +173,7 @@ export default function HRAnalyticsPage() {
       });
       toast({
         title: "Export completato",
-        description: `Dashboard esportato in formato ${format.toUpperCase()}`,
+        description: `Dashboard esportato in formato ${exportFormat.toUpperCase()}`,
       });
     } catch (error) {
       toast({
@@ -220,8 +185,9 @@ export default function HRAnalyticsPage() {
   };
 
   // Check permissions
-  const canViewFullAnalytics = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE'].includes(user?.role || '');
-  const canExport = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE', 'TEAM_LEADER'].includes(user?.role || '');
+  const userRole = (user as any)?.role || '';
+  const canViewFullAnalytics = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE'].includes(userRole);
+  const canExport = ['HR_MANAGER', 'ADMIN', 'EXECUTIVE', 'TEAM_LEADER'].includes(userRole);
 
   if (!canViewFullAnalytics) {
     return (
@@ -345,7 +311,7 @@ export default function HRAnalyticsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti i negozi</SelectItem>
-                {stores?.map(store => (
+                {stores?.map((store: any) => (
                   <SelectItem key={store.id} value={store.id}>
                     {store.name}
                   </SelectItem>
@@ -420,22 +386,22 @@ export default function HRAnalyticsPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AttendanceAnalytics
-                data={attendanceData}
+                data={attendanceData as any}
                 compact={true}
               />
               <LaborCostAnalytics
-                data={laborCostData}
+                data={laborCostData as any}
                 compact={true}
               />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ShiftAnalytics
-                data={shiftData}
+                data={shiftData as any}
                 compact={true}
               />
               <ComplianceDashboard
-                data={complianceData}
+                data={complianceData as any}
                 compact={true}
               />
             </div>
@@ -444,7 +410,7 @@ export default function HRAnalyticsPage() {
           {/* Attendance Tab */}
           <TabsContent value="attendance">
             <AttendanceAnalytics
-              data={attendanceData}
+              data={attendanceData as any}
               period={selectedPeriod}
               storeId={selectedStore !== 'all' ? selectedStore : undefined}
             />
@@ -453,7 +419,7 @@ export default function HRAnalyticsPage() {
           {/* Leave Tab */}
           <TabsContent value="leave">
             <LeaveAnalytics
-              data={leaveData}
+              data={leaveData as any}
               period={selectedPeriod}
               storeId={selectedStore !== 'all' ? selectedStore : undefined}
             />
@@ -462,7 +428,7 @@ export default function HRAnalyticsPage() {
           {/* Costs Tab */}
           <TabsContent value="costs">
             <LaborCostAnalytics
-              data={laborCostData}
+              data={laborCostData as any}
               period={selectedPeriod}
               storeId={selectedStore !== 'all' ? selectedStore : undefined}
               department={selectedDepartment !== 'all' ? selectedDepartment : undefined}

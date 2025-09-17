@@ -336,8 +336,8 @@ export const useExpensePolicies = () => {
 export const useReceiptScanner = () => {
   const { toast } = useToast();
   const [scanning, setScanning] = useState(false);
-  const [scanResult, setScanResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [scanResult, setScanResult] = useState<any>(null);
+  const [error, setError] = useState<any>(null);
 
   const scanReceipt = useCallback(async (imageData: string) => {
     setScanning(true);
@@ -346,10 +346,10 @@ export const useReceiptScanner = () => {
       // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       const result = await expenseService.scanReceipt(imageData);
-      setScanResult(result);
+      setScanResult(result as any);
       return result;
     } catch (err) {
-      setError(err);
+      setError(err as any);
       toast({
         title: 'Errore',
         description: 'Scansione scontrino fallita',

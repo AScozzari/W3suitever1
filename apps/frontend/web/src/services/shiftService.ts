@@ -359,7 +359,7 @@ class ShiftService {
    * Get shift color based on type
    */
   getShiftColor(shiftType: string): string {
-    const colors = {
+    const colors: Record<string, string> = {
       morning: '#FF6900',
       afternoon: '#3b82f6',
       night: '#7B2CBF',
@@ -367,7 +367,7 @@ class ShiftService {
       split: '#f59e0b',
       on_call: '#6b7280',
     };
-    return colors[shiftType] || '#6b7280';
+    return colors[shiftType as keyof typeof colors] || '#6b7280';
   }
   
   /**

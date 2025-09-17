@@ -1,5 +1,5 @@
 // Leave Service - API operations for leave management
-import { apiRequest } from '@/lib/queryClient';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
 
 // Types
 export interface LeaveBalance {
@@ -112,19 +112,14 @@ export interface LeaveStatistics {
 class LeaveService {
   // Balance operations
   async getBalance(userId: string): Promise<LeaveBalance> {
-    const response = await apiRequest<LeaveBalance>(`/api/hr/leave/balance/${userId}`);
-    return response;
+    return apiGet(`/api/hr/leave/balance/${userId}`);
   }
 
   async updateBalance(
     userId: string, 
     adjustment: { type: string; amount: number; reason: string }
   ): Promise<LeaveBalance> {
-    const response = await apiRequest<LeaveBalance>(`/api/hr/leave/balance/${userId}`, {
-      method: 'PUT',
-      body: JSON.stringify(adjustment)
-    });
-    return response;
+    return apiPut(`/api/hr/leave/balance/${userId}`, adjustment);
   }
 
   // Leave request operations
@@ -141,83 +136,48 @@ class LeaveService {
       if (value) params.append(key, value);
     });
     
-    const response = await apiRequest<LeaveRequest[]>(
-      `/api/hr/leave/requests${params.toString() ? '?' + params.toString() : ''}`
-    );
-    return response;
+    return apiGet(`/api/hr/leave/requests${params.toString() ? '?' + params.toString() : ''}`);
   }
 
   async getRequestById(id: string): Promise<LeaveRequest> {
-    const response = await apiRequest<LeaveRequest>(`/api/hr/leave/requests/${id}`);
-    return response;
+    return apiGet(`/api/hr/leave/requests/${id}`);
   }
 
   async createRequest(request: Partial<LeaveRequest>): Promise<LeaveRequest> {
-    const response = await apiRequest<LeaveRequest>('/api/hr/leave/requests', {
-      method: 'POST',
-      body: JSON.stringify(request)
-    });
-    return response;
+    return apiPost('/api/hr/leave/requests', request);
   }
 
   async updateRequest(id: string, updates: Partial<LeaveRequest>): Promise<LeaveRequest> {
-    const response = await apiRequest<LeaveRequest>(`/api/hr/leave/requests/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updates)
-    });
-    return response;
+    return apiPut(`/api/hr/leave/requests/${id}`, updates);
   }
 
   async deleteRequest(id: string): Promise<void> {
-    await apiRequest(`/api/hr/leave/requests/${id}`, {
-      method: 'DELETE'
-    });
+    await apiDelete(`/api/hr/leave/requests/${id}`);
   }
 
   async submitRequest(id: string): Promise<LeaveRequest> {
-    const response = await apiRequest<LeaveRequest>(`/api/hr/leave/requests/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status: 'pending', submittedAt: new Date().toISOString() })
-    });
-    return response;
+    return apiPut(`/api/hr/leave/requests/${id}`, { status: 'pending', submittedAt: new Date().toISOString() });
   }
 
   async approveRequest(id: string, comments?: string): Promise<LeaveRequest> {
-    const response = await apiRequest<LeaveRequest>(`/api/hr/leave/requests/${id}/approve`, {
-      method: 'POST',
-      body: JSON.stringify({ comments })
-    });
-    return response;
+    return apiPost(`/api/hr/leave/requests/${id}/approve`, { comments });
   }
 
   async rejectRequest(id: string, reason: string): Promise<LeaveRequest> {
-    const response = await apiRequest<LeaveRequest>(`/api/hr/leave/requests/${id}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ reason })
-    });
-    return response;
+    return apiPost(`/api/hr/leave/requests/${id}/reject`, { reason });
   }
 
   async cancelRequest(id: string): Promise<LeaveRequest> {
-    const response = await apiRequest<LeaveRequest>(`/api/hr/leave/requests/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status: 'cancelled' })
-    });
-    return response;
+    return apiPut(`/api/hr/leave/requests/${id}`, { status: 'cancelled' });
   }
 
   // Policies operations
   async getPolicies(): Promise<LeavePolicies> {
-    const response = await apiRequest<LeavePolicies>('/api/hr/leave/policies');
-    return response;
+    return apiGet('/api/hr/leave/policies');
   }
 
   async updatePolicies(policies: Partial<LeavePolicies>): Promise<LeavePolicies> {
-    const response = await apiRequest<LeavePolicies>('/api/hr/leave/policies', {
-      method: 'PUT',
-      body: JSON.stringify(policies)
-    });
-    return response;
+    return apiPut('/api/hr/leave/policies', policies);
   }
 
   // Team calendar operations
@@ -232,10 +192,7 @@ class LeaveService {
       if (value) params.append(key, value);
     });
     
-    const response = await apiRequest<TeamCalendarEvent[]>(
-      `/api/hr/leave/team-calendar${params.toString() ? '?' + params.toString() : ''}`
-    );
-    return response;
+    return apiGet(`/api/hr/leave/team-calendar${params.toString() ? '?' + params.toString() : ''}`);
   }
 
   // Utility methods
@@ -376,7 +333,7 @@ class LeaveService {
   }
 
   getStatusConfig(status: string) {
-    const configs = {
+    const configs: Record<string, any> = {
       draft: {
         label: 'Bozza',
         color: 'hsl(0, 0%, 64%)',
@@ -409,7 +366,7 @@ class LeaveService {
       }
     };
     
-    return configs[status] || configs.draft;
+    return configs[status as keyof typeof configs] || configs.draft;
   }
 
   formatDateRange(startDate: string, endDate: string): string {
@@ -436,6 +393,19 @@ class LeaveService {
 
   // Statistics
   async getStatistics(filters?: {
+    startDate?: string;
+    endDate?: string;
+    storeId?: string;
+  }): Promise<LeaveStatistics> {
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value) params.append(key, value);
+    });
+    
+    return apiGet(`/api/hr/leave/statistics${params.toString() ? '?' + params.toString() : ''}`);
+  }
+
+  async calculateStatistics(filters?: {
     startDate?: string;
     endDate?: string;
     storeId?: string;

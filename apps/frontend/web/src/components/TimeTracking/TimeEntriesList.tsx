@@ -396,9 +396,9 @@ export default function TimeEntriesList({
                                     <label className="text-xs text-gray-400">Entrata</label>
                                     <Input
                                       type="datetime-local"
-                                      value={editForm.clockIn?.slice(0, 16)}
+                                      value={typeof editForm.clockIn === 'string' ? editForm.clockIn.slice(0, 16) : new Date(editForm.clockIn || '').toISOString().slice(0, 16)}
                                       onChange={(e) =>
-                                        setEditForm({ ...editForm, clockIn: e.target.value })
+                                        setEditForm({ ...editForm, clockIn: new Date(e.target.value) })
                                       }
                                       className="mt-1"
                                     />
@@ -407,9 +407,9 @@ export default function TimeEntriesList({
                                     <label className="text-xs text-gray-400">Uscita</label>
                                     <Input
                                       type="datetime-local"
-                                      value={editForm.clockOut?.slice(0, 16) || ''}
+                                      value={typeof editForm.clockOut === 'string' ? editForm.clockOut.slice(0, 16) : (editForm.clockOut ? new Date(editForm.clockOut).toISOString().slice(0, 16) : '')}
                                       onChange={(e) =>
-                                        setEditForm({ ...editForm, clockOut: e.target.value })
+                                        setEditForm({ ...editForm, clockOut: new Date(e.target.value) })
                                       }
                                       className="mt-1"
                                     />

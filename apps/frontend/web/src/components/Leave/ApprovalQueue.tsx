@@ -24,19 +24,19 @@ export function ApprovalQueue({ compact = false, className }: ApprovalQueueProps
   const approveRequest = useApproveLeaveRequest();
   const rejectRequest = useRejectLeaveRequest();
   
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const [comments, setComments] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   
   // Handle quick approve
-  const handleQuickApprove = (request) => {
+  const handleQuickApprove = (request: any) => {
     setSelectedRequest(request);
     setActionType('approve');
   };
   
   // Handle quick reject
-  const handleQuickReject = (request) => {
+  const handleQuickReject = (request: any) => {
     setSelectedRequest(request);
     setActionType('reject');
   };
@@ -70,7 +70,7 @@ export function ApprovalQueue({ compact = false, className }: ApprovalQueueProps
   };
   
   // Calculate urgency
-  const getUrgency = (request) => {
+  const getUrgency = (request: any) => {
     const daysAgo = differenceInDays(new Date(), new Date(request.submittedAt || request.createdAt));
     const daysUntilStart = differenceInDays(new Date(request.startDate), new Date());
     

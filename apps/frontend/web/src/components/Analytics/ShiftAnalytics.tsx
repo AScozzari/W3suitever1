@@ -80,7 +80,7 @@ export default function ShiftAnalytics({ period, storeId }: ShiftAnalyticsProps)
     );
   }
 
-  const shiftIcons = {
+  const shiftIcons: Record<string, React.FC<any>> = {
     morning: Sun,
     afternoon: Sunset,
     evening: Moon,
@@ -209,7 +209,7 @@ export default function ShiftAnalytics({ period, storeId }: ShiftAnalyticsProps)
             </div>
             <div className="space-y-4">
               {Object.entries(data.shiftDistribution).map(([shift, count]) => {
-                const Icon = shiftIcons[shift];
+                const Icon = shiftIcons[shift] || Sun;
                 return (
                   <div key={shift} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

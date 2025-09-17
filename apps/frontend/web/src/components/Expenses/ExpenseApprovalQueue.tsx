@@ -121,7 +121,7 @@ export default function ExpenseApprovalQueue({ showActions = true }: ExpenseAppr
     return 'text-green-600';
   };
 
-  const getDaysWaiting = (submittedAt: Date) => {
+  const getDaysWaiting = (submittedAt: Date | string) => {
     const days = Math.floor((new Date().getTime() - new Date(submittedAt).getTime()) / (1000 * 60 * 60 * 24));
     if (days === 0) return 'Oggi';
     if (days === 1) return 'Ieri';

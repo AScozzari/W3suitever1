@@ -25,7 +25,7 @@ export function useCurrentSession() {
     retry: 1,
   });
 
-  const isActive = !!session && !session.clockOut;
+  const isActive = !!session && !('clockOut' in (session as any) && (session as any).clockOut);
   const elapsedMinutes = session?.elapsedMinutes || 0;
   const isOnBreak = !!session?.currentBreak;
   const requiresBreak = elapsedMinutes > 360; // 6 hours

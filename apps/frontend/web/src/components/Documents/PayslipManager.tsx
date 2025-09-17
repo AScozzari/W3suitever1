@@ -25,12 +25,12 @@ export default function PayslipManager({ onClose }: PayslipManagerProps) {
   const [compareMode, setCompareMode] = useState(false);
   const [compareYear, setCompareYear] = useState(selectedYear - 1);
 
-  const { data: payslips, isLoading } = useQuery({
+  const { data: payslips = [], isLoading } = useQuery<Payslip[]>({
     queryKey: ['/api/hr/documents/payslips', selectedYear],
     enabled: true
   });
 
-  const { data: comparePayslips } = useQuery({
+  const { data: comparePayslips = [] } = useQuery<Payslip[]>({
     queryKey: ['/api/hr/documents/payslips', compareYear],
     enabled: compareMode
   });
@@ -42,11 +42,12 @@ export default function PayslipManager({ onClose }: PayslipManagerProps) {
 
   const getPayslipForMonth = (month: number, year?: number) => {
     const slips = year === compareYear ? comparePayslips : payslips;
-    return slips?.find((p: Payslip) => p.month === month && p.year === (year || selectedYear));
+    return slips?.find((p) => p.month === month && p.year === (year || selectedYear));
   };
 
-  const calculateYearlyTotals = (slips: Payslip[]) => {
-    return slips?.reduce((acc, slip) => ({
+  const calculateYearlyTotals = (slips: Payslip[] | undefined) => {
+    if (!slips || slips.length === 0) return { net: 0, gross: 0, deductions: 0 };
+    return slips.reduce((acc, slip) => ({
       net: acc.net + slip.netSalary,
       gross: acc.gross + slip.grossSalary,
       deductions: acc.deductions + slip.deductions

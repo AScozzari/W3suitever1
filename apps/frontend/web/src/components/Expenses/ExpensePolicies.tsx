@@ -1,6 +1,5 @@
 // Expense Policies Component
 import { useState } from 'react';
-import type { ExpensePolicy } from '@/services/expenseService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,15 +26,53 @@ interface ExpensePoliciesProps {
   canEdit?: boolean;
 }
 
+// Local type for component
+interface LocalExpensePolicy {
+  maxAmountPerCategory?: Record<string, number>;
+  requireReceipt?: {
+    enabled: boolean;
+    minAmount: number;
+  };
+  approvalLevels?: Array<{
+    maxAmount: number | null;
+    approver: string;
+  }>;
+  autoApprove?: {
+    enabled: boolean;
+    maxAmount: number;
+  };
+  submitDeadlineDays?: number;
+  allowedCategories?: string[];
+  mileageRate?: number;
+  perDiemRate?: number;
+  reimbursementTimeline?: {
+    approvalDeadline: number;
+    paymentDeadline: number;
+  };
+}
+
 export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProps) {
   const { toast } = useToast();
   const { policy, isLoading, updatePolicy } = useExpensePolicies();
   const [editMode, setEditMode] = useState(false);
-  const [localPolicies, setLocalPolicies] = useState<Partial<ExpensePolicy>>(policy || {});
+  const [localPolicies, setLocalPolicies] = useState<LocalExpensePolicy>(policy || {});
 
   const handleSave = async () => {
     try {
-      await updatePolicy.mutateAsync(localPolicies);
+      // Convert local policy format to service format
+      const policyData = {
+        categoryLimits: localPolicies.maxAmountPerCategory || {},
+        approvalThresholds: localPolicies.approvalLevels?.map(level => ({
+          amount: level.maxAmount || 0,
+          approver: level.approver
+        })) || [],
+        receiptRequired: localPolicies.requireReceipt?.minAmount || 0,
+        submitDeadlineDays: localPolicies.submitDeadlineDays || 30,
+        allowedCategories: localPolicies.allowedCategories || [],
+        mileageRate: localPolicies.mileageRate || 0,
+        perDiemRate: localPolicies.perDiemRate || 0
+      };
+      await updatePolicy.mutateAsync(policyData as any);
       toast({
         title: 'Politiche aggiornate',
         description: 'Le politiche di rimborso sono state aggiornate con successo',
@@ -209,8 +246,8 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                     setLocalPolicies({
                       ...localPolicies,
                       requireReceipt: {
-                        ...localPolicies.requireReceipt,
-                        enabled: checked
+                        enabled: checked,
+                        minAmount: localPolicies.requireReceipt?.minAmount || 25
                       }
                     });
                   }}
@@ -234,7 +271,7 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                       setLocalPolicies({
                         ...localPolicies,
                         requireReceipt: {
-                          ...localPolicies.requireReceipt,
+                          enabled: localPolicies.requireReceipt?.enabled ?? true,
                           minAmount: Number(e.target.value)
                         }
                       });
@@ -264,7 +301,7 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {currentPolicies.approvalLevels?.map((level, index) => (
+            {(currentPolicies.approvalLevels || []).map((level, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge>{level.approver}</Badge>
@@ -277,7 +314,7 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const newLevels = [...localPolicies.approvalLevels];
+                      const newLevels = [...(localPolicies.approvalLevels || [])];
                       newLevels.splice(index, 1);
                       setLocalPolicies({
                         ...localPolicies,
@@ -319,13 +356,13 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    value={currentPolicies.reimbursementTimeline?.approvalDeadline}
+                    value={(typeof currentPolicies.reimbursementTimeline === 'object' ? currentPolicies.reimbursementTimeline?.approvalDeadline : currentPolicies.reimbursementTimeline) || 7}
                     onChange={(e) => {
                       setLocalPolicies({
                         ...localPolicies,
                         reimbursementTimeline: {
-                          ...localPolicies.reimbursementTimeline,
-                          approvalDeadline: Number(e.target.value)
+                          approvalDeadline: Number(e.target.value),
+                          paymentDeadline: (typeof localPolicies.reimbursementTimeline === 'object' ? localPolicies.reimbursementTimeline?.paymentDeadline : localPolicies.reimbursementTimeline) || 30
                         }
                       });
                     }}
@@ -336,7 +373,7 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                 </div>
               ) : (
                 <Badge variant="outline">
-                  {currentPolicies.reimbursementTimeline?.approvalDeadline} giorni
+                  {(typeof currentPolicies.reimbursementTimeline === 'object' ? currentPolicies.reimbursementTimeline?.approvalDeadline : currentPolicies.reimbursementTimeline) || 7} giorni
                 </Badge>
               )}
             </div>
@@ -352,12 +389,12 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    value={currentPolicies.reimbursementTimeline?.paymentDeadline}
+                    value={(typeof currentPolicies.reimbursementTimeline === 'object' ? currentPolicies.reimbursementTimeline?.paymentDeadline : currentPolicies.reimbursementTimeline) || 30}
                     onChange={(e) => {
                       setLocalPolicies({
                         ...localPolicies,
                         reimbursementTimeline: {
-                          ...localPolicies.reimbursementTimeline,
+                          approvalDeadline: (typeof localPolicies.reimbursementTimeline === 'object' ? localPolicies.reimbursementTimeline?.approvalDeadline : localPolicies.reimbursementTimeline) || 7,
                           paymentDeadline: Number(e.target.value)
                         }
                       });
@@ -369,7 +406,7 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                 </div>
               ) : (
                 <Badge variant="outline">
-                  {currentPolicies.reimbursementTimeline?.paymentDeadline} giorni
+                  {(typeof currentPolicies.reimbursementTimeline === 'object' ? currentPolicies.reimbursementTimeline?.paymentDeadline : currentPolicies.reimbursementTimeline) || 30} giorni
                 </Badge>
               )}
             </div>

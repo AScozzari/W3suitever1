@@ -2,7 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { calendarService, CalendarEvent } from '@/services/calendarService';
-import { useCalendarPermissions, EventVisibility } from '@/hooks/useCalendarPermissions';
+import { useCalendarPermissions } from '@/hooks/useCalendarPermissions';
+
+// Define EventVisibility type
+type EventVisibility = 'private' | 'team' | 'store' | 'area' | 'tenant';
+
+// Define as enum-like object for comparisons
+const EventVisibilityValues = {
+  PRIVATE: 'private' as EventVisibility,
+  TEAM: 'team' as EventVisibility,
+  STORE: 'store' as EventVisibility,
+  AREA: 'area' as EventVisibility,
+  TENANT: 'tenant' as EventVisibility,
+};
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -93,7 +105,7 @@ export default function EventModal({ event, selectedDate, onClose, onSave }: Eve
   const { permissions, helpers, user } = useCalendarPermissions();
   
   // Fetch users for attendees picker
-  const { data: users = [] } = useQuery({
+  const { data: users = [] } = useQuery<any[]>({
     queryKey: ['/api/users'],
     enabled: true,
   });
@@ -214,7 +226,7 @@ export default function EventModal({ event, selectedDate, onClose, onSave }: Eve
   };
   
   // Get visibility options based on permissions
-  const visibilityOptions = helpers?.getVisibilityOptions() || [EventVisibility.PRIVATE];
+  const visibilityOptions = helpers?.getVisibilityOptions() || ['private' as EventVisibility];
   
   return (
     <div style={{
@@ -547,19 +559,19 @@ export default function EventModal({ event, selectedDate, onClose, onSave }: Eve
               }}
               data-testid="select-visibility"
             >
-              {visibilityOptions.includes(EventVisibility.PRIVATE) && (
+              {visibilityOptions.includes(EventVisibilityValues.PRIVATE) && (
                 <option value="private">Privato - Solo io</option>
               )}
-              {visibilityOptions.includes(EventVisibility.TEAM) && (
+              {visibilityOptions.includes(EventVisibilityValues.TEAM) && (
                 <option value="team">Team - Il mio team</option>
               )}
-              {visibilityOptions.includes(EventVisibility.STORE) && (
+              {visibilityOptions.includes(EventVisibilityValues.STORE) && (
                 <option value="store">Store - Tutto il negozio</option>
               )}
-              {visibilityOptions.includes(EventVisibility.AREA) && (
+              {visibilityOptions.includes(EventVisibilityValues.AREA) && (
                 <option value="area">Area - Tutta l'area</option>
               )}
-              {visibilityOptions.includes(EventVisibility.TENANT) && (
+              {visibilityOptions.includes(EventVisibilityValues.TENANT) && (
                 <option value="tenant">Azienda - Tutta l'azienda</option>
               )}
             </select>
