@@ -2680,6 +2680,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleApiError(error, res, 'generazione CUD');
     }
   });
+
+  // ==================== EXPENSE MANAGEMENT ====================
+  const { expenseStorage } = await import('./expense-storage.js');
+  
+  // Get expense reports
+  app.get('/api/hr/expenses/reports', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      const filters = {
+        status: req.query.status,
+        startDate: req.query.startDate,
+        endDate: req.query.endDate,
+        userId: req.query.userId,
+        minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
+        maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined
+      };
+      
+      const reports = await expenseStorage.getExpenseReports(tenantId, userId, userRole, filters);
+      res.json(reports);
+    } catch (error) {
+      handleApiError(error, res, 'recupero note spese');
+    }
+  });
+  
+  // Get single expense report
+  app.get('/api/hr/expenses/reports/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const report = await expenseStorage.getExpenseReportById(req.params.id, tenantId);
+      
+      if (!report) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Nota spese non trovata'
+        });
+      }
+      
+      res.json(report);
+    } catch (error) {
+      handleApiError(error, res, 'recupero nota spese');
+    }
+  });
+  
+  // Create expense report
+  app.post('/api/hr/expenses/reports', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      const report = await expenseStorage.createExpenseReport({
+        ...req.body,
+        tenantId,
+        userId
+      });
+      
+      res.status(201).json(report);
+    } catch (error) {
+      handleApiError(error, res, 'creazione nota spese');
+    }
+  });
+  
+  // Update expense report
+  app.put('/api/hr/expenses/reports/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const report = await expenseStorage.updateExpenseReport(req.params.id, req.body, tenantId);
+      res.json(report);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento nota spese');
+    }
+  });
+  
+  // Delete expense report
+  app.delete('/api/hr/expenses/reports/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      await expenseStorage.deleteExpenseReport(req.params.id, tenantId);
+      res.status(204).send();
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione nota spese');
+    }
+  });
+  
+  // Submit expense report
+  app.post('/api/hr/expenses/reports/:id/submit', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const report = await expenseStorage.submitExpenseReport(req.params.id, tenantId);
+      res.json(report);
+    } catch (error) {
+      handleApiError(error, res, 'invio nota spese');
+    }
+  });
+  
+  // Approve expense report
+  app.post('/api/hr/expenses/reports/:id/approve', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const approverId = req.user?.id;
+      const { comments } = req.body;
+      
+      const report = await expenseStorage.approveExpenseReport(req.params.id, approverId, comments, tenantId);
+      res.json(report);
+    } catch (error) {
+      handleApiError(error, res, 'approvazione nota spese');
+    }
+  });
+  
+  // Reject expense report
+  app.post('/api/hr/expenses/reports/:id/reject', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const approverId = req.user?.id;
+      const { reason } = req.body;
+      
+      if (!reason) {
+        return res.status(400).json({
+          error: 'missing_reason',
+          message: 'Motivazione del rifiuto richiesta'
+        });
+      }
+      
+      const report = await expenseStorage.rejectExpenseReport(req.params.id, approverId, reason, tenantId);
+      res.json(report);
+    } catch (error) {
+      handleApiError(error, res, 'rifiuto nota spese');
+    }
+  });
+  
+  // Reimburse expense report
+  app.post('/api/hr/expenses/reports/:id/reimburse', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const processedBy = req.user?.id;
+      const { paymentMethod } = req.body;
+      
+      const report = await expenseStorage.reimburseExpenseReport(req.params.id, processedBy, paymentMethod, tenantId);
+      res.json(report);
+    } catch (error) {
+      handleApiError(error, res, 'rimborso nota spese');
+    }
+  });
+  
+  // Get expense items for a report
+  app.get('/api/hr/expenses/reports/:id/items', enterpriseAuth, async (req: any, res) => {
+    try {
+      const items = await expenseStorage.getExpenseItems(req.params.id);
+      res.json(items);
+    } catch (error) {
+      handleApiError(error, res, 'recupero voci spesa');
+    }
+  });
+  
+  // Create expense item
+  app.post('/api/hr/expenses/items', enterpriseAuth, async (req: any, res) => {
+    try {
+      const item = await expenseStorage.createExpenseItem(req.body);
+      res.status(201).json(item);
+    } catch (error) {
+      handleApiError(error, res, 'creazione voce spesa');
+    }
+  });
+  
+  // Update expense item
+  app.put('/api/hr/expenses/items/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const item = await expenseStorage.updateExpenseItem(req.params.id, req.body);
+      res.json(item);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento voce spesa');
+    }
+  });
+  
+  // Delete expense item
+  app.delete('/api/hr/expenses/items/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      await expenseStorage.deleteExpenseItem(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione voce spesa');
+    }
+  });
+  
+  // Get expense analytics
+  app.get('/api/hr/expenses/analytics', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { startDate, endDate } = req.query;
+      
+      const analytics = await expenseStorage.getExpenseAnalytics(
+        tenantId,
+        startDate ? new Date(startDate) : undefined,
+        endDate ? new Date(endDate) : undefined
+      );
+      
+      res.json(analytics);
+    } catch (error) {
+      handleApiError(error, res, 'recupero analytics spese');
+    }
+  });
+  
+  // Get expenses by category
+  app.get('/api/hr/expenses/categories', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { startDate, endDate } = req.query;
+      
+      const categories = await expenseStorage.getExpensesByCategory(
+        tenantId,
+        startDate ? new Date(startDate) : undefined,
+        endDate ? new Date(endDate) : undefined
+      );
+      
+      res.json(categories);
+    } catch (error) {
+      handleApiError(error, res, 'recupero categorie spese');
+    }
+  });
+  
+  // Get expense policy
+  app.get('/api/hr/expenses/policy', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const policy = await expenseStorage.getExpensePolicy(tenantId);
+      res.json(policy);
+    } catch (error) {
+      handleApiError(error, res, 'recupero policy spese');
+    }
+  });
+  
+  // Update expense policy (Admin only)
+  app.put('/api/hr/expenses/policy', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userRole = req.user?.role || 'USER';
+      
+      if (userRole !== 'ADMIN' && userRole !== 'HR_MANAGER') {
+        return res.status(403).json({
+          error: 'forbidden',
+          message: 'Solo Admin e HR Manager possono modificare le policy'
+        });
+      }
+      
+      const policy = await expenseStorage.updateExpensePolicy(tenantId, req.body);
+      res.json(policy);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento policy spese');
+    }
+  });
+  
+  // Mock OCR receipt scanning
+  app.post('/api/hr/expenses/receipts/scan', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { imageData } = req.body;
+      
+      if (!imageData) {
+        return res.status(400).json({
+          error: 'missing_image',
+          message: 'Dati immagine richiesti'
+        });
+      }
+      
+      const result = await expenseStorage.scanReceipt(imageData);
+      res.json(result);
+    } catch (error) {
+      handleApiError(error, res, 'scansione scontrino');
+    }
+  });
   
   // Remove user from shift
   app.post('/api/hr/shifts/:id/unassign', enterpriseAuth, async (req: any, res) => {
