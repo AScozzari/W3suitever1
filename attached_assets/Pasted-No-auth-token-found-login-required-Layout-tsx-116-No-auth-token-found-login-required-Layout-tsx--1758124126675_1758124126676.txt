@@ -1,0 +1,135 @@
+No auth token found - login required
+Layout.tsx:116 No auth token found - login required
+Layout.tsx:116 No auth token found - login required
+SettingsPage.tsx:518 🆕 SettingsPage: useEffect triggered - loading data...
+SettingsPage.tsx:521 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+Layout.tsx:116 No auth token found - login required
+SettingsPage.tsx:518 🆕 SettingsPage: useEffect triggered - loading data...
+SettingsPage.tsx:521 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+SettingsPage.tsx:523 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, warnings: Array(0)}
+SettingsPage.tsx:536 📝 Setting state with data: {legalEntities: 14, users: 23, stores: 18}
+queryClient.ts:83  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/payment-methods 404 (Not Found)
+queryFn @ queryClient.ts:83
+fetchFn @ @tanstack_react-query.js?v=5ca23d81:1097
+run @ @tanstack_react-query.js?v=5ca23d81:795
+start @ @tanstack_react-query.js?v=5ca23d81:838
+fetch @ @tanstack_react-query.js?v=5ca23d81:1144
+executeFetch_fn @ @tanstack_react-query.js?v=5ca23d81:1639
+onSubscribe @ @tanstack_react-query.js?v=5ca23d81:1335
+subscribe @ @tanstack_react-query.js?v=5ca23d81:24
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:3241
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=5ca23d81:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=5ca23d81:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=5ca23d81:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=5ca23d81:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=5ca23d81:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=5ca23d81:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=5ca23d81:18627Understand this error
+SettingsPage.tsx:523 📦 SettingsPage: loadSettingsData result: {success: true, data: {…}, warnings: Array(0)}
+SettingsPage.tsx:536 📝 Setting state with data: {legalEntities: 14, users: 23, stores: 18}
+2SettingsPage.tsx:550 📋 Suppliers will be loaded via TanStack Query automatically
+queryClient.ts:83  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/payment-methods 404 (Not Found)
+queryFn @ queryClient.ts:83
+fetchFn @ @tanstack_react-query.js?v=5ca23d81:1097
+run @ @tanstack_react-query.js?v=5ca23d81:795
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:816
+Promise.catch
+run @ @tanstack_react-query.js?v=5ca23d81:799
+start @ @tanstack_react-query.js?v=5ca23d81:838
+fetch @ @tanstack_react-query.js?v=5ca23d81:1144
+executeFetch_fn @ @tanstack_react-query.js?v=5ca23d81:1639
+onSubscribe @ @tanstack_react-query.js?v=5ca23d81:1335
+subscribe @ @tanstack_react-query.js?v=5ca23d81:24
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:3241
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=5ca23d81:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=5ca23d81:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=5ca23d81:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=5ca23d81:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=5ca23d81:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=5ca23d81:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=5ca23d81:18627Understand this error
+queryClient.ts:83  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/payment-methods 404 (Not Found)
+queryFn @ queryClient.ts:83
+fetchFn @ @tanstack_react-query.js?v=5ca23d81:1097
+run @ @tanstack_react-query.js?v=5ca23d81:795
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:816
+Promise.catch
+run @ @tanstack_react-query.js?v=5ca23d81:799
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:816
+Promise.catch
+run @ @tanstack_react-query.js?v=5ca23d81:799
+start @ @tanstack_react-query.js?v=5ca23d81:838
+fetch @ @tanstack_react-query.js?v=5ca23d81:1144
+executeFetch_fn @ @tanstack_react-query.js?v=5ca23d81:1639
+onSubscribe @ @tanstack_react-query.js?v=5ca23d81:1335
+subscribe @ @tanstack_react-query.js?v=5ca23d81:24
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:3241
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=5ca23d81:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=5ca23d81:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=5ca23d81:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=5ca23d81:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=5ca23d81:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=5ca23d81:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=5ca23d81:18627Understand this error
+queryClient.ts:83  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/reference/payment-methods 404 (Not Found)
+queryFn @ queryClient.ts:83
+fetchFn @ @tanstack_react-query.js?v=5ca23d81:1097
+run @ @tanstack_react-query.js?v=5ca23d81:795
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:816
+Promise.catch
+run @ @tanstack_react-query.js?v=5ca23d81:799
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:816
+Promise.catch
+run @ @tanstack_react-query.js?v=5ca23d81:799
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:816
+Promise.catch
+run @ @tanstack_react-query.js?v=5ca23d81:799
+start @ @tanstack_react-query.js?v=5ca23d81:838
+fetch @ @tanstack_react-query.js?v=5ca23d81:1144
+executeFetch_fn @ @tanstack_react-query.js?v=5ca23d81:1639
+onSubscribe @ @tanstack_react-query.js?v=5ca23d81:1335
+subscribe @ @tanstack_react-query.js?v=5ca23d81:24
+(anonymous) @ @tanstack_react-query.js?v=5ca23d81:3241
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=5ca23d81:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=5ca23d81:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=5ca23d81:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=5ca23d81:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=5ca23d81:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=5ca23d81:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=5ca23d81:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=5ca23d81:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=5ca23d81:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=5ca23d81:18627Understand this error
