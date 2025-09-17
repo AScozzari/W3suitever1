@@ -105,8 +105,21 @@ export default function LeftSidebar({
 
   // Handle menu item click
   const handleMenuClick = (item: MenuItem) => {
+    // Get tenant from localStorage or use 'staging' as fallback
+    const storedTenant = localStorage.getItem('currentTenant');
     const pathSegments = location.split('/').filter(Boolean);
-    const tenant = pathSegments[0];
+    const urlTenant = pathSegments[0];
+    const tenant = storedTenant || urlTenant || 'staging';
+    
+    // Debug log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[LeftSidebar] Navigation:', {
+        item: item.label,
+        path: item.path,
+        tenant,
+        targetPath: item.path ? `/${tenant}${item.path}` : 'module-change'
+      });
+    }
 
     if (item.path) {
       if (item.path === '/') {

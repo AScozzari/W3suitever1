@@ -149,15 +149,27 @@ function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const tenant = (params as any).tenant;
   
-  // DEVELOPMENT MODE - Bypassa autenticazione per testing
+  // DEVELOPMENT MODE - Crea sessione demo automatica
   const isDevelopment = process.env.NODE_ENV === 'development' || tenant === 'staging';
   
+  useEffect(() => {
+    if (isDevelopment && !isAuthenticated && !isLoading) {
+      // Crea un token JWT demo per development/staging
+      const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZW1vLXVzZXIiLCJ0ZW5hbnRJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGUiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.demo';
+      localStorage.setItem('auth_token', demoToken);
+      localStorage.setItem('currentTenant', tenant || 'staging');
+      console.log('[AuthenticatedApp] Development mode: Created demo session for tenant:', tenant);
+      // Forza un refresh per ricaricare con il token
+      window.location.reload();
+    }
+  }, [isDevelopment, isAuthenticated, isLoading, tenant]);
+  
   if (isLoading) {
-    return null; // Pagina arancione rimossa
+    return null;
   }
 
   if (!isAuthenticated && !isDevelopment) {
-    // W3 Suite ha il suo sistema di login indipendente
+    // Production: vai al login
     return <LoginPage />;
   }
 
