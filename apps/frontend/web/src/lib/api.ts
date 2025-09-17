@@ -38,3 +38,11 @@ export async function apiPut(url: string, data?: any) {
 export async function apiDelete(url: string) {
   return apiRequest(url, { method: 'DELETE' });
 }
+
+// Legacy alias for backward compatibility
+export const apiClient = {
+  get: apiGet,
+  post: apiPost,
+  put: apiPut,
+  delete: apiDelete
+};
