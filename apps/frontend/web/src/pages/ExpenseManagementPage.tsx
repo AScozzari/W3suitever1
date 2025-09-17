@@ -39,15 +39,16 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const ExpenseManagementPage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const filters = {
@@ -73,8 +74,8 @@ const ExpenseManagementPage = () => {
     );
   });
 
-  const canApprove = user?.role === 'HR_MANAGER' || user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
-  const canSetPolicies = user?.role === 'HR_MANAGER' || user?.role === 'ADMIN';
+  const canApprove = (user as any)?.role === 'HR_MANAGER' || (user as any)?.role === 'ADMIN' || (user as any)?.role === 'TEAM_LEADER';
+  const canSetPolicies = (user as any)?.role === 'HR_MANAGER' || (user as any)?.role === 'ADMIN';
 
   function getPeriodDates(period: string) {
     const now = new Date();
@@ -102,7 +103,7 @@ const ExpenseManagementPage = () => {
     }
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string): any => {
     const statusConfig = {
       draft: { variant: 'secondary', label: 'Bozza', icon: FileText },
       submitted: { variant: 'warning', label: 'In Attesa', icon: Clock },
@@ -111,7 +112,7 @@ const ExpenseManagementPage = () => {
       reimbursed: { variant: 'info', label: 'Rimborsata', icon: DollarSign }
     };
 
-    const config = statusConfig[status] || statusConfig.draft;
+    const config = (statusConfig as any)[status] || statusConfig.draft;
     const Icon = config.icon;
 
     return (
