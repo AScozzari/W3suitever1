@@ -84,8 +84,13 @@ const aclScopeBody = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Setup OAuth2 Authorization Server (Enterprise) - DISABLED FOR DEVELOPMENT
-  // setupOAuth2Server(app);
+  // Conditional OAuth2 Setup based on AUTH_MODE
+  if (config.AUTH_MODE === 'oauth2') {
+    console.log('🔐 Setting up OAuth2 Authorization Server (AUTH_MODE=oauth2)');
+    setupOAuth2Server(app);
+  } else {
+    console.log('🔓 Skipping OAuth2 setup (AUTH_MODE=development)');
+  }
 
   // Apply correlation middleware globally for request tracking
   app.use(correlationMiddleware);
@@ -154,7 +159,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For Replit Object Storage, redirect to the actual object storage URL
       const publicUrl = objectStorageService.getPublicUrl(objectPath);
       
-      console.log(`[API] GET /api/public/avatars/${tenantId}/${fileName} - Redirecting to: ${publicUrl}`);
       
       // Redirect to the actual object storage URL
       res.redirect(302, publicUrl);
@@ -198,8 +202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const startTime = Date.now();
 
     try {
-      // In development/demo mode, ALWAYS allow bypass for testing
-      if (process.env.NODE_ENV === 'development' || true) { // FORCE BYPASS ALWAYS
+      // Development mode: Use header-based authentication without JWT tokens
+      if (config.AUTH_MODE === 'development') {
         const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
         req.user = {
           id: 'demo-user',
@@ -217,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`[RLS-DEMO] Failed to set tenant context: ${rlsError}`);
         }
 
-        return next(); // ALWAYS bypass authentication in development
+        return next(); // Use development authentication mode
       }
 
       const authHeader = req.headers.authorization;
@@ -321,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session endpoint with tenant info
   app.get('/api/auth/session', async (req: any, res) => {
     // Check for development mode authentication first
-    if (process.env.NODE_ENV === 'development') {
+    if (config.AUTH_MODE === 'development') {
       // Check for demo session header (for development)
       const sessionAuth = req.headers['x-auth-session'];
       const demoUser = req.headers['x-demo-user'];
@@ -394,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(sessionData);
     } catch (error) {
-      console.error("Session error:", error);
+      console.error("[AUTH] Session verification failed:", error);
       return res.status(401).json({ message: "Token non valido" });
     }
   });
@@ -439,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return as array for compatibility with frontend expecting multiple tenants
       res.json([tenant]);
     } catch (error) {
-      console.error("Error fetching tenants:", error);
+      console.error("[API] Error fetching tenants:", error);
       res.status(500).json({ error: "Failed to fetch tenants" });
     }
   });
@@ -1003,7 +1007,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId
       );
 
-      console.log(`[API] POST /api/avatar/upload - Generated upload URL for user: ${userId}, tenant: ${tenantId}`);
       
       res.status(201).json({
         success: true,
@@ -1088,7 +1091,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         visibility as 'public' | 'private'
       );
 
-      console.log(`[API] POST /api/objects/upload - File uploaded successfully: ${objectPath}, user: ${userId}, tenant: ${tenantId}`);
 
       res.status(201).json({
         success: true,
@@ -1172,7 +1174,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(users.id, targetUserId));
 
-      console.log(`[API] PUT /api/users/${targetUserId}/avatar - Avatar updated for user: ${targetUserId}, tenant: ${tenantId}`);
 
       res.json({
         success: true,
@@ -1282,7 +1283,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For avatar images that should be public, try alternative validation
         if (objectPath.includes('/avatars/')) {
           // Avatar images are public by default - allow access
-          console.log(`[API] GET /objects${objectPath} - Public avatar access allowed`);
         } else {
           return res.status(403).json({
             error: 'access_denied',
@@ -1295,7 +1295,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // In a real implementation, you'd stream the file content
       const publicUrl = avatarService.getAvatarPublicUrl(objectPath);
 
-      console.log(`[API] GET /objects${objectPath} - Serving avatar file for tenant: ${tenantId || 'public'}`);
 
       // Return file metadata instead of redirecting (for demo purposes)
       res.json({
@@ -1369,7 +1368,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Extract object path from URL and delete
           // This is simplified - in real implementation you'd parse the URL properly
-          console.log(`[API] DELETE /api/users/${targetUserId}/avatar - Avatar deleted for user: ${targetUserId}`);
         } catch (deleteError) {
           console.warn('Failed to delete avatar file from storage:', deleteError);
         }
@@ -3553,7 +3551,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set(updatedData)
         .where(eq(tenants.id, tenantId));
 
-      console.log(`[TENANT-SETTINGS] Updated tenant ${tenantId} settings - RBAC enabled: ${settings.rbac_enabled}`);
 
       res.json({ 
         message: "Tenant settings updated successfully",
@@ -3904,7 +3901,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pagination object
       const pagination = { page, limit };
 
-      console.log(`[API] GET /api/logs - Tenant: ${tenantId}, User: ${req.user.id}, Filters:`, filters, 'Pagination:', pagination);
 
       // Get logs from storage (tenant-isolated)
       const result = await storage.getStructuredLogs(tenantId, filters, pagination);
@@ -3953,7 +3949,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId
       };
 
-      console.log(`[API] POST /api/logs - Creating log for tenant: ${tenantId}, User: ${req.user.id}`);
 
       const log = await storage.createStructuredLog(logData);
       res.status(201).json(log);
@@ -4279,7 +4274,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pagination object
       const pagination = { page, limit };
 
-      console.log(`[API] GET /api/notifications - Tenant: ${tenantId}, User: ${userId}, Filters:`, filters, 'Pagination:', pagination);
 
       // Get notifications from storage (tenant-isolated with user visibility)
       const result = await storage.getNotificationsByTenant(tenantId, userId, filters, pagination);
@@ -4316,7 +4310,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required - no tenant context' });
       }
 
-      console.log(`[API] GET /api/notifications/unread-count - Tenant: ${tenantId}, User: ${userId}`);
 
       const unreadCount = await storage.getUnreadNotificationCount(tenantId, userId);
 
@@ -4352,7 +4345,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId
       } as InsertNotification;
 
-      console.log(`[API] POST /api/notifications - Creating notification for tenant: ${tenantId}, User: ${req.user.id}`);
 
       const notification = await storage.createNotification(notificationData);
       res.status(201).json(notification);
@@ -4375,7 +4367,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate UUID parameter
       if (!validateUUIDParam(req.params.id, 'Notification ID', res)) return;
 
-      console.log(`[API] PATCH /api/notifications/${req.params.id}/read - Tenant: ${tenantId}, User: ${req.user.id}`);
 
       const notification = await storage.markNotificationRead(req.params.id, tenantId);
       
@@ -4403,7 +4394,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate UUID parameter
       if (!validateUUIDParam(req.params.id, 'Notification ID', res)) return;
 
-      console.log(`[API] PATCH /api/notifications/${req.params.id}/unread - Tenant: ${tenantId}, User: ${req.user.id}`);
 
       const notification = await storage.markNotificationUnread(req.params.id, tenantId);
       
@@ -4439,7 +4429,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { notificationIds } = validationResult.data;
 
-      console.log(`[API] PATCH /api/notifications/bulk-read - Marking ${notificationIds.length} notifications as read for tenant: ${tenantId}, User: ${req.user.id}`);
 
       const updatedCount = await storage.bulkMarkNotificationsRead(notificationIds, tenantId);
 
@@ -4467,7 +4456,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate UUID parameter
       if (!validateUUIDParam(req.params.id, 'Notification ID', res)) return;
 
-      console.log(`[API] DELETE /api/notifications/${req.params.id} - Tenant: ${tenantId}, User: ${req.user.id}`);
 
       await storage.deleteNotification(req.params.id, tenantId);
       res.status(204).send();
@@ -4487,7 +4475,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required - no tenant context' });
       }
 
-      console.log(`[API] DELETE /api/notifications/expired - Cleaning up expired notifications for tenant: ${tenantId}, User: ${req.user.id}`);
 
       const deletedCount = await storage.deleteExpiredNotifications(tenantId);
 

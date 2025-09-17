@@ -1,22 +1,24 @@
 import { QueryClient } from "@tanstack/react-query";
 import { oauth2Client } from '../services/OAuth2Client';
 
+// Unified Authentication Mode Control
+const AUTH_MODE = import.meta.env.VITE_AUTH_MODE || 'development';
+
 // Helper per ottenere il tenant ID corrente
 const getCurrentTenantId = () => {
-  // Sempre usa l'UUID corretto per development
-  return '00000000-0000-0000-0000-000000000001';
+  return import.meta.env.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
 };
 
-// Token validation helper function
+// Global redirect guard to prevent infinite OAuth redirects
+declare global {
+  interface Window {
+    __authRedirectInProgress?: boolean;
+  }
+}
+
+// Simplified token validation - let server handle JWT format validation
 function isValidToken(token: string | null): boolean {
-  if (!token) return false;
-  if (token === 'undefined' || token === 'null' || token === '') return false;
-  // Basic JWT format validation: should have 3 parts separated by dots
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  // Each part should be base64-like (letters, numbers, -, _)
-  const base64Pattern = /^[A-Za-z0-9\-_]+$/;
-  return parts.every(part => part.length > 0 && base64Pattern.test(part));
+  return token !== null && token !== undefined && token !== 'undefined' && token !== 'null' && token !== '';
 }
 
 export const queryClient = new QueryClient({
@@ -45,37 +47,34 @@ export const queryClient = new QueryClient({
           'X-Tenant-ID': tenantId, // Header per il tenant ID
         };
         
-        // Check if we're in development mode
-        const isDevelopment = true; // ALWAYS DEVELOPMENT MODE
-        
-        if (isDevelopment) {
-          // In development, use the X-Auth-Session header which is already supported by backend
-          // Development mode: Using X-Auth-Session header
+        // Mode-based authentication - clean separation
+        if (AUTH_MODE === 'development') {
+          // Development mode: ONLY use X-Auth-Session headers, NEVER call OAuth methods
           headers['X-Auth-Session'] = 'authenticated';
           headers['X-Demo-User'] = 'demo-user';
-        } else {
-          // In production, use OAuth2 token
+        } else if (AUTH_MODE === 'oauth2') {
+          // OAuth2 mode: Use Bearer tokens with proper error handling
           const token = await oauth2Client.getAccessToken();
           
-          // Validate token before using it
           if (!isValidToken(token)) {
-            // Invalid or missing access token detected
-            
-            // If no valid token, try to refresh or redirect to login
-            if (!token || token === 'undefined' || token === 'null' || token === '') {
-              // Attempting token refresh or redirecting to login
-              await oauth2Client.logout();
-              await oauth2Client.startAuthorizationFlow();
-              throw new Error('Authentication required');
+            // Prevent infinite redirects
+            if (window.__authRedirectInProgress) {
+              throw new Error('Authentication in progress');
             }
             
-            // If token format is invalid, logout and redirect
-            await oauth2Client.logout();
-            await oauth2Client.startAuthorizationFlow();
-            throw new Error('Invalid token format');
+            window.__authRedirectInProgress = true;
+            try {
+              await oauth2Client.logout();
+              await oauth2Client.startAuthorizationFlow();
+            } finally {
+              window.__authRedirectInProgress = false;
+            }
+            throw new Error('Authentication required');
           }
           
           headers['Authorization'] = `Bearer ${token}`;
+        } else {
+          throw new Error(`Unknown AUTH_MODE: ${AUTH_MODE}. Must be 'development' or 'oauth2'`);
         }
         
         // Request headers configured
@@ -89,10 +88,19 @@ export const queryClient = new QueryClient({
         
         if (!res.ok) {
           if (res.status === 401) {
-            console.log('❌ 401 Unauthorized - redirecting to login');
-            // Use OAuth2 logout instead of manual token clearing
-            await oauth2Client.logout();
-            await oauth2Client.startAuthorizationFlow();
+            console.log('❌ 401 Unauthorized');
+            
+            // Only trigger OAuth flow in oauth2 mode
+            if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress) {
+              window.__authRedirectInProgress = true;
+              try {
+                await oauth2Client.logout();
+                await oauth2Client.startAuthorizationFlow();
+              } finally {
+                window.__authRedirectInProgress = false;
+              }
+            }
+            
             throw new Error(`401: Unauthorized`);
           }
           throw new Error(`${res.status}: ${res.statusText}`);
@@ -130,37 +138,34 @@ export async function apiRequest(
     'X-Tenant-ID': tenantId, // Header per il tenant ID
   };
   
-  // Check if we're in development mode
-  const isDevelopment = true; // ALWAYS DEVELOPMENT MODE
-  
-  if (isDevelopment) {
-    // In development, use the X-Auth-Session header which is already supported by backend
-    // Development mode: Using X-Auth-Session header
+  // Mode-based authentication for API requests
+  if (AUTH_MODE === 'development') {
+    // Development mode: ONLY use X-Auth-Session headers
     headers['X-Auth-Session'] = 'authenticated';
     headers['X-Demo-User'] = 'demo-user';
-  } else {
-    // In production, use OAuth2 token
+  } else if (AUTH_MODE === 'oauth2') {
+    // OAuth2 mode: Use Bearer tokens
     const token = await oauth2Client.getAccessToken();
     
-    // Validate token before using it
     if (!isValidToken(token)) {
-      // Invalid or missing access token detected in apiRequest
-      
-      // If no valid token, try to refresh or redirect to login
-      if (!token || token === 'undefined' || token === 'null' || token === '') {
-        // Attempting token refresh or redirecting to login
-        await oauth2Client.logout();
-        await oauth2Client.startAuthorizationFlow();
-        throw new Error('Authentication required');
+      // Prevent infinite redirects
+      if (window.__authRedirectInProgress) {
+        throw new Error('Authentication in progress');
       }
       
-      // If token format is invalid, logout and redirect
-      await oauth2Client.logout();
-      await oauth2Client.startAuthorizationFlow();
-      throw new Error('Invalid token format');
+      window.__authRedirectInProgress = true;
+      try {
+        await oauth2Client.logout();
+        await oauth2Client.startAuthorizationFlow();
+      } finally {
+        window.__authRedirectInProgress = false;
+      }
+      throw new Error('Authentication required');
     }
     
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    throw new Error(`Unknown AUTH_MODE: ${AUTH_MODE}. Must be 'development' or 'oauth2'`);
   }
   
   const res = await fetch(finalUrl, {
@@ -174,10 +179,19 @@ export async function apiRequest(
 
   if (!res.ok) {
     if (res.status === 401) {
-      // 401 Unauthorized - redirecting to login
-      // Use OAuth2 logout instead of manual token clearing
-      await oauth2Client.logout();
-      await oauth2Client.startAuthorizationFlow();
+      console.log('❌ 401 Unauthorized in apiRequest');
+      
+      // Only trigger OAuth flow in oauth2 mode
+      if (AUTH_MODE === 'oauth2' && !window.__authRedirectInProgress) {
+        window.__authRedirectInProgress = true;
+        try {
+          await oauth2Client.logout();
+          await oauth2Client.startAuthorizationFlow();
+        } finally {
+          window.__authRedirectInProgress = false;
+        }
+      }
+      
       throw new Error(`401: Unauthorized`);
     }
     throw new Error(`${res.status}: ${res.statusText}`);

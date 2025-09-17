@@ -31,6 +31,9 @@ export const config = {
   // Authentication & JWT
   JWT_SECRET,
   
+  // Authentication Mode Configuration
+  AUTH_MODE: process.env.AUTH_MODE || 'development', // 'development' or 'oauth2'
+  
   // OAuth2 Configuration
   OAUTH2_ISSUER: process.env.OAUTH2_ISSUER || 'https://auth.w3suite.com',
   
@@ -51,4 +54,5 @@ export { JWT_SECRET };
 // Log configuration status
 console.log('✅ Core configuration initialized');
 console.log(`🌍 Environment: ${config.NODE_ENV}`);
+console.log(`🔐 Auth Mode: ${config.AUTH_MODE}`);
 console.log(`🔑 JWT Secret: ${JWT_SECRET ? 'SET' : 'NOT SET'}`);
