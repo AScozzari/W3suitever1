@@ -4909,6 +4909,597 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== HR ANALYTICS ROUTES ====================
+  
+  // Dashboard Metrics
+  app.get('/api/hr/analytics/dashboard', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { startDate, endDate, storeId, departmentId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Aggregate KPIs from multiple sources
+      const [
+        totalEmployees,
+        activeShifts,
+        pendingLeaveRequests,
+        timeTrackingData,
+        expenseData,
+        complianceScore
+      ] = await Promise.all([
+        // Count total employees
+        db.select({ count: sql`count(*)` })
+          .from(users)
+          .where(eq(users.tenantId, tenantId))
+          .then(result => result[0]?.count || 0),
+        
+        // Count active shifts today
+        db.select({ count: sql`count(*)` })
+          .from(shifts)
+          .where(and(
+            eq(shifts.tenantId, tenantId),
+            sql`DATE(${shifts.date}) = CURRENT_DATE`
+          ))
+          .then(result => result[0]?.count || 0),
+        
+        // Count pending leave requests
+        db.select({ count: sql`count(*)` })
+          .from(leaveRequests)
+          .where(and(
+            eq(leaveRequests.tenantId, tenantId),
+            eq(leaveRequests.status, 'pending')
+          ))
+          .then(result => result[0]?.count || 0),
+        
+        // Get time tracking metrics
+        db.select({
+          totalHours: sql`sum(total_minutes) / 60`,
+          overtimeHours: sql`sum(overtime_minutes) / 60`
+        })
+          .from(timeTracking)
+          .where(and(
+            eq(timeTracking.tenantId, tenantId),
+            startDate ? sql`${timeTracking.clockIn} >= ${startDate}` : sql`true`,
+            endDate ? sql`${timeTracking.clockIn} <= ${endDate}` : sql`true`
+          ))
+          .then(result => ({
+            totalHours: result[0]?.totalHours || 0,
+            overtimeHours: result[0]?.overtimeHours || 0
+          })),
+        
+        // Get expense metrics
+        db.select({
+          totalExpenses: sql`sum(total_amount)`,
+          pendingExpenses: sql`sum(case when status = 'submitted' then total_amount else 0 end)`
+        })
+          .from(expenseReports)
+          .where(and(
+            eq(expenseReports.tenantId, tenantId),
+            startDate ? sql`${expenseReports.submittedAt} >= ${startDate}` : sql`true`,
+            endDate ? sql`${expenseReports.submittedAt} <= ${endDate}` : sql`true`
+          ))
+          .then(result => ({
+            totalExpenses: result[0]?.totalExpenses || 0,
+            pendingExpenses: result[0]?.pendingExpenses || 0
+          })),
+        
+        // Calculate compliance score (simplified)
+        db.select({ score: sql`avg(case when expires_at > now() then 100 else 0 end)` })
+          .from(hrDocuments)
+          .where(eq(hrDocuments.tenantId, tenantId))
+          .then(result => result[0]?.score || 100)
+      ]);
+
+      // Calculate attendance rate for current period
+      const attendanceRate = await db.select({
+        rate: sql`(count(distinct user_id) * 100.0) / ${totalEmployees}`
+      })
+        .from(timeTracking)
+        .where(and(
+          eq(timeTracking.tenantId, tenantId),
+          sql`DATE(clock_in) = CURRENT_DATE`
+        ))
+        .then(result => result[0]?.rate || 0);
+
+      const metrics = {
+        totalEmployees: Number(totalEmployees),
+        activeShifts: Number(activeShifts),
+        pendingLeaveRequests: Number(pendingLeaveRequests),
+        overtimeHours: timeTrackingData.overtimeHours,
+        attendanceRate: Number(attendanceRate),
+        laborCostThisMonth: timeTrackingData.totalHours * 25, // Simplified calculation
+        complianceScore: Number(complianceScore),
+        upcomingEvents: 0, // To be implemented
+        trends: {
+          employeeGrowth: 5.2,  // Mock for now
+          attendanceChange: 2.3,
+          laborCostChange: -1.5,
+          overtimeChange: 3.1
+        }
+      };
+
+      res.json(metrics);
+    } catch (error) {
+      console.error('Dashboard metrics error:', error);
+      res.status(500).json({ error: 'Failed to get dashboard metrics' });
+    }
+  });
+
+  // Attendance Analytics
+  app.get('/api/hr/analytics/attendance', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { startDate, endDate, storeId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const attendance = await db.select({
+        date: sql`DATE(clock_in)`,
+        present: sql`count(distinct user_id)`,
+        totalHours: sql`sum(total_minutes) / 60`,
+        lateCount: sql`sum(case when is_late = true then 1 else 0 end)`
+      })
+        .from(timeTracking)
+        .where(and(
+          eq(timeTracking.tenantId, tenantId),
+          storeId ? eq(timeTracking.storeId, storeId) : sql`true`,
+          startDate ? sql`${timeTracking.clockIn} >= ${startDate}` : sql`true`,
+          endDate ? sql`${timeTracking.clockIn} <= ${endDate}` : sql`true`
+        ))
+        .groupBy(sql`DATE(clock_in)`)
+        .orderBy(sql`DATE(clock_in) desc`);
+
+      const totalEmployees = await db.select({ count: sql`count(*)` })
+        .from(users)
+        .where(eq(users.tenantId, tenantId))
+        .then(result => Number(result[0]?.count) || 1);
+
+      const totalPresent = attendance.reduce((sum, day) => sum + Number(day.present), 0);
+      const totalLate = attendance.reduce((sum, day) => sum + Number(day.lateCount), 0);
+      const averageAttendance = totalPresent / (attendance.length || 1);
+      
+      const analytics = {
+        totalPresent: totalPresent,
+        totalAbsent: (totalEmployees * attendance.length) - totalPresent,
+        totalLate: totalLate,
+        attendanceRate: (averageAttendance / totalEmployees) * 100,
+        punctualityRate: 100 - ((totalLate / totalPresent) * 100),
+        averageWorkHours: attendance.reduce((sum, day) => sum + Number(day.totalHours), 0) / (attendance.length || 1),
+        overtimeHours: 0, // Calculate from timeTracking
+        trends: {
+          daily: attendance.map(day => ({
+            date: day.date,
+            present: Number(day.present),
+            absent: totalEmployees - Number(day.present),
+            late: Number(day.lateCount)
+          })),
+          weekly: [],
+          departmental: []
+        }
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error('Attendance analytics error:', error);
+      res.status(500).json({ error: 'Failed to get attendance analytics' });
+    }
+  });
+
+  // Leave Analytics  
+  app.get('/api/hr/analytics/leave', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { startDate, endDate, departmentId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const leaveStats = await db.select({
+        totalRequests: sql`count(*)`,
+        approvedRequests: sql`sum(case when status = 'approved' then 1 else 0 end)`,
+        pendingRequests: sql`sum(case when status = 'pending' then 1 else 0 end)`,
+        rejectedRequests: sql`sum(case when status = 'rejected' then 1 else 0 end)`,
+        totalDays: sql`sum(EXTRACT(DAY FROM (end_date::timestamp - start_date::timestamp)) + 1)`,
+        avgDaysPerRequest: sql`avg(EXTRACT(DAY FROM (end_date::timestamp - start_date::timestamp)) + 1)`
+      })
+        .from(leaveRequests)
+        .where(and(
+          eq(leaveRequests.tenantId, tenantId),
+          startDate ? sql`${leaveRequests.createdAt} >= ${startDate}` : sql`true`,
+          endDate ? sql`${leaveRequests.createdAt} <= ${endDate}` : sql`true`
+        ));
+
+      const leaveByType = await db.select({
+        type: leaveRequests.leaveType,
+        count: sql`count(*)`,
+        days: sql`sum(EXTRACT(DAY FROM (end_date::timestamp - start_date::timestamp)) + 1)`
+      })
+        .from(leaveRequests)
+        .where(and(
+          eq(leaveRequests.tenantId, tenantId),
+          startDate ? sql`${leaveRequests.createdAt} >= ${startDate}` : sql`true`,
+          endDate ? sql`${leaveRequests.createdAt} <= ${endDate}` : sql`true`
+        ))
+        .groupBy(leaveRequests.leaveType);
+
+      const totalCount = Number(leaveStats[0]?.totalRequests) || 1;
+      
+      const analytics = {
+        totalRequests: Number(leaveStats[0]?.totalRequests) || 0,
+        approvedRequests: Number(leaveStats[0]?.approvedRequests) || 0,
+        pendingRequests: Number(leaveStats[0]?.pendingRequests) || 0,
+        rejectedRequests: Number(leaveStats[0]?.rejectedRequests) || 0,
+        averageDaysPerRequest: Number(leaveStats[0]?.avgDaysPerRequest) || 0,
+        mostCommonTypes: leaveByType.map(type => ({
+          type: type.type,
+          count: Number(type.count),
+          percentage: (Number(type.count) / totalCount) * 100
+        })),
+        balanceOverview: {
+          totalAvailable: 30,  // Mock - should be from leave policies
+          totalUsed: Number(leaveStats[0]?.totalDays) || 0,
+          totalScheduled: 0
+        },
+        trends: {
+          monthly: [],
+          byType: [],
+          byDepartment: []
+        }
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error('Leave analytics error:', error);
+      res.status(500).json({ error: 'Failed to get leave analytics' });
+    }
+  });
+
+  // Labor Cost Analytics
+  app.get('/api/hr/analytics/labor-cost', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { startDate, endDate, storeId, departmentId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const laborStats = await db.select({
+        totalMinutes: sql`sum(total_minutes)`,
+        overtimeMinutes: sql`sum(overtime_minutes)`,
+        holidayMinutes: sql`sum(case when holiday_bonus = true then total_minutes else 0 end)`
+      })
+        .from(timeTracking)
+        .where(and(
+          eq(timeTracking.tenantId, tenantId),
+          storeId ? eq(timeTracking.storeId, storeId) : sql`true`,
+          startDate ? sql`${timeTracking.clockIn} >= ${startDate}` : sql`true`,
+          endDate ? sql`${timeTracking.clockIn} <= ${endDate}` : sql`true`
+        ));
+
+      const hourlyRate = 25; // Should come from user profiles/contracts
+      const overtimeRate = hourlyRate * 1.5;
+      const holidayRate = hourlyRate * 2;
+
+      const totalMinutes = Number(laborStats[0]?.totalMinutes) || 0;
+      const overtimeMinutes = Number(laborStats[0]?.overtimeMinutes) || 0;
+      const holidayMinutes = Number(laborStats[0]?.holidayMinutes) || 0;
+      const regularMinutes = totalMinutes - overtimeMinutes - holidayMinutes;
+
+      const analytics = {
+        totalCost: (regularMinutes / 60 * hourlyRate) + 
+                  (overtimeMinutes / 60 * overtimeRate) +
+                  (holidayMinutes / 60 * holidayRate),
+        regularHoursCost: regularMinutes / 60 * hourlyRate,
+        overtimeCost: overtimeMinutes / 60 * overtimeRate,
+        holidayCost: holidayMinutes / 60 * holidayRate,
+        averageCostPerEmployee: 0, // To be calculated
+        costByDepartment: [],
+        costByStore: [],
+        trends: {
+          monthly: [],
+          quarterly: [],
+          projected: []
+        }
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error('Labor cost analytics error:', error);
+      res.status(500).json({ error: 'Failed to get labor cost analytics' });
+    }
+  });
+
+  // Shift Analytics
+  app.get('/api/hr/analytics/shifts', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { startDate, endDate, storeId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const shiftStats = await db.select({
+        totalShifts: sql`count(*)`,
+        coveredShifts: sql`sum(case when assigned_users is not null and array_length(assigned_users, 1) > 0 then 1 else 0 end)`,
+        avgDuration: sql`avg(EXTRACT(EPOCH FROM (end_time::time - start_time::time)) / 3600)`
+      })
+        .from(shifts)
+        .where(and(
+          eq(shifts.tenantId, tenantId),
+          storeId ? eq(shifts.storeId, storeId) : sql`true`,
+          startDate ? sql`${shifts.date} >= ${startDate}` : sql`true`,
+          endDate ? sql`${shifts.date} <= ${endDate}` : sql`true`
+        ));
+
+      const totalShifts = Number(shiftStats[0]?.totalShifts) || 1;
+      const coveredShifts = Number(shiftStats[0]?.coveredShifts) || 0;
+      
+      const analytics = {
+        totalShifts: totalShifts,
+        coveredShifts: coveredShifts,
+        openShifts: totalShifts - coveredShifts,
+        coverageRate: (coveredShifts / totalShifts) * 100,
+        averageShiftDuration: Number(shiftStats[0]?.avgDuration) || 8,
+        peakHours: [],
+        understaffedShifts: 0,
+        overstaffedShifts: 0,
+        shiftDistribution: {
+          morning: 0,
+          afternoon: 0,
+          evening: 0,
+          night: 0
+        },
+        trends: {
+          dailyCoverage: [],
+          weeklyPatterns: [],
+          monthlyEfficiency: []
+        }
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error('Shift analytics error:', error);
+      res.status(500).json({ error: 'Failed to get shift analytics' });
+    }
+  });
+
+  // Employee Demographics
+  app.get('/api/hr/analytics/demographics', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { storeId, departmentId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const totalEmployees = await db.select({ count: sql`count(*)` })
+        .from(users)
+        .where(eq(users.tenantId, tenantId))
+        .then(result => Number(result[0]?.count) || 0);
+
+      // Mock demographics for now - should query from user profiles
+      const analytics = {
+        totalEmployees: totalEmployees,
+        byGender: [
+          { gender: 'Male', count: Math.floor(totalEmployees * 0.45), percentage: 45 },
+          { gender: 'Female', count: Math.floor(totalEmployees * 0.55), percentage: 55 }
+        ],
+        byAgeGroup: [
+          { group: '18-25', count: Math.floor(totalEmployees * 0.2), percentage: 20 },
+          { group: '26-35', count: Math.floor(totalEmployees * 0.35), percentage: 35 },
+          { group: '36-45', count: Math.floor(totalEmployees * 0.25), percentage: 25 },
+          { group: '46+', count: Math.floor(totalEmployees * 0.2), percentage: 20 }
+        ],
+        byDepartment: [],
+        byContractType: [
+          { type: 'Full-time', count: Math.floor(totalEmployees * 0.7), percentage: 70 },
+          { type: 'Part-time', count: Math.floor(totalEmployees * 0.2), percentage: 20 },
+          { type: 'Contract', count: Math.floor(totalEmployees * 0.1), percentage: 10 }
+        ],
+        bySeniority: [],
+        averageAge: 34,
+        averageTenure: 3.5,
+        turnoverRate: 12.5,
+        diversityScore: 78
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error('Demographics analytics error:', error);
+      res.status(500).json({ error: 'Failed to get demographics' });
+    }
+  });
+
+  // Compliance Metrics
+  app.get('/api/hr/analytics/compliance', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const documentCompliance = await db.select({
+        expiredCount: sql`sum(case when expires_at < now() then 1 else 0 end)`,
+        upcomingCount: sql`sum(case when expires_at between now() and now() + interval '30 days' then 1 else 0 end)`,
+        validCount: sql`sum(case when expires_at > now() + interval '30 days' then 1 else 0 end)`
+      })
+        .from(hrDocuments)
+        .where(eq(hrDocuments.tenantId, tenantId));
+
+      const expiredDocs = Number(documentCompliance[0]?.expiredCount) || 0;
+      const upcomingDocs = Number(documentCompliance[0]?.upcomingCount) || 0;
+      const validDocs = Number(documentCompliance[0]?.validCount) || 0;
+      const totalDocs = expiredDocs + upcomingDocs + validDocs || 1;
+      
+      const analytics = {
+        overallScore: (validDocs / totalDocs) * 100,
+        documentCompliance: {
+          score: (validDocs / totalDocs) * 100,
+          expiredDocuments: expiredDocs,
+          upcomingExpirations: upcomingDocs
+        },
+        workingTimeCompliance: {
+          score: 95,  // Mock for now
+          violations: 2,
+          restPeriodViolations: 1,
+          overtimeViolations: 1
+        },
+        trainingCompliance: {
+          score: 88,
+          expiredCertifications: 3,
+          upcomingTraining: 5
+        },
+        contractCompliance: {
+          score: 100,
+          expiredContracts: 0,
+          renewalsPending: 2
+        },
+        issues: {
+          critical: expiredDocs,
+          warning: upcomingDocs,
+          info: 0
+        }
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error('Compliance metrics error:', error);
+      res.status(500).json({ error: 'Failed to get compliance metrics' });
+    }
+  });
+
+  // Export Dashboard
+  app.get('/api/hr/analytics/export', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { format, startDate, endDate, storeId, departmentId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      if (!format || !['pdf', 'excel', 'csv'].includes(format as string)) {
+        return res.status(400).json({ error: 'Invalid export format' });
+      }
+
+      // For now, return mock data - in production would generate actual file
+      res.setHeader('Content-Type', 
+        format === 'pdf' ? 'application/pdf' :
+        format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
+        'text/csv'
+      );
+      res.setHeader('Content-Disposition', `attachment; filename=hr-analytics.${format}`);
+      
+      // Send mock file content
+      res.send('Mock export data');
+    } catch (error) {
+      console.error('Export dashboard error:', error);
+      res.status(500).json({ error: 'Failed to export dashboard' });
+    }
+  });
+
+  // Current Attendance (Real-time)
+  app.get('/api/hr/analytics/attendance/current', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { storeId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const currentAttendance = await db.select({
+        present: sql`count(distinct user_id)`,
+        late: sql`sum(case when is_late = true then 1 else 0 end)`
+      })
+        .from(timeTracking)
+        .where(and(
+          eq(timeTracking.tenantId, tenantId),
+          storeId ? eq(timeTracking.storeId, storeId) : sql`true`,
+          sql`DATE(clock_in) = CURRENT_DATE`,
+          isNull(timeTracking.clockOut)
+        ));
+
+      const totalEmployees = await db.select({ count: sql`count(*)` })
+        .from(users)
+        .where(eq(users.tenantId, tenantId))
+        .then(result => Number(result[0]?.count) || 1);
+
+      const present = Number(currentAttendance[0]?.present) || 0;
+      
+      res.json({
+        present: present,
+        absent: totalEmployees - present,
+        late: Number(currentAttendance[0]?.late) || 0
+      });
+    } catch (error) {
+      console.error('Current attendance error:', error);
+      res.status(500).json({ error: 'Failed to get current attendance' });
+    }
+  });
+
+  // Active Shifts Count
+  app.get('/api/hr/analytics/shifts/active', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { storeId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const activeShifts = await db.select({ count: sql`count(*)` })
+        .from(shifts)
+        .where(and(
+          eq(shifts.tenantId, tenantId),
+          storeId ? eq(shifts.storeId, storeId) : sql`true`,
+          sql`DATE(${shifts.date}) = CURRENT_DATE`,
+          sql`CURRENT_TIME BETWEEN ${shifts.startTime} AND ${shifts.endTime}`
+        ));
+
+      res.json({ count: Number(activeShifts[0]?.count) || 0 });
+    } catch (error) {
+      console.error('Active shifts error:', error);
+      res.status(500).json({ error: 'Failed to get active shifts' });
+    }
+  });
+
+  // Upcoming Events
+  app.get('/api/hr/analytics/events/upcoming', ...authWithRBAC, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { days = 7 } = req.query;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const upcomingEvents = await db.select()
+        .from(calendarEvents)
+        .where(and(
+          eq(calendarEvents.tenantId, tenantId),
+          sql`${calendarEvents.startDate} BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '${days} days'`
+        ))
+        .orderBy(calendarEvents.startDate)
+        .limit(10);
+
+      res.json(upcomingEvents);
+    } catch (error) {
+      console.error('Upcoming events error:', error);
+      res.status(500).json({ error: 'Failed to get upcoming events' });
+    }
+  });
+
   // Direct health check route (outside /api prefix)
   app.get("/health", async (req, res) => {
     try {

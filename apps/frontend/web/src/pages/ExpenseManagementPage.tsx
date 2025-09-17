@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useExpenseReports, useExpenseStats, useExpenseApprovals } from '@/hooks/useExpenseManagement';
 import { expenseService } from '@/services/expenseService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import ExpenseReportForm from '@/components/Expenses/ExpenseReportForm';
 import ExpenseApprovalQueue from '@/components/Expenses/ExpenseApprovalQueue';
 import ExpenseAnalytics from '@/components/Expenses/ExpenseAnalytics';
