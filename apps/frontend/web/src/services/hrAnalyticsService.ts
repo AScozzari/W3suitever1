@@ -1,6 +1,7 @@
 // HR Analytics Service - Enterprise Analytics for HR Management
-import { apiService } from './ApiService';
-import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
+import { apiRequest } from '../lib/queryClient';
+import { format as formatDate, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
+import { oauth2Client } from './OAuth2Client';
 
 export interface DashboardMetrics {
   totalEmployees: number;
@@ -141,13 +142,25 @@ interface PeriodFilters {
   teamId?: string;
 }
 
+// Helper per ottenere il tenant ID corrente
+const getCurrentTenantId = () => {
+  // Sempre usa l'UUID corretto per development
+  return '00000000-0000-0000-0000-000000000001';
+};
+
+// Token validation helper function
+function isValidToken(token: string | null): boolean {
+  if (!token) return false;
+  if (token === 'undefined' || token === 'null' || token === '') return false;
+  // Basic JWT format validation: should have 3 parts separated by dots
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  // Each part should be base64-like (letters, numbers, -, _)
+  const base64Pattern = /^[A-Za-z0-9\-_]+$/;
+  return parts.every(part => part.length > 0 && base64Pattern.test(part));
+}
+
 class HRAnalyticsService {
-  private api: ApiService;
-
-  constructor() {
-    this.api = ApiService.getInstance();
-  }
-
   private getPeriodDates(period: string): { startDate: Date; endDate: Date } {
     const now = new Date();
     
@@ -176,67 +189,62 @@ class HRAnalyticsService {
     const { startDate, endDate } = this.getPeriodDates(period);
     
     const params = new URLSearchParams({
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      startDate: formatDate(startDate, 'yyyy-MM-dd'),
+      endDate: formatDate(endDate, 'yyyy-MM-dd'),
       ...(filters?.storeId && { storeId: filters.storeId }),
       ...(filters?.departmentId && { departmentId: filters.departmentId })
     });
 
-    const response = await this.api.get(`/api/hr/analytics/dashboard?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/dashboard?${params}`);
   }
 
   async getAttendanceAnalytics(period: string = 'month', storeId?: string): Promise<AttendanceAnalytics> {
     const { startDate, endDate } = this.getPeriodDates(period);
     
     const params = new URLSearchParams({
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      startDate: formatDate(startDate, 'yyyy-MM-dd'),
+      endDate: formatDate(endDate, 'yyyy-MM-dd'),
       ...(storeId && { storeId })
     });
 
-    const response = await this.api.get(`/api/hr/analytics/attendance?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/attendance?${params}`);
   }
 
   async getLeaveAnalytics(period: string = 'month', departmentId?: string): Promise<LeaveAnalytics> {
     const { startDate, endDate } = this.getPeriodDates(period);
     
     const params = new URLSearchParams({
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      startDate: formatDate(startDate, 'yyyy-MM-dd'),
+      endDate: formatDate(endDate, 'yyyy-MM-dd'),
       ...(departmentId && { departmentId })
     });
 
-    const response = await this.api.get(`/api/hr/analytics/leave?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/leave?${params}`);
   }
 
   async getLaborCostAnalytics(period: string = 'month', filters?: PeriodFilters): Promise<LaborCostAnalytics> {
     const { startDate, endDate } = this.getPeriodDates(period);
     
     const params = new URLSearchParams({
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      startDate: formatDate(startDate, 'yyyy-MM-dd'),
+      endDate: formatDate(endDate, 'yyyy-MM-dd'),
       ...(filters?.storeId && { storeId: filters.storeId }),
       ...(filters?.departmentId && { departmentId: filters.departmentId })
     });
 
-    const response = await this.api.get(`/api/hr/analytics/labor-cost?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/labor-cost?${params}`);
   }
 
   async getShiftAnalytics(period: string = 'month', storeId?: string): Promise<ShiftAnalytics> {
     const { startDate, endDate } = this.getPeriodDates(period);
     
     const params = new URLSearchParams({
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      startDate: formatDate(startDate, 'yyyy-MM-dd'),
+      endDate: formatDate(endDate, 'yyyy-MM-dd'),
       ...(storeId && { storeId })
     });
 
-    const response = await this.api.get(`/api/hr/analytics/shifts?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/shifts?${params}`);
   }
 
   async getEmployeeDemographics(filters?: PeriodFilters): Promise<EmployeeDemographics> {
@@ -245,56 +253,91 @@ class HRAnalyticsService {
       ...(filters?.departmentId && { departmentId: filters.departmentId })
     });
 
-    const response = await this.api.get(`/api/hr/analytics/demographics?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/demographics?${params}`);
   }
 
   async getComplianceMetrics(): Promise<ComplianceMetrics> {
-    const response = await this.api.get('/api/hr/analytics/compliance');
-    return response.data;
+    return await apiRequest('/api/hr/analytics/compliance');
   }
 
-  async exportDashboard(format: 'pdf' | 'excel' | 'csv', period: string, filters?: PeriodFilters): Promise<Blob> {
+  async exportDashboard(exportFormat: 'pdf' | 'excel' | 'csv', period: string, filters?: PeriodFilters): Promise<Blob> {
     const { startDate, endDate } = this.getPeriodDates(period);
     
     const params = new URLSearchParams({
-      format,
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      format: exportFormat,
+      startDate: formatDate(startDate, 'yyyy-MM-dd'),
+      endDate: formatDate(endDate, 'yyyy-MM-dd'),
       ...(filters?.storeId && { storeId: filters.storeId }),
       ...(filters?.departmentId && { departmentId: filters.departmentId })
     });
 
-    const response = await this.api.get(`/api/hr/analytics/export?${params}`, {
-      responseType: 'blob'
+    // Use fetch directly for Blob response
+    const tenantId = getCurrentTenantId();
+    let headers: Record<string, string> = {
+      'X-Tenant-ID': tenantId,
+    };
+    
+    // Check if we're in development mode
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev');
+    
+    if (isDevelopment) {
+      headers['X-Auth-Session'] = 'authenticated';
+      headers['X-Demo-User'] = 'demo-user';
+    } else {
+      const token = await oauth2Client.getAccessToken();
+      
+      if (!isValidToken(token)) {
+        if (!token || token === 'undefined' || token === 'null' || token === '') {
+          await oauth2Client.logout();
+          await oauth2Client.startAuthorizationFlow();
+          throw new Error('Authentication required');
+        }
+        
+        await oauth2Client.logout();
+        await oauth2Client.startAuthorizationFlow();
+        throw new Error('Invalid token format');
+      }
+      
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`/api/hr/analytics/export?${params}`, {
+      credentials: 'include',
+      headers
     });
     
-    return response.data;
+    if (!response.ok) {
+      if (response.status === 401) {
+        await oauth2Client.logout();
+        await oauth2Client.startAuthorizationFlow();
+        throw new Error('401: Unauthorized');
+      }
+      throw new Error(`${response.status}: ${response.statusText}`);
+    }
+    
+    return response.blob();
   }
 
   // Real-time metrics
   async getCurrentAttendance(storeId?: string): Promise<{ present: number; absent: number; late: number }> {
     const params = storeId ? `?storeId=${storeId}` : '';
-    const response = await this.api.get(`/api/hr/analytics/attendance/current${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/attendance/current${params}`);
   }
 
   async getActiveShifts(storeId?: string): Promise<number> {
     const params = storeId ? `?storeId=${storeId}` : '';
-    const response = await this.api.get(`/api/hr/analytics/shifts/active${params}`);
-    return response.data.count;
+    const response = await apiRequest(`/api/hr/analytics/shifts/active${params}`);
+    return response.count;
   }
 
   async getUpcomingEvents(days: number = 7): Promise<any[]> {
-    const response = await this.api.get(`/api/hr/analytics/events/upcoming?days=${days}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/events/upcoming?days=${days}`);
   }
 
   // Trend analysis
   async getHistoricalTrends(metric: string, period: string = 'year'): Promise<any> {
     const params = new URLSearchParams({ metric, period });
-    const response = await this.api.get(`/api/hr/analytics/trends?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/trends?${params}`);
   }
 
   // Predictive analytics
@@ -303,35 +346,36 @@ class HRAnalyticsService {
       type, 
       horizon: horizon.toString() 
     });
-    const response = await this.api.get(`/api/hr/analytics/predictions?${params}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/predictions?${params}`);
   }
 
   // Anomaly detection
   async getAnomalies(type: 'attendance' | 'overtime' | 'costs'): Promise<any[]> {
-    const response = await this.api.get(`/api/hr/analytics/anomalies?type=${type}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/anomalies?type=${type}`);
   }
 
   // Benchmarking
   async getBenchmarks(metric: string): Promise<any> {
-    const response = await this.api.get(`/api/hr/analytics/benchmarks?metric=${metric}`);
-    return response.data;
+    return await apiRequest(`/api/hr/analytics/benchmarks?metric=${metric}`);
   }
 
   // Custom reports
   async generateCustomReport(config: any): Promise<any> {
-    const response = await this.api.post('/api/hr/analytics/custom-report', config);
-    return response.data;
+    return await apiRequest('/api/hr/analytics/custom-report', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    });
   }
 
   async getReportTemplates(): Promise<any[]> {
-    const response = await this.api.get('/api/hr/analytics/report-templates');
-    return response.data;
+    return await apiRequest('/api/hr/analytics/report-templates');
   }
 
   async saveReportTemplate(template: any): Promise<void> {
-    await this.api.post('/api/hr/analytics/report-templates', template);
+    await apiRequest('/api/hr/analytics/report-templates', {
+      method: 'POST',
+      body: JSON.stringify(template)
+    });
   }
 }
 
