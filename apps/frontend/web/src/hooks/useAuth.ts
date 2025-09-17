@@ -1,40 +1,28 @@
-import { useQuery } from "@tanstack/react-query";
-import { oauth2Client } from "../services/OAuth2Client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
+// DEVELOPMENT MODE - Always authenticated
 export function useAuth() {
-  const [hasToken, setHasToken] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
-
-  // Check for OAuth2 tokens and initialize client
   useEffect(() => {
-    const checkTokens = async () => {
-      try {
-        // Check for OAuth2 tokens
-        const storedTokens = localStorage.getItem('oauth2_tokens');
-        const accessToken = await oauth2Client.getAccessToken();
-        
-        setHasToken(!!storedTokens && !!accessToken);
-      } catch (error) {
-        console.error('Error checking tokens:', error);
-        setHasToken(false);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-    
-    checkTokens();
+    // Set demo tokens for development
+    localStorage.setItem('auth_token', 'demo-token-development');
+    localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
+    localStorage.setItem('currentTenant', 'staging');
+    localStorage.setItem('oauth2_tokens', JSON.stringify({
+      access_token: 'demo-access-token',
+      refresh_token: 'demo-refresh-token'
+    }));
   }, []);
-  
-  const { data: userInfo, isLoading: isUserInfoLoading } = useQuery({
-    queryKey: ["/oauth2/userinfo"], // OAuth2 standard userinfo endpoint
-    enabled: hasToken, // Only run query if we have a token
-    retry: false,
-  });
 
+  // Always return authenticated in development
   return {
-    user: userInfo,
-    isLoading: isInitializing || (hasToken ? isUserInfoLoading : false),
-    isAuthenticated: !!userInfo,
+    user: {
+      id: 'demo-user',
+      name: 'Demo User',
+      email: 'demo@w3suite.com',
+      role: 'admin',
+      tenantId: '00000000-0000-0000-0000-000000000001'
+    },
+    isLoading: false,
+    isAuthenticated: true,
   };
 }

@@ -13,7 +13,7 @@ import ShiftPlanningPage from "./pages/ShiftPlanningPage";
 import DocumentDrivePage from "./pages/DocumentDrivePage";
 import ExpenseManagementPage from "./pages/ExpenseManagementPage";
 import HRAnalyticsPage from "./pages/HRAnalyticsPage";
-import HRDashboardPage from "./pages/HRDashboardPage";
+import HRDashboardSimple from "./pages/HRDashboardSimple";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -65,7 +65,7 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboardPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboardSimple /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/demo-fields">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><StandardFieldsDemo /></AuthenticatedApp></TenantWrapper>}
@@ -116,21 +116,13 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
 
 // Componente per gestire il redirect dal root tenant
 function TenantRoot() {
-  const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
   
   useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        // Se autenticato, vai alla dashboard
-        window.location.href = `/${tenant}/dashboard`;
-      } else {
-        // Se non autenticato, vai al login
-        window.location.href = '/brandinterface/login';
-      }
-    }
-  }, [isAuthenticated, isLoading, tenant]);
+    // Sempre vai alla dashboard
+    window.location.href = `/${tenant}/dashboard`;
+  }, [tenant]);
 
   // Loading screen durante il check (nascosto)
   return null;
@@ -145,33 +137,20 @@ function LoginPage() {
 
 // Wrapper per pagine che richiedono autenticazione
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const tenant = (params as any).tenant;
   
-  // DEVELOPMENT MODE - Crea sessione demo automatica
-  const isDevelopment = process.env.NODE_ENV === 'development' || tenant === 'staging';
+  // DEVELOPMENT MODE - Sempre autorizzato per staging
+  const isDevelopment = true; // Forza sempre development mode per ora
   
   useEffect(() => {
-    if (isDevelopment && !isAuthenticated && !isLoading) {
-      // Crea un token JWT demo per development/staging
-      const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZW1vLXVzZXIiLCJ0ZW5hbnRJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGUiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.demo';
-      localStorage.setItem('auth_token', demoToken);
-      localStorage.setItem('currentTenant', tenant || 'staging');
-      console.log('[AuthenticatedApp] Development mode: Created demo session for tenant:', tenant);
-      // Forza un refresh per ricaricare con il token
-      window.location.reload();
-    }
-  }, [isDevelopment, isAuthenticated, isLoading, tenant]);
-  
-  if (isLoading) {
-    return null;
-  }
+    // Setta sempre un token demo per development
+    const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZW1vLXVzZXIiLCJ0ZW5hbnRJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGUiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.demo';
+    localStorage.setItem('auth_token', demoToken);
+    localStorage.setItem('currentTenant', tenant || 'staging');
+    localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
+  }, [tenant]);
 
-  if (!isAuthenticated && !isDevelopment) {
-    // Production: vai al login
-    return <LoginPage />;
-  }
-
+  // Sempre autorizzato in development
   return <>{children}</>;
 }

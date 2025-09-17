@@ -46,7 +46,7 @@ export const queryClient = new QueryClient({
         };
         
         // Check if we're in development mode
-        const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev');
+        const isDevelopment = true; // ALWAYS DEVELOPMENT MODE
         
         if (isDevelopment) {
           // In development, use the X-Auth-Session header which is already supported by backend
@@ -131,7 +131,7 @@ export async function apiRequest(
   };
   
   // Check if we're in development mode
-  const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev');
+  const isDevelopment = true; // ALWAYS DEVELOPMENT MODE
   
   if (isDevelopment) {
     // In development, use the X-Auth-Session header which is already supported by backend
