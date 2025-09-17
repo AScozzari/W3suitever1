@@ -1,7 +1,7 @@
 // HR Analytics Hooks - Enterprise Analytics Data Management
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hrAnalyticsService } from '@/services/hrAnalyticsService';
-import { toast } from './use-toast';
+import { useToast } from './use-toast';
 
 // Dashboard Metrics Hook
 export function useDashboardMetrics(period: string = 'month', filters?: any) {
@@ -70,6 +70,7 @@ export function useComplianceMetrics() {
 // Export Dashboard Hook
 export function useExportDashboard() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: ({ format, period, filters }: { format: 'pdf' | 'excel' | 'csv'; period: string; filters?: any }) => 
@@ -168,6 +169,7 @@ export function useBenchmarks(metric: string) {
 // Custom Report Generation Hook
 export function useGenerateCustomReport() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (config: any) => hrAnalyticsService.generateCustomReport(config),
@@ -201,6 +203,7 @@ export function useReportTemplates() {
 
 export function useSaveReportTemplate() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (template: any) => hrAnalyticsService.saveReportTemplate(template),
@@ -225,6 +228,7 @@ export function useSaveReportTemplate() {
 // Utility hook to refresh all analytics data
 export function useRefreshAnalytics() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   return () => {
     queryClient.invalidateQueries({ queryKey: ['hr-analytics'] });
