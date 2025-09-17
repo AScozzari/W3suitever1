@@ -581,7 +581,7 @@ export default function HRDashboardPage() {
               label="Dipendenti Totali"
               value={dashboardMetrics?.totalEmployees || 0}
               change={dashboardMetrics?.trends?.employeeGrowth ? `+${dashboardMetrics.trends.employeeGrowth}` : '+0'}
-              trend={dashboardMetrics?.trends?.employeeGrowth > 0 ? 'up' : 'down'}
+              trend={(dashboardMetrics?.trends?.employeeGrowth ?? 0) > 0 ? 'up' : 'down'}
               icon={Users}
               loading={metricsLoading}
               color="info"
@@ -590,7 +590,7 @@ export default function HRDashboardPage() {
               label="Tasso Presenza"
               value={attendance?.attendanceRate ? `${attendance.attendanceRate}%` : '0%'}
               change={dashboardMetrics?.trends?.attendanceChange ? `${dashboardMetrics.trends.attendanceChange}%` : '0%'}
-              trend={dashboardMetrics?.trends?.attendanceChange > 0 ? 'up' : 'down'}
+              trend={(dashboardMetrics?.trends?.attendanceChange ?? 0) > 0 ? 'up' : 'down'}
               icon={UserCheck}
               loading={attendanceLoading}
               color="success"
@@ -599,7 +599,7 @@ export default function HRDashboardPage() {
               label="Ore Straordinario"
               value={dashboardMetrics?.overtimeHours ? `${dashboardMetrics.overtimeHours}h` : '0h'}
               change={dashboardMetrics?.trends?.overtimeChange ? `${dashboardMetrics.trends.overtimeChange}%` : '0%'}
-              trend={dashboardMetrics?.trends?.overtimeChange < 0 ? 'up' : 'down'}
+              trend={(dashboardMetrics?.trends?.overtimeChange ?? 0) < 0 ? 'up' : 'down'}
               icon={Timer}
               loading={metricsLoading}
               color="warning"
