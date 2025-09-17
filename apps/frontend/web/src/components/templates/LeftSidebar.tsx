@@ -56,10 +56,9 @@ const defaultMenuItems: MenuItem[] = [
     id: 'hr', 
     label: 'Human Resources', 
     icon: UserPlus, 
-    path: '/hr',
     hasSubmenu: true,
     submenuItems: [
-      { id: 'hr-dashboard', label: 'HR Overview', icon: Home, path: '/hr' },
+      { id: 'hr-dashboard', label: 'HR Overview', icon: Home, path: '/hr/dashboard' },
       { id: 'employee-management', label: 'Employee Management', icon: Users, path: '/hr/employee-management' },
       { id: 'performance-reviews', label: 'Performance Reviews', icon: Award, path: '/hr/performance-reviews' },
       { id: 'payroll-management', label: 'Payroll Management', icon: DollarSign, path: '/hr/payroll-management' },

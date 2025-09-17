@@ -100,7 +100,11 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
+        {(params) => {
+          // Redirect to canonical HR dashboard path
+          window.location.href = `/${params.tenant}/hr/dashboard`;
+          return null;
+        }}
       </Route>
       <Route path="/:tenant/hr-test">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRTestPage /></AuthenticatedApp></TenantWrapper>}
