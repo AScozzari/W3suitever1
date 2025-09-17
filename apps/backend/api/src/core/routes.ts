@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 // OAuth legacy system removed - using only OAuth2 enterprise
@@ -84,6 +84,10 @@ const aclScopeBody = z.object({
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
+  // Apply JSON body parser for all routes
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
   // Conditional OAuth2 Setup based on AUTH_MODE
   if (config.AUTH_MODE === 'oauth2') {
     console.log('🔐 Setting up OAuth2 Authorization Server (AUTH_MODE=oauth2)');
@@ -94,25 +98,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Development mode authentication endpoints to simulate OAuth2 flow
     app.post('/oauth2/authorize', async (req, res) => {
       console.log('📋 Development auth - authorize endpoint called');
+      console.log('Request body:', req.body);
       
       // In development, accept any credentials
       const { username, password } = req.body;
       
       if (username && password) {
         const mockCode = 'dev-auth-code-' + Date.now();
-        const redirectUri = req.body.redirect_uri || `${req.protocol}://${req.get('host')}/auth/callback`;
         
-        // Simulate OAuth2 redirect with authorization code
-        const redirectUrl = new URL(redirectUri);
-        redirectUrl.searchParams.append('code', mockCode);
-        if (req.body.state) {
-          redirectUrl.searchParams.append('state', req.body.state);
-        }
+        console.log('✅ Development auth successful for user:', username);
         
-        console.log('✅ Development auth successful, redirecting to:', redirectUrl.toString());
-        return res.redirect(302, redirectUrl.toString());
+        // Return JSON response instead of redirect for AJAX requests
+        return res.json({
+          code: mockCode,
+          state: req.body.state || null
+        });
       }
       
+      console.log('❌ Development auth failed - missing credentials');
       return res.status(401).json({
         error: 'invalid_credentials',
         message: 'Invalid username or password'
