@@ -47,6 +47,38 @@ export const supplierOriginEnum = pgEnum('supplier_origin', ['brand', 'tenant'])
 export const supplierTypeEnum = pgEnum('supplier_type', ['distributore', 'produttore', 'servizi', 'logistica']);
 export const supplierStatusEnum = pgEnum('supplier_status', ['active', 'suspended', 'blocked']);
 
+// HR System Enums
+// Calendar Event Enums
+export const calendarEventTypeEnum = pgEnum('calendar_event_type', ['meeting', 'shift', 'time_off', 'overtime', 'training', 'deadline', 'other']);
+export const calendarEventVisibilityEnum = pgEnum('calendar_event_visibility', ['private', 'team', 'store', 'area', 'tenant']);
+export const calendarEventStatusEnum = pgEnum('calendar_event_status', ['tentative', 'confirmed', 'cancelled']);
+
+// Time Tracking Enums
+export const trackingMethodEnum = pgEnum('tracking_method', ['badge', 'nfc', 'app', 'gps', 'manual', 'biometric']);
+export const timeTrackingStatusEnum = pgEnum('time_tracking_status', ['active', 'completed', 'edited', 'disputed']);
+
+// Leave Request Enums
+export const leaveTypeEnum = pgEnum('leave_type', ['vacation', 'sick', 'personal', 'maternity', 'paternity', 'bereavement', 'unpaid', 'other']);
+export const leaveRequestStatusEnum = pgEnum('leave_request_status', ['draft', 'pending', 'approved', 'rejected', 'cancelled']);
+
+// Shift Enums
+export const shiftTypeEnum = pgEnum('shift_type', ['morning', 'afternoon', 'night', 'full_day', 'split', 'on_call']);
+export const shiftStatusEnum = pgEnum('shift_status', ['draft', 'published', 'in_progress', 'completed', 'cancelled']);
+export const shiftPatternEnum = pgEnum('shift_pattern', ['daily', 'weekly', 'monthly', 'custom']);
+
+// HR Document Enums
+export const hrDocumentTypeEnum = pgEnum('hr_document_type', ['payslip', 'contract', 'certificate', 'id_document', 'cv', 'evaluation', 'warning', 'other']);
+
+// Expense Report Enums
+export const expenseReportStatusEnum = pgEnum('expense_report_status', ['draft', 'submitted', 'approved', 'rejected', 'reimbursed']);
+export const expensePaymentMethodEnum = pgEnum('expense_payment_method', ['cash', 'credit_card', 'bank_transfer']);
+export const expenseCategoryEnum = pgEnum('expense_category', ['travel', 'meal', 'accommodation', 'transport', 'supplies', 'other']);
+
+// HR Announcement Enums
+export const hrAnnouncementTypeEnum = pgEnum('hr_announcement_type', ['policy', 'event', 'deadline', 'benefit', 'general']);
+export const hrAnnouncementPriorityEnum = pgEnum('hr_announcement_priority', ['low', 'medium', 'high', 'urgent']);
+export const hrAnnouncementAudienceEnum = pgEnum('hr_announcement_audience', ['all', 'store', 'area', 'role', 'specific']);
+
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -647,6 +679,480 @@ export const insertSupplierOverrideSchema = createInsertSchema(supplierOverrides
 export type InsertSupplierOverride = z.infer<typeof insertSupplierOverrideSchema>;
 export type SupplierOverride = typeof supplierOverrides.$inferSelect;
 
+// ==================== HR SYSTEM TABLES ====================
+
+// ==================== CALENDAR EVENTS ====================
+export const calendarEvents = w3suiteSchema.table("calendar_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  ownerId: varchar("owner_id").notNull().references(() => users.id),
+  
+  // Core event data
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  location: varchar("location", { length: 255 }),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  allDay: boolean("all_day").default(false),
+  
+  // Event classification
+  type: calendarEventTypeEnum("type").notNull().default("other"),
+  visibility: calendarEventVisibilityEnum("visibility").notNull().default("private"),
+  status: calendarEventStatusEnum("status").notNull().default("tentative"),
+  hrSensitive: boolean("hr_sensitive").default(false),
+  
+  // RBAC scoping
+  teamId: uuid("team_id"),
+  storeId: uuid("store_id").references(() => stores.id),
+  areaId: uuid("area_id"),
+  
+  // Recurring events
+  recurring: jsonb("recurring").default({}), // { pattern, interval, daysOfWeek, endDate, exceptions }
+  
+  // Participants
+  attendees: jsonb("attendees").default([]), // [{ userId, status, responseTime }]
+  
+  // Additional metadata
+  metadata: jsonb("metadata").default({}), // Type-specific data
+  color: varchar("color", { length: 7 }), // Hex color for UI
+  
+  // Audit fields
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("calendar_events_tenant_owner_idx").on(table.tenantId, table.ownerId),
+  index("calendar_events_tenant_date_idx").on(table.tenantId, table.startDate, table.endDate),
+  index("calendar_events_tenant_type_idx").on(table.tenantId, table.type),
+  index("calendar_events_store_date_idx").on(table.storeId, table.startDate),
+]);
+
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+
+// ==================== TIME TRACKING ====================
+export const timeTracking = w3suiteSchema.table("time_tracking", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  storeId: uuid("store_id").notNull().references(() => stores.id),
+  
+  // Clock times
+  clockIn: timestamp("clock_in").notNull(),
+  clockOut: timestamp("clock_out"),
+  breaks: jsonb("breaks").default([]), // [{ start, end, duration }]
+  
+  // Tracking details
+  trackingMethod: trackingMethodEnum("tracking_method").notNull(),
+  geoLocation: jsonb("geo_location"), // { lat, lng, accuracy, address }
+  deviceInfo: jsonb("device_info"), // { deviceId, deviceType, ipAddress, userAgent }
+  
+  // Shift association
+  shiftId: uuid("shift_id"), // Reference to planned shift
+  
+  // Calculated fields
+  totalMinutes: integer("total_minutes"),
+  breakMinutes: integer("break_minutes"),
+  overtimeMinutes: integer("overtime_minutes"),
+  holidayBonus: boolean("holiday_bonus").default(false),
+  
+  // Status and approval
+  status: timeTrackingStatusEnum("status").notNull().default("active"),
+  notes: text("notes"),
+  editReason: text("edit_reason"),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("time_tracking_tenant_user_idx").on(table.tenantId, table.userId),
+  index("time_tracking_tenant_store_date_idx").on(table.tenantId, table.storeId, table.clockIn),
+  index("time_tracking_shift_idx").on(table.shiftId),
+  index("time_tracking_status_idx").on(table.status),
+]);
+
+export const insertTimeTrackingSchema = createInsertSchema(timeTracking).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertTimeTracking = z.infer<typeof insertTimeTrackingSchema>;
+export type TimeTracking = typeof timeTracking.$inferSelect;
+
+// ==================== LEAVE REQUESTS ====================
+export const leaveRequests = w3suiteSchema.table("leave_requests", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  storeId: uuid("store_id").references(() => stores.id),
+  
+  // Leave details
+  leaveType: leaveTypeEnum("leave_type").notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  totalDays: integer("total_days").notNull(),
+  
+  // Request information
+  reason: text("reason"),
+  notes: text("notes"),
+  
+  // Approval workflow
+  status: leaveRequestStatusEnum("status").notNull().default("draft"),
+  approvalChain: jsonb("approval_chain").default([]), // [{ approverId, status, timestamp, comments }]
+  currentApprover: varchar("current_approver").references(() => users.id),
+  
+  // Coverage
+  coveredBy: varchar("covered_by").references(() => users.id),
+  
+  // Attachments
+  attachments: jsonb("attachments").default([]), // [{ fileName, path, uploadedAt }]
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  submittedAt: timestamp("submitted_at"),
+  processedAt: timestamp("processed_at"),
+}, (table) => [
+  index("leave_requests_tenant_user_idx").on(table.tenantId, table.userId),
+  index("leave_requests_tenant_status_idx").on(table.tenantId, table.status),
+  index("leave_requests_tenant_dates_idx").on(table.tenantId, table.startDate, table.endDate),
+  index("leave_requests_current_approver_idx").on(table.currentApprover),
+]);
+
+export const insertLeaveRequestSchema = createInsertSchema(leaveRequests).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertLeaveRequest = z.infer<typeof insertLeaveRequestSchema>;
+export type LeaveRequest = typeof leaveRequests.$inferSelect;
+
+// ==================== SHIFTS ====================
+export const shifts = w3suiteSchema.table("shifts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  storeId: uuid("store_id").notNull().references(() => stores.id),
+  
+  // Shift identification
+  name: varchar("name", { length: 100 }).notNull(),
+  code: varchar("code", { length: 50 }),
+  
+  // Timing
+  date: date("date").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  breakMinutes: integer("break_minutes").default(0),
+  
+  // Staffing
+  requiredStaff: integer("required_staff").notNull(),
+  assignedUsers: jsonb("assigned_users").default([]), // [userId1, userId2, ...]
+  
+  // Shift details
+  shiftType: shiftTypeEnum("shift_type").notNull(),
+  templateId: uuid("template_id"),
+  skills: jsonb("skills").default([]), // Required skills/certifications
+  
+  // Status and display
+  status: shiftStatusEnum("status").notNull().default("draft"),
+  notes: text("notes"),
+  color: varchar("color", { length: 7 }), // Hex color for UI
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+}, (table) => [
+  index("shifts_tenant_store_date_idx").on(table.tenantId, table.storeId, table.date),
+  index("shifts_tenant_status_idx").on(table.tenantId, table.status),
+  index("shifts_template_idx").on(table.templateId),
+]);
+
+export const insertShiftSchema = createInsertSchema(shifts).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertShift = z.infer<typeof insertShiftSchema>;
+export type Shift = typeof shifts.$inferSelect;
+
+// ==================== SHIFT TEMPLATES ====================
+export const shiftTemplates = w3suiteSchema.table("shift_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Template identification
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  
+  // Pattern configuration
+  pattern: shiftPatternEnum("pattern").notNull(),
+  rules: jsonb("rules").default({}), // Complex recurrence rules
+  
+  // Default values
+  defaultStartTime: varchar("default_start_time", { length: 5 }), // HH:MM format
+  defaultEndTime: varchar("default_end_time", { length: 5 }), // HH:MM format
+  defaultRequiredStaff: integer("default_required_staff").notNull(),
+  defaultSkills: jsonb("default_skills").default([]),
+  defaultBreakMinutes: integer("default_break_minutes").default(30),
+  
+  // Validity
+  isActive: boolean("is_active").default(true),
+  validFrom: date("valid_from"),
+  validUntil: date("valid_until"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("shift_templates_tenant_active_idx").on(table.tenantId, table.isActive),
+  index("shift_templates_pattern_idx").on(table.pattern),
+]);
+
+export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertShiftTemplate = z.infer<typeof insertShiftTemplateSchema>;
+export type ShiftTemplate = typeof shiftTemplates.$inferSelect;
+
+// ==================== HR DOCUMENTS ====================
+export const hrDocuments = w3suiteSchema.table("hr_documents", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Document classification
+  documentType: hrDocumentTypeEnum("document_type").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // File information
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  storagePath: varchar("storage_path", { length: 500 }).notNull(),
+  
+  // Period reference (for payslips)
+  year: integer("year"),
+  month: integer("month"),
+  
+  // Security and expiry
+  isConfidential: boolean("is_confidential").default(false),
+  expiryDate: date("expiry_date"),
+  
+  // Metadata
+  metadata: jsonb("metadata").default({}),
+  
+  // Audit
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("hr_documents_tenant_user_idx").on(table.tenantId, table.userId),
+  index("hr_documents_tenant_type_idx").on(table.tenantId, table.documentType),
+  index("hr_documents_year_month_idx").on(table.year, table.month),
+  index("hr_documents_expiry_idx").on(table.expiryDate),
+]);
+
+export const insertHrDocumentSchema = createInsertSchema(hrDocuments).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  uploadedAt: true
+});
+export type InsertHrDocument = z.infer<typeof insertHrDocumentSchema>;
+export type HrDocument = typeof hrDocuments.$inferSelect;
+
+// ==================== EXPENSE REPORTS ====================
+export const expenseReports = w3suiteSchema.table("expense_reports", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Report identification
+  reportNumber: varchar("report_number", { length: 50 }).notNull(),
+  period: varchar("period", { length: 7 }), // YYYY-MM format
+  
+  // Financial summary
+  totalAmount: integer("total_amount").notNull().default(0), // Stored in cents
+  currency: varchar("currency", { length: 3 }).default("EUR"),
+  
+  // Status workflow
+  status: expenseReportStatusEnum("status").notNull().default("draft"),
+  
+  // Approval and payment
+  submittedAt: timestamp("submitted_at"),
+  approvedAt: timestamp("approved_at"),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  reimbursedAt: timestamp("reimbursed_at"),
+  rejectionReason: text("rejection_reason"),
+  paymentMethod: expensePaymentMethodEnum("payment_method"),
+  
+  // Additional information
+  notes: text("notes"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("expense_reports_tenant_user_idx").on(table.tenantId, table.userId),
+  index("expense_reports_tenant_status_idx").on(table.tenantId, table.status),
+  index("expense_reports_period_idx").on(table.period),
+  uniqueIndex("expense_reports_tenant_number_unique").on(table.tenantId, table.reportNumber),
+]);
+
+export const insertExpenseReportSchema = createInsertSchema(expenseReports).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertExpenseReport = z.infer<typeof insertExpenseReportSchema>;
+export type ExpenseReport = typeof expenseReports.$inferSelect;
+
+// ==================== EXPENSE ITEMS ====================
+export const expenseItems = w3suiteSchema.table("expense_items", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  expenseReportId: uuid("expense_report_id").notNull().references(() => expenseReports.id, { onDelete: "cascade" }),
+  
+  // Item details
+  date: date("date").notNull(),
+  category: expenseCategoryEnum("category").notNull(),
+  description: text("description").notNull(),
+  
+  // Financial data
+  amount: integer("amount").notNull(), // Stored in cents
+  vat: integer("vat").default(0), // VAT percentage * 100 (e.g., 2200 = 22%)
+  vatAmount: integer("vat_amount").default(0), // VAT amount in cents
+  
+  // Receipt and documentation
+  receipt: boolean("receipt").default(false),
+  receiptPath: varchar("receipt_path", { length: 500 }),
+  
+  // Project allocation
+  projectCode: varchar("project_code", { length: 50 }),
+  clientCode: varchar("client_code", { length: 50 }),
+  
+  // Reimbursement
+  isReimbursable: boolean("is_reimbursable").default(true),
+  
+  // Additional information
+  notes: text("notes"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("expense_items_report_idx").on(table.expenseReportId),
+  index("expense_items_date_idx").on(table.date),
+  index("expense_items_category_idx").on(table.category),
+]);
+
+export const insertExpenseItemSchema = createInsertSchema(expenseItems).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertExpenseItem = z.infer<typeof insertExpenseItemSchema>;
+export type ExpenseItem = typeof expenseItems.$inferSelect;
+
+// ==================== EMPLOYEE BALANCES ====================
+export const employeeBalances = w3suiteSchema.table("employee_balances", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  year: integer("year").notNull(),
+  
+  // Vacation days
+  vacationDaysEntitled: integer("vacation_days_entitled").notNull().default(0),
+  vacationDaysUsed: integer("vacation_days_used").notNull().default(0),
+  vacationDaysRemaining: integer("vacation_days_remaining").notNull().default(0),
+  
+  // Other leave types
+  sickDaysUsed: integer("sick_days_used").notNull().default(0),
+  personalDaysUsed: integer("personal_days_used").notNull().default(0),
+  
+  // Time balances
+  overtimeHours: integer("overtime_hours").notNull().default(0), // Stored as minutes
+  compTimeHours: integer("comp_time_hours").notNull().default(0), // Compensatory time in minutes
+  
+  // Adjustments tracking
+  adjustments: jsonb("adjustments").default([]), // [{ date, type, amount, reason, authorizedBy }]
+  
+  // Calculation metadata
+  lastCalculatedAt: timestamp("last_calculated_at"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("employee_balances_tenant_user_year_idx").on(table.tenantId, table.userId, table.year),
+  uniqueIndex("employee_balances_user_year_unique").on(table.userId, table.year),
+]);
+
+export const insertEmployeeBalanceSchema = createInsertSchema(employeeBalances).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertEmployeeBalance = z.infer<typeof insertEmployeeBalanceSchema>;
+export type EmployeeBalance = typeof employeeBalances.$inferSelect;
+
+// ==================== HR ANNOUNCEMENTS ====================
+export const hrAnnouncements = w3suiteSchema.table("hr_announcements", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Content
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  
+  // Classification
+  type: hrAnnouncementTypeEnum("type").notNull().default("general"),
+  priority: hrAnnouncementPriorityEnum("priority").notNull().default("medium"),
+  
+  // Targeting
+  targetAudience: hrAnnouncementAudienceEnum("target_audience").notNull().default("all"),
+  targetIds: jsonb("target_ids").default([]), // Store/area/user IDs for specific targeting
+  
+  // Publishing
+  publishDate: timestamp("publish_date").notNull(),
+  expiryDate: timestamp("expiry_date"),
+  isActive: boolean("is_active").default(true),
+  
+  // Attachments and engagement
+  attachments: jsonb("attachments").default([]), // [{ fileName, path, type }]
+  viewCount: integer("view_count").default(0),
+  
+  // Audit
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("hr_announcements_tenant_active_idx").on(table.tenantId, table.isActive),
+  index("hr_announcements_tenant_publish_idx").on(table.tenantId, table.publishDate),
+  index("hr_announcements_tenant_priority_idx").on(table.tenantId, table.priority),
+  index("hr_announcements_target_audience_idx").on(table.targetAudience),
+]);
+
+export const insertHrAnnouncementSchema = createInsertSchema(hrAnnouncements).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertHrAnnouncement = z.infer<typeof insertHrAnnouncementSchema>;
+export type HrAnnouncement = typeof hrAnnouncements.$inferSelect;
+
 // ==================== DRIZZLE RELATIONS ====================
 
 // Tenants Relations
@@ -662,6 +1168,16 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   storeBrands: many(storeBrands),
   storeDriverPotential: many(storeDriverPotential),
   notifications: many(notifications),
+  // HR relations
+  calendarEvents: many(calendarEvents),
+  timeTracking: many(timeTracking),
+  leaveRequests: many(leaveRequests),
+  shifts: many(shifts),
+  shiftTemplates: many(shiftTemplates),
+  hrDocuments: many(hrDocuments),
+  expenseReports: many(expenseReports),
+  employeeBalances: many(employeeBalances),
+  hrAnnouncements: many(hrAnnouncements),
 }));
 
 // Users Relations
@@ -675,6 +1191,17 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   entityLogs: many(entityLogs),
   structuredLogs: many(structuredLogs),
   notifications: many(notifications),
+  // HR relations
+  ownedCalendarEvents: many(calendarEvents),
+  timeTrackingEntries: many(timeTracking),
+  leaveRequests: many(leaveRequests),
+  hrDocuments: many(hrDocuments),
+  expenseReports: many(expenseReports),
+  employeeBalances: many(employeeBalances),
+  createdShifts: many(shifts),
+  approvedTimeTracking: many(timeTracking),
+  approvedLeaveRequests: many(leaveRequests),
+  createdAnnouncements: many(hrAnnouncements),
 }));
 
 // Legal Entities Relations
@@ -694,6 +1221,11 @@ export const storesRelations = relations(stores, ({ one, many }) => ({
   storeBrands: many(storeBrands),
   storeDriverPotential: many(storeDriverPotential),
   users: many(users),
+  // HR relations
+  calendarEvents: many(calendarEvents),
+  timeTracking: many(timeTracking),
+  leaveRequests: many(leaveRequests),
+  shifts: many(shifts),
 }));
 
 // Roles Relations
@@ -807,4 +1339,80 @@ export const supplierOverridesRelations = relations(supplierOverrides, ({ one })
   country: one(countries, { fields: [supplierOverrides.countryId], references: [countries.id] }),
   preferredPaymentMethod: one(paymentMethods, { fields: [supplierOverrides.preferredPaymentMethodId], references: [paymentMethods.id] }),
   paymentCondition: one(paymentMethodsConditions, { fields: [supplierOverrides.paymentConditionId], references: [paymentMethodsConditions.id] }),
+}));
+
+// ==================== HR SYSTEM RELATIONS ====================
+
+// Calendar Events Relations
+export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
+  tenant: one(tenants, { fields: [calendarEvents.tenantId], references: [tenants.id] }),
+  owner: one(users, { fields: [calendarEvents.ownerId], references: [users.id] }),
+  store: one(stores, { fields: [calendarEvents.storeId], references: [stores.id] }),
+  createdByUser: one(users, { fields: [calendarEvents.createdBy], references: [users.id] }),
+  updatedByUser: one(users, { fields: [calendarEvents.updatedBy], references: [users.id] }),
+}));
+
+// Time Tracking Relations
+export const timeTrackingRelations = relations(timeTracking, ({ one }) => ({
+  tenant: one(tenants, { fields: [timeTracking.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [timeTracking.userId], references: [users.id] }),
+  store: one(stores, { fields: [timeTracking.storeId], references: [stores.id] }),
+  shift: one(shifts, { fields: [timeTracking.shiftId], references: [shifts.id] }),
+  approvedByUser: one(users, { fields: [timeTracking.approvedBy], references: [users.id] }),
+}));
+
+// Leave Requests Relations
+export const leaveRequestsRelations = relations(leaveRequests, ({ one }) => ({
+  tenant: one(tenants, { fields: [leaveRequests.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [leaveRequests.userId], references: [users.id] }),
+  store: one(stores, { fields: [leaveRequests.storeId], references: [stores.id] }),
+  currentApproverUser: one(users, { fields: [leaveRequests.currentApprover], references: [users.id] }),
+  coveredByUser: one(users, { fields: [leaveRequests.coveredBy], references: [users.id] }),
+}));
+
+// Shifts Relations
+export const shiftsRelations = relations(shifts, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [shifts.tenantId], references: [tenants.id] }),
+  store: one(stores, { fields: [shifts.storeId], references: [stores.id] }),
+  template: one(shiftTemplates, { fields: [shifts.templateId], references: [shiftTemplates.id] }),
+  createdByUser: one(users, { fields: [shifts.createdBy], references: [users.id] }),
+  timeTrackingEntries: many(timeTracking),
+}));
+
+// Shift Templates Relations
+export const shiftTemplatesRelations = relations(shiftTemplates, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [shiftTemplates.tenantId], references: [tenants.id] }),
+  shifts: many(shifts),
+}));
+
+// HR Documents Relations
+export const hrDocumentsRelations = relations(hrDocuments, ({ one }) => ({
+  tenant: one(tenants, { fields: [hrDocuments.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [hrDocuments.userId], references: [users.id] }),
+  uploadedByUser: one(users, { fields: [hrDocuments.uploadedBy], references: [users.id] }),
+}));
+
+// Expense Reports Relations
+export const expenseReportsRelations = relations(expenseReports, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [expenseReports.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [expenseReports.userId], references: [users.id] }),
+  approvedByUser: one(users, { fields: [expenseReports.approvedBy], references: [users.id] }),
+  expenseItems: many(expenseItems),
+}));
+
+// Expense Items Relations
+export const expenseItemsRelations = relations(expenseItems, ({ one }) => ({
+  expenseReport: one(expenseReports, { fields: [expenseItems.expenseReportId], references: [expenseReports.id] }),
+}));
+
+// Employee Balances Relations
+export const employeeBalancesRelations = relations(employeeBalances, ({ one }) => ({
+  tenant: one(tenants, { fields: [employeeBalances.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [employeeBalances.userId], references: [users.id] }),
+}));
+
+// HR Announcements Relations
+export const hrAnnouncementsRelations = relations(hrAnnouncements, ({ one }) => ({
+  tenant: one(tenants, { fields: [hrAnnouncements.tenantId], references: [tenants.id] }),
+  createdByUser: one(users, { fields: [hrAnnouncements.createdBy], references: [users.id] }),
 }));
