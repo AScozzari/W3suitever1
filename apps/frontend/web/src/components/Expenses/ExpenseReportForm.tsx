@@ -42,7 +42,7 @@ const expenseReportSchema = z.object({
 type ExpenseReportFormValues = z.infer<typeof expenseReportSchema>;
 
 interface ExpenseReportFormProps {
-  initialData?: Partial<ExpenseReportFormValues>;
+  initialData?: Partial<ExpenseReportFormValues & { id?: string }>;
   onSuccess?: () => void;
   onCancel?: () => void;
 }

@@ -1,5 +1,5 @@
 // Time Tracking Service - Enterprise Time Management
-import { apiRequest } from '@/lib/queryClient';
+import { apiGet, apiPost, apiPut } from '@/lib/api';
 import { TimeTracking, InsertTimeTracking } from '../../../../backend/api/src/db/schema/w3suite';
 
 export interface TimeTrackingEntry extends TimeTracking {
@@ -87,14 +87,10 @@ class TimeTrackingService {
       deviceType: this.detectDeviceType(),
     };
 
-    const response = await apiRequest<TimeTrackingEntry>({
-      url: '/api/hr/time-tracking/clock-in',
-      method: 'POST',
-      data: {
-        ...data,
-        deviceInfo,
-        clockIn: new Date().toISOString(),
-      },
+    const response = await apiPost<TimeTrackingEntry>('/api/hr/time-tracking/clock-in', {
+      ...data,
+      deviceInfo,
+      clockIn: new Date().toISOString(),
     });
 
     // Store session in localStorage for offline support
@@ -110,14 +106,13 @@ class TimeTrackingService {
   }
 
   async clockOut(id: string, data?: ClockOutData): Promise<TimeTrackingEntry> {
-    const response = await apiRequest<TimeTrackingEntry>({
-      url: `/api/hr/time-tracking/${id}/clock-out`,
-      method: 'POST',
-      data: {
+    const response = await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/${id}/clock-out`,
+      {
         ...data,
         clockOut: new Date().toISOString(),
-      },
-    });
+      }
+    );
 
     // Clear session from localStorage
     if (response) {
@@ -129,10 +124,7 @@ class TimeTrackingService {
 
   async getCurrentSession(): Promise<CurrentSession | null> {
     try {
-      const response = await apiRequest<CurrentSession>({
-        url: '/api/hr/time-tracking/current',
-        method: 'GET',
-      });
+      const response = await apiGet<CurrentSession>('/api/hr/time-tracking/current');
       return response;
     } catch (error) {
       // Try to get from localStorage if API fails
@@ -158,23 +150,21 @@ class TimeTrackingService {
 
   // ==================== BREAK MANAGEMENT ====================
   async startBreak(trackingId: string): Promise<TimeTrackingEntry> {
-    return await apiRequest<TimeTrackingEntry>({
-      url: `/api/hr/time-tracking/${trackingId}/break/start`,
-      method: 'POST',
-      data: {
+    return await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/${trackingId}/break/start`,
+      {
         breakStart: new Date().toISOString(),
-      },
-    });
+      }
+    );
   }
 
   async endBreak(trackingId: string): Promise<TimeTrackingEntry> {
-    return await apiRequest<TimeTrackingEntry>({
-      url: `/api/hr/time-tracking/${trackingId}/break/end`,
-      method: 'POST',
-      data: {
+    return await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/${trackingId}/break/end`,
+      {
         breakEnd: new Date().toISOString(),
-      },
-    });
+      }
+    );
   }
 
   // ==================== ENTRIES MANAGEMENT ====================
@@ -190,44 +180,39 @@ class TimeTrackingService {
       params.append('includeBreaks', String(filters.includeBreaks));
     }
 
-    return await apiRequest<TimeTrackingEntry[]>({
-      url: `/api/hr/time-tracking/entries?${params.toString()}`,
-      method: 'GET',
-    });
+    return await apiGet<TimeTrackingEntry[]>(
+      `/api/hr/time-tracking/entries?${params.toString()}`
+    );
   }
 
   async getEntryById(id: string): Promise<TimeTrackingEntry> {
-    return await apiRequest<TimeTrackingEntry>({
-      url: `/api/hr/time-tracking/entries/${id}`,
-      method: 'GET',
-    });
+    return await apiGet<TimeTrackingEntry>(
+      `/api/hr/time-tracking/entries/${id}`
+    );
   }
 
   async updateEntry(
     id: string,
     data: Partial<InsertTimeTracking>
   ): Promise<TimeTrackingEntry> {
-    return await apiRequest<TimeTrackingEntry>({
-      url: `/api/hr/time-tracking/entries/${id}`,
-      method: 'PUT',
-      data,
-    });
+    return await apiPut<TimeTrackingEntry>(
+      `/api/hr/time-tracking/entries/${id}`,
+      data
+    );
   }
 
   async disputeEntry(id: string, reason: string): Promise<TimeTrackingEntry> {
-    return await apiRequest<TimeTrackingEntry>({
-      url: `/api/hr/time-tracking/entries/${id}/dispute`,
-      method: 'POST',
-      data: { reason },
-    });
+    return await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/entries/${id}/dispute`,
+      { reason }
+    );
   }
 
   async approveEntry(id: string, comments?: string): Promise<TimeTrackingEntry> {
-    return await apiRequest<TimeTrackingEntry>({
-      url: `/api/hr/time-tracking/entries/${id}/approve`,
-      method: 'POST',
-      data: { comments },
-    });
+    return await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/entries/${id}/approve`,
+      { comments }
+    );
   }
 
   // ==================== REPORTS ====================
@@ -242,10 +227,9 @@ class TimeTrackingService {
       endDate,
     });
 
-    return await apiRequest<TimeTrackingReport>({
-      url: `/api/hr/time-tracking/reports?${params.toString()}`,
-      method: 'GET',
-    });
+    return await apiGet<TimeTrackingReport>(
+      `/api/hr/time-tracking/reports?${params.toString()}`
+    );
   }
 
   async getTeamReport(
@@ -259,10 +243,9 @@ class TimeTrackingService {
       endDate,
     });
 
-    return await apiRequest<TimeTrackingReport[]>({
-      url: `/api/hr/time-tracking/reports/team?${params.toString()}`,
-      method: 'GET',
-    });
+    return await apiGet<TimeTrackingReport[]>(
+      `/api/hr/time-tracking/reports/team?${params.toString()}`
+    );
   }
 
   async exportEntries(
@@ -297,15 +280,14 @@ class TimeTrackingService {
     reason?: string;
     suggestions?: string[];
   }> {
-    return await apiRequest({
-      url: '/api/hr/time-tracking/validate/clock-in',
-      method: 'POST',
-      data: {
+    return await apiPost<{ valid: boolean; reason?: string; suggestions?: string[] }>(
+      '/api/hr/time-tracking/validate/clock-in',
+      {
         storeId,
         geoLocation,
         timestamp: new Date().toISOString(),
-      },
-    });
+      }
+    );
   }
 
   async checkConflicts(
@@ -324,10 +306,9 @@ class TimeTrackingService {
       params.append('excludeId', excludeId);
     }
 
-    return await apiRequest<TimeTrackingEntry[]>({
-      url: `/api/hr/time-tracking/conflicts?${params.toString()}`,
-      method: 'GET',
-    });
+    return await apiGet<TimeTrackingEntry[]>(
+      `/api/hr/time-tracking/conflicts?${params.toString()}`
+    );
   }
 
   // ==================== UTILITIES ====================

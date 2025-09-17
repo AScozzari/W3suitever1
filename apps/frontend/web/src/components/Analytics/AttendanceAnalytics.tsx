@@ -35,6 +35,7 @@ import {
   UserX,
   Activity,
   Calendar,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -117,7 +118,7 @@ export default function AttendanceAnalytics({ data, period = 'month', compact = 
   const { summary, weeklyTrend = [], hourlyPattern = [], departmentStats = [], heatmapData = [], topAbsentees = [], patterns } = data;
 
   // Create heatmap grid
-  const heatmapGrid = [];
+  const heatmapGrid: Array<{ day: number; hour: number; value: number }> = [];
   for (let hour = 0; hour < 24; hour++) {
     for (let day = 1; day <= 7; day++) {
       const dataPoint = heatmapData.find(d => d.day === day && d.hour === hour);

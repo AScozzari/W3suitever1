@@ -5,11 +5,15 @@ export interface ExpenseReport {
   id: string;
   reportNumber: string;
   userId: string;
+  userName?: string;
+  userAvatar?: string;
   tenantId: string;
   title: string;
   description?: string;
   periodStart: Date | string;
   periodEnd: Date | string;
+  startDate?: Date | string;
+  endDate?: Date | string;
   status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reimbursed';
   totalAmount: number;
   currency: string;
@@ -20,6 +24,8 @@ export interface ExpenseReport {
   reimbursedAt?: Date | string;
   paymentMethod?: 'bank_transfer' | 'cash' | 'company_card';
   notes?: string;
+  itemsCount?: number;
+  categories?: Array<{ name: string; amount: number }>;
   createdAt: Date | string;
   updatedAt: Date | string;
 }

@@ -1,7 +1,7 @@
 // Centralized API utilities
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
 
-export async function apiRequest(url: string, options?: RequestInit) {
+export async function apiRequest<T = any>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${url}`, {
     headers: {
       'Content-Type': 'application/json',
@@ -17,26 +17,26 @@ export async function apiRequest(url: string, options?: RequestInit) {
   return response.json();
 }
 
-export async function apiGet(url: string) {
-  return apiRequest(url, { method: 'GET' });
+export async function apiGet<T = any>(url: string): Promise<T> {
+  return apiRequest<T>(url, { method: 'GET' });
 }
 
-export async function apiPost(url: string, data?: any) {
-  return apiRequest(url, {
+export async function apiPost<T = any>(url: string, data?: any): Promise<T> {
+  return apiRequest<T>(url, {
     method: 'POST',
     body: data ? JSON.stringify(data) : undefined,
   });
 }
 
-export async function apiPut(url: string, data?: any) {
-  return apiRequest(url, {
+export async function apiPut<T = any>(url: string, data?: any): Promise<T> {
+  return apiRequest<T>(url, {
     method: 'PUT',
     body: data ? JSON.stringify(data) : undefined,
   });
 }
 
-export async function apiDelete(url: string) {
-  return apiRequest(url, { method: 'DELETE' });
+export async function apiDelete<T = any>(url: string): Promise<T> {
+  return apiRequest<T>(url, { method: 'DELETE' });
 }
 
 // Legacy alias for backward compatibility

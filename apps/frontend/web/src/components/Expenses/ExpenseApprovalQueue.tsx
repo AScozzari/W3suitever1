@@ -63,7 +63,7 @@ export default function ExpenseApprovalQueue({ showActions = true }: ExpenseAppr
     setProcessingId(report.id);
     try {
       await approveReport.mutateAsync({
-        reportId: report.id,
+        id: report.id,
         comments: 'Approvata'
       });
       toast({
@@ -94,7 +94,7 @@ export default function ExpenseApprovalQueue({ showActions = true }: ExpenseAppr
     setProcessingId(selectedReport.id);
     try {
       await rejectReport.mutateAsync({
-        reportId: selectedReport.id,
+        id: selectedReport.id,
         reason: rejectReason
       });
       toast({
@@ -165,7 +165,7 @@ export default function ExpenseApprovalQueue({ showActions = true }: ExpenseAppr
                       <span>{report.userName}</span>
                       <span>•</span>
                       <Calendar className="h-3 w-3" />
-                      <span>{getDaysWaiting(report.submittedAt)}</span>
+                      <span>{getDaysWaiting(report.submittedAt || new Date())}</span>
                     </div>
                   </div>
                 </div>
@@ -185,8 +185,8 @@ export default function ExpenseApprovalQueue({ showActions = true }: ExpenseAppr
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Periodo</span>
                   <span>
-                    {format(new Date(report.startDate), 'dd/MM/yyyy')} - 
-                    {format(new Date(report.endDate), 'dd/MM/yyyy')}
+                    {format(new Date(report.startDate || report.periodStart || new Date()), 'dd/MM/yyyy')} - 
+                    {format(new Date(report.endDate || report.periodEnd || new Date()), 'dd/MM/yyyy')}
                   </span>
                 </div>
 

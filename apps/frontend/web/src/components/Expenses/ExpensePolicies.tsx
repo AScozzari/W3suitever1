@@ -1,5 +1,6 @@
 // Expense Policies Component
 import { useState } from 'react';
+import type { ExpensePolicy } from '@/services/expenseService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,9 +29,9 @@ interface ExpensePoliciesProps {
 
 export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProps) {
   const { toast } = useToast();
-  const { policies, isLoading, updatePolicy } = useExpensePolicies();
+  const { policy, isLoading, updatePolicy } = useExpensePolicies();
   const [editMode, setEditMode] = useState(false);
-  const [localPolicies, setLocalPolicies] = useState(policies || {});
+  const [localPolicies, setLocalPolicies] = useState<Partial<ExpensePolicy>>(policy || {});
 
   const handleSave = async () => {
     try {
@@ -79,7 +80,7 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
     }
   };
 
-  const currentPolicies = localPolicies || policies || defaultPolicies;
+  const currentPolicies = localPolicies || policy || defaultPolicies;
 
   if (isLoading) {
     return (
@@ -110,7 +111,7 @@ export default function ExpensePolicies({ canEdit = false }: ExpensePoliciesProp
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setLocalPolicies(policies);
+                    setLocalPolicies(policy || {});
                     setEditMode(false);
                   }}
                   data-testid="button-cancel-policies"

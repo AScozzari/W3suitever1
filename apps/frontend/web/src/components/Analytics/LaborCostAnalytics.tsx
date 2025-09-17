@@ -594,9 +594,7 @@ export default function LaborCostAnalytics({
                 <ResponsiveContainer width="100%" height="100%">
                   <RadialBarChart cx="50%" cy="50%" innerRadius="10%" outerRadius="90%" data={productivityMetrics}>
                     <RadialBar
-                      minAngle={15}
                       background
-                      clockWise
                       dataKey="efficiency"
                       fill="#f97316"
                     />
