@@ -585,7 +585,7 @@ export default function LeaveAnalytics({ data, period = 'month', compact = false
               <div className="space-y-3">
                 {coverageGaps.map((gap, index) => {
                   const gapPercentage = ((gap.gap / gap.staffRequired) * 100).toFixed(0);
-                  const isC ritical = gap.gap > gap.staffRequired * 0.3;
+                  const isCritical = gap.gap > gap.staffRequired * 0.3;
                   
                   return (
                     <div
