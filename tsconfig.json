@@ -17,7 +17,9 @@
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./apps/frontend/web/src/*"],
-      "@shared/*": ["./apps/backend/api/src/db/schema/*"]
+      "@shared/*": ["./apps/backend/api/src/db/schema/*"],
+      "@w3suite/frontend-kit": ["./packages/frontend-kit"],
+      "@w3suite/frontend-kit/*": ["./packages/frontend-kit/*"]
     }
   }
 }
