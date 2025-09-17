@@ -1,0 +1,117 @@
+Sì, le tabelle di override avranno tutte e tre le protezioni: OAuth2/JWT → RBAC → RLS (più il tenant context). Ecco lo schema d’enforcement chiaro e operativo.
+
+🔐 Security stack (ordine di esecuzione)
+
+1. OAuth2 + JWT
+
+Verifica token (iss/aud/exp), estrae sub, tenantId, ruoli/permessi.
+
+
+
+2. Tenant Guard
+
+Imposta il contesto DB: SET LOCAL app.tenant_id = <tenantId>.
+
+
+
+3. RBAC (per endpoint overrides)
+
+Verifica permessi: suppliers.override.read|create|update|delete (o equivalenti per prodotti/listini/campagne).
+
+
+
+4. RLS (Postgres)
+
+Filtra automaticamente le righe: un tenant vede/tocca solo le sue override.
+
+
+
+
+
+---
+
+🧱 RLS (SQL) – supplier_overrides (stesso pattern per altre *_overrides)
+
+ALTER TABLE w3suite.supplier_overrides ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY rls_supplier_overrides ON w3suite.supplier_overrides
+  USING (tenant_id = current_setting('app.tenant_id')::uuid)
+  WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid);
+
+> Risultato: anche se un endpoint sbagliasse filtro, il DB blocca accessi cross-tenant.
+
+
+
+
+---
+
+🛡️ RBAC – permessi (esempio per Fornitori)
+
+suppliers.override.read
+
+suppliers.override.create
+
+suppliers.override.update
+
+suppliers.override.delete
+
+
+> Stesso schema per altre entità:
+products.override.*, pricelists.override.*, campaigns.override.*.
+
+
+
+Middleware (Nest/Express)
+
+// rotta esempio
+app.put(
+  "/:tenantSlug/api/v1/suppliers/:id/overrides",
+  jwtAuth, tenantGuard, requirePerm("suppliers.override.update"),
+  async (req, res) => { /* upsert overrides */ }
+);
+
+
+---
+
+🧩 Query “effective” (JOIN base + override del tenant)
+
+SELECT
+  s.id,
+  COALESCE(o.overrides->>'billing_email', s.billing_email) AS effective_billing_email,
+  CASE WHEN 'name' = ANY(s.locked_fields) THEN s.name
+       ELSE COALESCE(o.overrides->>'name', s.name)
+  END AS effective_name
+FROM w3suite.suppliers s
+LEFT JOIN w3suite.supplier_overrides o
+  ON o.supplier_id = s.id
+ AND o.tenant_id = current_setting('app.tenant_id')::uuid
+WHERE (s.tenant_id IS NULL OR s.tenant_id = current_setting('app.tenant_id')::uuid);
+
+> locked_fields del brand vince sempre: se il campo è lockato, l’override viene ignorato.
+
+
+
+
+---
+
+✅ Regole d’accesso riassunte
+
+Brand: scrive nei record base (suppliers con tenant_id IS NULL) e può impostare locked_fields. Non vede le override dei tenant.
+
+Tenant: legge base + proprie override (JOIN) e può creare/aggiornare solo override non lockate e solo del proprio tenant.
+
+DB: con RLS, il tenant non può leggere/scrivere override altrui, anche se l’API fosse mal configurata.
+
+
+
+---
+
+🔁 Riutilizzo del pattern
+
+Usiamo lo stesso identico stack (OAuth2/JWT → RBAC → RLS + JOIN effective) per:
+
+products / product_overrides
+
+pricelists / pricelist_overrides
+
+campaigns / campaign_overrides
