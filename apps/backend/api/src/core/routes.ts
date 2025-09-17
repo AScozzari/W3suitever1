@@ -1897,6 +1897,489 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== SHIFT MANAGEMENT ROUTES ====================
+  
+  // Get shifts
+  app.get('/api/hr/shifts', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const storeId = req.query.storeId;
+      
+      if (!storeId) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'Store ID is required'
+        });
+      }
+      
+      const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date();
+      const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+      
+      const shifts = await hrStorage.getShifts(tenantId, storeId, { start: startDate, end: endDate });
+      
+      res.json(shifts);
+    } catch (error) {
+      handleApiError(error, res, 'recupero turni');
+    }
+  });
+  
+  // Get shift by ID
+  app.get('/api/hr/shifts/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const { shifts } = await import('../db/schema/w3suite.js');
+      
+      const shift = await db.select()
+        .from(shifts)
+        .where(and(
+          eq(shifts.id, id),
+          eq(shifts.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      if (!shift[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Turno non trovato'
+        });
+      }
+      
+      res.json(shift[0]);
+    } catch (error) {
+      handleApiError(error, res, 'recupero turno');
+    }
+  });
+  
+  // Create shift
+  app.post('/api/hr/shifts', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      const shiftData = {
+        ...req.body,
+        tenantId,
+        createdBy: userId,
+        createdAt: new Date()
+      };
+      
+      const newShift = await hrStorage.createShift(shiftData);
+      
+      res.status(201).json(newShift);
+    } catch (error) {
+      handleApiError(error, res, 'creazione turno');
+    }
+  });
+  
+  // Update shift
+  app.put('/api/hr/shifts/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const { shifts } = await import('../db/schema/w3suite.js');
+      
+      const updated = await db.update(shifts)
+        .set({
+          ...req.body,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(shifts.id, id),
+          eq(shifts.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (!updated[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Turno non trovato'
+        });
+      }
+      
+      res.json(updated[0]);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento turno');
+    }
+  });
+  
+  // Delete shift
+  app.delete('/api/hr/shifts/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const { shifts } = await import('../db/schema/w3suite.js');
+      
+      await db.delete(shifts)
+        .where(and(
+          eq(shifts.id, id),
+          eq(shifts.tenantId, tenantId)
+        ))
+        .returning();
+      
+      res.status(204).send();
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione turno');
+    }
+  });
+  
+  // Bulk create shifts
+  app.post('/api/hr/shifts/bulk', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const { shifts: shiftsData } = req.body;
+      
+      if (!Array.isArray(shiftsData) || shiftsData.length === 0) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'Array of shifts is required'
+        });
+      }
+      
+      const { shifts } = await import('../db/schema/w3suite.js');
+      
+      const shiftsToCreate = shiftsData.map(shift => ({
+        ...shift,
+        tenantId,
+        createdBy: userId,
+        createdAt: new Date()
+      }));
+      
+      const created = await db.insert(shifts)
+        .values(shiftsToCreate)
+        .returning();
+      
+      res.status(201).json(created);
+    } catch (error) {
+      handleApiError(error, res, 'creazione multipla turni');
+    }
+  });
+  
+  // Assign user to shift
+  app.post('/api/hr/shifts/:id/assign', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.body;
+      
+      const shift = await hrStorage.assignUserToShift(id, userId);
+      
+      res.json(shift);
+    } catch (error) {
+      handleApiError(error, res, 'assegnazione utente a turno');
+    }
+  });
+  
+  // Remove user from shift
+  app.post('/api/hr/shifts/:id/unassign', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.body;
+      
+      const shift = await hrStorage.removeUserFromShift(id, userId);
+      
+      res.json(shift);
+    } catch (error) {
+      handleApiError(error, res, 'rimozione utente da turno');
+    }
+  });
+  
+  // Get shift templates
+  app.get('/api/hr/shift-templates', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const isActive = req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
+      
+      const templates = await hrStorage.getShiftTemplates(tenantId, isActive);
+      
+      res.json(templates);
+    } catch (error) {
+      handleApiError(error, res, 'recupero template turni');
+    }
+  });
+  
+  // Get shift template by ID
+  app.get('/api/hr/shift-templates/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const { shiftTemplates } = await import('../db/schema/w3suite.js');
+      
+      const template = await db.select()
+        .from(shiftTemplates)
+        .where(and(
+          eq(shiftTemplates.id, id),
+          eq(shiftTemplates.tenantId, tenantId)
+        ))
+        .limit(1);
+      
+      if (!template[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Template non trovato'
+        });
+      }
+      
+      res.json(template[0]);
+    } catch (error) {
+      handleApiError(error, res, 'recupero template turno');
+    }
+  });
+  
+  // Create shift template
+  app.post('/api/hr/shift-templates', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const templateData = {
+        ...req.body,
+        tenantId,
+        createdAt: new Date()
+      };
+      
+      const newTemplate = await hrStorage.createShiftTemplate(templateData);
+      
+      res.status(201).json(newTemplate);
+    } catch (error) {
+      handleApiError(error, res, 'creazione template turno');
+    }
+  });
+  
+  // Update shift template
+  app.put('/api/hr/shift-templates/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const updated = await hrStorage.updateShiftTemplate(id, req.body, tenantId);
+      
+      res.json(updated);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento template turno');
+    }
+  });
+  
+  // Delete shift template
+  app.delete('/api/hr/shift-templates/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      await hrStorage.deleteShiftTemplate(id, tenantId);
+      
+      res.status(204).send();
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione template turno');
+    }
+  });
+  
+  // Apply shift template
+  app.post('/api/hr/shifts/apply-template', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { templateId, storeId, startDate, endDate } = req.body;
+      
+      if (!templateId || !storeId || !startDate || !endDate) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'templateId, storeId, startDate, and endDate are required'
+        });
+      }
+      
+      const shifts = await hrStorage.applyShiftTemplate(
+        templateId,
+        storeId,
+        new Date(startDate),
+        new Date(endDate),
+        tenantId
+      );
+      
+      res.json(shifts);
+    } catch (error) {
+      handleApiError(error, res, 'applicazione template turno');
+    }
+  });
+  
+  // Get staff availability
+  app.get('/api/hr/shifts/staff-availability', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { storeId, startDate, endDate } = req.query;
+      
+      if (!storeId || !startDate || !endDate) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'storeId, startDate, and endDate are required'
+        });
+      }
+      
+      // Get availability for each day in the range
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const availability = [];
+      
+      const currentDate = new Date(start);
+      while (currentDate <= end) {
+        const dayAvailability = await hrStorage.getStaffAvailability(tenantId, storeId, new Date(currentDate));
+        availability.push(...dayAvailability);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      res.json(availability);
+    } catch (error) {
+      handleApiError(error, res, 'recupero disponibilità staff');
+    }
+  });
+  
+  // Get coverage analysis
+  app.get('/api/hr/shifts/coverage-analysis', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { storeId, startDate, endDate } = req.query;
+      
+      if (!storeId || !startDate || !endDate) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'storeId, startDate, and endDate are required'
+        });
+      }
+      
+      const analysis = await hrStorage.getShiftCoverageAnalysis(
+        tenantId,
+        storeId,
+        new Date(startDate),
+        new Date(endDate)
+      );
+      
+      res.json(analysis);
+    } catch (error) {
+      handleApiError(error, res, 'analisi copertura turni');
+    }
+  });
+  
+  // Detect shift conflicts
+  app.get('/api/hr/shifts/conflicts', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { storeId, userId } = req.query;
+      
+      if (!storeId) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'storeId is required'
+        });
+      }
+      
+      const conflicts = await hrStorage.detectShiftConflicts(tenantId, storeId, userId);
+      
+      res.json(conflicts);
+    } catch (error) {
+      handleApiError(error, res, 'rilevamento conflitti turni');
+    }
+  });
+  
+  // Auto-schedule shifts
+  app.post('/api/hr/shifts/auto-schedule', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { storeId, startDate, endDate, constraints } = req.body;
+      
+      if (!storeId || !startDate || !endDate) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'storeId, startDate, and endDate are required'
+        });
+      }
+      
+      const result = await hrStorage.autoScheduleShifts(
+        tenantId,
+        storeId,
+        new Date(startDate),
+        new Date(endDate),
+        constraints
+      );
+      
+      res.json(result);
+    } catch (error) {
+      handleApiError(error, res, 'auto-scheduling turni');
+    }
+  });
+  
+  // Get shift statistics
+  app.get('/api/hr/shifts/stats', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { storeId, startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({
+          error: 'bad_request',
+          message: 'startDate and endDate are required'
+        });
+      }
+      
+      const { shifts } = await import('../db/schema/w3suite.js');
+      
+      // Build query conditions
+      const conditions = [
+        eq(shifts.tenantId, tenantId),
+        gte(shifts.date, startDate),
+        lte(shifts.date, endDate)
+      ];
+      
+      if (storeId) {
+        conditions.push(eq(shifts.storeId, storeId));
+      }
+      
+      const shiftList = await db.select()
+        .from(shifts)
+        .where(and(...conditions));
+      
+      // Calculate statistics
+      let totalHours = 0;
+      let totalStaff = 0;
+      let overtimeHours = 0;
+      
+      shiftList.forEach(shift => {
+        const start = new Date(shift.startTime);
+        const end = new Date(shift.endTime);
+        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        const breakHours = (shift.breakMinutes || 0) / 60;
+        const workingHours = hours - breakHours;
+        
+        totalHours += workingHours * (shift.assignedUsers as string[]).length;
+        totalStaff += (shift.assignedUsers as string[]).length;
+        
+        // Count overtime (> 8 hours per shift)
+        if (workingHours > 8) {
+          overtimeHours += (workingHours - 8) * (shift.assignedUsers as string[]).length;
+        }
+      });
+      
+      const averageStaffPerShift = shiftList.length > 0 ? totalStaff / shiftList.length : 0;
+      const coverageRate = shiftList.reduce((acc, shift) => {
+        const coverage = shift.requiredStaff > 0 
+          ? ((shift.assignedUsers as string[]).length / shift.requiredStaff) * 100
+          : 100;
+        return acc + coverage;
+      }, 0) / (shiftList.length || 1);
+      
+      res.json({
+        totalShifts: shiftList.length,
+        totalHours: Math.round(totalHours),
+        averageStaffPerShift: Math.round(averageStaffPerShift * 10) / 10,
+        coverageRate: Math.round(coverageRate),
+        overtimeHours: Math.round(overtimeHours)
+      });
+    } catch (error) {
+      handleApiError(error, res, 'statistiche turni');
+    }
+  });
+
   // ==================== RBAC MANAGEMENT API ====================
 
   // Get all roles for the current tenant

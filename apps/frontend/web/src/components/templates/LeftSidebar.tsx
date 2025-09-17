@@ -43,6 +43,7 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'calendario', label: 'Calendario', icon: Calendar, path: '/calendar' },
   { id: 'time-tracking', label: 'Time Tracking', icon: Clock, path: '/time-tracking' },
   { id: 'leave-management', label: 'Gestione Ferie', icon: CalendarDays, path: '/leave-management' },
+  { id: 'shift-planning', label: 'Pianificazione Turni', icon: Clock, path: '/shift-planning' },
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
   { id: 'hr', label: 'Human Resources', icon: UserPlus },
