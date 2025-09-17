@@ -11,6 +11,9 @@ import TimeTrackingPage from "./pages/TimeTrackingPage";
 import { LeaveManagementPage } from "./pages/LeaveManagementPage";
 import ShiftPlanningPage from "./pages/ShiftPlanningPage";
 import DocumentDrivePage from "./pages/DocumentDrivePage";
+import ExpenseManagementPage from "./pages/ExpenseManagementPage";
+import HRAnalyticsPage from "./pages/HRAnalyticsPage";
+import HRDashboardPage from "./pages/HRDashboardPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -54,6 +57,15 @@ function Router() {
       </Route>
       <Route path="/:tenant/documents">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><DocumentDrivePage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/expense-management">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ExpenseManagementPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr-analytics">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboardPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/demo-fields">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><StandardFieldsDemo /></AuthenticatedApp></TenantWrapper>}
