@@ -291,7 +291,7 @@ export const useExpenseAnalytics = (startDate?: Date, endDate?: Date) => {
 };
 
 // Hook for expense policies
-export const useExpensePolicy = () => {
+export const useExpensePolicies = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
