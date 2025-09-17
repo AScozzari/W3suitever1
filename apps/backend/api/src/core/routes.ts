@@ -1533,6 +1533,370 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== HR LEAVE MANAGEMENT API ====================
+
+  // Get leave balance for a user
+  app.get('/api/hr/leave/balance/:userId', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const currentYear = new Date().getFullYear();
+      
+      // Get employee balance from database
+      const { employeeBalances } = await import('../db/schema/w3suite.js');
+      const balance = await db.select()
+        .from(employeeBalances)
+        .where(and(
+          eq(employeeBalances.userId, userId),
+          eq(employeeBalances.year, currentYear)
+        ))
+        .limit(1);
+      
+      if (!balance[0]) {
+        // Create default balance if not exists
+        const defaultBalance = {
+          tenantId,
+          userId,
+          year: currentYear,
+          vacationDaysEntitled: 22, // Default Italian vacation days
+          vacationDaysUsed: 0,
+          vacationDaysRemaining: 22,
+          sickDaysUsed: 0,
+          personalDaysUsed: 0,
+          overtimeHours: 0,
+          compTimeHours: 0,
+          adjustments: []
+        };
+        
+        const newBalance = await db.insert(employeeBalances)
+          .values(defaultBalance)
+          .returning();
+        
+        return res.json(newBalance[0]);
+      }
+      
+      res.json(balance[0]);
+    } catch (error) {
+      handleApiError(error, res, 'recupero saldo ferie');
+    }
+  });
+
+  // Get leave requests
+  app.get('/api/hr/leave/requests', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const filters = {
+        status: req.query.status,
+        startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
+        endDate: req.query.endDate ? new Date(req.query.endDate) : undefined,
+        leaveType: req.query.leaveType,
+        approverId: req.query.approverId
+      };
+      
+      const requests = await hrStorage.getLeaveRequests(
+        tenantId, 
+        userId, 
+        userRole, 
+        filters
+      );
+      
+      res.json(requests);
+    } catch (error) {
+      handleApiError(error, res, 'recupero richieste ferie');
+    }
+  });
+
+  // Create leave request
+  app.post('/api/hr/leave/requests', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      const requestData = {
+        ...req.body,
+        tenantId,
+        userId,
+        status: 'draft' as const,
+        createdAt: new Date()
+      };
+      
+      // Calculate total days (excluding weekends)
+      const startDate = new Date(req.body.startDate);
+      const endDate = new Date(req.body.endDate);
+      let totalDays = 0;
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Sunday (0) and Saturday (6)
+          totalDays++;
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      requestData.totalDays = totalDays;
+      
+      // Check balance
+      const { employeeBalances } = await import('../db/schema/w3suite.js');
+      const currentYear = new Date().getFullYear();
+      const balance = await db.select()
+        .from(employeeBalances)
+        .where(and(
+          eq(employeeBalances.userId, userId),
+          eq(employeeBalances.year, currentYear)
+        ))
+        .limit(1);
+      
+      if (balance[0] && req.body.leaveType === 'vacation') {
+        if (balance[0].vacationDaysRemaining < totalDays) {
+          return res.status(400).json({
+            error: 'insufficient_balance',
+            message: `Saldo ferie insufficiente. Disponibili: ${balance[0].vacationDaysRemaining}, Richiesti: ${totalDays}`
+          });
+        }
+      }
+      
+      const newRequest = await hrStorage.createLeaveRequest(requestData);
+      
+      res.status(201).json(newRequest);
+    } catch (error) {
+      handleApiError(error, res, 'creazione richiesta ferie');
+    }
+  });
+
+  // Update leave request
+  app.put('/api/hr/leave/requests/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const { leaveRequests } = await import('../db/schema/w3suite.js');
+      
+      const updated = await db.update(leaveRequests)
+        .set({
+          ...req.body,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(leaveRequests.id, id),
+          eq(leaveRequests.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (!updated[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Richiesta non trovata'
+        });
+      }
+      
+      res.json(updated[0]);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento richiesta ferie');
+    }
+  });
+
+  // Delete leave request
+  app.delete('/api/hr/leave/requests/:id', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const { leaveRequests } = await import('../db/schema/w3suite.js');
+      
+      const deleted = await db.delete(leaveRequests)
+        .where(and(
+          eq(leaveRequests.id, id),
+          eq(leaveRequests.tenantId, tenantId),
+          eq(leaveRequests.status, 'draft') // Can only delete draft requests
+        ))
+        .returning();
+      
+      if (!deleted[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Richiesta non trovata o non cancellabile'
+        });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione richiesta ferie');
+    }
+  });
+
+  // Approve leave request
+  app.post('/api/hr/leave/requests/:id/approve', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const approverId = req.user?.id;
+      const comments = req.body.comments;
+      
+      const approved = await hrStorage.approveLeaveRequest(id, approverId, comments);
+      
+      // Update balance if vacation
+      if (approved.leaveType === 'vacation') {
+        const { employeeBalances } = await import('../db/schema/w3suite.js');
+        const currentYear = new Date().getFullYear();
+        
+        await db.update(employeeBalances)
+          .set({
+            vacationDaysUsed: sql`${employeeBalances.vacationDaysUsed} + ${approved.totalDays}`,
+            vacationDaysRemaining: sql`${employeeBalances.vacationDaysRemaining} - ${approved.totalDays}`,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(employeeBalances.userId, approved.userId),
+            eq(employeeBalances.year, currentYear)
+          ));
+      }
+      
+      // Create calendar event
+      const eventData = {
+        tenantId: approved.tenantId,
+        ownerId: approved.userId,
+        title: `${approved.leaveType === 'vacation' ? 'Ferie' : 'Permesso'} - ${approved.userId}`,
+        description: approved.reason,
+        startDate: new Date(approved.startDate),
+        endDate: new Date(approved.endDate),
+        allDay: true,
+        type: 'time_off' as const,
+        visibility: 'team' as const,
+        status: 'confirmed' as const,
+        hrSensitive: true,
+        createdBy: approverId
+      };
+      
+      await hrStorage.createCalendarEvent(eventData);
+      
+      res.json(approved);
+    } catch (error) {
+      handleApiError(error, res, 'approvazione richiesta ferie');
+    }
+  });
+
+  // Reject leave request
+  app.post('/api/hr/leave/requests/:id/reject', enterpriseAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const approverId = req.user?.id;
+      const reason = req.body.reason;
+      
+      if (!reason) {
+        return res.status(400).json({
+          error: 'missing_reason',
+          message: 'Motivazione del rifiuto richiesta'
+        });
+      }
+      
+      const rejected = await hrStorage.rejectLeaveRequest(id, approverId, reason);
+      
+      res.json(rejected);
+    } catch (error) {
+      handleApiError(error, res, 'rifiuto richiesta ferie');
+    }
+  });
+
+  // Get leave policies
+  app.get('/api/hr/leave/policies', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      // Get policies from tenant settings
+      const tenant = await db.select()
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      const defaultPolicies = {
+        vacationDaysPerYear: 22,
+        minimumAdvanceDays: 15,
+        maximumConsecutiveDays: 15,
+        blackoutDates: [],
+        carryoverDays: 5,
+        sickDaysRequireCertificate: 3,
+        publicHolidays: [
+          '2025-01-01', '2025-01-06', '2025-04-21', '2025-04-25',
+          '2025-05-01', '2025-06-02', '2025-08-15', '2025-11-01',
+          '2025-12-08', '2025-12-25', '2025-12-26'
+        ]
+      };
+      
+      const policies = tenant[0]?.settings?.leavePolicies || defaultPolicies;
+      
+      res.json(policies);
+    } catch (error) {
+      handleApiError(error, res, 'recupero policy ferie');
+    }
+  });
+
+  // Update leave policies (HR/Admin only)
+  app.put('/api/hr/leave/policies', enterpriseAuth, requirePermission('hr.policies.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      const tenant = await db.select()
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      
+      if (!tenant[0]) {
+        return res.status(404).json({
+          error: 'not_found',
+          message: 'Tenant non trovato'
+        });
+      }
+      
+      const currentSettings = tenant[0].settings || {};
+      currentSettings.leavePolicies = req.body;
+      
+      const updated = await db.update(tenants)
+        .set({
+          settings: currentSettings,
+          updatedAt: new Date()
+        })
+        .where(eq(tenants.id, tenantId))
+        .returning();
+      
+      res.json(updated[0].settings.leavePolicies);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento policy ferie');
+    }
+  });
+
+  // Get team calendar
+  app.get('/api/hr/leave/team-calendar', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const filters = {
+        startDate: req.query.startDate ? new Date(req.query.startDate) : new Date(),
+        endDate: req.query.endDate ? new Date(req.query.endDate) : new Date(new Date().setMonth(new Date().getMonth() + 1)),
+        type: 'time_off',
+        visibility: req.query.visibility || 'team',
+        storeId: req.query.storeId,
+        teamId: req.query.teamId
+      };
+      
+      const events = await hrStorage.getCalendarEvents(
+        tenantId,
+        userId,
+        userRole,
+        filters
+      );
+      
+      res.json(events);
+    } catch (error) {
+      handleApiError(error, res, 'recupero calendario team');
+    }
+  });
+
   // ==================== RBAC MANAGEMENT API ====================
 
   // Get all roles for the current tenant
