@@ -4,9 +4,39 @@ W3 Suite is a multi-tenant enterprise platform within a structured monorepo, off
 
 # User Preferences
 
+# CRITICAL RULES - VIOLAZIONE = ERRORE
+
+## 1. DATABASE SCHEMA LOCATION (OBBLIGATORIO)
+**❌ NEVER create shared/ folder - IT DOES NOT EXIST**
+**❌ NEVER reference shared/schema.ts - IT DOES NOT EXIST**
+
+### Correct Schema Location:
+- ✅ **ALWAYS** use: `apps/backend/api/src/db/schema/`
+- ✅ **w3suite.ts** = Tenant-specific tables (users, stores, roles, HR tables with RLS)
+- ✅ **public.ts** = Shared reference data (countries, cities, payment methods - no tenant)
+- ✅ **brand-interface.ts** = Brand HQ system tables
+
+### Correct Import Pattern:
+```typescript
+// ✅ CORRECT
+import { users, stores, leaveRequests } from '@/db/schema/w3suite';
+import { countries, paymentMethods } from '@/db/schema/public';
+import { brandTenants } from '@/db/schema/brand-interface';
+
+// ❌ WRONG - WILL FAIL
+import { users } from '@shared/schema'; // DOES NOT EXIST
+import { users } from 'shared/schema.ts'; // DOES NOT EXIST
+```
+
+## 2. FRONTEND CONSISTENCY (OBBLIGATORIO)
+- ✅ **ALL pages MUST use Layout** with header and sidebar
+- ✅ **ALWAYS use @w3suite/frontend-kit** templates FIRST
+- ✅ **ALWAYS use shadcn/ui** components before creating custom
+- ❌ **NO custom components** if already exists in frontend-kit
+- ❌ **NO inline styles** - use CSS variables from design-system
+- ❌ **NO standalone pages** without Layout (except Login)
+
 - Preferred communication style: Simple, everyday language
-- **CRITICAL**: NO shared/ folder - Schema MUST be in apps/backend/api/src/db/schema/ (exact structure)
-- **NEVER create shared/ folder again** - Use direct imports from backend schema location
 - **UI/UX CONSISTENCY RULE**: Tutte le pagine devono mantenere la struttura dell'app con header e sidebar
 - **PAGE STRUCTURE**: Non creare pagine indipendenti, integrare contenuto nella dashboard esistente
 - **BACKGROUND RULE**: Tutte le pagine devono avere sfondo bianco (#ffffff) con header e sidebar
@@ -158,6 +188,19 @@ A Node.js master process orchestrates an embedded Nginx reverse proxy, routing t
     - **Brand Base + Tenant Override**: For entities managed by both Brand and Tenants (e.g., Suppliers, Products), using a base table and an override table.
     - **Brand-Only**: For entities exclusively managed by Brand (e.g., Stores, Legal Entities), with tenant read-only access controlled by `assigned_tenants` array.
 
+## HR System Tables (in w3suite schema)
+The following HR tables are available in `apps/backend/api/src/db/schema/w3suite.ts`:
+- **calendarEvents** - Employee calendar and events
+- **timeTracking** - Clock in/out and time tracking  
+- **leaveRequests** - Vacation and leave management
+- **shifts** - Shift scheduling
+- **shiftTemplates** - Recurring shift patterns
+- **hrDocuments** - Employee documents  
+- **expenseReports** - Expense management
+- **expenseItems** - Individual expense items
+- **employeeBalances** - Leave and time balances
+- **hrAnnouncements** - Company announcements
+
 **Frontend Package Structure:**
 - **@w3suite/frontend-kit**: Centralized frontend package with:
   - Design system with WindTre tokens and glassmorphism
@@ -166,6 +209,12 @@ A Node.js master process orchestrates an embedded Nginx reverse proxy, routing t
   - 3 UI patterns (forms, search, actions)
   - 3 custom React hooks
   - Complete shadcn/ui component library (31 components)
+  
+## Database Schema Import Reference
+**ALWAYS import from the correct schema location:**
+- Schema files are located in `apps/backend/api/src/db/schema/`
+- Use TypeScript path aliases like `@/db/schema/w3suite` or direct imports
+- NEVER create or reference a shared/ folder - it does not exist in this project
 
 # External Dependencies
 
