@@ -694,7 +694,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
           <div className="flex flex-col items-center space-y-4">
             <Button
               onClick={handleClockAction}
-              disabled={isLoading || (selectedMethod === 'gps' && !currentLocation)}
+              disabled={isLoading || (selectedMethod === 'gps' && !gpsPosition)}
               size="lg"
               className={`w-64 h-16 text-lg ${
                 isActive 
@@ -720,7 +720,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
               )}
             </Button>
             
-            {selectedMethod === 'gps' && !currentLocation && (
+            {selectedMethod === 'gps' && !gpsPosition && (
               <p className="text-xs text-orange-600">
                 Attendi il rilevamento della posizione GPS...
               </p>
