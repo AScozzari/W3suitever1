@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
+import TimbratureTab from '@/components/TimeTracking/TimbratureTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -533,48 +534,13 @@ export default function EmployeeDashboard() {
               </div>
             </TabsContent>
 
-            {/* Altri Tab */}
+            {/* Tab Timbrature con Sistema Completo */}
             <TabsContent value="timbrature" className="space-y-6 w-full">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                {/* Current Status Card */}
-                <Card className="lg:col-span-3">
-                  <CardHeader>
-                    <CardTitle>Stato Timbratura Corrente</CardTitle>
-                    <CardDescription>Situazione attuale del tuo orario di lavoro</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="p-3 rounded-full bg-blue-100">
-                          <Clock className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Entrata</p>
-                          <p className="font-semibold">{clockInTime ? format(clockInTime, 'HH:mm') : '--:--'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="p-3 rounded-full bg-purple-100">
-                          <Activity className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Ore lavorate</p>
-                          <p className="font-semibold">{calculateWorkedTime()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="p-3 rounded-full bg-orange-100">
-                          <Coffee className="h-5 w-5 text-orange-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Pausa</p>
-                          <p className="font-semibold">{breakTime} min</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <TimbratureTab 
+                userId="USER001"
+                storeId="STORE001" 
+                storeName="Milano Centro"
+              />
             </TabsContent>
 
             {/* Altri TabsContent per completezza */}
