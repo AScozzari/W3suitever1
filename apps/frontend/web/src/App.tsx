@@ -24,6 +24,7 @@ import HRReports from "./pages/HRReports";
 import HRExpense from "./pages/HRExpense";
 import HREmployees from "./pages/HREmployees";
 import HRAttendance from "./pages/HRAttendance";
+import HRFerie from "./pages/HRFerie";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -82,6 +83,9 @@ function Router() {
       </Route>
       <Route path="/:tenant/hr/presenze">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAttendance /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/ferie">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRFerie /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/employee-management">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeManagement /></AuthenticatedApp></TenantWrapper>}
