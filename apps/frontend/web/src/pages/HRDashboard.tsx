@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useLocation, Link } from 'wouter';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,137 +7,202 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { 
-  Users, 
-  Calendar, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  FileText, 
-  DollarSign, 
+  BarChart3,
+  Users,
+  Calendar as CalendarIcon,
+  Briefcase,
+  TrendingUp,
+  Shield,
+  FileText,
   Settings,
-  UserPlus,
+  Clock,
+  DollarSign,
+  Activity,
+  AlertTriangle,
+  Award,
+  ChevronRight,
   Search,
   Filter,
   Download,
   Eye,
   Edit,
   Trash2,
+  Plus,
   Mail,
   Phone,
   Building,
   MapPin,
-  Activity,
-  AlertTriangle,
-  Award,
+  UserPlus,
+  UserCheck,
+  UserX,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  Info,
+  Star,
+  Target,
+  Sparkles,
+  Heart,
+  ArrowUp,
+  ArrowDown,
+  Copy,
+  MoreVertical,
+  Globe,
+  Layers,
+  Zap,
+  Gift,
+  BookOpen,
   GraduationCap,
-  BarChart3,
-  Shield,
-  ChevronRight,
-  ArrowRight,
-  Sparkles
+  Trophy,
+  Cpu,
+  Database,
+  Lock,
+  Unlock,
+  Key,
+  PieChart,
+  LineChart,
+  TrendingDown,
+  Package,
+  Palette,
+  Timer,
+  Sunrise,
+  Sunset,
+  Moon,
+  Sun,
+  Bell
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, subDays, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+
+// WindTre Colors
+const WINDTRE_COLORS = {
+  primary: '#FF6900',
+  secondary: '#7B2CBF',
+  accent: '#FF0090',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  info: '#3B82F6',
+  dark: '#1F2937',
+  light: '#F9FAFB'
+};
+
+// Chart colors palette
+const CHART_COLORS = ['#FF6900', '#7B2CBF', '#FF0090', '#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6'];
+
+// Types
+interface Employee {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  status: 'active' | 'leave' | 'inactive';
+  email: string;
+  phone: string;
+  location: string;
+  salary: number;
+  startDate: string;
+  lastLogin: string;
+  avatar?: string;
+  performance?: number;
+  skills?: string[];
+  certifications?: string[];
+  emergencyContact?: string;
+  address?: string;
+  birthDate?: string;
+  contractType?: string;
+  manager?: string;
+  team?: string[];
+}
+
+interface ShiftTemplate {
+  id: string;
+  name: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  requiredStaff: number;
+  recurrence: 'daily' | 'weekly' | 'monthly' | 'custom';
+  daysOfWeek?: number[];
+  createdAt: string;
+  createdBy: string;
+  isActive: boolean;
+  color: string;
+  storeId?: string;
+  roles?: string[];
+}
+
+interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: 'vacation' | 'sick' | 'personal' | 'maternity' | 'paternity' | 'other';
+  startDate: string;
+  endDate: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reason: string;
+  approvedBy?: string;
+  approvedDate?: string;
+  notes?: string;
+  attachments?: string[];
+}
 
 export default function HRDashboard() {
-  const [location, navigate] = useLocation();
   const tenant = localStorage.getItem('currentTenant') || 'staging';
+  const { toast } = useToast();
   
-  // State per real-time updates
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  // Main tab state
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // States for different sections
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
-  const [activeModuleTab, setActiveModuleTab] = useState('overview');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
+  const [selectedStore, setSelectedStore] = useState('all');
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ShiftTemplate | null>(null);
+  const [selectedLeaveRequest, setSelectedLeaveRequest] = useState<LeaveRequest | null>(null);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   
-  // HR Module tabs configuration with enterprise features
-  const hrModuleTabs = [
-    {
-      id: 'overview',
-      label: 'Dashboard Overview',
-      icon: BarChart3,
-      description: 'Metriche e statistiche principali',
-      badge: null,
-      gradient: 'from-blue-500 to-cyan-500'
-    },
-    {
-      id: 'employees',
-      label: 'Employee Management',
-      icon: Users,
-      path: '/hr/employee-management',
-      description: 'Gestione anagrafica dipendenti',
-      badge: '127',
-      gradient: 'from-orange-500 to-red-500'
-    },
-    {
-      id: 'performance',
-      label: 'Performance Reviews',
-      icon: Award,
-      path: '/hr/performance-reviews',
-      description: 'Valutazioni e obiettivi',
-      badge: '12 new',
-      gradient: 'from-green-500 to-emerald-500'
-    },
-    {
-      id: 'payroll',
-      label: 'Payroll Management',
-      icon: DollarSign,
-      path: '/hr/payroll-management',
-      description: 'Buste paga e retribuzioni',
-      badge: null,
-      gradient: 'from-purple-500 to-pink-500'
-    },
-    {
-      id: 'training',
-      label: 'Training & Development',
-      icon: GraduationCap,
-      path: '/hr/training-development',
-      description: 'Formazione e certificazioni',
-      badge: '5 active',
-      gradient: 'from-indigo-500 to-blue-500'
-    },
-    {
-      id: 'analytics',
-      label: 'HR Analytics',
-      icon: BarChart3,
-      path: '/hr/analytics',
-      description: 'Analytics predittive e insights',
-      badge: 'AI',
-      gradient: 'from-violet-500 to-purple-500'
-    },
-    {
-      id: 'compliance',
-      label: 'Compliance',
-      icon: Shield,
-      path: '/hr/compliance',
-      description: 'GDPR e conformità',
-      badge: '✓',
-      gradient: 'from-teal-500 to-green-500'
-    },
-    {
-      id: 'reports',
-      label: 'Reports',
-      icon: FileText,
-      path: '/hr/reports',
-      description: 'Reportistica avanzata',
-      badge: null,
-      gradient: 'from-gray-500 to-slate-500'
-    }
-  ];
+  // Animation counter for stats
+  const [animatedStats, setAnimatedStats] = useState({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    onLeave: 0,
+    pendingRequests: 0,
+    attendanceRate: 0,
+    turnoverRate: 0,
+    newHires: 0,
+    totalPayroll: 0
+  });
   
-  const handleModuleNavigation = (tab: any) => {
-    if (tab.path) {
-      navigate(`/${tenant}${tab.path}`);
-    } else {
-      setActiveModuleTab(tab.id);
-    }
-  };
-
-  // Mock real-time data con updates ogni 30 secondi
-  const [stats, setStats] = useState({
+  // Real stats
+  const stats = {
     totalEmployees: 127,
     activeEmployees: 119,
     onLeave: 8,
@@ -147,25 +211,52 @@ export default function HRDashboard() {
     turnoverRate: 8.5,
     newHires: 3,
     totalPayroll: 847650
-  });
-
-  // Mock real-time updates
+  };
+  
+  // Animate stats on mount and tab change
   useEffect(() => {
-    const interval = setInterval(() => {
-      setStats(prev => ({
-        ...prev,
-        activeEmployees: Math.max(110, Math.min(127, prev.activeEmployees + Math.floor(Math.random() * 3) - 1)),
-        attendanceRate: Math.max(85, Math.min(98, prev.attendanceRate + (Math.random() - 0.5) * 2)),
-        pendingRequests: Math.max(0, Math.min(25, prev.pendingRequests + Math.floor(Math.random() * 3) - 1))
-      }));
-      setLastUpdate(new Date());
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Employee data espanso per la tabella
-  const [employees] = useState([
+    const duration = 1500;
+    const steps = 50;
+    const interval = duration / steps;
+    let currentStep = 0;
+    
+    const timer = setInterval(() => {
+      currentStep++;
+      const progress = currentStep / steps;
+      
+      setAnimatedStats({
+        totalEmployees: Math.floor(stats.totalEmployees * progress),
+        activeEmployees: Math.floor(stats.activeEmployees * progress),
+        onLeave: Math.floor(stats.onLeave * progress),
+        pendingRequests: Math.floor(stats.pendingRequests * progress),
+        attendanceRate: parseFloat((stats.attendanceRate * progress).toFixed(1)),
+        turnoverRate: parseFloat((stats.turnoverRate * progress).toFixed(1)),
+        newHires: Math.floor(stats.newHires * progress),
+        totalPayroll: Math.floor(stats.totalPayroll * progress)
+      });
+      
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        setAnimatedStats(stats);
+      }
+    }, interval);
+    
+    return () => clearInterval(timer);
+  }, [selectedTab]);
+  
+  // Tab configuration
+  const tabs = [
+    { id: 'overview', label: 'Dashboard Overview', icon: BarChart3, badge: null },
+    { id: 'employees', label: 'Dipendenti', icon: Users, badge: '127' },
+    { id: 'shifts', label: 'Turni & Calendario', icon: CalendarIcon, badge: 'NEW' },
+    { id: 'leave', label: 'Ferie & Permessi', icon: Briefcase, badge: '15' },
+    { id: 'analytics', label: 'HR Analytics', icon: TrendingUp, badge: null },
+    { id: 'compliance', label: 'Compliance & Reports', icon: Shield, badge: '✓' },
+    { id: 'settings', label: 'Impostazioni HR', icon: Settings, badge: null }
+  ];
+  
+  // Mock data
+  const employees: Employee[] = [
     {
       id: 'emp-001',
       name: 'Mario Rossi',
@@ -177,7 +268,12 @@ export default function HRDashboard() {
       location: 'Milano',
       salary: 65000,
       startDate: '2020-03-15',
-      lastLogin: '2 ore fa'
+      lastLogin: '2 ore fa',
+      performance: 92,
+      skills: ['Leadership', 'Communication', 'Problem Solving'],
+      certifications: ['SHRM-CP', 'PHR'],
+      contractType: 'Full-time',
+      manager: 'CEO'
     },
     {
       id: 'emp-002', 
@@ -190,7 +286,12 @@ export default function HRDashboard() {
       location: 'Roma',
       salary: 55000,
       startDate: '2021-01-10',
-      lastLogin: '1 ora fa'
+      lastLogin: '1 ora fa',
+      performance: 88,
+      skills: ['React', 'Node.js', 'TypeScript', 'Docker'],
+      certifications: ['AWS Certified Developer'],
+      contractType: 'Full-time',
+      manager: 'CTO'
     },
     {
       id: 'emp-003',
@@ -203,7 +304,11 @@ export default function HRDashboard() {
       location: 'Napoli',
       salary: 58000,
       startDate: '2019-08-22',
-      lastLogin: '1 giorno fa'
+      lastLogin: '1 giorno fa',
+      performance: 95,
+      skills: ['Negotiation', 'CRM', 'Strategic Planning'],
+      contractType: 'Full-time',
+      manager: 'Sales Director'
     },
     {
       id: 'emp-004',
@@ -216,7 +321,11 @@ export default function HRDashboard() {
       location: 'Torino',
       salary: 48000,
       startDate: '2022-02-01',
-      lastLogin: '30 min fa'
+      lastLogin: '30 min fa',
+      performance: 79,
+      skills: ['Social Media', 'Content Creation', 'SEO', 'Analytics'],
+      contractType: 'Full-time',
+      manager: 'Marketing Director'
     },
     {
       id: 'emp-005',
@@ -229,10 +338,97 @@ export default function HRDashboard() {
       location: 'Bologna',
       salary: 62000,
       startDate: '2021-06-15',
-      lastLogin: '15 min fa'
+      lastLogin: '15 min fa',
+      performance: 91,
+      skills: ['Kubernetes', 'CI/CD', 'AWS', 'Terraform'],
+      certifications: ['CKA', 'AWS Solutions Architect'],
+      contractType: 'Full-time',
+      manager: 'CTO'
     }
-  ]);
-
+  ];
+  
+  const shiftTemplates: ShiftTemplate[] = [
+    {
+      id: 'tpl-001',
+      name: 'Turno Mattina',
+      description: 'Turno standard del mattino',
+      startTime: '08:00',
+      endTime: '14:00',
+      requiredStaff: 3,
+      recurrence: 'daily',
+      createdAt: '2024-01-15',
+      createdBy: 'Mario Rossi',
+      isActive: true,
+      color: '#FF6900',
+      roles: ['Sales', 'Cashier']
+    },
+    {
+      id: 'tpl-002',
+      name: 'Turno Pomeriggio',
+      description: 'Turno standard del pomeriggio',
+      startTime: '14:00',
+      endTime: '20:00',
+      requiredStaff: 4,
+      recurrence: 'daily',
+      createdAt: '2024-01-15',
+      createdBy: 'Mario Rossi',
+      isActive: true,
+      color: '#7B2CBF',
+      roles: ['Sales', 'Cashier', 'Manager']
+    },
+    {
+      id: 'tpl-003',
+      name: 'Turno Weekend',
+      description: 'Turno speciale per il weekend',
+      startTime: '09:00',
+      endTime: '21:00',
+      requiredStaff: 5,
+      recurrence: 'weekly',
+      daysOfWeek: [6, 0],
+      createdAt: '2024-01-20',
+      createdBy: 'Giulia Bianchi',
+      isActive: true,
+      color: '#10B981',
+      roles: ['Sales', 'Cashier', 'Manager', 'Security']
+    }
+  ];
+  
+  const leaveRequests: LeaveRequest[] = [
+    {
+      id: 'leave-001',
+      employeeId: 'emp-003',
+      employeeName: 'Luca Verdi',
+      type: 'vacation',
+      startDate: '2024-02-01',
+      endDate: '2024-02-10',
+      status: 'approved',
+      reason: 'Vacanza famiglia',
+      approvedBy: 'Mario Rossi',
+      approvedDate: '2024-01-20'
+    },
+    {
+      id: 'leave-002',
+      employeeId: 'emp-002',
+      employeeName: 'Giulia Bianchi',
+      type: 'sick',
+      startDate: '2024-01-25',
+      endDate: '2024-01-26',
+      status: 'pending',
+      reason: 'Influenza',
+      attachments: ['certificato_medico.pdf']
+    },
+    {
+      id: 'leave-003',
+      employeeId: 'emp-004',
+      employeeName: 'Anna Neri',
+      type: 'personal',
+      startDate: '2024-02-15',
+      endDate: '2024-02-16',
+      status: 'pending',
+      reason: 'Motivi personali'
+    }
+  ];
+  
   // Charts data
   const attendanceData = [
     { month: 'Gen', attendance: 92.5, target: 95 },
@@ -242,15 +438,15 @@ export default function HRDashboard() {
     { month: 'Mag', attendance: 93.7, target: 95 },
     { month: 'Giu', attendance: 94.2, target: 95 }
   ];
-
+  
   const departmentData = [
-    { name: 'Sviluppo', value: 42, color: '#3B82F6' },
-    { name: 'Vendite', value: 28, color: '#FF6900' },
-    { name: 'Marketing', value: 19, color: '#7B2CBF' },
-    { name: 'HR', value: 15, color: '#10B981' },
-    { name: 'Amministrazione', value: 23, color: '#F59E0B' }
+    { name: 'Sviluppo', value: 42, color: WINDTRE_COLORS.primary },
+    { name: 'Vendite', value: 28, color: WINDTRE_COLORS.secondary },
+    { name: 'Marketing', value: 19, color: WINDTRE_COLORS.accent },
+    { name: 'HR', value: 15, color: WINDTRE_COLORS.success },
+    { name: 'Amministrazione', value: 23, color: WINDTRE_COLORS.warning }
   ];
-
+  
   const turnoverData = [
     { month: 'Gen', turnover: 8.2, hires: 5, departures: 3 },
     { month: 'Feb', turnover: 7.8, hires: 4, departures: 2 },
@@ -259,7 +455,25 @@ export default function HRDashboard() {
     { month: 'Mag', turnover: 8.8, hires: 4, departures: 3 },
     { month: 'Giu', turnover: 8.5, hires: 3, departures: 3 }
   ];
-
+  
+  const performanceData = [
+    { subject: 'Produttività', A: 85, B: 90, fullMark: 100 },
+    { subject: 'Qualità', A: 88, B: 92, fullMark: 100 },
+    { subject: 'Puntualità', A: 93, B: 95, fullMark: 100 },
+    { subject: 'Teamwork', A: 90, B: 88, fullMark: 100 },
+    { subject: 'Leadership', A: 82, B: 85, fullMark: 100 },
+    { subject: 'Innovazione', A: 78, B: 83, fullMark: 100 }
+  ];
+  
+  const salaryDistribution = [
+    { range: '30-40k', count: 15 },
+    { range: '40-50k', count: 32 },
+    { range: '50-60k', count: 45 },
+    { range: '60-70k', count: 28 },
+    { range: '70-80k', count: 12 },
+    { range: '80k+', count: 7 }
+  ];
+  
   // Filtered employees
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -270,629 +484,1715 @@ export default function HRDashboard() {
     
     return matchesSearch && matchesStatus && matchesDepartment;
   });
-
+  
   const departments = [...new Set(employees.map(emp => emp.department))];
-
-  return (
-    <Layout currentModule="hr" setCurrentModule={() => {}}>
-      <div className="min-h-screen p-6 space-y-8" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'}}>
-        
-        {/* Header con real-time indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2" data-testid="text-page-title">
-                Dashboard HR Enterprise
-              </h1>
-              <p className="text-lg text-gray-600">
-                Gestione completa delle risorse umane per W3 Suite Enterprise
-              </p>
-            </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <Activity className="h-4 w-4 text-green-500" />
-              <span>Ultimo aggiornamento: {lastUpdate.toLocaleTimeString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Professional HR Module Navigation Tabs - Enterprise Style */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative mb-8"
+  
+  // Render functions for each tab
+  const renderOverview = () => (
+    <div className="space-y-6">
+      {/* Stats Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div
+          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+          transition={{ type: "spring", stiffness: 300 }}
         >
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-            {hrModuleTabs.map((tab, index) => {
-              const Icon = tab.icon;
-              const isActive = activeModuleTab === tab.id;
-              const isOverview = tab.id === 'overview';
-              
-              return (
-                <motion.div
-                  key={tab.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <button
-                    onClick={() => handleModuleNavigation(tab)}
-                    className={`
-                      relative w-full p-4 rounded-xl transition-all duration-300
-                      ${isActive ? 'shadow-xl' : 'shadow-md hover:shadow-lg'}
-                      group overflow-hidden
-                    `}
-                    style={{
-                      background: isActive 
-                        ? `linear-gradient(135deg, ${tab.gradient.replace('from-', '#').replace('to-', '#').split(' ').join(', #')})` 
-                        : 'rgba(255, 255, 255, 0.8)',
-                      backdropFilter: 'blur(10px)',
-                      border: isActive ? 'none' : '1px solid rgba(255, 255, 255, 0.5)'
-                    }}
-                  >
-                    {/* Gradient Overlay for hover effect */}
-                    {!isActive && (
-                      <div 
-                        className={`absolute inset-0 bg-gradient-to-br ${tab.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
-                      />
-                    )}
-                    
-                    <div className="relative z-10">
-                      <div className="flex flex-col items-center space-y-2">
-                        <div className={`
-                          p-2 rounded-lg 
-                          ${isActive ? 'bg-white/20' : 'bg-gradient-to-br ' + tab.gradient + ' bg-opacity-10'}
-                        `}>
-                          <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-gray-700'}`} />
-                        </div>
-                        
-                        <div className="text-center">
-                          <p className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-gray-800'}`}>
-                            {tab.label.split(' ')[0]}
-                          </p>
-                          {tab.badge && (
-                            <Badge 
-                              variant={isActive ? 'secondary' : 'outline'} 
-                              className="mt-1 text-xs scale-90"
-                            >
-                              {tab.badge}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Arrow indicator for external navigation */}
-                      {tab.path && !isOverview && (
-                        <motion.div 
-                          className="absolute top-2 right-2"
-                          animate={{ x: [0, 3, 0] }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                        >
-                          <ArrowRight className={`h-3 w-3 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                        </motion.div>
-                      )}
-                    </div>
-                    
-                    {/* Sparkle effect for AI badge */}
-                    {tab.badge === 'AI' && (
-                      <Sparkles className="absolute top-2 right-2 h-3 w-3 text-yellow-500 animate-pulse" />
-                    )}
-                  </button>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Description tooltip - shows on hover */}
-          <AnimatePresence>
-            {activeModuleTab && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mt-4 p-3 rounded-lg bg-white/80 backdrop-blur-sm border border-white/50 shadow-md"
-              >
-                <p className="text-sm text-gray-600 text-center">
-                  {hrModuleTabs.find(t => t.id === activeModuleTab)?.description}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-500/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Dipendenti Totali</CardTitle>
+              <Users className="h-4 w-4 text-orange-600 animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                {animatedStats.totalEmployees}
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <ArrowUp className="h-3 w-3 text-green-500" />
+                <span className="text-green-500">+2.5%</span> dal mese scorso
+              </p>
+              <Progress value={95} className="mt-2 h-1" />
+            </CardContent>
+          </Card>
         </motion.div>
-
-        {/* Stats Cards Grid - shadcn/ui Cards */}
-        <div className="grid gap-6 md:grid-cols-4">
-          
-          {/* Total Employees */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm transition-all hover:shadow-xl" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-total-employees">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center" 
-                     style={{background: 'rgba(59, 130, 246, 0.1)'}}>
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Dipendenti Totali</p>
-                  <p className="text-3xl font-bold text-gray-800" data-testid="text-total-employees">{stats.totalEmployees}</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                    <span className="text-xs text-green-600">+2.3% vs mese scorso</span>
-                  </div>
-                </div>
+        
+        <motion.div
+          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-500/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Dipendenti Attivi</CardTitle>
+              <Activity className="h-4 w-4 text-purple-600 animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {animatedStats.activeEmployees}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {animatedStats.onLeave} in ferie/permesso
+              </p>
+              <Progress value={93.7} className="mt-2 h-1" />
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <motion.div
+          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-500/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tasso Presenza</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600 animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                {animatedStats.attendanceRate}%
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <ArrowUp className="h-3 w-3 text-green-500" />
+                <span className="text-green-500">+1.2%</span> dalla settimana scorsa
+              </p>
+              <Progress value={animatedStats.attendanceRate} className="mt-2 h-1" />
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <motion.div
+          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-yellow-500/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Richieste Pendenti</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-yellow-600 animate-pulse" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                {animatedStats.pendingRequests}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Richiede attenzione
+              </p>
+              <div className="mt-2 flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className={cn(
+                    "h-1 flex-1 rounded",
+                    i < 3 ? "bg-yellow-500" : "bg-gray-200"
+                  )} />
+                ))}
               </div>
             </CardContent>
           </Card>
-
-          {/* Active Employees */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm transition-all hover:shadow-xl" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-active-employees">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center" 
-                     style={{background: 'rgba(34, 197, 94, 0.1)'}}>
-                  <Activity className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Presenti Oggi</p>
-                  <p className="text-3xl font-bold text-gray-800" data-testid="text-active-employees">{stats.activeEmployees}</p>
-                  <Badge variant="success" className="mt-1">Real-time</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* On Leave */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm transition-all hover:shadow-xl" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-on-leave">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center" 
-                     style={{background: 'rgba(255, 105, 0, 0.1)'}}>
-                  <Calendar className="h-6 w-6" style={{color: '#FF6900'}} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">In Ferie</p>
-                  <p className="text-3xl font-bold text-gray-800" data-testid="text-on-leave">{stats.onLeave}</p>
-                  <div className="flex items-center mt-1">
-                    <Clock className="h-3 w-3 text-orange-500 mr-1" />
-                    <span className="text-xs text-orange-600">6.3% del totale</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pending Requests */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm transition-all hover:shadow-xl" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-pending-requests">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center" 
-                     style={{background: 'rgba(239, 68, 68, 0.1)'}}>
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Richieste Pendenti</p>
-                  <p className="text-3xl font-bold text-gray-800" data-testid="text-pending-requests">{stats.pendingRequests}</p>
-                  <Badge variant="warning" className="mt-1">Richiede azione</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Performance Metrics Row */}
-        <div className="grid gap-6 md:grid-cols-2">
-          
-          {/* Attendance Rate with Progress */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-attendance-rate">
+        </motion.div>
+      </div>
+      
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="backdrop-blur-xl bg-white/80 border-white/20">
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2" style={{color: '#FF6900'}} />
-                Tasso di Presenza
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-orange-600" />
+                Trend Presenze
               </CardTitle>
-              <CardDescription>Performance mensile e obiettivi</CardDescription>
+              <CardDescription>Andamento mensile del tasso di presenza</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold text-gray-800">{stats.attendanceRate.toFixed(1)}%</span>
-                  <Badge variant="success">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +2.3%
-                  </Badge>
-                </div>
-                <Progress value={stats.attendanceRate} className="h-3" />
-                <p className="text-sm text-gray-600">
-                  Rispetto al mese precedente. Obiettivo: 95%
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Turnover Rate */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-turnover-rate">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingDown className="h-5 w-5 mr-2" style={{color: '#7B2CBF'}} />
-                Tasso di Turnover
-              </CardTitle>
-              <CardDescription>Stabilità del team</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold text-gray-800">{stats.turnoverRate}%</span>
-                  <Badge variant="success">
-                    <TrendingDown className="h-3 w-3 mr-1" />
-                    -1.2%
-                  </Badge>
-                </div>
-                <Progress value={100 - stats.turnoverRate} className="h-3" />
-                <p className="text-sm text-gray-600">
-                  In diminuzione. Obiettivo annuale: &lt; 10%
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts Row - Recharts Integration */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          
-          {/* Attendance Trends Chart */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-attendance-chart">
-            <CardHeader>
-              <CardTitle>Tendenze Presenza</CardTitle>
-              <CardDescription>Andamento mensile presenza vs obiettivo</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={attendanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-                  <XAxis dataKey="month" stroke="#6B7280" />
-                  <YAxis stroke="#6B7280" />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" stroke="#888" />
+                  <YAxis stroke="#888" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '8px'
+                    }}
+                  />
                   <Legend />
-                  <Line type="monotone" dataKey="attendance" stroke="#FF6900" strokeWidth={3} name="Presenza %" />
-                  <Line type="monotone" dataKey="target" stroke="#7B2CBF" strokeDasharray="5 5" name="Obiettivo %" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="attendance" 
+                    stroke={WINDTRE_COLORS.primary}
+                    strokeWidth={3}
+                    dot={{ fill: WINDTRE_COLORS.primary, r: 5 }}
+                    activeDot={{ r: 8 }}
+                    name="Presenza %"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="target" 
+                    stroke={WINDTRE_COLORS.secondary}
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="Target"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
-
-          {/* Department Distribution */}
-          <Card className="border-white/20 shadow-lg backdrop-blur-sm" 
-                style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-department-chart">
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="backdrop-blur-xl bg-white/80 border-white/20">
             <CardHeader>
-              <CardTitle>Distribuzione Dipartimenti</CardTitle>
-              <CardDescription>Allocazione risorse per area</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-purple-600" />
+                Distribuzione Dipartimenti
+              </CardTitle>
+              <CardDescription>Dipendenti per dipartimento</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
                     data={departmentData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={5}
                     dataKey="value"
                   >
                     {departmentData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '8px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {departmentData.map((dept, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: dept.color }} />
+                    <span className="text-xs text-muted-foreground">{dept.name}: {dept.value}</span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Employee Management Section */}
-        <Card className="border-white/20 shadow-lg backdrop-blur-sm" 
-              style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-employee-management">
+        </motion.div>
+      </div>
+      
+      {/* Recent Activity */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Card className="backdrop-blur-xl bg-white/80 border-white/20">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Gestione Dipendenti</CardTitle>
-                <CardDescription>Lista completa con azioni CRUD</CardDescription>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button size="sm" data-testid="button-add-employee">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Aggiungi
-                </Button>
-                <Button variant="outline" size="sm" data-testid="button-export-employees">
-                  <Download className="h-4 w-4 mr-2" />
-                  Esporta
-                </Button>
-              </div>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-green-600" />
+              Attività Recenti
+            </CardTitle>
+            <CardDescription>Ultime azioni nel sistema HR</CardDescription>
           </CardHeader>
           <CardContent>
-            
-            {/* Search and Filters */}
-            <div className="flex items-center space-x-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Cerca dipendenti..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  data-testid="input-search-employees"
-                />
-              </div>
-              <select
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                data-testid="select-filter-status"
-              >
-                <option value="all">Tutti gli stati</option>
-                <option value="active">Attivi</option>
-                <option value="leave">In ferie</option>
-              </select>
-              <select
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={filterDepartment}
-                onChange={(e) => setFilterDepartment(e.target.value)}
-                data-testid="select-filter-department"
-              >
-                <option value="all">Tutti i dipartimenti</option>
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
+            <ScrollArea className="h-[200px]">
+              <div className="space-y-4">
+                {[
+                  { icon: UserPlus, color: 'text-green-600', title: 'Nuovo dipendente', desc: 'Marco Bianchi aggiunto al team Sviluppo', time: '5 min fa' },
+                  { icon: CheckCircle2, color: 'text-blue-600', title: 'Ferie approvate', desc: 'Richiesta di Giulia Rossi approvata', time: '1 ora fa' },
+                  { icon: Award, color: 'text-purple-600', title: 'Performance review', desc: 'Completata valutazione Q1 2024', time: '2 ore fa' },
+                  { icon: CalendarIcon, color: 'text-orange-600', title: 'Turno modificato', desc: 'Aggiornato turno weekend store Milano', time: '3 ore fa' },
+                  { icon: FileText, color: 'text-gray-600', title: 'Report generato', desc: 'Report mensile HR pronto', time: '5 ore fa' }
+                ].map((activity, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50/50 transition-colors"
+                  >
+                    <activity.icon className={cn("h-5 w-5 mt-0.5", activity.color)} />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground">{activity.desc}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{activity.time}</span>
+                  </motion.div>
                 ))}
-              </select>
-            </div>
-
-            {/* Employee Table */}
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Dipendente</TableHead>
-                    <TableHead>Ruolo</TableHead>
-                    <TableHead>Dipartimento</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ultimo Accesso</TableHead>
-                    <TableHead>Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id} data-testid={`row-employee-${employee.id}`}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div 
-                            className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold"
-                            style={{background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)'}}
-                          >
-                            {employee.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <div className="font-semibold" data-testid={`text-employee-name-${employee.id}`}>
-                              {employee.name}
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <Mail className="h-3 w-3 mr-1" />
-                              {employee.email}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{employee.role}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Building className="h-4 w-4 mr-2 text-gray-400" />
-                          {employee.department}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={employee.status === 'active' ? 'success' : 'warning'}
-                          data-testid={`badge-status-${employee.id}`}
-                        >
-                          {employee.status === 'active' ? 'Attivo' : 'In Ferie'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-500">{employee.lastLogin}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setSelectedEmployee(employee)}
-                                data-testid={`button-view-employee-${employee.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>Dettagli Dipendente</DialogTitle>
-                                <DialogDescription>
-                                  Informazioni complete su {employee.name}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-6 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500">Nome Completo</label>
-                                    <p className="text-lg font-semibold">{employee.name}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500">Ruolo</label>
-                                    <p className="text-lg">{employee.role}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500">Dipartimento</label>
-                                    <p className="text-lg">{employee.department}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500">Status</label>
-                                    <Badge variant={employee.status === 'active' ? 'success' : 'warning'}>
-                                      {employee.status === 'active' ? 'Attivo' : 'In Ferie'}
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500 flex items-center">
-                                      <Mail className="h-4 w-4 mr-1" />
-                                      Email
-                                    </label>
-                                    <p>{employee.email}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500 flex items-center">
-                                      <Phone className="h-4 w-4 mr-1" />
-                                      Telefono
-                                    </label>
-                                    <p>{employee.phone}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500 flex items-center">
-                                      <MapPin className="h-4 w-4 mr-1" />
-                                      Località
-                                    </label>
-                                    <p>{employee.location}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium text-gray-500 flex items-center">
-                                      <DollarSign className="h-4 w-4 mr-1" />
-                                      Stipendio
-                                    </label>
-                                    <p>€{employee.salary.toLocaleString()}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <label className="text-sm font-medium text-gray-500">Data Assunzione</label>
-                                  <p>{new Date(employee.startDate).toLocaleDateString('it-IT')}</p>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Button variant="outline" size="sm" data-testid={`button-edit-employee-${employee.id}`}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" data-testid={`button-delete-employee-${employee.id}`}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
-
-        {/* Quick Actions Grid */}
-        <Card className="border-white/20 shadow-lg backdrop-blur-sm" 
-              style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-quick-actions">
-          <CardHeader>
-            <CardTitle>Azioni Rapide</CardTitle>
-            <CardDescription>Operazioni frequenti per HR</CardDescription>
+      </motion.div>
+    </div>
+  );
+  
+  const renderEmployees = () => (
+    <div className="space-y-6">
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Cerca dipendente per nome, ruolo o dipartimento..." 
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Stato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti</SelectItem>
+              <SelectItem value="active">Attivi</SelectItem>
+              <SelectItem value="leave">In ferie</SelectItem>
+              <SelectItem value="inactive">Inattivi</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Dipartimento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti i dipartimenti</SelectItem>
+              {departments.map(dept => (
+                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button 
+            onClick={() => {
+              setSelectedEmployee(null);
+              setIsEmployeeModalOpen(true);
+            }}
+            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nuovo Dipendente
+          </Button>
+        </div>
+      </div>
+      
+      {/* Employees Table */}
+      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Dipendente</TableHead>
+                <TableHead>Ruolo</TableHead>
+                <TableHead>Dipartimento</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead>Posizione</TableHead>
+                <TableHead>Performance</TableHead>
+                <TableHead>Ultimo Accesso</TableHead>
+                <TableHead className="text-right">Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <AnimatePresence mode="wait">
+                {filteredEmployees.map((emp, i) => (
+                  <motion.tr
+                    key={emp.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="hover:bg-gray-50/50 transition-all duration-200 hover:shadow-md group"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderLeft = '3px solid #FF6900';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderLeft = 'none';
+                    }}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                          <AvatarImage src={emp.avatar} />
+                          <AvatarFallback className="bg-gradient-to-br from-orange-400 to-red-600 text-white">
+                            {emp.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{emp.name}</p>
+                          <p className="text-xs text-muted-foreground">{emp.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="font-normal">
+                        {emp.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{emp.department}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={emp.status === 'active' ? 'default' : emp.status === 'leave' ? 'secondary' : 'destructive'}
+                        className={cn(
+                          "transition-all duration-300",
+                          emp.status === 'active' && "bg-green-100 text-green-700 hover:bg-green-200 animate-pulse"
+                        )}
+                      >
+                        {emp.status === 'active' ? 'Attivo' : emp.status === 'leave' ? 'In ferie' : 'Inattivo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {emp.location}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={emp.performance || 0} className="w-16 h-2" />
+                        <span className="text-xs font-medium">{emp.performance || 0}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{emp.lastLogin}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedEmployee(emp);
+                            setIsEmployeeModalOpen(true);
+                          }}
+                          className="hover:bg-orange-50"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="hover:bg-purple-50"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+  
+  const renderShifts = () => (
+    <div className="space-y-6">
+      {/* Sub-tabs for Shifts */}
+      <Tabs defaultValue="templates" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 backdrop-blur-xl bg-white/80">
+          <TabsTrigger value="templates" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white">
+            <Layers className="h-4 w-4 mr-2" />
+            Turni Template
+          </TabsTrigger>
+          <TabsTrigger value="total-calendar" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">
+            <CalendarIcon className="h-4 w-4 mr-2" />
+            Calendario Totale
+          </TabsTrigger>
+          <TabsTrigger value="store-calendar" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white">
+            <Building className="h-4 w-4 mr-2" />
+            Per Punto Vendita
+          </TabsTrigger>
+          <TabsTrigger value="auto-schedule" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white">
+            <Zap className="h-4 w-4 mr-2" />
+            Auto-Scheduling
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="templates" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Gestione Template Turni</h3>
+              <p className="text-sm text-muted-foreground">Crea e gestisci template riutilizzabili per i turni</p>
+            </div>
+            <Button 
+              onClick={() => {
+                setSelectedTemplate(null);
+                setIsTemplateModalOpen(true);
+              }}
+              className="bg-gradient-to-r from-orange-600 to-red-600"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Template
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {shiftTemplates.map((template, i) => (
+              <motion.div
+                key={template.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:shadow-lg transition-all duration-300 overflow-hidden">
+                  <div className="h-2" style={{ backgroundColor: template.color }} />
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-base">{template.name}</CardTitle>
+                        <CardDescription className="text-xs mt-1">
+                          {template.description}
+                        </CardDescription>
+                      </div>
+                      <Badge variant={template.isActive ? "default" : "secondary"}>
+                        {template.isActive ? 'Attivo' : 'Inattivo'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{template.startTime} - {template.endTime}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{template.requiredStaff} persone richieste</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                      <span className="capitalize">{template.recurrence}</span>
+                    </div>
+                    {template.roles && (
+                      <div className="flex flex-wrap gap-1">
+                        {template.roles.map(role => (
+                          <Badge key={role} variant="outline" className="text-xs">
+                            {role}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">
+                        Creato da {template.createdBy}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost">
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="total-calendar" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Calendario Completo</h3>
+              <p className="text-sm text-muted-foreground">Vista unificata di tutti i turni</p>
+            </div>
+            <div className="flex gap-2">
+              <Select value={calendarView} onValueChange={(v: any) => setCalendarView(v)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Vista Mensile</SelectItem>
+                  <SelectItem value="week">Vista Settimanale</SelectItem>
+                  <SelectItem value="day">Vista Giornaliera</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtri
+              </Button>
+            </div>
+          </div>
+          
+          <Card className="backdrop-blur-xl bg-white/80 border-white/20">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-7 gap-2">
+                {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map(day => (
+                  <div key={day} className="text-center text-sm font-semibold text-muted-foreground p-2">
+                    {day}
+                  </div>
+                ))}
+                {Array.from({ length: 35 }, (_, i) => {
+                  const date = addDays(startOfMonth(selectedDate), i - 5);
+                  const isCurrentMonth = date.getMonth() === selectedDate.getMonth();
+                  const hasShifts = Math.random() > 0.5;
+                  
+                  return (
+                    <motion.div
+                      key={i}
+                      whileHover={{ scale: 1.05 }}
+                      className={cn(
+                        "min-h-[80px] p-2 rounded-lg border cursor-pointer transition-all",
+                        isCurrentMonth ? "bg-white" : "bg-gray-50",
+                        isToday(date) && "border-orange-500 border-2",
+                        hasShifts && "bg-gradient-to-br from-white to-orange-50"
+                      )}
+                    >
+                      <div className="text-sm font-medium">{format(date, 'd')}</div>
+                      {hasShifts && isCurrentMonth && (
+                        <div className="mt-1 space-y-1">
+                          <div className="h-1 bg-orange-400 rounded-full" />
+                          <div className="h-1 bg-purple-400 rounded-full w-3/4" />
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Card className="backdrop-blur-xl bg-white/80">
+              <CardHeader>
+                <CardTitle className="text-sm">Legenda</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[
+                    { color: 'bg-orange-400', label: 'Turno Mattina' },
+                    { color: 'bg-purple-400', label: 'Turno Pomeriggio' },
+                    { color: 'bg-green-400', label: 'Turno Sera' },
+                    { color: 'bg-blue-400', label: 'Weekend' }
+                  ].map(item => (
+                    <div key={item.label} className="flex items-center gap-2">
+                      <div className={cn("w-3 h-3 rounded-full", item.color)} />
+                      <span className="text-xs">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="backdrop-blur-xl bg-white/80">
+              <CardHeader>
+                <CardTitle className="text-sm">Statistiche Mese</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-muted-foreground">Turni totali</span>
+                    <span className="text-xs font-medium">248</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-muted-foreground">Ore totali</span>
+                    <span className="text-xs font-medium">1,488</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-muted-foreground">Copertura</span>
+                    <span className="text-xs font-medium">94%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="backdrop-blur-xl bg-white/80">
+              <CardHeader>
+                <CardTitle className="text-sm">Azioni Rapide</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button className="w-full justify-start" variant="outline" size="sm">
+                    <Plus className="h-3 w-3 mr-2" />
+                    Aggiungi Turno
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" size="sm">
+                    <Copy className="h-3 w-3 mr-2" />
+                    Duplica Settimana
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" size="sm">
+                    <Download className="h-3 w-3 mr-2" />
+                    Esporta PDF
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="store-calendar" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Calendario per Punto Vendita</h3>
+              <p className="text-sm text-muted-foreground">Gestisci i turni per ogni negozio</p>
+            </div>
+            <Select value={selectedStore} onValueChange={setSelectedStore}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Seleziona negozio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i negozi</SelectItem>
+                <SelectItem value="milano-centro">Milano Centro</SelectItem>
+                <SelectItem value="roma-termini">Roma Termini</SelectItem>
+                <SelectItem value="napoli-centro">Napoli Centro</SelectItem>
+                <SelectItem value="torino-porta-nuova">Torino Porta Nuova</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {['Milano Centro', 'Roma Termini', 'Napoli Centro', 'Torino Porta Nuova'].map((store, i) => (
+              <motion.div
+                key={store}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-sm">{store}</CardTitle>
+                      <Badge variant="outline" className="text-xs">
+                        {Math.floor(Math.random() * 10) + 15} staff
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Oggi</span>
+                        <span className="font-medium text-green-600">Completo</span>
+                      </div>
+                      <Progress value={100} className="h-1" />
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Domani</span>
+                        <span className="font-medium text-yellow-600">80%</span>
+                      </div>
+                      <Progress value={80} className="h-1" />
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Settimana</span>
+                        <span className="font-medium">92%</span>
+                      </div>
+                      <Progress value={92} className="h-1" />
+                      <Button className="w-full mt-3" variant="outline" size="sm">
+                        Visualizza Dettagli
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="auto-schedule" className="space-y-4">
+          <Alert className="border-green-200 bg-green-50">
+            <Zap className="h-4 w-4 text-green-600" />
+            <AlertTitle>Auto-Scheduling AI</AlertTitle>
+            <AlertDescription>
+              Il sistema di auto-scheduling utilizza l'intelligenza artificiale per ottimizzare automaticamente i turni basandosi su: disponibilità staff, competenze richieste, preferenze personali, storico presenze e bilanciamento carichi di lavoro.
+            </AlertDescription>
+          </Alert>
+          
+          <Card className="backdrop-blur-xl bg-white/80">
+            <CardHeader>
+              <CardTitle>Configura Auto-Scheduling</CardTitle>
+              <CardDescription>Imposta i parametri per la generazione automatica dei turni</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Periodo da schedulare</Label>
+                  <Select defaultValue="week">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="week">Prossima settimana</SelectItem>
+                      <SelectItem value="2weeks">Prossime 2 settimane</SelectItem>
+                      <SelectItem value="month">Prossimo mese</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Punto vendita</Label>
+                  <Select defaultValue="all">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti i punti vendita</SelectItem>
+                      <SelectItem value="milano">Milano Centro</SelectItem>
+                      <SelectItem value="roma">Roma Termini</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-3">
+                <Label>Ottimizzazioni</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="balance" defaultChecked />
+                      <label htmlFor="balance" className="text-sm">
+                        Bilancia equamente le ore tra i dipendenti
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="preferences" defaultChecked />
+                      <label htmlFor="preferences" className="text-sm">
+                        Rispetta le preferenze dei dipendenti
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="skills" defaultChecked />
+                      <label htmlFor="skills" className="text-sm">
+                        Assegna in base alle competenze
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="cost" />
+                      <label htmlFor="cost" className="text-sm">
+                        Ottimizza i costi del personale
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="flex gap-2">
+                <Button className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Genera Turni Automaticamente
+                </Button>
+                <Button variant="outline">
+                  Anteprima
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+  
+  const renderLeave = () => (
+    <div className="space-y-6">
+      {/* Leave Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Richieste Pendenti</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              
-              <Button 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                style={{
-                  background: 'rgba(59, 130, 246, 0.05)',
-                  borderColor: 'rgba(59, 130, 246, 0.2)',
-                  color: '#374151'
-                }}
-                variant="outline"
-                data-testid="button-add-employee-quick"
-              >
-                <UserPlus className="h-6 w-6" />
-                <span className="text-sm font-medium">Aggiungi Dipendente</span>
-              </Button>
-
-              <Button 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                style={{
-                  background: 'rgba(34, 197, 94, 0.05)',
-                  borderColor: 'rgba(34, 197, 94, 0.2)',
-                  color: '#374151'
-                }}
-                variant="outline"
-                data-testid="button-approve-leaves"
-              >
-                <Calendar className="h-6 w-6" />
-                <span className="text-sm font-medium">Approva Ferie</span>
-              </Button>
-
-              <Button 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                style={{
-                  background: 'rgba(255, 105, 0, 0.05)',
-                  borderColor: 'rgba(255, 105, 0, 0.2)',
-                  color: '#374151'
-                }}
-                variant="outline"
-                data-testid="button-review-expenses"
-              >
-                <DollarSign className="h-6 w-6" />
-                <span className="text-sm font-medium">Review Spese</span>
-              </Button>
-
-              <Button 
-                className="h-20 flex flex-col items-center justify-center space-y-2"
-                style={{
-                  background: 'rgba(123, 44, 191, 0.05)',
-                  borderColor: 'rgba(123, 44, 191, 0.2)',
-                  color: '#374151'
-                }}
-                variant="outline"
-                data-testid="button-generate-report"
-              >
-                <FileText className="h-6 w-6" />
-                <span className="text-sm font-medium">Genera Report</span>
-              </Button>
-            </div>
+            <div className="text-2xl font-bold text-orange-600">{leaveRequests.filter(r => r.status === 'pending').length}</div>
+            <p className="text-xs text-muted-foreground">Da approvare</p>
           </CardContent>
         </Card>
-
-        {/* Turnover Analytics Chart */}
-        <Card className="border-white/20 shadow-lg backdrop-blur-sm" 
-              style={{background: 'rgba(255, 255, 255, 0.7)'}} data-testid="card-turnover-analytics">
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">In Ferie Oggi</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">8</div>
+            <p className="text-xs text-muted-foreground">Dipendenti</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Giorni Totali</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">342</div>
+            <p className="text-xs text-muted-foreground">Questo mese</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Tasso Approvazione</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">87%</div>
+            <p className="text-xs text-muted-foreground">Media mensile</p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Leave Requests Table */}
+      <Card className="backdrop-blur-xl bg-white/80">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Richieste Ferie e Permessi</CardTitle>
+              <CardDescription>Gestisci le richieste di assenza del personale</CardDescription>
+            </div>
+            <Button className="bg-gradient-to-r from-orange-600 to-red-600">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuova Richiesta
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Dipendente</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Periodo</TableHead>
+                <TableHead>Giorni</TableHead>
+                <TableHead>Motivo</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead>Azioni</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {leaveRequests.map((request, i) => (
+                <motion.tr
+                  key={request.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="hover:bg-gray-50/50"
+                >
+                  <TableCell className="font-medium">{request.employeeName}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {request.type === 'vacation' ? 'Ferie' : 
+                       request.type === 'sick' ? 'Malattia' : 
+                       request.type === 'personal' ? 'Personale' : request.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(request.startDate), 'dd/MM')} - {format(new Date(request.endDate), 'dd/MM')}
+                  </TableCell>
+                  <TableCell>
+                    {Math.ceil((new Date(request.endDate).getTime() - new Date(request.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate">{request.reason}</TableCell>
+                  <TableCell>
+                    <Badge variant={
+                      request.status === 'approved' ? 'default' :
+                      request.status === 'pending' ? 'secondary' :
+                      request.status === 'rejected' ? 'destructive' : 'outline'
+                    }>
+                      {request.status === 'approved' ? 'Approvata' :
+                       request.status === 'pending' ? 'In attesa' :
+                       request.status === 'rejected' ? 'Rifiutata' : 'Cancellata'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {request.status === 'pending' && (
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" className="hover:bg-green-50 hover:text-green-600">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="hover:bg-red-50 hover:text-red-600">
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                </motion.tr>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      {/* Leave Calendar */}
+      <Card className="backdrop-blur-xl bg-white/80">
+        <CardHeader>
+          <CardTitle>Calendario Ferie</CardTitle>
+          <CardDescription>Vista mensile delle assenze programmate</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-1">
+            {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(day => (
+              <div key={day} className="text-center text-xs font-semibold text-muted-foreground p-2">
+                {day}
+              </div>
+            ))}
+            {Array.from({ length: 35 }, (_, i) => {
+              const hasLeave = Math.random() > 0.8;
+              const leaveCount = hasLeave ? Math.ceil(Math.random() * 3) : 0;
+              
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "aspect-square border rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors",
+                    hasLeave && "bg-orange-50 border-orange-200"
+                  )}
+                >
+                  <div className="text-xs font-medium">{(i % 31) + 1}</div>
+                  {hasLeave && (
+                    <div className="mt-1">
+                      <Badge variant="secondary" className="text-xs px-1 py-0">
+                        {leaveCount}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+  
+  const renderAnalytics = () => (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
           <CardHeader>
-            <CardTitle>Analisi Turnover</CardTitle>
-            <CardDescription>Assunzioni vs Dimissioni</CardDescription>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Target className="h-4 w-4 text-orange-600" />
+              Employee Satisfaction
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              8.7/10
+            </div>
+            <Progress value={87} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-2">+0.5 dal Q precedente</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+              Retention Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              91.5%
+            </div>
+            <Progress value={91.5} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-2">Above industry average</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-purple-600" />
+              Cost per Employee
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              €68.5K
+            </div>
+            <Progress value={75} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-2">-3% YoY</p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Analytics Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="backdrop-blur-xl bg-white/80">
+          <CardHeader>
+            <CardTitle>Performance Distribution</CardTitle>
+            <CardDescription>Confronto performance Q1 vs Q2</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={turnoverData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-                <XAxis dataKey="month" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" />
-                <Tooltip />
+              <RadarChart data={performanceData}>
+                <PolarGrid stroke="#e5e5e5" />
+                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                <Radar name="Q1 2024" dataKey="A" stroke={WINDTRE_COLORS.primary} fill={WINDTRE_COLORS.primary} fillOpacity={0.6} />
+                <Radar name="Q2 2024" dataKey="B" stroke={WINDTRE_COLORS.secondary} fill={WINDTRE_COLORS.secondary} fillOpacity={0.6} />
                 <Legend />
-                <Bar dataKey="hires" fill="#10B981" name="Assunzioni" />
-                <Bar dataKey="departures" fill="#EF4444" name="Dimissioni" />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80">
+          <CardHeader>
+            <CardTitle>Distribuzione Stipendi</CardTitle>
+            <CardDescription>Range salariali per numero dipendenti</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salaryDistribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="range" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill={WINDTRE_COLORS.primary}>
+                  {salaryDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
+      </div>
+      
+      {/* Predictive Analytics */}
+      <Card className="backdrop-blur-xl bg-white/80">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cpu className="h-5 w-5 text-blue-600" />
+            Analytics Predittive AI
+          </CardTitle>
+          <CardDescription>Previsioni basate su machine learning</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-sm">Turnover Risk</AlertTitle>
+              <AlertDescription className="text-xs">
+                3 dipendenti con alto rischio di abbandono nei prossimi 3 mesi. Considera azioni di retention.
+              </AlertDescription>
+            </Alert>
+            
+            <Alert className="border-green-200 bg-green-50">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-sm">Hiring Forecast</AlertTitle>
+              <AlertDescription className="text-xs">
+                Previsto aumento del 15% del carico di lavoro in Q3. Inizia recruiting per 5 posizioni.
+              </AlertDescription>
+            </Alert>
+            
+            <Alert className="border-purple-200 bg-purple-50">
+              <Award className="h-4 w-4 text-purple-600" />
+              <AlertTitle className="text-sm">Training ROI</AlertTitle>
+              <AlertDescription className="text-xs">
+                Il programma di formazione tecnica mostra ROI del 285%. Considera espansione budget.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+  
+  const renderCompliance = () => (
+    <div className="space-y-6">
+      {/* Compliance Status Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Shield className="h-4 w-4 text-green-600" />
+              GDPR Compliance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <span className="font-semibold text-green-600">Conforme</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Ultimo audit: 15/01/2024</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              Documenti Richiesti
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">127/127</div>
+            <Progress value={100} className="mt-1 h-1" />
+            <p className="text-xs text-muted-foreground mt-1">Tutti completi</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              Audit Pendenti
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">3</div>
+            <p className="text-xs text-muted-foreground mt-1">Prossimo: 01/02/2024</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80 hover:shadow-lg transition-all">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Lock className="h-4 w-4 text-purple-600" />
+              Security Score
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">94/100</div>
+            <Progress value={94} className="mt-1 h-1" />
+            <p className="text-xs text-muted-foreground mt-1">Eccellente</p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Compliance Tasks & Reports */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="backdrop-blur-xl bg-white/80">
+          <CardHeader>
+            <CardTitle>Attività di Compliance</CardTitle>
+            <CardDescription>Task e scadenze da completare</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                { title: 'Aggiornamento Privacy Policy', due: '30/01/2024', priority: 'high' },
+                { title: 'Training GDPR Q1', due: '15/02/2024', priority: 'medium' },
+                { title: 'Audit Sicurezza IT', due: '01/03/2024', priority: 'high' },
+                { title: 'Review Contratti Fornitori', due: '10/02/2024', priority: 'low' },
+                { title: 'Certificazione ISO 27001', due: '30/03/2024', priority: 'medium' }
+              ].map((task, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Checkbox />
+                    <div>
+                      <p className="text-sm font-medium">{task.title}</p>
+                      <p className="text-xs text-muted-foreground">Scadenza: {task.due}</p>
+                    </div>
+                  </div>
+                  <Badge variant={
+                    task.priority === 'high' ? 'destructive' :
+                    task.priority === 'medium' ? 'secondary' : 'outline'
+                  }>
+                    {task.priority === 'high' ? 'Alta' :
+                     task.priority === 'medium' ? 'Media' : 'Bassa'}
+                  </Badge>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="backdrop-blur-xl bg-white/80">
+          <CardHeader>
+            <CardTitle>Report Disponibili</CardTitle>
+            <CardDescription>Documentazione e report HR</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {[
+                { name: 'Report Mensile HR', type: 'PDF', size: '2.4 MB', date: '20/01/2024' },
+                { name: 'Analisi Turnover Q4', type: 'XLSX', size: '1.8 MB', date: '18/01/2024' },
+                { name: 'GDPR Compliance Audit', type: 'PDF', size: '3.2 MB', date: '15/01/2024' },
+                { name: 'Payroll Summary 2024', type: 'PDF', size: '1.5 MB', date: '10/01/2024' },
+                { name: 'Training Report Q4', type: 'DOCX', size: '890 KB', date: '05/01/2024' }
+              ].map((report, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{report.name}</p>
+                      <p className="text-xs text-muted-foreground">{report.type} • {report.size} • {report.date}</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+  
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <Card className="backdrop-blur-xl bg-white/80">
+        <CardHeader>
+          <CardTitle>Impostazioni Generali HR</CardTitle>
+          <CardDescription>Configura le impostazioni del modulo risorse umane</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Notifiche Email</Label>
+                <p className="text-xs text-muted-foreground">Ricevi notifiche per nuove richieste</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Approvazione Automatica</Label>
+                <p className="text-xs text-muted-foreground">Approva automaticamente richieste sotto 3 giorni</p>
+              </div>
+              <Switch />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Report Settimanali</Label>
+                <p className="text-xs text-muted-foreground">Genera report automatici ogni lunedì</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium">Limiti e Soglie</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Giorni ferie annuali</Label>
+                <Input type="number" defaultValue="22" />
+              </div>
+              <div className="space-y-2">
+                <Label>Ore straordinario mensili max</Label>
+                <Input type="number" defaultValue="40" />
+              </div>
+              <div className="space-y-2">
+                <Label>Preavviso richieste (giorni)</Label>
+                <Input type="number" defaultValue="7" />
+              </div>
+              <div className="space-y-2">
+                <Label>Target presenza (%)</Label>
+                <Input type="number" defaultValue="95" />
+              </div>
+            </div>
+          </div>
+          
+          <Separator />
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline">Annulla</Button>
+            <Button className="bg-gradient-to-r from-orange-600 to-red-600">
+              Salva Impostazioni
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+  
+  // Employee Modal
+  const EmployeeModal = () => (
+    <Dialog open={isEmployeeModalOpen} onOpenChange={setIsEmployeeModalOpen}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {selectedEmployee ? 'Dettagli Dipendente' : 'Nuovo Dipendente'}
+          </DialogTitle>
+          <DialogDescription>
+            {selectedEmployee ? 'Visualizza e modifica le informazioni del dipendente' : 'Aggiungi un nuovo dipendente al sistema'}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {selectedEmployee ? (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={selectedEmployee.avatar} />
+                <AvatarFallback className="bg-gradient-to-br from-orange-400 to-red-600 text-white text-xl">
+                  {selectedEmployee.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="text-xl font-semibold">{selectedEmployee.name}</h3>
+                <p className="text-sm text-muted-foreground">{selectedEmployee.role}</p>
+                <div className="flex gap-2 mt-2">
+                  <Badge variant={selectedEmployee.status === 'active' ? 'default' : 'secondary'}>
+                    {selectedEmployee.status === 'active' ? 'Attivo' : 'In ferie'}
+                  </Badge>
+                  <Badge variant="outline">{selectedEmployee.contractType}</Badge>
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="text-sm font-medium">{selectedEmployee.email}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Telefono</p>
+                <p className="text-sm font-medium">{selectedEmployee.phone}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Posizione</p>
+                <p className="text-sm font-medium">{selectedEmployee.location}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Dipartimento</p>
+                <p className="text-sm font-medium">{selectedEmployee.department}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Data assunzione</p>
+                <p className="text-sm font-medium">{format(new Date(selectedEmployee.startDate), 'dd/MM/yyyy')}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Manager</p>
+                <p className="text-sm font-medium">{selectedEmployee.manager}</p>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Performance</h4>
+              <div className="flex items-center gap-3">
+                <Progress value={selectedEmployee.performance} className="flex-1" />
+                <span className="text-sm font-medium">{selectedEmployee.performance}%</span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Competenze</h4>
+              <div className="flex flex-wrap gap-2">
+                {selectedEmployee.skills?.map(skill => (
+                  <Badge key={skill} variant="secondary">{skill}</Badge>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">Certificazioni</h4>
+              <div className="flex flex-wrap gap-2">
+                {selectedEmployee.certifications?.map(cert => (
+                  <Badge key={cert} variant="outline">
+                    <Award className="h-3 w-3 mr-1" />
+                    {cert}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <form className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input placeholder="Nome completo" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" placeholder="email@azienda.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Ruolo</Label>
+                <Input placeholder="Posizione lavorativa" />
+              </div>
+              <div className="space-y-2">
+                <Label>Dipartimento</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona dipartimento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(dept => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Telefono</Label>
+                <Input type="tel" placeholder="+39 xxx xxx xxxx" />
+              </div>
+              <div className="space-y-2">
+                <Label>Posizione</Label>
+                <Input placeholder="Città" />
+              </div>
+              <div className="space-y-2">
+                <Label>Data assunzione</Label>
+                <Input type="date" />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo contratto</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full-time">Full-time</SelectItem>
+                    <SelectItem value="part-time">Part-time</SelectItem>
+                    <SelectItem value="contract">Contratto</SelectItem>
+                    <SelectItem value="internship">Stage</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </form>
+        )}
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsEmployeeModalOpen(false)}>
+            Chiudi
+          </Button>
+          {!selectedEmployee && (
+            <Button className="bg-gradient-to-r from-orange-600 to-red-600">
+              Aggiungi Dipendente
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+  
+  // Template Modal
+  const TemplateModal = () => (
+    <Dialog open={isTemplateModalOpen} onOpenChange={setIsTemplateModalOpen}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {selectedTemplate ? 'Modifica Template' : 'Nuovo Template Turno'}
+          </DialogTitle>
+          <DialogDescription>
+            Crea un template riutilizzabile per i turni
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form className="space-y-4">
+          <div className="space-y-2">
+            <Label>Nome Template</Label>
+            <Input placeholder="Es. Turno Mattina Standard" />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Descrizione</Label>
+            <Textarea placeholder="Descrizione del template..." />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Ora Inizio</Label>
+              <Input type="time" defaultValue="08:00" />
+            </div>
+            <div className="space-y-2">
+              <Label>Ora Fine</Label>
+              <Input type="time" defaultValue="14:00" />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Staff Richiesto</Label>
+            <Input type="number" placeholder="3" min="1" />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Ricorrenza</Label>
+            <Select defaultValue="daily">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Giornaliera</SelectItem>
+                <SelectItem value="weekly">Settimanale</SelectItem>
+                <SelectItem value="monthly">Mensile</SelectItem>
+                <SelectItem value="custom">Personalizzata</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Giorni della Settimana</Label>
+            <div className="flex gap-2">
+              {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((day, i) => (
+                <div key={i} className="flex items-center">
+                  <Checkbox id={`day-${i}`} />
+                  <label htmlFor={`day-${i}`} className="ml-1 text-sm">{day}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Colore</Label>
+            <div className="flex gap-2">
+              {CHART_COLORS.map(color => (
+                <button
+                  key={color}
+                  type="button"
+                  className="w-8 h-8 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+        </form>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsTemplateModalOpen(false)}>
+            Annulla
+          </Button>
+          <Button className="bg-gradient-to-r from-orange-600 to-red-600">
+            Salva Template
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+  
+  return (
+    <Layout currentModule="hr" setCurrentModule={() => {}}>
+      <div className="min-h-screen p-6 space-y-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="backdrop-blur-xl bg-white/80 rounded-xl p-6 border border-white/20 shadow-lg"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-purple-600 bg-clip-text text-transparent">
+                HR Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-1">Sistema completo di gestione risorse umane</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="icon">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Bell className="h-4 w-4" />
+              </Button>
+              <Button className="bg-gradient-to-r from-orange-600 to-red-600">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </div>
+          </div>
+          
+          {/* Tabs Navigation */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setSelectedTab(tab.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-300",
+                    selectedTab === tab.id
+                      ? "bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg"
+                      : "bg-white/50 hover:bg-white/80 text-gray-600 hover:text-gray-900"
+                  )}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Icon className={cn(
+                    "h-4 w-4 transition-transform duration-300",
+                    selectedTab === tab.id && "rotate-12"
+                  )} />
+                  <span className="font-medium">{tab.label}</span>
+                  {tab.badge && (
+                    <Badge 
+                      variant={selectedTab === tab.id ? "secondary" : "outline"}
+                      className={cn(
+                        "ml-1 transition-all duration-300",
+                        selectedTab === tab.id && "animate-pulse"
+                      )}
+                    >
+                      {tab.badge}
+                    </Badge>
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
+        
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedTab}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {selectedTab === 'overview' && renderOverview()}
+            {selectedTab === 'employees' && renderEmployees()}
+            {selectedTab === 'shifts' && renderShifts()}
+            {selectedTab === 'leave' && renderLeave()}
+            {selectedTab === 'analytics' && renderAnalytics()}
+            {selectedTab === 'compliance' && renderCompliance()}
+            {selectedTab === 'settings' && renderSettings()}
+          </motion.div>
+        </AnimatePresence>
+        
+        {/* Modals */}
+        <EmployeeModal />
+        <TemplateModal />
       </div>
     </Layout>
   );
