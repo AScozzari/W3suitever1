@@ -270,7 +270,7 @@ export default function EmployeeDashboard() {
           {/* Quick Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
             {/* Real-time Clock Widget */}
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(255,105,0,0.35)] border border-white/15 backdrop-blur-lg cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <Clock className="h-8 w-8 text-white/80" />
@@ -292,8 +292,9 @@ export default function EmployeeDashboard() {
                 <div className="flex gap-2 mt-4">
                   <Button 
                     onClick={handleClockAction}
-                    className={`flex-1 ${isClockedIn ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white`}
+                    className={`flex-1 bg-white/15 hover:bg-white/25 ring-1 ring-white/20 focus-visible:ring-2 focus-visible:ring-white/40 text-white transition-all duration-200`}
                     size="sm"
+                    data-testid="button-clock-in"
                   >
                     {isClockedIn ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
                     {isClockedIn ? 'Clock Out' : 'Clock In'}
@@ -303,7 +304,8 @@ export default function EmployeeDashboard() {
                       onClick={handleBreakAction}
                       variant="secondary" 
                       size="sm"
-                      className="bg-white/20 hover:bg-white/30 text-white"
+                      className="bg-white/15 hover:bg-white/25 ring-1 ring-white/20 text-white focus-visible:ring-2 focus-visible:ring-white/40 transition-all duration-200"
+                      data-testid="button-break"
                     >
                       <Coffee className="h-4 w-4" />
                     </Button>
@@ -455,27 +457,28 @@ export default function EmployeeDashboard() {
                     <CardDescription>Operazioni frequenti</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <FileText className="h-5 w-5" />
-                        <span className="text-xs">Busta Paga</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <Receipt className="h-5 w-5" />
-                        <span className="text-xs">Nota Spese</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <GraduationCap className="h-5 w-5" />
-                        <span className="text-xs">Corsi</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <Users className="h-5 w-5" />
-                        <span className="text-xs">Team</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <HelpCircle className="h-5 w-5" />
-                        <span className="text-xs">Supporto</span>
-                      </Button>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                      {[
+                        { icon: FileText, label: 'Documenti', testId: 'documenti' },
+                        { icon: Receipt, label: 'Spese', testId: 'spese' },
+                        { icon: GraduationCap, label: 'Formazione', testId: 'formazione' },
+                        { icon: Users, label: 'Team', testId: 'team' },
+                        { icon: HelpCircle, label: 'Supporto', testId: 'supporto' }
+                      ].map(({ icon: Icon, label, testId }) => (
+                        <Button
+                          key={testId}
+                          variant="ghost"
+                          className="group relative h-24 p-4 bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/15 dark:border-white/10 ring-1 ring-white/10 dark:ring-white/5 shadow-[0_6px_30px_rgba(0,0,0,0.15)] rounded-xl hover:translate-y-[-2px] hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] hover:border-white/25 dark:hover:border-white/20 transition-all duration-300 ease-out focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-br before:from-orange-500/10 before:to-purple-500/10 before:opacity-0 hover:before:opacity-100 before:transition-opacity overflow-hidden"
+                          data-testid={`button-quickaction-${testId}`}
+                        >
+                          <div className="flex flex-col items-center justify-center gap-3 relative z-10">
+                            <div className="w-9 h-9 rounded-lg bg-white/15 dark:bg-white/10 ring-1 ring-white/20 dark:ring-white/15 flex items-center justify-center group-hover:scale-110 group-hover:rotate-1 transition-all duration-300">
+                              <Icon className="h-5 w-5 text-orange-500" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                          </div>
+                        </Button>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
