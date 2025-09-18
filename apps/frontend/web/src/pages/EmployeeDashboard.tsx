@@ -451,55 +451,57 @@ export default function EmployeeDashboard() {
                 </Card>
 
                 {/* Azioni Rapide - Compact 2x2 Grid */}
-                <div className="lg:col-span-1">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Azioni Rapide</h3>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Operazioni frequenti</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 h-[320px]">
-                    {[
-                      { 
-                        icon: FileText, 
-                        label: 'Documenti', 
-                        color: 'from-blue-500 to-blue-600',
-                        testId: 'documenti' 
-                      },
-                      { 
-                        icon: Receipt, 
-                        label: 'Spese', 
-                        color: 'from-green-500 to-green-600',
-                        testId: 'spese' 
-                      },
-                      { 
-                        icon: GraduationCap, 
-                        label: 'Formazione', 
-                        color: 'from-purple-500 to-purple-600',
-                        testId: 'formazione' 
-                      },
-                      { 
-                        icon: Users, 
-                        label: 'Team', 
-                        color: 'from-orange-500 to-orange-600',
-                        testId: 'team' 
-                      }
-                    ].map(({ icon: Icon, label, color, testId }) => (
-                      <Card 
-                        key={testId}
-                        className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer h-[150px] flex flex-col"
-                        data-testid={`card-quickaction-${testId}`}
-                      >
-                        <CardContent className="flex-1 flex flex-col items-center justify-center p-4">
-                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                            <Icon className="h-5 w-5 text-white" />
-                          </div>
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white text-center group-hover:text-gray-700 dark:group-hover:text-gray-200">
-                            {label}
-                          </h4>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
+                <Card className="lg:col-span-1 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-orange-300">
+                  <CardHeader>
+                    <CardTitle>Azioni Rapide</CardTitle>
+                    <CardDescription>Operazioni frequenti</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-3 max-h-[320px]">
+                      {[
+                        { 
+                          icon: FileText, 
+                          label: 'Documenti', 
+                          color: 'from-blue-500 to-blue-600',
+                          testId: 'documenti' 
+                        },
+                        { 
+                          icon: Receipt, 
+                          label: 'Spese', 
+                          color: 'from-green-500 to-green-600',
+                          testId: 'spese' 
+                        },
+                        { 
+                          icon: GraduationCap, 
+                          label: 'Formazione', 
+                          color: 'from-purple-500 to-purple-600',
+                          testId: 'formazione' 
+                        },
+                        { 
+                          icon: Users, 
+                          label: 'Team', 
+                          color: 'from-orange-500 to-orange-600',
+                          testId: 'team' 
+                        }
+                      ].map(({ icon: Icon, label, color, testId }) => (
+                        <Card 
+                          key={testId}
+                          className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer h-[120px] flex flex-col"
+                          data-testid={`card-quickaction-${testId}`}
+                        >
+                          <CardContent className="flex-1 flex flex-col items-center justify-center p-3">
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300`}>
+                              <Icon className="h-4 w-4 text-white" />
+                            </div>
+                            <h4 className="text-xs font-semibold text-gray-900 dark:text-white text-center group-hover:text-gray-700 dark:group-hover:text-gray-200">
+                              {label}
+                            </h4>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
 
 
                 {/* Performance Goals */}
