@@ -23,6 +23,7 @@ import HRCompliance from "./pages/HRCompliance";
 import HRReports from "./pages/HRReports";
 import HRAttendance from "./pages/HRAttendance";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
+import HRRequestCenter from "./pages/HRRequestCenter";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -75,6 +76,9 @@ function Router() {
       </Route>
       <Route path="/:tenant/employee/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeDashboard /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/employee/hr-requests">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRRequestCenter /></AuthenticatedApp></TenantWrapper>}
       </Route>
       {/* Route principale HR - tutte le richieste HR puntano qui */}
       <Route path="/:tenant/hr">
@@ -132,7 +136,7 @@ function Router() {
       </Route>
       
       {/* Root path - redirect to default tenant dashboard */}
-      <Route path="/" exact>
+      <Route path="/">
         {() => <Redirect to="/staging/dashboard" replace />}
       </Route>
       

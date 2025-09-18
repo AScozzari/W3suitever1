@@ -19,12 +19,18 @@ import {
   Download, Upload, Target, Award, TrendingUp, Sun, Moon, Sunrise, Sunset,
   Home, Briefcase, Heart, Umbrella, Plane, Baby, School, HeartHandshake,
   Bell, ChevronRight, MoreVertical, Star, Activity, BarChart3, User,
-  Settings, HelpCircle, LogOut, Shield, Zap, Gift, Wallet, Building, Plus
+  Settings, HelpCircle, LogOut, Shield, Zap, Gift, Wallet, Building, Plus,
+  ClipboardList
 } from 'lucide-react';
 import { format, addDays, startOfMonth, endOfMonth, isToday, isSameDay, differenceInMinutes } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { Link, useLocation } from 'wouter';
 
 export default function EmployeeDashboard() {
+  // Get current location to extract tenant param
+  const [location] = useLocation();
+  const currentTenant = location.split('/')[1] || 'staging';
+  
   // Stati principali
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isClockedIn, setIsClockedIn] = useState(false);
@@ -461,10 +467,11 @@ export default function EmployeeDashboard() {
                     <div className="grid grid-cols-2 gap-3 max-h-[320px]">
                       {[
                         { 
-                          icon: FileText, 
-                          label: 'Documenti', 
-                          color: 'from-blue-500 to-blue-600',
-                          testId: 'documenti' 
+                          icon: ClipboardList, 
+                          label: 'Richieste HR', 
+                          color: 'from-orange-500 to-purple-600',
+                          testId: 'hr-requests',
+                          link: `/${currentTenant}/employee/hr-requests`
                         },
                         { 
                           icon: Receipt, 
@@ -484,22 +491,34 @@ export default function EmployeeDashboard() {
                           color: 'from-orange-500 to-orange-600',
                           testId: 'team' 
                         }
-                      ].map(({ icon: Icon, label, color, testId }) => (
-                        <Card 
-                          key={testId}
-                          className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer h-[120px] flex flex-col"
-                          data-testid={`card-quickaction-${testId}`}
-                        >
-                          <CardContent className="flex-1 flex flex-col items-center justify-center p-3">
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300`}>
-                              <Icon className="h-4 w-4 text-white" />
-                            </div>
-                            <h4 className="text-xs font-semibold text-gray-900 dark:text-white text-center group-hover:text-gray-700 dark:group-hover:text-gray-200">
-                              {label}
-                            </h4>
-                          </CardContent>
-                        </Card>
-                      ))}
+                      ].map(({ icon: Icon, label, color, testId, link }) => {
+                        const CardComponent = (
+                          <Card 
+                            key={testId}
+                            className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer h-[120px] flex flex-col"
+                            data-testid={`card-quickaction-${testId}`}
+                          >
+                            <CardContent className="flex-1 flex flex-col items-center justify-center p-3">
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300`}>
+                                <Icon className="h-4 w-4 text-white" />
+                              </div>
+                              <h4 className="text-xs font-semibold text-gray-900 dark:text-white text-center group-hover:text-gray-700 dark:group-hover:text-gray-200">
+                                {label}
+                              </h4>
+                            </CardContent>
+                          </Card>
+                        );
+                        
+                        if (link) {
+                          return (
+                            <Link key={testId} href={link}>
+                              {CardComponent}
+                            </Link>
+                          );
+                        }
+                        
+                        return CardComponent;
+                      })}
                     </div>
                   </CardContent>
                 </Card>
