@@ -1069,7 +1069,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
                   <LogIn className="h-4 w-4 text-green-600" />
                   <div>
                     <p className="text-sm font-medium">Entrata</p>
-                    <p className="text-xs text-gray-500">GPS • {storeName}</p>
+                    <p className="text-xs text-gray-500">GPS • {selectedStore?.name || fallbackStoreName || 'Negozio'}</p>
                   </div>
                 </div>
                 <span className="text-sm">08:45</span>
