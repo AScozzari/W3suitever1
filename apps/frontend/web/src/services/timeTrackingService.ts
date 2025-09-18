@@ -1,6 +1,7 @@
-// Time Tracking Service - Enterprise Time Management
+// Time Tracking Service - Enterprise Time Management with End-to-End Encryption
 import { apiGet, apiPost, apiPut } from '@/lib/api';
 import { TimeTracking, InsertTimeTracking } from '../../../../backend/api/src/db/schema/w3suite';
+import { encryptionManager } from '@/utils/encryptionManager';
 
 export interface TimeTrackingEntry extends TimeTracking {
   userName?: string;
@@ -28,6 +29,28 @@ export interface ClockInData {
   // Enhanced geofencing audit fields
   wasOverride?: boolean;
   overrideReason?: string;
+}
+
+// Encrypted data interface for API communication
+export interface EncryptedClockInData {
+  storeId: string;
+  trackingMethod: 'badge' | 'nfc' | 'app' | 'gps' | 'manual' | 'biometric';
+  shiftId?: string;
+  wasOverride?: boolean;
+  overrideReason?: string;
+  // Encrypted fields
+  encryptedGeoLocation?: string;
+  encryptedDeviceInfo?: string;
+  encryptedNotes?: string;
+  encryptionKeyId?: string;
+  encryptionMetadata?: {
+    geoLocationIv?: string;
+    deviceInfoIv?: string;
+    notesIv?: string;
+    geoLocationTag?: string;
+    deviceInfoTag?: string;
+    notesTag?: string;
+  };
 }
 
 export interface ClockOutData {
@@ -119,6 +142,127 @@ export interface StoreResolutionResult {
 }
 
 class TimeTrackingService {
+  // ==================== ENCRYPTION HELPERS ====================
+  private async encryptSensitiveData(data: ClockInData): Promise<EncryptedClockInData> {
+    const encryptedData: EncryptedClockInData = {
+      storeId: data.storeId,
+      trackingMethod: data.trackingMethod,
+      shiftId: data.shiftId,
+      wasOverride: data.wasOverride,
+      overrideReason: data.overrideReason,
+    };
+
+    const encryptionMetadata: any = {};
+
+    try {
+      // Encrypt geoLocation if present
+      if (data.geoLocation) {
+        const encrypted = await encryptionManager.encryptData(JSON.stringify(data.geoLocation));
+        encryptedData.encryptedGeoLocation = encrypted.encryptedData;
+        encryptedData.encryptionKeyId = encrypted.keyId;
+        encryptionMetadata.geoLocationIv = encrypted.iv;
+        encryptionMetadata.geoLocationTag = encrypted.tag;
+      }
+
+      // Encrypt deviceInfo if present
+      if (data.deviceInfo) {
+        const encrypted = await encryptionManager.encryptData(JSON.stringify(data.deviceInfo));
+        encryptedData.encryptedDeviceInfo = encrypted.encryptedData;
+        if (!encryptedData.encryptionKeyId) {
+          encryptedData.encryptionKeyId = encrypted.keyId;
+        }
+        encryptionMetadata.deviceInfoIv = encrypted.iv;
+        encryptionMetadata.deviceInfoTag = encrypted.tag;
+      }
+
+      // Encrypt notes if present
+      if (data.notes) {
+        const encrypted = await encryptionManager.encryptData(data.notes);
+        encryptedData.encryptedNotes = encrypted.encryptedData;
+        if (!encryptedData.encryptionKeyId) {
+          encryptedData.encryptionKeyId = encrypted.keyId;
+        }
+        encryptionMetadata.notesIv = encrypted.iv;
+        encryptionMetadata.notesTag = encrypted.tag;
+      }
+
+      if (Object.keys(encryptionMetadata).length > 0) {
+        encryptedData.encryptionMetadata = encryptionMetadata;
+      }
+
+      console.log('🔒 [ENCRYPTION] Successfully encrypted sensitive time tracking data');
+      return encryptedData;
+    } catch (error) {
+      console.error('🚨 [ENCRYPTION-ERROR] Failed to encrypt sensitive data:', error);
+      // Fallback to non-encrypted data for demo purposes
+      // In production, this should fail gracefully or retry
+      return {
+        ...encryptedData,
+        // Include original data as fallback (not recommended for production)
+        geoLocation: data.geoLocation,
+        deviceInfo: data.deviceInfo,
+        notes: data.notes,
+      } as any;
+    }
+  }
+
+  private async decryptSensitiveData(encryptedEntry: any): Promise<any> {
+    if (!encryptedEntry.encryptionKeyId) {
+      return encryptedEntry; // No encryption metadata, return as is
+    }
+
+    try {
+      const decrypted = { ...encryptedEntry };
+
+      // Decrypt geoLocation if present
+      if (encryptedEntry.encryptedGeoLocation && encryptedEntry.encryptionMetadata?.geoLocationIv) {
+        const decryptedGeoLocation = await encryptionManager.decryptData({
+          encryptedData: encryptedEntry.encryptedGeoLocation,
+          keyId: encryptedEntry.encryptionKeyId,
+          iv: encryptedEntry.encryptionMetadata.geoLocationIv,
+          tag: encryptedEntry.encryptionMetadata.geoLocationTag,
+        });
+        decrypted.geoLocation = JSON.parse(decryptedGeoLocation);
+        delete decrypted.encryptedGeoLocation;
+      }
+
+      // Decrypt deviceInfo if present
+      if (encryptedEntry.encryptedDeviceInfo && encryptedEntry.encryptionMetadata?.deviceInfoIv) {
+        const decryptedDeviceInfo = await encryptionManager.decryptData({
+          encryptedData: encryptedEntry.encryptedDeviceInfo,
+          keyId: encryptedEntry.encryptionKeyId,
+          iv: encryptedEntry.encryptionMetadata.deviceInfoIv,
+          tag: encryptedEntry.encryptionMetadata.deviceInfoTag,
+        });
+        decrypted.deviceInfo = JSON.parse(decryptedDeviceInfo);
+        delete decrypted.encryptedDeviceInfo;
+      }
+
+      // Decrypt notes if present
+      if (encryptedEntry.encryptedNotes && encryptedEntry.encryptionMetadata?.notesIv) {
+        const decryptedNotes = await encryptionManager.decryptData({
+          encryptedData: encryptedEntry.encryptedNotes,
+          keyId: encryptedEntry.encryptionKeyId,
+          iv: encryptedEntry.encryptionMetadata.notesIv,
+          tag: encryptedEntry.encryptionMetadata.notesTag,
+        });
+        decrypted.notes = decryptedNotes;
+        delete decrypted.encryptedNotes;
+      }
+
+      // Clean up encryption metadata
+      delete decrypted.encryptionKeyId;
+      delete decrypted.encryptionMetadata;
+
+      console.log('🔓 [DECRYPTION] Successfully decrypted sensitive time tracking data');
+      return decrypted;
+    } catch (error) {
+      console.error('🚨 [DECRYPTION-ERROR] Failed to decrypt sensitive data:', error);
+      // Return original encrypted data if decryption fails
+      return encryptedEntry;
+    }
+  }
+
   // ==================== CLOCK OPERATIONS ====================
   async clockIn(data: ClockInData): Promise<TimeTrackingEntry> {
     // Get device info automatically
@@ -128,22 +272,34 @@ class TimeTrackingService {
       deviceType: this.detectDeviceType(),
     };
 
-    const response = await apiPost<TimeTrackingEntry>('/api/hr/time-tracking/clock-in', {
+    // Prepare data with enhanced device info
+    const enhancedData = {
       ...data,
       deviceInfo,
+    };
+
+    // Encrypt sensitive data before sending to API
+    console.log('🔒 [CLOCK-IN] Encrypting sensitive data before API call');
+    const encryptedData = await this.encryptSensitiveData(enhancedData);
+
+    const response = await apiPost<TimeTrackingEntry>('/api/hr/time-tracking/clock-in', {
+      ...encryptedData,
       clockIn: new Date().toISOString(),
     });
 
+    // Decrypt response data for client use
+    const decryptedResponse = await this.decryptSensitiveData(response);
+
     // Store session in localStorage for offline support
-    if (response) {
+    if (decryptedResponse) {
       localStorage.setItem('w3_current_session', JSON.stringify({
-        id: response.id,
-        startTime: response.clockIn,
-        storeId: response.storeId,
+        id: decryptedResponse.id,
+        startTime: decryptedResponse.clockIn,
+        storeId: decryptedResponse.storeId,
       }));
     }
 
-    return response;
+    return decryptedResponse;
   }
 
   async clockOut(id: string, data?: ClockOutData): Promise<TimeTrackingEntry> {

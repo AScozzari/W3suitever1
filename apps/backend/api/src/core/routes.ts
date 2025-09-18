@@ -28,6 +28,7 @@ import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-
 import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
 import { objectAclService } from "./objectAcl";
 import { HRStorage } from "./hr-storage";
+import { encryptionKeyService } from "./encryption-service";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
@@ -108,7 +109,30 @@ const clockInBodySchema = z.object({
   shiftId: z.string().uuid().optional(),
   notes: z.string().optional(),
   wasOverride: z.boolean().default(false),
-  overrideReason: z.string().optional()
+  overrideReason: z.string().optional(),
+  // Encrypted data fields
+  encryptedGeoLocation: z.string().optional(),
+  encryptedDeviceInfo: z.string().optional(),
+  encryptedNotes: z.string().optional(),
+  encryptionKeyId: z.string().optional(),
+  encryptionMetadata: z.object({
+    geoLocationIv: z.string().optional(),
+    deviceInfoIv: z.string().optional(),
+    notesIv: z.string().optional(),
+    geoLocationTag: z.string().optional(),
+    deviceInfoTag: z.string().optional(),
+    notesTag: z.string().optional()
+  }).optional()
+});
+
+// Encryption key management schemas
+const keyRotationBodySchema = z.object({
+  reason: z.string().optional()
+});
+
+const gdprDeletionBodySchema = z.object({
+  reason: z.string().default('GDPR_REQUEST'),
+  userId: z.string().optional() // Optional user-specific deletion
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1870,6 +1894,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching reports:", error);
       res.status(500).json({ error: "Failed to fetch reports" });
+    }
+  });
+
+  // ==================== FRONTEND API ENDPOINTS ====================
+  // These endpoints match what the frontend modules expect
+
+  // Customers API - matches CRMModule expectations
+  app.get('/api/customers', enterpriseAuth, async (req, res) => {
+    try {
+      // Return mock customer data for development
+      const customers = [
+        {
+          id: 'cust-001',
+          firstName: 'Mario',
+          lastName: 'Rossi', 
+          email: 'mario.rossi@example.com',
+          phone: '+39 331 1234567',
+          company: 'Rossi SRL',
+          vatNumber: 'IT01234567890',
+          address: 'Via Roma 123',
+          city: 'Milano',
+          postalCode: '20121',
+          notes: 'Cliente VIP'
+        },
+        {
+          id: 'cust-002', 
+          firstName: 'Anna',
+          lastName: 'Bianchi',
+          email: 'anna.bianchi@example.com',
+          phone: '+39 331 9876543',
+          company: 'Bianchi Store',
+          vatNumber: 'IT09876543210',
+          address: 'Via Garibaldi 456',
+          city: 'Roma',
+          postalCode: '00184',
+          notes: 'Ottimo pagatore'
+        }
+      ];
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+
+  app.post('/api/customers', enterpriseAuth, async (req, res) => {
+    try {
+      // Mock customer creation - return the created customer with generated ID
+      const newCustomer = {
+        id: 'cust-' + Date.now(),
+        ...req.body,
+        createdAt: new Date().toISOString()
+      };
+      res.status(201).json(newCustomer);
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      res.status(500).json({ error: "Failed to create customer" });
+    }
+  });
+
+  // Products API - matches InventoryModule expectations  
+  app.get('/api/products', enterpriseAuth, async (req, res) => {
+    try {
+      // Return mock product data for development
+      const products = [
+        {
+          id: 'prod-001',
+          name: 'iPhone 14 Pro',
+          description: 'Apple iPhone 14 Pro 128GB',
+          sku: 'APL-IP14P-128',
+          barcode: '1234567890123',
+          price: '1199.99',
+          cost: '899.99',
+          quantity: 25,
+          minStock: 5,
+          category: 'Electronics',
+          brand: 'Apple'
+        },
+        {
+          id: 'prod-002',
+          name: 'Samsung Galaxy S23',
+          description: 'Samsung Galaxy S23 256GB',
+          sku: 'SAM-GS23-256',
+          barcode: '2345678901234',
+          price: '999.99',
+          cost: '749.99',
+          quantity: 18,
+          minStock: 3,
+          category: 'Electronics',
+          brand: 'Samsung'
+        },
+        {
+          id: 'prod-003',
+          name: 'MacBook Air M2',
+          description: 'Apple MacBook Air 13" M2 256GB',
+          sku: 'APL-MBA-M2-256',
+          barcode: '3456789012345',
+          price: '1399.99',
+          cost: '1099.99',
+          quantity: 12,
+          minStock: 2,
+          category: 'Computers',
+          brand: 'Apple'
+        }
+      ];
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  app.post('/api/products', enterpriseAuth, async (req, res) => {
+    try {
+      // Mock product creation - return the created product with generated ID
+      const newProduct = {
+        id: 'prod-' + Date.now(),
+        ...req.body,
+        createdAt: new Date().toISOString()
+      };
+      res.status(201).json(newProduct);
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ error: "Failed to create product" });
+    }
+  });
+
+  // Orders API - matches POSModule expectations
+  app.get('/api/orders', enterpriseAuth, async (req, res) => {
+    try {
+      // Return mock order data for development  
+      const orders = [
+        {
+          id: 'ord-001',
+          customerId: 'cust-001',
+          customerName: 'Mario Rossi',
+          subtotal: '1199.99',
+          tax: '263.98',
+          total: '1463.97',
+          paymentMethod: 'card',
+          status: 'completed',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          items: [
+            {
+              id: 'item-001',
+              productId: 'prod-001',
+              productName: 'iPhone 14 Pro',
+              quantity: 1,
+              price: '1199.99',
+              total: '1199.99'
+            }
+          ]
+        },
+        {
+          id: 'ord-002',
+          customerId: 'cust-002', 
+          customerName: 'Anna Bianchi',
+          subtotal: '999.99',
+          tax: '220.00',
+          total: '1219.99',
+          paymentMethod: 'cash',
+          status: 'completed',
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+          items: [
+            {
+              id: 'item-002',
+              productId: 'prod-002',
+              productName: 'Samsung Galaxy S23',
+              quantity: 1,
+              price: '999.99',
+              total: '999.99'
+            }
+          ]
+        }
+      ];
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  app.post('/api/orders', enterpriseAuth, async (req, res) => {
+    try {
+      // Mock order creation - return the created order with generated ID
+      const newOrder = {
+        id: 'ord-' + Date.now(),
+        ...req.body,
+        status: 'completed',
+        createdAt: new Date().toISOString()
+      };
+      res.status(201).json(newOrder);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ error: "Failed to create order" });
     }
   });
 
@@ -4912,6 +5131,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting expired notifications:", error);
       res.status(500).json({ error: "Failed to delete expired notifications" });
+    }
+  });
+
+  // ==================== ENCRYPTION KEY MANAGEMENT API ====================
+  
+  // Get active encryption keys metadata for tenant
+  app.get('/api/encryption/keys', tenantMiddleware, rbacMiddleware, requirePermission('encryption.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const keys = await encryptionKeyService.getActiveKeys(tenantId);
+      
+      res.json({
+        activeKeys: keys.map(key => ({
+          id: key.id,
+          version: key.version,
+          isActive: key.isActive,
+          createdAt: key.createdAt,
+          // Never expose the actual key material
+          algorithm: 'AES-256-GCM',
+          keyDerivation: 'PBKDF2'
+        }))
+      });
+    } catch (error) {
+      console.error('Encryption keys retrieval error:', error);
+      res.status(500).json({ error: 'Failed to retrieve encryption keys' });
+    }
+  });
+
+  // Rotate tenant encryption keys (creates new key and marks old as inactive)
+  app.post('/api/encryption/keys/rotate', tenantMiddleware, rbacMiddleware, requirePermission('encryption.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Validate request body
+      const validatedData = keyRotationBodySchema.safeParse(req.body);
+      if (!validatedData.success) {
+        return res.status(400).json({
+          error: 'invalid_rotation_data',
+          details: validatedData.error.issues
+        });
+      }
+
+      const { reason } = validatedData.data;
+
+      const newKey = await encryptionKeyService.rotateKeys(tenantId, {
+        reason: reason || 'Manual key rotation',
+        rotatedBy: userId
+      });
+
+      res.json({
+        success: true,
+        newKeyId: newKey.id,
+        message: 'Encryption keys rotated successfully'
+      });
+    } catch (error) {
+      console.error('Key rotation error:', error);
+      res.status(500).json({ error: 'Failed to rotate encryption keys' });
+    }
+  });
+
+  // GDPR compliant key destruction
+  app.delete('/api/encryption/keys/gdpr-delete', tenantMiddleware, rbacMiddleware, requirePermission('encryption.gdpr'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      // Validate request body
+      const validatedData = gdprDeletionBodySchema.safeParse(req.body);
+      if (!validatedData.success) {
+        return res.status(400).json({
+          error: 'invalid_gdpr_deletion_data',
+          details: validatedData.error.issues
+        });
+      }
+
+      const { reason, userId: targetUserId } = validatedData.data;
+
+      const result = await encryptionKeyService.gdprDeleteKeys(tenantId, {
+        reason,
+        requestedBy: userId,
+        targetUserId
+      });
+
+      res.json({
+        success: true,
+        destroyedKeys: result.destroyedKeys,
+        message: 'GDPR key deletion completed successfully'
+      });
+    } catch (error) {
+      console.error('GDPR key deletion error:', error);
+      res.status(500).json({ error: 'Failed to delete encryption keys' });
+    }
+  });
+
+  // Encryption system health check
+  app.get('/api/encryption/health', tenantMiddleware, rbacMiddleware, requirePermission('encryption.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const health = await encryptionKeyService.healthCheck(tenantId);
+      
+      res.json({
+        status: health.healthy ? 'healthy' : 'unhealthy',
+        activeKeys: health.activeKeyCount,
+        lastRotation: health.lastRotation,
+        nextRecommendedRotation: health.nextRecommendedRotation,
+        issues: health.issues || []
+      });
+    } catch (error) {
+      console.error('Encryption health check error:', error);
+      res.status(500).json({ error: 'Failed to check encryption health' });
+    }
+  });
+
+  // Admin: List all encryption keys (including inactive)
+  app.get('/api/encryption/keys/all', tenantMiddleware, rbacMiddleware, requirePermission('encryption.admin'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const allKeys = await encryptionKeyService.getAllKeys(tenantId);
+      
+      res.json({
+        keys: allKeys.map(key => ({
+          id: key.id,
+          version: key.version,
+          isActive: key.isActive,
+          createdAt: key.createdAt,
+          deactivatedAt: key.deactivatedAt,
+          rotationReason: key.rotationReason,
+          // Never expose the actual key material even for admins
+          algorithm: 'AES-256-GCM',
+          keyDerivation: 'PBKDF2'
+        }))
+      });
+    } catch (error) {
+      console.error('Admin encryption keys retrieval error:', error);
+      res.status(500).json({ error: 'Failed to retrieve all encryption keys' });
     }
   });
 

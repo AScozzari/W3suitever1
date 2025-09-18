@@ -200,14 +200,32 @@ export const stores = w3suiteSchema.table("stores", {
   nome: varchar("nome", { length: 255 }).notNull(),
   channelId: uuid("channel_id").notNull().references(() => channels.id),
   commercialAreaId: uuid("commercial_area_id").notNull().references(() => commercialAreas.id),
-  address: text("address"),
+  
+  // LEGACY LOCATION FIELDS (for backwards compatibility)
+  address: text("address"), // DEPRECATED - use encryptedAddress
+  latitude: varchar("latitude", { length: 20 }), // DEPRECATED - use encryptedCoordinates
+  longitude: varchar("longitude", { length: 20 }), // DEPRECATED - use encryptedCoordinates
+  geo: jsonb("geo"), // DEPRECATED - use encryptedGeoData
+  
+  // ENCRYPTED LOCATION FIELDS
+  encryptedAddress: text("encrypted_address"), // Base64 encrypted physical address
+  encryptedCoordinates: text("encrypted_coordinates"), // Base64 encrypted lat/lng
+  encryptedGeoData: text("encrypted_geo_data"), // Base64 encrypted detailed geo info
+  
+  // STORE ENCRYPTION METADATA
+  storeEncryptionKeyId: varchar("store_encryption_key_id", { length: 100 }).references(() => encryptionKeys.keyId),
+  addressIv: varchar("address_iv", { length: 100 }), // IV for address
+  coordinatesIv: varchar("coordinates_iv", { length: 100 }), // IV for coordinates
+  geoDataIv: varchar("geo_data_iv", { length: 100 }), // IV for geo data
+  addressTag: varchar("address_tag", { length: 100 }), // Auth tag for address
+  coordinatesTag: varchar("coordinates_tag", { length: 100 }), // Auth tag for coordinates
+  geoDataTag: varchar("geo_data_tag", { length: 100 }), // Auth tag for geo data
+  locationEncryptedAt: timestamp("location_encrypted_at"), // When location was encrypted
+  
   citta: varchar("citta", { length: 100 }),
   provincia: varchar("provincia", { length: 10 }),
   cap: varchar("cap", { length: 10 }),
   region: varchar("region", { length: 100 }),
-  geo: jsonb("geo"),
-  latitude: varchar("latitude", { length: 20 }),
-  longitude: varchar("longitude", { length: 20 }),
   wifiNetworks: jsonb("wifi_networks").default([]), // Store WiFi SSIDs for geofencing
   status: varchar("status", { length: 50 }).default("active"),
   openedAt: date("opened_at"),
@@ -229,6 +247,7 @@ export const stores = w3suiteSchema.table("stores", {
   telegram: varchar("telegram", { length: 255 }),
 }, (table) => [
   uniqueIndex("stores_tenant_code_unique").on(table.tenantId, table.code),
+  index("stores_encryption_key_idx").on(table.storeEncryptionKeyId),
 ]);
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ 
@@ -739,6 +758,43 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 
+// ==================== ENCRYPTION KEYS ====================
+export const encryptionKeys = w3suiteSchema.table("encryption_keys", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Key identification
+  keyId: varchar("key_id", { length: 100 }).notNull().unique(),
+  version: integer("version").notNull().default(1),
+  
+  // Key metadata (NOT the actual key - keys are derived client-side)
+  algorithm: varchar("algorithm", { length: 50 }).notNull().default("AES-GCM"),
+  keyLength: integer("key_length").notNull().default(256),
+  saltBase64: text("salt_base64").notNull(), // Salt for key derivation
+  iterations: integer("iterations").notNull().default(100000),
+  
+  // Key status
+  isActive: boolean("is_active").default(true),
+  
+  // GDPR compliance
+  destroyedAt: timestamp("destroyed_at"), // For "right to be forgotten"
+  destroyReason: varchar("destroy_reason", { length: 100 }),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"), // Key rotation
+}, (table) => [
+  index("encryption_keys_tenant_active_idx").on(table.tenantId, table.isActive),
+  index("encryption_keys_key_id_idx").on(table.keyId),
+]);
+
+export const insertEncryptionKeySchema = createInsertSchema(encryptionKeys).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertEncryptionKey = z.infer<typeof insertEncryptionKeySchema>;
+export type EncryptionKey = typeof encryptionKeys.$inferSelect;
+
 // ==================== TIME TRACKING ====================
 export const timeTracking = w3suiteSchema.table("time_tracking", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -753,8 +809,27 @@ export const timeTracking = w3suiteSchema.table("time_tracking", {
   
   // Tracking details
   trackingMethod: trackingMethodEnum("tracking_method").notNull(),
-  geoLocation: jsonb("geo_location"), // { lat, lng, accuracy, address }
-  deviceInfo: jsonb("device_info"), // { deviceId, deviceType, ipAddress, userAgent }
+  
+  // LEGACY FIELDS (for backwards compatibility)
+  geoLocation: jsonb("geo_location"), // { lat, lng, accuracy, address } - DEPRECATED
+  deviceInfo: jsonb("device_info"), // { deviceId, deviceType, ipAddress, userAgent } - DEPRECATED
+  notes: text("notes"), // DEPRECATED - use encryptedNotes
+  
+  // ENCRYPTED FIELDS
+  encryptedGeoLocation: text("encrypted_geo_location"), // Base64 encrypted geo data
+  encryptedDeviceInfo: text("encrypted_device_info"), // Base64 encrypted device data  
+  encryptedNotes: text("encrypted_notes"), // Base64 encrypted notes
+  
+  // ENCRYPTION METADATA
+  encryptionKeyId: varchar("encryption_key_id", { length: 100 }).references(() => encryptionKeys.keyId),
+  encryptionVersion: integer("encryption_version").default(1),
+  geoLocationIv: varchar("geo_location_iv", { length: 100 }), // Initialization vector for geo
+  deviceInfoIv: varchar("device_info_iv", { length: 100 }), // IV for device info
+  notesIv: varchar("notes_iv", { length: 100 }), // IV for notes
+  geoLocationTag: varchar("geo_location_tag", { length: 100 }), // Auth tag for geo
+  deviceInfoTag: varchar("device_info_tag", { length: 100 }), // Auth tag for device
+  notesTag: varchar("notes_tag", { length: 100 }), // Auth tag for notes
+  encryptedAt: timestamp("encrypted_at"), // When data was encrypted
   
   // Shift association
   shiftId: uuid("shift_id"), // Reference to planned shift
@@ -767,7 +842,6 @@ export const timeTracking = w3suiteSchema.table("time_tracking", {
   
   // Status and approval
   status: timeTrackingStatusEnum("status").notNull().default("active"),
-  notes: text("notes"),
   editReason: text("edit_reason"),
   approvedBy: varchar("approved_by").references(() => users.id),
   approvedAt: timestamp("approved_at"),
@@ -780,6 +854,7 @@ export const timeTracking = w3suiteSchema.table("time_tracking", {
   index("time_tracking_tenant_store_date_idx").on(table.tenantId, table.storeId, table.clockIn),
   index("time_tracking_shift_idx").on(table.shiftId),
   index("time_tracking_status_idx").on(table.status),
+  index("time_tracking_encryption_key_idx").on(table.encryptionKeyId),
 ]);
 
 export const insertTimeTrackingSchema = createInsertSchema(timeTracking).omit({ 

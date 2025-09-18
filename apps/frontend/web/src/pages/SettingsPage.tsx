@@ -6353,35 +6353,43 @@ export default function SettingsPage() {
                       const value = e.target.value.toLowerCase();
                       setNewRagioneSociale({ ...newRagioneSociale, pec: value });
                     }}
-                    onBlur={(e) => {
-                      // Real-time PEC email validation for legal entities
-                      if (e.target.value) {
-                        const pecValidation = legalEntityValidationSchema.shape.pec?.safeParse(e.target.value);
-                        if (!pecValidation?.success) {
-                          e.target.style.borderColor = '#ef4444';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
-                          let errorDiv = e.target.parentElement?.querySelector('.validation-error');
-                          if (!errorDiv) {
-                            errorDiv = document.createElement('div');
-                            errorDiv.className = 'validation-error';
-                            e.target.parentElement?.appendChild(errorDiv);
+                    onBlur={composeEventHandlers(
+                      (e) => {
+                        // Real-time PEC email validation for legal entities
+                        if (e.target.value) {
+                          const pecValidation = legalEntityValidationSchema.shape.pec?.safeParse(e.target.value);
+                          if (!pecValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'PEC non valida - deve terminare con domini certificati PEC';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
                           }
-                          errorDiv.textContent = 'PEC non valida - deve terminare con domini certificati PEC';
-                          errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
                         } else {
-                          e.target.style.borderColor = '#10b981';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
                           const errorDiv = e.target.parentElement?.querySelector('.validation-error');
                           errorDiv?.remove();
                         }
-                      } else {
+                      },
+                      (e) => {
+                        // Styling reset handler
                         e.target.style.borderColor = '#e5e7eb';
                         e.target.style.background = '#fafbfc';
                         e.target.style.boxShadow = 'none';
-                        const errorDiv = e.target.parentElement?.querySelector('.validation-error');
-                        errorDiv?.remove();
                       }
-                    }}
+                    )}
                     data-testid="input-legal-entity-pec"
                     style={{
                       width: '100%',
