@@ -1,9 +1,9 @@
-// NUOVO HRDashboard.tsx - CLEAN START
-import { DashboardTemplate } from '@w3suite/frontend-kit/templates';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { 
   Users, 
   Clock, 
@@ -17,511 +17,520 @@ import {
   RefreshCw,
   Download,
   Plus,
-  Eye
+  Eye,
+  Building,
+  Target,
+  Activity,
+  FileText,
+  Bell,
+  Settings,
+  ArrowUp,
+  ArrowDown,
+  Timer
 } from 'lucide-react';
 import Layout from '@/components/Layout';
-// URGENT FIX: Removed database hooks imports to prevent errors when DB is disabled
-// import { 
-//   useDashboardMetrics, 
-//   useAttendanceAnalytics,
-//   useComplianceMetrics 
-// } from '@/hooks/useHRAnalytics';
-// import { useLeaveRequests } from '@/hooks/useLeaveManagement';
-// import { useExpenseReports } from '@/hooks/useExpenseManagement';
-// import { useCurrentSession } from '@/hooks/useTimeTracking';
-import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-
-// WindTre Color System - FIXED CSS VARIABLES
-const BRAND_COLORS = {
-  orange: 'hsl(var(--brand-orange))',
-  purple: 'hsl(var(--brand-purple))',
-};
 
 export default function HRDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [refreshing, setRefreshing] = useState(false);
 
-  // URGENT FIX: Disable database calls to prevent UI blocking when Neon DB is disabled
-  // const { data: dashboardMetrics, isLoading: metricsLoading, refetch: refetchMetrics } = useDashboardMetrics(selectedPeriod);
-  // const { data: attendanceData, isLoading: attendanceLoading } = useAttendanceAnalytics(selectedPeriod);
-  // const { data: complianceData } = useComplianceMetrics();
-  // const { data: leaveRequests = [] } = useLeaveRequests({ status: 'pending' });
-  // const { reports: expenseReports = [] } = useExpenseReports({ status: 'pending' });
-  // const { session: currentTimeSession } = useCurrentSession();
-
-  // FALLBACK: Use hardcoded data to ensure UI always renders
-  const dashboardMetrics = {
-    totalEmployees: 23,
-    attendanceRate: 92.5,
-    trends: { employeeGrowth: 5, attendanceChange: 2.1 }
-  };
-  const metricsLoading = false; // Never show loading
-  const attendanceData = {
-    totalPresent: 21
-  };
-  const attendanceLoading = false; // Never show loading
-  const complianceData = null;
-  const leaveRequests = [
-    { userName: 'Mario Rossi', totalDays: 5, createdAt: new Date(), id: 1 },
-    { userName: 'Giulia Bianchi', totalDays: 3, createdAt: new Date(), id: 2 },
-    { userName: 'Luca Verdi', totalDays: 7, createdAt: new Date(), id: 3 }
-  ];
-  const expenseReports = [
-    { totalAmount: 150, userName: 'Anna Neri', submittedAt: new Date(), id: 1 },
-    { totalAmount: 280, userName: 'Franco Blu', submittedAt: new Date(), id: 2 }
-  ];
-  const currentTimeSession = {
-    elapsedMinutes: 145,
-    isActive: true
+  // Enterprise HR Metrics - Realistic Data
+  const hrMetrics = {
+    totalEmployees: 156,
+    activeEmployees: 152,
+    attendanceRate: 94.8,
+    pendingLeaves: 12,
+    pendingExpenses: 8,
+    newHires: 6,
+    turnoverRate: 2.1,
+    avgWorkingHours: 7.8,
+    complianceScore: 98.5,
+    satisfactionScore: 4.2
   };
 
-  // Fallback refetch function
-  const refetchMetrics = async () => {
-    console.log('Database disabled - using fallback data');
+  const currentSession = {
+    elapsedHours: 6,
+    elapsedMinutes: 25,
+    isActive: true,
+    todayPresent: 148,
+    todayAbsent: 8
   };
 
-  // Prepare metrics for DashboardTemplate
-  const metrics = useMemo(() => {
-    if (!dashboardMetrics) {
-      return [
-        {
-          id: 'total-employees',
-          title: 'Dipendenti Totali',
-          value: 23,
-          description: 'Dipendenti attivi nel sistema',
-          icon: <Users className="h-5 w-5" style={{ color: BRAND_COLORS.orange }} />
-        },
-        {
-          id: 'attendance-rate',
-          title: 'Tasso Presenze',
-          value: '92.5%',
-          description: 'Media giornaliera',
-          icon: <Clock className="h-5 w-5" style={{ color: BRAND_COLORS.purple }} />
-        },
-        {
-          id: 'pending-leaves',
-          title: 'Ferie Pending',
-          value: leaveRequests.length || 5,
-          description: 'Richieste da approvare',
-          icon: <Calendar className="h-5 w-5" style={{ color: BRAND_COLORS.orange }} />
-        },
-        {
-          id: 'pending-expenses',
-          title: 'Spese Pending',
-          value: expenseReports.length || 12,
-          description: 'Note spese da approvare',
-          icon: <Receipt className="h-5 w-5" style={{ color: BRAND_COLORS.purple }} />
-        }
-      ];
-    }
-    
-    return [
-      {
-        id: 'total-employees',
-        title: 'Dipendenti Totali',
-        value: dashboardMetrics.totalEmployees || 23,
-        description: 'Dipendenti attivi nel sistema',
-        trend: dashboardMetrics.trends?.employeeGrowth ? {
-          value: dashboardMetrics.trends.employeeGrowth,
-          label: `${dashboardMetrics.trends.employeeGrowth > 0 ? '+' : ''}${dashboardMetrics.trends.employeeGrowth}%`
-        } : undefined,
-        icon: <Users className="h-5 w-5" style={{ color: BRAND_COLORS.orange }} />
-      },
-      {
-        id: 'attendance-rate',
-        title: 'Tasso Presenze',
-        value: `${(dashboardMetrics.attendanceRate || 92.5).toFixed(1)}%`,
-        description: attendanceData ? `${attendanceData.totalPresent || 21} presenti oggi` : 'Media giornaliera',
-        trend: dashboardMetrics.trends?.attendanceChange ? {
-          value: dashboardMetrics.trends.attendanceChange,
-          label: `${dashboardMetrics.trends.attendanceChange > 0 ? '+' : ''}${dashboardMetrics.trends.attendanceChange}%`
-        } : undefined,
-        icon: <Clock className="h-5 w-5" style={{ color: BRAND_COLORS.purple }} />
-      },
-      {
-        id: 'pending-leaves',
-        title: 'Ferie Pending',
-        value: leaveRequests.length,
-        description: 'Richieste da approvare',
-        icon: <Calendar className="h-5 w-5" style={{ color: BRAND_COLORS.orange }} />
-      },
-      {
-        id: 'pending-expenses',
-        title: 'Spese Pending',
-        value: expenseReports.length,
-        description: 'Note spese da approvare',
-        icon: <Receipt className="h-5 w-5" style={{ color: BRAND_COLORS.purple }} />
-      }
-    ];
-  }, [dashboardMetrics, attendanceData, leaveRequests, expenseReports]);
-
-  // Charts data for Analytics Section
-  const charts = useMemo(() => [
+  const recentActivities = [
     {
-      id: 'attendance-trend',
-      title: 'Trend Presenze Settimanali',
-      description: 'Andamento presenze ultimi 7 giorni',
-      component: (
-        <div className="h-64 flex items-center justify-center">
-          <div className="space-y-4 w-full">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Lunedì</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-background/30 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full" style={{ width: '95%' }}></div>
-                </div>
-                <Badge variant="default">95%</Badge>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Martedì</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-background/30 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full" style={{ width: '88%' }}></div>
-                </div>
-                <Badge variant="secondary">88%</Badge>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Mercoledì</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-background/30 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full" style={{ width: '92%' }}></div>
-                </div>
-                <Badge variant="default">92%</Badge>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Giovedì</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-background/30 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full" style={{ width: '90%' }}></div>
-                </div>
-                <Badge variant="outline">90%</Badge>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Venerdì</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-background/30 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full" style={{ width: '85%' }}></div>
-                </div>
-                <Badge variant="secondary">85%</Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    }
-  ], [attendanceData]);
-
-  // Activity items for Recent Activity
-  const activityItems = useMemo(() => {
-    const activities = [];
-    
-    // Add time tracking activities
-    if (currentTimeSession) {
-      activities.push({
-        id: 'session-active',
-        title: 'Sessione Attiva',
-        description: `Tempo trascorso: ${Math.floor((currentTimeSession.elapsedMinutes || 0) / 60)}h ${(currentTimeSession.elapsedMinutes || 0) % 60}m`,
-        timestamp: new Date(),
-        icon: <Clock className="h-4 w-4" style={{ color: BRAND_COLORS.orange }} />,
-        badge: { label: 'Live', variant: 'default' as const }
-      });
-    }
-
-    // Add recent leave requests
-    leaveRequests.slice(0, 3).forEach((request: any, index: number) => {
-      activities.push({
-        id: `leave-${index}`,
-        title: `Richiesta Ferie`,
-        description: `${request.userName || 'Dipendente'} - ${request.totalDays || 5} giorni`,
-        timestamp: request.createdAt || new Date(),
-        icon: <Calendar className="h-4 w-4" style={{ color: BRAND_COLORS.purple }} />,
-        badge: { label: 'Pending', variant: 'secondary' as const }
-      });
-    });
-
-    // Add expense reports
-    expenseReports.slice(0, 2).forEach((report: any, index: number) => {
-      activities.push({
-        id: `expense-${index}`,
-        title: 'Nota Spese',
-        description: `€${report.totalAmount || 150} - ${report.userName || 'Dipendente'}`,
-        timestamp: report.submittedAt || new Date(),
-        icon: <Receipt className="h-4 w-4" style={{ color: BRAND_COLORS.orange }} />,
-        badge: { label: 'Review', variant: 'outline' as const }
-      });
-    });
-
-    return activities.sort((a, b) => {
-      const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-      const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
-      return timeB - timeA;
-    });
-  }, [currentTimeSession, leaveRequests, expenseReports]);
-
-  // Quick Actions - FIXED: Added data-testid
-  const quickActions = [
-    {
-      label: 'Nuova Richiesta',
-      icon: <Plus className="h-4 w-4" />,
-      onClick: () => {
-        window.location.href = '/leave-management';
-      },
-      variant: 'default' as const,
-      'data-testid': 'button-new-request'
+      id: 1,
+      type: 'leave',
+      user: 'Marco Bianchi',
+      action: 'Richiesta ferie approvata',
+      time: '10 minuti fa',
+      status: 'approved',
+      details: '5 giorni dal 15 Feb'
     },
     {
-      label: 'Visualizza Report',
-      icon: <BarChart3 className="h-4 w-4" />,
-      onClick: () => {
-        window.location.href = '/hr-analytics';
-      },
-      variant: 'outline' as const,
-      'data-testid': 'button-view-reports'
+      id: 2,
+      type: 'expense',
+      user: 'Sarah Johnson',
+      action: 'Nota spese inviata',
+      time: '25 minuti fa',
+      status: 'pending',
+      details: '€487.50 - Trasferta Milano'
     },
     {
-      label: 'Esporta Dati',
-      icon: <Download className="h-4 w-4" />,
-      onClick: () => {
-        // Export functionality
-      },
-      variant: 'outline' as const,
-      'data-testid': 'button-export-data'
+      id: 3,
+      type: 'attendance',
+      user: 'System',
+      action: 'Report presenze generato',
+      time: '1 ora fa',
+      status: 'completed',
+      details: 'Gennaio 2024'
+    },
+    {
+      id: 4,
+      type: 'hire',
+      user: 'Elena Rossi',
+      action: 'Nuovo dipendente inserito',
+      time: '2 ore fa',
+      status: 'active',
+      details: 'Marketing Specialist'
+    }
+  ];
+
+  const urgentTasks = [
+    {
+      id: 1,
+      title: 'Approvazione Ferie',
+      description: '12 richieste in attesa di approvazione',
+      priority: 'high',
+      dueDate: 'Oggi',
+      icon: Calendar
+    },
+    {
+      id: 2,
+      title: 'Review Spese',
+      description: '8 note spese da verificare',
+      priority: 'medium',
+      dueDate: 'Domani',
+      icon: Receipt
+    },
+    {
+      id: 3,
+      title: 'Report Mensile',
+      description: 'Completare report presenze gennaio',
+      priority: 'low',
+      dueDate: '30 Jan',
+      icon: FileText
     }
   ];
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refetchMetrics();
-    setTimeout(() => setRefreshing(false), 1000);
+    // Simulate API call
+    setTimeout(() => setRefreshing(false), 1500);
   };
 
-  const handleNewReport = () => {
-    window.location.href = '/hr-analytics';
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-600';
+      case 'medium': return 'text-amber-600';  
+      case 'low': return 'text-blue-600';
+      default: return 'text-gray-600';
+    }
   };
 
-  // Tabs Content
-  const tabsContent = (
-    <Tabs defaultValue="overview" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3" data-testid="tabs-hr-dashboard">
-        <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-        <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
-        <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="overview" className="space-y-6">
-        {/* Alerts Section */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="hr-card glass-card" data-testid="card-urgent-requests">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" style={{ color: BRAND_COLORS.orange }} />
-                Richieste Urgenti
-              </CardTitle>
+  const getStatusIcon = (type: string) => {
+    switch (type) {
+      case 'leave': return <Calendar className="h-4 w-4 text-purple-600" />;
+      case 'expense': return <Receipt className="h-4 w-4 text-orange-600" />;
+      case 'attendance': return <Clock className="h-4 w-4 text-blue-600" />;
+      case 'hire': return <Users className="h-4 w-4 text-green-600" />;
+      default: return <Activity className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <Layout currentModule="hr" setCurrentModule={() => {}}>
+      <div className="space-y-8 p-6">
+        {/* Header Section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground" data-testid="text-page-title">
+              Dashboard Risorse Umane
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Gestione completa delle risorse umane aziendali
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              data-testid="button-refresh-dashboard"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Aggiorna
+            </Button>
+            <Button 
+              size="sm"
+              data-testid="button-new-report"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuovo Report
+            </Button>
+          </div>
+        </div>
+
+        {/* Key Metrics Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="hr-card" data-testid="card-total-employees">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Dipendenti Totali</CardTitle>
+              <Users className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {leaveRequests.slice(0, 3).map((request: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-background/50">
-                    <div>
-                      <p className="text-sm font-medium">{request.userName || `Dipendente ${index + 1}`}</p>
-                      <p className="text-xs text-muted-foreground">Ferie dal {format(new Date(), 'dd/MM', { locale: it })}</p>
-                    </div>
-                    <Badge variant="secondary">Pending</Badge>
-                  </div>
-                ))}
-                {leaveRequests.length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <CheckCircle className="h-8 w-8 mx-auto mb-2" style={{ color: BRAND_COLORS.purple }} />
-                    <p>Nessuna richiesta urgente</p>
-                  </div>
-                )}
+              <div className="text-2xl font-bold">{hrMetrics.totalEmployees}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
+                +6 questo mese
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hr-card glass-card" data-testid="card-calendar-today">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" style={{ color: BRAND_COLORS.purple }} />
-                Calendario Oggi
-              </CardTitle>
+          <Card className="hr-card" data-testid="card-attendance-rate">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tasso Presenze</CardTitle>
+              <Clock className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-background/50">
-                  <div>
-                    <p className="text-sm font-medium">Meeting Team HR</p>
-                    <p className="text-xs text-muted-foreground">14:30 - 15:30</p>
-                  </div>
-                  <Badge variant="default">Oggi</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-background/50">
-                  <div>
-                    <p className="text-sm font-medium">Review Presenze</p>
-                    <p className="text-xs text-muted-foreground">16:00 - 17:00</p>
-                  </div>
-                  <Badge variant="outline">Programmato</Badge>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-background/50">
-                  <div>
-                    <p className="text-sm font-medium">Approvazione Spese</p>
-                    <p className="text-xs text-muted-foreground">17:30 - 18:00</p>
-                  </div>
-                  <Badge variant="secondary">Pending</Badge>
-                </div>
+              <div className="text-2xl font-bold">{hrMetrics.attendanceRate}%</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
+                +2.1% vs settimana scorsa
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hr-card" data-testid="card-pending-leaves">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ferie Pending</CardTitle>
+              <Calendar className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{hrMetrics.pendingLeaves}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <Bell className="h-3 w-3 text-amber-600 mr-1" />
+                Richiede attenzione
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hr-card" data-testid="card-pending-expenses">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Spese Pending</CardTitle>
+              <Receipt className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{hrMetrics.pendingExpenses}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <Timer className="h-3 w-3 text-blue-600 mr-1" />
+                €3,245 totali
               </div>
             </CardContent>
           </Card>
         </div>
-      </TabsContent>
 
-      <TabsContent value="analytics" className="space-y-6">
-        <div className="grid gap-6">
-          <Card className="hr-card glass-card" data-testid="card-attendance-analytics">
-            <CardHeader>
-              <CardTitle>Analytics Presenze</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.orange }}>95%</p>
-                    <p className="text-sm text-muted-foreground">Presenza Media</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.purple }}>21</p>
-                    <p className="text-sm text-muted-foreground">Presenti Oggi</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.orange }}>2</p>
-                    <p className="text-sm text-muted-foreground">Assenti Oggi</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.purple }}>85h</p>
-                    <p className="text-sm text-muted-foreground">Ore Lavorate</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="reports" className="space-y-6">
-        <Card className="hr-card glass-card" data-testid="card-hr-reports">
+        {/* Current Session Status */}
+        <Card className="hr-card" data-testid="card-session-status">
           <CardHeader>
-            <CardTitle>Report HR</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+              Status Giornaliero
+              <Badge variant="default" className="ml-auto">Live</Badge>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {/* FIXED: Replaced Table with Cards + Badges */}
-              <div className="space-y-3">
-                <Card className="hr-card glass-card" data-testid="card-report-presenze">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-medium">Report Presenze</h3>
-                        <p className="text-sm text-muted-foreground">Gennaio 2024</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="default">Completato</Badge>
-                        <Button variant="outline" size="sm" data-testid="button-view-report-1">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Visualizza
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="hr-card glass-card" data-testid="card-report-ferie">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-medium">Report Ferie</h3>
-                        <p className="text-sm text-muted-foreground">Gennaio 2024</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary">In elaborazione</Badge>
-                        <Button variant="outline" size="sm" disabled data-testid="button-view-report-2">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Visualizza
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="hr-card glass-card" data-testid="card-report-spese">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-medium">Report Spese</h3>
-                        <p className="text-sm text-muted-foreground">Dicembre 2023</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline">Disponibile</Badge>
-                        <Button variant="outline" size="sm" data-testid="button-view-report-3">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Visualizza
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="text-center p-4 rounded-lg bg-background/50">
+                <div className="text-2xl font-bold" style={{ color: 'hsl(var(--brand-purple))' }}>
+                  {currentSession.todayPresent}
+                </div>
+                <div className="text-sm text-muted-foreground">Presenti Oggi</div>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-background/50">
+                <div className="text-2xl font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+                  {currentSession.elapsedHours}h {currentSession.elapsedMinutes}m
+                </div>
+                <div className="text-sm text-muted-foreground">Tempo Medio Lavorato</div>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-background/50">
+                <div className="text-2xl font-bold text-red-600">
+                  {currentSession.todayAbsent}
+                </div>
+                <div className="text-sm text-muted-foreground">Assenti Oggi</div>
               </div>
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
-    </Tabs>
-  );
 
-  return (
-    <Layout currentModule="hr" setCurrentModule={() => {}}>
-      <DashboardTemplate
-        title="Dashboard Risorse Umane"
-        subtitle="Gestione completa delle risorse umane aziendali"
-        metrics={metrics}
-        metricsLoading={metricsLoading}
-        charts={charts}
-        chartsLayout="grid"
-        chartsLoading={attendanceLoading}
-        activityTitle="Attività Recenti"
-        activityItems={activityItems}
-        activityLoading={false}
-        showActivityViewAll={true}
-        onActivityViewAll={() => window.location.href = '/hr-analytics'}
-        quickActions={quickActions}
-        showFilters={false}
-        isLoading={metricsLoading}
-        isRefreshing={refreshing}
-        error={null}
-        lastUpdated={new Date()}
-        onRefresh={handleRefresh}
-        onExport={() => {
-          // Export functionality
-        }}
-        primaryAction={{
-          label: 'Nuovo Report',
-          icon: <Plus className="h-4 w-4" />,
-          onClick: handleNewReport,
-          variant: 'default',
-          'data-testid': 'button-new-report'
-        }}
-        variant="default"
-        className="space-y-6"
-        data-testid="hr-dashboard"
-      >
-        {/* Custom Tabs Content */}
-        {tabsContent}
-      </DashboardTemplate>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Recent Activities */}
+          <Card className="hr-card" data-testid="card-recent-activities">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" style={{ color: 'hsl(var(--brand-purple))' }} />
+                  Attività Recenti
+                </span>
+                <Button variant="outline" size="sm" data-testid="button-view-all-activities">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Vedi Tutte
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+                    <div className="mt-0.5">
+                      {getStatusIcon(activity.type)}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{activity.action}</p>
+                        <Badge 
+                          variant={activity.status === 'approved' ? 'default' : 
+                                 activity.status === 'pending' ? 'secondary' : 'outline'}
+                        >
+                          {activity.status}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{activity.user} • {activity.details}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Urgent Tasks */}
+          <Card className="hr-card" data-testid="card-urgent-tasks">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" style={{ color: 'hsl(var(--brand-orange))' }} />
+                Compiti Urgenti
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {urgentTasks.map((task) => (
+                  <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg bg-background/50">
+                    <div className="p-2 rounded-lg bg-background/50">
+                      <task.icon className={`h-4 w-4 ${getPriorityColor(task.priority)}`} />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{task.title}</p>
+                        <Badge variant="outline">{task.dueDate}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{task.description}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" data-testid={`button-task-${task.id}`}>
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Analytics Tabs */}
+        <Card className="hr-card" data-testid="card-analytics-tabs">
+          <Tabs defaultValue="overview" className="w-full">
+            <CardHeader>
+              <TabsList className="grid w-full grid-cols-4" data-testid="tabs-analytics">
+                <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+                <TabsTrigger value="attendance" data-testid="tab-attendance">Presenze</TabsTrigger>
+                <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
+                <TabsTrigger value="reports" data-testid="tab-reports">Report</TabsTrigger>
+              </TabsList>
+            </CardHeader>
+
+            <CardContent>
+              <TabsContent value="overview" className="space-y-4">
+                <div className="grid gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Dipendenti Attivi</span>
+                      <span className="text-sm font-bold" style={{ color: 'hsl(var(--brand-purple))' }}>
+                        {hrMetrics.activeEmployees}
+                      </span>
+                    </div>
+                    <div className="w-full bg-background/50 rounded-full h-2">
+                      <div 
+                        className="h-2 rounded-full"
+                        style={{ 
+                          width: `${(hrMetrics.activeEmployees/hrMetrics.totalEmployees)*100}%`,
+                          background: 'linear-gradient(90deg, hsl(var(--brand-purple)), hsl(var(--brand-orange)))'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Compliance Score</span>
+                      <span className="text-sm font-bold text-green-600">
+                        {hrMetrics.complianceScore}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-background/50 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{ width: `${hrMetrics.complianceScore}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Satisfaction Score</span>
+                      <span className="text-sm font-bold" style={{ color: 'hsl(var(--brand-orange))' }}>
+                        {hrMetrics.satisfactionScore}/5.0
+                      </span>
+                    </div>
+                    <div className="w-full bg-background/50 rounded-full h-2">
+                      <div 
+                        className="h-2 rounded-full"
+                        style={{ 
+                          width: `${(hrMetrics.satisfactionScore/5)*100}%`,
+                          backgroundColor: 'hsl(var(--brand-orange))'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="attendance" className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <h3 className="font-medium">Trend Settimanale</h3>
+                    {['Lun', 'Mar', 'Mer', 'Gio', 'Ven'].map((day, index) => {
+                      const attendance = [95, 88, 92, 90, 85][index];
+                      return (
+                        <div key={day} className="flex items-center justify-between">
+                          <span className="text-sm">{day}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 h-2 bg-background/50 rounded-full">
+                              <div 
+                                className="h-2 rounded-full"
+                                style={{ 
+                                  width: `${attendance}%`,
+                                  backgroundColor: index % 2 === 0 ? 'hsl(var(--brand-orange))' : 'hsl(var(--brand-purple))'
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium w-12">{attendance}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="font-medium">Statistiche</h3>
+                    <div className="grid gap-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Media Mensile:</span>
+                        <span className="text-sm font-bold">{hrMetrics.attendanceRate}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Ore Medie:</span>
+                        <span className="text-sm font-bold">{hrMetrics.avgWorkingHours}h/giorno</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Turnover Rate:</span>
+                        <span className="text-sm font-bold">{hrMetrics.turnoverRate}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="performance" className="space-y-4">
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Performance Analytics</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Visualizza metriche dettagliate delle performance dei team
+                  </p>
+                  <Button data-testid="button-view-performance">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Visualizza Performance
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="reports" className="space-y-4">
+                <div className="space-y-3">
+                  {[
+                    { name: 'Report Presenze Gennaio', status: 'Completato', date: '15 Gen 2024' },
+                    { name: 'Analisi Performance Q4', status: 'In elaborazione', date: '20 Gen 2024' },
+                    { name: 'Report Ferie Annuale', status: 'Programmato', date: '25 Gen 2024' }
+                  ].map((report, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">{report.name}</p>
+                        <p className="text-xs text-muted-foreground">{report.date}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant={
+                          report.status === 'Completato' ? 'default' :
+                          report.status === 'In elaborazione' ? 'secondary' : 'outline'
+                        }>
+                          {report.status}
+                        </Badge>
+                        <Button variant="ghost" size="sm" data-testid={`button-report-${index}`}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </CardContent>
+          </Tabs>
+        </Card>
+
+        {/* Quick Actions Footer */}
+        <Card className="hr-card" data-testid="card-quick-actions">
+          <CardHeader>
+            <CardTitle className="text-lg">Azioni Rapide</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-4">
+              <Button variant="outline" className="justify-start h-12" data-testid="button-add-employee">
+                <Users className="h-5 w-5 mr-3" />
+                Aggiungi Dipendente
+              </Button>
+              <Button variant="outline" className="justify-start h-12" data-testid="button-approve-leaves">
+                <Calendar className="h-5 w-5 mr-3" />
+                Approva Ferie
+              </Button>
+              <Button variant="outline" className="justify-start h-12" data-testid="button-review-expenses">
+                <Receipt className="h-5 w-5 mr-3" />
+                Review Spese
+              </Button>
+              <Button variant="outline" className="justify-start h-12" data-testid="button-generate-report">
+                <FileText className="h-5 w-5 mr-3" />
+                Genera Report
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </Layout>
   );
 }
