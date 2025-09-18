@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      "@w3suite/frontend-kit": path.resolve(__dirname, "../../../packages/frontend-kit"),
     },
   },
   server: {

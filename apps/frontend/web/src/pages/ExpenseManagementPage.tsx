@@ -1,8 +1,7 @@
 // Expense Management Page - Enterprise HR Management System
 import { useState, useMemo } from 'react';
-import { ListPageTemplate } from '@/components/templates/ListPageTemplate';
-import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
-import { Column } from '@/components/templates/DataTable';
+import { ListPageTemplate, DashboardTemplate } from '@w3suite/frontend-kit/templates';
+import { Column } from '@w3suite/frontend-kit/components/blocks/DataTable';
 import {
   Plus,
   Download,

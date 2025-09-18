@@ -1,8 +1,7 @@
 // Leave Management Page - Enterprise HR Management System with frontend-kit
 import { useState, useMemo } from 'react';
-import { ListPageTemplate } from '../../../../../packages/frontend-kit/templates';
-import { DashboardTemplate } from '../../../../../packages/frontend-kit/templates';
-import { Column } from '../../../../../packages/frontend-kit/components/blocks/DataTable';
+import { ListPageTemplate, DashboardTemplate } from '@w3suite/frontend-kit/templates';
+import { Column } from '@w3suite/frontend-kit/components/blocks/DataTable';
 import {
   Calendar,
   CalendarDays,

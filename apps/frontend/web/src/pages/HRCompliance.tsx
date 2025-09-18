@@ -1,8 +1,7 @@
 // HR Compliance Page - Enterprise HR Management System
 import { useState, useMemo } from 'react';
-import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
-import { ListPageTemplate } from '@/components/templates/ListPageTemplate';
-import { Column } from '@/components/templates/DataTable';
+import { DashboardTemplate, ListPageTemplate } from '@w3suite/frontend-kit/templates';
+import { Column } from '@w3suite/frontend-kit/components/blocks/DataTable';
 import {
   Shield,
   FileCheck,

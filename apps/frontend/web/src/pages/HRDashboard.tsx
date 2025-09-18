@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'wouter';
-import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
+import { DashboardTemplate } from '@w3suite/frontend-kit/templates';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

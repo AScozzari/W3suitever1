@@ -1,7 +1,7 @@
 // HR Analytics Page - Enterprise HR Management System
 import { useState, useMemo, useEffect } from 'react';
-import { DashboardTemplate } from '@/components/templates/DashboardTemplate';
-import { Column } from '@/components/templates/DataTable';
+import { DashboardTemplate } from '@w3suite/frontend-kit/templates';
+import { Column } from '@w3suite/frontend-kit/components/blocks/DataTable';
 import {
   BarChart3,
   TrendingUp,

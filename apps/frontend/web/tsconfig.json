@@ -6,7 +6,9 @@
       "@/*": ["./src/*"],
       "@ui/*": ["../../packages/ui/src/*"],
       "@tokens/*": ["../../packages/tokens/*"],
-      "@sdk/*": ["../../packages/sdk/*"]
+      "@sdk/*": ["../../packages/sdk/*"],
+      "@w3suite/frontend-kit": ["../../../packages/frontend-kit/index.ts"],
+      "@w3suite/frontend-kit/*": ["../../../packages/frontend-kit/*"]
     }
   },
   "include": ["src/**/*", "vite.config.ts"],
