@@ -42,7 +42,8 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
     selectedStore,
     autoDetected,
     isResolving: isResolvingStore,
-    gpsError
+    gpsError,
+    gpsPosition
   } = useStoreResolution();
   
   // Stati principali
@@ -378,22 +379,22 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {currentLocation ? (
+              {gpsPosition ? (
                 <>
                   <div className="flex items-center gap-2 text-green-600">
                     <CheckCircle className="h-4 w-4" />
                     <span className="text-sm">Posizione rilevata</span>
                   </div>
                   <div className="p-3 bg-white rounded-lg space-y-2">
-                    <p className="text-sm font-medium">📍 {locationAddress || 'Caricamento indirizzo...'}</p>
+                    <p className="text-sm font-medium">📍 {selectedStore?.address || 'Indirizzo negozio...'}</p>
                     <p className="text-xs text-gray-500">
-                      Lat: {currentLocation.lat.toFixed(6)}, Lng: {currentLocation.lng.toFixed(6)}
+                      Lat: {gpsPosition.lat.toFixed(6)}, Lng: {gpsPosition.lng.toFixed(6)}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Precisione: {currentLocation.accuracy.toFixed(0)}m
+                      Precisione: {gpsPosition.accuracy.toFixed(0)}m
                     </p>
                   </div>
-                  <Button onClick={() => initializeGPS()} variant="outline" size="sm">
+                  <Button onClick={() => {}} variant="outline" size="sm">
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Aggiorna posizione
                   </Button>
