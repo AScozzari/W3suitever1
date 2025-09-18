@@ -43,6 +43,24 @@
   --input: 0 0% 90%; /* Input border */
   --ring: 24 100% 50%; /* Focus ring - orange */
   
+  /* Sidebar Colors - Required by Tailwind */
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 0 0% 10%;
+  --sidebar-primary: 24 100% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 10%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 24 100% 50%;
+  
+  /* WindTre Colors - Required by Tailwind */
+  --windtre-orange: 24 100% 50%;
+  --windtre-orange-light: 24 100% 60%;
+  --windtre-orange-dark: 24 100% 40%;
+  --windtre-purple: 268 58% 46%;
+  --windtre-purple-light: 268 58% 56%;
+  --windtre-purple-dark: 268 58% 36%;
+  
   /* Glassmorphism - Frontend-Kit Compatible */
   --glass-bg: hsl(0 0% 100% / 0.5);
   --glass-bg-heavy: hsl(0 0% 100% / 0.7);
@@ -67,7 +85,8 @@
   --text-secondary: hsl(0 0% 32%);
   --text-tertiary: hsl(0 0% 45%);
   
-  /* Border Radius */
+  /* Border Radius - CRITICAL FIX for shadcn/ui */
+  --radius: 0.5rem; /* REQUIRED by Tailwind config borderRadius */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
@@ -310,7 +329,8 @@ body {
   opacity: 0.3;
 }
 
-/* Transizioni globali fluide */
-* {
+/* Transizioni ottimizzate - solo per elementi animati */
+.animate, .animate-in, .animate-out, .hover\:animate-in:hover {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 250ms;
 }
