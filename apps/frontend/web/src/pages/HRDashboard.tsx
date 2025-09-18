@@ -2293,9 +2293,9 @@ export default function HRDashboard() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-purple-600 bg-clip-text text-transparent">
-                HR Dashboard
+                HR Dashboard ✨
               </h1>
-              <p className="text-muted-foreground mt-1">Sistema completo di gestione risorse umane</p>
+              <p className="text-muted-foreground mt-1">Sistema completo di gestione risorse umane con effetti hover avanzati</p>
             </div>
             <div className="flex items-center gap-3">
               <Button variant="outline" size="icon">
