@@ -6325,11 +6325,6 @@ export default function SettingsPage() {
                       e.target.style.background = '#ffffff';
                       e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                     }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e5e7eb';
-                      e.target.style.background = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
                 </div>
 

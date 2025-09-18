@@ -17,10 +17,39 @@ declare global {
   }
 }
 
+// Add loop prevention mechanism
+let tenantMiddlewareCallCount = 0;
+let lastCallTime = 0;
+
 export async function tenantMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
+    // CRITICAL FIX: Completely exclude non-API requests to prevent infinite loops
+    // This middleware should only process /api routes
+    if (!req.path.startsWith('/api')) {
+      console.log('[TENANT-SKIP] Skipping tenant middleware for non-API path:', req.path);
+      return next();
+    }
+    
+    // Prevent infinite loop - check if middleware is being called too frequently
+    const now = Date.now();
+    if (now - lastCallTime < 10) { // Less than 10ms between calls
+      tenantMiddlewareCallCount++;
+      if (tenantMiddlewareCallCount > 100) {
+        console.error('[TENANT-ERROR] Infinite loop detected in tenant middleware - blocking further execution');
+        return res.status(500).json({ error: 'Server configuration error - infinite loop detected' });
+      }
+    } else {
+      tenantMiddlewareCallCount = 0; // Reset counter if enough time has passed
+    }
+    lastCallTime = now;
+
     // DEVELOPMENT BYPASS - Use mock tenant when database is unavailable
     if (process.env.NODE_ENV === 'development') {
+      // Check if tenant is already set to prevent redundant processing
+      if (req.tenant) {
+        return next();
+      }
+      
       const mockTenant = {
         id: 'demo-tenant-id',
         name: 'W3 Suite Demo',
@@ -28,7 +57,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
       };
       
       req.tenant = mockTenant;
-      console.log('[TENANT-DEV] Using mock tenant:', mockTenant.name);
+      console.log('[TENANT-DEV] Using mock tenant:', mockTenant.name, 'for path:', req.path);
       return next();
     }
     

@@ -234,24 +234,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply correlation middleware globally for request tracking
   app.use(correlationMiddleware);
 
-  // Apply tenant middleware to all API routes except auth, OAuth2, and public routes
-  app.use((req, res, next) => {
-    // Skip tenant middleware for auth routes, OAuth2 routes, health endpoints, and public avatar access
-    if (req.path.startsWith('/api/auth/') || 
-        req.path.startsWith('/oauth2/') || 
-        req.path.startsWith('/.well-known/') ||
-        req.path.startsWith('/api/public/') ||
-        req.path === '/api/health' ||
-        req.path === '/health' ||
-        req.path === '/healthz') {
+  // Apply tenant middleware only to API routes using Express path matching to avoid loops
+  app.use('/api', (req, res, next) => {
+    // Skip tenant middleware for specific excluded paths
+    if (req.path.startsWith('/auth/') || 
+        req.path.startsWith('/public/') ||
+        req.path === '/health') {
       return next();
     }
-    // Apply tenant middleware for all other API routes (including stores, users, roles, etc.)
-    // The tenant context will be set from headers or user context
-    if (req.path.startsWith('/api/')) {
-      return tenantMiddleware(req, res, next);
-    }
-    next();
+    // Apply tenant middleware to all other API routes
+    tenantMiddleware(req, res, next);
   });
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================

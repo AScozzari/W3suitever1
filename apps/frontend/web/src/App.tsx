@@ -131,17 +131,19 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
+      {/* Root path - redirect to default tenant dashboard */}
+      <Route path="/" exact>
+        {() => <Redirect to="/staging/dashboard" replace />}
+      </Route>
+      
       {/* Route root tenant - redirect basato su auth */}
       <Route path="/:tenant">
         {(params) => <TenantWrapper params={params}><TenantRoot /></TenantWrapper>}
       </Route>
       
-      {/* Fallback - redirect a staging */}
+      {/* Fallback for any unmatched routes */}
       <Route>
-        {() => {
-          window.location.href = '/staging';
-          return null;
-        }}
+        {() => <Redirect to="/staging/dashboard" replace />}
       </Route>
     </Switch>
   );
