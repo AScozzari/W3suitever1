@@ -139,11 +139,11 @@ export default function LeftSidebar({
 
   // Handle menu item click
   const handleMenuClick = (item: MenuItem) => {
-    // Get tenant from localStorage or use 'staging' as fallback
-    const storedTenant = localStorage.getItem('currentTenant');
-    const pathSegments = location.split('/').filter(Boolean);
-    const urlTenant = pathSegments[0];
-    const tenant = storedTenant || urlTenant || 'staging';
+    // ALWAYS get tenant from localStorage, never parse URL
+    const tenant = localStorage.getItem('currentTenant') || 'staging';
+    
+    // Debug log to verify tenant
+    console.log('[LeftSidebar] Using tenant:', tenant, 'from localStorage');
     
     // If item has both submenu and path, navigate to path and toggle submenu
     if (item.hasSubmenu && item.path) {
