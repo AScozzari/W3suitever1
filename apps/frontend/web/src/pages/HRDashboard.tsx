@@ -738,7 +738,7 @@ export default function HRDashboard() {
               <CardDescription className="mt-2 ml-1">Andamento mensile del tasso di presenza</CardDescription>
             </CardHeader>
             <CardContent className="p-6 pt-0">
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={320}>
                 <LineChart data={attendanceData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="month" stroke="#888" />
