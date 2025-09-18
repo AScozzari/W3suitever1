@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -306,103 +307,155 @@ export default function EmployeeDashboard() {
           </div>
 
           {/* Quick Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Real-time Clock Widget */}
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <Clock className="h-8 w-8 text-white/80" />
-                  <Badge variant="secondary" className="bg-white/20 text-white">
-                    {isClockedIn ? 'Attivo' : 'Inattivo'}
-                  </Badge>
-                </div>
-                <div className="text-3xl font-bold mb-2">
-                  {format(currentTime, 'HH:mm:ss')}
-                </div>
-                <div className="text-sm text-white/80 mb-4">
-                  {format(currentTime, 'EEEE d MMMM yyyy', { locale: it })}
-                </div>
-                {isClockedIn && (
-                  <div className="text-sm font-medium">
-                    Tempo lavorato: {calculateWorkedTime()}
+            <motion.div
+              whileHover={{ 
+                scale: 1.02, 
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                borderColor: "#FF8500"
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-transparent transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-white/20 to-white/10 flex items-center justify-center backdrop-blur-sm">
+                      <Clock className="h-6 w-6 text-white" />
+                    </div>
+                    <Badge variant="secondary" className="bg-white/20 text-white backdrop-blur-sm">
+                      {isClockedIn ? 'Attivo' : 'Inattivo'}
+                    </Badge>
                   </div>
-                )}
-                <div className="flex gap-2 mt-4">
-                  <Button 
-                    onClick={handleClockAction}
-                    className={`flex-1 ${isClockedIn ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white`}
-                    size="sm"
-                  >
-                    {isClockedIn ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                    {isClockedIn ? 'Clock Out' : 'Clock In'}
-                  </Button>
+                  <div className="text-3xl font-bold mb-2">
+                    {format(currentTime, 'HH:mm:ss')}
+                  </div>
+                  <div className="text-sm text-white/80 mb-4">
+                    {format(currentTime, 'EEEE d MMMM yyyy', { locale: it })}
+                  </div>
                   {isClockedIn && (
-                    <Button 
-                      onClick={handleBreakAction}
-                      variant="secondary" 
-                      size="sm"
-                      className="bg-white/20 hover:bg-white/30 text-white"
-                    >
-                      <Coffee className="h-4 w-4" />
-                    </Button>
+                    <div className="text-sm font-medium">
+                      Tempo lavorato: {calculateWorkedTime()}
+                    </div>
                   )}
-                </div>
-                {isClockedIn && (
-                  <div className="flex items-center gap-1 mt-2 text-xs text-white/80">
-                    <MapPin className="h-3 w-3" />
-                    Milano, Sede Centrale
+                  <div className="flex gap-2 mt-4">
+                    <Button 
+                      onClick={handleClockAction}
+                      className={`flex-1 ${isClockedIn ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white transition-all duration-200 hover:scale-105`}
+                      size="sm"
+                    >
+                      {isClockedIn ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                      {isClockedIn ? 'Clock Out' : 'Clock In'}
+                    </Button>
+                    {isClockedIn && (
+                      <Button 
+                        onClick={handleBreakAction}
+                        variant="secondary" 
+                        size="sm"
+                        className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm hover:scale-105 transition-all duration-200"
+                      >
+                        <Coffee className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  {isClockedIn && (
+                    <div className="flex items-center gap-1 mt-2 text-xs text-white/80">
+                      <MapPin className="h-3 w-3" />
+                      Milano, Sede Centrale
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Ferie Disponibili */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <Umbrella className="h-8 w-8 text-blue-500" />
-                  <Badge variant="outline">{leaveBalance.ferieRimanenti} giorni</Badge>
-                </div>
-                <div className="text-2xl font-bold mb-1">Ferie</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {leaveBalance.ferieUsate}/{leaveBalance.ferieAnno} utilizzati
-                </div>
-                <Progress value={(leaveBalance.ferieUsate / leaveBalance.ferieAnno) * 100} className="h-2" />
-              </CardContent>
-            </Card>
+            <motion.div
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                borderColor: "#3B82F6"
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <Card className="border-2 border-transparent hover:border-blue-200 transition-all duration-300 backdrop-blur-xl bg-white/80 hover:bg-white/90">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <Umbrella className="h-6 w-6 text-white" />
+                    </div>
+                    <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">
+                      {leaveBalance.ferieRimanenti} giorni
+                    </Badge>
+                  </div>
+                  <div className="text-2xl font-bold mb-1 text-gray-900">Ferie</div>
+                  <div className="text-sm text-gray-600 mb-4">
+                    {leaveBalance.ferieUsate}/{leaveBalance.ferieAnno} utilizzati
+                  </div>
+                  <Progress value={(leaveBalance.ferieUsate / leaveBalance.ferieAnno) * 100} className="h-2" />
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Prossimo Turno */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <CalendarIcon className="h-8 w-8 text-purple-500" />
-                  <Badge variant="outline">Domani</Badge>
-                </div>
-                <div className="text-2xl font-bold mb-1">Turno</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {shifts[1].turno} • {shifts[1].dalle} - {shifts[1].alle}
-                </div>
-                <Button variant="link" className="p-0 mt-2 text-purple-600">
-                  Vedi calendario →
-                </Button>
-              </CardContent>
-            </Card>
+            <motion.div
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                borderColor: "#7B2CBF"
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <Card className="border-2 border-transparent hover:border-purple-200 transition-all duration-300 backdrop-blur-xl bg-white/80 hover:bg-white/90">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                      <CalendarIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50">
+                      Domani
+                    </Badge>
+                  </div>
+                  <div className="text-2xl font-bold mb-1 text-gray-900">Turno</div>
+                  <div className="text-sm text-gray-600 mb-2">
+                    {shifts[1].turno} • {shifts[1].dalle} - {shifts[1].alle}
+                  </div>
+                  <motion.div whileHover={{ x: 5 }} transition={{ type: "spring", stiffness: 400 }}>
+                    <Button variant="link" className="p-0 mt-2 text-purple-600 hover:text-purple-700">
+                      Vedi calendario →
+                    </Button>
+                  </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Tasks Pendenti */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <Target className="h-8 w-8 text-green-500" />
-                  <Badge variant="outline" className="bg-green-50 text-green-700">4 attivi</Badge>
-                </div>
-                <div className="text-2xl font-bold mb-1">Obiettivi</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Performance Q4
-                </div>
-                <Progress value={85} className="h-2 mt-4" />
-                <div className="text-xs text-gray-500 mt-1">85% completamento</div>
-              </CardContent>
-            </Card>
+            <motion.div
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                borderColor: "#10B981"
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <Card className="border-2 border-transparent hover:border-green-200 transition-all duration-300 backdrop-blur-xl bg-white/80 hover:bg-white/90">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      4 attivi
+                    </Badge>
+                  </div>
+                  <div className="text-2xl font-bold mb-1 text-gray-900">Obiettivi</div>
+                  <div className="text-sm text-gray-600 mb-3">
+                    Performance Q4
+                  </div>
+                  <Progress value={85} className="h-2 mt-4" />
+                  <div className="text-xs text-gray-500 mt-1">85% completamento</div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Notifications Alert */}
@@ -449,106 +502,210 @@ export default function EmployeeDashboard() {
             <TabsContent value="overview" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Notifiche Recenti */}
-                <Card className="lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Notifiche e Annunci</CardTitle>
-                    <CardDescription>Aggiornamenti importanti dall'azienda</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-4">
-                        {notifications.map((notifica) => (
-                          <div key={notifica.id} className={`p-4 rounded-lg border ${notifica.letto ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}`}>
-                            <div className="flex items-start gap-3">
-                              <div className={`p-2 rounded-full ${
-                                notifica.tipo === 'success' ? 'bg-green-100' :
-                                notifica.tipo === 'alert' ? 'bg-orange-100' :
-                                'bg-blue-100'
-                              }`}>
-                                {notifica.tipo === 'success' ? <CheckCircle className="h-4 w-4 text-green-600" /> :
-                                 notifica.tipo === 'alert' ? <AlertCircle className="h-4 w-4 text-orange-600" /> :
-                                 <Bell className="h-4 w-4 text-blue-600" />}
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  <Card className="lg:col-span-2 backdrop-blur-xl bg-white/90 border-2 border-transparent hover:border-blue-200 transition-all duration-300">
+                    <CardHeader className="p-6">
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                          <Bell className="h-6 w-6 text-white" />
+                        </div>
+                        Notifiche e Annunci
+                      </CardTitle>
+                      <CardDescription>Aggiornamenti importanti dall'azienda</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0">
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {notifications.map((notifica) => (
+                            <motion.div 
+                              key={notifica.id} 
+                              whileHover={{ scale: 1.01, x: 5 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                              className={`p-4 rounded-lg border transition-all duration-200 ${
+                                notifica.letto 
+                                  ? 'bg-gray-50 hover:bg-gray-100 border-gray-200' 
+                                  : 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 hover:border-blue-300'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                                  notifica.tipo === 'success' ? 'bg-gradient-to-br from-green-500 to-green-600' :
+                                  notifica.tipo === 'alert' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
+                                  'bg-gradient-to-br from-blue-500 to-blue-600'
+                                }`}>
+                                  {notifica.tipo === 'success' ? <CheckCircle className="h-5 w-5 text-white" /> :
+                                   notifica.tipo === 'alert' ? <AlertCircle className="h-5 w-5 text-white" /> :
+                                   <Bell className="h-5 w-5 text-white" />}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-sm">{notifica.titolo}</h4>
+                                  <p className="text-sm text-gray-600 mt-1">{notifica.messaggio}</p>
+                                  <p className="text-xs text-gray-500 mt-2">
+                                    {format(notifica.data, 'dd/MM/yyyy HH:mm')}
+                                  </p>
+                                </div>
+                                <motion.div whileHover={{ rotate: 90 }} transition={{ duration: 0.2 }}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </motion.div>
                               </div>
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-sm">{notifica.titolo}</h4>
-                                <p className="text-sm text-gray-600 mt-1">{notifica.messaggio}</p>
-                                <p className="text-xs text-gray-500 mt-2">
-                                  {format(notifica.data, 'dd/MM/yyyy HH:mm')}
-                                </p>
-                              </div>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
                 {/* Quick Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Azioni Rapide</CardTitle>
-                    <CardDescription>Accedi velocemente alle funzioni più usate</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <Umbrella className="h-5 w-5" />
-                        <span className="text-xs">Richiedi Ferie</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <FileText className="h-5 w-5" />
-                        <span className="text-xs">Busta Paga</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <Receipt className="h-5 w-5" />
-                        <span className="text-xs">Nota Spese</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <GraduationCap className="h-5 w-5" />
-                        <span className="text-xs">Corsi</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <Users className="h-5 w-5" />
-                        <span className="text-xs">Team</span>
-                      </Button>
-                      <Button variant="outline" className="h-20 flex-col gap-2">
-                        <HelpCircle className="h-5 w-5" />
-                        <span className="text-xs">Supporto</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  <Card className="backdrop-blur-xl bg-white/90 border-2 border-transparent hover:border-purple-200 transition-all duration-300">
+                    <CardHeader className="p-6">
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                          <Zap className="h-6 w-6 text-white" />
+                        </div>
+                        Azioni Rapide
+                      </CardTitle>
+                      <CardDescription>Accedi velocemente alle funzioni più usate</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0">
+                      <div className="grid grid-cols-2 gap-3">
+                        <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                          <Button variant="outline" className="h-20 flex-col gap-2 border-2 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                              <Umbrella className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium">Richiedi Ferie</span>
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                          <Button variant="outline" className="h-20 flex-col gap-2 border-2 hover:border-green-300 hover:bg-green-50 transition-all duration-200">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                              <FileText className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium">Busta Paga</span>
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                          <Button variant="outline" className="h-20 flex-col gap-2 border-2 hover:border-orange-300 hover:bg-orange-50 transition-all duration-200">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                              <Receipt className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium">Nota Spese</span>
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                          <Button variant="outline" className="h-20 flex-col gap-2 border-2 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                              <GraduationCap className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium">Corsi</span>
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                          <Button variant="outline" className="h-20 flex-col gap-2 border-2 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center">
+                              <Users className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium">Team</span>
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                          <Button variant="outline" className="h-20 flex-col gap-2 border-2 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
+                              <HelpCircle className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs font-medium">Supporto</span>
+                          </Button>
+                        </motion.div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
                 {/* Performance Goals */}
-                <Card className="lg:col-span-3">
-                  <CardHeader>
-                    <CardTitle>Obiettivi di Performance Q4</CardTitle>
-                    <CardDescription>Il tuo progresso verso gli obiettivi trimestrali</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {goals.map((goal) => (
-                        <div key={goal.id} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">{goal.titolo}</span>
-                            <Badge variant={goal.progresso >= 90 ? 'success' : goal.progresso >= 70 ? 'warning' : 'secondary'}>
-                              {goal.progresso}%
-                            </Badge>
-                          </div>
-                          <Progress value={goal.progresso} className="h-2" />
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>{goal.attuale}</span>
-                            <span>{goal.target}</span>
-                          </div>
+                <motion.div
+                  whileHover={{ scale: 1.005 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  <Card className="lg:col-span-3 backdrop-blur-xl bg-white/90 border-2 border-transparent hover:border-orange-200 transition-all duration-300">
+                    <CardHeader className="p-6">
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                          <Target className="h-6 w-6 text-white" />
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                        Obiettivi di Performance Q4
+                      </CardTitle>
+                      <CardDescription>Il tuo progresso verso gli obiettivi trimestrali</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {goals.map((goal, index) => {
+                          const iconColors = [
+                            'from-emerald-500 to-emerald-600',
+                            'from-blue-500 to-blue-600', 
+                            'from-purple-500 to-purple-600',
+                            'from-orange-500 to-orange-600'
+                          ];
+                          const goalIcons = [DollarSign, Users, TrendingUp, Award];
+                          const IconComponent = goalIcons[index] || Target;
+                          return (
+                            <motion.div 
+                              key={goal.id} 
+                              whileHover={{ 
+                                scale: 1.05, 
+                                y: -5,
+                                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)"
+                              }}
+                              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                              className="p-4 rounded-lg border-2 border-transparent hover:border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:from-white hover:to-gray-50 transition-all duration-300"
+                            >
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${iconColors[index]} flex items-center justify-center`}>
+                                      <IconComponent className="h-4 w-4 text-white" />
+                                    </div>
+                                    <span className="text-sm font-medium">{goal.titolo}</span>
+                                  </div>
+                                  <Badge 
+                                    variant={goal.progresso >= 90 ? 'default' : goal.progresso >= 70 ? 'secondary' : 'outline'}
+                                    className={goal.progresso >= 90 ? 'bg-green-100 text-green-700 border-green-200' : 
+                                              goal.progresso >= 70 ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                              'bg-gray-100 text-gray-700 border-gray-200'}
+                                  >
+                                    {goal.progresso}%
+                                  </Badge>
+                                </div>
+                                <div className="relative">
+                                  <Progress value={goal.progresso} className="h-3" />
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${goal.progresso}%` }}
+                                    transition={{ duration: 1, delay: index * 0.2 }}
+                                    className="absolute top-0 left-0 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-20"
+                                  />
+                                </div>
+                                <div className="flex justify-between text-xs font-medium">
+                                  <span className="text-gray-600">{goal.attuale}</span>
+                                  <span className="text-gray-500">{goal.target}</span>
+                                </div>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </div>
             </TabsContent>
 
@@ -563,33 +720,48 @@ export default function EmployeeDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div className={`p-3 rounded-full ${isClockedIn ? 'bg-green-100' : 'bg-gray-100'}`}>
-                          {isClockedIn ? <Play className="h-5 w-5 text-green-600" /> : <Pause className="h-5 w-5 text-gray-600" />}
+                      <motion.div 
+                        whileHover={{ scale: 1.02, y: -2 }} 
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      >
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-white rounded-lg border hover:border-gray-200 transition-all duration-200">
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isClockedIn ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'}`}>
+                            {isClockedIn ? <Play className="h-6 w-6 text-white" /> : <Pause className="h-6 w-6 text-white" />}
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Stato</p>
+                            <p className="font-semibold">{isClockedIn ? 'In servizio' : 'Fuori servizio'}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Stato</p>
-                          <p className="font-semibold">{isClockedIn ? 'In servizio' : 'Fuori servizio'}</p>
+                      </motion.div>
+                      <motion.div 
+                        whileHover={{ scale: 1.02, y: -2 }} 
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      >
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-white rounded-lg border hover:border-blue-200 transition-all duration-200">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                            <Clock className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Entrata</p>
+                            <p className="font-semibold">{clockInTime ? format(clockInTime, 'HH:mm') : '--:--'}</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="p-3 rounded-full bg-blue-100">
-                          <Clock className="h-5 w-5 text-blue-600" />
+                      </motion.div>
+                      <motion.div 
+                        whileHover={{ scale: 1.02, y: -2 }} 
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      >
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-white rounded-lg border hover:border-purple-200 transition-all duration-200">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                            <Activity className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Ore lavorate</p>
+                            <p className="font-semibold">{calculateWorkedTime()}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Entrata</p>
-                          <p className="font-semibold">{clockInTime ? format(clockInTime, 'HH:mm') : '--:--'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="p-3 rounded-full bg-purple-100">
-                          <Activity className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Ore lavorate</p>
-                          <p className="font-semibold">{calculateWorkedTime()}</p>
-                        </div>
-                      </div>
+                      </motion.div>
                       <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                         <div className="p-3 rounded-full bg-orange-100">
                           <Coffee className="h-5 w-5 text-orange-600" />
@@ -681,49 +853,96 @@ export default function EmployeeDashboard() {
             <TabsContent value="ferie" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Leave Balance Cards */}
-                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <Umbrella className="h-8 w-8 text-blue-500" />
-                        <Badge variant="outline">Annuali</Badge>
-                      </div>
-                      <p className="text-2xl font-bold">{leaveBalance.ferieRimanenti}</p>
-                      <p className="text-sm text-gray-600">giorni di ferie</p>
-                      <Progress value={(leaveBalance.ferieUsate / leaveBalance.ferieAnno) * 100} className="h-1 mt-3" />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <Clock className="h-8 w-8 text-purple-500" />
-                        <Badge variant="outline">ROL</Badge>
-                      </div>
-                      <p className="text-2xl font-bold">{leaveBalance.permessiRimanenti}</p>
-                      <p className="text-sm text-gray-600">ore permessi</p>
-                      <Progress value={(leaveBalance.permessiUsati / leaveBalance.permessiROL) * 100} className="h-1 mt-3" />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <Heart className="h-8 w-8 text-red-500" />
-                        <Badge variant="outline">2024</Badge>
-                      </div>
-                      <p className="text-2xl font-bold">{leaveBalance.malattia}</p>
-                      <p className="text-sm text-gray-600">giorni malattia</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <Baby className="h-8 w-8 text-green-500" />
-                        <Badge variant="outline">Extra</Badge>
-                      </div>
-                      <p className="text-2xl font-bold">{leaveBalance.congedi}</p>
-                      <p className="text-sm text-gray-600">congedi parentali</p>
-                    </CardContent>
-                  </Card>
+                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <motion.div
+                    whileHover={{ 
+                      scale: 1.02,
+                      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                      borderColor: "#3B82F6"
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <Card className="border-2 border-transparent hover:border-blue-200 transition-all duration-300 backdrop-blur-xl bg-white/90 hover:bg-white/95">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                            <Umbrella className="h-6 w-6 text-white" />
+                          </div>
+                          <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">Annuali</Badge>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{leaveBalance.ferieRimanenti}</p>
+                        <p className="text-sm text-gray-600 mb-3">giorni di ferie</p>
+                        <Progress value={(leaveBalance.ferieUsate / leaveBalance.ferieAnno) * 100} className="h-2" />
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                  
+                  <motion.div
+                    whileHover={{ 
+                      scale: 1.02,
+                      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                      borderColor: "#7B2CBF"
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <Card className="border-2 border-transparent hover:border-purple-200 transition-all duration-300 backdrop-blur-xl bg-white/90 hover:bg-white/95">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                            <Clock className="h-6 w-6 text-white" />
+                          </div>
+                          <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50">ROL</Badge>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{leaveBalance.permessiRimanenti}</p>
+                        <p className="text-sm text-gray-600 mb-3">ore permessi</p>
+                        <Progress value={(leaveBalance.permessiUsati / leaveBalance.permessiROL) * 100} className="h-2" />
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                  
+                  <motion.div
+                    whileHover={{ 
+                      scale: 1.02,
+                      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                      borderColor: "#EF4444"
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <Card className="border-2 border-transparent hover:border-red-200 transition-all duration-300 backdrop-blur-xl bg-white/90 hover:bg-white/95">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                            <Heart className="h-6 w-6 text-white" />
+                          </div>
+                          <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50">2024</Badge>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{leaveBalance.malattia}</p>
+                        <p className="text-sm text-gray-600">giorni malattia</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                  
+                  <motion.div
+                    whileHover={{ 
+                      scale: 1.02,
+                      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                      borderColor: "#10B981"
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <Card className="border-2 border-transparent hover:border-green-200 transition-all duration-300 backdrop-blur-xl bg-white/90 hover:bg-white/95">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                            <Baby className="h-6 w-6 text-white" />
+                          </div>
+                          <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">Extra</Badge>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{leaveBalance.congedi}</p>
+                        <p className="text-sm text-gray-600">congedi parentali</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 </div>
 
                 {/* Leave Requests */}
