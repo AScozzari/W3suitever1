@@ -9,7 +9,31 @@ import {
   TimeTrackingReport,
   ClockInData,
   ClockOutData,
+  TimeTrackingFilters,
 } from '@/services/timeTrackingService';
+
+// Frontend-safe type for updating time tracking entries
+export interface UpdateTimeTrackingEntry {
+  clockIn?: Date;
+  clockOut?: Date;
+  breakStart?: Date;
+  breakEnd?: Date;
+  breakMinutes?: number;
+  notes?: string;
+  status?: 'active' | 'completed' | 'edited' | 'disputed';
+  approvedBy?: string;
+  approvedAt?: Date;
+  disputeReason?: string;
+  shiftId?: string;
+  overtimeMinutes?: number;
+  holidayBonus?: boolean;
+  geoLocation?: {
+    lat: number;
+    lng: number;
+    accuracy: number;
+    address?: string;
+  };
+}
 import {
   geolocationManager,
   GeoPosition,
@@ -327,13 +351,7 @@ export function useClockOut() {
 }
 
 // ==================== ENTRIES HOOKS ====================
-export function useTimeEntries(filters?: {
-  userId?: string;
-  storeId?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: string;
-}) {
+export function useTimeEntries(filters?: TimeTrackingFilters) {
   return useQuery({
     queryKey: ['/api/hr/time-tracking/entries', filters],
     queryFn: () => timeTrackingService.getEntries(filters),
@@ -345,7 +363,7 @@ export function useUpdateEntry() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<TimeTrackingEntry> }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateTimeTrackingEntry }) =>
       timeTrackingService.updateEntry(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/entries'] });
@@ -449,7 +467,7 @@ export function useExportEntries() {
       filters: any;
       format?: 'csv' | 'pdf';
     }) => timeTrackingService.exportEntries(filters, format),
-    onSuccess: (blob, { format }) => {
+    onSuccess: (blob, { format = 'csv' }) => {
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -462,7 +480,7 @@ export function useExportEntries() {
       
       toast({
         title: 'Export Completato',
-        description: `File ${format.toUpperCase()} scaricato con successo`,
+        description: `File ${format?.toUpperCase() || 'CSV'} scaricato con successo`,
       });
     },
     onError: (error) => {
