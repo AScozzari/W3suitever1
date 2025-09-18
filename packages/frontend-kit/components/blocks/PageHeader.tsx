@@ -17,6 +17,7 @@ export interface PageHeaderAction {
   onClick?: () => void;
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'destructive';
   disabled?: boolean;
+  'data-testid'?: string;
 }
 
 export interface PageHeaderProps {
@@ -149,7 +150,7 @@ export function PageHeader({
               variant={primaryAction.variant || 'default'}
               onClick={primaryAction.onClick}
               disabled={primaryAction.disabled}
-              data-testid="button-primary"
+              data-testid={primaryAction['data-testid'] || 'button-primary'}
             >
               {primaryAction.icon && <span className="mr-2">{primaryAction.icon}</span>}
               {primaryAction.label}

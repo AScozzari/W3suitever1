@@ -33,6 +33,11 @@
   --glass-blur-heavy: 20px;
   --glass-blur-light: 8px;
   
+  /* HR Card Specific - 50% opacity */
+  --hr-card-bg: hsl(0 0% 100% / 0.5);
+  --hr-card-border: hsl(0 0% 100% / 0.3);
+  --hr-card-blur: 15px;
+  
   /* Shadows */
   --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   --shadow-glass-sm: 0 4px 16px 0 rgba(31, 38, 135, 0.25);
@@ -110,6 +115,23 @@ body {
 }
 
 .glass-card:hover {
+  background: var(--glass-bg-heavy);
+  box-shadow: var(--shadow-glass-lg);
+  transform: translateY(-2px);
+  transition: all var(--duration-base) var(--ease-in-out);
+}
+
+/* HR Card Specific - 50% Opacity Glassmorphism */
+.hr-card {
+  background: var(--hr-card-bg);
+  backdrop-filter: blur(var(--hr-card-blur));
+  -webkit-backdrop-filter: blur(var(--hr-card-blur));
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hr-card-border);
+  box-shadow: var(--shadow-glass);
+}
+
+.hr-card:hover {
   background: var(--glass-bg-heavy);
   box-shadow: var(--shadow-glass-lg);
   transform: translateY(-2px);
