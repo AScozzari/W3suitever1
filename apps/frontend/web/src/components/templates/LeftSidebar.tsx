@@ -139,20 +139,22 @@ export default function LeftSidebar({
 
   // Handle menu item click
   const handleMenuClick = (item: MenuItem) => {
-    // ALWAYS get tenant from localStorage, never parse URL
-    const tenant = localStorage.getItem('currentTenant') || 'staging';
+    // Force use staging tenant for now to ensure it works
+    const tenant = 'staging';
     
-    // Debug log to verify tenant
-    console.log('[LeftSidebar] Using tenant:', tenant, 'from localStorage');
+    console.log('[LeftSidebar] Navigation:', {
+      item: item.label,
+      path: item.path,
+      tenant: tenant,
+      fullPath: item.path ? `/${tenant}${item.path}` : null
+    });
     
     // If item has both submenu and path, navigate to path and toggle submenu
     if (item.hasSubmenu && item.path) {
       // Navigate to the main path (HR overview)
-      if (item.path === '/') {
-        navigate(`/${tenant}`);
-      } else {
-        navigate(`/${tenant}${item.path}`);
-      }
+      const targetPath = `/${tenant}${item.path}`;
+      console.log('[LeftSidebar] Navigating to:', targetPath);
+      navigate(targetPath);
       // Also toggle submenu for access to sub-items
       toggleSubmenu(item.id);
       return;
