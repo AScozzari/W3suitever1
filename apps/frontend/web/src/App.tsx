@@ -75,6 +75,11 @@ function Router() {
       <Route path="/:tenant/hr-analytics">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
+      {/* TEST ALIAS per debug - evita il path /hr che viene intercettato da Nginx */}
+      <Route path="/:tenant/people/dashboard">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      
       <Route path="/:tenant/hr/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
