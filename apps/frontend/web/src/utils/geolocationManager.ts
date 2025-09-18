@@ -418,7 +418,7 @@ export function findNearestStore(
   let minDistance = Infinity;
 
   for (const store of stores) {
-    const distance = geolocationManager.calculateDistance(
+    const distance = new GeolocationManager().calculateDistance(
       position.lat,
       position.lng,
       store.center.lat,

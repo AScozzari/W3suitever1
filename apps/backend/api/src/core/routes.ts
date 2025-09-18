@@ -716,7 +716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Get nearby stores with GPS coordinates and geofencing
-  app.get('/api/stores/nearby', tenantMiddleware, rbacMiddleware(requirePermission('stores.read')), async (req: any, res) => {
+  app.get('/api/stores/nearby', tenantMiddleware, rbacMiddleware, requirePermission('stores.read'), async (req: any, res) => {
     const { lat, lng, radius } = req.query;
     
     // DEMO MOCK DATA - Always available as fallback
@@ -4918,7 +4918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== HR TIME TRACKING ROUTES ====================
   
   // Clock In with Enhanced Geofencing Validation
-  app.post('/api/hr/time-tracking/clock-in', tenantMiddleware, rbacMiddleware(requirePermission('hr.timetracking.clock')), async (req: any, res) => {
+  app.post('/api/hr/time-tracking/clock-in', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.clock'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
@@ -5286,7 +5286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Clock Out
-  app.post('/api/hr/time-tracking/:id/clock-out', tenantMiddleware, rbacMiddleware(requirePermission('hr.timetracking.clock')), async (req: any, res) => {
+  app.post('/api/hr/time-tracking/:id/clock-out', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.clock'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
@@ -5316,7 +5316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get Current Session
-  app.get('/api/hr/time-tracking/current', tenantMiddleware, rbacMiddleware(requirePermission('hr.timetracking.read')), async (req: any, res) => {
+  app.get('/api/hr/time-tracking/current', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.read'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
@@ -5347,7 +5347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get Time Tracking Entries
-  app.get('/api/hr/time-tracking/entries', tenantMiddleware, rbacMiddleware(requirePermission('hr.timetracking.read')), async (req: any, res) => {
+  app.get('/api/hr/time-tracking/entries', tenantMiddleware, rbacMiddleware, requirePermission('hr.timetracking.read'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
