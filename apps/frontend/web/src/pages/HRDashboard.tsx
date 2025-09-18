@@ -493,19 +493,48 @@ export default function HRDashboard() {
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
-          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
-          transition={{ type: "spring", stiffness: 300 }}
+          whileHover={{ 
+            scale: 1.02, 
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            borderColor: '#FF6900'
+          }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 300,
+            duration: 0.3,
+            ease: [0.4, 0, 0.2, 1]
+          }}
+          className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-500/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent" />
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-orange-50 hover:to-white">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent group-hover:from-orange-500/20 transition-all duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-600/0 to-orange-100/0 group-hover:from-orange-600/5 group-hover:to-orange-100/10 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Dipendenti Totali</CardTitle>
-              <Users className="h-4 w-4 text-orange-600 animate-pulse" />
+              <motion.div
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Users className="h-4 w-4 text-orange-600 group-hover:text-orange-500 transition-colors duration-300" />
+              </motion.div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                {animatedStats.totalEmployees}
-              </div>
+              <motion.div 
+                key={animatedStats.totalEmployees}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent"
+              >
+                <motion.span
+                  key={animatedStats.totalEmployees}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                >
+                  {animatedStats.totalEmployees}
+                </motion.span>
+              </motion.div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <ArrowUp className="h-3 w-3 text-green-500" />
                 <span className="text-green-500">+2.5%</span> dal mese scorso
@@ -516,19 +545,48 @@ export default function HRDashboard() {
         </motion.div>
         
         <motion.div
-          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
-          transition={{ type: "spring", stiffness: 300 }}
+          whileHover={{ 
+            scale: 1.02, 
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            borderColor: '#7B2CBF'
+          }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 300,
+            duration: 0.3,
+            ease: [0.4, 0, 0.2, 1]
+          }}
+          className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-500/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent" />
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-purple-50 hover:to-white">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent group-hover:from-purple-500/20 transition-all duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 to-purple-100/0 group-hover:from-purple-600/5 group-hover:to-purple-100/10 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Dipendenti Attivi</CardTitle>
-              <Activity className="h-4 w-4 text-purple-600 animate-pulse" />
+              <motion.div
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Activity className="h-4 w-4 text-purple-600 group-hover:text-purple-500 transition-colors duration-300" />
+              </motion.div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                {animatedStats.activeEmployees}
-              </div>
+              <motion.div 
+                key={animatedStats.activeEmployees}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+              >
+                <motion.span
+                  key={animatedStats.activeEmployees}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                >
+                  {animatedStats.activeEmployees}
+                </motion.span>
+              </motion.div>
               <p className="text-xs text-muted-foreground">
                 {animatedStats.onLeave} in ferie/permesso
               </p>
@@ -538,19 +596,48 @@ export default function HRDashboard() {
         </motion.div>
         
         <motion.div
-          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
-          transition={{ type: "spring", stiffness: 300 }}
+          whileHover={{ 
+            scale: 1.02, 
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            borderColor: '#10B981'
+          }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 300,
+            duration: 0.3,
+            ease: [0.4, 0, 0.2, 1]
+          }}
+          className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-500/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent" />
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-green-50 hover:to-white">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent group-hover:from-green-500/20 transition-all duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600/0 to-green-100/0 group-hover:from-green-600/5 group-hover:to-green-100/10 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Tasso Presenza</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-600 animate-pulse" />
+              <motion.div
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CheckCircle2 className="h-4 w-4 text-green-600 group-hover:text-green-500 transition-colors duration-300" />
+              </motion.div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                {animatedStats.attendanceRate}%
-              </div>
+              <motion.div 
+                key={animatedStats.attendanceRate}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
+              >
+                <motion.span
+                  key={animatedStats.attendanceRate}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                >
+                  {animatedStats.attendanceRate}%
+                </motion.span>
+              </motion.div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <ArrowUp className="h-3 w-3 text-green-500" />
                 <span className="text-green-500">+1.2%</span> dalla settimana scorsa
@@ -561,19 +648,48 @@ export default function HRDashboard() {
         </motion.div>
         
         <motion.div
-          whileHover={{ scale: 1.02, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
-          transition={{ type: "spring", stiffness: 300 }}
+          whileHover={{ 
+            scale: 1.02, 
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            borderColor: '#F59E0B'
+          }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 300,
+            duration: 0.3,
+            ease: [0.4, 0, 0.2, 1]
+          }}
+          className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-yellow-500/50 transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent" />
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-yellow-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-yellow-50 hover:to-white">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent group-hover:from-yellow-500/20 transition-all duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/0 to-yellow-100/0 group-hover:from-yellow-600/5 group-hover:to-yellow-100/10 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Richieste Pendenti</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-yellow-600 animate-pulse" />
+              <motion.div
+                whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <AlertTriangle className="h-4 w-4 text-yellow-600 group-hover:text-yellow-500 transition-colors duration-300" />
+              </motion.div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-                {animatedStats.pendingRequests}
-              </div>
+              <motion.div 
+                key={animatedStats.pendingRequests}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent"
+              >
+                <motion.span
+                  key={animatedStats.pendingRequests}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                >
+                  {animatedStats.pendingRequests}
+                </motion.span>
+              </motion.div>
               <p className="text-xs text-muted-foreground">
                 Richiede attenzione
               </p>
@@ -596,12 +712,23 @@ export default function HRDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          whileHover={{ 
+            scale: 1.01,
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            y: -2
+          }}
+          className="cursor-pointer"
         >
-          <Card className="backdrop-blur-xl bg-white/80 border-white/20">
+          <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-300 transition-all duration-300 group hover:bg-gradient-to-br hover:from-white hover:to-orange-50/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-orange-600" />
-                Trend Presenze
+                <motion.div
+                  whileHover={{ rotate: 15, scale: 1.1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <TrendingUp className="h-5 w-5 text-orange-600 group-hover:text-orange-500 transition-colors duration-300" />
+                </motion.div>
+                <span className="group-hover:font-semibold transition-all duration-300">Trend Presenze</span>
               </CardTitle>
               <CardDescription>Andamento mensile del tasso di presenza</CardDescription>
             </CardHeader>
@@ -647,12 +774,23 @@ export default function HRDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          whileHover={{ 
+            scale: 1.01,
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            y: -2
+          }}
+          className="cursor-pointer"
         >
-          <Card className="backdrop-blur-xl bg-white/80 border-white/20">
+          <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-300 transition-all duration-300 group hover:bg-gradient-to-br hover:from-white hover:to-purple-50/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-purple-600" />
-                Distribuzione Dipartimenti
+                <motion.div
+                  whileHover={{ rotate: 180, scale: 1.1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <PieChart className="h-5 w-5 text-purple-600 group-hover:text-purple-500 transition-colors duration-300" />
+                </motion.div>
+                <span className="group-hover:font-semibold transition-all duration-300">Distribuzione Dipartimenti</span>
               </CardTitle>
               <CardDescription>Dipendenti per dipartimento</CardDescription>
             </CardHeader>
@@ -781,16 +919,28 @@ export default function HRDashboard() {
             </SelectContent>
           </Select>
           
-          <Button 
-            onClick={() => {
-              setSelectedEmployee(null);
-              setIsEmployeeModalOpen(true);
-            }}
-            className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Dipendente
-          </Button>
+            <Button 
+              onClick={() => {
+                setSelectedEmployee(null);
+                setIsEmployeeModalOpen(true);
+              }}
+              className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25"
+              data-testid="button-new-employee"
+            >
+              <motion.div
+                whileHover={{ rotate: 180, scale: 1.2 }}
+                transition={{ duration: 0.3 }}
+                className="inline-block"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+              </motion.div>
+              Nuovo Dipendente
+            </Button>
+          </motion.div>
         </div>
       </div>
       
@@ -819,22 +969,34 @@ export default function HRDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: i * 0.05 }}
-                    className="hover:bg-gray-50/50 transition-all duration-200 hover:shadow-md group"
+                    className="hover:bg-gradient-to-r hover:from-orange-50/50 hover:to-transparent transition-all duration-300 hover:shadow-lg group cursor-pointer relative overflow-hidden"
+                    whileHover={{ 
+                      scale: 1.005,
+                      x: 2,
+                      boxShadow: '0 4px 15px rgba(255, 105, 0, 0.1)'
+                    }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderLeft = '3px solid #FF6900';
+                      e.currentTarget.style.borderLeft = '4px solid #FF6900';
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 105, 0, 0.03)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderLeft = 'none';
+                      e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Avatar className="h-9 w-9 border-2 border-white shadow-sm group-hover:border-orange-200 group-hover:shadow-md transition-all duration-300">
                           <AvatarImage src={emp.avatar} />
                           <AvatarFallback className="bg-gradient-to-br from-orange-400 to-red-600 text-white">
                             {emp.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
-                        </Avatar>
+                          </Avatar>
+                        </motion.div>
                         <div>
                           <p className="font-medium text-sm">{emp.name}</p>
                           <p className="text-xs text-muted-foreground">{emp.email}</p>
@@ -960,14 +1122,31 @@ export default function HRDashboard() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.1 }}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ 
+                  scale: 1.02, 
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                  y: -3
+                }}
+                className="cursor-pointer"
               >
-                <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:shadow-lg transition-all duration-300 overflow-hidden">
-                  <div className="h-2" style={{ backgroundColor: template.color }} />
+                <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:shadow-lg transition-all duration-300 overflow-hidden group hover:border-opacity-70 hover:bg-gradient-to-br hover:from-white hover:to-gray-50">
+                  <div 
+                    className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"
+                    style={{ backgroundColor: template.color }}
+                  />
+                  <motion.div 
+                    className="h-2 group-hover:h-3 transition-all duration-300" 
+                    style={{ backgroundColor: template.color }}
+                    whileHover={{ scaleY: 1.2 }}
+                  />
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-base">{template.name}</CardTitle>
+                        <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+                          <CardTitle className="text-base group-hover:font-semibold transition-all duration-300">
+                            {template.name}
+                          </CardTitle>
+                        </motion.div>
                         <CardDescription className="text-xs mt-1">
                           {template.description}
                         </CardDescription>
@@ -2104,7 +2283,7 @@ export default function HRDashboard() {
   
   return (
     <Layout currentModule="hr" setCurrentModule={() => {}}>
-      <div className="min-h-screen p-6 space-y-6">
+      <div className="w-full max-w-none p-4 lg:p-6 space-y-6 transition-all duration-300">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -2155,15 +2334,29 @@ export default function HRDashboard() {
                   )} />
                   <span className="font-medium">{tab.label}</span>
                   {tab.badge && (
-                    <Badge 
-                      variant={selectedTab === tab.id ? "secondary" : "outline"}
-                      className={cn(
-                        "ml-1 transition-all duration-300",
-                        selectedTab === tab.id && "animate-pulse"
-                      )}
+                    <motion.div
+                      animate={{
+                        scale: tab.badge === 'NEW' ? [1, 1.1, 1] : 1,
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: tab.badge === 'NEW' ? Infinity : 0,
+                        ease: "easeInOut"
+                      }}
                     >
-                      {tab.badge}
-                    </Badge>
+                      <Badge 
+                        variant={selectedTab === tab.id ? "secondary" : "outline"}
+                        className={cn(
+                          "ml-1 transition-all duration-300",
+                          selectedTab === tab.id && "animate-pulse",
+                          tab.badge === 'NEW' && "bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-md",
+                          tab.badge === '15' && "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-md animate-pulse",
+                          tab.badge === '✓' && "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0"
+                        )}
+                    >
+                        {tab.badge}
+                      </Badge>
+                    </motion.div>
                   )}
                 </motion.button>
               );
