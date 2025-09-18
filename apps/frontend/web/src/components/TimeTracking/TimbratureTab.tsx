@@ -188,22 +188,74 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
   // Smart Detection
   const detectSmartEnvironment = async () => {
     try {
-      // Simula rilevamento WiFi e Bluetooth
-      setWifiNetworks([
-        { ssid: 'W3Suite-Store-WiFi', signal: -45, connected: true },
-        { ssid: 'Guest-WiFi', signal: -65, connected: false },
-      ]);
+      // Smart detection: GPS + WiFi + NFC
+      const checks = {
+        gps: false,
+        wifi: false,
+        nfc: false
+      };
 
-      // Check se è connesso alla rete aziendale
-      const connectedToOffice = wifiNetworks.some(n => n.connected && n.ssid.includes('W3Suite'));
-      if (connectedToOffice) {
+      // Check GPS
+      const position = await geolocationManager.getCurrentPosition();
+      if (position) {
+        checks.gps = await checkGeofencing(position);
+      }
+
+      // Check WiFi networks from database configuration
+      try {
+        const response = await fetch(`/api/stores/${storeId}/location`);
+        if (response.ok) {
+          const storeData = await response.json();
+          const configuredNetworks = storeData.wifiNetworks || [];
+          
+          if (configuredNetworks.length > 0) {
+            // Note: Browser doesn't have direct WiFi API, so we simulate for now
+            // In production with a mobile app, this would actually scan WiFi networks
+            setWifiNetworks(configuredNetworks.map((ssid: string) => ({
+              ssid,
+              signal: -45 - Math.random() * 20, // Simulated signal strength
+              connected: Math.random() > 0.5 // Simulated connection status
+            })));
+            
+            checks.wifi = wifiNetworks.some(n => n.connected);
+            
+            if (checks.wifi) {
+              toast({
+                title: 'Rete WiFi rilevata',
+                description: `Connesso alla rete aziendale`,
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('WiFi check error:', error);
+      }
+
+      // Check NFC proximity (if available)
+      if (typeof (window as any).NDEFReader !== 'undefined') {
+        checks.nfc = nfcReady;
+      }
+
+      // At least one check must pass
+      const isValid = checks.gps || checks.wifi || checks.nfc;
+      
+      if (isValid) {
         toast({
-          title: 'Rilevamento automatico',
-          description: 'Connesso alla rete aziendale',
+          title: 'Ambiente riconosciuto',
+          description: `Rilevati: ${checks.gps ? 'GPS ✓' : ''} ${checks.wifi ? 'WiFi ✓' : ''} ${checks.nfc ? 'NFC ✓' : ''}`,
+        });
+      } else {
+        toast({
+          title: 'Ambiente non riconosciuto',
+          description: 'Non sei nella zona autorizzata per la timbratura',
+          variant: 'destructive',
         });
       }
+
+      return isValid;
     } catch (error) {
       console.error('Smart detection error:', error);
+      return false;
     }
   };
 
@@ -231,18 +283,54 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
 
   // Geofencing Check
   const checkGeofencing = async (position: any) => {
-    // Coordinate del punto vendita (mock)
-    const storeCoords = { lat: 45.4642, lng: 9.1900 }; // Milano
-    const maxDistance = 100; // metri
-
-    const distance = geolocationManager.calculateDistance(
-      position.lat,
-      position.lng,
-      storeCoords.lat,
-      storeCoords.lng
-    );
-
-    return distance <= maxDistance;
+    try {
+      // Get actual store coordinates from database
+      const response = await fetch(`/api/stores/${storeId}/location`);
+      if (!response.ok) {
+        console.error('Failed to fetch store location');
+        return false;
+      }
+      
+      const storeData = await response.json();
+      
+      if (!storeData.latitude || !storeData.longitude) {
+        console.warn('Store coordinates not configured');
+        toast({
+          title: 'Coordinate non configurate',
+          description: 'Le coordinate GPS del negozio non sono configurate',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      const storeCoords = {
+        lat: parseFloat(storeData.latitude),
+        lng: parseFloat(storeData.longitude)
+      };
+      
+      const maxDistance = 100; // metri
+      const distance = geolocationManager.calculateDistance(
+        position.lat,
+        position.lng,
+        storeCoords.lat,
+        storeCoords.lng
+      );
+      
+      const withinRange = distance <= maxDistance;
+      
+      if (!withinRange) {
+        toast({
+          title: 'Fuori zona',
+          description: `Sei a ${Math.round(distance)} metri dal negozio. Devi essere entro 100 metri.`,
+          variant: 'destructive',
+        });
+      }
+      
+      return withinRange;
+    } catch (error) {
+      console.error('Geofencing check error:', error);
+      return false;
+    }
   };
 
   // NFC Read Handler

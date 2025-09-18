@@ -206,6 +206,9 @@ export const stores = w3suiteSchema.table("stores", {
   cap: varchar("cap", { length: 10 }),
   region: varchar("region", { length: 100 }),
   geo: jsonb("geo"),
+  latitude: varchar("latitude", { length: 20 }),
+  longitude: varchar("longitude", { length: 20 }),
+  wifiNetworks: jsonb("wifi_networks").default([]), // Store WiFi SSIDs for geofencing
   status: varchar("status", { length: 50 }).default("active"),
   openedAt: date("opened_at"),
   closedAt: date("closed_at"),

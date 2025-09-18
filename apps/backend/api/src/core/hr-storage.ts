@@ -495,6 +495,12 @@ export class HRStorage implements IHRStorage {
   
   // Time Tracking
   async clockIn(data: InsertTimeTracking): Promise<TimeTracking> {
+    // Check for active session to prevent double clock-in
+    const activeSession = await this.getActiveSession(data.userId, data.tenantId);
+    if (activeSession) {
+      throw new Error(`Esiste già una sessione attiva dal ${activeSession.clockIn}. Effettua prima il clock-out.`);
+    }
+    
     const result = await db.insert(timeTracking)
       .values(data)
       .returning();
@@ -502,7 +508,24 @@ export class HRStorage implements IHRStorage {
     return result[0];
   }
   
-  async clockOut(trackingId: string, clockOut: Date, notes?: string): Promise<TimeTracking> {
+  // Get active time tracking session for user
+  async getActiveSession(userId: string, tenantId: string): Promise<TimeTracking | null> {
+    const [session] = await db
+      .select()
+      .from(timeTracking)
+      .where(and(
+        eq(timeTracking.userId, userId),
+        eq(timeTracking.tenantId, tenantId),
+        eq(timeTracking.status, 'active'),
+        isNull(timeTracking.clockOut)
+      ))
+      .orderBy(desc(timeTracking.clockIn))
+      .limit(1);
+    
+    return session || null;
+  }
+  
+  async clockOut(trackingId: string, tenantId: string, notes?: string): Promise<TimeTracking> {
     const tracking = await db.select()
       .from(timeTracking)
       .where(eq(timeTracking.id, trackingId))
@@ -513,12 +536,13 @@ export class HRStorage implements IHRStorage {
     }
     
     const clockInTime = new Date(tracking[0].clockIn);
-    const totalMinutes = Math.floor((clockOut.getTime() - clockInTime.getTime()) / 60000);
+    const clockOutTime = new Date();
+    const totalMinutes = Math.floor((clockOutTime.getTime() - clockInTime.getTime()) / 60000);
     const breakMinutes = tracking[0].breakMinutes || 0;
     
     const result = await db.update(timeTracking)
       .set({
-        clockOut,
+        clockOut: clockOutTime,
         totalMinutes,
         status: 'completed',
         notes,
@@ -535,14 +559,14 @@ export class HRStorage implements IHRStorage {
       .from(timeTracking)
       .where(and(
         eq(timeTracking.userId, userId),
-        between(timeTracking.clockIn, dateRange.start, dateRange.end)
+        between(timeTracking.clockIn, (dateRange as any).start || new Date(), (dateRange as any).end || new Date())
       ))
       .orderBy(desc(timeTracking.clockIn));
   }
   
   // Permissions
   getUserCalendarPermissions(userId: string, userRole: string): CalendarPermissions {
-    const rolePermissions = CALENDAR_PERMISSIONS[userRole] || CALENDAR_PERMISSIONS.USER;
+    const rolePermissions = CALENDAR_PERMISSIONS[userRole as keyof typeof CALENDAR_PERMISSIONS] || CALENDAR_PERMISSIONS.USER;
     
     return {
       canViewScopes: rolePermissions.view || [CalendarScope.OWN],
@@ -625,13 +649,13 @@ export class HRStorage implements IHRStorage {
       // Check pattern
       if (template.pattern === 'daily') {
         shouldCreate = true;
-      } else if (template.pattern === 'weekly' && template.rules?.daysOfWeek) {
-        shouldCreate = template.rules.daysOfWeek.includes(dayOfWeek);
+      } else if (template.pattern === 'weekly' && (template.rules as any)?.daysOfWeek) {
+        shouldCreate = (template.rules as any).daysOfWeek.includes(dayOfWeek);
       }
       
       if (shouldCreate) {
-        const [startHour, startMinute] = template.defaultStartTime.split(':').map(Number);
-        const [endHour, endMinute] = template.defaultEndTime.split(':').map(Number);
+        const [startHour, startMinute] = (template.defaultStartTime || '09:00').split(':').map(Number);
+        const [endHour, endMinute] = (template.defaultEndTime || '18:00').split(':').map(Number);
         
         const shiftStartTime = new Date(currentDate);
         shiftStartTime.setHours(startHour, startMinute, 0, 0);

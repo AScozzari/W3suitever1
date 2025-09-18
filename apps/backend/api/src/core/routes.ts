@@ -1601,6 +1601,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== STORE LOCATION API ====================
+  
+  // Get store coordinates and geofencing info
+  app.get('/api/stores/:storeId/location', async (req: any, res) => {
+    try {
+      const { storeId } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      // Get store location data
+      const storeData = await db.select({
+        id: stores.id,
+        nome: stores.nome,
+        latitude: stores.latitude,
+        longitude: stores.longitude,
+        wifiNetworks: stores.wifiNetworks,
+        address: stores.address,
+        citta: stores.citta
+      })
+      .from(stores)
+      .where(and(
+        eq(stores.id, storeId),
+        eq(stores.tenantId, tenantId)
+      ))
+      .limit(1);
+      
+      if (!storeData[0]) {
+        return res.status(404).json({ error: 'Store not found' });
+      }
+      
+      res.json(storeData[0]);
+    } catch (error) {
+      handleApiError(error, res, 'recupero coordinate negozio');
+    }
+  });
+  
   // ==================== HR LEAVE MANAGEMENT API ====================
 
   // Get leave balance for a user
