@@ -1,364 +1,387 @@
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Users, UserCheck, Calendar, Clock, TrendingUp, AlertTriangle, 
-  CheckCircle, XCircle, FileText, Receipt, Mail, Phone, MapPin,
-  User, Building2, Award, Target, DollarSign, BookOpen, Coffee
-} from 'lucide-react';
-
-interface Employee {
-  id: string;
-  name: string;
-  role: string;
-  department: string;
-  status: 'active' | 'leave' | 'inactive';
-  email: string;
-  phone: string;
-  startDate: string;
-  avatar?: string;
-}
-
-interface HRStats {
-  totalEmployees: number;
-  activeEmployees: number;
-  onLeave: number;
-  pendingRequests: number;
-  attendanceRate: number;
-  turnoverRate: number;
-}
 
 export default function HRDashboard() {
-  // Mock data queries
-  const { data: stats, isLoading: statsLoading } = useQuery<HRStats>({
-    queryKey: ['/api/hr/stats'],
-    initialData: {
-      totalEmployees: 127,
-      activeEmployees: 119,
-      onLeave: 8,
-      pendingRequests: 15,
-      attendanceRate: 94.2,
-      turnoverRate: 8.5
-    }
-  });
+  // Mock data - stesso formato enterprise
+  const stats = {
+    totalEmployees: 127,
+    activeEmployees: 119,
+    onLeave: 8,
+    pendingRequests: 15,
+    attendanceRate: 94.2,
+    turnoverRate: 8.5
+  };
 
-  const { data: employees, isLoading: employeesLoading } = useQuery<Employee[]>({
-    queryKey: ['/api/hr/employees'],
-    initialData: [
-      {
-        id: 'emp-001',
-        name: 'Mario Rossi',
-        role: 'HR Manager',
-        department: 'Risorse Umane',
-        status: 'active',
-        email: 'mario.rossi@w3suite.com',
-        phone: '+39 335 123 4567',
-        startDate: '2023-01-15'
-      },
-      {
-        id: 'emp-002', 
-        name: 'Giulia Bianchi',
-        role: 'Software Engineer',
-        department: 'Sviluppo',
-        status: 'active',
-        email: 'giulia.bianchi@w3suite.com',
-        phone: '+39 347 987 6543',
-        startDate: '2023-03-20'
-      },
-      {
-        id: 'emp-003',
-        name: 'Luca Verdi',
-        role: 'Sales Manager',
-        department: 'Vendite',
-        status: 'leave',
-        email: 'luca.verdi@w3suite.com', 
-        phone: '+39 329 456 7890',
-        startDate: '2022-11-10'
-      },
-      {
-        id: 'emp-004',
-        name: 'Elena Neri',
-        role: 'Marketing Specialist',
-        department: 'Marketing',
-        status: 'active',
-        email: 'elena.neri@w3suite.com',
-        phone: '+39 338 234 5678',
-        startDate: '2024-01-08'
-      }
-    ]
-  });
-
-  if (statsLoading || employeesLoading) {
-    return (
-      <Layout currentModule="hr" setCurrentModule={() => {}}>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-        </div>
-      </Layout>
-    );
-  }
+  const employees = [
+    {
+      id: 'emp-001',
+      name: 'Mario Rossi',
+      role: 'HR Manager',
+      department: 'Risorse Umane',
+      status: 'active',
+      email: 'mario.rossi@w3suite.com',
+      phone: '+39 335 123 4567',
+    },
+    {
+      id: 'emp-002', 
+      name: 'Giulia Bianchi',
+      role: 'Software Engineer',
+      department: 'Sviluppo',
+      status: 'active',
+      email: 'giulia.bianchi@w3suite.com',
+      phone: '+39 347 987 6543',
+    },
+    {
+      id: 'emp-003',
+      name: 'Luca Verdi',
+      role: 'Sales Manager',
+      department: 'Vendite',
+      status: 'leave',
+      email: 'luca.verdi@w3suite.com', 
+      phone: '+39 329 456 7890',
+    },
+  ];
 
   return (
     <Layout currentModule="hr" setCurrentModule={() => {}}>
-      <div className="space-y-8 p-6">
+      <div className="min-h-screen p-6 space-y-8" style={{background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'}}>
+        
         {/* Header */}
-        <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2" data-testid="text-page-title">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2" data-testid="text-page-title">
             Dashboard HR
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-lg text-gray-600">
             Gestione completa delle risorse umane per W3 Suite Enterprise
           </p>
         </div>
 
-        {/* Quick Stats Row */}
+        {/* Quick Stats Row - Pure Tailwind */}
         <div className="grid gap-6 md:grid-cols-4">
-          <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-total-employees">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-lg bg-blue-500/10">
-                  <Users className="h-8 w-8 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Dipendenti Totali</p>
-                  <p className="text-3xl font-bold text-foreground" data-testid="text-total-employees">{stats?.totalEmployees}</p>
-                </div>
+          
+          {/* Total Employees */}
+          <div 
+            className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6 transition-all hover:shadow-xl"
+            style={{background: 'rgba(255, 255, 255, 0.7)'}}
+            data-testid="card-total-employees"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{background: 'rgba(59, 130, 246, 0.1)'}}>
+                👥
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Dipendenti Totali</p>
+                <p className="text-3xl font-bold text-gray-800" data-testid="text-total-employees">{stats.totalEmployees}</p>
+              </div>
+            </div>
+          </div>
 
-          <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-active-employees">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-lg bg-green-500/10">
-                  <UserCheck className="h-8 w-8 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Presenti Oggi</p>
-                  <p className="text-3xl font-bold text-foreground" data-testid="text-active-employees">{stats?.activeEmployees}</p>
-                </div>
+          {/* Active Employees */}
+          <div 
+            className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6 transition-all hover:shadow-xl"
+            style={{background: 'rgba(255, 255, 255, 0.7)'}}
+            data-testid="card-active-employees"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{background: 'rgba(34, 197, 94, 0.1)'}}>
+                ✅
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Presenti Oggi</p>
+                <p className="text-3xl font-bold text-gray-800" data-testid="text-active-employees">{stats.activeEmployees}</p>
+              </div>
+            </div>
+          </div>
 
-          <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-on-leave">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-lg bg-orange-500/10">
-                  <Calendar className="h-8 w-8 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">In Ferie</p>
-                  <p className="text-3xl font-bold text-foreground" data-testid="text-on-leave">{stats?.onLeave}</p>
-                </div>
+          {/* On Leave */}
+          <div 
+            className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6 transition-all hover:shadow-xl"
+            style={{background: 'rgba(255, 255, 255, 0.7)'}}
+            data-testid="card-on-leave"
+          >
+            <div className="flex items-center space-x-4">
+              <div 
+                className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
+                style={{background: 'rgba(255, 105, 0, 0.1)'}}
+              >
+                🏖️
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">In Ferie</p>
+                <p className="text-3xl font-bold text-gray-800" data-testid="text-on-leave">{stats.onLeave}</p>
+              </div>
+            </div>
+          </div>
 
-          <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-pending-requests">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-lg bg-red-500/10">
-                  <AlertTriangle className="h-8 w-8 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Richieste Pendenti</p>
-                  <p className="text-3xl font-bold text-foreground" data-testid="text-pending-requests">{stats?.pendingRequests}</p>
-                </div>
+          {/* Pending Requests */}
+          <div 
+            className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6 transition-all hover:shadow-xl"
+            style={{background: 'rgba(255, 255, 255, 0.7)'}}
+            data-testid="card-pending-requests"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{background: 'rgba(239, 68, 68, 0.1)'}}>
+                ⚠️
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Richieste Pendenti</p>
+                <p className="text-3xl font-bold text-gray-800" data-testid="text-pending-requests">{stats.pendingRequests}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Performance Metrics */}
+        {/* Performance Metrics - WindTre Colors */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-attendance-rate">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <TrendingUp className="h-6 w-6 mr-3 text-green-600" />
+          
+          {/* Attendance Rate */}
+          <div 
+            className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6"
+            style={{background: 'rgba(255, 255, 255, 0.7)'}}
+            data-testid="card-attendance-rate"
+          >
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold flex items-center text-gray-800">
+                <span className="text-2xl mr-3">📈</span>
                 Tasso di Presenza
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold text-foreground">{stats?.attendanceRate}%</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    +2.3%
-                  </Badge>
+              </h3>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold text-gray-800">{stats.attendanceRate}%</span>
+                <div className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 border border-green-200">
+                  📈 +2.3%
                 </div>
-                <Progress value={stats?.attendanceRate} className="h-3" />
-                <p className="text-sm text-muted-foreground">
-                  Rispetto al mese precedente. Obiettivo: 95%
-                </p>
               </div>
-            </CardContent>
-          </Card>
+              {/* Progress Bar - Pure CSS */}
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="h-3 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${stats.attendanceRate}%`,
+                    background: 'linear-gradient(90deg, #FF6900 0%, #FFB366 100%)'
+                  }}
+                ></div>
+              </div>
+              <p className="text-sm text-gray-600">
+                Rispetto al mese precedente. Obiettivo: 95%
+              </p>
+            </div>
+          </div>
 
-          <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-turnover-rate">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Target className="h-6 w-6 mr-3 text-blue-600" />
+          {/* Turnover Rate */}
+          <div 
+            className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6"
+            style={{background: 'rgba(255, 255, 255, 0.7)'}}
+            data-testid="card-turnover-rate"
+          >
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold flex items-center text-gray-800">
+                <span className="text-2xl mr-3">🎯</span>
                 Tasso di Turnover
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold text-foreground">{stats?.turnoverRate}%</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    -1.2%
-                  </Badge>
+              </h3>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold text-gray-800">{stats.turnoverRate}%</span>
+                <div className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 border border-green-200">
+                  📉 -1.2%
                 </div>
-                <Progress value={100 - (stats?.turnoverRate || 0)} className="h-3" />
-                <p className="text-sm text-muted-foreground">
-                  In diminuzione. Obiettivo annuale: &lt; 10%
-                </p>
               </div>
-            </CardContent>
-          </Card>
+              {/* Progress Bar - Purple WindTre */}
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="h-3 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${100 - stats.turnoverRate}%`,
+                    background: 'linear-gradient(90deg, #7B2CBF 0%, #A855F7 100%)'
+                  }}
+                ></div>
+              </div>
+              <p className="text-sm text-gray-600">
+                In diminuzione. Obiettivo annuale: &lt; 10%
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Recent Employees */}
-        <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-recent-employees">
-          <CardHeader>
-            <CardTitle className="text-xl">Dipendenti Recenti</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {employees?.map((employee) => (
-                <div 
-                  key={employee.id} 
-                  className="flex items-center justify-between p-4 rounded-lg bg-background/30 hover:bg-background/50 transition-colors"
-                  data-testid={`row-employee-${employee.id}`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                      {employee.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground" data-testid={`text-employee-name-${employee.id}`}>
-                        {employee.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {employee.role} • {employee.department}
-                      </p>
-                      <div className="flex items-center space-x-4 mt-1">
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Mail className="h-3 w-3 mr-1" />
-                          {employee.email}
-                        </div>
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Phone className="h-3 w-3 mr-1" />
-                          {employee.phone}
-                        </div>
+        {/* Recent Employees - Pure Tailwind */}
+        <div 
+          className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6"
+          style={{background: 'rgba(255, 255, 255, 0.7)'}}
+          data-testid="card-recent-employees"
+        >
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Dipendenti Recenti</h3>
+          </div>
+          <div className="space-y-4">
+            {employees.map((employee) => (
+              <div 
+                key={employee.id}
+                className="flex items-center justify-between p-4 rounded-lg transition-colors hover:bg-white/50"
+                style={{background: 'rgba(248, 250, 252, 0.5)'}}
+                data-testid={`row-employee-${employee.id}`}
+              >
+                <div className="flex items-center space-x-4">
+                  <div 
+                    className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                    style={{background: 'linear-gradient(135deg, #FF6900 0%, #7B2CBF 100%)'}}
+                  >
+                    {employee.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800" data-testid={`text-employee-name-${employee.id}`}>
+                      {employee.name}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {employee.role} • {employee.department}
+                    </p>
+                    <div className="flex items-center space-x-4 mt-1">
+                      <div className="flex items-center text-xs text-gray-500">
+                        📧 {employee.email}
+                      </div>
+                      <div className="flex items-center text-xs text-gray-500">
+                        📱 {employee.phone}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge
-                      variant={employee.status === 'active' ? 'default' : employee.status === 'leave' ? 'secondary' : 'destructive'}
-                      data-testid={`badge-status-${employee.id}`}
-                    >
-                      {employee.status === 'active' ? (
-                        <><CheckCircle className="h-3 w-3 mr-1" />Attivo</>
-                      ) : employee.status === 'leave' ? (
-                        <><Calendar className="h-3 w-3 mr-1" />In Ferie</>
-                      ) : (
-                        <><XCircle className="h-3 w-3 mr-1" />Inattivo</>
-                      )}
-                    </Badge>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div 
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                      employee.status === 'active' 
+                        ? 'bg-green-100 text-green-700 border-green-200'
+                        : 'bg-orange-100 text-orange-700 border-orange-200'
+                    }`}
+                    data-testid={`badge-status-${employee.id}`}
+                  >
+                    {employee.status === 'active' ? '✅ Attivo' : '🏖️ In Ferie'}
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* Quick Actions */}
-        <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-quick-actions">
-          <CardHeader>
-            <CardTitle className="text-xl">Azioni Rapide</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col justify-center space-y-2 bg-background/30 hover:bg-background/50"
-                data-testid="button-add-employee"
-              >
-                <User className="h-8 w-8 text-blue-600" />
-                <span>Aggiungi Dipendente</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col justify-center space-y-2 bg-background/30 hover:bg-background/50"
-                data-testid="button-approve-leaves"
-              >
-                <Calendar className="h-8 w-8 text-green-600" />
-                <span>Approva Ferie</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col justify-center space-y-2 bg-background/30 hover:bg-background/50"
-                data-testid="button-review-expenses"
-              >
-                <Receipt className="h-8 w-8 text-orange-600" />
-                <span>Review Spese</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col justify-center space-y-2 bg-background/30 hover:bg-background/50"
-                data-testid="button-generate-report"
-              >
-                <FileText className="h-8 w-8 text-purple-600" />
-                <span>Genera Report</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quick Actions - WindTre Gradient */}
+        <div 
+          className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6"
+          style={{background: 'rgba(255, 255, 255, 0.7)'}}
+          data-testid="card-quick-actions"
+        >
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Azioni Rapide</h3>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            
+            <button 
+              className="h-20 flex flex-col items-center justify-center space-y-2 rounded-lg border transition-all hover:shadow-md"
+              style={{
+                background: 'rgba(59, 130, 246, 0.05)',
+                borderColor: 'rgba(59, 130, 246, 0.2)'
+              }}
+              data-testid="button-add-employee"
+            >
+              <span className="text-2xl">👤</span>
+              <span className="text-sm font-medium text-gray-700">Aggiungi Dipendente</span>
+            </button>
 
-        {/* Department Overview */}
-        <Card className="hr-card border-0 bg-background/50 backdrop-blur-sm" data-testid="card-departments">
-          <CardHeader>
-            <CardTitle className="text-xl">Panoramica Dipartimenti</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
-                <div className="flex items-center justify-between">
-                  <Building2 className="h-8 w-8 text-blue-600" />
-                  <Badge variant="secondary">42 dipendenti</Badge>
+            <button 
+              className="h-20 flex flex-col items-center justify-center space-y-2 rounded-lg border transition-all hover:shadow-md"
+              style={{
+                background: 'rgba(34, 197, 94, 0.05)',
+                borderColor: 'rgba(34, 197, 94, 0.2)'
+              }}
+              data-testid="button-approve-leaves"
+            >
+              <span className="text-2xl">📅</span>
+              <span className="text-sm font-medium text-gray-700">Approva Ferie</span>
+            </button>
+
+            <button 
+              className="h-20 flex flex-col items-center justify-center space-y-2 rounded-lg border transition-all hover:shadow-md"
+              style={{
+                background: 'rgba(255, 105, 0, 0.05)',
+                borderColor: 'rgba(255, 105, 0, 0.2)'
+              }}
+              data-testid="button-review-expenses"
+            >
+              <span className="text-2xl">🧾</span>
+              <span className="text-sm font-medium text-gray-700">Review Spese</span>
+            </button>
+
+            <button 
+              className="h-20 flex flex-col items-center justify-center space-y-2 rounded-lg border transition-all hover:shadow-md"
+              style={{
+                background: 'rgba(123, 44, 191, 0.05)',
+                borderColor: 'rgba(123, 44, 191, 0.2)'
+              }}
+              data-testid="button-generate-report"
+            >
+              <span className="text-2xl">📄</span>
+              <span className="text-sm font-medium text-gray-700">Genera Report</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Department Overview - WindTre Brand Colors */}
+        <div 
+          className="rounded-xl border border-white/20 shadow-lg backdrop-blur-sm p-6"
+          style={{background: 'rgba(255, 255, 255, 0.7)'}}
+          data-testid="card-departments"
+        >
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">Panoramica Dipartimenti</h3>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            
+            {/* Development */}
+            <div 
+              className="p-4 rounded-lg"
+              style={{background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.1) 100%)'}}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">🏢</span>
+                <div className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                  42 dipendenti
                 </div>
-                <h3 className="font-bold text-lg mt-2 text-blue-900 dark:text-blue-100">Sviluppo</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-200">Frontend, Backend, DevOps</p>
               </div>
-              
-              <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
-                <div className="flex items-center justify-between">
-                  <DollarSign className="h-8 w-8 text-green-600" />
-                  <Badge variant="secondary">28 dipendenti</Badge>
-                </div>
-                <h3 className="font-bold text-lg mt-2 text-green-900 dark:text-green-100">Vendite</h3>
-                <p className="text-sm text-green-700 dark:text-green-200">Account Manager, Sales Rep</p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
-                <div className="flex items-center justify-between">
-                  <BookOpen className="h-8 w-8 text-purple-600" />
-                  <Badge variant="secondary">19 dipendenti</Badge>
-                </div>
-                <h3 className="font-bold text-lg mt-2 text-purple-900 dark:text-purple-100">Marketing</h3>
-                <p className="text-sm text-purple-700 dark:text-purple-200">Digital, Content, Design</p>
-              </div>
+              <h4 className="font-bold text-lg mt-2 text-blue-900">Sviluppo</h4>
+              <p className="text-sm text-blue-700">Frontend, Backend, DevOps</p>
             </div>
-          </CardContent>
-        </Card>
+            
+            {/* Sales */}
+            <div 
+              className="p-4 rounded-lg"
+              style={{background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.1) 0%, rgba(255, 154, 51, 0.1) 100%)'}}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">💰</span>
+                <div className="px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-700">
+                  28 dipendenti
+                </div>
+              </div>
+              <h4 className="font-bold text-lg mt-2 text-orange-900">Vendite</h4>
+              <p className="text-sm text-orange-700">Account Manager, Sales Rep</p>
+            </div>
+            
+            {/* Marketing */}
+            <div 
+              className="p-4 rounded-lg"
+              style={{background: 'linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)'}}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">📚</span>
+                <div className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700">
+                  19 dipendenti
+                </div>
+              </div>
+              <h4 className="font-bold text-lg mt-2 text-purple-900">Marketing</h4>
+              <p className="text-sm text-purple-700">Digital, Content, Design</p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </Layout>
   );
