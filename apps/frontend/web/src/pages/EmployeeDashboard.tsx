@@ -419,8 +419,8 @@ export default function EmployeeDashboard() {
                     <CardDescription>Aggiornamenti importanti dall'azienda</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {notifications.slice(0, 3).map((notif) => (
+                    <div className="space-y-4 max-h-[320px] overflow-y-auto">
+                      {notifications.slice(0, 5).map((notif) => (
                         <div key={notif.id} className="flex items-start gap-3 p-3 rounded-lg border">
                           <div className={`p-2 rounded-full ${
                             notif.tipo === 'info' ? 'bg-blue-100' :
@@ -450,90 +450,57 @@ export default function EmployeeDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Azioni Rapide - Professional Dashboard Tiles */}
-                <div className="lg:col-span-2">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Azioni Rapide</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Operazioni frequenti per la gestione quotidiana</p>
+                {/* Azioni Rapide - Compact 2x2 Grid */}
+                <div className="lg:col-span-1">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Azioni Rapide</h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Operazioni frequenti</p>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-3 h-[320px]">
                     {[
                       { 
                         icon: FileText, 
                         label: 'Documenti', 
-                        description: 'Buste paga e certificati',
                         color: 'from-blue-500 to-blue-600',
                         testId: 'documenti' 
                       },
                       { 
                         icon: Receipt, 
                         label: 'Spese', 
-                        description: 'Note spese e rimborsi',
                         color: 'from-green-500 to-green-600',
                         testId: 'spese' 
                       },
                       { 
                         icon: GraduationCap, 
                         label: 'Formazione', 
-                        description: 'Corsi e certificazioni',
                         color: 'from-purple-500 to-purple-600',
                         testId: 'formazione' 
                       },
                       { 
                         icon: Users, 
                         label: 'Team', 
-                        description: 'Colleghi e organigramma',
                         color: 'from-orange-500 to-orange-600',
                         testId: 'team' 
-                      },
-                      { 
-                        icon: HelpCircle, 
-                        label: 'Supporto', 
-                        description: 'Assistenza e FAQ',
-                        color: 'from-red-500 to-red-600',
-                        testId: 'supporto' 
-                      },
-                      { 
-                        icon: Calendar, 
-                        label: 'Calendario', 
-                        description: 'Eventi e appuntamenti',
-                        color: 'from-indigo-500 to-indigo-600',
-                        testId: 'calendario' 
                       }
-                    ].map(({ icon: Icon, label, description, color, testId }) => (
+                    ].map(({ icon: Icon, label, color, testId }) => (
                       <Card 
                         key={testId}
-                        className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer"
+                        className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer h-[150px] flex flex-col"
                         data-testid={`card-quickaction-${testId}`}
                       >
-                        <CardHeader className="pb-3">
-                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                            <Icon className="h-6 w-6 text-white" />
+                        <CardContent className="flex-1 flex flex-col items-center justify-center p-4">
+                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                            <Icon className="h-5 w-5 text-white" />
                           </div>
-                          <CardTitle className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white text-center group-hover:text-gray-700 dark:group-hover:text-gray-200">
                             {label}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <CardDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                            {description}
-                          </CardDescription>
+                          </h4>
                         </CardContent>
-                        <CardFooter className="pt-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-full justify-start text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 group-hover:bg-gray-100/50 dark:group-hover:bg-gray-700/50"
-                            data-testid={`button-quickaction-${testId}`}
-                          >
-                            Apri
-                            <ChevronRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                          </Button>
-                        </CardFooter>
                       </Card>
                     ))}
                   </div>
                 </div>
+
 
                 {/* Performance Goals */}
                 <Card className="lg:col-span-3 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer hover:border-green-300">
