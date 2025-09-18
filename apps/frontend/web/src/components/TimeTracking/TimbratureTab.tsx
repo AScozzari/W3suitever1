@@ -18,33 +18,47 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useClockIn, useClockOut, useCurrentSession } from '@/hooks/useTimeTracking';
 import { geolocationManager } from '@/utils/geolocationManager';
-import { timeTrackingService } from '@/services/timeTrackingService';
+import { timeTrackingService, NearbyStore } from '@/services/timeTrackingService';
+import { useStoreResolution } from '@/hooks/useStoreResolution';
+import StoreSelector from './StoreSelector';
 
 // Tipi per i metodi di timbratura
 type TrackingMethod = 'gps' | 'qr' | 'nfc' | 'web' | 'smart';
 
 interface TimbratureTabProps {
   userId: string;
-  storeId: string;
-  storeName: string;
+  storeId?: string; // Optional - will be determined by GPS resolution
+  storeName?: string; // Optional - will be determined by GPS resolution
 }
 
-export default function TimbratureTab({ userId, storeId, storeName }: TimbratureTabProps) {
+export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeName: fallbackStoreName }: TimbratureTabProps) {
   const { toast } = useToast();
   const clockInMutation = useClockIn();
   const clockOutMutation = useClockOut();
   const { session, isActive, elapsedMinutes, isOvertime, requiresBreak, refetch } = useCurrentSession();
   
+  // Store Resolution Hook - NEW GPS SYSTEM
+  const {
+    selectedStore,
+    autoDetected,
+    isResolving: isResolvingStore,
+    gpsError
+  } = useStoreResolution();
+  
   // Stati principali
   const [selectedMethod, setSelectedMethod] = useState<TrackingMethod>('gps');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<any>(null);
-  const [locationAddress, setLocationAddress] = useState<string>('');
+  // GPS states removed - now handled by useStoreResolution hook
   const [qrCode, setQrCode] = useState<string>('');
   const [qrTimer, setQrTimer] = useState(30);
   const [wifiNetworks, setWifiNetworks] = useState<any[]>([]);
   const [nfcReady, setNfcReady] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  
+  // Store selection state - NEW SYSTEM
+  const [selectedStoreForAction, setSelectedStoreForAction] = useState<NearbyStore | null>(null);
+  const [isOverriding, setIsOverriding] = useState(false);
+  const [overrideReason, setOverrideReason] = useState<string>('');
   
   // Timers
   const qrIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -94,11 +108,10 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
     },
   ];
 
-  // Inizializzazione
+  // Inizializzazione - GPS now handled by useStoreResolution hook
   useEffect(() => {
-    if (selectedMethod === 'gps') {
-      initializeGPS();
-    } else if (selectedMethod === 'qr') {
+    // GPS method no longer needs manual initialization - handled by StoreSelector
+    if (selectedMethod === 'qr') {
       generateQRCode();
     } else if (selectedMethod === 'smart') {
       detectSmartEnvironment();
@@ -117,58 +130,26 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
     };
   }, [selectedMethod]);
 
-  // GPS Initialization
-  const initializeGPS = async () => {
-    try {
-      // Request permission directly
-      const hasPermission = await geolocationManager.checkPermission();
-      if (hasPermission === 'denied') {
-        toast({
-          title: 'GPS non disponibile',
-          description: 'Abilita la geolocalizzazione per usare questo metodo',
-          variant: 'destructive',
-        });
-        return;
-      }
+  // GPS initialization removed - now handled by useStoreResolution hook and StoreSelector component
 
-      const position = await geolocationManager.getCurrentPosition();
-      if (position) {
-        setCurrentLocation(position);
-        const address = await geolocationManager.reverseGeocode(position.lat, position.lng);
-        if (address?.formatted) {
-          setLocationAddress(address.formatted);
-        }
-
-        // Check geofencing
-        const isInZone = await checkGeofencing(position);
-        if (!isInZone) {
-          toast({
-            title: 'Fuori zona',
-            description: 'Non sei nella zona autorizzata per la timbratura',
-            variant: 'destructive',
-          });
-        }
-      }
-    } catch (error) {
-      console.error('GPS Error:', error);
-      toast({
-        title: 'Errore GPS',
-        description: 'Impossibile ottenere la posizione',
-        variant: 'destructive',
-      });
-    }
+  // Store Selection Handler - NEW SYSTEM
+  const handleStoreSelected = (store: NearbyStore | null, isOverride: boolean, overrideReason?: string) => {
+    setSelectedStoreForAction(store);
+    setIsOverriding(isOverride);
+    setOverrideReason(overrideReason || '');
   };
-
-  // QR Code Generation
+  
+  // QR Code Generation - Updated to use selected store
   const generateQRCode = () => {
-    const code = `W3-${storeId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const activeStoreId = selectedStoreForAction?.id || selectedStore?.id || fallbackStoreId || 'UNKNOWN';
+    const code = `W3-${activeStoreId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setQrCode(code);
     setQrTimer(30);
 
     // Rigenera ogni 30 secondi
     if (qrIntervalRef.current) clearInterval(qrIntervalRef.current);
     qrIntervalRef.current = setInterval(() => {
-      const newCode = `W3-${storeId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newCode = `W3-${activeStoreId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       setQrCode(newCode);
       setQrTimer(30);
     }, 30000);
@@ -282,56 +263,7 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
   };
 
   // Geofencing Check
-  const checkGeofencing = async (position: any) => {
-    try {
-      // Get actual store coordinates from database
-      const response = await fetch(`/api/stores/${storeId}/location`);
-      if (!response.ok) {
-        console.error('Failed to fetch store location');
-        return false;
-      }
-      
-      const storeData = await response.json();
-      
-      if (!storeData.latitude || !storeData.longitude) {
-        console.warn('Store coordinates not configured');
-        toast({
-          title: 'Coordinate non configurate',
-          description: 'Le coordinate GPS del negozio non sono configurate',
-          variant: 'destructive',
-        });
-        return false;
-      }
-      
-      const storeCoords = {
-        lat: parseFloat(storeData.latitude),
-        lng: parseFloat(storeData.longitude)
-      };
-      
-      const maxDistance = 100; // metri
-      const distance = geolocationManager.calculateDistance(
-        position.lat,
-        position.lng,
-        storeCoords.lat,
-        storeCoords.lng
-      );
-      
-      const withinRange = distance <= maxDistance;
-      
-      if (!withinRange) {
-        toast({
-          title: 'Fuori zona',
-          description: `Sei a ${Math.round(distance)} metri dal negozio. Devi essere entro 100 metri.`,
-          variant: 'destructive',
-        });
-      }
-      
-      return withinRange;
-    } catch (error) {
-      console.error('Geofencing check error:', error);
-      return false;
-    }
-  };
+  // Geofencing check removed - now handled server-side by the enhanced clock-in endpoint
 
   // NFC Read Handler
   const handleNFCRead = (serialNumber: string) => {
@@ -345,25 +277,47 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
 
   // Main Clock Action
   const handleClockAction = async () => {
+    // Check if store is selected when GPS is being used
+    const activeStore = selectedStoreForAction || selectedStore;
+    const activeStoreId = activeStore?.id || fallbackStoreId;
+    
+    if (!activeStoreId) {
+      toast({
+        title: 'Store non selezionato',
+        description: 'Seleziona un punto vendita prima di continuare',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const trackingData: any = {
-        storeId,
+        storeId: activeStoreId,
         trackingMethod: selectedMethod,
         deviceInfo: {
           deviceType: 'web',
           userAgent: navigator.userAgent,
         },
       };
+      
+      // NEW AUDIT FIELDS for geofencing compliance
+      if (activeStore) {
+        trackingData.wasOverride = isOverriding;
+        if (overrideReason) {
+          trackingData.overrideReason = overrideReason;
+        }
+      }
 
       // Aggiungi dati specifici per metodo
-      if (selectedMethod === 'gps' && currentLocation) {
+      if (selectedMethod === 'gps' && activeStore) {
+        // Use GPS data from store resolution system
         trackingData.geoLocation = {
-          lat: currentLocation.lat,
-          lng: currentLocation.lng,
-          accuracy: currentLocation.accuracy,
-          address: locationAddress,
+          lat: activeStore.latitude, // Use store coordinates
+          lng: activeStore.longitude,
+          accuracy: 20, // Estimated
+          address: `${activeStore.address || ''}, ${activeStore.city || ''}, ${activeStore.province || ''}`.trim().replace(/^,\s*|,\s*$/g, '') || 'Posizione rilevata',
         };
       } else if (selectedMethod === 'qr') {
         trackingData.qrCode = qrCode;
@@ -376,23 +330,27 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
         await clockOutMutation.mutateAsync({ id: session.id, data: trackingData });
         toast({
           title: 'Uscita registrata',
-          description: `Timbratura uscita effettuata con ${selectedMethod.toUpperCase()}`,
+          description: `Timbratura uscita effettuata con ${selectedMethod.toUpperCase()} - ${activeStore?.name || fallbackStoreName || 'Store'}`,
         });
       } else {
         // Clock In
         await clockInMutation.mutateAsync(trackingData);
         toast({
           title: 'Entrata registrata',
-          description: `Timbratura entrata effettuata con ${selectedMethod.toUpperCase()}`,
+          description: `Timbratura entrata effettuata con ${selectedMethod.toUpperCase()} - ${activeStore?.name || fallbackStoreName || 'Store'}`,
         });
       }
 
+      // Reset override state after successful action
+      setIsOverriding(false);
+      setOverrideReason('');
+      
       await refetch();
     } catch (error) {
       console.error('Clock action error:', error);
       toast({
         title: 'Errore timbratura',
-        description: 'Si è verificato un errore durante la timbratura',
+        description: 'Si è verificato un errore durante la timbratura. Verifica la connessione e riprova.',
         variant: 'destructive',
       });
     } finally {
@@ -690,6 +648,13 @@ export default function TimbratureTab({ userId, storeId, storeName }: Timbrature
           </CardContent>
         )}
       </Card>
+
+      {/* Store Selector - NEW GPS SYSTEM */}
+      <StoreSelector
+        onStoreSelected={handleStoreSelected}
+        disabled={isLoading || isResolvingStore}
+        autoDetectEnabled={selectedMethod === 'gps'}
+      />
 
       {/* Method Selector */}
       <Card>

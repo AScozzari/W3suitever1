@@ -22,18 +22,20 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { timeTrackingService, ClockInData } from '@/services/timeTrackingService';
+import { timeTrackingService, ClockInData, NearbyStore } from '@/services/timeTrackingService';
 import {
   geolocationManager,
   requestLocationPermission,
   GeoPosition,
 } from '@/utils/geolocationManager';
+import { useStoreResolution } from '@/hooks/useStoreResolution';
+import StoreSelector from './StoreSelector';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 interface ClockWidgetProps {
-  storeId: string;
-  storeName?: string;
+  storeId?: string; // Optional - will be determined by GPS resolution
+  storeName?: string; // Optional - will be determined by GPS resolution
   userId: string;
   userName?: string;
   compact?: boolean;
@@ -59,8 +61,8 @@ const TRACKING_METHODS: {
 ];
 
 export default function ClockWidget({
-  storeId,
-  storeName,
+  storeId: fallbackStoreId,
+  storeName: fallbackStoreName,
   userId,
   userName,
   compact = false,
@@ -75,9 +77,21 @@ export default function ClockWidget({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [trackingMethod, setTrackingMethod] = useState<TrackingMethod>('app');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<GeoPosition | null>(null);
-  const [locationAddress, setLocationAddress] = useState<string>('');
+  // GPS states removed - now handled by useStoreResolution hook
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Store Resolution Hook - NEW GPS SYSTEM
+  const {
+    selectedStore,
+    autoDetected,
+    isResolving: isResolvingStore,
+    gpsError
+  } = useStoreResolution();
+  
+  // Store selection state - NEW SYSTEM
+  const [selectedStoreForAction, setSelectedStoreForAction] = useState<NearbyStore | null>(null);
+  const [isOverriding, setIsOverriding] = useState(false);
+  const [overrideReason, setOverrideReason] = useState<string>('');
 
   // Check for active session on mount
   useEffect(() => {
@@ -104,16 +118,7 @@ export default function ClockWidget({
     };
   }, [isActive, isOnBreak]);
 
-  // Request location permission on mount
-  useEffect(() => {
-    if (trackingMethod === 'gps') {
-      requestLocationPermission().then((granted) => {
-        if (granted) {
-          getCurrentLocation();
-        }
-      });
-    }
-  }, [trackingMethod]);
+  // GPS location handling removed - now managed by useStoreResolution hook and StoreSelector component
 
   const checkActiveSession = async () => {
     try {
@@ -129,43 +134,43 @@ export default function ClockWidget({
     }
   };
 
-  const getCurrentLocation = async () => {
-    try {
-      const position = await geolocationManager.getCurrentPosition();
-      if (position) {
-        setCurrentLocation(position);
-        
-        // Get address
-        const address = await geolocationManager.reverseGeocode(
-          position.lat,
-          position.lng
-        );
-        if (address?.formatted) {
-          setLocationAddress(address.formatted);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to get location:', error);
-    }
+  // Store Selection Handler - NEW SYSTEM
+  const handleStoreSelected = (store: NearbyStore | null, isOverride: boolean, overrideReason?: string) => {
+    setSelectedStoreForAction(store);
+    setIsOverriding(isOverride);
+    setOverrideReason(overrideReason || '');
   };
 
   const handleClockIn = async () => {
+    // Check if store is selected when GPS is being used
+    const activeStore = selectedStoreForAction || selectedStore;
+    const activeStoreId = activeStore?.id || fallbackStoreId;
+    
+    if (!activeStoreId) {
+      toast({
+        title: 'Store non selezionato',
+        description: 'Seleziona un punto vendita prima di continuare',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Get location if GPS tracking
+      // GPS location from store resolution system
       let geoLocation;
-      if (trackingMethod === 'gps' && currentLocation) {
+      if (trackingMethod === 'gps' && activeStore) {
         geoLocation = {
-          lat: currentLocation.lat,
-          lng: currentLocation.lng,
-          accuracy: currentLocation.accuracy,
-          address: locationAddress,
+          lat: activeStore.latitude,
+          lng: activeStore.longitude,
+          accuracy: 20, // Estimated
+          address: `${activeStore.address || ''}, ${activeStore.city || ''}, ${activeStore.province || ''}`.trim().replace(/^,\s*|,\s*$/g, '') || 'Posizione rilevata',
         };
       }
 
       const data: ClockInData = {
-        storeId,
+        storeId: activeStoreId,
         trackingMethod,
         geoLocation,
         deviceInfo: {
@@ -173,6 +178,14 @@ export default function ClockWidget({
           userAgent: navigator.userAgent,
         },
       };
+      
+      // NEW AUDIT FIELDS for geofencing compliance
+      if (activeStore) {
+        data.wasOverride = isOverriding;
+        if (overrideReason) {
+          data.overrideReason = overrideReason;
+        }
+      }
 
       const response = await timeTrackingService.clockIn(data);
       
@@ -182,9 +195,12 @@ export default function ClockWidget({
       
       toast({
         title: "Timbratura Entrata",
-        description: `Registrata con successo alle ${format(new Date(), 'HH:mm')}`,
-        data: { testid: 'toast-clock-in-success' },
+        description: `Registrata con successo alle ${format(new Date(), 'HH:mm')} - ${activeStore?.name || fallbackStoreName || 'Store'}`,
       });
+      
+      // Reset override state after successful action
+      setIsOverriding(false);
+      setOverrideReason('');
       
       if (onClockIn) onClockIn();
     } catch (error) {
@@ -192,7 +208,6 @@ export default function ClockWidget({
         title: "Errore Timbratura",
         description: "Impossibile registrare l'entrata",
         variant: "destructive",
-        data: { testid: 'toast-clock-in-error' },
       });
     } finally {
       setIsLoading(false);
@@ -215,7 +230,6 @@ export default function ClockWidget({
       toast({
         title: "Timbratura Uscita",
         description: `Registrata con successo alle ${format(new Date(), 'HH:mm')}`,
-        data: { testid: 'toast-clock-out-success' },
       });
       
       if (onClockOut) onClockOut();
@@ -224,7 +238,6 @@ export default function ClockWidget({
         title: "Errore Timbratura",
         description: "Impossibile registrare l'uscita",
         variant: "destructive",
-        data: { testid: 'toast-clock-out-error' },
       });
     } finally {
       setIsLoading(false);
@@ -243,23 +256,20 @@ export default function ClockWidget({
         toast({
           title: "Pausa Iniziata",
           description: "La pausa è stata registrata",
-          data: { testid: 'toast-break-start' },
-        });
+          });
       } else {
         await timeTrackingService.endBreak(sessionId);
         setIsOnBreak(false);
         toast({
           title: "Pausa Terminata",
           description: "Sei tornato al lavoro",
-          data: { testid: 'toast-break-end' },
-        });
+          });
       }
     } catch (error) {
       toast({
         title: "Errore",
         description: "Impossibile gestire la pausa",
         variant: "destructive",
-        data: { testid: 'toast-break-error' },
       });
     } finally {
       setIsLoading(false);
@@ -347,7 +357,7 @@ export default function ClockWidget({
             Timbratura
           </h3>
           <p className="text-sm text-gray-400 mt-1">
-            {storeName || 'Store'} • {userName || 'User'}
+            {fallbackStoreName || 'Store'} • {userName || 'User'}
           </p>
         </div>
         <Badge
@@ -356,6 +366,15 @@ export default function ClockWidget({
         >
           {isActive ? (isOnBreak ? 'In Pausa' : 'In Turno') : 'Fuori Turno'}
         </Badge>
+      </div>
+
+      {/* Store Selector - NEW GPS SYSTEM */}
+      <div className="mb-6">
+        <StoreSelector
+          onStoreSelected={handleStoreSelected}
+          disabled={isLoading || isResolvingStore}
+          autoDetectEnabled={trackingMethod === 'gps'}
+        />
       </div>
 
       {/* Timer Display */}
@@ -412,27 +431,7 @@ export default function ClockWidget({
       </div>
 
       {/* Location Display */}
-      {trackingMethod === 'gps' && currentLocation && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mb-6 p-3 bg-blue-500/10 rounded-lg"
-        >
-          <div className="flex items-start gap-2">
-            <MapPin className="w-4 h-4 text-blue-400 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium">Posizione Attuale</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {locationAddress || `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Precisione: {Math.round(currentLocation.accuracy)}m
-              </p>
-            </div>
-            <CheckCircle className="w-4 h-4 text-green-400" />
-          </div>
-        </motion.div>
-      )}
+      {/* GPS location display removed - now handled by StoreSelector component */}
 
       {/* Main Clock Button */}
       <div className="flex gap-3">

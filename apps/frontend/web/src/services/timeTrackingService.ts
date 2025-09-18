@@ -25,6 +25,9 @@ export interface ClockInData {
   };
   shiftId?: string;
   notes?: string;
+  // Enhanced geofencing audit fields
+  wasOverride?: boolean;
+  overrideReason?: string;
 }
 
 export interface ClockOutData {
@@ -75,6 +78,44 @@ export interface CurrentSession {
   };
   isOvertime: boolean;
   requiresBreak: boolean;
+}
+
+// ==================== STORE GEOLOCATION INTERFACES ====================
+export interface NearbyStore {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  distance: number; // meters
+  inGeofence: boolean;
+  confidence: number; // 0-100
+  address?: string;
+  city?: string;
+  province?: string;
+  radius: number;
+  rank: number;
+  isNearest: boolean;
+  wifiNetworks?: any[];
+}
+
+export interface NearbyStoresResponse {
+  stores: NearbyStore[];
+  searchCenter: {
+    lat: number;
+    lng: number;
+    radius: number;
+  };
+  totalFound: number;
+  inGeofenceCount: number;
+  message: string;
+}
+
+export interface StoreResolutionResult {
+  selectedStore: NearbyStore | null;
+  nearbyStores: NearbyStore[];
+  autoDetected: boolean;
+  requiresManualSelection: boolean;
+  error?: string;
 }
 
 class TimeTrackingService {
@@ -309,6 +350,108 @@ class TimeTrackingService {
     return await apiGet<TimeTrackingEntry[]>(
       `/api/hr/time-tracking/conflicts?${params.toString()}`
     );
+  }
+
+  // ==================== STORE GEOLOCATION SERVICES ====================
+  async getNearbyStores(
+    lat: number, 
+    lng: number, 
+    radius: number = 200
+  ): Promise<NearbyStoresResponse> {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lng: lng.toString(),
+      radius: radius.toString()
+    });
+
+    const response = await apiGet<NearbyStoresResponse>(
+      `/api/stores/nearby?${params.toString()}`
+    );
+
+    // Cache the successful GPS location for future use
+    if (response.stores.length > 0) {
+      localStorage.setItem('w3_last_gps_location', JSON.stringify({
+        lat,
+        lng,
+        timestamp: Date.now(),
+        stores: response.stores
+      }));
+    }
+
+    return response;
+  }
+
+  async resolveStoreSelection(
+    lat: number,
+    lng: number,
+    gpsAccuracy: number = 20,
+    radius: number = 200
+  ): Promise<StoreResolutionResult> {
+    try {
+      const nearbyResponse = await this.getNearbyStores(lat, lng, radius);
+      const storesInGeofence = nearbyResponse.stores.filter(store => store.inGeofence);
+      
+      let selectedStore: NearbyStore | null = null;
+      let autoDetected = false;
+      let requiresManualSelection = false;
+
+      // Business Logic: Auto-select rules
+      if (storesInGeofence.length === 1 && gpsAccuracy < 100) {
+        // Single store in geofence with good GPS accuracy = auto-select
+        selectedStore = storesInGeofence[0];
+        autoDetected = true;
+      } else if (storesInGeofence.length > 1) {
+        // Multiple stores in geofence = manual selection required
+        requiresManualSelection = true;
+      } else if (nearbyResponse.stores.length > 0) {
+        // No stores in geofence but stores nearby = manual selection required
+        requiresManualSelection = true;
+      } else {
+        // No stores found = manual fallback
+        requiresManualSelection = true;
+      }
+
+      return {
+        selectedStore,
+        nearbyStores: nearbyResponse.stores,
+        autoDetected,
+        requiresManualSelection
+      };
+
+    } catch (error) {
+      console.error('Store resolution error:', error);
+      return {
+        selectedStore: null,
+        nearbyStores: [],
+        autoDetected: false,
+        requiresManualSelection: true,
+        error: error instanceof Error ? error.message : 'Store resolution failed'
+      };
+    }
+  }
+
+  getCachedLastLocation(): { lat: number; lng: number; stores: NearbyStore[] } | null {
+    try {
+      const cached = localStorage.getItem('w3_last_gps_location');
+      if (!cached) return null;
+      
+      const data = JSON.parse(cached);
+      // Check if cache is less than 24 hours old
+      if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+        return {
+          lat: data.lat,
+          lng: data.lng,
+          stores: data.stores
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to load cached location:', error);
+    }
+    return null;
+  }
+
+  clearLocationCache(): void {
+    localStorage.removeItem('w3_last_gps_location');
   }
 
   // ==================== UTILITIES ====================
