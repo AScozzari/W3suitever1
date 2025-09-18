@@ -450,38 +450,90 @@ export default function EmployeeDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Azioni Rapide */}
-                <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-blue-300">
-                  <CardHeader>
-                    <CardTitle>Azioni Rapide</CardTitle>
-                    <CardDescription>Operazioni frequenti</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                      {[
-                        { icon: FileText, label: 'Documenti', testId: 'documenti' },
-                        { icon: Receipt, label: 'Spese', testId: 'spese' },
-                        { icon: GraduationCap, label: 'Formazione', testId: 'formazione' },
-                        { icon: Users, label: 'Team', testId: 'team' },
-                        { icon: HelpCircle, label: 'Supporto', testId: 'supporto' }
-                      ].map(({ icon: Icon, label, testId }) => (
-                        <Button
-                          key={testId}
-                          variant="ghost"
-                          className="group relative h-24 p-4 bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/15 dark:border-white/10 ring-1 ring-white/10 dark:ring-white/5 shadow-[0_6px_30px_rgba(0,0,0,0.15)] rounded-xl hover:translate-y-[-2px] hover:shadow-[0_12px_40px_rgba(0,0,0,0.25)] hover:border-white/25 dark:hover:border-white/20 transition-all duration-300 ease-out focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-br before:from-orange-500/10 before:to-purple-500/10 before:opacity-0 hover:before:opacity-100 before:transition-opacity overflow-hidden"
-                          data-testid={`button-quickaction-${testId}`}
-                        >
-                          <div className="flex flex-col items-center justify-center gap-3 relative z-10">
-                            <div className="w-9 h-9 rounded-lg bg-white/15 dark:bg-white/10 ring-1 ring-white/20 dark:ring-white/15 flex items-center justify-center group-hover:scale-110 group-hover:rotate-1 transition-all duration-300">
-                              <Icon className="h-5 w-5 text-orange-500" />
-                            </div>
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                {/* Azioni Rapide - Professional Dashboard Tiles */}
+                <div className="lg:col-span-2">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Azioni Rapide</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Operazioni frequenti per la gestione quotidiana</p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {[
+                      { 
+                        icon: FileText, 
+                        label: 'Documenti', 
+                        description: 'Buste paga e certificati',
+                        color: 'from-blue-500 to-blue-600',
+                        testId: 'documenti' 
+                      },
+                      { 
+                        icon: Receipt, 
+                        label: 'Spese', 
+                        description: 'Note spese e rimborsi',
+                        color: 'from-green-500 to-green-600',
+                        testId: 'spese' 
+                      },
+                      { 
+                        icon: GraduationCap, 
+                        label: 'Formazione', 
+                        description: 'Corsi e certificazioni',
+                        color: 'from-purple-500 to-purple-600',
+                        testId: 'formazione' 
+                      },
+                      { 
+                        icon: Users, 
+                        label: 'Team', 
+                        description: 'Colleghi e organigramma',
+                        color: 'from-orange-500 to-orange-600',
+                        testId: 'team' 
+                      },
+                      { 
+                        icon: HelpCircle, 
+                        label: 'Supporto', 
+                        description: 'Assistenza e FAQ',
+                        color: 'from-red-500 to-red-600',
+                        testId: 'supporto' 
+                      },
+                      { 
+                        icon: Calendar, 
+                        label: 'Calendario', 
+                        description: 'Eventi e appuntamenti',
+                        color: 'from-indigo-500 to-indigo-600',
+                        testId: 'calendario' 
+                      }
+                    ].map(({ icon: Icon, label, description, color, testId }) => (
+                      <Card 
+                        key={testId}
+                        className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer"
+                        data-testid={`card-quickaction-${testId}`}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                            <Icon className="h-6 w-6 text-white" />
                           </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                          <CardTitle className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200">
+                            {label}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <CardDescription className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {description}
+                          </CardDescription>
+                        </CardContent>
+                        <CardFooter className="pt-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full justify-start text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 group-hover:bg-gray-100/50 dark:group-hover:bg-gray-700/50"
+                            data-testid={`button-quickaction-${testId}`}
+                          >
+                            Apri
+                            <ChevronRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Performance Goals */}
                 <Card className="lg:col-span-3 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer hover:border-green-300">
