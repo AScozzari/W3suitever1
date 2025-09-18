@@ -76,49 +76,50 @@ function Router() {
       <Route path="/:tenant/employee/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
-      {/* TEST ALIAS per debug - evita il path /hr che viene intercettato da Nginx */}
-      <Route path="/:tenant/people/dashboard">
+      {/* Route principale HR - tutte le richieste HR puntano qui */}
+      <Route path="/:tenant/hr">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
+      {/* Redirect da tutti i path HR legacy verso /tenant/hr */}
       <Route path="/:tenant/hr/dashboard">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/dipendenti">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeManagement /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/presenze">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAttendance /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/ferie">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><LeaveManagementPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/employee-management">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeManagement /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/performance-reviews">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><PerformanceReviews /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/payroll-management">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><PayrollManagement /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/training-development">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><TrainingDevelopment /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/compliance">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRCompliance /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/reports">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRReports /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/expense">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ExpenseManagementPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr/analytics">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
-      <Route path="/:tenant/hr">
-        {(params) => <Redirect to={`/${params.tenant}/hr/dashboard`} replace />}
+      <Route path="/:tenant/people/dashboard">
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/hr-test">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRTestPage /></AuthenticatedApp></TenantWrapper>}

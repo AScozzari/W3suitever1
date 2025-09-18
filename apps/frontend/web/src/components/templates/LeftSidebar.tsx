@@ -60,9 +60,9 @@ const defaultMenuItems: MenuItem[] = [
     hasSubmenu: true,
     submenuItems: [
       { id: 'hr-dashboard', label: 'Dashboard HR', icon: BarChart3, path: '/hr' },
-      { id: 'dipendenti', label: 'Dipendenti', icon: Users, path: '/hr/dipendenti' },
-      { id: 'presenze', label: 'Presenze', icon: Clock, path: '/hr/presenze' },
-      { id: 'ferie', label: 'Ferie & Permessi', icon: Calendar, path: '/hr/ferie' },
+      { id: 'dipendenti', label: 'Dipendenti', icon: Users, path: '/hr' },
+      { id: 'presenze', label: 'Presenze', icon: Clock, path: '/hr' },
+      { id: 'ferie', label: 'Ferie & Permessi', icon: Calendar, path: '/hr' },
       { id: 'turni', label: 'Turni', icon: CalendarDays, path: '/shift-planning' },
       { id: 'documenti', label: 'Documenti', icon: FileText, path: '/documents' },
       { id: 'spese', label: 'Note Spese', icon: Receipt, path: '/expense-management' }
