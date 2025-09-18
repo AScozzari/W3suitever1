@@ -509,16 +509,17 @@ export default function HRDashboard() {
           <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-orange-50 hover:to-white">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent group-hover:from-orange-500/20 transition-all duration-300" />
             <div className="absolute inset-0 bg-gradient-to-r from-orange-600/0 to-orange-100/0 group-hover:from-orange-600/5 group-hover:to-orange-100/10 transition-all duration-300" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Dipendenti Totali</CardTitle>
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.3 }}
+                className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 group-hover:from-orange-200 group-hover:to-orange-300 transition-all duration-300 shadow-sm"
               >
-                <Users className="h-4 w-4 text-orange-600 group-hover:text-orange-500 transition-colors duration-300" />
+                <Users className="h-6 w-6 text-orange-600 group-hover:text-orange-700 transition-colors duration-300" />
               </motion.div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 pt-0">
               <motion.div 
                 key={animatedStats.totalEmployees}
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -539,7 +540,7 @@ export default function HRDashboard() {
                 <ArrowUp className="h-3 w-3 text-green-500" />
                 <span className="text-green-500">+2.5%</span> dal mese scorso
               </p>
-              <Progress value={95} className="mt-2 h-1" />
+              <Progress value={95} className="mt-3 h-2" />
             </CardContent>
           </Card>
         </motion.div>
@@ -561,16 +562,17 @@ export default function HRDashboard() {
           <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-purple-50 hover:to-white">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent group-hover:from-purple-500/20 transition-all duration-300" />
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 to-purple-100/0 group-hover:from-purple-600/5 group-hover:to-purple-100/10 transition-all duration-300" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Dipendenti Attivi</CardTitle>
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.3 }}
+                className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 group-hover:from-purple-200 group-hover:to-purple-300 transition-all duration-300 shadow-sm"
               >
-                <Activity className="h-4 w-4 text-purple-600 group-hover:text-purple-500 transition-colors duration-300" />
+                <Activity className="h-6 w-6 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" />
               </motion.div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 pt-0">
               <motion.div 
                 key={animatedStats.activeEmployees}
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -590,7 +592,7 @@ export default function HRDashboard() {
               <p className="text-xs text-muted-foreground">
                 {animatedStats.onLeave} in ferie/permesso
               </p>
-              <Progress value={93.7} className="mt-2 h-1" />
+              <Progress value={93.7} className="mt-3 h-2" />
             </CardContent>
           </Card>
         </motion.div>
@@ -612,16 +614,17 @@ export default function HRDashboard() {
           <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-green-50 hover:to-white">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent group-hover:from-green-500/20 transition-all duration-300" />
             <div className="absolute inset-0 bg-gradient-to-r from-green-600/0 to-green-100/0 group-hover:from-green-600/5 group-hover:to-green-100/10 transition-all duration-300" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Tasso Presenza</CardTitle>
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.3 }}
+                className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 group-hover:from-green-200 group-hover:to-green-300 transition-all duration-300 shadow-sm"
               >
-                <CheckCircle2 className="h-4 w-4 text-green-600 group-hover:text-green-500 transition-colors duration-300" />
+                <CheckCircle2 className="h-6 w-6 text-green-600 group-hover:text-green-700 transition-colors duration-300" />
               </motion.div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 pt-0">
               <motion.div 
                 key={animatedStats.attendanceRate}
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -642,7 +645,7 @@ export default function HRDashboard() {
                 <ArrowUp className="h-3 w-3 text-green-500" />
                 <span className="text-green-500">+1.2%</span> dalla settimana scorsa
               </p>
-              <Progress value={animatedStats.attendanceRate} className="mt-2 h-1" />
+              <Progress value={animatedStats.attendanceRate} className="mt-3 h-2" />
             </CardContent>
           </Card>
         </motion.div>
@@ -664,16 +667,17 @@ export default function HRDashboard() {
           <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-yellow-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-yellow-50 hover:to-white">
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent group-hover:from-yellow-500/20 transition-all duration-300" />
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/0 to-yellow-100/0 group-hover:from-yellow-600/5 group-hover:to-yellow-100/10 transition-all duration-300" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Richieste Pendenti</CardTitle>
               <motion.div
                 whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
                 transition={{ duration: 0.5 }}
+                className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-yellow-100 to-yellow-200 group-hover:from-yellow-200 group-hover:to-yellow-300 transition-all duration-300 shadow-sm"
               >
-                <AlertTriangle className="h-4 w-4 text-yellow-600 group-hover:text-yellow-500 transition-colors duration-300" />
+                <AlertTriangle className="h-6 w-6 text-yellow-600 group-hover:text-yellow-700 transition-colors duration-300" />
               </motion.div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 pt-0">
               <motion.div 
                 key={animatedStats.pendingRequests}
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -693,7 +697,7 @@ export default function HRDashboard() {
               <p className="text-xs text-muted-foreground">
                 Richiede attenzione
               </p>
-              <div className="mt-2 flex gap-1">
+              <div className="mt-3 flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className={cn(
                     "h-1 flex-1 rounded",
@@ -720,19 +724,20 @@ export default function HRDashboard() {
           className="cursor-pointer"
         >
           <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-300 transition-all duration-300 group hover:bg-gradient-to-br hover:from-white hover:to-orange-50/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="p-6">
+              <CardTitle className="flex items-center gap-3">
                 <motion.div
                   whileHover={{ rotate: 15, scale: 1.1 }}
                   transition={{ duration: 0.3 }}
+                  className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 group-hover:from-orange-200 group-hover:to-orange-300 transition-all duration-300 shadow-sm"
                 >
-                  <TrendingUp className="h-5 w-5 text-orange-600 group-hover:text-orange-500 transition-colors duration-300" />
+                  <TrendingUp className="h-6 w-6 text-orange-600 group-hover:text-orange-700 transition-colors duration-300" />
                 </motion.div>
                 <span className="group-hover:font-semibold transition-all duration-300">Trend Presenze</span>
               </CardTitle>
-              <CardDescription>Andamento mensile del tasso di presenza</CardDescription>
+              <CardDescription className="mt-2 ml-1">Andamento mensile del tasso di presenza</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 pt-0">
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={attendanceData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -782,19 +787,20 @@ export default function HRDashboard() {
           className="cursor-pointer"
         >
           <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-300 transition-all duration-300 group hover:bg-gradient-to-br hover:from-white hover:to-purple-50/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="p-6">
+              <CardTitle className="flex items-center gap-3">
                 <motion.div
                   whileHover={{ rotate: 180, scale: 1.1 }}
                   transition={{ duration: 0.3 }}
+                  className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 group-hover:from-purple-200 group-hover:to-purple-300 transition-all duration-300 shadow-sm"
                 >
-                  <PieChart className="h-5 w-5 text-purple-600 group-hover:text-purple-500 transition-colors duration-300" />
+                  <PieChartIcon className="h-6 w-6 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" />
                 </motion.div>
                 <span className="group-hover:font-semibold transition-all duration-300">Distribuzione Dipartimenti</span>
               </CardTitle>
-              <CardDescription>Dipendenti per dipartimento</CardDescription>
+              <CardDescription className="mt-2 ml-1">Dipendenti per dipartimento</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 pt-0">
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
@@ -839,12 +845,14 @@ export default function HRDashboard() {
         transition={{ delay: 0.3 }}
       >
         <Card className="backdrop-blur-xl bg-white/80 border-white/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-green-600" />
+          <CardHeader className="p-6">
+            <CardTitle className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 shadow-sm">
+                <Activity className="h-6 w-6 text-green-600" />
+              </div>
               Attività Recenti
             </CardTitle>
-            <CardDescription>Ultime azioni nel sistema HR</CardDescription>
+            <CardDescription className="mt-2 ml-1">Ultime azioni nel sistema HR</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[200px]">
@@ -984,27 +992,30 @@ export default function HRDashboard() {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
+                    <TableCell className="pl-6">
+                      <div className="flex items-center gap-4">
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <Avatar className="h-9 w-9 border-2 border-white shadow-sm group-hover:border-orange-200 group-hover:shadow-md transition-all duration-300">
+                          <Avatar className="h-11 w-11 border-2 border-white shadow-md group-hover:border-orange-200 group-hover:shadow-lg transition-all duration-300">
                           <AvatarImage src={emp.avatar} />
-                          <AvatarFallback className="bg-gradient-to-br from-orange-400 to-red-600 text-white">
+                          <AvatarFallback className="bg-gradient-to-br from-orange-400 to-red-600 text-white font-semibold">
                             {emp.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                           </Avatar>
                         </motion.div>
-                        <div>
-                          <p className="font-medium text-sm">{emp.name}</p>
-                          <p className="text-xs text-muted-foreground">{emp.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm text-gray-900 truncate">{emp.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{emp.email}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="font-normal">
+                      <Badge 
+                        variant="secondary" 
+                        className="font-normal bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
+                      >
                         {emp.role}
                       </Badge>
                     </TableCell>
@@ -1013,30 +1024,45 @@ export default function HRDashboard() {
                       <Badge 
                         variant={emp.status === 'active' ? 'default' : emp.status === 'leave' ? 'secondary' : 'destructive'}
                         className={cn(
-                          "transition-all duration-300",
-                          emp.status === 'active' && "bg-green-100 text-green-700 hover:bg-green-200 animate-pulse"
+                          "transition-all duration-300 font-medium px-3 py-1",
+                          emp.status === 'active' && "bg-green-100 text-green-700 border-green-300 hover:bg-green-200",
+                          emp.status === 'leave' && "bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200",
+                          emp.status === 'inactive' && "bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
                         )}
                       >
+                        <div className={cn(
+                          "w-2 h-2 rounded-full mr-2 inline-block",
+                          emp.status === 'active' && "bg-green-500 animate-pulse",
+                          emp.status === 'leave' && "bg-yellow-500",
+                          emp.status === 'inactive' && "bg-red-500"
+                        )} />
                         {emp.status === 'active' ? 'Attivo' : emp.status === 'leave' ? 'In ferie' : 'Inattivo'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {emp.location}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gray-100">
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                        </div>
+                        <span className="font-medium text-gray-700">{emp.location}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={emp.performance || 0} className="w-16 h-2" />
-                        <span className="text-xs font-medium">{emp.performance || 0}%</span>
+                      <div className="flex items-center gap-3">
+                        <Progress value={emp.performance || 0} className="w-20 h-2" />
+                        <span className="text-sm font-semibold min-w-[35px] text-gray-700">{emp.performance || 0}%</span>
+                        {emp.performance && emp.performance >= 90 && (
+                          <div className="flex items-center justify-center h-5 w-5 rounded-full bg-green-100">
+                            <Star className="h-3 w-3 text-green-600" />
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">{emp.lastLogin}</span>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <TableCell className="pr-6">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <Button 
                           size="sm" 
                           variant="ghost"
@@ -1044,23 +1070,26 @@ export default function HRDashboard() {
                             setSelectedEmployee(emp);
                             setIsEmployeeModalOpen(true);
                           }}
-                          className="hover:bg-orange-50"
+                          className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-all duration-200"
+                          data-testid={`button-view-${emp.id}`}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 text-blue-600" />
                         </Button>
                         <Button 
                           size="sm" 
                           variant="ghost"
-                          className="hover:bg-purple-50"
+                          className="h-8 w-8 p-0 hover:bg-green-50 hover:border-green-200 border border-transparent transition-all duration-200"
+                          data-testid={`button-edit-${emp.id}`}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-4 w-4 text-green-600" />
                         </Button>
                         <Button 
                           size="sm" 
                           variant="ghost"
-                          className="hover:bg-red-50 hover:text-red-600"
+                          className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-200 hover:text-red-600 border border-transparent transition-all duration-200"
+                          data-testid={`button-delete-${emp.id}`}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -1135,63 +1164,101 @@ export default function HRDashboard() {
                     style={{ backgroundColor: template.color }}
                   />
                   <motion.div 
-                    className="h-2 group-hover:h-3 transition-all duration-300" 
+                    className="h-3 group-hover:h-4 transition-all duration-300 shadow-sm" 
                     style={{ backgroundColor: template.color }}
                     whileHover={{ scaleY: 1.2 }}
                   />
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
+                  <CardHeader className="p-6">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1">
                         <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
                           <CardTitle className="text-base group-hover:font-semibold transition-all duration-300">
                             {template.name}
                           </CardTitle>
                         </motion.div>
-                        <CardDescription className="text-xs mt-1">
+                        <CardDescription className="text-xs mt-2">
                           {template.description}
                         </CardDescription>
                       </div>
-                      <Badge variant={template.isActive ? "default" : "secondary"}>
+                      <Badge 
+                        variant={template.isActive ? "default" : "secondary"}
+                        className={cn(
+                          "shrink-0 transition-all duration-300",
+                          template.isActive 
+                            ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200" 
+                            : "bg-gray-100 text-gray-600 border-gray-300"
+                        )}
+                      >
                         {template.isActive ? 'Attivo' : 'Inattivo'}
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>{template.startTime} - {template.endTime}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{template.requiredStaff} persone richieste</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <RefreshCw className="h-4 w-4 text-muted-foreground" />
-                      <span className="capitalize">{template.recurrence}</span>
+                  <CardContent className="p-6 pt-0 space-y-4">
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center gap-3 text-sm bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100">
+                          <Clock className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{template.startTime} - {template.endTime}</div>
+                          <div className="text-xs text-gray-500">Orario turno</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-green-100">
+                          <Users className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{template.requiredStaff} persone</div>
+                          <div className="text-xs text-gray-500">Staff richiesto</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-purple-100">
+                          <RefreshCw className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 capitalize">{template.recurrence}</div>
+                          <div className="text-xs text-gray-500">Ricorrenza</div>
+                        </div>
+                      </div>
                     </div>
                     {template.roles && (
-                      <div className="flex flex-wrap gap-1">
-                        {template.roles.map(role => (
-                          <Badge key={role} variant="outline" className="text-xs">
-                            {role}
-                          </Badge>
-                        ))}
+                      <div className="mt-3">
+                        <div className="text-xs text-gray-500 mb-2">Ruoli richiesti</div>
+                        <div className="flex flex-wrap gap-2">
+                          {template.roles.map((role, index) => (
+                            <Badge 
+                              key={role} 
+                              variant="outline" 
+                              className="text-xs px-2 py-1 bg-white border-gray-300 hover:bg-gray-50 transition-colors"
+                              style={{ borderColor: template.color, color: template.color }}
+                            >
+                              {role}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    <Separator />
+                    <Separator className="my-4" />
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">
-                        Creato da {template.createdBy}
-                      </span>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="ghost">
-                          <Copy className="h-3 w-3" />
+                      <div>
+                        <span className="text-xs text-muted-foreground">
+                          Creato da {template.createdBy}
+                        </span>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {template.createdAt}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50">
+                          <Copy className="h-4 w-4 text-blue-600" />
                         </Button>
-                        <Button size="sm" variant="ghost">
-                          <Edit className="h-3 w-3" />
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-green-50">
+                          <Edit className="h-4 w-4 text-green-600" />
                         </Button>
-                        <Button size="sm" variant="ghost">
-                          <Trash2 className="h-3 w-3" />
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-red-50">
+                          <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
                       </div>
                     </div>
