@@ -139,23 +139,21 @@ export default function LeftSidebar({
 
   // Handle menu item click
   const handleMenuClick = (item: MenuItem) => {
-    // Force use staging tenant for now to ensure it works
+    // Force use staging tenant
     const tenant = 'staging';
     
-    console.log('[LeftSidebar] Navigation:', {
-      item: item.label,
-      path: item.path,
-      tenant: tenant,
-      fullPath: item.path ? `/${tenant}${item.path}` : null
-    });
+    // If HR item, force direct navigation
+    if (item.id === 'hr' && item.path) {
+      // Direct navigation for HR
+      window.location.pathname = `/staging/hr/dashboard`;
+      return;
+    }
     
     // If item has both submenu and path, navigate to path and toggle submenu
     if (item.hasSubmenu && item.path) {
-      // Navigate to the main path (HR overview)
+      // Navigate to the main path
       const targetPath = `/${tenant}${item.path}`;
-      console.log('[LeftSidebar] Navigating to:', targetPath);
-      navigate(targetPath);
-      // Also toggle submenu for access to sub-items
+      window.location.pathname = targetPath;
       toggleSubmenu(item.id);
       return;
     }
