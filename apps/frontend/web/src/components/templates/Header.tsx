@@ -714,31 +714,6 @@ export default function Header({
               <button
                 onClick={() => {
                   const tenant = localStorage.getItem('currentTenant') || 'staging';
-                  window.location.href = `/${tenant}/hr`;
-                  setUserMenuOpen(false);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderBottom: '1px solid hsla(0, 0%, 0%, 0.05)',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'background 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(255, 105, 0, 0.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <Users size={16} style={{ color: '#FF6900' }} />
-                <span style={{ fontSize: '14px', color: '#1f2937' }}>Portale HR</span>
-              </button>
-              <button
-                onClick={() => {
-                  const tenant = localStorage.getItem('currentTenant') || 'staging';
                   window.location.href = `/${tenant}/employee/dashboard`;
                   setUserMenuOpen(false);
                 }}
@@ -759,7 +734,7 @@ export default function Header({
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 <BarChart3 size={16} style={{ color: '#10B981' }} />
-                <span style={{ fontSize: '14px', color: '#1f2937' }}>Dashboard Dipendente</span>
+                <span style={{ fontSize: '14px', color: '#1f2937' }}>Il mio portale</span>
               </button>
               <button
                 style={{
