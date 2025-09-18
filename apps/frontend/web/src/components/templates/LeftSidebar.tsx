@@ -53,21 +53,19 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
   { 
-    id: 'hr', 
-    label: 'Human Resources', 
+    id: 'hr-system', 
+    label: 'Risorse Umane', 
     icon: UserPlus, 
-    path: '/hr/dashboard',
+    path: '/hr',
     hasSubmenu: true,
     submenuItems: [
-      { id: 'hr-dashboard', label: 'HR Overview', icon: Home, path: '/hr/dashboard' },
-      { id: 'employee-management', label: 'Employee Management', icon: Users, path: '/hr/employee-management' },
-      { id: 'performance-reviews', label: 'Performance Reviews', icon: Award, path: '/hr/performance-reviews' },
-      { id: 'payroll-management', label: 'Payroll Management', icon: DollarSign, path: '/hr/payroll-management' },
-      { id: 'training-development', label: 'Training & Development', icon: BookOpen, path: '/hr/training-development' },
-      { id: 'hr-compliance', label: 'HR Compliance', icon: Shield, path: '/hr/compliance' },
-      { id: 'hr-reports', label: 'HR Reports', icon: FileBarChart, path: '/hr/reports' },
-      { id: 'hr-expense', label: 'HR Expenses', icon: Receipt, path: '/hr/expense' },
-      { id: 'hr-analytics', label: 'HR Analytics', icon: TrendingUp, path: '/hr/analytics' }
+      { id: 'hr-dashboard', label: 'Dashboard HR', icon: BarChart3, path: '/hr' },
+      { id: 'dipendenti', label: 'Dipendenti', icon: Users, path: '/hr/dipendenti' },
+      { id: 'presenze', label: 'Presenze', icon: Clock, path: '/hr/presenze' },
+      { id: 'ferie', label: 'Ferie & Permessi', icon: Calendar, path: '/hr/ferie' },
+      { id: 'turni', label: 'Turni', icon: CalendarDays, path: '/hr/turni' },
+      { id: 'documenti', label: 'Documenti', icon: FileText, path: '/hr/documenti' },
+      { id: 'spese', label: 'Note Spese', icon: Receipt, path: '/hr/spese' }
     ]
   },
   { id: 'listini', label: 'Listini', icon: FileText },
