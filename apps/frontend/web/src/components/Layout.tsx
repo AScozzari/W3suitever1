@@ -492,6 +492,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Menu items dalla sidebar mostrata negli screenshots
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'employee', label: 'Il Mio Portale', icon: UserCircle },
     { id: 'crm', label: 'CRM', icon: Users },
     { id: 'ai', label: 'AI Tools', icon: Zap },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
@@ -1087,10 +1088,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               const isSettingsPath = pathSegments[1] === 'settings';
               const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
               
+              const isEmployeePath = pathSegments[1] === 'employee';
+              
               const isActive = item.id === 'impostazioni' 
                 ? isSettingsPath
                 : item.id === 'dashboard'
                 ? isDashboardPath
+                : item.id === 'employee'
+                ? isEmployeePath
                 : currentModule === item.id;
               
               return (
@@ -1105,6 +1110,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       navigate(`/${tenant}/settings`);
                     } else if (item.id === 'dashboard') {
                       navigate(`/${tenant}`);
+                    } else if (item.id === 'employee') {
+                      navigate(`/${tenant}/employee/dashboard`);
                     } else {
                       setCurrentModule(item.id);
                     }

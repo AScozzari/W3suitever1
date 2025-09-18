@@ -25,6 +25,7 @@ import HRExpense from "./pages/HRExpense";
 import HREmployees from "./pages/HREmployees";
 import HRAttendance from "./pages/HRAttendance";
 import HRFerie from "./pages/HRFerie";
+import EmployeeDashboard from "./pages/EmployeeDashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -74,6 +75,9 @@ function Router() {
       </Route>
       <Route path="/:tenant/hr-analytics">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/employee/dashboard">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       {/* TEST ALIAS per debug - evita il path /hr che viene intercettato da Nginx */}
       <Route path="/:tenant/people/dashboard">
