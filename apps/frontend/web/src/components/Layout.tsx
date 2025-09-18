@@ -837,10 +837,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
                 {/* Menu items */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+
                   <button
                     onClick={() => {
+                      const tenant = localStorage.getItem('currentTenant') || 'staging';
+                      window.location.href = `/${tenant}/hr`;
                       setUserMenuOpen(false);
-                      // TODO: Navigate to profile
                     }}
                     style={{
                       display: 'flex',
@@ -854,17 +856,18 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       fontSize: '14px',
                       transition: 'background-color 0.15s ease'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(255, 105, 0, 0.05)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    <UserCircle size={16} />
-                    <span>Profilo Account</span>
+                    <Users size={16} style={{ color: '#FF6900' }} />
+                    <span>Portale HR</span>
                   </button>
 
                   <button
                     onClick={() => {
+                      const tenant = localStorage.getItem('currentTenant') || 'staging';
+                      window.location.href = `/${tenant}/employee/dashboard`;
                       setUserMenuOpen(false);
-                      // TODO: Open support ticket
                     }}
                     style={{
                       display: 'flex',
@@ -878,35 +881,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       fontSize: '14px',
                       transition: 'background-color 0.15s ease'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(123, 47%, 50%, 0.05)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    <HelpCircle size={16} />
-                    <span>Apri Ticket</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      // TODO: Clock in/out functionality
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
-                      background: 'transparent',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      transition: 'background-color 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <MapPin size={16} />
-                    <span>Timbratura</span>
+                    <BarChart3 size={16} style={{ color: '#10B981' }} />
+                    <span>Dashboard Dipendente</span>
                   </button>
 
                   {/* Divider */}
@@ -915,7 +894,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);
-                      setLoginModalOpen(true);
+                      // TODO: Navigate to settings
                     }}
                     style={{
                       display: 'flex',
@@ -927,14 +906,13 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       borderRadius: '8px',
                       cursor: 'pointer',
                       fontSize: '14px',
-                      color: '#FF6900',
                       transition: 'background-color 0.15s ease'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(25, 100%, 50%, 0.1)'}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.05)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    <User size={16} />
-                    <span>Cambia Utente</span>
+                    <Settings size={16} />
+                    <span>Impostazioni</span>
                   </button>
 
                   <button
