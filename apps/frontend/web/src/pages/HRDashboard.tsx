@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation, Link } from 'wouter';
+import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
   Calendar, 
@@ -28,17 +31,111 @@ import {
   Building,
   MapPin,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  Award,
+  GraduationCap,
+  BarChart3,
+  Shield,
+  ChevronRight,
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 export default function HRDashboard() {
+  const [location, navigate] = useLocation();
+  const tenant = localStorage.getItem('currentTenant') || 'staging';
+  
   // State per real-time updates
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDepartment, setFilterDepartment] = useState('all');
+  const [activeModuleTab, setActiveModuleTab] = useState('overview');
+  
+  // HR Module tabs configuration with enterprise features
+  const hrModuleTabs = [
+    {
+      id: 'overview',
+      label: 'Dashboard Overview',
+      icon: BarChart3,
+      description: 'Metriche e statistiche principali',
+      badge: null,
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      id: 'employees',
+      label: 'Employee Management',
+      icon: Users,
+      path: '/hr/employee-management',
+      description: 'Gestione anagrafica dipendenti',
+      badge: '127',
+      gradient: 'from-orange-500 to-red-500'
+    },
+    {
+      id: 'performance',
+      label: 'Performance Reviews',
+      icon: Award,
+      path: '/hr/performance-reviews',
+      description: 'Valutazioni e obiettivi',
+      badge: '12 new',
+      gradient: 'from-green-500 to-emerald-500'
+    },
+    {
+      id: 'payroll',
+      label: 'Payroll Management',
+      icon: DollarSign,
+      path: '/hr/payroll-management',
+      description: 'Buste paga e retribuzioni',
+      badge: null,
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    {
+      id: 'training',
+      label: 'Training & Development',
+      icon: GraduationCap,
+      path: '/hr/training-development',
+      description: 'Formazione e certificazioni',
+      badge: '5 active',
+      gradient: 'from-indigo-500 to-blue-500'
+    },
+    {
+      id: 'analytics',
+      label: 'HR Analytics',
+      icon: BarChart3,
+      path: '/hr/analytics',
+      description: 'Analytics predittive e insights',
+      badge: 'AI',
+      gradient: 'from-violet-500 to-purple-500'
+    },
+    {
+      id: 'compliance',
+      label: 'Compliance',
+      icon: Shield,
+      path: '/hr/compliance',
+      description: 'GDPR e conformità',
+      badge: '✓',
+      gradient: 'from-teal-500 to-green-500'
+    },
+    {
+      id: 'reports',
+      label: 'Reports',
+      icon: FileText,
+      path: '/hr/reports',
+      description: 'Reportistica avanzata',
+      badge: null,
+      gradient: 'from-gray-500 to-slate-500'
+    }
+  ];
+  
+  const handleModuleNavigation = (tab: any) => {
+    if (tab.path) {
+      navigate(`/${tenant}${tab.path}`);
+    } else {
+      setActiveModuleTab(tab.id);
+    }
+  };
 
   // Mock real-time data con updates ogni 30 secondi
   const [stats, setStats] = useState({
@@ -197,6 +294,113 @@ export default function HRDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Professional HR Module Navigation Tabs - Enterprise Style */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative mb-8"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            {hrModuleTabs.map((tab, index) => {
+              const Icon = tab.icon;
+              const isActive = activeModuleTab === tab.id;
+              const isOverview = tab.id === 'overview';
+              
+              return (
+                <motion.div
+                  key={tab.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <button
+                    onClick={() => handleModuleNavigation(tab)}
+                    className={`
+                      relative w-full p-4 rounded-xl transition-all duration-300
+                      ${isActive ? 'shadow-xl' : 'shadow-md hover:shadow-lg'}
+                      group overflow-hidden
+                    `}
+                    style={{
+                      background: isActive 
+                        ? `linear-gradient(135deg, ${tab.gradient.replace('from-', '#').replace('to-', '#').split(' ').join(', #')})` 
+                        : 'rgba(255, 255, 255, 0.8)',
+                      backdropFilter: 'blur(10px)',
+                      border: isActive ? 'none' : '1px solid rgba(255, 255, 255, 0.5)'
+                    }}
+                  >
+                    {/* Gradient Overlay for hover effect */}
+                    {!isActive && (
+                      <div 
+                        className={`absolute inset-0 bg-gradient-to-br ${tab.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
+                      />
+                    )}
+                    
+                    <div className="relative z-10">
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className={`
+                          p-2 rounded-lg 
+                          ${isActive ? 'bg-white/20' : 'bg-gradient-to-br ' + tab.gradient + ' bg-opacity-10'}
+                        `}>
+                          <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-gray-700'}`} />
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-gray-800'}`}>
+                            {tab.label.split(' ')[0]}
+                          </p>
+                          {tab.badge && (
+                            <Badge 
+                              variant={isActive ? 'secondary' : 'outline'} 
+                              className="mt-1 text-xs scale-90"
+                            >
+                              {tab.badge}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Arrow indicator for external navigation */}
+                      {tab.path && !isOverview && (
+                        <motion.div 
+                          className="absolute top-2 right-2"
+                          animate={{ x: [0, 3, 0] }}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                        >
+                          <ArrowRight className={`h-3 w-3 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                        </motion.div>
+                      )}
+                    </div>
+                    
+                    {/* Sparkle effect for AI badge */}
+                    {tab.badge === 'AI' && (
+                      <Sparkles className="absolute top-2 right-2 h-3 w-3 text-yellow-500 animate-pulse" />
+                    )}
+                  </button>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Description tooltip - shows on hover */}
+          <AnimatePresence>
+            {activeModuleTab && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mt-4 p-3 rounded-lg bg-white/80 backdrop-blur-sm border border-white/50 shadow-md"
+              >
+                <p className="text-sm text-gray-600 text-center">
+                  {hrModuleTabs.find(t => t.id === activeModuleTab)?.description}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Stats Cards Grid - shadcn/ui Cards */}
         <div className="grid gap-6 md:grid-cols-4">

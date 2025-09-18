@@ -21,10 +21,7 @@ import TrainingDevelopment from "./pages/TrainingDevelopment";
 import HRTestPage from "./pages/HRTestPage";
 import HRCompliance from "./pages/HRCompliance";
 import HRReports from "./pages/HRReports";
-import HRExpense from "./pages/HRExpense";
-import HREmployees from "./pages/HREmployees";
 import HRAttendance from "./pages/HRAttendance";
-import HRFerie from "./pages/HRFerie";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
@@ -88,13 +85,13 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/dipendenti">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HREmployees /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeManagement /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/presenze">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAttendance /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/ferie">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRFerie /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><LeaveManagementPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/employee-management">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeManagement /></AuthenticatedApp></TenantWrapper>}
@@ -115,7 +112,7 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRReports /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/expense">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRExpense /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ExpenseManagementPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/analytics">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}

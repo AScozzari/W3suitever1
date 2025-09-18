@@ -63,9 +63,9 @@ const defaultMenuItems: MenuItem[] = [
       { id: 'dipendenti', label: 'Dipendenti', icon: Users, path: '/hr/dipendenti' },
       { id: 'presenze', label: 'Presenze', icon: Clock, path: '/hr/presenze' },
       { id: 'ferie', label: 'Ferie & Permessi', icon: Calendar, path: '/hr/ferie' },
-      { id: 'turni', label: 'Turni', icon: CalendarDays, path: '/hr/turni' },
-      { id: 'documenti', label: 'Documenti', icon: FileText, path: '/hr/documenti' },
-      { id: 'spese', label: 'Note Spese', icon: Receipt, path: '/hr/spese' }
+      { id: 'turni', label: 'Turni', icon: CalendarDays, path: '/shift-planning' },
+      { id: 'documenti', label: 'Documenti', icon: FileText, path: '/documents' },
+      { id: 'spese', label: 'Note Spese', icon: Receipt, path: '/expense-management' }
     ]
   },
   { id: 'listini', label: 'Listini', icon: FileText },
