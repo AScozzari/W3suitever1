@@ -478,7 +478,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               plan: 'Enterprise',
               isActive: true
             },
-            roles: ['admin', 'manager'] // Ruoli dell'utente
+            roles: ['admin', 'manager'], // Ruoli dell'utente
+            permissions: ['*'] // DEVELOPMENT: Tutti i permessi
           }
         };
         
