@@ -22,6 +22,7 @@ import HRTestPage from "./pages/HRTestPage";
 import HRCompliance from "./pages/HRCompliance";
 import HRReports from "./pages/HRReports";
 import HRExpense from "./pages/HRExpense";
+import HREmployees from "./pages/HREmployees";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -74,6 +75,9 @@ function Router() {
       </Route>
       <Route path="/:tenant/hr/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/hr/dipendenti">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HREmployees /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/hr/employee-management">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeManagement /></AuthenticatedApp></TenantWrapper>}
