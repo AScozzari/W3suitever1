@@ -1180,7 +1180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== LEGAL ENTITIES API ====================
 
   // Get legal entities for current tenant
-  app.get('/api/legal-entities', ...authWithRBAC, requirePermission('legal_entities.read'), async (req: any, res) => {
+  app.get('/api/legal-entities', ...authWithRBAC, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
 
@@ -1268,7 +1268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== USER MANAGEMENT API ====================
 
   // Get users for current tenant
-  app.get('/api/users', ...authWithRBAC, requirePermission('users.read'), async (req: any, res) => {
+  app.get('/api/users', ...authWithRBAC, async (req: any, res) => {
     try {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
 
