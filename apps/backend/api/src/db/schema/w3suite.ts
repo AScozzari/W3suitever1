@@ -79,6 +79,15 @@ export const hrAnnouncementTypeEnum = pgEnum('hr_announcement_type', ['policy', 
 export const hrAnnouncementPriorityEnum = pgEnum('hr_announcement_priority', ['low', 'medium', 'high', 'urgent']);
 export const hrAnnouncementAudienceEnum = pgEnum('hr_announcement_audience', ['all', 'store', 'area', 'role', 'specific']);
 
+// HR Request System Enums
+export const hrRequestCategoryEnum = pgEnum('hr_request_category', ['leave', 'schedule', 'other']);
+export const hrRequestTypeEnum = pgEnum('hr_request_type', [
+  'vacation', 'sick', 'fmla', 'parental', 'bereavement', 'personal', 'religious', 'military', 
+  'jury_duty', 'medical_appt', 'emergency', 'shift_swap', 'time_change', 'flex_hours', 'wfh', 'overtime'
+]);
+export const hrRequestStatusEnum = pgEnum('hr_request_status', ['draft', 'pending', 'approved', 'rejected', 'cancelled']);
+export const hrRequestApprovalActionEnum = pgEnum('hr_request_approval_action', ['approved', 'rejected', 'requested_changes']);
+
 // ==================== TENANTS ====================
 export const tenants = w3suiteSchema.table("tenants", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1231,6 +1240,157 @@ export const insertHrAnnouncementSchema = createInsertSchema(hrAnnouncements).om
 export type InsertHrAnnouncement = z.infer<typeof insertHrAnnouncementSchema>;
 export type HrAnnouncement = typeof hrAnnouncements.$inferSelect;
 
+// ==================== HR REQUESTS SYSTEM ====================
+export const hrRequests = w3suiteSchema.table("hr_requests", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  requesterId: varchar("requester_id").notNull().references(() => users.id),
+  
+  // Request classification
+  category: hrRequestCategoryEnum("category").notNull(),
+  type: hrRequestTypeEnum("type").notNull(),
+  
+  // Request content and data
+  payload: jsonb("payload").default({}), // Type-specific fields
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  
+  // Workflow and approval
+  status: hrRequestStatusEnum("status").notNull().default("draft"),
+  currentApproverId: varchar("current_approver_id").references(() => users.id),
+  
+  // Supporting documents
+  attachments: text("attachments").array().default([]),
+  
+  // Request metadata
+  title: varchar("title", { length: 255 }),
+  description: text("description"),
+  priority: varchar("priority", { length: 20 }).default("normal"), // normal, high, urgent
+  
+  // Audit fields
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("hr_requests_tenant_status_idx").on(table.tenantId, table.status),
+  index("hr_requests_tenant_requester_idx").on(table.tenantId, table.requesterId),
+  index("hr_requests_tenant_type_idx").on(table.tenantId, table.type),
+  index("hr_requests_tenant_category_idx").on(table.tenantId, table.category),
+  index("hr_requests_current_approver_idx").on(table.currentApproverId),
+  index("hr_requests_tenant_created_idx").on(table.tenantId, table.createdAt.desc()),
+  index("hr_requests_start_date_idx").on(table.startDate),
+  index("hr_requests_end_date_idx").on(table.endDate),
+]);
+
+export const insertHrRequestSchema = createInsertSchema(hrRequests).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertHrRequest = z.infer<typeof insertHrRequestSchema>;
+export type HrRequest = typeof hrRequests.$inferSelect;
+
+// ==================== HR REQUEST APPROVALS ====================
+export const hrRequestApprovals = w3suiteSchema.table("hr_request_approvals", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  requestId: uuid("request_id").notNull().references(() => hrRequests.id, { onDelete: "cascade" }),
+  approverId: varchar("approver_id").notNull().references(() => users.id),
+  
+  // Approval decision
+  action: hrRequestApprovalActionEnum("action").notNull(),
+  comment: text("comment"),
+  
+  // Additional metadata
+  level: integer("level").default(1), // Approval level/stage
+  isRequired: boolean("is_required").default(true),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("hr_request_approvals_tenant_idx").on(table.tenantId),
+  index("hr_request_approvals_request_idx").on(table.requestId),
+  index("hr_request_approvals_approver_idx").on(table.approverId),
+  index("hr_request_approvals_tenant_request_created_idx").on(table.tenantId, table.requestId, table.createdAt),
+  index("hr_request_approvals_action_idx").on(table.action),
+]);
+
+export const insertHrRequestApprovalSchema = createInsertSchema(hrRequestApprovals).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertHrRequestApproval = z.infer<typeof insertHrRequestApprovalSchema>;
+export type HrRequestApproval = typeof hrRequestApprovals.$inferSelect;
+
+// ==================== HR REQUEST COMMENTS ====================
+export const hrRequestComments = w3suiteSchema.table("hr_request_comments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  requestId: uuid("request_id").notNull().references(() => hrRequests.id, { onDelete: "cascade" }),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  
+  // Comment content
+  comment: text("comment").notNull(),
+  
+  // Comment metadata
+  isInternal: boolean("is_internal").default(false), // Internal HR comment vs visible to requester
+  mentionedUsers: text("mentioned_users").array().default([]), // @mention support
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("hr_request_comments_tenant_idx").on(table.tenantId),
+  index("hr_request_comments_request_idx").on(table.requestId),
+  index("hr_request_comments_author_idx").on(table.authorId),
+  index("hr_request_comments_tenant_request_created_idx").on(table.tenantId, table.requestId, table.createdAt),
+  index("hr_request_comments_is_internal_idx").on(table.isInternal),
+]);
+
+export const insertHrRequestCommentSchema = createInsertSchema(hrRequestComments).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertHrRequestComment = z.infer<typeof insertHrRequestCommentSchema>;
+export type HrRequestComment = typeof hrRequestComments.$inferSelect;
+
+// ==================== HR REQUEST STATUS HISTORY ====================
+export const hrRequestStatusHistory = w3suiteSchema.table("hr_request_status_history", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  requestId: uuid("request_id").notNull().references(() => hrRequests.id, { onDelete: "cascade" }),
+  changedBy: varchar("changed_by").notNull().references(() => users.id),
+  
+  // Status transition
+  fromStatus: hrRequestStatusEnum("from_status"),
+  toStatus: hrRequestStatusEnum("to_status").notNull(),
+  
+  // Change context
+  reason: text("reason"), // Reason for status change
+  automaticChange: boolean("automatic_change").default(false), // System vs manual change
+  
+  // Additional metadata
+  metadata: jsonb("metadata").default({}), // Any additional context data
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("hr_request_status_history_tenant_idx").on(table.tenantId),
+  index("hr_request_status_history_request_idx").on(table.requestId),
+  index("hr_request_status_history_changed_by_idx").on(table.changedBy),
+  index("hr_request_status_history_tenant_request_created_idx").on(table.tenantId, table.requestId, table.createdAt),
+  index("hr_request_status_history_from_status_idx").on(table.fromStatus),
+  index("hr_request_status_history_to_status_idx").on(table.toStatus),
+  index("hr_request_status_history_automatic_idx").on(table.automaticChange),
+]);
+
+export const insertHrRequestStatusHistorySchema = createInsertSchema(hrRequestStatusHistory).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertHrRequestStatusHistory = z.infer<typeof insertHrRequestStatusHistorySchema>;
+export type HrRequestStatusHistory = typeof hrRequestStatusHistory.$inferSelect;
+
 // ==================== DRIZZLE RELATIONS ====================
 
 // Tenants Relations
@@ -1256,6 +1416,8 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   expenseReports: many(expenseReports),
   employeeBalances: many(employeeBalances),
   hrAnnouncements: many(hrAnnouncements),
+  // HR Request System relations
+  hrRequests: many(hrRequests),
 }));
 
 // Users Relations
@@ -1280,6 +1442,12 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   approvedTimeTracking: many(timeTracking),
   approvedLeaveRequests: many(leaveRequests),
   createdAnnouncements: many(hrAnnouncements),
+  // HR Request System relations
+  hrRequests: many(hrRequests),
+  hrRequestApprovals: many(hrRequestApprovals),
+  hrRequestComments: many(hrRequestComments),
+  hrRequestStatusHistory: many(hrRequestStatusHistory),
+  assignedHrRequests: many(hrRequests),
 }));
 
 // Legal Entities Relations
@@ -1493,4 +1661,37 @@ export const employeeBalancesRelations = relations(employeeBalances, ({ one }) =
 export const hrAnnouncementsRelations = relations(hrAnnouncements, ({ one }) => ({
   tenant: one(tenants, { fields: [hrAnnouncements.tenantId], references: [tenants.id] }),
   createdByUser: one(users, { fields: [hrAnnouncements.createdBy], references: [users.id] }),
+}));
+
+// ==================== HR REQUEST SYSTEM RELATIONS ====================
+
+// HR Requests Relations
+export const hrRequestsRelations = relations(hrRequests, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [hrRequests.tenantId], references: [tenants.id] }),
+  requester: one(users, { fields: [hrRequests.requesterId], references: [users.id] }),
+  currentApprover: one(users, { fields: [hrRequests.currentApproverId], references: [users.id] }),
+  approvals: many(hrRequestApprovals),
+  comments: many(hrRequestComments),
+  statusHistory: many(hrRequestStatusHistory),
+}));
+
+// HR Request Approvals Relations
+export const hrRequestApprovalsRelations = relations(hrRequestApprovals, ({ one }) => ({
+  tenant: one(tenants, { fields: [hrRequestApprovals.tenantId], references: [tenants.id] }),
+  request: one(hrRequests, { fields: [hrRequestApprovals.requestId], references: [hrRequests.id] }),
+  approver: one(users, { fields: [hrRequestApprovals.approverId], references: [users.id] }),
+}));
+
+// HR Request Comments Relations
+export const hrRequestCommentsRelations = relations(hrRequestComments, ({ one }) => ({
+  tenant: one(tenants, { fields: [hrRequestComments.tenantId], references: [tenants.id] }),
+  request: one(hrRequests, { fields: [hrRequestComments.requestId], references: [hrRequests.id] }),
+  author: one(users, { fields: [hrRequestComments.authorId], references: [users.id] }),
+}));
+
+// HR Request Status History Relations
+export const hrRequestStatusHistoryRelations = relations(hrRequestStatusHistory, ({ one }) => ({
+  tenant: one(tenants, { fields: [hrRequestStatusHistory.tenantId], references: [tenants.id] }),
+  request: one(hrRequests, { fields: [hrRequestStatusHistory.requestId], references: [hrRequests.id] }),
+  changedByUser: one(users, { fields: [hrRequestStatusHistory.changedBy], references: [users.id] }),
 }));
