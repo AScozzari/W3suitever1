@@ -52,22 +52,6 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'documents', label: 'Document Drive', icon: FileText, path: '/documents' },
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
-  { 
-    id: 'hr-system', 
-    label: 'Risorse Umane', 
-    icon: UserPlus, 
-    path: '/hr',
-    hasSubmenu: true,
-    submenuItems: [
-      { id: 'hr-dashboard', label: 'Dashboard HR', icon: BarChart3, path: '/hr' },
-      { id: 'dipendenti', label: 'Dipendenti', icon: Users, path: '/hr' },
-      { id: 'presenze', label: 'Presenze', icon: Clock, path: '/hr' },
-      { id: 'ferie', label: 'Ferie & Permessi', icon: Calendar, path: '/hr' },
-      { id: 'turni', label: 'Turni', icon: CalendarDays, path: '/shift-planning' },
-      { id: 'documenti', label: 'Documenti', icon: FileText, path: '/documents' },
-      { id: 'spese', label: 'Note Spese', icon: Receipt, path: '/expense-management' }
-    ]
-  },
   { id: 'listini', label: 'Listini', icon: FileText },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
   { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
