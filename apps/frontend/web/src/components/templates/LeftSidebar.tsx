@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { 
   Home, Users, Zap, Briefcase, Building, UserPlus, 
   FileText, ShoppingBag, Settings, ChevronLeft, 
@@ -305,8 +305,84 @@ export default function LeftSidebar({
             return (
               <div key={item.id}>
                 {/* Main menu item */}
-                <button
-                  onClick={() => handleMenuClick(item)}
+                {item.id === 'hr' ? (
+                  // HR link diretto con Link di wouter
+                  <Link href="/staging/hr/dashboard">
+                    <a
+                      style={{
+                        width: isMobile ? 'auto' : (collapsed ? '40px' : '100%'),
+                        height: collapsed && !isMobile ? '40px' : 'auto',
+                        minWidth: isMobile ? '80px' : 'auto',
+                        padding: isMobile ? '12px' : (collapsed ? '12px' : '12px 16px'),
+                        marginBottom: isMobile ? '0' : (collapsed ? '0' : '4px'),
+                        background: isActive 
+                          ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
+                          : 'transparent',
+                        backdropFilter: 'none',
+                        WebkitBackdropFilter: 'none',
+                        border: 'none',
+                        borderRadius: collapsed ? '12px' : '8px',
+                        color: isActive ? 'white' : '#374151',
+                        fontSize: isMobile ? '12px' : '14px',
+                        fontWeight: isActive ? 600 : 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        gap: isMobile ? '4px' : (collapsed ? '0' : '12px'),
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: collapsed ? 'center' : 'left',
+                        justifyContent: collapsed ? 'center' : 'space-between',
+                        boxShadow: 'none',
+                        textDecoration: 'none'
+                      }}
+                      onClick={() => toggleSubmenu(item.id)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? '0' : '12px' }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative'
+                        }}>
+                          <UserPlus size={isMobile ? 16 : 20} />
+                          {isActive && (
+                            <div style={{
+                              position: 'absolute',
+                              width: '100%',
+                              height: '100%',
+                              background: `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+                              borderRadius: '50%',
+                              opacity: 0.3,
+                              filter: 'blur(8px)',
+                              zIndex: -1
+                            }} />
+                          )}
+                        </div>
+                        
+                        {(!collapsed || isMobile) && (
+                          <span style={{
+                            fontSize: 'inherit',
+                            fontWeight: 'inherit',
+                            lineHeight: 1.2,
+                            textAlign: isMobile ? 'center' : 'left'
+                          }}>
+                            Human Resources
+                          </span>
+                        )}
+                      </div>
+                      
+                      {item.hasSubmenu && !collapsed && !isMobile && (
+                        <div style={{ transition: 'transform 0.2s ease', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                          <ChevronDown size={16} />
+                        </div>
+                      )}
+                    </a>
+                  </Link>
+                ) : (
+                  // Altri menu items con button normale
+                  <button
+                    onClick={() => handleMenuClick(item)}
                   style={{
                     width: isMobile ? 'auto' : (collapsed ? '40px' : '100%'),
                     height: collapsed && !isMobile ? '40px' : 'auto',
@@ -415,6 +491,7 @@ export default function LeftSidebar({
                     </div>
                   )}
                 </button>
+                )}
 
                 {/* Submenu items */}
                 {item.hasSubmenu && isExpanded && !collapsed && (
