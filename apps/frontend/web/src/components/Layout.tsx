@@ -841,31 +841,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       const tenant = localStorage.getItem('currentTenant') || 'staging';
-                      window.location.href = `/${tenant}/hr`;
-                      setUserMenuOpen(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
-                      background: 'transparent',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      transition: 'background-color 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(255, 105, 0, 0.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <Users size={16} style={{ color: '#FF6900' }} />
-                    <span>Portale HR</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const tenant = localStorage.getItem('currentTenant') || 'staging';
                       window.location.href = `/${tenant}/employee/dashboard`;
                       setUserMenuOpen(false);
                     }}
@@ -885,7 +860,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <BarChart3 size={16} style={{ color: '#10B981' }} />
-                    <span>Dashboard Dipendente</span>
+                    <span>Il mio portale</span>
                   </button>
 
                   {/* Divider */}
