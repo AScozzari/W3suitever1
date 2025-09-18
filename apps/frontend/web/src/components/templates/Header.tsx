@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   User, Search, Bell, Settings, Menu, ChevronDown,
   Store, LogOut, UserCircle, CheckCircle, Circle,
-  AlertTriangle, AlertCircle, Info, Users
+  AlertTriangle, AlertCircle, Info, Users, BarChart3
 } from 'lucide-react';
 import { oauth2Client } from '../../services/OAuth2Client';
 import { queryClient } from '../../lib/queryClient';
@@ -755,6 +755,31 @@ export default function Header({
               >
                 <Users size={16} style={{ color: '#FF6900' }} />
                 <span style={{ fontSize: '14px', color: '#1f2937' }}>Portale HR</span>
+              </button>
+              <button
+                onClick={() => {
+                  const tenant = localStorage.getItem('currentTenant') || 'staging';
+                  window.location.href = `/${tenant}/employee/dashboard`;
+                  setUserMenuOpen(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid hsla(0, 0%, 0%, 0.05)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  transition: 'background 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(123, 47%, 50%, 0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <BarChart3 size={16} style={{ color: '#10B981' }} />
+                <span style={{ fontSize: '14px', color: '#1f2937' }}>Dashboard Dipendente</span>
               </button>
               <button
                 style={{

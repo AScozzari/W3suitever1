@@ -319,7 +319,7 @@ export default function EmployeeDashboard() {
             </Card>
 
             {/* Ferie Disponibili */}
-            <Card>
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-blue-300">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <Umbrella className="h-8 w-8 text-blue-500" />
@@ -334,7 +334,7 @@ export default function EmployeeDashboard() {
             </Card>
 
             {/* Prossimo Turno */}
-            <Card>
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-purple-300">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <CalendarIcon className="h-8 w-8 text-purple-500" />
@@ -351,7 +351,7 @@ export default function EmployeeDashboard() {
             </Card>
 
             {/* Tasks Pendenti */}
-            <Card>
+            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-green-300">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <Target className="h-8 w-8 text-green-500" />
@@ -411,7 +411,7 @@ export default function EmployeeDashboard() {
             <TabsContent value="overview" className="space-y-6 w-full">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                 {/* Notifiche Recenti */}
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-orange-300">
                   <CardHeader>
                     <CardTitle>Notifiche e Annunci</CardTitle>
                     <CardDescription>Aggiornamenti importanti dall'azienda</CardDescription>
@@ -449,7 +449,7 @@ export default function EmployeeDashboard() {
                 </Card>
 
                 {/* Azioni Rapide */}
-                <Card>
+                <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-blue-300">
                   <CardHeader>
                     <CardTitle>Azioni Rapide</CardTitle>
                     <CardDescription>Operazioni frequenti</CardDescription>
@@ -481,7 +481,7 @@ export default function EmployeeDashboard() {
                 </Card>
 
                 {/* Performance Goals */}
-                <Card className="lg:col-span-3">
+                <Card className="lg:col-span-3 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer hover:border-green-300">
                   <CardHeader>
                     <CardTitle>Obiettivi di Performance Q4</CardTitle>
                     <CardDescription>Il tuo progresso verso gli obiettivi trimestrali</CardDescription>
