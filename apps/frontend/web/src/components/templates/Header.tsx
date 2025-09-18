@@ -712,26 +712,6 @@ export default function Header({
               overflow: 'hidden'
             }}>
               <button
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderBottom: '1px solid hsla(0, 0%, 0%, 0.05)',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  transition: 'background 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0, 0%, 0%, 0.03)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <UserCircle size={16} />
-                <span style={{ fontSize: '14px', color: '#1f2937' }}>Profilo</span>
-              </button>
-              <button
                 onClick={() => {
                   const tenant = localStorage.getItem('currentTenant') || 'staging';
                   window.location.href = `/${tenant}/hr`;
