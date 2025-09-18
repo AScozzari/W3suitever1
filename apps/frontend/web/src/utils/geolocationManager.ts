@@ -34,7 +34,7 @@ export interface LocationValidation {
   message?: string;
 }
 
-class GeolocationManager {
+export class GeolocationManager {
   private watchId?: number;
   private lastPosition?: GeoPosition;
   private permissionStatus?: PermissionState;
