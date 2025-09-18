@@ -22,6 +22,11 @@ import {
   expenseReports,
   hrAnnouncements,
   employeeBalances,
+  // HR Request System
+  hrRequests,
+  hrRequestApprovals,
+  hrRequestComments,
+  hrRequestStatusHistory,
   type User,
   type UpsertUser,
   type Tenant,
@@ -60,6 +65,15 @@ import {
   type InsertLeaveRequest,
   type InsertShift,
   type InsertTimeTracking,
+  // HR Request System types
+  type HrRequest,
+  type InsertHrRequest,
+  type HrRequestApproval,
+  type InsertHrRequestApproval,
+  type HrRequestComment,
+  type InsertHrRequestComment,
+  type HrRequestStatusHistory,
+  type InsertHrRequestStatusHistory,
 } from "../db/schema/w3suite";
 
 // Import from Public schema (shared reference data)
@@ -117,11 +131,45 @@ export interface NotificationsResponse {
 // Import HR Storage
 import { IHRStorage } from "./hr-storage";
 
+// HR Request System interfaces
+export interface HRRequestFilters {
+  status?: string;
+  category?: string;
+  type?: string;
+  priority?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface HRRequestListOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: 'created' | 'updated' | 'priority' | 'startDate';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface HRRequestWithDetails extends HrRequest {
+  requester?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+  currentApprover?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  comments?: HrRequestComment[];
+  approvals?: HrRequestApproval[];
+  statusHistory?: HrRequestStatusHistory[];
+}
+
 export interface IStorage extends IHRStorage {
   // User operations (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  getUsersByTenant(tenantId: string): Promise<any[]>;
+  getUsersByTenant(tenantId: string): Promise<User[]>;
   
   // Tenant Management
   getTenant(id: string): Promise<Tenant | undefined>;
@@ -140,13 +188,13 @@ export interface IStorage extends IHRStorage {
   createRole(role: InsertRole): Promise<Role>;
   
   // Store Management
-  getStoresByTenant(tenantId: string): Promise<any[]>;
+  getStoresByTenant(tenantId: string): Promise<Store[]>;
   createStore(store: InsertStore): Promise<Store>;
   updateStore(id: string, store: Partial<InsertStore>): Promise<Store>;
   deleteStore(id: string): Promise<void>;
   
   // Supplier Management (Brand Base + Tenant Override Pattern)
-  getSuppliersByTenant(tenantId: string): Promise<any[]>;
+  getSuppliersByTenant(tenantId: string): Promise<Array<SupplierOverride & { country?: Country; city_name?: string; payment_method?: any }>>;
   createTenantSupplier(supplier: InsertSupplierOverride): Promise<SupplierOverride>;
   updateTenantSupplier(id: string, supplier: Partial<InsertSupplierOverride>): Promise<SupplierOverride>;
   deleteTenantSupplier(id: string, tenantId: string): Promise<void>;
@@ -166,7 +214,7 @@ export interface IStorage extends IHRStorage {
   // Reference Data Management
   getLegalForms(): Promise<LegalForm[]>;
   getCountries(): Promise<Country[]>;
-  getItalianCities(): Promise<any[]>;
+  getItalianCities(): Promise<Array<{ id: string; name: string; province: string; region: string; active: boolean }>>;
   getCommercialAreas(): Promise<CommercialArea[]>;
   createCommercialArea(areaData: InsertCommercialArea): Promise<CommercialArea>;
   
@@ -187,6 +235,18 @@ export interface IStorage extends IHRStorage {
   bulkMarkNotificationsRead(notificationIds: string[], tenantId: string): Promise<number>;
   deleteNotification(notificationId: string, tenantId: string): Promise<void>;
   deleteExpiredNotifications(tenantId: string): Promise<number>;
+  
+  // HR Request System Management
+  createRequest(data: InsertHrRequest): Promise<HrRequest>;
+  getMyRequests(tenantId: string, requesterId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }>;
+  getPendingApprovals(tenantId: string, approverId: string): Promise<HrRequest[]>;
+  getRequestById(tenantId: string, requestId: string): Promise<HRRequestWithDetails | null>;
+  addComment(tenantId: string, requestId: string, authorId: string, comment: string, isInternal?: boolean): Promise<HrRequestComment>;
+  transitionStatus(requestId: string, newStatus: string, changedBy: string, reason?: string): Promise<HrRequest>;
+  listRequests(tenantId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }>;
+  approveRequest(tenantId: string, requestId: string, approverId: string, comment?: string): Promise<HrRequest>;
+  rejectRequest(tenantId: string, requestId: string, approverId: string, reason: string): Promise<HrRequest>;
+  cancelRequest(tenantId: string, requestId: string, requesterId: string, reason?: string): Promise<HrRequest>;
 }
 
 // Database is always enabled - no mock data bypass
@@ -216,7 +276,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
-  async getUsersByTenant(tenantId: string): Promise<any[]> {
+  async getUsersByTenant(tenantId: string): Promise<User[]> {
     console.log(`[STORAGE-RLS] 🔍 getUsersByTenant: Setting tenant context for ${tenantId}`);
     
     // Always use real database - mock data removed
@@ -386,7 +446,7 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== STORE MANAGEMENT ====================
 
-  async getStoresByTenant(tenantId: string): Promise<any[]> {
+  async getStoresByTenant(tenantId: string): Promise<Store[]> {
     console.log(`[STORAGE-RLS] 🔍 getStoresByTenant: Setting tenant context for ${tenantId}`);
     
     // Always use real database - no mock data
@@ -472,7 +532,7 @@ export class DatabaseStorage implements IStorage {
   // ==================== SUPPLIER OPERATIONS ====================
   // Brand Base + Tenant Override Pattern Implementation
   
-  async getSuppliersByTenant(tenantId: string): Promise<any[]> {
+  async getSuppliersByTenant(tenantId: string): Promise<Array<SupplierOverride & { country?: Country; city_name?: string; payment_method?: any }>> {
     console.log(`[STORAGE-RLS] 🔍 getSuppliersByTenant: Getting suppliers for tenant ${tenantId}`);
     
     // Set the tenant context for RLS
@@ -877,7 +937,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(countries).where(eq(countries.active, true)).orderBy(countries.name);
   }
 
-  async getItalianCities(): Promise<any[]> {
+  async getItalianCities(): Promise<Array<{ id: string; name: string; province: string; region: string; active: boolean }>> {
     return await db.select().from(italianCities).where(eq(italianCities.active, true)).orderBy(italianCities.name);
   }
 
@@ -1550,6 +1610,562 @@ export class DatabaseStorage implements IStorage {
       .from(timeTracking)
       .where(and(...conditions))
       .orderBy(desc(timeTracking.clockIn));
+  }
+  
+  // ==================== HR REQUEST SYSTEM ====================
+  
+  async createRequest(data: InsertHrRequest): Promise<HrRequest> {
+    await setTenantContext(data.tenantId);
+    
+    const [request] = await db
+      .insert(hrRequests)
+      .values({
+        ...data,
+        status: 'draft'
+      })
+      .returning();
+    
+    // Log status history
+    await this.logStatusHistory(request.id, data.tenantId, data.requesterId, null, 'draft', 'Request created');
+    
+    // Integration Hook: Notify user of request creation with error handling
+    try {
+      await this.createNotification({
+        tenantId: data.tenantId,
+        type: 'system',
+        priority: 'low',
+        title: 'HR Request Created',
+        message: `Your ${data.type} request has been created and saved as draft.`,
+        targetUserId: data.requesterId,
+        metadata: { requestId: request.id, requestType: data.type }
+      });
+    } catch (error) {
+      // Log integration failure but don't break main flow
+      console.error(`[INTEGRATION-ERROR] Failed to create notification for request creation:`, error);
+    }
+    
+    return request;
+  }
+  
+  async getMyRequests(tenantId: string, requesterId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [
+      eq(hrRequests.tenantId, tenantId),
+      eq(hrRequests.requesterId, requesterId)
+    ];
+    
+    // Apply filters
+    if (filters?.status) {
+      conditions.push(eq(hrRequests.status, filters.status as any));
+    }
+    if (filters?.category) {
+      conditions.push(eq(hrRequests.category, filters.category as any));
+    }
+    if (filters?.type) {
+      conditions.push(eq(hrRequests.type, filters.type as any));
+    }
+    if (filters?.priority) {
+      conditions.push(eq(hrRequests.priority, filters.priority));
+    }
+    if (filters?.startDate) {
+      conditions.push(gte(hrRequests.startDate, new Date(filters.startDate)));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(hrRequests.endDate, new Date(filters.endDate)));
+    }
+    
+    // Pagination
+    const page = options?.page || 1;
+    const limit = options?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Sort order
+    let orderBy;
+    switch (options?.sortBy) {
+      case 'updated':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.updatedAt) : desc(hrRequests.updatedAt);
+        break;
+      case 'priority':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.priority) : desc(hrRequests.priority);
+        break;
+      case 'startDate':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.startDate) : desc(hrRequests.startDate);
+        break;
+      default:
+        orderBy = desc(hrRequests.createdAt);
+    }
+    
+    const [requests, [{ total }]] = await Promise.all([
+      db.select()
+        .from(hrRequests)
+        .where(and(...conditions))
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+      db.select({ total: sql<number>`count(*)` })
+        .from(hrRequests)
+        .where(and(...conditions))
+    ]);
+    
+    return {
+      requests,
+      total: Number(total)
+    };
+  }
+  
+  async getPendingApprovals(tenantId: string, approverId: string): Promise<HrRequest[]> {
+    await setTenantContext(tenantId);
+    
+    return await db
+      .select()
+      .from(hrRequests)
+      .where(and(
+        eq(hrRequests.tenantId, tenantId),
+        eq(hrRequests.status, 'pending'),
+        eq(hrRequests.currentApproverId, approverId)
+      ))
+      .orderBy(desc(hrRequests.createdAt));
+  }
+  
+  async getRequestById(tenantId: string, requestId: string): Promise<HRRequestWithDetails | null> {
+    await setTenantContext(tenantId);
+    
+    const [request] = await db
+      .select({
+        // Main request fields
+        id: hrRequests.id,
+        tenantId: hrRequests.tenantId,
+        requesterId: hrRequests.requesterId,
+        category: hrRequests.category,
+        type: hrRequests.type,
+        payload: hrRequests.payload,
+        startDate: hrRequests.startDate,
+        endDate: hrRequests.endDate,
+        status: hrRequests.status,
+        currentApproverId: hrRequests.currentApproverId,
+        attachments: hrRequests.attachments,
+        title: hrRequests.title,
+        description: hrRequests.description,
+        priority: hrRequests.priority,
+        createdAt: hrRequests.createdAt,
+        updatedAt: hrRequests.updatedAt,
+        // Requester details
+        requesterFirstName: users.firstName,
+        requesterLastName: users.lastName,
+        requesterEmail: users.email,
+        // Current approver details
+        approverFirstName: sql<string>`approver.first_name`.as('approverFirstName'),
+        approverLastName: sql<string>`approver.last_name`.as('approverLastName'),
+      })
+      .from(hrRequests)
+      .leftJoin(users, eq(hrRequests.requesterId, users.id))
+      .leftJoin(
+        sql`${users} as approver`,
+        sql`${hrRequests.currentApproverId} = approver.id`
+      )
+      .where(and(
+        eq(hrRequests.tenantId, tenantId),
+        eq(hrRequests.id, requestId)
+      ));
+    
+    if (!request) return null;
+    
+    // Get comments, approvals, and status history
+    const [comments, approvals, statusHistory] = await Promise.all([
+      this.getRequestComments(tenantId, requestId),
+      this.getRequestApprovals(tenantId, requestId),
+      this.getRequestStatusHistory(tenantId, requestId)
+    ]);
+    
+    return {
+      ...request,
+      requester: request.requesterFirstName ? {
+        id: request.requesterId,
+        firstName: request.requesterFirstName,
+        lastName: request.requesterLastName,
+        email: request.requesterEmail
+      } : undefined,
+      currentApprover: request.approverFirstName ? {
+        id: request.currentApproverId!,
+        firstName: request.approverFirstName,
+        lastName: request.approverLastName
+      } : undefined,
+      comments,
+      approvals,
+      statusHistory
+    } as HRRequestWithDetails;
+  }
+  
+  async addComment(tenantId: string, requestId: string, authorId: string, comment: string, isInternal?: boolean): Promise<HrRequestComment> {
+    await setTenantContext(tenantId);
+    
+    const [commentRecord] = await db
+      .insert(hrRequestComments)
+      .values({
+        tenantId,
+        requestId,
+        authorId,
+        comment,
+        isInternal: isInternal || false
+      })
+      .returning();
+    
+    // Update request timestamp
+    await db
+      .update(hrRequests)
+      .set({ updatedAt: new Date() })
+      .where(and(
+        eq(hrRequests.tenantId, tenantId),
+        eq(hrRequests.id, requestId)
+      ));
+    
+    return commentRecord;
+  }
+  
+  async transitionStatus(requestId: string, newStatus: string, changedBy: string, reason?: string): Promise<HrRequest> {
+    // Use transaction for atomic operation
+    return await db.transaction(async (tx) => {
+      const [request] = await tx
+        .select()
+        .from(hrRequests)
+        .where(eq(hrRequests.id, requestId));
+      
+      if (!request) {
+        throw new Error('Request not found');
+      }
+      
+      await setTenantContext(request.tenantId);
+      
+      const oldStatus = request.status;
+      
+      // Validate status transition
+      if (!this.isValidStatusTransition(oldStatus, newStatus as any)) {
+        throw new Error(`Invalid status transition from ${oldStatus} to ${newStatus}`);
+      }
+      
+      // Add ownership/approver checks for critical transitions
+      await this.validateTransitionAuthority(request, newStatus, changedBy);
+      
+      // Update request status
+      const [updatedRequest] = await tx
+        .update(hrRequests)
+        .set({
+          status: newStatus as any,
+          updatedAt: new Date(),
+          ...(newStatus === 'approved' && { approvedAt: new Date(), approvedBy: changedBy }),
+          ...(newStatus === 'rejected' && { rejectedAt: new Date(), rejectedBy: changedBy })
+        })
+        .where(eq(hrRequests.id, requestId))
+        .returning();
+      
+      // Log status history in same transaction
+      await tx
+        .insert(hrRequestStatusHistory)
+        .values({
+          tenantId: request.tenantId,
+          requestId,
+          changedBy,
+          fromStatus: oldStatus as any,
+          toStatus: newStatus as any,
+          reason,
+          automaticChange: false
+        });
+      
+      return updatedRequest;
+    });
+  }
+  
+  async listRequests(tenantId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [eq(hrRequests.tenantId, tenantId)];
+    
+    // Apply filters
+    if (filters?.status) {
+      conditions.push(eq(hrRequests.status, filters.status as any));
+    }
+    if (filters?.category) {
+      conditions.push(eq(hrRequests.category, filters.category as any));
+    }
+    if (filters?.type) {
+      conditions.push(eq(hrRequests.type, filters.type as any));
+    }
+    if (filters?.priority) {
+      conditions.push(eq(hrRequests.priority, filters.priority));
+    }
+    if (filters?.startDate) {
+      conditions.push(gte(hrRequests.startDate, new Date(filters.startDate)));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(hrRequests.endDate, new Date(filters.endDate)));
+    }
+    
+    // Pagination
+    const page = options?.page || 1;
+    const limit = options?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Sort order
+    let orderBy;
+    switch (options?.sortBy) {
+      case 'updated':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.updatedAt) : desc(hrRequests.updatedAt);
+        break;
+      case 'priority':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.priority) : desc(hrRequests.priority);
+        break;
+      case 'startDate':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.startDate) : desc(hrRequests.startDate);
+        break;
+      default:
+        orderBy = desc(hrRequests.createdAt);
+    }
+    
+    const [requests, [{ total }]] = await Promise.all([
+      db.select()
+        .from(hrRequests)
+        .where(and(...conditions))
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+      db.select({ total: sql<number>`count(*)` })
+        .from(hrRequests)
+        .where(and(...conditions))
+    ]);
+    
+    return {
+      requests,
+      total: Number(total)
+    };
+  }
+  
+  async approveRequest(tenantId: string, requestId: string, approverId: string, comment?: string): Promise<HrRequest> {
+    await setTenantContext(tenantId);
+    
+    // Record approval
+    await db
+      .insert(hrRequestApprovals)
+      .values({
+        tenantId,
+        requestId,
+        approverId,
+        action: 'approved',
+        comment
+      });
+    
+    // Update request status
+    const updatedRequest = await this.transitionStatus(requestId, 'approved', approverId, comment);
+    
+    // Create notification for requester
+    const [request] = await db
+      .select({ requesterId: hrRequests.requesterId, type: hrRequests.type })
+      .from(hrRequests)
+      .where(eq(hrRequests.id, requestId));
+    
+    if (request) {
+      await this.createNotification({
+        tenantId,
+        type: 'system',
+        priority: 'medium',
+        title: 'Request Approved',
+        message: `Your ${request.type} request has been approved.`,
+        targetUserId: request.requesterId,
+        metadata: { requestId, approverId }
+      });
+      
+      // For leave requests, create calendar event
+      if (request.type === 'vacation' || request.type === 'sick' || request.type === 'personal') {
+        await this.createCalendarEventForApprovedLeave(tenantId, requestId);
+      }
+    }
+    
+    return updatedRequest;
+  }
+  
+  async rejectRequest(tenantId: string, requestId: string, approverId: string, reason: string): Promise<HrRequest> {
+    await setTenantContext(tenantId);
+    
+    // Record rejection
+    await db
+      .insert(hrRequestApprovals)
+      .values({
+        tenantId,
+        requestId,
+        approverId,
+        action: 'rejected',
+        comment: reason
+      });
+    
+    // Update request status
+    const updatedRequest = await this.transitionStatus(requestId, 'rejected', approverId, reason);
+    
+    // Create notification for requester
+    const [request] = await db
+      .select({ requesterId: hrRequests.requesterId, type: hrRequests.type })
+      .from(hrRequests)
+      .where(eq(hrRequests.id, requestId));
+    
+    if (request) {
+      await this.createNotification({
+        tenantId,
+        type: 'system',
+        priority: 'medium',
+        title: 'Request Rejected',
+        message: `Your ${request.type} request has been rejected. Reason: ${reason}`,
+        targetUserId: request.requesterId,
+        metadata: { requestId, approverId, reason }
+      });
+    }
+    
+    return updatedRequest;
+  }
+  
+  async cancelRequest(tenantId: string, requestId: string, requesterId: string, reason?: string): Promise<HrRequest> {
+    await setTenantContext(tenantId);
+    
+    // Verify requester owns the request
+    const [request] = await db
+      .select({ requesterId: hrRequests.requesterId, type: hrRequests.type, currentApproverId: hrRequests.currentApproverId })
+      .from(hrRequests)
+      .where(and(
+        eq(hrRequests.tenantId, tenantId),
+        eq(hrRequests.id, requestId)
+      ));
+    
+    if (!request || request.requesterId !== requesterId) {
+      throw new Error('Request not found or access denied');
+    }
+    
+    // Update request status
+    const updatedRequest = await this.transitionStatus(requestId, 'cancelled', requesterId, reason);
+    
+    // Integration Hook: Notify approver that request was cancelled
+    try {
+      if (request.currentApproverId) {
+        await this.createNotification({
+          tenantId,
+          type: 'system',
+          priority: 'low',
+          title: 'Request Cancelled',
+          message: `A ${request.type} request has been cancelled by the requester. ${reason ? `Reason: ${reason}` : ''}`,
+          targetUserId: request.currentApproverId,
+          metadata: { requestId, requesterId, reason }
+        });
+      }
+    } catch (error) {
+      // Log integration failure but don't break main flow
+      console.error(`[INTEGRATION-ERROR] Failed to create notification for request cancellation:`, error);
+    }
+    
+    return updatedRequest;
+  }
+  
+  // Helper methods
+  private async getRequestComments(tenantId: string, requestId: string): Promise<HrRequestComment[]> {
+    return await db
+      .select()
+      .from(hrRequestComments)
+      .where(and(
+        eq(hrRequestComments.tenantId, tenantId),
+        eq(hrRequestComments.requestId, requestId)
+      ))
+      .orderBy(hrRequestComments.createdAt);
+  }
+  
+  private async getRequestApprovals(tenantId: string, requestId: string): Promise<HrRequestApproval[]> {
+    return await db
+      .select()
+      .from(hrRequestApprovals)
+      .where(and(
+        eq(hrRequestApprovals.tenantId, tenantId),
+        eq(hrRequestApprovals.requestId, requestId)
+      ))
+      .orderBy(hrRequestApprovals.createdAt);
+  }
+  
+  private async getRequestStatusHistory(tenantId: string, requestId: string): Promise<HrRequestStatusHistory[]> {
+    return await db
+      .select()
+      .from(hrRequestStatusHistory)
+      .where(and(
+        eq(hrRequestStatusHistory.tenantId, tenantId),
+        eq(hrRequestStatusHistory.requestId, requestId)
+      ))
+      .orderBy(hrRequestStatusHistory.createdAt);
+  }
+  
+  private async logStatusHistory(requestId: string, tenantId: string, changedBy: string, fromStatus: string | null, toStatus: string, reason?: string): Promise<void> {
+    await db
+      .insert(hrRequestStatusHistory)
+      .values({
+        tenantId,
+        requestId,
+        changedBy,
+        fromStatus: fromStatus as any,
+        toStatus: toStatus as any,
+        reason,
+        automaticChange: false
+      });
+  }
+  
+  private isValidStatusTransition(from: string, to: string): boolean {
+    // Centralized transition map with enhanced validation
+    const validTransitions: Record<string, string[]> = {
+      'draft': ['pending', 'cancelled'],
+      'pending': ['approved', 'rejected', 'cancelled'],
+      'approved': ['cancelled'],
+      'rejected': ['pending'], // Allow resubmission
+      'cancelled': []
+    };
+    
+    return validTransitions[from]?.includes(to) || false;
+  }
+  
+  private async validateTransitionAuthority(request: HrRequest, newStatus: string, changedBy: string): Promise<void> {
+    // Ownership check - user can only cancel their own requests
+    if (newStatus === 'cancelled' && request.requesterId !== changedBy) {
+      throw new Error('Only the request owner can cancel their request');
+    }
+    
+    // Authority check - only approvers can approve/reject (this will be enforced by RBAC middleware)
+    if ((newStatus === 'approved' || newStatus === 'rejected') && request.requesterId === changedBy) {
+      throw new Error('Users cannot approve/reject their own requests');
+    }
+    
+    // Status-specific validations
+    if (newStatus === 'approved' && request.status !== 'pending') {
+      throw new Error('Only pending requests can be approved');
+    }
+    
+    if (newStatus === 'rejected' && request.status !== 'pending') {
+      throw new Error('Only pending requests can be rejected');
+    }
+  }
+  
+  private async createCalendarEventForApprovedLeave(tenantId: string, requestId: string): Promise<void> {
+    const [request] = await db
+      .select()
+      .from(hrRequests)
+      .where(eq(hrRequests.id, requestId));
+    
+    if (!request || !request.startDate || !request.endDate) return;
+    
+    await db
+      .insert(calendarEvents)
+      .values({
+        tenantId: request.tenantId,
+        ownerId: request.requesterId,
+        title: `${request.type} Leave`,
+        description: request.description || '',
+        startDate: new Date(request.startDate),
+        endDate: new Date(request.endDate),
+        isAllDay: true,
+        type: 'time_off',
+        visibility: 'private',
+        hrSensitive: false,
+        metadata: { hrRequestId: requestId }
+      });
   }
 
 }

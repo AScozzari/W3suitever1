@@ -1,5 +1,5 @@
 // HR Storage Interface - Enterprise Calendar & HR Operations
-import { db } from "./db";
+import { db, setTenantContext } from "./db";
 import { eq, and, or, between, inArray, gte, lte, desc, isNull, sql } from "drizzle-orm";
 import {
   calendarEvents,
@@ -949,6 +949,128 @@ export class HRStorage implements IHRStorage {
     // This would typically update a separate availability table
     // For now, we'll just log the update
     console.log(`Updated availability for ${userId} on ${date}: ${available} (${reason})`);
+  }
+
+  // Missing Time Tracking Methods
+  async getTimeTrackingById(id: string, tenantId: string): Promise<TimeTracking | null> {
+    await setTenantContext(tenantId);
+    
+    const result = await db.select()
+      .from(timeTracking)
+      .where(and(
+        eq(timeTracking.id, id),
+        eq(timeTracking.tenantId, tenantId)
+      ))
+      .limit(1);
+    
+    return result[0] || null;
+  }
+
+  async updateTimeTracking(id: string, updates: Partial<InsertTimeTracking>, tenantId: string): Promise<TimeTracking> {
+    await setTenantContext(tenantId);
+    
+    const result = await db.update(timeTracking)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timeTracking.id, id),
+        eq(timeTracking.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return result[0];
+  }
+
+  async approveTimeTracking(id: string, approverId: string, notes: string | undefined, tenantId: string): Promise<TimeTracking> {
+    await setTenantContext(tenantId);
+    
+    const result = await db.update(timeTracking)
+      .set({
+        status: 'completed',
+        approvedBy: approverId,
+        approvedAt: new Date(),
+        notes: notes ? `[APPROVED] ${notes}` : undefined,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timeTracking.id, id),
+        eq(timeTracking.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return result[0];
+  }
+
+  async disputeTimeTracking(id: string, reason: string, tenantId: string): Promise<TimeTracking> {
+    await setTenantContext(tenantId);
+    
+    const result = await db.update(timeTracking)
+      .set({
+        status: 'disputed',
+        notes: reason,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timeTracking.id, id),
+        eq(timeTracking.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return result[0];
+  }
+
+  async startBreak(timeTrackingId: string, tenantId: string): Promise<TimeTracking> {
+    await setTenantContext(tenantId);
+    
+    // Validate entry exists and user owns it before starting break
+    const entry = await this.getTimeTrackingById(timeTrackingId, tenantId);
+    if (!entry || entry.isOnBreak) {
+      throw new Error('Cannot start break: entry not found or already on break');
+    }
+    
+    const result = await db.update(timeTracking)
+      .set({
+        isOnBreak: true,
+        breakStartedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timeTracking.id, timeTrackingId),
+        eq(timeTracking.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return result[0];
+  }
+
+  async endBreak(timeTrackingId: string, tenantId: string): Promise<TimeTracking> {
+    await setTenantContext(tenantId);
+    
+    const entry = await this.getTimeTrackingById(timeTrackingId, tenantId);
+    if (!entry || !entry.isOnBreak || !entry.breakStartedAt) {
+      throw new Error('No active break found');
+    }
+
+    // Calculate break duration
+    const breakDuration = Math.floor((Date.now() - new Date(entry.breakStartedAt).getTime()) / 60000); // in minutes
+    const totalBreakTime = (entry.breakDuration || 0) + breakDuration;
+
+    const result = await db.update(timeTracking)
+      .set({
+        isOnBreak: false,
+        breakStartedAt: null,
+        breakDuration: totalBreakTime,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(timeTracking.id, timeTrackingId),
+        eq(timeTracking.tenantId, tenantId)
+      ))
+      .returning();
+    
+    return result[0];
   }
 }
 

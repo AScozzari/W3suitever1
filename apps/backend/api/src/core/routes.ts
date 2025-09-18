@@ -21,7 +21,14 @@ import {
   shiftTemplates,
   hrAnnouncements
 } from "../db/schema";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification } from "../db/schema/w3suite";
+import {
+  // HR Request System
+  hrRequests,
+  hrRequestApprovals,
+  hrRequestComments,
+  hrRequestStatusHistory
+} from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -62,6 +69,50 @@ const createNotificationBodySchema = insertNotificationSchema.omit({ tenantId: t
 
 const bulkMarkReadBodySchema = z.object({
   notificationIds: z.array(z.string().uuid()).min(1).max(100)
+});
+
+// Zod validation schemas for HR request API
+const createHrRequestBodySchema = insertHrRequestSchema.omit({ 
+  tenantId: true, 
+  status: true,
+  currentApproverId: true 
+}).extend({
+  // Type-specific payload validation can be added here
+  payload: z.record(z.any()).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  attachments: z.array(z.string()).optional(),
+  priority: z.enum(['normal', 'high', 'urgent']).optional()
+});
+
+const hrRequestFiltersSchema = z.object({
+  status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']).optional(),
+  category: z.string().optional(),
+  type: z.string().optional(),
+  priority: z.enum(['normal', 'high', 'urgent']).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  page: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1)).default('1'),
+  limit: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1).max(100)).default('20'),
+  sortBy: z.enum(['created', 'updated', 'priority', 'startDate']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional()
+});
+
+const addCommentBodySchema = z.object({
+  comment: z.string().min(1).max(2000),
+  isInternal: z.boolean().optional()
+});
+
+const approveRequestBodySchema = z.object({
+  comment: z.string().max(1000).optional()
+});
+
+const rejectRequestBodySchema = z.object({
+  reason: z.string().min(1).max(1000)
+});
+
+const cancelRequestBodySchema = z.object({
+  reason: z.string().max(1000).optional()
 });
 
 // Zod validation schemas for file upload and ACL routes
@@ -847,10 +898,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { lat: validLat, lng: validLng, radius: validRadius } = validatedQuery.data;
 
       // TRY DATABASE FIRST - with timeout protection
-      let storeResults;
+      type StoreQueryResult = {
+        id: string;
+        nome: string | null;
+        latitude: string | null;
+        longitude: string | null;
+        address: string | null;
+        citta: string | null;
+        provincia: string | null;
+        geo: any;
+        wifiNetworks: any;
+      };
+
+      let storeResults: StoreQueryResult[];
       try {
         console.log('🔍 [STORE-DB] Attempting database query for nearby stores');
-        const dbTimeout = new Promise((_, reject) => 
+        const dbTimeout = new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error('Database timeout')), 5000)
         );
         
@@ -912,7 +975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate distances and filter by radius
       const nearbyStores = storeResults
-        .map((store) => {
+        .map((store: StoreQueryResult) => {
           const storeLat = parseFloat(store.latitude || '0');
           const storeLng = parseFloat(store.longitude || '0');
           
@@ -950,9 +1013,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             wifiNetworks: store.wifiNetworks || []
           };
         })
-        .filter((store) => store !== null) // Remove stores with invalid coordinates
-        .filter((store) => store!.distance <= (validRadius * 3)) // Reasonable search area
-        .sort((a, b) => a!.distance - b!.distance); // Sort by distance
+        .filter((store): store is NonNullable<typeof store> => store !== null) // Remove stores with invalid coordinates
+        .filter((store) => store.distance <= (validRadius * 3)) // Reasonable search area
+        .sort((a, b) => a.distance - b.distance); // Sort by distance
 
       // Add ranking information
       const rankedStores = nearbyStores.map((store, index) => ({
@@ -2217,7 +2280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // MOCK DATA - leave_requests table does not exist yet
-      const requests = [];
+      const requests: any[] = [];
       
       res.json(requests);
     } catch (error) {
@@ -2448,7 +2511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ]
       };
       
-      const policies = tenant[0]?.settings?.leavePolicies || defaultPolicies;
+      const tenantSettings = tenant[0]?.settings as any;
+      const policies = tenantSettings?.leavePolicies || defaultPolicies;
       
       res.json(policies);
     } catch (error) {
@@ -2473,7 +2537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const currentSettings = tenant[0].settings || {};
+      const currentSettings = (tenant[0].settings || {}) as any;
       currentSettings.leavePolicies = req.body;
       
       const updated = await db.update(tenants)
@@ -2484,7 +2548,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(tenants.id, tenantId))
         .returning();
       
-      res.json(updated[0].settings.leavePolicies);
+      const updatedSettings = updated[0].settings as any;
+      res.json(updatedSettings?.leavePolicies);
     } catch (error) {
       handleApiError(error, res, 'aggiornamento policy ferie');
     }
@@ -2537,7 +2602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date();
       const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
       
-      const shifts = await hrStorage.getShifts(tenantId, storeId, { start: startDate, end: endDate });
+      const shifts = await hrStorage.getShifts(tenantId, storeId, { startDate, endDate });
       
       res.json(shifts);
     } catch (error) {
@@ -5399,7 +5464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             };
             
-            return demoStores[targetStoreId] || {
+            return (demoStores as any)[targetStoreId] || {
               id: targetStoreId,
               nome: 'Demo Store',
               latitude: geoLocation ? geoLocation.lat.toString() : '45.4642',
@@ -5433,7 +5498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             )
             .limit(1);
             
-            const dbResults = await Promise.race([dbQuery, dbTimeout]);
+            const dbResults = await Promise.race([dbQuery, dbTimeout]) as any[];
             
             if (!dbResults.length) {
               console.log('🎭 [GEOFENCE-FALLBACK] Store not found in DB, using demo data');
@@ -5549,6 +5614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         storeId,
         trackingMethod,
+        clockIn: new Date(),
         geoLocation,
         deviceInfo,
         shiftId,
@@ -5603,13 +5669,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           wasOverride: auditData.wasOverride,
           warnings: auditData.validationErrors
         },
-        isDemoMode: entry.isDemoMode || false,
-        message: entry.isDemoMode ? 
+        isDemoMode: (entry as any)?.isDemoMode || false,
+        message: (entry as any)?.isDemoMode ? 
           'Timbratura registrata in modalità demo (database non disponibile)' :
           'Timbratura registrata con successo'
       };
 
-      console.log(`✅ [CLOCKIN] Clock-in successful for user ${userId} at store ${storeId}${entry.isDemoMode ? ' (DEMO MODE)' : ''}`);
+      console.log(`✅ [CLOCKIN] Clock-in successful for user ${userId} at store ${storeId}${(entry as any)?.isDemoMode ? ' (DEMO MODE)' : ''}`);
       res.json(response);
 
     } catch (error) {
@@ -6537,6 +6603,288 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Upcoming events error:', error);
       res.status(500).json({ error: 'Failed to get upcoming events' });
+    }
+  });
+
+  // ==================== HR REQUEST SYSTEM API ====================
+  
+  // Create new HR request
+  app.post('/api/hr/requests', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.create'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedData = validateRequestBody(createHrRequestBodySchema, req.body);
+      
+      const requestData: InsertHrRequest = {
+        ...validatedData,
+        tenantId,
+        requesterId: userId
+      };
+      
+      const request = await storage.createRequest(requestData);
+      res.status(201).json(request);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // List user's own requests
+  app.get('/api/hr/requests', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedQuery = hrRequestFiltersSchema.parse(req.query);
+      const filters = {
+        status: validatedQuery.status,
+        category: validatedQuery.category,
+        type: validatedQuery.type,
+        priority: validatedQuery.priority,
+        startDate: validatedQuery.startDate,
+        endDate: validatedQuery.endDate
+      };
+      
+      const options = {
+        page: validatedQuery.page,
+        limit: validatedQuery.limit,
+        sortBy: validatedQuery.sortBy,
+        sortOrder: validatedQuery.sortOrder
+      };
+      
+      const result = await storage.getMyRequests(tenantId, userId, filters, options);
+      res.json(result);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Get pending approvals (manager only)
+  app.get('/api/hr/requests/pending', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.approve'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const requests = await storage.getPendingApprovals(tenantId, userId);
+      res.json({ requests });
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // List all requests (manager only)
+  app.get('/api/hr/requests/all', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.all'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedQuery = hrRequestFiltersSchema.parse(req.query);
+      const filters = {
+        status: validatedQuery.status,
+        category: validatedQuery.category,
+        type: validatedQuery.type,
+        priority: validatedQuery.priority,
+        startDate: validatedQuery.startDate,
+        endDate: validatedQuery.endDate
+      };
+      
+      const options = {
+        page: validatedQuery.page,
+        limit: validatedQuery.limit,
+        sortBy: validatedQuery.sortBy,
+        sortOrder: validatedQuery.sortOrder
+      };
+      
+      const result = await storage.listRequests(tenantId, filters, options);
+      res.json(result);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Get specific request details
+  app.get('/api/hr/requests/:id', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id);
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const request = await storage.getRequestById(tenantId, requestId);
+      
+      if (!request) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      
+      // Enforce self vs all scoping - user can view own requests or managers can view all
+      const userPermissions = req.userPermissions || [];
+      const canViewOwnRequest = request.requesterId === userId;
+      const canViewAllRequests = userPermissions.includes('hr.requests.view.all');
+      
+      if (!canViewOwnRequest && !canViewAllRequests) {
+        return res.status(403).json({ error: 'Access denied - insufficient permissions' });
+      }
+      
+      res.json(request);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Add comment to request
+  app.post('/api/hr/requests/:id/comment', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.comment'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id, 'Request ID', res);
+      if (!requestId) return;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedData = validateRequestBody(addCommentBodySchema, req.body, res);
+      if (!validatedData) return;
+      
+      // Verify request exists and user has access
+      const request = await storage.getRequestById(tenantId, requestId);
+      if (!request) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      
+      // Forbid internal comments without approve/comment permission
+      if (validatedData.isInternal) {
+        const userPermissions = req.userPermissions || [];
+        if (!userPermissions.includes('hr.requests.approve')) {
+          return res.status(403).json({ error: 'Access denied - internal comments require approval permission' });
+        }
+      }
+      
+      const comment = await storage.addComment(
+        tenantId, 
+        requestId, 
+        userId, 
+        validatedData.comment, 
+        validatedData.isInternal
+      );
+      
+      res.status(201).json(comment);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Approve request
+  app.post('/api/hr/requests/:id/approve', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.approve'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id, 'Request ID', res);
+      if (!requestId) return;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedData = validateRequestBody(approveRequestBodySchema, req.body, res);
+      if (!validatedData) return;
+      
+      const request = await storage.approveRequest(tenantId, requestId, userId, validatedData.comment);
+      res.json(request);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Reject request
+  app.post('/api/hr/requests/:id/reject', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.approve'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id, 'Request ID', res);
+      if (!requestId) return;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedData = validateRequestBody(rejectRequestBodySchema, req.body, res);
+      if (!validatedData) return;
+      
+      const request = await storage.rejectRequest(tenantId, requestId, userId, validatedData.reason);
+      res.json(request);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Cancel request (by requester only)
+  app.post('/api/hr/requests/:id/cancel', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id, 'Request ID', res);
+      if (!requestId) return;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedData = validateRequestBody(cancelRequestBodySchema, req.body, res);
+      if (!validatedData) return;
+      
+      const request = await storage.cancelRequest(tenantId, requestId, userId, validatedData.reason);
+      res.json(request);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Submit request for approval (transition from draft to pending)
+  app.post('/api/hr/requests/:id/submit', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id);
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Verify request exists and user owns it
+      const existingRequest = await storage.getRequestById(tenantId, requestId);
+      if (!existingRequest) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      
+      if (existingRequest.requesterId !== userId) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      // Set current approver - this would typically be determined by business logic
+      // For now, we'll leave it null and let the system assign it
+      const request = await storage.transitionStatus(requestId, 'pending', userId, 'Submitted for approval');
+      res.json(request);
+    } catch (error) {
+      handleApiError(error, res);
     }
   });
 

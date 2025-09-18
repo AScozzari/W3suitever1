@@ -124,6 +124,13 @@ export const PERMISSIONS = {
       view: 'hr.leave.view',
       request: 'hr.leave.request',
       approve: 'hr.leave.approve'
+    },
+    requests: {
+      create: 'hr.requests.create',
+      view_self: 'hr.requests.view.self',
+      view_all: 'hr.requests.view.all',
+      approve: 'hr.requests.approve',
+      comment: 'hr.requests.comment'
     }
   },
 
