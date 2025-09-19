@@ -6821,7 +6821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // List user's own requests or manager's team requests
-  app.get('/api/hr/requests', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+  app.get('/api/hr/requests', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;

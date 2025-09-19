@@ -438,7 +438,7 @@ export default function EmployeeDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {notifications.slice(0, 3).map((notification) => (
+                        {(Array.isArray(notifications) ? notifications : []).slice(0, 3).map((notification) => (
                           <Alert key={notification.id} className="border-l-4 border-l-orange-500" data-testid={`item-notification-${notification.id}`}>
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -455,7 +455,7 @@ export default function EmployeeDashboard() {
                             </div>
                           </Alert>
                         ))}
-                        {notifications.length === 0 && (
+                        {(!Array.isArray(notifications) || notifications.length === 0) && (
                           <Alert>
                             <AlertDescription className="text-gray-500 text-center">
                               Nessuna notifica recente
@@ -493,10 +493,10 @@ export default function EmployeeDashboard() {
                   {/* LEFT: ClockWidget (40% - 2 columns) */}
                   <div className="xl:col-span-2">
                     <ClockWidget
-                      userId={userData?.id}
-                      userName={`${userData?.nome || ''} ${userData?.cognome || ''}`.trim()}
+                      userId={displayUser.matricola}
+                      userName={`${displayUser.nome} ${displayUser.cognome}`.trim()}
                       storeId="store-001" 
-                      storeName={userData?.store}
+                      storeName={displayUser.store}
                       className="h-full"
                       onClockIn={() => {
                         // Refresh data after clock in
@@ -512,9 +512,9 @@ export default function EmployeeDashboard() {
                   {/* RIGHT: TimbratureTab (60% - 3 columns) */}
                   <div className="xl:col-span-3">
                     <TimbratureTab
-                      userId={userData?.id}
+                      userId={displayUser.matricola}
                       storeId="store-001"
-                      storeName={userData?.store}
+                      storeName={displayUser.store}
                     />
                   </div>
                 </div>
