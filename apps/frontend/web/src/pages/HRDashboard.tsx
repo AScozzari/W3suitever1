@@ -26,12 +26,12 @@ import {
   Download, Plus, Eye, Edit3, Search, Filter, MoreVertical, CheckCircle, XCircle, AlertTriangle,
   UserPlus, UserCheck, UserX, Mail, Phone, MapPin, Building, Activity, Zap, Shield, Award,
   MessageSquare, Bell, Home, ChevronRight, Star, ThumbsUp, ThumbsDown, Send, Trash2, Save,
-  RefreshCw, ExternalLink, Copy, Info, HelpCircle, BrainCircle, FileCheck, Briefcase,
+  RefreshCw, ExternalLink, Copy, Info, HelpCircle, FileCheck, Briefcase,
   DollarSign, PieChart, LineChart, Timer, Coffee, Heart, Baby, Umbrella, Stethoscope,
   Upload, Archive, History, Folder, FolderOpen, Lock, Key, Database, GitBranch, Workflow,
   Signature, FileSignature, BookOpen, Calendar as CalendarView, Tag, Tags, LinkIcon, Server,
   Cloud, HardDrive, Share2, UserCog, Users2, Globe, Layers, CheckSquare, Square,
-  FileImage, FilePdf, FileSpreadsheet, FileVideo, FileAudio, File, Play, Pause, RotateCcw,
+  FileImage, FileText as FileText, FileSpreadsheet, FileVideo, FileAudio, File, Play, Pause, RotateCcw,
   ChevronLeft, ArrowRight, LogOut, Calculator, Wand2, Lightbulb, Cpu, Monitor, Smartphone,
   Tablet, Laptop, Maximize, Minimize, FullScreen, ScanLine, Fingerprint, ShieldCheck, Scale
 } from 'lucide-react';
@@ -275,7 +275,7 @@ export default function HRDashboard() {
           }}
           className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-orange-50 hover:to-white" data-testid="hr-card-total-employees">
+          <Card className="relative overflow-hidden glass-card hover:border-orange-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-orange-50 hover:to-white" data-testid="hr-card-total-employees">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent group-hover:from-orange-500/20 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Dipendenti Totali</CardTitle>
@@ -314,7 +314,7 @@ export default function HRDashboard() {
           }}
           className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-purple-50 hover:to-white" data-testid="hr-card-pending-approvals">
+          <Card className="relative overflow-hidden glass-card hover:border-purple-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-purple-50 hover:to-white" data-testid="hr-card-pending-approvals">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent group-hover:from-purple-500/20 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Approvazioni Pending</CardTitle>
@@ -353,7 +353,7 @@ export default function HRDashboard() {
           }}
           className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-green-50 hover:to-white" data-testid="hr-card-attendance-rate">
+          <Card className="relative overflow-hidden glass-card hover:border-green-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-green-50 hover:to-white" data-testid="hr-card-attendance-rate">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent group-hover:from-green-500/20 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Tasso Presenza</CardTitle>
@@ -392,7 +392,7 @@ export default function HRDashboard() {
           }}
           className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-amber-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-amber-50 hover:to-white" data-testid="hr-card-turnover-rate">
+          <Card className="relative overflow-hidden glass-card hover:border-amber-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-amber-50 hover:to-white" data-testid="hr-card-turnover-rate">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent group-hover:from-amber-500/20 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Turnover Rate</CardTitle>
@@ -431,7 +431,7 @@ export default function HRDashboard() {
           }}
           className="cursor-pointer"
         >
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-purple-50 hover:to-white" data-testid="hr-card-training-compliance">
+          <Card className="relative overflow-hidden glass-card hover:border-purple-500 transition-all duration-300 group hover:bg-gradient-to-br hover:from-purple-50 hover:to-white" data-testid="hr-card-training-compliance">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent group-hover:from-purple-500/20 transition-all duration-300" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
               <CardTitle className="text-sm font-medium">Training Compliance</CardTitle>
@@ -457,7 +457,7 @@ export default function HRDashboard() {
       </div>
 
       {/* Manager Approval Queue with SLA Tracking - Enhanced */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-approval-queue">
+      <Card className="glass-card hover:shadow-xl transition-all duration-300" data-testid="hr-card-approval-queue">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
@@ -476,7 +476,7 @@ export default function HRDashboard() {
       {/* Advanced Analytics Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Attendance Analytics */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-attendance-analytics">
+        <Card className="glass-card" data-testid="hr-card-attendance-analytics">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Clock className="h-5 w-5 text-blue-600" />
@@ -489,7 +489,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Leave Analytics */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-leave-analytics">
+        <Card className="glass-card" data-testid="hr-card-leave-analytics">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <CalendarIcon className="h-5 w-5 text-green-600" />
@@ -502,7 +502,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Team Status Overview */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-team-status">
+        <Card className="glass-card" data-testid="hr-card-team-status">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="h-5 w-5 text-purple-600" />
@@ -569,7 +569,7 @@ export default function HRDashboard() {
       {/* Critical Alerts & Notification Center - Enhanced */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Critical Alerts */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-critical-alerts">
+        <Card className="glass-card" data-testid="hr-card-critical-alerts">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -606,7 +606,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Advanced Quick Actions */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-advanced-actions">
+        <Card className="glass-card" data-testid="hr-card-advanced-actions">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-purple-600" />
@@ -678,7 +678,7 @@ export default function HRDashboard() {
       {/* Interactive Mini Calendar & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Leave Calendar Preview */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-leave-calendar">
+        <Card className="glass-card" data-testid="hr-card-leave-calendar">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-green-600" />
@@ -692,7 +692,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Recent Activity Feed */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-activity-feed">
+        <Card className="glass-card" data-testid="hr-card-activity-feed">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-orange-600" />
@@ -750,7 +750,7 @@ export default function HRDashboard() {
   const renderEmployees = () => (
     <div className="space-y-6">
       {/* Enhanced Search and Management Bar */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-employee-management">
+      <Card className="glass-card" data-testid="hr-card-employee-management">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
@@ -866,7 +866,7 @@ export default function HRDashboard() {
       {/* Employee Lifecycle Management Tabs */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Lifecycle Status Cards */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-onboarding">
+        <Card className="glass-card" data-testid="hr-card-onboarding">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-green-600" />
@@ -889,7 +889,7 @@ export default function HRDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-transfers">
+        <Card className="glass-card" data-testid="hr-card-transfers">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Shuffle className="h-5 w-5 text-blue-600" />
@@ -912,7 +912,7 @@ export default function HRDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-offboarding">
+        <Card className="glass-card" data-testid="hr-card-offboarding">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <UserMinus className="h-5 w-5 text-orange-600" />
@@ -935,7 +935,7 @@ export default function HRDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-org-overview">
+        <Card className="glass-card" data-testid="hr-card-org-overview">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <GitBranch className="h-5 w-5 text-purple-600" />
@@ -972,7 +972,7 @@ export default function HRDashboard() {
       </div>
 
       {/* Enhanced Employee Directory */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-employee-directory">
+      <Card className="glass-card" data-testid="hr-card-employee-directory">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
@@ -991,7 +991,7 @@ export default function HRDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-white/70 transition-all duration-300 border border-white/20 hover:border-orange-200 hover:shadow-md"
+                className="flex items-center justify-between p-4 rounded-lg glass-card hover:border-orange-200 hover:shadow-md"
                 data-testid={`hr-employee-${employee.id}`}
               >
                 <div className="flex items-center gap-4">
@@ -1116,7 +1116,7 @@ export default function HRDashboard() {
   const renderTimeManagement = () => (
     <div className="space-y-6">
       {/* Enhanced Time Management Header */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-time-management-header">
+      <Card className="glass-card" data-testid="hr-card-time-management-header">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-blue-600" />
@@ -1175,7 +1175,7 @@ export default function HRDashboard() {
       {/* Real-time Time Tracking Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Live Attendance Status */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-live-attendance">
+        <Card className="glass-card" data-testid="hr-card-live-attendance">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Users className="h-5 w-5 text-green-600" />
@@ -1228,7 +1228,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Overtime Monitoring */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-overtime-monitoring">
+        <Card className="glass-card" data-testid="hr-card-overtime-monitoring">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Timer className="h-5 w-5 text-orange-600" />
@@ -1264,7 +1264,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Schedule Conflicts */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-schedule-conflicts">
+        <Card className="glass-card" data-testid="hr-card-schedule-conflicts">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -1302,7 +1302,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Payroll Integration */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-payroll-integration">
+        <Card className="glass-card" data-testid="hr-card-payroll-integration">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-green-600" />
@@ -1341,7 +1341,7 @@ export default function HRDashboard() {
       </div>
 
       {/* Advanced Shift Scheduling with Drag & Drop Interface */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-advanced-scheduling">
+      <Card className="glass-card" data-testid="hr-card-advanced-scheduling">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-blue-600" />
@@ -1452,7 +1452,7 @@ export default function HRDashboard() {
       {/* Attendance Analytics & Anomaly Detection */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Enhanced Attendance Analytics */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-attendance-analytics">
+        <Card className="glass-card" data-testid="hr-card-attendance-analytics">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-green-600" />
@@ -1477,7 +1477,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Anomaly Detection Dashboard */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-anomaly-detection">
+        <Card className="glass-card" data-testid="hr-card-anomaly-detection">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -1557,7 +1557,7 @@ export default function HRDashboard() {
   const renderLeaveManagement = () => (
     <div className="space-y-6">
       {/* Enhanced Leave Management Header */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-leave-management-header">
+      <Card className="glass-card" data-testid="hr-card-leave-management-header">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-green-600" />
@@ -1616,7 +1616,7 @@ export default function HRDashboard() {
       {/* Leave Balance Management Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Overall Balance Status */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-balance-overview">
+        <Card className="glass-card" data-testid="hr-card-balance-overview">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Scale className="h-5 w-5 text-blue-600" />
@@ -1653,7 +1653,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Accrual Tracking */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-accrual-tracking">
+        <Card className="glass-card" data-testid="hr-card-accrual-tracking">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-600" />
@@ -1689,7 +1689,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Policy Compliance */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-policy-compliance">
+        <Card className="glass-card" data-testid="hr-card-policy-compliance">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Shield className="h-5 w-5 text-purple-600" />
@@ -1727,7 +1727,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Payroll Integration */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-payroll-sync">
+        <Card className="glass-card" data-testid="hr-card-payroll-sync">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-green-600" />
@@ -1766,7 +1766,7 @@ export default function HRDashboard() {
       </div>
 
       {/* Centralized Approval Dashboard with Bulk Actions */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-approval-dashboard">
+      <Card className="glass-card" data-testid="hr-card-approval-dashboard">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
@@ -1808,7 +1808,7 @@ export default function HRDashboard() {
       </Card>
 
       {/* Advanced Leave Calendar with Team View */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-team-leave-calendar">
+      <Card className="glass-card" data-testid="hr-card-team-leave-calendar">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-blue-600" />
@@ -1893,7 +1893,7 @@ export default function HRDashboard() {
       </Card>
 
       {/* Leave Policy Configuration */}
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-policy-configuration">
+      <Card className="glass-card" data-testid="hr-card-policy-configuration">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-purple-600" />
@@ -1957,7 +1957,7 @@ export default function HRDashboard() {
               <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-gray-50 border" data-testid="hr-calc-engine">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calculator className="h-4 w-4 text-gray-600" />
+                    <Calculator className="h-4 w-4 glass-text-secondary" />
                     <span className="font-medium text-sm">Calculation Engine</span>
                     <Badge variant="outline" className="ml-auto">Running</Badge>
                   </div>
@@ -2004,7 +2004,7 @@ export default function HRDashboard() {
       {/* Comprehensive Leave Analytics & Reporting Suite */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Enhanced Leave Analytics */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-leave-analytics-enhanced">
+        <Card className="glass-card" data-testid="hr-card-leave-analytics-enhanced">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-green-600" />
@@ -2029,7 +2029,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Compliance & Reporting Suite */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-compliance-reporting">
+        <Card className="glass-card" data-testid="hr-card-compliance-reporting">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
@@ -2149,7 +2149,7 @@ export default function HRDashboard() {
     return (
       <div className="space-y-6">
         {/* PHASE 2.5: Enhanced Documents Management with Sub-Tabs */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-documents-enterprise">
+        <Card className="glass-card" data-testid="hr-card-documents-enterprise">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5 text-blue-600" />
@@ -2251,7 +2251,7 @@ export default function HRDashboard() {
                 <Card className="border-gray-200" data-testid="hr-card-document-search">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Search className="h-5 w-5 text-gray-600" />
+                      <Search className="h-5 w-5 glass-text-secondary" />
                       Advanced Search & Metadata Filtering
                     </CardTitle>
                   </CardHeader>
@@ -2380,7 +2380,7 @@ export default function HRDashboard() {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-gray-600" />
+                        <FileText className="h-5 w-5 glass-text-secondary" />
                         Documenti Recenti
                       </div>
                       <div className="flex gap-2">
@@ -2409,7 +2409,7 @@ export default function HRDashboard() {
                           <div className="flex items-center gap-3">
                             <div className="p-2 rounded-lg bg-blue-100">
                               {doc.name.endsWith('.pdf') ? (
-                                <FilePdf className="h-5 w-5 text-red-600" />
+                                <FileText className="h-5 w-5 text-red-600" />
                               ) : (
                                 <FileText className="h-5 w-5 text-blue-600" />
                               )}
@@ -2876,7 +2876,7 @@ export default function HRDashboard() {
                 <Card className="border-gray-200" data-testid="hr-card-audit-trail">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <History className="h-5 w-5 text-gray-600" />
+                      <History className="h-5 w-5 glass-text-secondary" />
                       Comprehensive Audit Trail
                     </CardTitle>
                     <CardDescription>Complete activity log with version control and compliance tracking</CardDescription>
@@ -3006,7 +3006,7 @@ export default function HRDashboard() {
                                 {entry.type === 'approve' ? <CheckCircle className="h-5 w-5 text-green-600" /> :
                                  entry.type === 'edit' ? <Edit3 className="h-5 w-5 text-blue-600" /> :
                                  entry.type === 'sign' ? <Signature className="h-5 w-5 text-purple-600" /> :
-                                 <Plus className="h-5 w-5 text-gray-600" />}
+                                 <Plus className="h-5 w-5 glass-text-secondary" />}
                               </div>
                               
                               <div>
@@ -3062,7 +3062,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* External Storage Integration */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-external-storage">
+        <Card className="glass-card" data-testid="hr-card-external-storage">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Cloud className="h-5 w-5 text-blue-600" />
@@ -3180,7 +3180,7 @@ export default function HRDashboard() {
     return (
       <div className="space-y-6">
         {/* PHASE 2.6: Enhanced Performance Management with Sub-Tabs */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-performance-enterprise">
+        <Card className="glass-card" data-testid="hr-card-performance-enterprise">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-red-600" />
@@ -3283,7 +3283,7 @@ export default function HRDashboard() {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <RefreshCw className="h-5 w-5 text-gray-600" />
+                        <RefreshCw className="h-5 w-5 glass-text-secondary" />
                         Review Cycles Orchestration
                       </div>
                       <Button size="sm" data-testid="hr-button-create-cycle">
@@ -3612,7 +3612,7 @@ export default function HRDashboard() {
                               ) : dept.trend === 'down' ? (
                                 <TrendingUp className="h-5 w-5 text-red-600 transform rotate-180" />
                               ) : (
-                                <TrendingUp className="h-5 w-5 text-gray-600 transform rotate-90" />
+                                <TrendingUp className="h-5 w-5 glass-text-secondary transform rotate-90" />
                               )}
                             </div>
                             
@@ -4079,7 +4079,7 @@ export default function HRDashboard() {
     return (
       <div className="space-y-6">
         {/* Enterprise Training Management Header */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-training-management-header">
+        <Card className="glass-card" data-testid="hr-card-training-management-header">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5 text-purple-600" />
@@ -4101,7 +4101,7 @@ export default function HRDashboard() {
                 data-testid="hr-training-kpi-effectiveness"
               >
                 <div className="flex items-center gap-3">
-                  <BrainCircle className="h-8 w-8 text-purple-600" />
+                  <Lightbulb className="h-8 w-8 text-purple-600" />
                   <div>
                     <p className="text-2xl font-bold text-purple-600">{trainingMetrics.trainingEffectiveness}%</p>
                     <p className="text-xs text-purple-700">Training Effectiveness</p>
@@ -4166,7 +4166,7 @@ export default function HRDashboard() {
                 className="hover:bg-green-50 hover:border-green-200"
                 data-testid="hr-button-ai-skills-analysis"
               >
-                <BrainCircle className="h-4 w-4 mr-2" />
+                <Lightbulb className="h-4 w-4 mr-2" />
                 AI Skills Gap Analysis
               </Button>
               <Button 
@@ -4198,7 +4198,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Enterprise Training Sub-Tabs */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-training-enterprise-tabs">
+        <Card className="glass-card" data-testid="hr-card-training-enterprise-tabs">
           <CardContent className="p-0">
             <Tabs defaultValue="lms" className="w-full">
               <div className="border-b border-gray-200 px-6 pt-6">
@@ -4323,10 +4323,10 @@ export default function HRDashboard() {
                             <h4 className="font-medium text-sm">{course.title}</h4>
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                              <span className="text-xs text-gray-600">{course.rating}</span>
+                              <span className="text-xs glass-text-secondary">{course.rating}</span>
                             </div>
                           </div>
-                          <div className="flex justify-between items-center text-xs text-gray-600 mb-2">
+                          <div className="flex justify-between items-center text-xs glass-text-secondary mb-2">
                             <span>{course.learners} learners</span>
                             <span>{course.completion}% completion</span>
                           </div>
@@ -4367,7 +4367,7 @@ export default function HRDashboard() {
                           { metric: 'Avg. Session Time', value: '47min', trend: '+8%' }
                         ].map((item, idx) => (
                           <div key={idx} className="flex justify-between items-center text-sm">
-                            <span className="text-gray-600">{item.metric}</span>
+                            <span className="glass-text-secondary">{item.metric}</span>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{item.value}</span>
                               <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
@@ -4420,7 +4420,7 @@ export default function HRDashboard() {
                             </Badge>
                           </div>
                           {integration.status === 'connected' ? (
-                            <div className="space-y-2 text-xs text-gray-600">
+                            <div className="space-y-2 text-xs glass-text-secondary">
                               <div className="flex justify-between">
                                 <span>Courses:</span>
                                 <span className="font-medium">{integration.courses}</span>
@@ -4499,7 +4499,7 @@ export default function HRDashboard() {
                           </AlertDescription>
                         </Alert>
                         <Alert className="border-blue-200 bg-blue-50" data-testid="hr-optimization-suggestion-2">
-                          <BrainCircle className="h-4 w-4 text-blue-600" />
+                          <Lightbulb className="h-4 w-4 text-blue-600" />
                           <AlertDescription className="text-sm text-blue-800">
                             Combine "Leadership" sessions to reduce trainer workload by 20%
                           </AlertDescription>
@@ -4641,7 +4641,7 @@ export default function HRDashboard() {
                                 </Badge>
                               </div>
                               
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm glass-text-secondary mb-3">
                                 <div className="flex items-center gap-2">
                                   <Users className="h-4 w-4" />
                                   {program.participants} participants
@@ -4661,12 +4661,12 @@ export default function HRDashboard() {
                               </div>
 
                               <div className="flex items-center gap-2 mb-3">
-                                <span className="text-sm text-gray-600">Trainer:</span>
+                                <span className="text-sm glass-text-secondary">Trainer:</span>
                                 <span className="text-sm font-medium">{program.trainer}</span>
                               </div>
 
                               <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-600">Progress:</span>
+                                <span className="text-sm glass-text-secondary">Progress:</span>
                                 <Progress value={program.progress} className="flex-1" />
                                 <span className="text-sm font-medium">{program.progress}%</span>
                               </div>
@@ -4764,7 +4764,7 @@ export default function HRDashboard() {
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-600">Compliance:</span>
+                            <span className="glass-text-secondary">Compliance:</span>
                             <span className="font-medium">{cat.compliance}%</span>
                           </div>
                           <Progress value={cat.compliance} className="h-1 mt-1" />
@@ -4818,7 +4818,7 @@ export default function HRDashboard() {
                 <Card className="border-gray-200" data-testid="hr-certifications-management-table">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Database className="h-5 w-5 text-gray-600" />
+                      <Database className="h-5 w-5 glass-text-secondary" />
                       Certification Management
                     </CardTitle>
                   </CardHeader>
@@ -4929,14 +4929,14 @@ export default function HRDashboard() {
               <TabsContent value="skills" className="p-6 space-y-6" data-testid="hr-training-content-skills">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <BrainCircle className="h-5 w-5 text-orange-600" />
+                    <Lightbulb className="h-5 w-5 text-orange-600" />
                     AI-Powered Skills Gap Analysis
                   </h3>
                   <Button 
                     className="bg-orange-600 hover:bg-orange-700"
                     data-testid="hr-button-run-skills-analysis"
                   >
-                    <BrainCircle className="h-4 w-4 mr-2" />
+                    <Lightbulb className="h-4 w-4 mr-2" />
                     Run AI Analysis
                   </Button>
                 </div>
@@ -4980,7 +4980,7 @@ export default function HRDashboard() {
                                 }}
                               />
                             </div>
-                            <div className="flex justify-between text-xs text-gray-600">
+                            <div className="flex justify-between text-xs glass-text-secondary">
                               <span>Current: {skill.current}%</span>
                               <span>Target: {skill.target}%</span>
                             </div>
@@ -5124,7 +5124,7 @@ export default function HRDashboard() {
                               }>
                                 {rec.priority} Priority
                               </Badge>
-                              <BrainCircle className="h-4 w-4 text-green-600" />
+                              <Lightbulb className="h-4 w-4 text-green-600" />
                             </div>
                             <h4 className="font-semibold text-lg mb-2">{rec.recommendation}</h4>
                             <p className="text-sm text-gray-700 mb-3">{rec.impact}</p>
@@ -5199,7 +5199,7 @@ export default function HRDashboard() {
                         <div className="text-sm text-green-700">Total Allocated</div>
                         <div className="mt-2">
                           <Progress value={(trainingMetrics.budgetSpent / trainingMetrics.monthlyBudget) * 100} className="h-2" />
-                          <div className="flex justify-between text-xs text-gray-600 mt-1">
+                          <div className="flex justify-between text-xs glass-text-secondary mt-1">
                             <span>Spent: €{trainingMetrics.budgetSpent.toLocaleString()}</span>
                             <span>{Math.round((trainingMetrics.budgetSpent / trainingMetrics.monthlyBudget) * 100)}%</span>
                           </div>
@@ -5257,7 +5257,7 @@ export default function HRDashboard() {
                       <div className="text-center">
                         <div className="text-3xl font-bold text-orange-600">€{Math.round(trainingMetrics.budgetSpent / trainingMetrics.activeLearners)}</div>
                         <div className="text-sm text-orange-700">Avg Per Learner</div>
-                        <div className="mt-2 space-y-1 text-xs text-gray-600">
+                        <div className="mt-2 space-y-1 text-xs glass-text-secondary">
                           <div>Industry avg: €420</div>
                           <Badge className="bg-green-100 text-green-700">
                             -24% vs industry
@@ -5273,7 +5273,7 @@ export default function HRDashboard() {
                   <Card className="border-gray-200" data-testid="hr-budget-breakdown">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <PieChart className="h-5 w-5 text-gray-600" />
+                        <PieChart className="h-5 w-5 glass-text-secondary" />
                         Budget Breakdown
                       </CardTitle>
                     </CardHeader>
@@ -5302,7 +5302,7 @@ export default function HRDashboard() {
                           <span>Total Spent</span>
                           <span>€{trainingMetrics.budgetSpent.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between items-center text-sm text-gray-600 mt-1">
+                        <div className="flex justify-between items-center text-sm glass-text-secondary mt-1">
                           <span>Remaining Budget</span>
                           <span>€{(trainingMetrics.monthlyBudget - trainingMetrics.budgetSpent).toLocaleString()}</span>
                         </div>
@@ -5328,7 +5328,7 @@ export default function HRDashboard() {
                         </Alert>
 
                         <Alert className="border-blue-200 bg-blue-50" data-testid="hr-cost-optimization-2">
-                          <BrainCircle className="h-4 w-4 text-blue-600" />
+                          <Lightbulb className="h-4 w-4 text-blue-600" />
                           <AlertTitle className="text-blue-800">Internal Trainer Opportunity</AlertTitle>
                           <AlertDescription className="text-blue-700 text-sm">
                             Marco Rossi could deliver leadership training internally, saving €4,800
@@ -5413,26 +5413,26 @@ export default function HRDashboard() {
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
-                              <span className="text-gray-600">Investment:</span>
+                              <span className="glass-text-secondary">Investment:</span>
                               <div className="font-semibold">€{program.cost.toLocaleString()}</div>
                             </div>
                             <div>
-                              <span className="text-gray-600">Participants:</span>
+                              <span className="glass-text-secondary">Participants:</span>
                               <div className="font-semibold">{program.participants}</div>
                             </div>
                             <div>
-                              <span className="text-gray-600">Productivity:</span>
+                              <span className="glass-text-secondary">Productivity:</span>
                               <div className="font-semibold text-green-600">+{program.productivity_increase}</div>
                             </div>
                             <div>
-                              <span className="text-gray-600">Retention:</span>
+                              <span className="glass-text-secondary">Retention:</span>
                               <div className="font-semibold text-blue-600">+{program.retention_improvement}</div>
                             </div>
                           </div>
 
                           <div className="mt-3 pt-3 border-t border-indigo-200">
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Estimated Return:</span>
+                              <span className="text-sm glass-text-secondary">Estimated Return:</span>
                               <span className="font-semibold text-lg">
                                 €{((program.cost * program.roi) / 100).toLocaleString()}
                               </span>
@@ -5480,7 +5480,7 @@ export default function HRDashboard() {
 
   const renderAnalytics = () => (
     <div className="space-y-6">
-      <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-analytics-reports">
+      <Card className="glass-card" data-testid="hr-card-analytics-reports">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -5520,7 +5520,7 @@ export default function HRDashboard() {
 
       {/* Integrated Analytics Components */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-attendance-analytics-preview">
+        <Card className="glass-card" data-testid="hr-card-attendance-analytics-preview">
           <CardHeader>
             <CardTitle className="text-lg">Attendance Overview</CardTitle>
           </CardHeader>
@@ -5529,7 +5529,7 @@ export default function HRDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-labor-cost-analytics-preview">
+        <Card className="glass-card" data-testid="hr-card-labor-cost-analytics-preview">
           <CardHeader>
             <CardTitle className="text-lg">Labor Cost Overview</CardTitle>
           </CardHeader>
@@ -5560,7 +5560,7 @@ export default function HRDashboard() {
     return (
       <div className="space-y-6">
         {/* Enterprise Settings Control Center Header */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-settings-control-center-header">
+        <Card className="glass-card" data-testid="hr-card-settings-control-center-header">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5 text-indigo-600" />
@@ -5679,7 +5679,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Enterprise Settings Sub-Tabs */}
-        <Card className="backdrop-blur-xl bg-white/80 border-white/20" data-testid="hr-card-settings-enterprise-tabs">
+        <Card className="glass-card" data-testid="hr-card-settings-enterprise-tabs">
           <CardContent className="p-0">
             <Tabs defaultValue="policies" className="w-full">
               <div className="border-b border-gray-200 px-6 pt-6">
@@ -5769,7 +5769,7 @@ export default function HRDashboard() {
                       </div>
 
                       <Progress value={settingsMetrics.policyComplianceRate} className="h-3" />
-                      <div className="text-center text-sm text-gray-600">
+                      <div className="text-center text-sm glass-text-secondary">
                         {settingsMetrics.policyComplianceRate}% Compliance Rate
                       </div>
                     </CardContent>
@@ -5802,7 +5802,7 @@ export default function HRDashboard() {
                               </Badge>
                             </div>
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-gray-600">{policy.changes} changes</span>
+                              <span className="glass-text-secondary">{policy.changes} changes</span>
                               <div className="flex gap-1">
                                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0" data-testid={`hr-button-view-policy-${idx}`}>
                                   <Eye className="h-3 w-3" />
@@ -5865,7 +5865,7 @@ export default function HRDashboard() {
                 <Card className="border-gray-200" data-testid="hr-policies-management-table">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Database className="h-5 w-5 text-gray-600" />
+                      <Database className="h-5 w-5 glass-text-secondary" />
                       Policy Management
                     </CardTitle>
                   </CardHeader>
@@ -6155,7 +6155,7 @@ export default function HRDashboard() {
                 <Card className="border-gray-200" data-testid="hr-workflows-active-list">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-gray-600" />
+                      <Activity className="h-5 w-5 glass-text-secondary" />
                       Active Workflows
                       <Badge variant="outline" className="ml-auto">{settingsMetrics.workflowsDeployed} Deployed</Badge>
                     </CardTitle>
@@ -6208,7 +6208,7 @@ export default function HRDashboard() {
                                 </Badge>
                               </div>
                               
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm glass-text-secondary mb-3">
                                 <div className="flex items-center gap-2">
                                   <Zap className="h-4 w-4" />
                                   {workflow.trigger}
@@ -6228,7 +6228,7 @@ export default function HRDashboard() {
                               </div>
 
                               <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-600">Success Rate:</span>
+                                <span className="text-sm glass-text-secondary">Success Rate:</span>
                                 <Progress value={workflow.success_rate} className="flex-1 max-w-32" />
                                 <span className="text-sm font-medium">{workflow.success_rate}%</span>
                               </div>
@@ -6281,7 +6281,7 @@ export default function HRDashboard() {
                         <div className="text-sm text-green-700">Connected Systems</div>
                         <div className="mt-2">
                           <Progress value={settingsMetrics.integrationHealthScore} className="h-2" />
-                          <div className="text-xs text-gray-600 mt-1">
+                          <div className="text-xs glass-text-secondary mt-1">
                             Health: {settingsMetrics.integrationHealthScore}%
                           </div>
                         </div>
@@ -6439,14 +6439,14 @@ export default function HRDashboard() {
 
                       <div className="space-y-3">
                         <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">Category:</span>
+                          <span className="glass-text-secondary">Category:</span>
                           <span className="font-medium">{integration.category}</span>
                         </div>
                         
                         {integration.status === 'connected' && (
                           <>
                             <div className="flex justify-between items-center text-sm">
-                              <span className="text-gray-600">Health:</span>
+                              <span className="glass-text-secondary">Health:</span>
                               <div className="flex items-center gap-2">
                                 <Progress value={integration.health} className="w-16 h-2" />
                                 <span className="font-medium">{integration.health}%</span>
@@ -6454,19 +6454,19 @@ export default function HRDashboard() {
                             </div>
                             
                             <div className="flex justify-between items-center text-sm">
-                              <span className="text-gray-600">Last Sync:</span>
+                              <span className="glass-text-secondary">Last Sync:</span>
                               <span className="font-medium">{integration.lastSync}</span>
                             </div>
                             
                             <div className="flex justify-between items-center text-sm">
-                              <span className="text-gray-600">Version:</span>
+                              <span className="glass-text-secondary">Version:</span>
                               <span className="font-medium">{integration.version}</span>
                             </div>
                           </>
                         )}
 
                         <div className="space-y-2">
-                          <div className="text-sm text-gray-600">Features:</div>
+                          <div className="text-sm glass-text-secondary">Features:</div>
                           <div className="flex flex-wrap gap-1">
                             {integration.features.map((feature, featureIdx) => (
                               <Badge key={featureIdx} variant="secondary" className="text-xs">
@@ -6655,7 +6655,7 @@ export default function HRDashboard() {
                   <Card className="border-gray-200" data-testid="hr-compliance-audit-trail">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-gray-600" />
+                        <FileText className="h-5 w-5 glass-text-secondary" />
                         Audit Trail Configuration
                       </CardTitle>
                     </CardHeader>
@@ -6670,7 +6670,7 @@ export default function HRDashboard() {
                           <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg" data-testid={`hr-audit-config-${idx}`}>
                             <div>
                               <h4 className="font-medium text-sm">{config.category}</h4>
-                              <p className="text-xs text-gray-600">Retention: {config.retention}</p>
+                              <p className="text-xs glass-text-secondary">Retention: {config.retention}</p>
                             </div>
                             <Badge className={
                               config.logging === 'enabled' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -6726,7 +6726,7 @@ export default function HRDashboard() {
                                 {report.status}
                               </Badge>
                             </div>
-                            <div className="flex justify-between items-center text-xs text-gray-600">
+                            <div className="flex justify-between items-center text-xs glass-text-secondary">
                               <span>{report.frequency}</span>
                               <span>Due: {report.next_due}</span>
                             </div>
@@ -6911,7 +6911,7 @@ export default function HRDashboard() {
                   <Card className="border-gray-200" data-testid="hr-reports-component-library">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Box className="h-5 w-5 text-gray-600" />
+                        <Box className="h-5 w-5 glass-text-secondary" />
                         Component Library
                       </CardTitle>
                     </CardHeader>
@@ -6993,7 +6993,7 @@ export default function HRDashboard() {
                 <Card className="border-gray-200" data-testid="hr-reports-active-list">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-gray-600" />
+                      <FileText className="h-5 w-5 glass-text-secondary" />
                       Active Custom Reports
                       <Badge variant="outline" className="ml-auto">{settingsMetrics.customReportUsage} Reports</Badge>
                     </CardTitle>
@@ -7049,7 +7049,7 @@ export default function HRDashboard() {
                                 </Badge>
                               </div>
                               
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm glass-text-secondary mb-3">
                                 <div className="flex items-center gap-2">
                                   <Eye className="h-4 w-4" />
                                   {report.views} views
@@ -7098,20 +7098,20 @@ export default function HRDashboard() {
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-indigo-50">
-        {/* Header - EXACT same pattern as EmployeeDashboard */}
-        <div className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-40">
+        {/* Header - WindTre Glassmorphism */}
+        <div className="windtre-glass-panel border-b border-white/20 sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900" data-testid="hr-text-dashboard-title">HR Management Dashboard</h1>
-                <p className="text-gray-600 mt-1" data-testid="hr-text-dashboard-subtitle">
+                <p className="glass-text-secondary mt-1" data-testid="hr-text-dashboard-subtitle">
                   Sistema di gestione risorse umane • {hrData.store}
                 </p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900" data-testid="hr-text-current-time">{formatTime(currentTime)}</p>
-                  <p className="text-xs text-gray-600" data-testid="hr-text-current-date">{format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}</p>
+                  <p className="text-xs glass-text-secondary" data-testid="hr-text-current-date">{format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}</p>
                 </div>
                 <Button
                   variant="outline"

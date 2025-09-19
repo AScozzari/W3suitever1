@@ -61,19 +61,32 @@
   --windtre-purple-light: 268 58% 56%;
   --windtre-purple-dark: 268 58% 36%;
   
-  /* Glassmorphism - Frontend-Kit Compatible */
-  --glass-bg: hsl(0 0% 100% / 0.5);
-  --glass-bg-heavy: hsl(0 0% 100% / 0.7);
-  --glass-bg-light: hsl(0 0% 100% / 0.3);
-  --glass-border: hsl(0 0% 100% / 0.2);
-  --glass-blur: 12px;
-  --glass-blur-heavy: 20px;
-  --glass-blur-light: 8px;
+  /* WindTre Glassmorphism System - Exact Specification */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-heavy: rgba(255, 255, 255, 0.15);
+  --glass-bg-light: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-border-brand: rgba(255, 105, 0, 0.3);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glass-blur: blur(10px);
+  --glass-blur-heavy: blur(15px);
+  --glass-blur-light: blur(8px);
   
-  /* HR Card Specific - 50% opacity */
-  --hr-card-bg: hsl(0 0% 100% / 0.5);
-  --hr-card-border: hsl(0 0% 100% / 0.3);
-  --hr-card-blur: 15px;
+  /* WindTre Brand Glass Effects */
+  --brand-glass-orange: linear-gradient(135deg, rgba(255, 105, 0, 0.1), rgba(255, 105, 0, 0.05));
+  --brand-glass-purple: linear-gradient(135deg, rgba(123, 44, 191, 0.1), rgba(123, 44, 191, 0.05));
+  --brand-glass-gradient: linear-gradient(135deg, rgba(255, 105, 0, 0.1), rgba(123, 44, 191, 0.1));
+  
+  /* Professional Glass Cards */
+  --glass-card-bg: rgba(255, 255, 255, 0.12);
+  --glass-card-border: rgba(255, 255, 255, 0.18);
+  --glass-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-card-hover-bg: rgba(255, 255, 255, 0.18);
+  
+  /* Glass Transitions */
+  --glass-transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-hover-transform: translateY(-2px);
+  --glass-hover-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   
   /* Shadows */
   --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
@@ -124,16 +137,22 @@ body {
 /* Glassmorphism Classes */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
 }
 
 .glass-heavy {
   background: var(--glass-bg-heavy);
-  backdrop-filter: blur(var(--glass-blur-heavy));
-  -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+  backdrop-filter: var(--glass-blur-heavy);
+  -webkit-backdrop-filter: var(--glass-blur-heavy);
   border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
 }
 
 .glass-light {
@@ -144,36 +163,48 @@ body {
 }
 
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-glass);
+  background: var(--glass-card-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: 12px;
+  border: 1px solid var(--glass-card-border);
+  box-shadow: var(--glass-card-shadow);
+  transition: var(--glass-transition);
 }
 
 .glass-card:hover {
-  background: var(--glass-bg-heavy);
-  box-shadow: var(--shadow-glass-lg);
-  transform: translateY(-2px);
-  transition: all var(--duration-base) var(--ease-in-out);
+  background: var(--glass-card-hover-bg);
+  box-shadow: var(--glass-hover-shadow);
+  transform: var(--glass-hover-transform);
+  border-color: var(--glass-border-brand);
 }
 
 /* HR Card Specific - 50% Opacity Glassmorphism */
-.hr-card {
-  background: var(--hr-card-bg);
-  backdrop-filter: blur(var(--hr-card-blur));
-  -webkit-backdrop-filter: blur(var(--hr-card-blur));
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--hr-card-border);
-  box-shadow: var(--shadow-glass);
+.windtre-glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
 }
 
-.hr-card:hover {
+.windtre-glass-panel:hover {
   background: var(--glass-bg-heavy);
-  box-shadow: var(--shadow-glass-lg);
-  transform: translateY(-2px);
-  transition: all var(--duration-base) var(--ease-in-out);
+  box-shadow: var(--glass-hover-shadow);
+  transform: var(--glass-hover-transform);
+  border-color: var(--glass-border-brand);
+}
+
+.windtre-brand-accent {
+  background: var(--brand-glass-gradient);
+  border: 1px solid var(--glass-border-brand);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: 12px;
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
 }
 
 /* WindTre Gradient Background */
@@ -333,4 +364,149 @@ body {
 .animate, .animate-in, .animate-out, .hover\:animate-in:hover {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 250ms;
+}
+
+/* ARCHITECT REQUIREMENTS - FOCUS ACCESSIBILITY STYLES */
+/* Focus-visible styles for interactive elements */
+.glass-card:focus-visible,
+.windtre-glass-panel:focus-visible,
+.windtre-brand-accent:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid hsl(24, 100%, 50%);
+  outline-offset: 2px;
+  border-color: hsl(24, 100%, 50%);
+  box-shadow: 0 0 0 4px hsla(24, 100%, 50%, 0.2);
+  transition: all 200ms ease-in-out;
+}
+
+/* Tab navigation focus styles */
+.tabs-trigger:focus-visible {
+  outline: 2px solid hsl(24, 100%, 50%);
+  outline-offset: 2px;
+  background: linear-gradient(135deg, rgba(255, 105, 0, 0.1), rgba(255, 105, 0, 0.05));
+}
+
+/* Card hover focus states for keyboard navigation */
+.glass-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 4px hsla(24, 100%, 50%, 0.2), 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* ARCHITECT REQUIREMENTS - PERFORMANCE OPTIMIZATIONS */
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .glass-card, 
+  .windtre-glass-panel, 
+  .windtre-brand-accent,
+  .glass,
+  .glass-heavy,
+  .glass-light {
+    backdrop-filter: none;
+    animation: none;
+    transition: none;
+  }
+  
+  /* Remove transforms and animations for accessibility */
+  .glass-card:hover,
+  .windtre-glass-panel:hover,
+  .windtre-brand-accent:hover {
+    transform: none;
+  }
+  
+  /* Disable framer-motion animations */
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+  .glass-card, 
+  .windtre-glass-panel, 
+  .windtre-brand-accent,
+  .glass,
+  .glass-heavy {
+    backdrop-filter: blur(8px); /* reduced from 12px */
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  /* Reduce shadow intensity on mobile for performance */
+  .glass-card,
+  .windtre-glass-panel {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  
+  .glass-card:hover,
+  .windtre-glass-panel:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* Ultra-low performance devices */
+@media (max-width: 480px) {
+  .glass-card, 
+  .windtre-glass-panel, 
+  .windtre-brand-accent {
+    backdrop-filter: blur(4px); /* further reduced */
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ARCHITECT REQUIREMENTS - ENHANCED ACCESSIBILITY CONTRAST */
+/* High contrast text for glass backgrounds - WCAG AA compliant */
+.glass-text-primary {
+  color: hsl(0, 0%, 15%); /* Replaces text-gray-600 */
+  font-weight: 500;
+}
+
+.glass-text-secondary {
+  color: hsl(0, 0%, 25%); /* Replaces text-gray-600 */
+  font-weight: 400;
+}
+
+.glass-text-muted {
+  color: hsl(0, 0%, 35%); /* Still readable on glass */
+  font-weight: 400;
+}
+
+/* Interactive element contrast */
+.glass-card .text-gray-600,
+.windtre-glass-panel .text-gray-600 {
+  color: hsl(0, 0%, 15%) !important; /* Override to meet WCAG AA */
+}
+
+/* ARCHITECT REQUIREMENTS - ENHANCED WINDTRE BRAND INTEGRATION */
+/* Professional WindTre gradient backgrounds */
+.windtre-bg-gradient {
+  background: linear-gradient(135deg, 
+    hsl(24, 100%, 50%) 0%, 
+    hsl(268, 58%, 46%) 100%);
+}
+
+.windtre-bg-subtle {
+  background: linear-gradient(135deg, 
+    hsla(24, 100%, 50%, 0.05) 0%, 
+    hsla(268, 58%, 46%, 0.05) 100%);
+}
+
+/* Enhanced brand accent variations */
+.windtre-brand-accent-orange {
+  background: linear-gradient(135deg, rgba(255, 105, 0, 0.12), rgba(255, 105, 0, 0.06));
+  border: 1px solid rgba(255, 105, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.windtre-brand-accent-purple {
+  background: linear-gradient(135deg, rgba(123, 44, 191, 0.12), rgba(123, 44, 191, 0.06));
+  border: 1px solid rgba(123, 44, 191, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }

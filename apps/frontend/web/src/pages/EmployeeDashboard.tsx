@@ -219,8 +219,8 @@ export default function EmployeeDashboard() {
   return (
     <Layout>
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-indigo-50">
-        {/* Header - Pattern Settings */}
-        <div className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-40">
+        {/* Header - WindTre Glassmorphism */}
+        <div className="windtre-glass-panel border-b border-white/20 sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
@@ -256,9 +256,9 @@ export default function EmployeeDashboard() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Tab Navigation - Glassmorphism WindTre - Pattern Settings */}
+          {/* Tab Navigation - WindTre Glassmorphism */}
           <div className="mb-8">
-            <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-2">
+            <div className="windtre-glass-panel p-2">
               <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {EMPLOYEE_TABS.map((tab) => {
                   const IconComponent = tab.icon;
@@ -270,10 +270,10 @@ export default function EmployeeDashboard() {
                       onClick={() => setTab(tab.id)}
                       className={`
                         flex-shrink-0 flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm
-                        transition-all duration-200 hover:transform hover:translate-y-[-2px]
+                        transition-all duration-300 hover:transform hover:translate-y-[-2px]
                         ${isActive
-                          ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg'
-                          : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
+                          ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg windtre-brand-accent'
+                          : 'glass-text-secondary hover:bg-white/50 hover:text-gray-900 hover:shadow-md'
                         }
                       `}
                       data-testid={`tab-${tab.id}`}
@@ -292,8 +292,8 @@ export default function EmployeeDashboard() {
             {activeTab === 'overview' && (
               <div className="space-y-6" data-testid="section-overview">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Welcome Card */}
-                  <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  {/* Welcome Card - WindTre Glass */}
+                  <Card className="lg:col-span-2 glass-card hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Sun className="h-5 w-5 text-orange-500" />
@@ -340,8 +340,8 @@ export default function EmployeeDashboard() {
                     </CardContent>
                   </Card>
 
-                  {/* Quick Actions */}
-                  <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  {/* Quick Actions - WindTre Glass */}
+                  <Card className="glass-card hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                       <CardTitle data-testid="section-quick-actions">Azioni Rapide</CardTitle>
                     </CardHeader>
@@ -376,8 +376,8 @@ export default function EmployeeDashboard() {
                   </Card>
                 </div>
 
-                {/* Notifications */}
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                {/* Notifications - WindTre Glass */}
+                <Card className="glass-card hover:shadow-xl transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2" data-testid="section-notifications">
                       <Bell className="h-5 w-5 text-orange-500" />
@@ -426,8 +426,8 @@ export default function EmployeeDashboard() {
 
             {activeTab === 'time-attendance' && (
               <div className="space-y-6" data-testid="section-time-attendance">
-                {/* Advanced Time Tracking with Tabs */}
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                {/* Advanced Time Tracking with Tabs - WindTre Glass */}
+                <Card className="glass-card hover:shadow-xl transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Clock className="h-5 w-5 text-orange-500" />
@@ -802,7 +802,7 @@ export default function EmployeeDashboard() {
             {activeTab === 'requests' && (
               <div className="space-y-6" data-testid="section-requests">
                 {/* Enhanced Requests Dashboard */}
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <ClipboardList className="h-5 w-5 text-orange-500" />
@@ -1139,7 +1139,7 @@ export default function EmployeeDashboard() {
                       <TabsContent value="balances" className="space-y-6">
                         <LeaveBalanceWidget 
                           userId={userData.id}
-                          className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg"
+                          className="glass-card"
                         />
 
                         {/* Additional Balance Details */}
@@ -1220,7 +1220,7 @@ export default function EmployeeDashboard() {
             {activeTab === 'documents' && (
               <div className="space-y-6" data-testid="section-documents">
                 {/* Enhanced Document Management System */}
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-orange-500" />
@@ -1291,7 +1291,7 @@ export default function EmployeeDashboard() {
                               <div className="flex-1">
                                 <Input 
                                   placeholder="Cerca documenti..." 
-                                  className="bg-white/90"
+                                  className="glass-card"
                                   data-testid="input-search-documents"
                                 />
                               </div>
@@ -1577,7 +1577,7 @@ export default function EmployeeDashboard() {
 
             {activeTab === 'performance' && (
               <div className="space-y-6" data-testid="section-performance">
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                <Card className="glass-card">
                   <CardHeader>
                     <CardTitle>I Miei Obiettivi</CardTitle>
                     <CardDescription>Performance personale e goals</CardDescription>
@@ -1612,7 +1612,7 @@ export default function EmployeeDashboard() {
 
             {activeTab === 'training' && (
               <div className="space-y-6" data-testid="section-training">
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                <Card className="glass-card">
                   <CardHeader>
                     <CardTitle>I Miei Corsi</CardTitle>
                     <CardDescription>Formazione assegnata e volontaria</CardDescription>
@@ -1675,7 +1675,7 @@ export default function EmployeeDashboard() {
               <div className="space-y-6" data-testid="section-profile">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Personal Info */}
-                  <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <Card className="glass-card">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         Informazioni Personali
@@ -1728,7 +1728,7 @@ export default function EmployeeDashboard() {
                   </Card>
 
                   {/* Account Settings */}
-                  <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <Card className="glass-card">
                     <CardHeader>
                       <CardTitle>Impostazioni Account</CardTitle>
                     </CardHeader>
@@ -1794,7 +1794,7 @@ export default function EmployeeDashboard() {
             {activeTab === 'performance' && (
               <div className="space-y-6" data-testid="section-performance">
                 {/* Advanced Performance Management System */}
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Target className="h-5 w-5 text-orange-500" />
@@ -2234,7 +2234,7 @@ export default function EmployeeDashboard() {
             {activeTab === 'training' && (
               <div className="space-y-6" data-testid="section-training">
                 {/* Advanced Learning Management System */}
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <GraduationCap className="h-5 w-5 text-orange-500" />
@@ -2879,7 +2879,7 @@ export default function EmployeeDashboard() {
             {activeTab === 'profile' && (
               <div className="space-y-6" data-testid="section-profile">
                 {/* Advanced Profile Management System */}
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                <Card className="glass-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <User className="h-5 w-5 text-orange-500" />
