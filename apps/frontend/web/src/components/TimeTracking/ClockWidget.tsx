@@ -22,8 +22,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTimeAttendanceFSM } from '@/hooks/useTimeAttendanceFSM';
-import { TimeAttendanceState, TrackingMethod } from '@/types/timeAttendanceFSM';
+import { TimeAttendanceState, TrackingMethod, StrategyType } from '@/types/timeAttendanceFSM';
 import { ClockInData, NearbyStore } from '@/services/timeTrackingService';
+import { useTimeAttendanceStrategies } from '@/hooks/useTimeAttendanceStrategies';
+import { ALL_STRATEGIES, getAvailableStrategies } from '@/strategies';
 import {
   geolocationManager,
   requestLocationPermission,
@@ -45,21 +47,7 @@ interface ClockWidgetProps {
   className?: string;
 }
 
-// TrackingMethod is now imported from FSM types
-
-const TRACKING_METHODS: {
-  value: TrackingMethod;
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-}[] = [
-  { value: 'app', label: 'App', icon: <Smartphone className="w-4 h-4" />, color: 'blue' },
-  { value: 'gps', label: 'GPS', icon: <MapPin className="w-4 h-4" />, color: 'green' },
-  { value: 'badge', label: 'Badge', icon: <CreditCard className="w-4 h-4" />, color: 'purple' },
-  { value: 'nfc', label: 'NFC', icon: <Wifi className="w-4 h-4" />, color: 'orange' },
-  { value: 'biometric', label: 'Biometric', icon: <Fingerprint className="w-4 h-4" />, color: 'red' },
-  { value: 'manual', label: 'Manual', icon: <User className="w-4 h-4" />, color: 'gray' },
-];
+// Strategy Pattern - Dynamic tracking methods from available strategies
 
 export default function ClockWidget({
   storeId: fallbackStoreId,
@@ -74,8 +62,25 @@ export default function ClockWidget({
   // Initialize FSM Hook - centralized state management
   const fsm = useTimeAttendanceFSM(userId);
   
-  // Local UI state
-  const [trackingMethod, setTrackingMethod] = useState<TrackingMethod>('app');
+  // Strategy Manager Hook - NEW STRATEGY PATTERN INTEGRATION
+  const [strategyState, strategyActions] = useTimeAttendanceStrategies({
+    autoInitialize: true,
+    context: fsm.context,
+    onStrategyChange: (strategy) => {
+      if (strategy) {
+        console.log(`[ClockWidget] Strategy selected: ${strategy.type}`);
+        // Map strategy type to FSM tracking method
+        const trackingMethod = mapStrategyToTrackingMethod(strategy.type);
+        fsm.selectMethod(trackingMethod);
+      }
+    },
+    onError: (error) => {
+      console.error('[ClockWidget] Strategy error:', error);
+    }
+  });
+  
+  // Local UI state - now using StrategyType instead of TrackingMethod
+  const [selectedStrategyType, setSelectedStrategyType] = useState<StrategyType>('web');
   
   // Store Resolution Hook - GPS SYSTEM
   const {
@@ -95,12 +100,45 @@ export default function ClockWidget({
   const [isOverriding, setIsOverriding] = useState(false);
   const [overrideReason, setOverrideReason] = useState<string>('');
 
-  // Auto-select tracking method and store when available
-  useEffect(() => {
-    if (trackingMethod && !fsm.context.selectedMethod) {
-      fsm.selectMethod(trackingMethod);
+  // Helper function to map strategy types to FSM tracking methods
+  const mapStrategyToTrackingMethod = (strategyType: StrategyType): TrackingMethod => {
+    switch (strategyType) {
+      case 'gps': return 'gps';
+      case 'nfc': return 'nfc';
+      case 'badge': return 'badge';
+      case 'qr': return 'app'; // QR maps to app method in FSM
+      case 'smart': return 'app'; // Smart maps to app method in FSM
+      case 'web': return 'app'; // Web maps to app method in FSM
+      default: return 'app';
     }
-  }, [trackingMethod, fsm.context.selectedMethod]);
+  };
+
+  // Helper function to get strategy icons
+  const getStrategyIcon = (strategyType: StrategyType): React.ReactNode => {
+    switch (strategyType) {
+      case 'gps': return <MapPin className="w-4 h-4" />;
+      case 'nfc': return <Wifi className="w-4 h-4" />;
+      case 'badge': return <CreditCard className="w-4 h-4" />;
+      case 'qr': return <CheckCircle className="w-4 h-4" />;
+      case 'smart': return <Activity className="w-4 h-4" />;
+      case 'web': return <Smartphone className="w-4 h-4" />;
+      default: return <User className="w-4 h-4" />;
+    }
+  };
+
+  // Auto-select strategy and prepare when available
+  useEffect(() => {
+    if (selectedStrategyType && !strategyState.selectedStrategy) {
+      strategyActions.selectStrategy(selectedStrategyType);
+    }
+  }, [selectedStrategyType, strategyState.selectedStrategy]);
+
+  // Auto-prepare strategy when store is selected
+  useEffect(() => {
+    if (strategyState.selectedStrategy && fsm.context.selectedStore && !strategyState.prepareResult) {
+      strategyActions.prepareStrategy(fsm.context);
+    }
+  }, [strategyState.selectedStrategy, fsm.context.selectedStore, strategyState.prepareResult]);
   
   useEffect(() => {
     const storeToSelect = selectedStoreForAction || selectedStore;
@@ -134,38 +172,53 @@ export default function ClockWidget({
       return; // FSM will handle validation and error messages
     }
 
+    if (!strategyState.selectedStrategy) {
+      console.error('[ClockWidget] No strategy selected for clock in');
+      return;
+    }
+
     try {
-      // GPS location from store resolution system
-      let geoLocation;
-      if (trackingMethod === 'gps' && activeStore) {
-        geoLocation = {
-          lat: activeStore.latitude,
-          lng: activeStore.longitude,
-          accuracy: 20, // Estimated
-          address: `${activeStore.address || ''}, ${activeStore.city || ''}, ${activeStore.province || ''}`.trim().replace(/^,\s*|,\s*$/g, '') || 'Posizione rilevata',
-        };
+      // STRATEGY PATTERN: Validate strategy before proceeding
+      const validationResult = await strategyActions.validateStrategy(fsm.context);
+      if (!validationResult.isValid) {
+        console.error('[ClockWidget] Strategy validation failed:', validationResult.error);
+        return;
       }
 
-      const data: ClockInData = {
+      // STRATEGY PATTERN: Create base payload for augmentation
+      const basePayload: Partial<ClockInData> = {
         storeId: activeStoreId,
-        trackingMethod,
-        geoLocation,
         deviceInfo: {
           deviceType: 'web',
           userAgent: navigator.userAgent,
         },
       };
       
+      // Add legacy geolocation for GPS compatibility
+      if (selectedStrategyType === 'gps' && activeStore) {
+        basePayload.geoLocation = {
+          lat: activeStore.latitude,
+          lng: activeStore.longitude,
+          accuracy: 20, // Estimated
+          address: `${activeStore.address || ''}, ${activeStore.city || ''}, ${activeStore.province || ''}`.trim().replace(/^,\s*|,\s*$/g, '') || 'Posizione rilevata',
+        };
+      }
+      
       // NEW AUDIT FIELDS for geofencing compliance
       if (activeStore) {
-        data.wasOverride = isOverriding;
+        basePayload.wasOverride = isOverriding;
         if (overrideReason) {
-          data.overrideReason = overrideReason;
+          basePayload.overrideReason = overrideReason;
         }
       }
 
-      // Use FSM clock in instead of direct service call
-      await fsm.clockIn(data);
+      // STRATEGY PATTERN: Augment payload with strategy-specific data
+      const augmentedPayload = await strategyActions.augmentPayload(basePayload, fsm.context);
+      
+      console.log(`[ClockWidget] Strategy-augmented payload:`, augmentedPayload);
+
+      // Use FSM clock in with strategy-augmented payload
+      await fsm.clockIn(augmentedPayload);
       
       // Reset override state after successful action
       setIsOverriding(false);
@@ -343,35 +396,76 @@ export default function ClockWidget({
           </div>
         </div>
 
-        {/* MIDDLE ROW: Tracking Methods - Responsive Horizontal Layout */}
+        {/* MIDDLE ROW: Strategy Selection - Dynamic from Available Strategies */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
             Metodo Timbratura
           </label>
           <div className="flex flex-wrap gap-2">
-            {TRACKING_METHODS.slice(0, 4).map((method) => {
-              const isSelected = trackingMethod === method.value;
+            {strategyState.availableStrategies.slice(0, 6).map((strategy) => {
+              const isSelected = selectedStrategyType === strategy.type;
+              const isAvailable = strategy.isAvailable();
+              
               return (
                 <Button
-                  key={method.value}
+                  key={strategy.type}
                   variant={isSelected ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setTrackingMethod(method.value)}
-                  disabled={fsm.isActive}
+                  onClick={() => setSelectedStrategyType(strategy.type)}
+                  disabled={fsm.isActive || !isAvailable}
                   className={cn(
                     "h-9 px-3 text-xs flex-1 sm:flex-initial min-w-[80px]",
                     isSelected 
                       ? "bg-windtre-orange text-white border-windtre-orange" 
-                      : "glass-light border-white/20 hover:bg-windtre-orange/10"
+                      : "glass-light border-white/20 hover:bg-windtre-orange/10",
+                    !isAvailable && "opacity-50 cursor-not-allowed"
                   )}
-                  data-testid={`method-${method.value}`}
+                  data-testid={`strategy-${strategy.type}`}
                 >
-                  {method.icon}
-                  <span className="ml-1">{method.label}</span>
+                  {getStrategyIcon(strategy.type)}
+                  <span className="ml-1">{strategy.name}</span>
                 </Button>
               );
             })}
           </div>
+          
+          {/* Strategy Status Display */}
+          {strategyState.selectedStrategy && (
+            <div className="text-xs text-gray-600 space-y-1">
+              <div className="flex items-center gap-2">
+                {strategyState.isPreparing ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Preparazione {strategyState.selectedStrategy.name}...</span>
+                  </>
+                ) : strategyState.prepareResult?.success ? (
+                  <>
+                    <CheckCircle className="w-3 h-3 text-green-500" />
+                    <span>{strategyState.selectedStrategy.name} pronto</span>
+                  </>
+                ) : strategyState.prepareResult?.error ? (
+                  <>
+                    <AlertCircle className="w-3 h-3 text-red-500" />
+                    <span>Errore: {strategyState.prepareResult.error}</span>
+                  </>
+                ) : null}
+              </div>
+              
+              {strategyState.validationResult && !strategyState.validationResult.isValid && (
+                <div className="flex items-center gap-1 text-red-600">
+                  <AlertCircle className="w-3 h-3" />
+                  <span>{strategyState.validationResult.error}</span>
+                </div>
+              )}
+              
+              {strategyState.validationResult?.warnings?.map((warning, index) => (
+                <div key={index} className="flex items-center gap-1 text-orange-600">
+                  <AlertCircle className="w-3 h-3" />
+                  <span>{warning}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* BOTTOM ROW: Action Buttons - Full Width */}
@@ -379,19 +473,25 @@ export default function ClockWidget({
           {!fsm.isActive ? (
             <Button
               onClick={handleClockIn}
-              disabled={fsm.isLoading || !fsm.canClockIn}
+              disabled={
+                fsm.isLoading || 
+                !fsm.canClockIn || 
+                !strategyState.selectedStrategy ||
+                strategyState.isPreparing ||
+                (strategyState.validationResult && !strategyState.validationResult.isValid)
+              }
               className="w-full h-14 bg-gradient-to-r from-windtre-orange to-windtre-purple hover:from-orange-600 hover:to-purple-600 text-white font-bold text-lg shadow-lg"
               data-testid="button-clock-in"
             >
-              {fsm.isLoading ? (
+              {fsm.isLoading || strategyState.isPreparing ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                  Registrazione in corso...
+                  {strategyState.isPreparing ? 'Preparazione...' : 'Registrazione in corso...'}
                 </>
               ) : (
                 <>
                   <Play className="w-5 h-5 mr-3" />
-                  REGISTRA ENTRATA
+                  REGISTRA ENTRATA ({strategyState.selectedStrategy?.name || 'N/A'})
                 </>
               )}
             </Button>
@@ -456,10 +556,35 @@ export default function ClockWidget({
             </div>
           </motion.div>
         )}
+        
+        {/* STRATEGY PANEL - NEW FEATURE */}
+        {strategyState.selectedStrategy && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-3"
+          >
+            <div className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+              Configurazione {strategyState.selectedStrategy.name}
+            </div>
+            <div className="bg-gray-50 rounded-md p-2">
+              {strategyState.selectedStrategy.renderPanel({
+                isActive: true,
+                isLoading: fsm.isLoading || strategyState.isPreparing,
+                context: fsm.context,
+                onAction: (action, data) => {
+                  console.log(`[ClockWidget] Strategy action:`, action, data);
+                },
+                compact: true
+              })}
+            </div>
+          </motion.div>
+        )}
+        
         <StoreSelector
           onStoreSelected={handleStoreSelected}
           disabled={fsm.isLoading || isResolvingStore}
-          autoDetectEnabled={trackingMethod === 'gps'}
+          autoDetectEnabled={selectedStrategyType === 'gps'}
           compact
         />
       </div>

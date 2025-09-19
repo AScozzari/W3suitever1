@@ -41,11 +41,72 @@ export enum TimeAttendanceEvent {
 }
 
 // ==================== TRACKING METHODS ====================
-export type TrackingMethod = 'badge' | 'nfc' | 'app' | 'gps' | 'manual' | 'biometric';
+export type TrackingMethod = 'badge' | 'nfc' | 'app' | 'gps' | 'manual' | 'biometric' | 'qr' | 'smart' | 'web';
+
+// ==================== STRATEGY PATTERN TYPES ====================
+export type StrategyType = 'gps' | 'nfc' | 'qr' | 'smart' | 'web' | 'badge';
+
+export interface StrategyValidationResult {
+  isValid: boolean;
+  error?: string;
+  warnings?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface StrategyPrepareResult {
+  success: boolean;
+  error?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface StrategyPayloadData {
+  method: StrategyType;
+  data: Record<string, unknown>;
+  metadata?: {
+    accuracy?: number;
+    confidence?: number;
+    timestamp: number;
+    source: string;
+  };
+}
+
+export interface StrategyPanelProps {
+  isActive: boolean;
+  isLoading: boolean;
+  context: TimeAttendanceContext;
+  onAction?: (action: string, data?: unknown) => void;
+  compact?: boolean;
+}
+
+export interface TimeAttendanceStrategy {
+  readonly type: StrategyType;
+  readonly name: string;
+  readonly description: string;
+  readonly priority: number;
+  readonly availability: {
+    supported: boolean;
+    requiresPermission: boolean;
+    requiresHardware: boolean;
+    requiresNetwork: boolean;
+  };
+
+  // Core Strategy Methods
+  prepare(context: TimeAttendanceContext): Promise<StrategyPrepareResult>;
+  validate(context: TimeAttendanceContext): Promise<StrategyValidationResult>;
+  augmentPayload(basePayload: Partial<ClockInData>, context: TimeAttendanceContext): Promise<ClockInData>;
+  renderPanel(props: StrategyPanelProps): React.ReactElement;
+
+  // Lifecycle Methods
+  cleanup?(): Promise<void>;
+  reset?(): void;
+  
+  // Capability Checks
+  isAvailable(): boolean;
+  getRequiredPermissions(): string[];
+}
 
 // ==================== FSM CONTEXT ====================
 export interface TimeAttendanceContext {
-  // Session Data
   sessionId: string | null;
   startTime: Date | null;
   endTime: Date | null;
