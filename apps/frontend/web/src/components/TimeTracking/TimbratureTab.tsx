@@ -533,9 +533,9 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
       </div>
 
       {/* MAIN HORIZONTAL LAYOUT - 3 COLUMNS */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[400px]">
+      <div className="flex flex-col lg:flex-row gap-6 min-h-[400px]">
         {/* LEFT COLUMN - TIMER & STATUS (30%) */}
-        <div className="lg:col-span-4 space-y-4">
+        <div className="flex-none lg:w-[30%] space-y-4">
           {/* Store Selector */}
           <Card className="glass-card h-fit">
             <CardHeader className="pb-3">
@@ -580,7 +580,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
         </div>
 
         {/* CENTER COLUMN - TRACKING METHODS GRID (45%) */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="flex-1 lg:flex-[1.5]">
           <Card className="glass-card h-full">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm">
@@ -590,7 +590,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
             </CardHeader>
             <CardContent className="pt-0 h-full">
               {/* HORIZONTAL METHODS GRID - 2x3 */}
-              <div className="grid grid-cols-2 gap-3 h-full">
+              <div className="flex flex-wrap gap-3 h-full content-start">
                 {trackingMethods.slice(0, 6).map((method) => {
                   const IconComponent = method.icon;
                   const isSelected = selectedMethod === method.id;
@@ -601,7 +601,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
                       key={method.id}
                       variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        "h-full flex-col gap-2 p-3",
+                        "flex-1 min-w-[140px] sm:min-w-[120px] h-24 flex-col gap-2 p-3 relative",
                         isSelected 
                           ? "bg-gradient-to-br from-windtre-orange to-windtre-purple text-white border-windtre-orange" 
                           : "glass-card hover:glass-card-hover border-white/20",
@@ -648,7 +648,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
         </div>
 
         {/* RIGHT COLUMN - ACTIONS & METHOD DETAILS (25%) */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="flex-none lg:w-[25%] space-y-4">
           {/* Main Clock Action */}
           <Card className="glass-card">
             <CardContent className="p-4">
@@ -706,8 +706,8 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
       <div className="mt-6">
         <Card className="glass-card">
           <CardContent className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="space-y-1">
+            <div className="flex flex-wrap gap-4 justify-center sm:justify-between">
+              <div className="flex-1 min-w-[120px] space-y-1 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <Clock className="h-4 w-4 text-windtre-orange" />
                   <span className="text-xs font-medium text-gray-600">Ore Oggi</span>

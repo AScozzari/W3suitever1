@@ -344,73 +344,85 @@ export default function ClockWidget({
   return (
     <Card
       className={cn(
-        "glass-card p-4",
+        "glass-card p-4 min-h-[200px]",
         className
       )}
       data-testid="clock-widget"
     >
-      {/* HORIZONTAL LAYOUT - 4 COLUMNS */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center h-20">
+      {/* MOBILE-FIRST RESPONSIVE FLEXBOX LAYOUT */}
+      <div className="flex flex-col space-y-4 h-full">
         
-        {/* COLUMN 1: TIMER DISPLAY (25%) */}
-        <div className="flex flex-col items-center lg:items-start">
-          <motion.div
-            key={isActive ? 'active' : 'inactive'}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className={cn(
-              "text-2xl lg:text-3xl font-mono font-bold leading-none",
-              isActive ? (isOvertime ? 'text-red-500' : 'text-green-500') : 'text-gray-400'
-            )}
-            data-testid="timer-display"
-          >
-            {formatElapsedTime(elapsedTime)}
-          </motion.div>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge
-              variant={isActive ? (isOnBreak ? "warning" : "default") : "secondary"}
-              className="text-xs"
-            >
-              {isActive ? (isOnBreak ? 'In Pausa' : 'In Turno') : 'Fuori Turno'}
-            </Badge>
-            {isActive && (
-              <Activity className="w-3 h-3 text-green-400 animate-pulse" />
-            )}
-          </div>
-        </div>
-
-        {/* COLUMN 2: STORE INFO & STATUS (25%) */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-windtre-orange" />
-            <h3 className="text-sm font-semibold">Timbratura</h3>
-          </div>
-          <div className="text-xs text-gray-600 space-y-1">
-            <p>📍 {selectedStore?.name || fallbackStoreName || 'Store non selezionato'}</p>
-            <p>👤 {userName || 'User'}</p>
-            {isActive && (
-              <p className="text-green-600">
-                ⏰ Iniziato: {format(new Date(Date.now() - elapsedTime * 1000), 'HH:mm')}
-              </p>
-            )}
-          </div>
-          {requiresBreak && (
+        {/* TOP ROW: Timer Display + Status - Always Horizontal */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* TIMER DISPLAY - Primary Focus */}
+          <div className="flex-shrink-0">
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-1 text-xs text-orange-500"
+              key={isActive ? 'active' : 'inactive'}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className={cn(
+                "text-3xl sm:text-4xl lg:text-5xl font-mono font-bold leading-none",
+                isActive ? (isOvertime ? 'text-red-500' : 'text-green-500') : 'text-gray-400'
+              )}
+              data-testid="timer-display"
             >
-              <AlertCircle className="w-3 h-3" />
-              <span>Pausa obbligatoria</span>
+              {formatElapsedTime(elapsedTime)}
             </motion.div>
-          )}
+            <div className="flex items-center gap-2 mt-2">
+              <Badge
+                variant={isActive ? (isOnBreak ? "warning" : "default") : "secondary"}
+                className="text-xs font-medium"
+              >
+                {isActive ? (isOnBreak ? 'In Pausa' : 'In Turno') : 'Fuori Turno'}
+              </Badge>
+              {isActive && (
+                <Activity className="w-4 h-4 text-green-400 animate-pulse" />
+              )}
+            </div>
+          </div>
+
+          {/* STORE INFO & STATUS */}
+          <div className="flex-1 sm:flex-initial space-y-2">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-windtre-orange" />
+              <h3 className="text-sm font-semibold">Sistema Timbratura</h3>
+            </div>
+            <div className="text-xs text-gray-600 space-y-1">
+              <p className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {selectedStore?.name || fallbackStoreName || 'Store non selezionato'}
+              </p>
+              <p className="flex items-center gap-1">
+                <User className="w-3 h-3" />
+                {userName || 'User'}
+              </p>
+              {isActive && (
+                <p className="flex items-center gap-1 text-green-600">
+                  <Clock className="w-3 h-3" />
+                  Iniziato: {format(new Date(Date.now() - elapsedTime * 1000), 'HH:mm')}
+                </p>
+              )}
+            </div>
+            {requiresBreak && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-1 text-xs text-orange-500 bg-orange-50 p-2 rounded-md"
+              >
+                <AlertCircle className="w-3 h-3" />
+                <span>Pausa obbligatoria richiesta</span>
+              </motion.div>
+            )}
+          </div>
         </div>
 
-        {/* COLUMN 3: TRACKING METHOD COMPACT (25%) */}
+        {/* MIDDLE ROW: Tracking Methods - Responsive Horizontal Layout */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-600">Metodo</label>
-          <div className="grid grid-cols-2 gap-1">
+          <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+            Metodo Timbratura
+          </label>
+          <div className="flex flex-wrap gap-2">
             {TRACKING_METHODS.slice(0, 4).map((method) => {
               const isSelected = trackingMethod === method.value;
               return (
@@ -421,89 +433,103 @@ export default function ClockWidget({
                   onClick={() => setTrackingMethod(method.value)}
                   disabled={isActive}
                   className={cn(
-                    "h-8 px-2 text-xs",
+                    "h-9 px-3 text-xs flex-1 sm:flex-initial min-w-[80px]",
                     isSelected 
-                      ? "bg-windtre-orange text-white" 
-                      : "glass-light border-white/20"
+                      ? "bg-windtre-orange text-white border-windtre-orange" 
+                      : "glass-light border-white/20 hover:bg-windtre-orange/10"
                   )}
                   data-testid={`method-${method.value}`}
                 >
                   {method.icon}
-                  <span className="ml-1 hidden sm:inline">{method.label}</span>
+                  <span className="ml-1">{method.label}</span>
                 </Button>
               );
             })}
           </div>
         </div>
 
-        {/* COLUMN 4: ACTION BUTTONS (25%) */}
-        <div className="space-y-2">
+        {/* BOTTOM ROW: Action Buttons - Full Width */}
+        <div className="flex-1 flex flex-col justify-end">
           {!isActive ? (
             <Button
               onClick={handleClockIn}
               disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-windtre-orange to-windtre-purple hover:from-orange-600 hover:to-purple-600 text-white font-bold"
+              className="w-full h-14 bg-gradient-to-r from-windtre-orange to-windtre-purple hover:from-orange-600 hover:to-purple-600 text-white font-bold text-lg shadow-lg"
               data-testid="button-clock-in"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span className="hidden sm:inline">Registrazione...</span>
+                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                  Registrazione in corso...
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4 mr-2" />
-                  <span>ENTRATA</span>
+                  <Play className="w-5 h-5 mr-3" />
+                  REGISTRA ENTRATA
                 </>
               )}
             </Button>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Button
                 onClick={handleClockOut}
                 disabled={isLoading || isOnBreak}
-                className="w-full h-8 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-bold"
+                className="w-full h-12 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold shadow-lg"
                 data-testid="button-clock-out"
               >
                 {isLoading ? (
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <>
-                    <Power className="w-3 h-3 mr-1" />
-                    USCITA
+                    <Power className="w-4 h-4 mr-2" />
+                    REGISTRA USCITA
                   </>
                 )}
               </Button>
               
-              {!isOnBreak ? (
-                <Button
-                  onClick={handleBreak}
-                  disabled={isLoading}
-                  variant="outline"
-                  className="w-full h-8 border-orange-400/50 hover:bg-orange-400/10 text-orange-600 text-sm"
-                  data-testid="button-pause"
-                >
-                  <Pause className="w-3 h-3 mr-1" />
-                  Pausa
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleBreak}
-                  disabled={isLoading}
-                  className="w-full h-8 bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm"
-                  data-testid="button-resume"
-                >
-                  <Play className="w-3 h-3 mr-1" />
-                  Riprendi
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {!isOnBreak ? (
+                  <Button
+                    onClick={handleBreak}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="flex-1 h-10 border-orange-400/50 hover:bg-orange-400/10 text-orange-600"
+                    data-testid="button-pause"
+                  >
+                    <Pause className="w-4 h-4 mr-2" />
+                    Inizia Pausa
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleBreak}
+                    disabled={isLoading}
+                    className="flex-1 h-10 bg-gradient-to-r from-blue-500 to-green-500 text-white"
+                    data-testid="button-resume"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Termina Pausa
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* STORE SELECTOR - HORIZONTAL INTEGRATION */}
-      <div className="mt-4 pt-4 border-t border-white/10">
+      {/* STORE SELECTOR - Horizontal Integration with Error Boundary */}
+      <div className="mt-6 pt-4 border-t border-white/10">
+        {gpsError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md"
+          >
+            <div className="flex items-center gap-2 text-red-600 text-xs">
+              <AlertCircle className="w-4 h-4" />
+              <span>GPS non disponibile: {gpsError}</span>
+            </div>
+          </motion.div>
+        )}
         <StoreSelector
           onStoreSelected={handleStoreSelected}
           disabled={isLoading || isResolvingStore}

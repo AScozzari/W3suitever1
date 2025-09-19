@@ -512,10 +512,10 @@ export default function EmployeeDashboard() {
                   </CardHeader>
                 </Card>
 
-                {/* MAIN HORIZONTAL LAYOUT - CLOCKWIDGET + TIMBRATURETAB */}
-                <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-                  {/* LEFT: ClockWidget (40% - 2 columns) */}
-                  <div className="xl:col-span-2">
+                {/* RESPONSIVE FLEXBOX LAYOUT - FULL HORIZONTAL UTILIZATION */}
+                <div className="flex flex-col xl:flex-row gap-6 w-full">
+                  {/* LEFT: ClockWidget (Mobile: Full Width, Desktop: 40%) */}
+                  <div className="w-full xl:w-[40%] xl:flex-none">
                     <ClockWidget
                       userId={displayUser.matricola}
                       userName={`${displayUser.nome} ${displayUser.cognome}`.trim()}
@@ -533,8 +533,8 @@ export default function EmployeeDashboard() {
                     />
                   </div>
                   
-                  {/* RIGHT: TimbratureTab (60% - 3 columns) */}
-                  <div className="xl:col-span-3">
+                  {/* RIGHT: TimbratureTab (Mobile: Full Width, Desktop: 60%) */}
+                  <div className="w-full xl:w-[60%] xl:flex-1">
                     <TimbratureTab
                       userId={displayUser.matricola}
                       storeId="store-001"
