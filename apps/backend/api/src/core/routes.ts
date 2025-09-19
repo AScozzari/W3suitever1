@@ -497,6 +497,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const startTime = Date.now();
 
     try {
+      // DEVELOPMENT MODE FIX: Skip JWT validation if user is already authenticated by devAuthMiddleware
+      if (config.AUTH_MODE === 'development' && req.user) {
+        console.log(`[ENTERPRISE-AUTH] 🔧 Development mode bypass - user already authenticated:`, {
+          userId: req.user.id,
+          email: req.user.email,
+          tenantId: req.user.tenantId
+        });
+        return next();
+      }
+      
       // Development authentication is now handled by unified devAuthMiddleware
       // This middleware focuses only on OAuth2 JWT validation
       
