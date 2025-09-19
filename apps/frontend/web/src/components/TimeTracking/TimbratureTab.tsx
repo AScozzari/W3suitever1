@@ -399,64 +399,66 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
         return (
           <div className="glass-card transition-all duration-500 hover:shadow-xl relative overflow-hidden group">
             <div className="glass-glow"></div>
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center gap-3 text-windtre-orange">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-600/20 backdrop-blur-sm">
-                  <MapPin className="h-5 w-5 text-windtre-orange" />
+            <CardHeader className="relative z-10 text-center">
+              <CardTitle className="flex items-center justify-center gap-3 text-windtre-orange text-xl">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/20 backdrop-blur-sm">
+                  <MapPin className="h-6 w-6 text-windtre-orange" />
                 </div>
                 Timbratura GPS
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 relative z-10">
+            <CardContent className="space-y-6 relative z-10">
               {gpsPosition ? (
                 <>
-                  <div className="flex items-center gap-3 p-3 glass-light rounded-lg">
-                    <div className="p-1 rounded-full bg-green-500/20">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                  <div className="flex items-center justify-center gap-3 p-4 glass-light rounded-xl mx-auto max-w-md">
+                    <div className="p-2 rounded-full bg-green-500/20">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
                     </div>
-                    <span className="text-sm font-medium">Posizione rilevata con successo</span>
+                    <span className="text-sm font-medium text-center">Posizione rilevata con successo</span>
                   </div>
-                  <div className="p-4 glass-heavy rounded-xl space-y-3 border border-white/20">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-windtre-orange animate-pulse"></div>
-                      <p className="text-sm font-medium">📍 {selectedStore?.address || 'Indirizzo rilevato...'}</p>
+                  <div className="p-6 glass-heavy rounded-xl space-y-4 border border-white/20 mx-auto max-w-lg">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-windtre-orange animate-pulse"></div>
+                      <p className="text-sm font-medium text-center">📍 {selectedStore?.address || 'Indirizzo rilevato...'}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="space-y-1">
-                        <p className="text-gray-600">Latitudine</p>
-                        <p className="font-mono bg-black/10 px-2 py-1 rounded">{gpsPosition.lat.toFixed(6)}</p>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div className="space-y-2 text-center">
+                        <p className="text-gray-600 font-medium">Latitudine</p>
+                        <p className="font-mono bg-black/10 px-3 py-2 rounded-lg">{gpsPosition.lat.toFixed(6)}</p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-gray-600">Longitudine</p>
-                        <p className="font-mono bg-black/10 px-2 py-1 rounded">{gpsPosition.lng.toFixed(6)}</p>
+                      <div className="space-y-2 text-center">
+                        <p className="text-gray-600 font-medium">Longitudine</p>
+                        <p className="font-mono bg-black/10 px-3 py-2 rounded-lg">{gpsPosition.lng.toFixed(6)}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 pt-2 border-t border-white/10">
-                      <div className="w-1 h-1 rounded-full bg-blue-500"></div>
-                      <p className="text-xs text-gray-600">Precisione: {gpsPosition.accuracy.toFixed(0)}m</p>
+                    <div className="flex items-center justify-center gap-2 pt-3 border-t border-white/10">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <p className="text-xs text-gray-600 font-medium">Precisione: {gpsPosition.accuracy.toFixed(0)}m</p>
                     </div>
                   </div>
-                  <Button 
-                    onClick={() => {}} 
-                    variant="outline" 
-                    size="sm"
-                    className="glass-button hover:bg-windtre-orange/10 border-windtre-orange/20 text-windtre-orange hover:text-windtre-orange"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Aggiorna posizione
-                  </Button>
+                  <div className="flex justify-center">
+                    <Button 
+                      onClick={() => {}} 
+                      variant="outline" 
+                      size="sm"
+                      className="glass-button hover:bg-windtre-orange/10 border-windtre-orange/20 text-windtre-orange hover:text-windtre-orange mx-auto"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Aggiorna posizione
+                    </Button>
+                  </div>
                 </>
               ) : (
-                <div className="flex flex-col items-center gap-4 py-8">
+                <div className="flex flex-col items-center gap-6 py-12">
                   <div className="relative">
-                    <div className="w-16 h-16 rounded-full glass-heavy flex items-center justify-center">
-                      <Loader2 className="h-8 w-8 text-windtre-orange animate-spin" />
+                    <div className="w-20 h-20 rounded-full glass-heavy flex items-center justify-center">
+                      <Loader2 className="h-10 w-10 text-windtre-orange animate-spin" />
                     </div>
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500/20 to-purple-500/20 animate-pulse"></div>
                   </div>
-                  <div className="text-center space-y-2">
-                    <p className="text-sm font-medium text-windtre-orange">Rilevamento posizione GPS...</p>
-                    <p className="text-xs text-gray-600">Assicurati di aver concesso i permessi di geolocalizzazione</p>
+                  <div className="text-center space-y-3 max-w-sm mx-auto">
+                    <p className="text-base font-semibold text-windtre-orange">Rilevamento posizione GPS...</p>
+                    <p className="text-sm text-gray-600">Assicurati di aver concesso i permessi di geolocalizzazione</p>
                   </div>
                 </div>
               )}
@@ -728,7 +730,7 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto p-4">
+    <div className="space-y-8 max-w-5xl mx-auto p-6 min-h-screen flex flex-col windtre-bg-subtle">
       {/* Status Card - Glassmorphism */}
       <div className={`glass-card transition-all duration-700 hover:shadow-2xl relative overflow-hidden ${
         isActive ? 'border-green-400/30 shadow-green-500/20' : 'border-white/20'
@@ -851,36 +853,38 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
         )}
       </div>
 
-      {/* Store Selector - NEW GPS SYSTEM */}
-      <StoreSelector
-        onStoreSelected={handleStoreSelected}
-        disabled={isLoading || isResolvingStore}
-        autoDetectEnabled={selectedMethod === 'gps'}
-      />
+      {/* Store Selector - NEW GPS SYSTEM with Enhanced Styling */}
+      <div className="w-full">
+        <StoreSelector
+          onStoreSelected={handleStoreSelected}
+          disabled={isLoading || isResolvingStore}
+          autoDetectEnabled={selectedMethod === 'gps'}
+        />
+      </div>
 
-      {/* Method Selector - Glassmorphism */}
+      {/* Method Selector - Enhanced Glassmorphism with Better Alignment */}
       <div className="glass-card transition-all duration-500 hover:shadow-xl relative overflow-hidden">
         <div className="glass-shimmer"></div>
-        <CardHeader className="relative z-10">
-          <CardTitle className="flex items-center gap-3 text-xl text-windtre-orange">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-windtre-orange/20 to-windtre-purple/20">
+        <CardHeader className="relative z-10 text-center">
+          <CardTitle className="flex items-center justify-center gap-3 text-xl text-windtre-orange">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-windtre-orange/20 to-windtre-purple/20">
               <Sparkles className="h-6 w-6 text-windtre-orange" />
             </div>
             Metodo di Timbratura
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-gray-600 max-w-md mx-auto">
             Scegli il metodo più comodo per te
           </CardDescription>
         </CardHeader>
         <CardContent className="relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 justify-items-center">
             {trackingMethods.map((method) => (
               <button
                 key={method.id}
                 onClick={() => setSelectedMethod(method.id)}
                 disabled={!method.available}
                 data-testid={`method-${method.id}`}
-                className={`group relative h-auto p-4 rounded-xl transition-all duration-300 ${
+                className={`group relative h-auto p-5 rounded-xl transition-all duration-300 w-full max-w-[160px] ${
                   selectedMethod === method.id 
                     ? 'glass-heavy border-windtre-orange/70 shadow-lg scale-105 ring-2 ring-windtre-orange/30' 
                     : 'glass-light hover:glass-heavy border-gray-300/50 hover:border-windtre-orange/40'
@@ -888,27 +892,27 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
                   !method.available ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 hover:shadow-lg'
                 } border backdrop-blur-sm`}
               >
-                <div className="flex flex-col items-center space-y-3">
-                  <div className={`p-3 rounded-xl transition-all duration-300 ${
+                <div className="flex flex-col items-center justify-center space-y-4 h-full">
+                  <div className={`p-4 rounded-xl transition-all duration-300 ${
                     selectedMethod === method.id 
-                      ? `bg-gradient-to-br from-${method.windtreColor}/30 to-${method.windtreColor}/20` 
-                      : `bg-gradient-to-br from-${method.windtreColor}/20 to-${method.windtreColor}/10 group-hover:from-${method.windtreColor}/25 group-hover:to-${method.windtreColor}/15`
+                      ? `bg-gradient-to-br from-windtre-orange/30 to-windtre-orange/20` 
+                      : `bg-gradient-to-br from-gray-500/20 to-gray-500/10 group-hover:from-windtre-orange/25 group-hover:to-windtre-orange/15`
                   }`}>
-                    <method.icon className={`h-6 w-6 ${
+                    <method.icon className={`h-7 w-7 ${
                       selectedMethod === method.id 
-                        ? `text-${method.windtreColor}` 
-                        : `text-${method.windtreColor}/70 group-hover:text-${method.windtreColor}`
+                        ? 'text-windtre-orange' 
+                        : 'text-gray-600 group-hover:text-windtre-orange'
                     } transition-colors duration-300`} />
                   </div>
-                  <div className="text-center space-y-1">
-                    <span className={`text-sm font-semibold transition-colors ${
+                  <div className="text-center space-y-2">
+                    <span className={`text-sm font-bold transition-colors ${
                       selectedMethod === method.id 
                         ? 'text-windtre-orange' 
                         : 'text-gray-700 group-hover:text-windtre-orange'
                     }`}>
                       {method.name}
                     </span>
-                    <span className="text-xs text-gray-500 block">
+                    <span className="text-xs text-gray-500 block leading-tight">
                       {method.description}
                     </span>
                   </div>
@@ -927,32 +931,34 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
         </CardContent>
       </div>
 
-      {/* Method-specific Widget */}
-      {renderMethodWidget()}
+      {/* Method-specific Widget - Enhanced Integration */}
+      <div className="w-full flex justify-center">
+        {renderMethodWidget()}
+      </div>
 
       {/* Perfectly Centered Action Button - WindTre Glassmorphism */}
-      <div className="glass-card border-2 border-dashed border-windtre-orange/30 relative overflow-hidden group hover:border-windtre-orange/50 transition-all duration-500">
+      <div className="glass-card border-2 border-dashed border-windtre-orange/30 relative overflow-hidden group hover:border-windtre-orange/50 transition-all duration-500 flex-shrink-0">
         <div className="glass-glow opacity-50"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-windtre-orange/5 to-windtre-purple/5"></div>
-        <CardContent className="py-12 relative z-10">
-          <div className="flex flex-col items-center justify-center space-y-6">
-            {/* Main Action Button - Perfectly Centered */}
-            <div className="relative">
+        <CardContent className="py-16 relative z-10">
+          <div className="flex flex-col items-center justify-center space-y-8 w-full">
+            {/* Main Action Button - Perfectly Centered with Enhanced Layout */}
+            <div className="relative flex justify-center w-full">
               <button
                 onClick={handleClockAction}
                 disabled={isLoading || (selectedMethod === 'gps' && !gpsPosition)}
                 data-testid={isActive ? 'button-clock-out' : 'button-clock-in'}
                 className={`
-                  relative group w-72 h-20 rounded-2xl font-bold text-xl
-                  transition-all duration-500 transform hover:scale-105
+                  relative group w-72 md:w-80 h-20 md:h-24 rounded-2xl font-bold text-lg md:text-xl mx-auto block
+                  transition-all duration-500 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4
                   disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
                   ${
                     isActive 
-                      ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white shadow-red-500/30' 
-                      : 'bg-gradient-to-r from-windtre-orange via-orange-600 to-windtre-orange-dark hover:from-windtre-orange-dark hover:via-windtre-orange hover:to-orange-700 text-white shadow-orange-500/30'
+                      ? 'bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 text-white shadow-red-500/30 shadow-2xl hover:shadow-red-500/50 focus:ring-red-500/30' 
+                      : 'bg-gradient-to-r from-windtre-orange via-orange-600 to-windtre-orange-dark hover:from-windtre-orange-dark hover:via-windtre-orange hover:to-orange-700 text-white shadow-orange-500/30 shadow-2xl hover:shadow-orange-500/50 focus:ring-windtre-orange/30'
                   }
                   shadow-2xl hover:shadow-3xl
-                  border border-white/20
+                  border border-white/20 backdrop-blur-sm
                   overflow-hidden
                 `}
               >
@@ -1014,17 +1020,17 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
               </div>
             </div>
             
-            {/* Status messages */}
-            <div className="text-center space-y-2">
+            {/* Enhanced Status messages with better spacing and alignment */}
+            <div className="text-center space-y-4 w-full max-w-md mx-auto">
               {selectedMethod === 'gps' && !gpsPosition ? (
-                <div className="glass-light p-3 rounded-xl border border-orange-300/30">
+                <div className="glass-light p-4 rounded-xl border border-orange-300/30 mx-auto">
                   <p className="text-sm text-orange-600 font-medium flex items-center justify-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
                     Attendi il rilevamento della posizione GPS...
                   </p>
                 </div>
               ) : (
-                <div className="glass-light p-3 rounded-xl border border-green-300/30">
+                <div className="glass-light p-4 rounded-xl border border-green-300/30 mx-auto">
                   <p className="text-sm text-green-600 font-medium flex items-center justify-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     Sistema pronto per la timbratura
@@ -1032,12 +1038,17 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
                 </div>
               )}
               
-              {/* Current method indicator */}
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                <span>Metodo selezionato:</span>
-                <span className="font-semibold text-windtre-orange capitalize">
-                  {trackingMethods.find(m => m.id === selectedMethod)?.name}
-                </span>
+              {/* Enhanced method indicator with better styling */}
+              <div className="glass-light p-3 rounded-lg border border-windtre-orange/20 mx-auto">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <span className="text-gray-600">Metodo selezionato:</span>
+                  <span className="font-bold text-windtre-orange capitalize flex items-center gap-1">
+                    {trackingMethods.find(m => m.id === selectedMethod)?.icon && 
+                      React.createElement(trackingMethods.find(m => m.id === selectedMethod)!.icon, { className: "h-4 w-4" })
+                    }
+                    {trackingMethods.find(m => m.id === selectedMethod)?.name}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

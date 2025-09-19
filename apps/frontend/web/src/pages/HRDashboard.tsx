@@ -469,7 +469,7 @@ export default function HRDashboard() {
             <CheckCircle className="h-5 w-5 text-green-600" />
             Manager Approval Queue
             <Badge variant="outline" className="ml-auto">
-              {hrMetrics.pendingApprovals} Pending
+              {currentMetrics.pendingApprovals} Pending
             </Badge>
           </CardTitle>
           <CardDescription>Richieste in attesa con SLA tracking e azioni bulk</CardDescription>
@@ -629,7 +629,7 @@ export default function HRDashboard() {
                 onClick={() => setTab('leave-management')}
               >
                 <CheckCircle className="h-6 w-6 text-green-600" />
-                <span className="text-xs text-center">Bulk Approve ({hrMetrics.pendingApprovals})</span>
+                <span className="text-xs text-center">Bulk Approve ({currentMetrics.pendingApprovals})</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -1569,7 +1569,7 @@ export default function HRDashboard() {
             <CalendarIcon className="h-5 w-5 text-green-600" />
             Advanced Leave Management
             <Badge variant="outline" className="ml-auto">
-              {hrMetrics.pendingApprovals} Pending Approvals
+              {currentMetrics.pendingApprovals} Pending Approvals
             </Badge>
           </CardTitle>
           <CardDescription>Centralized leave approval, balance management e policy configuration</CardDescription>
@@ -1778,7 +1778,7 @@ export default function HRDashboard() {
             <CheckCircle className="h-5 w-5 text-green-600" />
             Centralized Approval Dashboard
             <Badge variant="outline" className="ml-auto">
-              {hrMetrics.pendingApprovals} requests
+              {currentMetrics.pendingApprovals} requests
             </Badge>
           </CardTitle>
           <CardDescription>Bulk operations, SLA tracking e workflow automation</CardDescription>
@@ -1789,7 +1789,7 @@ export default function HRDashboard() {
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="flex items-center gap-3">
                 <input type="checkbox" className="rounded" data-testid="hr-checkbox-select-all" />
-                <span className="text-sm font-medium">Select All ({hrMetrics.pendingApprovals} requests)</span>
+                <span className="text-sm font-medium">Select All ({currentMetrics.pendingApprovals} requests)</span>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" className="bg-green-600 hover:bg-green-700" data-testid="hr-button-bulk-approve">
