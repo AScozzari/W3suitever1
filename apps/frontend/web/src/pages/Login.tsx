@@ -61,8 +61,28 @@ export default function Login({ tenantCode: propTenantCode }: LoginProps = {}) {
     
     setIsLoading(true);
     
+    // DEVELOPMENT MODE BYPASS - Skip OAuth2 for development
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        // Set development token directly
+        const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZW1vLXVzZXIiLCJ0ZW5hbnRJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGUiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.demo';
+        localStorage.setItem('auth_token', demoToken);
+        localStorage.setItem('currentTenant', propTenantCode || 'staging');
+        localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
+        
+        // Redirect to dashboard
+        window.location.href = `/${propTenantCode || 'staging'}/dashboard`;
+        return;
+      } catch (error) {
+        console.error('Development login error:', error);
+        alert('Errore durante il login in development mode');
+        setIsLoading(false);
+        return;
+      }
+    }
+    
     try {
-      // OAuth2 Authorization Code Flow with PKCE
+      // OAuth2 Authorization Code Flow with PKCE (only for production)
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = await generateCodeChallenge(codeVerifier);
       
