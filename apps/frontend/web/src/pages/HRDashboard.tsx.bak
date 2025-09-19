@@ -779,11 +779,10 @@ export default function HRDashboard() {
     </div>
   );
 
-  function renderEmployees() {
-    return (
-      <div className="space-y-6">
-        {/* Enhanced Search and Management Bar */}
-        <Card className="glass-card" data-testid="hr-card-employee-management">
+  const renderEmployees = () => (
+    <div className="space-y-6">
+      {/* Enhanced Search and Management Bar */}
+      <Card className="glass-card" data-testid="hr-card-employee-management">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
@@ -1170,14 +1169,12 @@ export default function HRDashboard() {
         </CardContent>
       </Card>
     </div>
-    );
-  }
+  );
 
-  function renderTimeManagement() {
-    return (
-      <div className="space-y-6">
-        {/* Enhanced Time Management Header */}
-        <Card className="glass-card" data-testid="hr-card-time-management-header">
+  const renderTimeManagement = () => (
+    <div className="space-y-6">
+      {/* Enhanced Time Management Header */}
+      <Card className="glass-card" data-testid="hr-card-time-management-header">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-blue-600" />
@@ -1613,11 +1610,9 @@ export default function HRDashboard() {
         </Card>
       </div>
     </div>
-    );
-  }
+  );
 
-  function renderLeaveManagement() {
-    return (
+  const renderLeaveManagement = () => (
     <div className="space-y-6">
       {/* Enhanced Leave Management Header */}
       <Card className="glass-card" data-testid="hr-card-leave-management-header">
@@ -2175,8 +2170,7 @@ export default function HRDashboard() {
       </div>
       </div>
     </ErrorBoundary>
-    );
-  }
+  );
 
   const renderDocuments = () => {
     // Mock data for enhanced documents management

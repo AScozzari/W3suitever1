@@ -37,6 +37,7 @@ import {
   ManagerFilters
 } from '@/hooks/useHRRequests';
 import HRRequestDetails from './HRRequestDetails';
+import ErrorBoundary, { SafeRender } from '@/components/ErrorBoundary';
 
 // Request type icons
 const TYPE_ICONS: Record<string, React.ComponentType<any>> = {
@@ -127,7 +128,7 @@ export default function ManagerApprovalQueue({ className }: ManagerApprovalQueue
 
   // Data queries
   const { data: requestsData, isLoading, error, refetch } = useManagerApprovalQueue(filters);
-  const requests: HRRequest[] = requestsData?.requests || [];
+  const requests: HRRequest[] = (requestsData as any)?.requests || [];
 
   // Mutations
   const approveMutation = useApproveHRRequest();
@@ -157,7 +158,7 @@ export default function ManagerApprovalQueue({ className }: ManagerApprovalQueue
     
     const term = searchTerm.toLowerCase();
     return requests.filter((request) => {
-      const requesterName = `${request.requester?.firstName || ''} ${request.requester?.lastName || ''}`.toLowerCase();
+      const requesterName = `${request.requesterId || 'N/A'}`.toLowerCase();
       const title = request.title.toLowerCase();
       const type = HR_REQUEST_TYPES[request.type as keyof typeof HR_REQUEST_TYPES]?.toLowerCase() || '';
       
@@ -279,8 +280,9 @@ export default function ManagerApprovalQueue({ className }: ManagerApprovalQueue
   }
 
   return (
-    <div className={className}>
-      <Card className="glassmorphism-card">
+    <ErrorBoundary>
+      <div className={className}>
+        <Card className="glassmorphism-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
@@ -542,7 +544,7 @@ export default function ManagerApprovalQueue({ className }: ManagerApprovalQueue
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <span data-testid={`text-requester-${request.id}`}>
-                              {request.requester ? `${request.requester.firstName} ${request.requester.lastName}` : 'N/A'}
+                              {request.requesterId || 'N/A'}
                             </span>
                           </div>
                         </TableCell>
@@ -766,6 +768,7 @@ export default function ManagerApprovalQueue({ className }: ManagerApprovalQueue
           onUpdate={refetch}
         />
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
