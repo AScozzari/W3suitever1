@@ -150,7 +150,10 @@ function createSideEffects(
       }
       
       await timeTrackingService.clockIn(context.clockInData);
+      
+      // Invalidate cache to refresh current session and entries
       queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/entries'] });
     },
     
     apiClockOut: async (context) => {
@@ -162,17 +165,40 @@ function createSideEffects(
       }
       
       await timeTrackingService.clockOut(context.sessionId, context.clockOutData);
+      
+      // Invalidate cache to refresh current session and entries
       queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/entries'] });
     },
     
     apiStartBreak: async (context) => {
       if (!context.sessionId) throw new Error('No active session');
+      
+      // Ensure encryption is initialized before API call
+      if (encryptionManager.isSupported()) {
+        await encryptionManager.initialize(tenantId);
+      }
+      
       await timeTrackingService.startBreak(context.sessionId);
+      
+      // Invalidate cache to refresh current session state
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/entries'] });
     },
     
     apiEndBreak: async (context) => {
       if (!context.sessionId) throw new Error('No active session');
+      
+      // Ensure encryption is initialized before API call
+      if (encryptionManager.isSupported()) {
+        await encryptionManager.initialize(tenantId);
+      }
+      
       await timeTrackingService.endBreak(context.sessionId);
+      
+      // Invalidate cache to refresh current session state
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/current'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/entries'] });
     },
     
     // Timer Effects

@@ -63,6 +63,16 @@ export interface ClockOutData {
   };
 }
 
+export interface BreakData {
+  notes?: string;
+  geoLocation?: {
+    lat: number;
+    lng: number;
+    accuracy: number;
+    address?: string;
+  };
+}
+
 export interface TimeTrackingFilters {
   userId?: string;
   storeId?: string;
@@ -153,6 +163,25 @@ class TimeTrackingService {
     }
     // Demo tenant for development
     return '00000000-0000-0000-0000-000000000001';
+  }
+
+  // ==================== UNIFIED ERROR HANDLING ====================
+  private async handleServiceError<T>(
+    operation: string,
+    asyncOperation: () => Promise<T>
+  ): Promise<T> {
+    try {
+      console.log(`🔄 [${operation}] Starting operation`);
+      const result = await asyncOperation();
+      console.log(`✅ [${operation}] Operation completed successfully`);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error(`🚨 [${operation}-ERROR] Operation failed:`, errorMessage);
+      
+      // Standardized error response for UI consistency
+      throw new Error(`${operation} failed: ${errorMessage}`);
+    }
   }
 
   // ==================== ENCRYPTION HELPERS ====================
@@ -311,6 +340,7 @@ class TimeTrackingService {
 
   // ==================== CLOCK OPERATIONS ====================
   async clockIn(data: ClockInData): Promise<TimeTrackingEntry> {
+    return this.handleServiceError('CLOCK_IN', async () => {
     // Get device info automatically
     const deviceInfo = {
       ...data.deviceInfo,
@@ -346,23 +376,71 @@ class TimeTrackingService {
     }
 
     return decryptedResponse;
+    });
   }
 
   async clockOut(id: string, data?: ClockOutData): Promise<TimeTrackingEntry> {
-    const response = await apiPost<TimeTrackingEntry>(
-      `/api/hr/time-tracking/${id}/clock-out`,
-      {
-        ...data,
-        clockOut: new Date().toISOString(),
-      }
-    );
+    return this.handleServiceError('CLOCK_OUT', async () => {
+    console.log('🔒 [CLOCK-OUT] Processing clock out request with encryption support');
+    
+    let requestData: any = {
+      clockOut: new Date().toISOString(),
+    };
 
-    // Clear session from localStorage
-    if (response) {
-      localStorage.removeItem('w3_current_session');
+    // Encrypt sensitive data if present (similar to clockIn)
+    if (data && (data.geoLocation || data.notes)) {
+      try {
+        const encryptedClockOutData = await this.encryptSensitiveData({
+          storeId: '', // Not needed for clock out
+          trackingMethod: 'app' as any, // Not needed for clock out
+          geoLocation: data.geoLocation,
+          notes: data.notes,
+        });
+
+        // Add encrypted fields to request
+        if (encryptedClockOutData.encryptedGeoLocation) {
+          requestData.encryptedGeoLocation = encryptedClockOutData.encryptedGeoLocation;
+        }
+        if (encryptedClockOutData.encryptedNotes) {
+          requestData.encryptedNotes = encryptedClockOutData.encryptedNotes;
+        }
+        if (encryptedClockOutData.encryptionKeyId) {
+          requestData.encryptionKeyId = encryptedClockOutData.encryptionKeyId;
+        }
+        if (encryptedClockOutData.encryptionMetadata) {
+          requestData.encryptionMetadata = encryptedClockOutData.encryptionMetadata;
+        }
+
+        console.log('🔒 [CLOCK-OUT] Successfully encrypted sensitive data');
+      } catch (error) {
+        console.error('🚨 [CLOCK-OUT-ENCRYPTION-ERROR] Failed to encrypt sensitive data:', error);
+        
+        // Security gate: Only allow plaintext fallback in demo mode
+        if ((import.meta as any).env?.VITE_DEMO_MODE === 'true') {
+          console.warn('⚠️ [DEMO-MODE] Using plaintext fallback for clock out - NOT for production!');
+          requestData = { ...requestData, ...data };
+        } else {
+          throw new Error(`Clock out encryption failed: ${error instanceof Error ? error.message : 'Unknown encryption error'}`);
+        }
+      }
     }
 
-    return response;
+    const response = await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/${id}/clock-out`,
+      requestData
+    );
+
+    // Decrypt response data for client use
+    const decryptedResponse = await this.decryptSensitiveData(response);
+
+    // Clear session from localStorage
+    if (decryptedResponse) {
+      localStorage.removeItem('w3_current_session');
+      console.log('🗑️ [CLOCK-OUT] Session cleared from localStorage');
+    }
+
+    return decryptedResponse;
+    });
   }
 
   async getCurrentSession(): Promise<CurrentSession | null> {
@@ -392,22 +470,144 @@ class TimeTrackingService {
   }
 
   // ==================== BREAK MANAGEMENT ====================
-  async startBreak(trackingId: string): Promise<TimeTrackingEntry> {
-    return await apiPost<TimeTrackingEntry>(
-      `/api/hr/time-tracking/${trackingId}/break/start`,
-      {
-        breakStart: new Date().toISOString(),
+  async startBreak(trackingId: string, data?: BreakData): Promise<TimeTrackingEntry> {
+    return this.handleServiceError('START_BREAK', async () => {
+    console.log('🔒 [START-BREAK] Processing start break request with encryption support');
+    
+    let requestData: any = {
+      breakStart: new Date().toISOString(),
+    };
+
+    // Encrypt sensitive data if present
+    if (data && (data.geoLocation || data.notes)) {
+      try {
+        const encryptedBreakData = await this.encryptSensitiveData({
+          storeId: '', // Not needed for break operations
+          trackingMethod: 'app' as any, // Not needed for break operations
+          geoLocation: data.geoLocation,
+          notes: data.notes,
+        });
+
+        // Add encrypted fields to request
+        if (encryptedBreakData.encryptedGeoLocation) {
+          requestData.encryptedGeoLocation = encryptedBreakData.encryptedGeoLocation;
+        }
+        if (encryptedBreakData.encryptedNotes) {
+          requestData.encryptedNotes = encryptedBreakData.encryptedNotes;
+        }
+        if (encryptedBreakData.encryptionKeyId) {
+          requestData.encryptionKeyId = encryptedBreakData.encryptionKeyId;
+        }
+        if (encryptedBreakData.encryptionMetadata) {
+          requestData.encryptionMetadata = encryptedBreakData.encryptionMetadata;
+        }
+
+        console.log('🔒 [START-BREAK] Successfully encrypted sensitive data');
+      } catch (error) {
+        console.error('🚨 [START-BREAK-ENCRYPTION-ERROR] Failed to encrypt sensitive data:', error);
+        
+        // Security gate: Only allow plaintext fallback in demo mode
+        if ((import.meta as any).env?.VITE_DEMO_MODE === 'true') {
+          console.warn('⚠️ [DEMO-MODE] Using plaintext fallback for start break - NOT for production!');
+          requestData = { ...requestData, ...data };
+        } else {
+          throw new Error(`Start break encryption failed: ${error instanceof Error ? error.message : 'Unknown encryption error'}`);
+        }
       }
+    }
+
+    const response = await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/${trackingId}/break/start`,
+      requestData
     );
+
+    // Decrypt response data for client use
+    const decryptedResponse = await this.decryptSensitiveData(response);
+
+    // Update session in localStorage to reflect break status
+    if (decryptedResponse) {
+      const cached = localStorage.getItem('w3_current_session');
+      if (cached) {
+        const session = JSON.parse(cached);
+        session.isOnBreak = true;
+        session.breakStartTime = new Date().toISOString();
+        localStorage.setItem('w3_current_session', JSON.stringify(session));
+        console.log('💾 [START-BREAK] Session updated in localStorage with break status');
+      }
+    }
+
+    return decryptedResponse;
+    });
   }
 
-  async endBreak(trackingId: string): Promise<TimeTrackingEntry> {
-    return await apiPost<TimeTrackingEntry>(
-      `/api/hr/time-tracking/${trackingId}/break/end`,
-      {
-        breakEnd: new Date().toISOString(),
+  async endBreak(trackingId: string, data?: BreakData): Promise<TimeTrackingEntry> {
+    return this.handleServiceError('END_BREAK', async () => {
+    console.log('🔒 [END-BREAK] Processing end break request with encryption support');
+    
+    let requestData: any = {
+      breakEnd: new Date().toISOString(),
+    };
+
+    // Encrypt sensitive data if present
+    if (data && (data.geoLocation || data.notes)) {
+      try {
+        const encryptedBreakData = await this.encryptSensitiveData({
+          storeId: '', // Not needed for break operations
+          trackingMethod: 'app' as any, // Not needed for break operations
+          geoLocation: data.geoLocation,
+          notes: data.notes,
+        });
+
+        // Add encrypted fields to request
+        if (encryptedBreakData.encryptedGeoLocation) {
+          requestData.encryptedGeoLocation = encryptedBreakData.encryptedGeoLocation;
+        }
+        if (encryptedBreakData.encryptedNotes) {
+          requestData.encryptedNotes = encryptedBreakData.encryptedNotes;
+        }
+        if (encryptedBreakData.encryptionKeyId) {
+          requestData.encryptionKeyId = encryptedBreakData.encryptionKeyId;
+        }
+        if (encryptedBreakData.encryptionMetadata) {
+          requestData.encryptionMetadata = encryptedBreakData.encryptionMetadata;
+        }
+
+        console.log('🔒 [END-BREAK] Successfully encrypted sensitive data');
+      } catch (error) {
+        console.error('🚨 [END-BREAK-ENCRYPTION-ERROR] Failed to encrypt sensitive data:', error);
+        
+        // Security gate: Only allow plaintext fallback in demo mode
+        if ((import.meta as any).env?.VITE_DEMO_MODE === 'true') {
+          console.warn('⚠️ [DEMO-MODE] Using plaintext fallback for end break - NOT for production!');
+          requestData = { ...requestData, ...data };
+        } else {
+          throw new Error(`End break encryption failed: ${error instanceof Error ? error.message : 'Unknown encryption error'}`);
+        }
       }
+    }
+
+    const response = await apiPost<TimeTrackingEntry>(
+      `/api/hr/time-tracking/${trackingId}/break/end`,
+      requestData
     );
+
+    // Decrypt response data for client use
+    const decryptedResponse = await this.decryptSensitiveData(response);
+
+    // Update session in localStorage to reflect break ended
+    if (decryptedResponse) {
+      const cached = localStorage.getItem('w3_current_session');
+      if (cached) {
+        const session = JSON.parse(cached);
+        session.isOnBreak = false;
+        session.breakStartTime = null;
+        localStorage.setItem('w3_current_session', JSON.stringify(session));
+        console.log('💾 [END-BREAK] Session updated in localStorage - break ended');
+      }
+    }
+
+    return decryptedResponse;
+    });
   }
 
   // ==================== ENTRIES MANAGEMENT ====================
