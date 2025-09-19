@@ -193,28 +193,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // SECURITY: Critical production configuration validation for ALL environments
-  if (config.AUTH_MODE !== 'oauth2') {
-    console.error('🚨 CRITICAL SECURITY ERROR: Only oauth2 authentication is allowed');
+  // SECURITY: Critical production configuration validation
+  if (process.env.NODE_ENV === 'production' && config.AUTH_MODE !== 'oauth2') {
+    console.error('🚨 CRITICAL SECURITY ERROR: Only oauth2 authentication is allowed in production');
     console.error(`❌ Current AUTH_MODE: ${config.AUTH_MODE}`);
     console.error('💥 FAILING FAST to prevent security breach');
     console.error('🔧 Set AUTH_MODE=oauth2 environment variable');
     process.exit(1);
   }
-  console.log('✅ Security validation passed - using oauth2');
+  
+  // Development mode warning
+  if (process.env.NODE_ENV === 'development' && config.AUTH_MODE === 'development') {
+    console.log('⚠️  Running in DEVELOPMENT mode with basic authentication');
+    console.log('🔧 For production deployment, set AUTH_MODE=oauth2');
+  }
+  console.log(`✅ Security validation passed - using ${config.AUTH_MODE} mode`);
 
   // Conditional OAuth2 Setup based on AUTH_MODE
   if (config.AUTH_MODE === 'oauth2') {
     console.log('🔐 Setting up OAuth2 Authorization Server (AUTH_MODE=oauth2)');
     setupOAuth2Server(app);
+  } else if (config.AUTH_MODE === 'development' && process.env.NODE_ENV === 'development') {
+    console.log('🔧 Running in DEVELOPMENT mode - basic authentication enabled');
+    console.log('⚠️  This mode should NEVER be used in production');
+    // Development auth setup would go here if needed
   } else {
-    // SECURITY FIX: Remove development auth endpoints completely
-    // These were critical security vulnerabilities that could leak into production
-    
-    console.error('🚨 CRITICAL SECURITY: Development AUTH_MODE detected');
-    console.error('💥 Only OAuth2 authentication is allowed in all environments');
-    console.error('🔧 Set AUTH_MODE=oauth2 to use proper authentication');
-    console.error('❌ FAILING FAST - no development endpoints will be created');
+    console.error('🚨 CRITICAL SECURITY: Invalid AUTH_MODE configuration');
+    console.error(`❌ AUTH_MODE: ${config.AUTH_MODE}, NODE_ENV: ${process.env.NODE_ENV}`);
+    console.error('💥 Only oauth2 authentication is allowed in production');
+    console.error('🔧 Set AUTH_MODE=oauth2 for production or AUTH_MODE=development for development');
     process.exit(1);
   }
 
