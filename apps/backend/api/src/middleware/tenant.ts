@@ -43,23 +43,8 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     }
     lastCallTime = now;
 
-    // DEVELOPMENT BYPASS - Use mock tenant when database is unavailable
-    if (process.env.NODE_ENV === 'development') {
-      // Check if tenant is already set to prevent redundant processing
-      if (req.tenant) {
-        return next();
-      }
-      
-      const mockTenant = {
-        id: 'demo-tenant-id',
-        name: 'W3 Suite Demo',
-        slug: 'w3-demo'
-      };
-      
-      req.tenant = mockTenant;
-      console.log('[TENANT-DEV] Using mock tenant:', mockTenant.name, 'for path:', req.path);
-      return next();
-    }
+    // SECURITY: Remove development bypass - all environments must use real database
+    // No mock tenant bypasses allowed - this was a security vulnerability
     
     // PRODUCTION LOGIC - Real database queries
     // In produzione, il tenant verrebbe determinato da:
@@ -107,14 +92,24 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     
     next();
   } catch (error) {
-    console.error('Tenant middleware error:', error);
+    console.error('CRITICAL: Tenant middleware database error:', error);
     
-    // FALLBACK: Use mock tenant even in production if database fails
-    console.log('[TENANT-FALLBACK] Database unavailable, using mock tenant');
+    // SECURITY FIX: Fail fast in production - no fallback tenant allowed
+    if (process.env.NODE_ENV === 'production') {
+      console.error('🚨 PRODUCTION SECURITY: Database tenant resolution failed - rejecting request');
+      return res.status(503).json({ 
+        error: 'SECURITY_ERROR',
+        message: 'Tenant resolution failed - service unavailable for security',
+        details: 'Production does not allow tenant fallbacks'
+      });
+    }
+    
+    // Development only: Allow controlled fallback with clear logging
+    console.log('[TENANT-DEV-FALLBACK] Development fallback tenant (DATABASE UNAVAILABLE)');
     req.tenant = {
-      id: 'fallback-tenant-id',
-      name: 'Fallback Tenant',
-      slug: 'fallback'
+      id: 'dev-fallback-tenant-id',
+      name: 'Development Fallback Tenant',
+      slug: 'dev-fallback'
     };
     next();
   }
@@ -126,13 +121,8 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
       return next();
     }
     
-    // DEMO USER FAST PATH: Use req.user.permissions for demo users in development
-    if (process.env.NODE_ENV === 'development' && req.user?.id === 'demo-user') {
-      const perms = Array.isArray((req.user as any).permissions) ? (req.user as any).permissions : [];
-      req.userPermissions = perms;
-      console.log(`[RBAC-DEMO] Using inline permissions: ${req.userPermissions?.join(',')}`);
-      return next();
-    }
+    // SECURITY FIX: Remove demo user permissions bypass - all users must go through proper RBAC
+    // This was a security vulnerability that bypassed proper authorization
     
     // Check if tenant has granular RBAC enabled - default is simplified admin permissions
     const tenantResult = await db

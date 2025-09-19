@@ -193,142 +193,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // SECURITY: Critical production configuration validation
-  if (config.NODE_ENV === 'production') {
-    if (config.AUTH_MODE !== 'oauth2') {
-      console.error('🚨 CRITICAL SECURITY ERROR: Production MUST use oauth2 authentication');
-      console.error(`❌ Current AUTH_MODE: ${config.AUTH_MODE}`);
-      console.error('💥 FAILING FAST to prevent security breach');
-      process.exit(1);
-    }
-    console.log('✅ Production security validation passed - using oauth2');
+  // SECURITY: Critical production configuration validation for ALL environments
+  if (config.AUTH_MODE !== 'oauth2') {
+    console.error('🚨 CRITICAL SECURITY ERROR: Only oauth2 authentication is allowed');
+    console.error(`❌ Current AUTH_MODE: ${config.AUTH_MODE}`);
+    console.error('💥 FAILING FAST to prevent security breach');
+    console.error('🔧 Set AUTH_MODE=oauth2 environment variable');
+    process.exit(1);
   }
+  console.log('✅ Security validation passed - using oauth2');
 
   // Conditional OAuth2 Setup based on AUTH_MODE
   if (config.AUTH_MODE === 'oauth2') {
     console.log('🔐 Setting up OAuth2 Authorization Server (AUTH_MODE=oauth2)');
     setupOAuth2Server(app);
   } else {
-    // SECURITY: Strict development-only validation
-    if (config.NODE_ENV !== 'development' && config.NODE_ENV !== 'test') {
-      console.error('🚨 CRITICAL SECURITY ERROR: Dev auth endpoints ONLY allowed in development/test environments');
-      console.error(`❌ Current NODE_ENV: ${config.NODE_ENV}`);
-      console.error(`❌ Current AUTH_MODE: ${config.AUTH_MODE}`);
-      console.error('💥 FAILING FAST to prevent security breach');
-      process.exit(1);
-    }
+    // SECURITY FIX: Remove development auth endpoints completely
+    // These were critical security vulnerabilities that could leak into production
     
-    console.log('🔓 Setting up development auth endpoints (DEVELOPMENT ONLY)');
-    
-    // SECURITY: Development mode authentication endpoints - STRICTLY DEVELOPMENT ONLY
-    app.post('/oauth2/authorize', async (req, res) => {
-      // SECURITY: Double-check environment on every request
-      if (config.NODE_ENV === 'production') {
-        console.error('🚨 SECURITY VIOLATION: Dev auth endpoint called in production');
-        return res.status(403).json({
-          error: 'forbidden',
-          message: 'Development authentication endpoints are disabled in production'
-        });
-      }
-      
-      console.log('📋 Development auth - authorize endpoint called (DEV ONLY)');
-      console.log('Request body:', req.body);
-      
-      // SECURITY: Still require credentials even in development
-      const { username, password } = req.body;
-      
-      // SECURITY: Basic validation even in development mode
-      if (!username || !password) {
-        console.log('❌ Development auth failed - missing credentials');
-        return res.status(401).json({
-          error: 'invalid_credentials',
-          message: 'Username and password are required'
-        });
-      }
-
-      // SECURITY: At minimum, require non-empty credentials
-      if (username.trim().length === 0 || password.trim().length === 0) {
-        console.log('❌ Development auth failed - empty credentials');
-        return res.status(401).json({
-          error: 'invalid_credentials',
-          message: 'Username and password cannot be empty'
-        });
-      }
-      
-      const mockCode = 'dev-auth-code-' + Date.now();
-      
-      console.log('✅ Development auth successful for user:', username, '(DEVELOPMENT MODE ONLY)');
-      
-      // Return JSON response instead of redirect for AJAX requests
-      return res.json({
-        code: mockCode,
-        state: req.body.state || null
-      });
-    });
-
-    app.post('/oauth2/token', async (req, res) => {
-      // SECURITY: Double-check environment on every request  
-      if (config.NODE_ENV === 'production') {
-        console.error('🚨 SECURITY VIOLATION: Dev token endpoint called in production');
-        return res.status(403).json({
-          error: 'forbidden',
-          message: 'Development authentication endpoints are disabled in production'
-        });
-      }
-      
-      console.log('🎫 Development auth - token endpoint called (DEV ONLY)');
-      
-      // Generate mock JWT token for development
-      const mockToken = jwt.sign({
-        sub: 'dev-user-id',
-        id: 'dev-user-id',
-        email: req.body.username || 'admin@w3suite.com',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        tenant_id: '00000000-0000-0000-0000-000000000001',
-        roles: ['admin', 'manager'],
-        permissions: ['*'],
-        capabilities: [],
-        scope: 'openid profile email tenant_access',
-        client_id: 'w3suite-frontend',
-        aud: 'w3suite-frontend',
-        iss: 'w3suite-auth-dev',
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
-        iat: Math.floor(Date.now() / 1000)
-      }, JWT_SECRET);
-
-      console.log('✅ Development token generated successfully');
-      
-      return res.json({
-        access_token: mockToken,
-        token_type: 'Bearer',
-        expires_in: 86400,
-        refresh_token: 'dev-refresh-token-' + Date.now(),
-        scope: 'openid profile email tenant_access',
-        id_token: mockToken // Same as access token for simplicity in dev mode
-      });
-    });
-    
-    // Development mode session endpoint
-    app.get('/oauth2/userinfo', async (req, res) => {
-      console.log('👤 Development auth - userinfo endpoint called');
-      
-      // Return mock user info for development
-      return res.json({
-        sub: 'dev-user-id',
-        email: 'admin@w3suite.com',
-        email_verified: true,
-        name: 'Admin User',
-        preferred_username: 'admin',
-        given_name: 'Admin',
-        family_name: 'User',
-        tenant_id: '00000000-0000-0000-0000-000000000001',
-        tenant_name: 'Demo Organization',
-        roles: ['admin', 'manager'],
-        permissions: ['*']
-      });
-    });
-    
-    console.log('✅ Development authentication routes configured');
+    console.error('🚨 CRITICAL SECURITY: Development AUTH_MODE detected');
+    console.error('💥 Only OAuth2 authentication is allowed in all environments');
+    console.error('🔧 Set AUTH_MODE=oauth2 to use proper authentication');
+    console.error('❌ FAILING FAST - no development endpoints will be created');
+    process.exit(1);
   }
 
   // Apply correlation middleware globally for request tracking
@@ -433,27 +320,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const startTime = Date.now();
 
     try {
-      // Development mode: Use header-based authentication without JWT tokens
-      if (config.AUTH_MODE === 'development') {
-        const tenantId = req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
-        req.user = {
-          id: 'demo-user',
-          email: 'admin@w3suite.com',
-          tenantId: tenantId,
-          roles: ['admin'],
-          permissions: ['*'],
-          capabilities: [],
-          scope: 'openid profile email'
-        };
-        // Set RLS context for demo user
-        try {
-          await setTenantContext(tenantId);
-        } catch (rlsError) {
-          console.error(`[RLS-DEMO] Failed to set tenant context: ${rlsError}`);
-        }
-
-        return next(); // Use development authentication mode
-      }
+      // SECURITY FIX: Remove header-based auth bypass - all environments must use proper OAuth2/JWT
+      // This development bypass was a critical security vulnerability
+      
+      // ALL environments now require proper JWT token authentication
 
       const authHeader = req.headers.authorization;
       const token = authHeader?.split(' ')[1];
@@ -2265,372 +2135,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // ==================== HR LEAVE MANAGEMENT API ====================
+  // 🚨 CRITICAL SECURITY NOTICE: Legacy HR endpoints DISABLED for security audit
+  // These endpoints bypassed RBAC and allowed unauthorized access to HR data
+  // Use the new secure endpoints under /api/hr/leave-requests instead
 
-  // Get leave balance for a user
-  app.get('/api/hr/leave/balance/:userId', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { userId } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      const currentYear = new Date().getFullYear();
-      
-      // Get employee balance from database
-      const { employeeBalances } = await import('../db/schema/w3suite.js');
-      const balance = await db.select()
-        .from(employeeBalances)
-        .where(and(
-          eq(employeeBalances.userId, userId),
-          eq(employeeBalances.year, currentYear)
-        ))
-        .limit(1);
-      
-      if (!balance[0]) {
-        // Create default balance if not exists
-        const defaultBalance = {
-          tenantId,
-          userId,
-          year: currentYear,
-          vacationDaysEntitled: 22, // Default Italian vacation days
-          vacationDaysUsed: 0,
-          vacationDaysRemaining: 22,
-          sickDaysUsed: 0,
-          personalDaysUsed: 0,
-          overtimeHours: 0,
-          compTimeHours: 0,
-          adjustments: []
-        };
-        
-        const newBalance = await db.insert(employeeBalances)
-          .values(defaultBalance)
-          .returning();
-        
-        return res.json(newBalance[0]);
-      }
-      
-      res.json(balance[0]);
-    } catch (error) {
-      handleApiError(error, res, 'recupero saldo ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.get('/api/hr/leave/balance/:userId', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint bypassed RBAC security - use secure alternatives',
+      secureAlternative: '/api/hr/leave-requests'
+    });
   });
 
-  // Get leave requests
-  app.get('/api/hr/leave/requests', enterpriseAuth, async (req: any, res) => {
-    try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      const userId = req.user?.id;
-      const userRole = req.user?.role || 'USER';
-      
-      const filters = {
-        status: req.query.status,
-        startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
-        endDate: req.query.endDate ? new Date(req.query.endDate) : undefined,
-        leaveType: req.query.leaveType,
-        approverId: req.query.approverId
-      };
-      
-      // MOCK DATA - leave_requests table does not exist yet
-      const requests: any[] = [];
-      
-      res.json(requests);
-    } catch (error) {
-      handleApiError(error, res, 'recupero richieste ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.get('/api/hr/leave/requests', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint bypassed RBAC security - use secure alternatives',
+      secureAlternative: '/api/hr/leave-requests'
+    });
   });
 
-  // Create leave request
-  app.post('/api/hr/leave/requests', enterpriseAuth, async (req: any, res) => {
-    try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      const userId = req.user?.id;
-      
-      const requestData = {
-        ...req.body,
-        tenantId,
-        userId,
-        status: 'draft' as const,
-        createdAt: new Date()
-      };
-      
-      // Calculate total days (excluding weekends)
-      const startDate = new Date(req.body.startDate);
-      const endDate = new Date(req.body.endDate);
-      let totalDays = 0;
-      const currentDate = new Date(startDate);
-      
-      while (currentDate <= endDate) {
-        const dayOfWeek = currentDate.getDay();
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Sunday (0) and Saturday (6)
-          totalDays++;
-        }
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      
-      requestData.totalDays = totalDays;
-      
-      // Check balance
-      const { employeeBalances } = await import('../db/schema/w3suite.js');
-      const currentYear = new Date().getFullYear();
-      const balance = await db.select()
-        .from(employeeBalances)
-        .where(and(
-          eq(employeeBalances.userId, userId),
-          eq(employeeBalances.year, currentYear)
-        ))
-        .limit(1);
-      
-      if (balance[0] && req.body.leaveType === 'vacation') {
-        if (balance[0].vacationDaysRemaining < totalDays) {
-          return res.status(400).json({
-            error: 'insufficient_balance',
-            message: `Saldo ferie insufficiente. Disponibili: ${balance[0].vacationDaysRemaining}, Richiesti: ${totalDays}`
-          });
-        }
-      }
-      
-      // MOCK DATA - leave_requests table does not exist yet
-      const newRequest = {
-        id: uuidv4(),
-        ...requestData,
-        status: 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      res.status(201).json(newRequest);
-    } catch (error) {
-      handleApiError(error, res, 'creazione richiesta ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.post('/api/hr/leave/requests', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint bypassed RBAC security - use secure alternatives',
+      secureAlternative: '/api/hr/leave-requests'
+    });
   });
 
-  // Update leave request
-  app.put('/api/hr/leave/requests/:id', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      const { leaveRequests } = await import('../db/schema/w3suite.js');
-      
-      const updated = await db.update(leaveRequests)
-        .set({
-          ...req.body,
-          updatedAt: new Date()
-        })
-        .where(and(
-          eq(leaveRequests.id, id),
-          eq(leaveRequests.tenantId, tenantId)
-        ))
-        .returning();
-      
-      if (!updated[0]) {
-        return res.status(404).json({
-          error: 'not_found',
-          message: 'Richiesta non trovata'
-        });
-      }
-      
-      res.json(updated[0]);
-    } catch (error) {
-      handleApiError(error, res, 'aggiornamento richiesta ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.put('/api/hr/leave/requests/:id', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint bypassed RBAC security - use secure alternatives',
+      secureAlternative: '/api/hr/leave-requests'
+    });
   });
 
-  // Delete leave request
-  app.delete('/api/hr/leave/requests/:id', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      const { leaveRequests } = await import('../db/schema/w3suite.js');
-      
-      const deleted = await db.delete(leaveRequests)
-        .where(and(
-          eq(leaveRequests.id, id),
-          eq(leaveRequests.tenantId, tenantId),
-          eq(leaveRequests.status, 'draft') // Can only delete draft requests
-        ))
-        .returning();
-      
-      if (!deleted[0]) {
-        return res.status(404).json({
-          error: 'not_found',
-          message: 'Richiesta non trovata o non cancellabile'
-        });
-      }
-      
-      res.status(204).send();
-    } catch (error) {
-      handleApiError(error, res, 'eliminazione richiesta ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.delete('/api/hr/leave/requests/:id', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint bypassed RBAC security - use secure alternatives',
+      secureAlternative: '/api/hr/leave-requests'
+    });
   });
 
-  // Approve leave request
-  app.post('/api/hr/leave/requests/:id/approve', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const approverId = req.user?.id;
-      const comments = req.body.comments;
-      
-      const approved = await hrStorage.approveLeaveRequest(id, approverId, comments);
-      
-      // Update balance if vacation
-      if (approved.leaveType === 'vacation') {
-        const { employeeBalances } = await import('../db/schema/w3suite.js');
-        const currentYear = new Date().getFullYear();
-        
-        await db.update(employeeBalances)
-          .set({
-            vacationDaysUsed: sql`${employeeBalances.vacationDaysUsed} + ${approved.totalDays}`,
-            vacationDaysRemaining: sql`${employeeBalances.vacationDaysRemaining} - ${approved.totalDays}`,
-            updatedAt: new Date()
-          })
-          .where(and(
-            eq(employeeBalances.userId, approved.userId),
-            eq(employeeBalances.year, currentYear)
-          ));
-      }
-      
-      // Create calendar event
-      const eventData = {
-        tenantId: approved.tenantId,
-        ownerId: approved.userId,
-        title: `${approved.leaveType === 'vacation' ? 'Ferie' : 'Permesso'} - ${approved.userId}`,
-        description: approved.reason,
-        startDate: new Date(approved.startDate),
-        endDate: new Date(approved.endDate),
-        allDay: true,
-        type: 'time_off' as const,
-        visibility: 'team' as const,
-        status: 'confirmed' as const,
-        hrSensitive: true,
-        createdBy: approverId
-      };
-      
-      await hrStorage.createCalendarEvent(eventData);
-      
-      res.json(approved);
-    } catch (error) {
-      handleApiError(error, res, 'approvazione richiesta ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.post('/api/hr/leave/requests/:id/approve', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'CRITICAL: This endpoint allowed ANY authenticated user to approve leave requests without proper authorization',
+      secureAlternative: '/api/hr/leave-requests/:id/approve'
+    });
   });
 
-  // Reject leave request
-  app.post('/api/hr/leave/requests/:id/reject', enterpriseAuth, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const approverId = req.user?.id;
-      const reason = req.body.reason;
-      
-      if (!reason) {
-        return res.status(400).json({
-          error: 'missing_reason',
-          message: 'Motivazione del rifiuto richiesta'
-        });
-      }
-      
-      const rejected = await hrStorage.rejectLeaveRequest(id, approverId, reason);
-      
-      res.json(rejected);
-    } catch (error) {
-      handleApiError(error, res, 'rifiuto richiesta ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.post('/api/hr/leave/requests/:id/reject', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'CRITICAL: This endpoint allowed ANY authenticated user to reject leave requests without proper authorization',
+      secureAlternative: '/api/hr/leave-requests/:id/reject'
+    });
   });
 
-  // Get leave policies
-  app.get('/api/hr/leave/policies', enterpriseAuth, async (req: any, res) => {
-    try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      // Get policies from tenant settings
-      const tenant = await db.select()
-        .from(tenants)
-        .where(eq(tenants.id, tenantId))
-        .limit(1);
-      
-      const defaultPolicies = {
-        vacationDaysPerYear: 22,
-        minimumAdvanceDays: 15,
-        maximumConsecutiveDays: 15,
-        blackoutDates: [],
-        carryoverDays: 5,
-        sickDaysRequireCertificate: 3,
-        publicHolidays: [
-          '2025-01-01', '2025-01-06', '2025-04-21', '2025-04-25',
-          '2025-05-01', '2025-06-02', '2025-08-15', '2025-11-01',
-          '2025-12-08', '2025-12-25', '2025-12-26'
-        ]
-      };
-      
-      const tenantSettings = tenant[0]?.settings as any;
-      const policies = tenantSettings?.leavePolicies || defaultPolicies;
-      
-      res.json(policies);
-    } catch (error) {
-      handleApiError(error, res, 'recupero policy ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.get('/api/hr/leave/policies', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint bypassed RBAC security - use secure alternatives',
+      secureAlternative: 'Contact administrator for policy access'
+    });
   });
 
-  // Update leave policies (HR/Admin only)
-  app.put('/api/hr/leave/policies', enterpriseAuth, requirePermission('hr.policies.update'), async (req: any, res) => {
-    try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      
-      const tenant = await db.select()
-        .from(tenants)
-        .where(eq(tenants.id, tenantId))
-        .limit(1);
-      
-      if (!tenant[0]) {
-        return res.status(404).json({
-          error: 'not_found',
-          message: 'Tenant non trovato'
-        });
-      }
-      
-      const currentSettings = (tenant[0].settings || {}) as any;
-      currentSettings.leavePolicies = req.body;
-      
-      const updated = await db.update(tenants)
-        .set({
-          settings: currentSettings,
-          updatedAt: new Date()
-        })
-        .where(eq(tenants.id, tenantId))
-        .returning();
-      
-      const updatedSettings = updated[0].settings as any;
-      res.json(updatedSettings?.leavePolicies);
-    } catch (error) {
-      handleApiError(error, res, 'aggiornamento policy ferie');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - missing RBAC middleware
+  app.put('/api/hr/leave/policies', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint missing RBAC middleware - bypassed proper security chain',
+      secureAlternative: 'Contact administrator for policy updates'
+    });
   });
 
-  // Get team calendar
-  app.get('/api/hr/leave/team-calendar', enterpriseAuth, async (req: any, res) => {
-    try {
-      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
-      const userId = req.user?.id;
-      const userRole = req.user?.role || 'USER';
-      
-      const filters = {
-        startDate: req.query.startDate ? new Date(req.query.startDate) : new Date(),
-        endDate: req.query.endDate ? new Date(req.query.endDate) : new Date(new Date().setMonth(new Date().getMonth() + 1)),
-        type: 'time_off',
-        visibility: req.query.visibility || 'team',
-        storeId: req.query.storeId,
-        teamId: req.query.teamId
-      };
-      
-      const events = await hrStorage.getCalendarEvents(
-        tenantId,
-        userId,
-        userRole,
-        filters
-      );
-      
-      res.json(events);
-    } catch (error) {
-      handleApiError(error, res, 'recupero calendario team');
-    }
+  // SECURITY FIX: Disabled vulnerable endpoint - bypassed RBAC
+  app.get('/api/hr/leave/team-calendar', (req: any, res) => {
+    res.status(403).json({
+      error: 'SECURITY_DISABLED',
+      message: 'This legacy HR endpoint has been disabled for security reasons. Contact administrator.',
+      details: 'Endpoint bypassed RBAC security - allowed unauthorized access to team calendar data',
+      secureAlternative: 'Use properly secured calendar endpoints'
+    });
   });
 
   // ==================== SHIFT MANAGEMENT ROUTES ====================
