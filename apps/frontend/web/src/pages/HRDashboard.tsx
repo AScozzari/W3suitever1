@@ -7262,8 +7262,8 @@ export default function HRDashboard() {
 
       {/* Modals - Same pattern as EmployeeDashboard */}
       <>
-      {/* Employee Modal */
-      <Dialog open={employeeModal.open} onOpenChange={(open) => !open && setEmployeeModal({ open: false, data: null })}>
+        {/* Employee Modal */}
+        <Dialog open={employeeModal.open} onOpenChange={(open) => !open && setEmployeeModal({ open: false, data: null })}>
           <DialogContent className="sm:max-w-[600px]" data-testid="hr-modal-employee">
             <DialogHeader>
               <DialogTitle>
