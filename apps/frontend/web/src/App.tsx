@@ -25,6 +25,7 @@ import HRAttendance from "./pages/HRAttendance";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import HRRequestCenter from "./pages/HRRequestCenter";
 import ManagerHRDashboard from "./pages/ManagerHRDashboard";
+import ManagerApprovalQueue from "./pages/ManagerApprovalQueue";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -84,6 +85,10 @@ function Router() {
       {/* Manager HR Approval Dashboard */}
       <Route path="/:tenant/manager/hr-approvals">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><ManagerHRDashboard /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      {/* Manager Approval Queue - Dedicated Interface */}
+      <Route path="/:tenant/manager/approval-queue">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ManagerApprovalQueue /></AuthenticatedApp></TenantWrapper>}
       </Route>
       {/* Route principale HR - tutte le richieste HR puntano qui */}
       <Route path="/:tenant/hr">
