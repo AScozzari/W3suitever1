@@ -51,27 +51,17 @@ export default function Header({
     enabled: !!user
   });
 
-  // Notification queries
+  // Notification queries - Use default queryClient fetcher for proper tenant middleware
   const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery({
     queryKey: ['/api/notifications/unread-count'],
-    queryFn: async () => {
-      const response = await apiService.getUnreadNotificationCount();
-      return response.success ? response.data : { unreadCount: 0 };
-    },
+    // No custom queryFn - use default fetcher from queryClient for proper auth/tenant headers
     refetchInterval: 15000, // Poll every 15 seconds
     enabled: !!user
   });
 
   const { data: notificationsData, refetch: refetchNotifications } = useQuery({
     queryKey: ['/api/notifications', { status: 'unread', limit: 10 }],
-    queryFn: async () => {
-      const response = await apiService.getNotifications({ 
-        status: 'unread', 
-        limit: 10,
-        page: 1 
-      });
-      return response.success ? response.data : { notifications: [], unreadCount: 0, metadata: {} };
-    },
+    // No custom queryFn - use default fetcher from queryClient for proper auth/tenant headers
     enabled: !!user && notificationMenuOpen
   });
 

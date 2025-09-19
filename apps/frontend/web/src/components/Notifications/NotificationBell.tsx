@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, CheckCircle, Clock, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useMarkAllNotificationsRead, type Notification } from '@/hooks/useNotifications';
-import { useLocation } from 'wouter';
+import { useLocation, useParams } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -32,6 +32,8 @@ interface NotificationBellProps {
 export default function NotificationBell({ isMobile = false }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [, navigate] = useLocation();
+  const params = useParams();
+  const currentTenant = (params as any).tenant || 'staging'; // fallback for safety
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications and unread count
@@ -228,7 +230,7 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
               )}
               
               <button
-                onClick={() => navigate('/notifications')}
+                onClick={() => navigate(`/${currentTenant}/notification-center`)}
                 style={{
                   background: 'none',
                   border: 'none',

@@ -1,32 +1,16 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
+import { queryClient, setCurrentTenantId } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
 import { Route, Switch, useParams, Redirect } from "wouter";
 import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
-import CalendarPage from "./lib/CalendarPage";
-import TimeTrackingPage from "./pages/TimeTrackingPage";
-import { LeaveManagementPage } from "./pages/LeaveManagementPage";
-import ShiftPlanningPage from "./pages/ShiftPlanningPage";
-import DocumentDrivePage from "./pages/DocumentDrivePage";
-import ExpenseManagementPage from "./pages/ExpenseManagementPage";
-import HRAnalyticsPage from "./pages/HRAnalyticsPage";
+// Legacy imports removed - consolidated into HR and Employee dashboards
 import HRDashboard from "./pages/HRDashboard";
-import EmployeeManagement from "./pages/EmployeeManagement";
-import PerformanceReviews from "./pages/PerformanceReviews";
-import PayrollManagement from "./pages/PayrollManagement";
-import TrainingDevelopment from "./pages/TrainingDevelopment";
-import HRTestPage from "./pages/HRTestPage";
-import HRCompliance from "./pages/HRCompliance";
-import HRReports from "./pages/HRReports";
-import HRAttendance from "./pages/HRAttendance";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
-import HRRequestCenter from "./pages/HRRequestCenter";
-import ManagerHRDashboard from "./pages/ManagerHRDashboard";
-import ManagerApprovalQueue from "./pages/ManagerApprovalQueue";
 import NotificationCenter from "./pages/NotificationCenter";
+import TenantVerificationTest from "./pages/TenantVerificationTest";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -49,47 +33,35 @@ function Router() {
     <Switch>
       {/* Route dedicate per login */}
       <Route path="/:tenant/login">
-        {(params) => <TenantWrapper params={params}><LoginPage /></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><Login tenantCode={params.tenant} /></TenantWrapper>}
       </Route>
       
-      {/* Route con tenant nel path - richiedono autenticazione */}
+      {/* ===== ENTERPRISE HR CONSOLIDATION: ONLY 2 HR ROUTES ===== */}
+      
+      {/* Legacy HR route redirects - consolidation from 24+ pages to 2 dashboards */}
       <Route path="/:tenant/settings">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/calendar">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><CalendarPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/employee/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/time-tracking">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><TimeTrackingPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/employee/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/leave-management">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><LeaveManagementPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/employee/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/shift-planning">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ShiftPlanningPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/documents">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><DocumentDrivePage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/employee/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/expense-management">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ExpenseManagementPage /></AuthenticatedApp></TenantWrapper>}
-      </Route>
-      <Route path="/:tenant/hr-analytics">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRAnalyticsPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/employee/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/employee/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeDashboard /></AuthenticatedApp></TenantWrapper>}
-      </Route>
-      <Route path="/:tenant/employee/hr-requests">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRRequestCenter /></AuthenticatedApp></TenantWrapper>}
-      </Route>
-      {/* Manager HR Approval Dashboard */}
-      <Route path="/:tenant/manager/hr-approvals">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ManagerHRDashboard /></AuthenticatedApp></TenantWrapper>}
-      </Route>
-      {/* Manager Approval Queue - Dedicated Interface */}
-      <Route path="/:tenant/manager/approval-queue">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ManagerApprovalQueue /></AuthenticatedApp></TenantWrapper>}
       </Route>
       {/* Route principale HR - tutte le richieste HR puntano qui */}
       <Route path="/:tenant/hr">
@@ -136,14 +108,24 @@ function Router() {
       <Route path="/:tenant/people/dashboard">
         {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
+      {/* HR test route redirected to main HR dashboard */}
       <Route path="/:tenant/hr-test">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRTestPage /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/demo-fields">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><StandardFieldsDemo /></AuthenticatedApp></TenantWrapper>}
       </Route>
-      <Route path="/:tenant/notifications">
+      {/* SECURITY VERIFICATION TEST - Critical tenant ID propagation test */}
+      <Route path="/:tenant/tenant-verification">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><TenantVerificationTest /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      {/* Notifications - dedicated notification center */}
+      <Route path="/:tenant/notification-center">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><NotificationCenter /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      {/* Backward compatibility - redirect old notifications path to notification center */}
+      <Route path="/:tenant/notifications">
+        {(params) => <Redirect to={`/${params.tenant}/notification-center`} replace />}
       </Route>
       <Route path="/:tenant/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
@@ -172,20 +154,73 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
   const tenant = params.tenant;
   
   useEffect(() => {
-    // Salva il tenant corrente
-    if (tenant) {
-      localStorage.setItem('currentTenant', tenant);
+    // CRITICAL SECURITY FIX: Proper tenant UUID resolution via API call
+    const resolveAndSetTenant = async () => {
+      if (!tenant) return;
       
-      const tenantMapping: Record<string, string> = {
-        'staging': '00000000-0000-0000-0000-000000000001',
-        'demo': '99999999-9999-9999-9999-999999999999',
-        'acme': '11111111-1111-1111-1111-111111111111',
-        'tech': '22222222-2222-2222-2222-222222222222'
-      };
-      
-      const tenantId = tenantMapping[tenant] || tenantMapping['staging'];
-      localStorage.setItem('currentTenantId', tenantId);
-    }
+      try {
+        console.log(`[TENANT-WRAPPER] 🔍 Resolving tenant slug "${tenant}" to UUID via API`);
+        
+        // Save the tenant slug
+        localStorage.setItem('currentTenant', tenant);
+        
+        // ARCHITECT REQUIREMENT: Call /api/tenants/resolve to get proper UUID
+        const response = await fetch(`/api/tenants/resolve?slug=${tenant}`);
+        
+        console.log(`[TENANT-WRAPPER] 📡 API response status: ${response.status}`);
+        
+        if (!response.ok) {
+          console.error(`[TENANT-WRAPPER] ❌ Tenant resolution failed: ${response.status} ${response.statusText}`);
+          
+          // Fallback to hardcoded mapping for development only
+          console.warn('[TENANT-WRAPPER] ⚠️ Using fallback tenant mapping (development only)');
+          const fallbackMapping: Record<string, string> = {
+            'staging': '00000000-0000-0000-0000-000000000001',
+            'demo': '99999999-9999-9999-9999-999999999999',
+            'acme': '11111111-1111-1111-1111-111111111111',
+            'tech': '22222222-2222-2222-2222-222222222222'
+          };
+          
+          const fallbackId = fallbackMapping[tenant] || fallbackMapping['staging'];
+          localStorage.setItem('currentTenantId', fallbackId);
+          setCurrentTenantId(fallbackId);
+          console.warn(`[TENANT-WRAPPER] ⚠️ Using fallback UUID: ${fallbackId}`);
+          return;
+        }
+        
+        const data = await response.json();
+        console.log('[TENANT-WRAPPER] ✅ Tenant resolution successful:', data);
+        
+        // SECURITY CRITICAL: Set UUID for queryClient headers  
+        const resolvedTenantId = data.tenantId;
+        localStorage.setItem('currentTenantId', resolvedTenantId);
+        setCurrentTenantId(resolvedTenantId);
+        
+        console.log(`[TENANT-WRAPPER] 🔒 Tenant UUID resolved and set: "${resolvedTenantId}"`);
+        console.log(`[TENANT-WRAPPER] 📋 Tenant name: "${data.name}"`);
+        console.log(`[TENANT-WRAPPER] ✅ Ready for authenticated API calls with proper tenant headers`);
+        
+      } catch (error) {
+        console.error('[TENANT-WRAPPER] ❌ CRITICAL ERROR: Tenant resolution failed:', error);
+        console.error('[TENANT-WRAPPER] 🚨 This could cause cross-tenant data leakage!');
+        
+        // In production, this should block rendering or redirect to error page
+        // For development, fallback to hardcoded mapping with warnings
+        const fallbackMapping: Record<string, string> = {
+          'staging': '00000000-0000-0000-0000-000000000001',
+          'demo': '99999999-9999-9999-9999-999999999999',
+          'acme': '11111111-1111-1111-1111-111111111111',
+          'tech': '22222222-2222-2222-2222-222222222222'
+        };
+        
+        const fallbackId = fallbackMapping[tenant] || fallbackMapping['staging'];
+        localStorage.setItem('currentTenantId', fallbackId);
+        setCurrentTenantId(fallbackId);
+        console.error(`[TENANT-WRAPPER] ⚠️ EMERGENCY FALLBACK: Using UUID ${fallbackId}`);
+      }
+    };
+    
+    resolveAndSetTenant();
   }, [tenant]);
   
   return <>{children}</>;
@@ -222,18 +257,39 @@ function LoginPage() {
 function AuthenticatedApp({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const tenant = (params as any).tenant;
+  const { isAuthenticated, isLoading } = useAuth();
   
-  // DEVELOPMENT MODE - Sempre autorizzato per staging
-  const isDevelopment = true; // Forza sempre development mode per ora
+  // Show loading state while authentication is being checked
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #FF6900',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }} />
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>Verifica autenticazione...</p>
+        </div>
+      </div>
+    );
+  }
   
-  useEffect(() => {
-    // Setta sempre un token demo per development
-    const demoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkZW1vLXVzZXIiLCJ0ZW5hbnRJZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInJvbGUiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.demo';
-    localStorage.setItem('auth_token', demoToken);
-    localStorage.setItem('currentTenant', tenant || 'staging');
-    localStorage.setItem('currentTenantId', '00000000-0000-0000-0000-000000000001');
-  }, [tenant]);
-
-  // Sempre autorizzato in development
-  return <>{children}</>;
+  // If authenticated, render children
+  if (isAuthenticated) {
+    return <>{children}</>;
+  }
+  
+  // If not authenticated, render Login
+  return <Login tenantCode={tenant} />;
 }

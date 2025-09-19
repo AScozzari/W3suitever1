@@ -47,14 +47,22 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     // No mock tenant bypasses allowed - this was a security vulnerability
     
     // PRODUCTION LOGIC - Real database queries
-    // In produzione, il tenant verrebbe determinato da:
-    // 1. Subdomain (e.g., demo.w3suite.com)
-    // 2. Header X-Tenant-Id
-    // 3. User's tenant association
+    // SECURITY FIX: Read X-Tenant-ID header (UUID) sent by frontend queryClient
+    const tenantId = req.headers['x-tenant-id'] as string;
     
-    const tenantSlug = req.headers['x-tenant-slug'] as string || 'w3-demo';
+    console.log(`[TENANT-MIDDLEWARE] Processing API request: ${req.method} ${req.path}`);
+    console.log(`[TENANT-HEADER] X-Tenant-ID received: ${tenantId}`);
     
-    // Otteniamo il tenant dal database usando Drizzle ORM
+    if (!tenantId) {
+      console.error('[TENANT-ERROR] Missing X-Tenant-ID header - request rejected');
+      return res.status(400).json({ 
+        error: 'MISSING_TENANT_ID',
+        message: 'X-Tenant-ID header is required for all API calls',
+        details: 'Frontend must send valid tenant UUID in X-Tenant-ID header'
+      });
+    }
+    
+    // SECURITY FIX: Query tenant by UUID (not slug) for proper tenant isolation
     const tenantResult = await db
       .select({
         id: tenants.id,
@@ -64,13 +72,21 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
       })
       .from(tenants)
       .where(and(
-        eq(tenants.slug, tenantSlug),
+        eq(tenants.id, tenantId),
         eq(tenants.status, 'active')
       ))
       .limit(1);
     
+    console.log(`[TENANT-DB-QUERY] Searching for tenant UUID: ${tenantId}`);
+    console.log(`[TENANT-DB-RESULT] Found ${tenantResult.length} tenant(s)`);
+    
     if (tenantResult.length === 0) {
-      return res.status(404).json({ error: 'Tenant not found or inactive' });
+      console.error(`[TENANT-ERROR] Tenant not found for UUID: ${tenantId}`);
+      return res.status(404).json({ 
+        error: 'TENANT_NOT_FOUND',
+        message: 'Tenant not found or inactive',
+        tenantId: tenantId
+      });
     }
     
     const tenant = tenantResult[0];
@@ -80,13 +96,16 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
       slug: tenant.slug || ''
     };
     
+    console.log(`[TENANT-SUCCESS] Tenant resolved: ${tenant.name} (${tenant.id})`);
+    
     // Impostiamo il tenant_id per RLS (Row Level Security)
     try {
       if (tenant.id) {
         await db.execute(sql.raw(`SET app.tenant_id = '${tenant.id}'`));
+        console.log(`[RLS-SUCCESS] Set tenant_id for RLS: ${tenant.id}`);
       }
     } catch (error) {
-      console.log('RLS set tenant_id:', tenant.id);
+      console.log(`[RLS-WARNING] Failed to set RLS tenant_id: ${tenant.id}`, error);
       // RLS configuration might not be set up yet, continue without error
     }
     

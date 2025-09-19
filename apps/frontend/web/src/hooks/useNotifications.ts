@@ -44,30 +44,17 @@ export function useNotifications(filters?: {
   limit?: number;
   offset?: number;
 }) {
+  const queryParams = { 
+    status: filters?.status, 
+    type: filters?.type, 
+    priority: filters?.priority, 
+    limit: filters?.limit, 
+    offset: filters?.offset 
+  };
+  
   return useQuery({
-    queryKey: ['/api/notifications', filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.priority) params.append('priority', filters.priority);
-      if (filters?.limit) params.append('limit', filters.limit.toString());
-      if (filters?.offset) params.append('offset', filters.offset.toString());
-
-      const url = `/api/notifications${params.toString() ? '?' + params.toString() : ''}`;
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'X-Tenant-ID': localStorage.getItem('currentTenantId') || '',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
-      }
-
-      return response.json() as Promise<Notification[]>;
-    },
+    queryKey: ['/api/notifications', queryParams],
+    // Use default queryFn from queryClient - no custom queryFn needed
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 }
@@ -76,21 +63,7 @@ export function useNotifications(filters?: {
 export function useUnreadNotificationCount() {
   return useQuery({
     queryKey: ['/api/notifications/unread-count'],
-    queryFn: async () => {
-      const response = await fetch('/api/notifications/unread-count', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'X-Tenant-ID': localStorage.getItem('currentTenantId') || '',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch unread count');
-      }
-
-      const data = await response.json();
-      return data.count as number;
-    },
+    // Use default queryFn from queryClient - no custom queryFn needed
     refetchInterval: 15000, // Refetch every 15 seconds for real-time updates
   });
 }
@@ -135,20 +108,7 @@ export function useMarkAllNotificationsRead() {
 export function useNotificationPreferences() {
   return useQuery({
     queryKey: ['/api/notification-preferences'],
-    queryFn: async () => {
-      const response = await fetch('/api/notification-preferences', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'X-Tenant-ID': localStorage.getItem('currentTenantId') || '',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch notification preferences');
-      }
-
-      return response.json() as Promise<NotificationPreference>;
-    },
+    // Use default queryFn from queryClient - no custom queryFn needed
   });
 }
 
