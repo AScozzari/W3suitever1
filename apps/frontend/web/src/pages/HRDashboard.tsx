@@ -7103,66 +7103,108 @@ export default function HRDashboard() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-indigo-50">
-        {/* Header - WindTre Glassmorphism */}
-        <div className="windtre-glass-panel border-b border-white/20 sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900" data-testid="hr-text-dashboard-title">HR Management Dashboard</h1>
-                <p className="glass-text-secondary mt-1" data-testid="hr-text-dashboard-subtitle">
-                  Sistema di gestione risorse umane • {hrData.store}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900" data-testid="hr-text-current-time">{formatTime(currentTime)}</p>
-                  <p className="text-xs glass-text-secondary" data-testid="hr-text-current-date">{format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-white/50 hover:bg-white/70 backdrop-blur-sm"
-                  data-testid="hr-button-refresh"
-                  onClick={() => window.location.reload()}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Aggiorna
-                </Button>
-              </div>
+      {/* Header - Direttamente sullo sfondo come Settings */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: '700',
+          color: '#111827',
+          margin: '0 0 8px 0'
+        }} data-testid="hr-text-dashboard-title">
+          HR Management Dashboard
+        </h1>
+        <p style={{
+          fontSize: '15px',
+          color: '#6b7280',
+          margin: 0
+        }} data-testid="hr-text-dashboard-subtitle">
+          Sistema di gestione risorse umane • {hrData.store}
+        </p>
+        <div className="flex items-center justify-between mt-4">
+          <div></div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-900" data-testid="hr-text-current-time">{formatTime(currentTime)}</p>
+              <p className="text-xs text-gray-500" data-testid="hr-text-current-date">{format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white hover:bg-gray-50"
+              data-testid="hr-button-refresh"
+              onClick={() => window.location.reload()}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Aggiorna
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Tab Navigation - IDENTICO a EmployeeDashboard */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 border-b border-white/20 mb-6 overflow-x-auto">
-            {HR_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <Link
-                  key={tab.id}
-                  href={getTabUrl(tab.id)}
-                  onClick={() => setTab(tab.id)}
-                  data-testid={`hr-tab-${tab.id}`}
-                  className={`flex items-center space-x-2 px-4 py-3 rounded-t-lg transition-all whitespace-nowrap ${
-                    isActive
-                      ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg'
-                      : 'bg-white/10 backdrop-blur-sm text-gray-700 hover:bg-white/20'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{tab.name}</span>
-                </Link>
-              );
-            })}
-          </div>
+      {/* Tabs Container - Glassmorphism come Settings */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          background: 'rgba(243, 244, 246, 0.5)',
+          borderRadius: '12px',
+          padding: '4px',
+          gap: '4px',
+          flexWrap: 'wrap'
+        }}>
+          {HR_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={getTabUrl(tab.id)}
+                onClick={() => setTab(tab.id)}
+                style={{
+                  flex: '1 1 auto',
+                  minWidth: '120px',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                    : 'transparent',
+                  color: isActive ? 'white' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px 20px',
+                  fontSize: '14px',
+                  fontWeight: isActive ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isActive 
+                    ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                    : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  textAlign: 'center',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  textDecoration: 'none'
+                }}
+                data-testid={`hr-tab-${tab.id}`}
+              >
+                <Icon size={16} />
+                {tab.name}
+              </Link>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Tab Content Area */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="space-y-6">
+      {/* Content Area - Direttamente sullo sfondo come Settings */}
+      <div>
             {activeTab === 'overview' && (
               <div className="space-y-6" data-testid="hr-section-overview">
                 {renderOverview()}
@@ -7216,12 +7258,12 @@ export default function HRDashboard() {
                 {renderSettings()}
               </div>
             )}
-          </div>
-        </div>
+      </div>
 
-        {/* Modals - Same pattern as EmployeeDashboard */}
-        {/* Employee Modal */}
-        <Dialog open={employeeModal.open} onOpenChange={(open) => !open && setEmployeeModal({ open: false, data: null })}>
+      {/* Modals - Same pattern as EmployeeDashboard */}
+      <>
+      {/* Employee Modal */
+      <Dialog open={employeeModal.open} onOpenChange={(open) => !open && setEmployeeModal({ open: false, data: null })}>
           <DialogContent className="sm:max-w-[600px]" data-testid="hr-modal-employee">
             <DialogHeader>
               <DialogTitle>
@@ -7278,7 +7320,6 @@ export default function HRDashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* HR Request Modal */}
         <Dialog open={requestModal.open} onOpenChange={(open) => !open && setRequestModal({ open: false, data: null })}>
           <DialogContent className="sm:max-w-[800px]" data-testid="hr-modal-request">
             <DialogHeader>
@@ -7329,7 +7370,7 @@ export default function HRDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </>
     </Layout>
   );
 }

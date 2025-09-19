@@ -224,77 +224,114 @@ export default function EmployeeDashboard() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-indigo-50">
-        {/* Header - WindTre Glassmorphism */}
-        <div className="windtre-glass-panel border-b border-white/20 sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900" data-testid="text-dashboard-title">Employee Dashboard</h1>
-                {userLoading ? (
-                  <Skeleton className="h-4 w-64 mt-1" />
-                ) : (
-                  <p className="text-gray-600 mt-1" data-testid="text-user-welcome">
-                    Benvenuto, {displayUser.nome} {displayUser.cognome} • {displayUser.ruolo}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <p className="text-sm text-gray-500" data-testid="label-current-time">Ora corrente</p>
-                  <p className="text-xl font-mono font-bold text-gray-900" data-testid="text-current-time">
-                    {formatTime(currentTime)}
-                  </p>
-                </div>
-                {userLoading ? (
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                ) : (
-                  <Avatar className="h-12 w-12" data-testid="avatar-user">
-                    <AvatarImage src={displayUser.foto || undefined} alt={`${displayUser.nome} ${displayUser.cognome}`} />
-                    <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white" data-testid="avatar-fallback">
-                      {displayUser.nome[0]}{displayUser.cognome[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
+      {/* Header - Direttamente sullo sfondo come Settings */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: '700',
+          color: '#111827',
+          margin: '0 0 8px 0'
+        }} data-testid="text-dashboard-title">
+          Employee Dashboard
+        </h1>
+        {userLoading ? (
+          <Skeleton className="h-4 w-64" />
+        ) : (
+          <p style={{
+            fontSize: '15px',
+            color: '#6b7280',
+            margin: 0
+          }} data-testid="text-user-welcome">
+            Benvenuto, {displayUser.nome} {displayUser.cognome} • {displayUser.ruolo}
+          </p>
+        )}
+        <div className="flex items-center justify-between mt-4">
+          <div></div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-500" data-testid="label-current-time">Ora corrente</p>
+              <p className="text-xl font-mono font-bold text-gray-900" data-testid="text-current-time">
+                {formatTime(currentTime)}
+              </p>
             </div>
+            {userLoading ? (
+              <Skeleton className="h-12 w-12 rounded-full" />
+            ) : (
+              <Avatar className="h-12 w-12" data-testid="avatar-user">
+                <AvatarImage src={displayUser.foto || undefined} alt={`${displayUser.nome} ${displayUser.cognome}`} />
+                <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white" data-testid="avatar-fallback">
+                  {displayUser.nome[0]}{displayUser.cognome[0]}
+                </AvatarFallback>
+              </Avatar>
+            )}
           </div>
         </div>
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Tab Navigation - WindTre Glassmorphism */}
-          <div className="mb-8">
-            <div className="windtre-glass-panel p-2">
-              <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
-                {EMPLOYEE_TABS.map((tab) => {
-                  const IconComponent = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <Link
-                      key={tab.id}
-                      href={getTabUrl(tab.id)}
-                      onClick={() => setTab(tab.id)}
-                      className={`
-                        flex-shrink-0 flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm
-                        transition-all duration-300 hover:transform hover:translate-y-[-2px]
-                        ${isActive
-                          ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg windtre-brand-accent'
-                          : 'glass-text-secondary hover:bg-white/50 hover:text-gray-900 hover:shadow-md'
-                        }
-                      `}
-                      data-testid={`tab-${tab.id}`}
-                    >
-                      <IconComponent className="h-4 w-4" />
-                      <span className="whitespace-nowrap">{tab.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+      {/* Tabs Container - Glassmorphism come Settings */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          background: 'rgba(243, 244, 246, 0.5)',
+          borderRadius: '12px',
+          padding: '4px',
+          gap: '4px',
+          flexWrap: 'wrap'
+        }}>
+          {EMPLOYEE_TABS.map((tab) => {
+            const IconComponent = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={getTabUrl(tab.id)}
+                onClick={() => setTab(tab.id)}
+                style={{
+                  flex: '1 1 auto',
+                  minWidth: '120px',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                    : 'transparent',
+                  color: isActive ? 'white' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px 20px',
+                  fontSize: '14px',
+                  fontWeight: isActive ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isActive 
+                    ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                    : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  textAlign: 'center',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  textDecoration: 'none'
+                }}
+                data-testid={`tab-${tab.id}`}
+              >
+                <IconComponent size={16} />
+                {tab.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
-          {/* Content Area - Pattern Settings */}
-          <div className="space-y-6">
+      {/* Content Area - Direttamente sullo sfondo come Settings */}
+      <div>
             {activeTab === 'overview' && (
               <div className="space-y-6" data-testid="section-overview">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -3605,8 +3642,6 @@ export default function EmployeeDashboard() {
                 </Card>
               </div>
             )}
-          </div>
-        </div>
       </div>
     </Layout>
   );
