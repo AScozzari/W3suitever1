@@ -15,7 +15,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-// Import strategy classes only (not instances) to avoid circular imports
+// Import strategy instances directly to fix circular dependency
+import { gpsStrategy } from './GPSStrategy';
+import { nfcStrategy } from './NFCStrategy';
+import { webStrategy } from './WebStrategy';
 
 interface SmartDetectionResult {
   selectedStrategy: 'nfc' | 'gps' | 'web' | null;
@@ -374,24 +377,20 @@ export class SmartStrategy extends BaseStrategy {
   }
 
   private getStrategyByName(name: 'nfc' | 'gps' | 'web'): BaseStrategy | undefined {
-    // Lazy load strategy instances to avoid circular imports
+    // Use direct strategy instance references to avoid circular dependency issues
     try {
       switch (name) {
         case 'gps':
-          // Dynamic import to avoid circular dependency
-          const { gpsStrategy } = require('./GPSStrategy');
           return gpsStrategy;
         case 'nfc':
-          const { nfcStrategy } = require('./NFCStrategy');
           return nfcStrategy;
         case 'web':
-          const { webStrategy } = require('./WebStrategy');
           return webStrategy;
         default:
           return undefined;
       }
     } catch (error) {
-      this.log('error', `Failed to load strategy: ${name}`, error);
+      this.log('error', `Failed to access strategy: ${name}`, error);
       return undefined;
     }
   }

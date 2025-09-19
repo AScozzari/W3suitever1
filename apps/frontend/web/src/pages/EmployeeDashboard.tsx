@@ -35,7 +35,7 @@ import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Link } from 'wouter';
 import ClockWidget from '@/components/TimeTracking/ClockWidget';
-import TimbratureTab from '@/components/TimeTracking/TimbratureTab';
+import TimeAttendancePage from '@/components/TimeTracking/TimeAttendancePage';
 import HRRequestWizard from '@/components/HR/HRRequestWizard';
 import HRRequestDetails from '@/components/HR/HRRequestDetails';
 import PayslipManager from '@/components/Documents/PayslipManager';
@@ -509,12 +509,10 @@ export default function EmployeeDashboard() {
                     />
                   </div>
                   
-                  {/* RIGHT: TimbratureTab (Mobile: Full Width, Desktop: 60%) */}
+                  {/* RIGHT: TimeAttendancePage (Mobile: Full Width, Desktop: 60%) */}
                   <div className="w-full xl:w-[60%] xl:flex-1">
-                    <TimbratureTab
+                    <TimeAttendancePage
                       userId={displayUser.matricola}
-                      storeId="store-001"
-                      storeName={displayUser.store}
                     />
                   </div>
                 </div>
