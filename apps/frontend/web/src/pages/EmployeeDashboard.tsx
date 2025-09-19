@@ -99,10 +99,16 @@ const EMPLOYEE_TABS = [
   }
 ];
 
+// SECURITY: Valid tabs for Employee Dashboard - prevents malformed deep links
+const VALID_EMPLOYEE_TABS = ['overview', 'time-attendance', 'requests', 'documents', 'performance', 'training', 'profile'];
+const VALID_EMPLOYEE_SECTIONS = ['pending', 'approved', 'rejected']; // for requests tab
+
 export default function EmployeeDashboard() {
-  // Tab Router Hook - seguendo pattern Settings
+  // Tab Router Hook with security validation - seguendo pattern Settings
   const { activeTab, setTab, getTabUrl } = useTabRouter({
-    defaultTab: 'overview'
+    defaultTab: 'overview',
+    validTabs: VALID_EMPLOYEE_TABS,
+    validSections: VALID_EMPLOYEE_SECTIONS
   });
 
   // Use proper tenant context instead of URL parsing

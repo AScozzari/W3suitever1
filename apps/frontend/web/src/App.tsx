@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient, setCurrentTenantId } from "./lib/queryClient";
 import { useAuth } from "./hooks/useAuth";
+import { useToast } from "./hooks/use-toast";
 import { Route, Switch, useParams, Redirect } from "wouter";
 import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
@@ -13,7 +14,7 @@ import NotificationCenter from "./pages/NotificationCenter";
 import TenantVerificationTest from "./pages/TenantVerificationTest";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function App() {
   return (
@@ -65,7 +66,7 @@ function Router() {
       </Route>
       {/* Route principale HR - tutte le richieste HR puntano qui */}
       <Route path="/:tenant/hr">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRDashboard /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ProtectedHRRoute tenant={params.tenant} /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
       {/* Redirect da tutti i path HR legacy verso /tenant/hr */}
@@ -251,6 +252,33 @@ function LoginPage() {
   const params = useParams();
   const tenant = (params as any).tenant;
   return <Login tenantCode={tenant} />;
+}
+
+// SECURITY: Protected HR Route Component - RBAC Guard
+function ProtectedHRRoute({ tenant }: { tenant: string }) {
+  const { hasHRAccess } = useAuth();
+  const { toast } = useToast();
+  const [hasShownToast, setHasShownToast] = useState(false);
+  
+  // ARCHITECT FIX: Move toast side-effect to useEffect to prevent render violations
+  useEffect(() => {
+    if (!hasHRAccess() && !hasShownToast) {
+      toast({
+        title: "Access Denied", 
+        description: "You don't have permission to access HR management features.",
+        variant: "destructive",
+      });
+      setHasShownToast(true);
+    }
+  }, [hasHRAccess, hasShownToast, toast]);
+  
+  // Check if user has HR management permissions
+  if (!hasHRAccess()) {
+    // Redirect to employee dashboard
+    return <Redirect to={`/${tenant}/employee/dashboard`} />;
+  }
+  
+  return <HRDashboard />;
 }
 
 // Wrapper per pagine che richiedono autenticazione

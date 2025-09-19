@@ -1,6 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter';
 
+// SECURITY: Tab validation functions to prevent malformed deep links
+const validateTab = (tab: string, validTabs: string[], defaultTab: string): string => {
+  if (!validTabs || validTabs.length === 0) {
+    return tab || defaultTab; // No validation if no valid tabs provided
+  }
+  return validTabs.includes(tab) ? tab : defaultTab;
+};
+
+const validateSection = (section: string, validSections: string[], defaultSection: string | null): string | null => {
+  if (!section) return defaultSection;
+  if (!validSections || validSections.length === 0) {
+    return section; // No validation if no valid sections provided
+  }
+  return validSections.includes(section) ? section : defaultSection;
+};
+
 /**
  * Props per la configurazione dell'hook useTabRouter
  */
@@ -13,6 +29,10 @@ export interface UseTabRouterProps {
   tabParam?: string;
   /** Nome del parametro URL per la sezione (default: 'section') */
   sectionParam?: string;
+  /** Lista di tab validi per la validazione di sicurezza */
+  validTabs?: string[];
+  /** Lista di sezioni valide per la validazione di sicurezza */
+  validSections?: string[];
 }
 
 /**
@@ -76,7 +96,9 @@ export function useTabRouter({
   defaultTab = 'overview',
   defaultSection = null,
   tabParam = 'tab',
-  sectionParam = 'section'
+  sectionParam = 'section',
+  validTabs = [],
+  validSections = []
 }: UseTabRouterProps = {}): UseTabRouterReturn {
   const [location, navigate] = useLocation();
   
@@ -115,7 +137,26 @@ export function useTabRouter({
   }, [navigate, tabParam, sectionParam, getUrlParams]);
 
   /**
-   * Sincronizza lo stato interno con i query parameters dell'URL
+   * SECURITY: Helper function to generate sanitized URL
+   */
+  const getSanitizedUrl = useCallback((tab: string, section: string | null): string => {
+    const params = getUrlParams();
+    const newParams = new URLSearchParams(params);
+    
+    newParams.set(tabParam, tab);
+    
+    if (section) {
+      newParams.set(sectionParam, section);
+    } else {
+      newParams.delete(sectionParam);
+    }
+    
+    const search = newParams.toString();
+    return window.location.pathname + (search ? '?' + search : '');
+  }, [tabParam, sectionParam, getUrlParams]);
+
+  /**
+   * SECURITY: Sincronizza lo stato interno con i query parameters dell'URL con validazione
    */
   const syncFromUrl = useCallback(() => {
     try {
@@ -124,26 +165,40 @@ export function useTabRouter({
       const urlTab = params.get(tabParam);
       const urlSection = params.get(sectionParam);
       
-      // Determina i nuovi valori con gestione più robusta
-      // Per il tab: usa il valore URL se presente e non vuoto, altrimenti defaultTab
-      const newTab = (urlTab && urlTab.trim() !== '') ? urlTab.trim() : defaultTab;
+      // SECURITY: Validate tab against whitelist
+      const rawTab = (urlTab && urlTab.trim() !== '') ? urlTab.trim() : defaultTab;
+      const validatedTab = validateTab(rawTab, validTabs, defaultTab);
       
-      // Per la sezione: più controlli per gestire correttamente null vs empty string
-      let newSection: string | null;
+      // SECURITY: Validate section against whitelist
+      let rawSection: string | null;
       if (urlSection === null || urlSection.trim() === '') {
-        newSection = defaultSection;
+        rawSection = defaultSection;
       } else {
-        newSection = urlSection.trim();
+        rawSection = urlSection.trim();
+      }
+      const validatedSection = validateSection(rawSection || '', validSections, defaultSection);
+      
+      // SECURITY: Check if URL needs sanitization (invalid parameters detected)
+      const needsUrlReplacement = (rawTab !== validatedTab) || 
+                                  (rawSection !== validatedSection);
+      
+      // Replace URL if invalid parameters detected
+      if (needsUrlReplacement) {
+        console.warn(`[TAB-ROUTER] 🔒 SECURITY: Invalid tab parameters detected, sanitizing URL`);
+        console.warn(`[TAB-ROUTER] 📝 Original: tab=${rawTab}, section=${rawSection}`);
+        console.warn(`[TAB-ROUTER] ✅ Sanitized: tab=${validatedTab}, section=${validatedSection}`);
+        
+        const sanitizedUrl = getSanitizedUrl(validatedTab, validatedSection);
+        navigate(sanitizedUrl, { replace: true });
       }
       
-      // Aggiorna lo stato solo se i valori sono effettivamente cambiati per evitare loop infiniti
-      // Usa strict equality per confronti più accurati
-      if (newTab !== activeTab) {
-        setActiveTab(newTab);
+      // Aggiorna lo stato solo se i valori sono effettivamente cambiati
+      if (validatedTab !== activeTab) {
+        setActiveTab(validatedTab);
       }
       
-      if (newSection !== activeSection) {
-        setActiveSection(newSection);
+      if (validatedSection !== activeSection) {
+        setActiveSection(validatedSection);
       }
     } catch (error) {
       // Fallback silenzioso in caso di errori nella lettura degli URL params
@@ -157,7 +212,7 @@ export function useTabRouter({
         setActiveSection(defaultSection);
       }
     }
-  }, [activeTab, activeSection, defaultTab, defaultSection, tabParam, sectionParam, getUrlParams]);
+  }, [activeTab, activeSection, defaultTab, defaultSection, tabParam, sectionParam, validTabs, validSections, getUrlParams, getSanitizedUrl, navigate]);
 
   /**
    * Cambia il tab attivo e aggiorna l'URL

@@ -110,10 +110,16 @@ const HR_TABS = [
   }
 ];
 
+// SECURITY: Valid tabs for HR Dashboard - prevents malformed deep links
+const VALID_HR_TABS = ['overview', 'employees', 'time-management', 'leave-management', 'documents', 'performance', 'training', 'analytics', 'settings'];
+const VALID_HR_SECTIONS = ['active', 'inactive', 'pending']; // for employees tab
+
 export default function HRDashboard() {
-  // Tab Router Hook - exact same pattern as EmployeeDashboard
+  // Tab Router Hook with security validation - exact same pattern as EmployeeDashboard
   const { activeTab, setTab, getTabUrl } = useTabRouter({
-    defaultTab: 'overview'
+    defaultTab: 'overview',
+    validTabs: VALID_HR_TABS,
+    validSections: VALID_HR_SECTIONS
   });
 
   // Use proper tenant context instead of URL parsing
