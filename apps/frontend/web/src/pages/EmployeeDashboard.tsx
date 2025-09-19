@@ -29,7 +29,8 @@ import {
   Filter, Eye, Search, Award, BookOpen, TrendingUp, Star,
   Bookmark, PlayCircle, Lock, Settings, Camera, Briefcase,
   ChevronRight, MessageSquare, Users2, PieChart, Calendar1,
-  Globe, Palette, Key, History, Smartphone as SmartphoneIcon
+  Globe, Palette, Key, History, Smartphone as SmartphoneIcon,
+  Share2, Upload
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -45,8 +46,8 @@ import DocumentUploadModal from '@/components/Documents/DocumentUploadModal';
 import DocumentViewer from '@/components/Documents/DocumentViewer';
 import { LeaveBalanceWidget } from '@/components/Leave/LeaveBalanceWidget';
 import { LeaveCalendar } from '@/components/Leave/LeaveCalendar';
-import { useTimeTracking, useCurrentSession, useTimeBalance } from '@/hooks/useTimeTracking';
-import { useHRRequests, useHRRequestFilters } from '@/hooks/useHRRequests';
+import { useCurrentSession, useTimeBalance } from '@/hooks/useTimeTracking';
+import { useHRRequests, HRRequestFilters } from '@/hooks/useHRRequests';
 import { useLeaveBalance } from '@/hooks/useLeaveManagement';
 import { useDocumentDrive } from '@/hooks/useDocumentDrive';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -119,10 +120,10 @@ export default function EmployeeDashboard() {
   const userId = authUser?.id;
   
   // Real data queries with hierarchical cache keys - REVERTED TO STABLE VERSION
-  const { data: userData, isLoading: userLoading, error: userError } = useUser(userId);
-  const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId);
+  const { data: userData, isLoading: userLoading, error: userError } = useUser(userId || '');
+  const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
-  const { data: myRequestsData, isLoading: requestsLoading } = useHRRequests({ userId, limit: 5 });
+  const { data: myRequestsData, isLoading: requestsLoading } = useHRRequests({ status: 'pending', limit: 5 });
   const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
   const { documents, isLoading: documentsLoading } = useDocumentDrive();
   
@@ -143,36 +144,36 @@ export default function EmployeeDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   // Extract requests from response and provide fallbacks
-  const myRequests = myRequestsData?.requests || myRequestsData || [];
+  const myRequests = Array.isArray(myRequestsData) ? myRequestsData : (myRequestsData?.data || []);
   
   // Loading states
   const isLoading = userLoading || leaveLoading || notificationsLoading || requestsLoading;
   
   // Display user info with fallbacks
   const displayUser = {
-    nome: userData?.firstName || authUser?.name?.split(' ')[0] || 'Demo',
-    cognome: userData?.lastName || authUser?.name?.split(' ')[1] || 'User',
-    email: userData?.email || authUser?.email || 'demo@windtre.it',
-    telefono: userData?.phone || '+39 335 123 4567',
-    ruolo: userData?.position || 'Employee',
-    reparto: userData?.department || 'General',
-    matricola: userData?.id || 'W3-DEMO',
-    foto: userData?.profileImageUrl || null,
-    dataAssunzione: userData?.hireDate || '15/03/2022',
+    nome: (userData as any)?.firstName || authUser?.name?.split(' ')[0] || 'Demo',
+    cognome: (userData as any)?.lastName || authUser?.name?.split(' ')[1] || 'User',
+    email: (userData as any)?.email || authUser?.email || 'demo@windtre.it',
+    telefono: (userData as any)?.phone || '+39 335 123 4567',
+    ruolo: (userData as any)?.position || 'Employee',
+    reparto: (userData as any)?.department || 'General',
+    matricola: (userData as any)?.id || 'W3-DEMO',
+    foto: (userData as any)?.profileImageUrl || null,
+    dataAssunzione: (userData as any)?.hireDate || '15/03/2022',
     manager: 'Laura Bianchi',
     store: 'Milano Centro'
   };
   
   // Display leave balance with fallbacks
   const displayLeaveBalance = {
-    ferieRimanenti: leaveBalance?.remainingVacationDays || leaveBalance?.vacationDaysRemaining || 18,
-    permessiRimanenti: leaveBalance?.remainingPersonalDays || leaveBalance?.personalDaysRemaining || 20,
-    ferieAnno: leaveBalance?.totalVacationDays || 26,
-    ferieUsate: leaveBalance?.usedVacationDays || 8,
-    permessiROL: leaveBalance?.totalPersonalDays || 32,
-    permessiUsati: leaveBalance?.usedPersonalDays || 12,
-    malattia: leaveBalance?.sickDays || 5,
-    congedi: leaveBalance?.otherLeave || 0
+    ferieRimanenti: (leaveBalance as any)?.remainingVacationDays || (leaveBalance as any)?.vacationDaysRemaining || 18,
+    permessiRimanenti: (leaveBalance as any)?.remainingPersonalDays || (leaveBalance as any)?.personalDaysRemaining || 20,
+    ferieAnno: (leaveBalance as any)?.totalVacationDays || 26,
+    ferieUsate: (leaveBalance as any)?.usedVacationDays || 8,
+    permessiROL: (leaveBalance as any)?.totalPersonalDays || 32,
+    permessiUsati: (leaveBalance as any)?.usedPersonalDays || 12,
+    malattia: (leaveBalance as any)?.sickDays || 5,
+    congedi: (leaveBalance as any)?.otherLeave || 0
   };
 
   // Performance data - Remove mock data for production readiness
@@ -209,7 +210,7 @@ export default function EmployeeDashboard() {
 
   // Handle HR Request
   const handleHRRequestSuccess = () => {
-    setHrRequestModal({ open: false, data: null });
+    setHrRequestModal({ open: false as false, data: null });
     // Refresh requests data
   };
 
@@ -236,7 +237,7 @@ export default function EmployeeDashboard() {
   };
 
   return (
-    <Layout>
+    <Layout currentModule="employee" setCurrentModule={() => {}}>
       {/* Header - Direttamente sullo sfondo come Settings */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{
@@ -500,11 +501,9 @@ export default function EmployeeDashboard() {
                       className="h-full"
                       onClockIn={() => {
                         // Refresh data after clock in
-                        refetch();
                       }}
                       onClockOut={() => {
                         // Refresh data after clock out  
-                        refetch();
                       }}
                     />
                   </div>
@@ -968,7 +967,7 @@ export default function EmployeeDashboard() {
                                 <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="modal-hr-request">
                                   <HRRequestWizard
                                     onSuccess={handleHRRequestSuccess}
-                                    onCancel={() => setHrRequestModal({ open: false, data: null })}
+                                    onCancel={() => setHrRequestModal({ open: false as false, data: null })}
                                     data-testid="wizard-hr-request"
                                   />
                                 </DialogContent>
@@ -991,7 +990,7 @@ export default function EmployeeDashboard() {
                           <Card className="p-6">
                             <h3 className="font-semibold mb-4">Richieste Recenti</h3>
                             <div className="space-y-3">
-                              {myRequests.slice(0, 4).map((request) => (
+                              {myRequests.slice(0, 4).map((request: any) => (
                                 <div key={request.id} className="flex items-center gap-3 p-2 rounded-lg border">
                                   <div className={`w-3 h-3 rounded-full flex-shrink-0 ${getStatusColor(request.stato)}`}></div>
                                   <div className="flex-1 min-w-0">
@@ -1032,7 +1031,7 @@ export default function EmployeeDashboard() {
                             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="modal-main-hr-request">
                               <HRRequestWizard
                                 onSuccess={handleHRRequestSuccess}
-                                onCancel={() => setHrRequestModal({ open: false, data: null })}
+                                onCancel={() => setHrRequestModal({ open: false as false, data: null })}
                                 data-testid="wizard-main-hr-request"
                               />
                             </DialogContent>
@@ -1146,7 +1145,7 @@ export default function EmployeeDashboard() {
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
-                              {myRequests.map((request) => (
+                              {myRequests.map((request: any) => (
                                 <div 
                                   key={request.id} 
                                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50/50 transition-colors group"
