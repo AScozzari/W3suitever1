@@ -52,6 +52,7 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'documents', label: 'Document Drive', icon: FileText, path: '/documents' },
   { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
+  { id: 'hr', label: 'Human Resources', icon: UserPlus, path: '/hr' },
   { id: 'listini', label: 'Listini', icon: FileText },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
   { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
