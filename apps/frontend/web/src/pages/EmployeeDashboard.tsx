@@ -1217,17 +1217,17 @@ export default function EmployeeDashboard() {
                             <div className="space-y-4">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">Totale annuale</span>
-                                <span className="font-medium">{leaveBalance.ferieAnno} giorni</span>
+                                <span className="font-medium">{displayLeaveBalance.ferieAnno} giorni</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">Utilizzate</span>
-                                <span className="font-medium text-orange-600">{leaveBalance.ferieUsate} giorni</span>
+                                <span className="font-medium text-orange-600">{displayLeaveBalance.ferieUsate} giorni</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">Rimanenti</span>
-                                <span className="font-medium text-green-600">{leaveBalance.ferieRimanenti} giorni</span>
+                                <span className="font-medium text-green-600">{displayLeaveBalance.ferieRimanenti} giorni</span>
                               </div>
-                              <Progress value={(leaveBalance.ferieUsate / leaveBalance.ferieAnno) * 100} className="h-2" />
+                              <Progress value={(displayLeaveBalance.ferieUsate / displayLeaveBalance.ferieAnno) * 100} className="h-2" />
                             </div>
                           </Card>
 
@@ -1236,17 +1236,17 @@ export default function EmployeeDashboard() {
                             <div className="space-y-4">
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">Totale annuale</span>
-                                <span className="font-medium">{leaveBalance.permessiROL} ore</span>
+                                <span className="font-medium">{displayLeaveBalance.permessiROL} ore</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">Utilizzate</span>
-                                <span className="font-medium text-orange-600">{leaveBalance.permessiUsati} ore</span>
+                                <span className="font-medium text-orange-600">{displayLeaveBalance.permessiUsati} ore</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-sm">Rimanenti</span>
-                                <span className="font-medium text-green-600">{leaveBalance.permessiRimanenti} ore</span>
+                                <span className="font-medium text-green-600">{displayLeaveBalance.permessiRimanenti} ore</span>
                               </div>
-                              <Progress value={(leaveBalance.permessiUsati / leaveBalance.permessiROL) * 100} className="h-2" />
+                              <Progress value={(displayLeaveBalance.permessiUsati / displayLeaveBalance.permessiROL) * 100} className="h-2" />
                             </div>
                           </Card>
                         </div>
