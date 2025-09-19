@@ -149,9 +149,9 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* Root path - redirect to default tenant dashboard */}
+      {/* Root path - serve directly staging dashboard */}
       <Route path="/">
-        {() => <Redirect to="/staging/dashboard" replace />}
+        {() => <TenantWrapper params={{tenant: 'staging'}}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
       {/* Route root tenant - redirect basato su auth */}
@@ -161,7 +161,7 @@ function Router() {
       
       {/* Fallback for any unmatched routes */}
       <Route>
-        {() => <Redirect to="/staging/dashboard" replace />}
+        {() => <TenantWrapper params={{tenant: 'staging'}}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
     </Switch>
   );
@@ -189,6 +189,17 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
   }, [tenant]);
   
   return <>{children}</>;
+}
+
+// Componente per gestire il redirect dalla root
+function RootRedirect() {
+  useEffect(() => {
+    // Usa history API invece di window.location per evitare loop
+    window.history.replaceState(null, '', '/staging/dashboard');
+    window.location.reload();
+  }, []);
+  
+  return <div>Caricamento in corso...</div>;
 }
 
 // Componente per gestire il redirect dal root tenant
