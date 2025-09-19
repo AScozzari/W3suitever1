@@ -232,19 +232,8 @@ export default function EmployeeDashboard() {
           color: '#111827',
           margin: '0 0 8px 0'
         }} data-testid="text-dashboard-title">
-          Employee Dashboard
+          Il mio Portale
         </h1>
-        {userLoading ? (
-          <Skeleton className="h-4 w-64" />
-        ) : (
-          <p style={{
-            fontSize: '15px',
-            color: '#6b7280',
-            margin: 0
-          }} data-testid="text-user-welcome">
-            Benvenuto, {displayUser.nome} {displayUser.cognome} • {displayUser.ruolo}
-          </p>
-        )}
         <div className="flex items-center justify-between mt-4">
           <div></div>
           <div className="flex items-center space-x-4">
