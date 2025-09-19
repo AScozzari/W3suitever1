@@ -2729,6 +2729,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search HR documents
+  app.get('/api/hr/documents/search', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      const { query } = req.query;
+      
+      if (!query) {
+        return res.json([]);
+      }
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [
+        eq(hrDocuments.tenantId, tenantId),
+        or(
+          sql`${hrDocuments.title} ILIKE ${`%${query}%`}`,
+          sql`${hrDocuments.fileName} ILIKE ${`%${query}%`}`,
+          sql`${hrDocuments.description} ILIKE ${`%${query}%`}`
+        )
+      ];
+      
+      // Non-HR users can only search their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const documents = await db.select()
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .limit(50);
+      
+      res.json(documents);
+    } catch (error) {
+      handleApiError(error, res, 'ricerca documenti HR');
+    }
+  });
+
+  // Get document categories with counts
+  app.get('/api/hr/documents/categories', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const conditions = [eq(hrDocuments.tenantId, tenantId)];
+      
+      // Non-HR users can only see stats for their own documents
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        conditions.push(eq(hrDocuments.userId, userId));
+      }
+      
+      const categories = await db
+        .select({
+          type: hrDocuments.documentType,
+          count: sql<number>`COUNT(*)`,
+          totalSize: sql<number>`SUM(${hrDocuments.fileSize})`
+        })
+        .from(hrDocuments)
+        .where(and(...conditions))
+        .groupBy(hrDocuments.documentType);
+      
+      res.json(categories);
+    } catch (error) {
+      handleApiError(error, res, 'recupero categorie documenti');
+    }
+  });
+
+  // Get storage quota
+  app.get('/api/hr/documents/storage-quota', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const usage = await db
+        .select({
+          used: sql<number>`COALESCE(SUM(${hrDocuments.fileSize}), 0)`
+        })
+        .from(hrDocuments)
+        .where(and(
+          eq(hrDocuments.tenantId, tenantId),
+          eq(hrDocuments.userId, userId)
+        ));
+      
+      const used = Number(usage[0]?.used || 0);
+      const total = 1073741824; // 1GB per user default
+      const percentage = Math.round((used / total) * 100);
+      
+      res.json({
+        used,
+        total,
+        percentage
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero quota storage');
+    }
+  });
+
+  // Get payslips for a specific year
+  app.get('/api/hr/documents/payslips', enterpriseAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user?.id;
+      const year = parseInt(req.query.year as string) || new Date().getFullYear();
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      const payslips = await db.select()
+        .from(hrDocuments)
+        .where(and(
+          eq(hrDocuments.tenantId, tenantId),
+          eq(hrDocuments.userId, userId),
+          eq(hrDocuments.documentType, 'payslip'),
+          eq(hrDocuments.year, year)
+        ))
+        .orderBy(hrDocuments.month);
+      
+      res.json(payslips);
+    } catch (error) {
+      handleApiError(error, res, 'recupero buste paga');
+    }
+  });
+
   // Get single HR document
   app.get('/api/hr/documents/:id', enterpriseAuth, async (req: any, res) => {
     try {
