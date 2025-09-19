@@ -2350,7 +2350,7 @@ export default function HRDashboard() {
   
   return (
     <Layout currentModule="hr" setCurrentModule={() => {}}>
-      <div className="w-full max-w-none p-4 lg:p-6 space-y-6 transition-all duration-300">
+      <div className="w-full max-w-7xl mx-auto p-4 lg:p-6 space-y-6 transition-all duration-300 overflow-x-hidden">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
