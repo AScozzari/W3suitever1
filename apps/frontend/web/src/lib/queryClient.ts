@@ -149,11 +149,14 @@ export const queryClient = new QueryClient({
           'X-Tenant-ID': tenantId, // Header per il tenant ID
         };
         
-        // Mode-based authentication - clean separation
+        // Mode-based authentication - clean separation  
+        console.log(`🔍 [API-DEBUG] AUTH_MODE: ${AUTH_MODE}`);
+        console.log(`🔍 [API-DEBUG] Making request to: ${finalUrl}`);
         if (AUTH_MODE === 'development') {
           // Development mode: ONLY use X-Auth-Session headers, NEVER call OAuth methods
           headers['X-Auth-Session'] = 'authenticated';
           headers['X-Demo-User'] = 'demo-user';
+          console.log(`🔧 [DEV-AUTH] Headers aggiunti per development mode:`, headers);
         } else if (AUTH_MODE === 'oauth2') {
           // OAuth2 mode: Use Bearer tokens with proper error handling
           const token = await oauth2Client.getAccessToken();

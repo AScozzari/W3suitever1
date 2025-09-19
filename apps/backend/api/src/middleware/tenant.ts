@@ -23,10 +23,14 @@ let lastCallTime = 0;
 
 export async function tenantMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
-    // CRITICAL FIX: Completely exclude non-API requests to prevent infinite loops
-    // This middleware should only process /api routes
-    if (!req.path.startsWith('/api')) {
-      console.log('[TENANT-SKIP] Skipping tenant middleware for non-API path:', req.path);
+    // CRITICAL FIX: Since this middleware is mounted on '/api', req.path is relative to the mount point
+    // Skip only specific public endpoints that don't need tenant context
+    if (req.path.startsWith('/auth/') || 
+        req.path.startsWith('/public/') ||
+        req.path === '/health' ||
+        req.path === '/tenants/resolve' ||
+        req.path === '/') { // Skip auth for /api/ root endpoint
+      console.log('[TENANT-SKIP] Bypassing tenant middleware for public endpoint:', req.path);
       return next();
     }
     

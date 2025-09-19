@@ -302,21 +302,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const devAuthMiddleware = (req: any, res: any, next: any) => {
     // CRITICAL GATING: Only apply development auth when AUTH_MODE=development AND NOT in production
     if (config.AUTH_MODE === 'development' && process.env.NODE_ENV !== 'production') {
-      // Skip dev auth for public endpoints that don't need authentication
-      if (req.path.startsWith('/auth/') || 
-          req.path.startsWith('/public/') ||
-          req.path === '/health' ||
-          req.path === '/tenants/resolve') {
+      
+      // CRITICAL FIX: Skip dev auth for static assets and non-API routes
+      // Since this middleware is mounted on /api, req.path is relative to /api
+      // But we need to handle cases where the middleware might be called globally
+      const fullPath = req.originalUrl || req.url || req.path;
+      const apiPath = req.path; // Path relative to /api mount
+      
+      // MOUNT POINT DEBUG (can be removed after verification)
+      // console.log(`[DEV-AUTH] 🚨 MOUNT POINT DEBUG: fullPath=${fullPath}, apiPath=${apiPath}, originalUrl=${req.originalUrl}, baseUrl=${req.baseUrl}`);
+      
+      // CRITICAL FIX: Detect browser page requests vs API calls
+      const acceptHeader = req.headers.accept || '';
+      const isBrowserRequest = 
+        acceptHeader.includes('text/html') || 
+        req.headers['sec-fetch-mode'] === 'navigate' ||
+        req.headers['sec-fetch-dest'] === 'document';
+      
+      // Skip authentication for static assets, public routes, health endpoints, and browser page requests
+      if (
+        // Browser page requests (not API calls) - NGINX fallback protection
+        isBrowserRequest ||
+        // Static assets (CSS, JS, images, etc.)
+        fullPath.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map|html)$/i) ||
+        fullPath === '/' ||
+        fullPath === '/favicon.ico' ||
+        fullPath.startsWith('/public/') ||
+        fullPath.startsWith('/assets/') ||
+        fullPath.startsWith('/static/') ||
+        // API-specific exclusions (path relative to /api mount)
+        apiPath.startsWith('/auth/') || 
+        apiPath.startsWith('/public/') ||
+        apiPath === '/health' ||
+        apiPath === '/tenants/resolve' ||
+        apiPath === '/' // Skip auth for /api/ root endpoint
+      ) {
+        const reason = isBrowserRequest ? 'browser page request' : 'static/public asset';
+        console.log(`[DEV-AUTH] ⏭️  Skipping auth for ${reason}: ${fullPath}`);
         return next();
       }
 
-      const sessionAuth = req.headers['x-auth-session'];
-      const demoUser = req.headers['x-demo-user'];
+      // DEBUG HEADERS (can be removed after verification)
+      // console.log(`[DEV-AUTH] 🔍 HEADERS DEBUG for API: ${apiPath}`);
+      // console.log(`[DEV-AUTH] 📋 Browser detection headers:`, {
+      //   'accept': req.headers.accept,
+      //   'sec-fetch-mode': req.headers['sec-fetch-mode'],
+      //   'sec-fetch-dest': req.headers['sec-fetch-dest'],
+      //   'content-type': req.headers['content-type']
+      // });
+      
+      const sessionAuth = req.headers['x-auth-session'] || req.headers['X-Auth-Session'];
+      const demoUser = req.headers['x-demo-user'] || req.headers['X-Demo-User'];
+      
+      console.log(`[DEV-AUTH] 🔧 Parsed values:`, { sessionAuth, demoUser });
       
       if (sessionAuth === 'authenticated') {
         // Set development user context with proper security logging
-        console.log(`[DEV-AUTH] ⚠️  Development authentication active for: ${req.path}`);
-        console.log(`[DEV-AUTH] 🔧 User: ${demoUser || 'admin@w3suite.com'}`);
+        console.log(`[DEV-AUTH] ✅ Development authentication active for API: ${apiPath}`);
+        console.log(`[DEV-AUTH] 👤 User: ${demoUser || 'admin@w3suite.com'}`);
         
         req.user = {
           id: 'admin-user',
@@ -326,9 +369,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           permissions: ['*'], // DEVELOPMENT ONLY: All permissions
           scope: 'all'
         };
+        
+        console.log(`[DEV-AUTH] 🔧 req.user populated:`, { 
+          id: req.user.id, 
+          email: req.user.email, 
+          tenantId: req.user.tenantId 
+        });
         return next();
       } else {
-        console.log(`[DEV-AUTH] ❌ Development mode requires X-Auth-Session header for: ${req.path}`);
+        console.log(`[DEV-AUTH] ❌ Development mode requires X-Auth-Session header for API: ${apiPath}`);
         return res.status(401).json({ 
           error: 'development_auth_required',
           message: 'Development mode requires X-Auth-Session header',
@@ -338,6 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // Not in development mode or in production - continue to next middleware
+    console.log(`[DEV-AUTH] ⏭️  Auth mode is ${config.AUTH_MODE}, skipping dev auth`);
     return next();
   };
 
