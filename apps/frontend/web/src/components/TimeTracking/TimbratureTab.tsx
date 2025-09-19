@@ -616,44 +616,33 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
                 Timbratura Web
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 relative z-10">
-              <div className="glass-heavy rounded-xl border border-white/20 overflow-hidden">
-                <div className="p-6 space-y-4">
-                  <div className="grid gap-4">
-                    <div className="flex items-center justify-between p-3 glass-light rounded-lg">
-                      <span className="text-sm text-gray-600 flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-windtre-orange" />
-                        Punto vendita
-                      </span>
-                      <span className="font-medium text-windtre-orange">{selectedStore?.name || fallbackStoreName || 'Store'}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 glass-light rounded-lg">
-                      <span className="text-sm text-gray-600 flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-windtre-orange" />
-                        IP Address
-                      </span>
-                      <span className="font-mono text-sm bg-black/10 px-2 py-1 rounded">192.168.1.100</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 glass-light rounded-lg">
-                      <span className="text-sm text-gray-600 flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-windtre-orange" />
-                        Browser
-                      </span>
-                      <span className="text-sm bg-black/10 px-2 py-1 rounded">Chrome 120.0</span>
-                    </div>
+            <CardContent className="space-y-4 relative z-10">
+              <div className="glass-light rounded-lg border border-gray-300/30 p-4">
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-windtre-orange" />
+                      Punto vendita
+                    </span>
+                    <span className="font-medium text-windtre-orange">{selectedStore?.name || fallbackStoreName || 'Milano Centro'}</span>
                   </div>
-                </div>
-              </div>
-              <div className="glass-light rounded-lg p-4 border border-windtre-orange/20">
-                <div className="flex items-start gap-3">
-                  <div className="p-1 rounded-full bg-windtre-orange/20">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-windtre-orange" />
+                      IP Address
+                    </span>
+                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">192.168.1.100</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-windtre-orange" />
+                      Browser
+                    </span>
+                    <span className="text-xs bg-gray-100 px-2 py-1 rounded">Chrome 120.0</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm pt-2 border-t border-gray-200">
                     <Shield className="h-4 w-4 text-windtre-orange" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-windtre-orange">Sicurezza Avanzata</p>
-                    <p className="text-xs text-gray-600">
-                      Timbratura protetta da autenticazione multi-fattore e verifica IP
-                    </p>
+                    <span className="text-windtre-orange font-medium">Sicurezza avanzata attiva</span>
                   </div>
                 </div>
               </div>
@@ -893,8 +882,8 @@ export default function TimbratureTab({ userId, storeId: fallbackStoreId, storeN
                 data-testid={`method-${method.id}`}
                 className={`group relative h-auto p-4 rounded-xl transition-all duration-300 ${
                   selectedMethod === method.id 
-                    ? 'glass-heavy border-windtre-orange/50 shadow-lg scale-105' 
-                    : 'glass-light hover:glass-heavy border-white/20'
+                    ? 'glass-heavy border-windtre-orange/70 shadow-lg scale-105 ring-2 ring-windtre-orange/30' 
+                    : 'glass-light hover:glass-heavy border-gray-300/50 hover:border-windtre-orange/40'
                 } ${
                   !method.available ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 hover:shadow-lg'
                 } border backdrop-blur-sm`}

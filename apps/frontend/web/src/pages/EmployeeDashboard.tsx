@@ -262,22 +262,13 @@ export default function EmployeeDashboard() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </div>
             </div>
           </div>
 
           {/* Quick Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
             {/* Real-time Clock Widget */}
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(255,105,0,0.35)] border border-white/15 backdrop-blur-lg cursor-pointer">
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(34,197,94,0.35)] border border-white/15 backdrop-blur-lg cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <Clock className="h-8 w-8 text-white/80" />
@@ -297,15 +288,17 @@ export default function EmployeeDashboard() {
                   </div>
                 )}
                 <div className="flex gap-2 mt-4">
-                  <Button 
-                    onClick={handleClockAction}
-                    className={`flex-1 bg-white/15 hover:bg-white/25 ring-1 ring-white/20 focus-visible:ring-2 focus-visible:ring-white/40 text-white transition-all duration-200`}
-                    size="sm"
-                    data-testid="button-clock-in"
-                  >
-                    {isClockedIn ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                    {isClockedIn ? 'Clock Out' : 'Clock In'}
-                  </Button>
+                  <div className="flex justify-center w-full">
+                    <Button 
+                      onClick={handleClockAction}
+                      className="bg-green-600 hover:bg-green-700 ring-1 ring-green-500/20 focus-visible:ring-2 focus-visible:ring-green-400/40 text-white transition-all duration-200 font-semibold"
+                      size="sm"
+                      data-testid="button-clock-in"
+                    >
+                      {isClockedIn ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                      {isClockedIn ? 'Clock Out' : 'Clock In'}
+                    </Button>
+                  </div>
                   {isClockedIn && (
                     <Button 
                       onClick={handleBreakAction}
@@ -328,7 +321,7 @@ export default function EmployeeDashboard() {
             </Card>
 
             {/* Ferie Disponibili */}
-            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-blue-300">
+            <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-blue-300 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <Umbrella className="h-8 w-8 text-blue-500" />
@@ -343,7 +336,7 @@ export default function EmployeeDashboard() {
             </Card>
 
             {/* Prossimo Turno */}
-            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-purple-300">
+            <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <CalendarIcon className="h-8 w-8 text-purple-500" />
@@ -360,7 +353,7 @@ export default function EmployeeDashboard() {
             </Card>
 
             {/* Tasks Pendenti */}
-            <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer hover:border-green-300">
+            <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-300 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <Target className="h-8 w-8 text-green-500" />
@@ -420,7 +413,7 @@ export default function EmployeeDashboard() {
             <TabsContent value="overview" className="space-y-6 w-full">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                 {/* Notifiche Recenti */}
-                <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-orange-300">
+                <Card className="lg:col-span-2 backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-300 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                   <CardHeader>
                     <CardTitle>Notifiche e Annunci</CardTitle>
                     <CardDescription>Aggiornamenti importanti dall'azienda</CardDescription>
@@ -458,7 +451,7 @@ export default function EmployeeDashboard() {
                 </Card>
 
                 {/* Azioni Rapide - Compact 2x2 Grid */}
-                <Card className="lg:col-span-1 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer hover:border-orange-300">
+                <Card className="lg:col-span-1 backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-300 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                   <CardHeader>
                     <CardTitle>Azioni Rapide</CardTitle>
                     <CardDescription>Operazioni frequenti</CardDescription>
@@ -525,7 +518,7 @@ export default function EmployeeDashboard() {
 
 
                 {/* Performance Goals */}
-                <Card className="lg:col-span-3 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer hover:border-green-300">
+                <Card className="lg:col-span-3 backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-300 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer">
                   <CardHeader>
                     <CardTitle>Obiettivi di Performance Q4</CardTitle>
                     <CardDescription>Il tuo progresso verso gli obiettivi trimestrali</CardDescription>
@@ -565,14 +558,14 @@ export default function EmployeeDashboard() {
             {/* Altri TabsContent per completezza */}
             <TabsContent value="ferie" className="space-y-6 w-full">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                <Card className="lg:col-span-3">
+                <Card className="lg:col-span-3 backdrop-blur-xl bg-white/80 border-white/20">
                   <CardHeader>
                     <CardTitle>Saldo Ferie e Permessi</CardTitle>
                     <CardDescription>Panoramica delle tue ferie e permessi disponibili</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-2">
                             <Umbrella className="h-8 w-8 text-blue-500" />
@@ -584,7 +577,7 @@ export default function EmployeeDashboard() {
                         </CardContent>
                       </Card>
                       
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-2">
                             <Clock className="h-8 w-8 text-green-500" />
@@ -596,7 +589,7 @@ export default function EmployeeDashboard() {
                         </CardContent>
                       </Card>
                       
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-2">
                             <Heart className="h-8 w-8 text-red-500" />
@@ -607,7 +600,7 @@ export default function EmployeeDashboard() {
                         </CardContent>
                       </Card>
                       
-                      <Card>
+                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-2">
                             <Baby className="h-8 w-8 text-green-500" />
