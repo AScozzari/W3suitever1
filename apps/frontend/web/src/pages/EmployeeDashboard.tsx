@@ -380,34 +380,85 @@ export default function EmployeeDashboard() {
             </Alert>
           )}
 
-          {/* Main Content Tabs */}
+          {/* Main Content Tabs - Settings Style */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          }}>
+            <div style={{
+              display: 'flex',
+              background: 'rgba(243, 244, 246, 0.5)',
+              borderRadius: '12px',
+              padding: '4px',
+              gap: '4px'
+            }}>
+              {[
+                { id: 'overview', label: 'Overview', icon: Home },
+                { id: 'timbrature', label: 'Timbrature', icon: Clock },
+                { id: 'ferie', label: 'Ferie', icon: Umbrella },
+                { id: 'turni', label: 'Turni', icon: CalendarIcon },
+                { id: 'documenti', label: 'Documenti', icon: FileText },
+                { id: 'formazione', label: 'Formazione', icon: GraduationCap }
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{
+                      flex: 1,
+                      background: isActive 
+                        ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                        : 'transparent',
+                      color: isActive ? 'white' : '#6b7280',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '14px 20px',
+                      fontSize: '14px',
+                      fontWeight: isActive ? '600' : '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: isActive 
+                        ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                        : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      textAlign: 'center',
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)'
+                    }}
+                    onMouseOver={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'hsla(255, 255, 255, 0.08)';
+                        e.currentTarget.style.color = '#374151';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#6b7280';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
+                    }}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 w-full">
-            <TabsList className="grid grid-cols-2 lg:grid-cols-6 h-auto w-full">
-              <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm">
-                <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="timbrature" className="flex items-center gap-1 text-xs sm:text-sm">
-                <Clock className="h-4 w-4" />
-                <span className="hidden sm:inline">Timbrature</span>
-              </TabsTrigger>
-              <TabsTrigger value="ferie" className="flex items-center gap-1 text-xs sm:text-sm">
-                <Umbrella className="h-4 w-4" />
-                <span className="hidden sm:inline">Ferie</span>
-              </TabsTrigger>
-              <TabsTrigger value="turni" className="flex items-center gap-1 text-xs sm:text-sm">
-                <CalendarIcon className="h-4 w-4" />
-                <span className="hidden sm:inline">Turni</span>
-              </TabsTrigger>
-              <TabsTrigger value="documenti" className="flex items-center gap-1 text-xs sm:text-sm">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Documenti</span>
-              </TabsTrigger>
-              <TabsTrigger value="formazione" className="flex items-center gap-1 text-xs sm:text-sm">
-                <GraduationCap className="h-4 w-4" />
-                <span className="hidden sm:inline">Formazione</span>
-              </TabsTrigger>
-            </TabsList>
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6 w-full">
