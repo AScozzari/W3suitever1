@@ -144,7 +144,7 @@ export default function EmployeeDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   // Extract requests from response and provide fallbacks
-  const myRequests = Array.isArray(myRequestsData) ? myRequestsData : (myRequestsData?.data || []);
+  const myRequests = Array.isArray(myRequestsData) ? myRequestsData : ((myRequestsData as any)?.data || []);
   
   // Loading states
   const isLoading = userLoading || leaveLoading || notificationsLoading || requestsLoading;
@@ -917,7 +917,7 @@ export default function EmployeeDashboard() {
                               <div>
                                 <p className="text-sm text-green-700 font-medium">Approvate</p>
                                 <p className="text-2xl font-bold text-green-800" data-testid="stat-approved">
-                                  {myRequests.filter(r => r.stato === 'approved').length}
+                                  {myRequests.filter((r: any) => r.stato === 'approved').length}
                                 </p>
                               </div>
                             </div>
@@ -931,7 +931,7 @@ export default function EmployeeDashboard() {
                               <div>
                                 <p className="text-sm text-yellow-700 font-medium">In Attesa</p>
                                 <p className="text-2xl font-bold text-yellow-800" data-testid="stat-pending">
-                                  {myRequests.filter(r => r.stato === 'pending').length}
+                                  {myRequests.filter((r: any) => r.stato === 'pending').length}
                                 </p>
                               </div>
                             </div>
@@ -957,7 +957,7 @@ export default function EmployeeDashboard() {
                           <Card className="p-6">
                             <h3 className="font-semibold mb-4">Azioni Rapide</h3>
                             <div className="space-y-3">
-                              <Dialog open={hrRequestModal.open} onOpenChange={(open) => setHrRequestModal({ open, data: null })}>
+                              <Dialog open={hrRequestModal.open} onOpenChange={(open) => setHrRequestModal(open ? { open: true, data: {} } : { open: false, data: null })}>
                                 <DialogTrigger asChild>
                                   <Button className="w-full justify-start bg-gradient-to-r from-orange-500 to-purple-600" data-testid="button-quick-new-request">
                                     <Plus className="h-4 w-4 mr-2" />
@@ -1017,7 +1017,7 @@ export default function EmployeeDashboard() {
                             </div>
                           </div>
                           
-                          <Dialog open={hrRequestModal.open} onOpenChange={(open) => setHrRequestModal({ open, data: null })}>
+                          <Dialog open={hrRequestModal.open} onOpenChange={(open) => setHrRequestModal(open ? { open: true, data: {} } : { open: false, data: null })}>
                             <DialogTrigger asChild>
                               <Button 
                                 size="lg"
@@ -1206,7 +1206,7 @@ export default function EmployeeDashboard() {
                       {/* Leave Balance Tab */}
                       <TabsContent value="balances" className="space-y-6">
                         <LeaveBalanceWidget 
-                          userId={userData?.id}
+                          userId={(userData as any)?.id || 'admin-user'}
                           className="glass-card"
                         />
 
