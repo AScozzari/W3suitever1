@@ -2663,7 +2663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documents = await db.select()
         .from(hrDocuments)
         .where(and(...conditions))
-        .orderBy(desc(hrDocuments.createdAt));
+        .orderBy(desc(hrDocuments.uploadedAt));
       
       res.json(documents);
     } catch (error) {
