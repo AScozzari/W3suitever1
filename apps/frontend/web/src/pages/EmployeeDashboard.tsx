@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useTabRouter } from '@/hooks/useTabRouter';
+import { useTenant } from '@/contexts/TenantContext';
 import Layout from '@/components/Layout';
-import TimbratureTab from '@/components/TimeTracking/TimbratureTab';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
@@ -13,23 +12,84 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
-  Clock, Calendar as CalendarIcon, FileText, DollarSign, GraduationCap, Receipt,
-  MapPin, Coffee, Play, Pause, CheckCircle, XCircle, AlertCircle, Users,
-  Download, Upload, Target, Award, TrendingUp, Sun, Moon, Sunrise, Sunset,
-  Home, Briefcase, Heart, Umbrella, Plane, Baby, School, HeartHandshake,
-  Bell, ChevronRight, MoreVertical, Star, Activity, BarChart3, User,
-  Settings, HelpCircle, LogOut, Shield, Zap, Gift, Wallet, Building, Plus,
-  ClipboardList
+  Clock, FileText, GraduationCap,
+  Download, Target, Sun,
+  Home, Bell, Plus, User, CheckCircle, ClipboardList
 } from 'lucide-react';
-import { format, addDays, startOfMonth, endOfMonth, isToday, isSameDay, differenceInMinutes } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { Link, useLocation } from 'wouter';
+import { Link } from 'wouter';
+import ClockWidget from '@/components/TimeTracking/ClockWidget';
+import HRRequestWizard from '@/components/HR/HRRequestWizard';
+import PayslipManager from '@/components/Documents/PayslipManager';
+
+// Tab configuration for Employee Dashboard
+const EMPLOYEE_TABS = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    icon: Home,
+    description: 'Dashboard personale e notifiche'
+  },
+  {
+    id: 'time-attendance',
+    label: 'Time & Attendance', 
+    icon: Clock,
+    description: 'Timbrature e calendario eventi'
+  },
+  {
+    id: 'requests',
+    label: 'My Requests',
+    icon: ClipboardList,
+    description: 'Richieste ferie e permessi'
+  },
+  {
+    id: 'documents',
+    label: 'Documents',
+    icon: FileText,
+    description: 'Buste paga e documenti'
+  },
+  {
+    id: 'performance',
+    label: 'My Performance',
+    icon: Target,
+    description: 'Goals e recensioni personali'
+  },
+  {
+    id: 'training',
+    label: 'Training',
+    icon: GraduationCap,
+    description: 'Corsi e certificazioni'
+  },
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: User,
+    description: 'Impostazioni personali'
+  }
+];
 
 export default function EmployeeDashboard() {
-  // Get current location to extract tenant param
-  const [location] = useLocation();
-  const currentTenant = location.split('/')[1] || 'staging';
+  // Tab Router Hook - seguendo pattern Settings
+  const { activeTab, setTab, getTabUrl } = useTabRouter({
+    defaultTab: 'overview'
+  });
+
+  // Use proper tenant context instead of URL parsing
+  const { currentTenant } = useTenant();
+  
+  // Modal states with proper types - discriminated union to eliminate any
+  type ModalState = 
+    | { open: false; data: null }
+    | { open: true; data: Record<string, unknown> };
+  const [hrRequestModal, setHrRequestModal] = useState<ModalState>({ open: false, data: null });
+  const [documentViewerModal, setDocumentViewerModal] = useState<ModalState>({ open: false, data: null });
+  const [profileEditModal, setProfileEditModal] = useState<ModalState>({ open: false, data: null });
   
   // Stati principali
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -38,20 +98,21 @@ export default function EmployeeDashboard() {
   const [breakTime, setBreakTime] = useState(0);
   const [isOnBreak, setIsOnBreak] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [activeTab, setActiveTab] = useState('overview');
   
-  // Mock data per l'utente
+  // Mock data per l'utente - Employee-centric
   const userData = {
+    id: 'emp-001',
     nome: 'Marco',
-    cognome: 'Rossi',
+    cognome: 'Rossi', 
+    email: 'marco.rossi@windtre.it',
+    telefono: '+39 335 123 4567',
     ruolo: 'Senior Account Manager',
     reparto: 'Vendite Enterprise',
     matricola: 'W3-2024-0156',
     foto: null,
-    email: 'marco.rossi@w3suite.com',
-    telefono: '+39 335 123 4567',
     dataAssunzione: '15/03/2022',
-    manager: 'Laura Bianchi'
+    manager: 'Laura Bianchi',
+    store: 'Milano Centro'
   };
 
   // Stati ferie e permessi
@@ -94,95 +155,107 @@ export default function EmployeeDashboard() {
     }
   ]);
 
-  // Mock data timbrature
-  const [timbrature] = useState([
-    { data: new Date(), entrata: '08:30', uscita: '17:30', ore: '8h 30m', pausa: '30m', stato: 'completo' },
-    { data: addDays(new Date(), -1), entrata: '08:15', uscita: '18:45', ore: '9h 30m', pausa: '45m', stato: 'straordinario' },
-    { data: addDays(new Date(), -2), entrata: '09:00', uscita: '17:15', ore: '7h 45m', pausa: '30m', stato: 'completo' },
-    { data: addDays(new Date(), -3), entrata: '08:45', uscita: '17:30', ore: '8h 15m', pausa: '30m', stato: 'completo' },
-    { data: addDays(new Date(), -4), entrata: '08:30', uscita: '17:00', ore: '8h 00m', pausa: '30m', stato: 'completo' }
-  ]);
-
-  // Mock data richieste ferie
-  const [leaveRequests] = useState([
-    { id: 1, tipo: 'Ferie', dal: '20/12/2024', al: '24/12/2024', giorni: 5, stato: 'approved', motivo: 'Vacanze natalizie' },
-    { id: 2, tipo: 'Permesso', dal: '15/12/2024', al: '15/12/2024', giorni: 1, stato: 'pending', motivo: 'Visita medica' },
-    { id: 3, tipo: 'Ferie', dal: '01/08/2024', al: '15/08/2024', giorni: 15, stato: 'approved', motivo: 'Vacanze estive' }
-  ]);
-
-  // Mock data turni
-  const [shifts] = useState([
-    { id: 1, data: format(new Date(), 'yyyy-MM-dd'), turno: 'Mattino', dalle: '08:00', alle: '16:00', store: 'Milano Centro', stato: 'attivo' },
-    { id: 2, data: format(addDays(new Date(), 1), 'yyyy-MM-dd'), turno: 'Pomeriggio', dalle: '14:00', alle: '22:00', store: 'Milano Centro', stato: 'programmato' },
-    { id: 3, data: format(addDays(new Date(), 2), 'yyyy-MM-dd'), turno: 'Mattino', dalle: '08:00', alle: '16:00', store: 'Milano Centro', stato: 'programmato' }
-  ]);
-
-  // Mock data documenti
-  const [documents] = useState([
-    { id: 1, nome: 'Busta Paga Novembre 2024', tipo: 'Busta paga', data: '30/11/2024', size: '245 KB' },
-    { id: 2, nome: 'Contratto di Lavoro', tipo: 'Contratto', data: '15/03/2022', size: '1.2 MB' },
-    { id: 3, nome: 'Policy Aziendale 2024', tipo: 'Policy', data: '01/01/2024', size: '890 KB' },
-    { id: 4, nome: 'Certificato Sicurezza', tipo: 'Certificato', data: '20/01/2024', size: '156 KB' }
-  ]);
-
-  // Mock data spese
-  const [expenses] = useState([
-    { id: 1, data: '10/12/2024', descrizione: 'Pranzo cliente - Contratto Enterprise', importo: 45.50, categoria: 'Pasti', stato: 'approved' },
-    { id: 2, data: '08/12/2024', descrizione: 'Taxi aeroporto', importo: 25.00, categoria: 'Trasporti', stato: 'pending' },
-    { id: 3, data: '05/12/2024', descrizione: 'Hotel Milano - Fiera', importo: 120.00, categoria: 'Alloggio', stato: 'approved' }
-  ]);
-
-  // Mock data formazione
-  const [training] = useState([
-    {
-      id: 1,
-      titolo: 'Vendite Consultive Avanzate',
-      descrizione: 'Tecniche avanzate di vendita e gestione clienti',
-      progresso: 75,
-      scadenza: '31/12/2024',
-      durata: '8 ore',
-      tipo: 'Obbligatorio',
-      stato: 'in_progress'
+  // Mock data richieste
+  const [myRequests] = useState([
+    { 
+      id: 1, 
+      categoria: 'leave',
+      tipo: 'Ferie', 
+      dal: '20/12/2024', 
+      al: '24/12/2024', 
+      giorni: 5, 
+      stato: 'approved', 
+      motivo: 'Vacanze natalizie',
+      dataRichiesta: '10/11/2024'
     },
-    {
-      id: 2,
-      titolo: 'Sicurezza sul Lavoro',
-      descrizione: 'Corso di aggiornamento sicurezza',
-      progresso: 100,
-      scadenza: '15/01/2025',
-      durata: '4 ore',
-      tipo: 'Obbligatorio',
-      stato: 'completed'
+    { 
+      id: 2, 
+      categoria: 'wellness_health',
+      tipo: 'Permesso', 
+      dal: '15/12/2024', 
+      al: '15/12/2024', 
+      giorni: 1, 
+      stato: 'pending', 
+      motivo: 'Visita medica',
+      dataRichiesta: '12/12/2024'
     },
-    {
-      id: 3,
-      titolo: 'Leadership e Team Management',
-      descrizione: 'Sviluppo competenze manageriali',
-      progresso: 0,
-      scadenza: '15/01/2025',
-      durata: '4 ore',
-      tipo: 'Obbligatorio',
-      stato: 'not_started'
+    { 
+      id: 3, 
+      categoria: 'leave', 
+      tipo: 'Ferie', 
+      dal: '01/08/2024', 
+      al: '15/08/2024', 
+      giorni: 15, 
+      stato: 'approved', 
+      motivo: 'Vacanze estive',
+      dataRichiesta: '15/06/2024'
     }
   ]);
 
-  // Mock data team calendar
-  const [teamAbsences] = useState([
-    { nome: 'Giulia Verdi', tipo: 'Ferie', dal: '18/12', al: '22/12' },
-    { nome: 'Andrea Bianchi', tipo: 'Malattia', dal: '10/12', al: '11/12' },
-    { nome: 'Sofia Romano', tipo: 'Permesso', dal: '15/12', al: '15/12' },
-    { nome: 'Luca Esposito', tipo: 'Ferie', dal: '23/12', al: '31/12' }
+  // Mock data performance
+  const [performance] = useState([
+    {
+      id: 1,
+      titolo: 'Obiettivi Q4 2024',
+      progress: 85,
+      scadenza: '31/12/2024',
+      stato: 'in_progress',
+      dettagli: 'Target vendite: 95.000€ (81.750€ raggiunti)'
+    },
+    {
+      id: 2,
+      titolo: 'Certificazione Sicurezza',
+      progress: 100,
+      scadenza: '15/01/2025',
+      stato: 'completed',
+      dettagli: 'Corso completato con valutazione A+'
+    },
+    {
+      id: 3,
+      titolo: 'Customer Satisfaction',
+      progress: 92,
+      scadenza: 'Ongoing',
+      stato: 'excellent',
+      dettagli: 'Media feedback clienti: 4.6/5.0'
+    }
   ]);
 
-  // Mock data performance goals
-  const [goals] = useState([
-    { id: 1, titolo: 'Fatturato Q4', target: '€150.000', attuale: '€112.500', progresso: 75 },
-    { id: 2, titolo: 'Nuovi clienti', target: '15', attuale: '12', progresso: 80 },
-    { id: 3, titolo: 'Retention rate', target: '95%', attuale: '92%', progresso: 97 },
-    { id: 4, titolo: 'Upselling', target: '€50.000', attuale: '€45.000', progresso: 90 }
+  // Mock data training
+  const [training] = useState([
+    {
+      id: 1,
+      titolo: 'Advanced Sales Techniques',
+      provider: 'WindTre Academy',
+      progress: 65,
+      scadenza: '20/01/2025',
+      stato: 'in_progress',
+      crediti: 25,
+      tipo: 'Obbligatorio'
+    },
+    {
+      id: 2,
+      titolo: 'Digital Marketing Fundamentals',
+      provider: 'LinkedIn Learning',
+      progress: 100,
+      scadenza: 'Completato',
+      stato: 'completed',
+      crediti: 15,
+      tipo: 'Volontario',
+      certificato: 'cert_001.pdf'
+    },
+    {
+      id: 3,
+      titolo: 'Leadership Skills',
+      provider: 'WindTre Academy',
+      progress: 0,
+      scadenza: '30/03/2025',
+      stato: 'assigned',
+      crediti: 40,
+      tipo: 'Sviluppo Carriera'
+    }
   ]);
 
-  // Update time every second
+  // Update current time
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -190,404 +263,374 @@ export default function EmployeeDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // Calculate worked time
-  const calculateWorkedTime = () => {
-    if (!isClockedIn || !clockInTime) return '00:00:00';
-    const diff = differenceInMinutes(currentTime, clockInTime) - breakTime;
-    const hours = Math.floor(diff / 60);
-    const minutes = diff % 60;
-    const seconds = currentTime.getSeconds();
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  // Format time utility
+  const formatTime = (date: Date) => {
+    return format(date, 'HH:mm:ss');
   };
 
-  // Handle clock in/out
-  const handleClockAction = () => {
-    if (!isClockedIn) {
-      setIsClockedIn(true);
-      setClockInTime(new Date());
-    } else {
-      setIsClockedIn(false);
-      setClockInTime(null);
-      setBreakTime(0);
-      setIsOnBreak(false);
+  // Handle HR Request
+  const handleHRRequestSuccess = () => {
+    setHrRequestModal({ open: false, data: null });
+    // Refresh requests data
+  };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'bg-green-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'rejected': return 'bg-red-500';
+      case 'in_progress': return 'bg-blue-500';
+      case 'completed': return 'bg-green-500';
+      default: return 'bg-gray-500';
     }
   };
 
-  // Handle break
-  const handleBreakAction = () => {
-    setIsOnBreak(!isOnBreak);
-  };
-
-  // Get greeting based on time
-  const getGreeting = () => {
-    const hour = currentTime.getHours();
-    if (hour < 12) return 'Buongiorno';
-    if (hour < 18) return 'Buon pomeriggio';
-    return 'Buonasera';
-  };
-
-  // Get status badge variant
-  const getStatusVariant = (stato: string) => {
-    switch (stato) {
-      case 'approved': return 'success';
-      case 'pending': return 'warning';
-      case 'rejected': return 'destructive';
-      case 'completed': return 'success';
-      case 'in_progress': return 'warning';
-      case 'not_started': return 'secondary';
-      default: return 'default';
+  // Get priority color
+  const getPriorityColor = (type: string) => {
+    switch (type) {
+      case 'Obbligatorio': return 'bg-red-100 text-red-800';
+      case 'Sviluppo Carriera': return 'bg-blue-100 text-blue-800';
+      case 'Volontario': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <Layout currentModule="employee" setCurrentModule={() => {}}>
-      <div className="flex-1 flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full max-w-none">
-          {/* Header Section */}
-          <div className="mb-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={userData.foto || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-purple-600 text-white text-xl">
+    <Layout>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-indigo-50">
+        {/* Header - Pattern Settings */}
+        <div className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900" data-testid="text-dashboard-title">Employee Dashboard</h1>
+                <p className="text-gray-600 mt-1" data-testid="text-user-welcome">
+                  Benvenuto, {userData.nome} {userData.cognome} • {userData.ruolo}
+                </p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-sm text-gray-500" data-testid="label-current-time">Ora corrente</p>
+                  <p className="text-xl font-mono font-bold text-gray-900" data-testid="text-current-time">
+                    {formatTime(currentTime)}
+                  </p>
+                </div>
+                <Avatar className="h-12 w-12" data-testid="avatar-user">
+                  <AvatarImage src={userData.foto || undefined} alt={`${userData.nome} ${userData.cognome}`} />
+                  <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white" data-testid="avatar-fallback">
                     {userData.nome[0]}{userData.cognome[0]}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                    {getGreeting()}, {userData.nome}! 👋
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {userData.ruolo} • {userData.reparto}
-                  </p>
-                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Tab Navigation - Glassmorphism WindTre - Pattern Settings */}
+          <div className="mb-8">
+            <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-2">
+              <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+                {EMPLOYEE_TABS.map((tab) => {
+                  const IconComponent = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <Link
+                      key={tab.id}
+                      href={getTabUrl(tab.id)}
+                      onClick={() => setTab(tab.id)}
+                      className={`
+                        flex-shrink-0 flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm
+                        transition-all duration-200 hover:transform hover:translate-y-[-2px]
+                        ${isActive
+                          ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg'
+                          : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
+                        }
+                      `}
+                      data-testid={`tab-${tab.id}`}
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      <span className="whitespace-nowrap">{tab.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Quick Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full">
-            {/* Real-time Clock Widget */}
-            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_20px_60px_rgba(34,197,94,0.35)] border border-white/15 backdrop-blur-lg cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <Clock className="h-8 w-8 text-white/80" />
-                  <Badge variant="secondary" className="bg-white/20 text-white">
-                    {isClockedIn ? 'Attivo' : 'Inattivo'}
-                  </Badge>
-                </div>
-                <div className="text-3xl font-bold mb-2">
-                  {format(currentTime, 'HH:mm:ss')}
-                </div>
-                <div className="text-sm text-white/80 mb-4">
-                  {format(currentTime, 'EEEE d MMMM yyyy', { locale: it })}
-                </div>
-                {isClockedIn && (
-                  <div className="text-sm font-medium">
-                    Tempo lavorato: {calculateWorkedTime()}
-                  </div>
-                )}
-                <div className="flex gap-2 mt-4">
-                  <div className="flex justify-center w-full">
-                    <Button 
-                      onClick={handleClockAction}
-                      className="bg-green-600 hover:bg-green-700 ring-1 ring-green-500/20 focus-visible:ring-2 focus-visible:ring-green-400/40 text-white transition-all duration-200 font-semibold"
-                      size="sm"
-                      data-testid="button-clock-in"
-                    >
-                      {isClockedIn ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                      {isClockedIn ? 'Clock Out' : 'Clock In'}
-                    </Button>
-                  </div>
-                  {isClockedIn && (
-                    <Button 
-                      onClick={handleBreakAction}
-                      variant="secondary" 
-                      size="sm"
-                      className="bg-white/15 hover:bg-white/25 ring-1 ring-white/20 text-white focus-visible:ring-2 focus-visible:ring-white/40 transition-all duration-200"
-                      data-testid="button-break"
-                    >
-                      <Coffee className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                {isClockedIn && (
-                  <div className="flex items-center gap-1 mt-2 text-xs text-white/80">
-                    <MapPin className="h-3 w-3" />
-                    Milano, Sede Centrale
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Ferie Disponibili */}
-            <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-blue-300 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <Umbrella className="h-8 w-8 text-blue-500" />
-                  <Badge variant="outline">{leaveBalance.ferieRimanenti} giorni</Badge>
-                </div>
-                <div className="text-2xl font-bold mb-1">Ferie</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {leaveBalance.ferieUsate}/{leaveBalance.ferieAnno} utilizzati
-                </div>
-                <Progress value={(leaveBalance.ferieUsate / leaveBalance.ferieAnno) * 100} className="h-2" />
-              </CardContent>
-            </Card>
-
-            {/* Prossimo Turno */}
-            <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <CalendarIcon className="h-8 w-8 text-purple-500" />
-                  <Badge variant="outline">Domani</Badge>
-                </div>
-                <div className="text-2xl font-bold mb-1">Turno</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {shifts[1].turno} • {shifts[1].dalle} - {shifts[1].alle}
-                </div>
-                <Button variant="link" className="p-0 h-auto text-purple-600">
-                  Vedi calendario →
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Tasks Pendenti */}
-            <Card className="backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-300 transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <Target className="h-8 w-8 text-green-500" />
-                  <Badge variant="outline">4 attivi</Badge>
-                </div>
-                <div className="text-2xl font-bold mb-1">Obiettivi</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Performance Q4
-                </div>
-                <Progress value={85} className="h-2" />
-                <div className="text-xs text-gray-500 mt-1">85% completamento</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Notifications Alert */}
-          {notifications.filter(n => !n.letto).length > 0 && (
-            <Alert className="mb-8 border-orange-200 bg-orange-50">
-              <Bell className="h-4 w-4 text-orange-600" />
-              <AlertTitle>Notifiche non lette</AlertTitle>
-              <AlertDescription>
-                Hai {notifications.filter(n => !n.letto).length} notifiche da leggere
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Main Content Tabs - Settings Style */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.7)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '16px',
-            padding: '20px',
-            marginBottom: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{
-              display: 'flex',
-              background: 'rgba(243, 244, 246, 0.5)',
-              borderRadius: '12px',
-              padding: '4px',
-              gap: '4px'
-            }}>
-              {[
-                { id: 'overview', label: 'Overview', icon: Home },
-                { id: 'timbrature', label: 'Timbrature', icon: Clock },
-                { id: 'ferie', label: 'Ferie', icon: Umbrella },
-                { id: 'turni', label: 'Turni', icon: CalendarIcon },
-                { id: 'documenti', label: 'Documenti', icon: FileText },
-                { id: 'formazione', label: 'Formazione', icon: GraduationCap }
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    style={{
-                      flex: 1,
-                      background: isActive 
-                        ? 'linear-gradient(135deg, #FF6900, #ff8533)'
-                        : 'transparent',
-                      color: isActive ? 'white' : '#6b7280',
-                      border: 'none',
-                      borderRadius: '12px',
-                      padding: '14px 20px',
-                      fontSize: '14px',
-                      fontWeight: isActive ? '600' : '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: isActive 
-                        ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
-                        : 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      textAlign: 'center',
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)'
-                    }}
-                    onMouseOver={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = 'hsla(255, 255, 255, 0.08)';
-                        e.currentTarget.style.color = '#374151';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = '#6b7280';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }
-                    }}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 w-full">
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6 w-full">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                {/* Notifiche Recenti */}
-                <Card className="lg:col-span-2 backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-300 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
-                  <CardHeader>
-                    <CardTitle>Notifiche e Annunci</CardTitle>
-                    <CardDescription>Aggiornamenti importanti dall'azienda</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4 max-h-[320px] overflow-y-auto">
-                      {notifications.slice(0, 5).map((notif) => (
-                        <div key={notif.id} className="flex items-start gap-3 p-3 rounded-lg border">
-                          <div className={`p-2 rounded-full ${
-                            notif.tipo === 'info' ? 'bg-blue-100' :
-                            notif.tipo === 'success' ? 'bg-green-100' :
-                            notif.tipo === 'alert' ? 'bg-orange-100' :
-                            'bg-gray-100'
-                          }`}>
-                            {notif.tipo === 'info' && <Bell className="h-4 w-4 text-blue-600" />}
-                            {notif.tipo === 'success' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                            {notif.tipo === 'alert' && <AlertCircle className="h-4 w-4 text-orange-600" />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium">{notif.titolo}</h4>
-                              <span className="text-xs text-gray-500">
-                                {format(notif.data, 'dd/MM HH:mm')}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">{notif.messaggio}</p>
-                            {!notif.letto && (
-                              <Badge variant="secondary" className="mt-2">Nuovo</Badge>
-                            )}
-                          </div>
+          {/* Content Area - Pattern Settings */}
+          <div className="space-y-6">
+            {activeTab === 'overview' && (
+              <div className="space-y-6" data-testid="section-overview">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Welcome Card */}
+                  <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Sun className="h-5 w-5 text-orange-500" />
+                        Benvenuto, {userData.nome}!
+                      </CardTitle>
+                      <CardDescription>
+                        {format(new Date(), 'EEEE d MMMM yyyy', { locale: it })}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg" data-testid="card-leave-balance">
+                          <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                          <p className="text-sm text-green-700 font-medium" data-testid="label-leave-remaining">Ferie Rimanenti</p>
+                          <p className="text-xl font-bold text-green-800" data-testid="text-leave-remaining">{leaveBalance.ferieRimanenti}</p>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg" data-testid="card-rol-balance">
+                          <Clock className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                          <p className="text-sm text-blue-700 font-medium" data-testid="label-rol-remaining">Permessi ROL</p>
+                          <p className="text-xl font-bold text-blue-800" data-testid="text-rol-remaining">{leaveBalance.permessiRimanenti}</p>
+                        </div>
+                        <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg" data-testid="card-performance">
+                          <Target className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                          <p className="text-sm text-purple-700 font-medium" data-testid="label-performance">Performance</p>
+                          <p className="text-xl font-bold text-purple-800" data-testid="text-performance-score">85%</p>
+                        </div>
+                        <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg" data-testid="card-training">
+                          <GraduationCap className="h-6 w-6 text-orange-600 mx-auto mb-2" />
+                          <p className="text-sm text-orange-700 font-medium" data-testid="label-training">Formazione</p>
+                          <p className="text-xl font-bold text-orange-800" data-testid="text-training-progress">2/3</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Azioni Rapide - Compact 2x2 Grid */}
-                <Card className="lg:col-span-1 backdrop-blur-xl bg-white/80 border-white/20 hover:border-orange-300 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+                  {/* Quick Actions */}
+                  <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                    <CardHeader>
+                      <CardTitle data-testid="section-quick-actions">Azioni Rapide</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Button 
+                        onClick={() => setTab('requests')}
+                        className="w-full justify-start bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                        data-testid="button-quick-request"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nuova Richiesta
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setTab('documents')}
+                        className="w-full justify-start"
+                        data-testid="button-quick-documents"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Scarica Buste Paga
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setTab('time-attendance')}
+                        className="w-full justify-start"
+                        data-testid="button-quick-timesheet"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Timbrature
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Notifications */}
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
                   <CardHeader>
-                    <CardTitle>Azioni Rapide</CardTitle>
-                    <CardDescription>Operazioni frequenti</CardDescription>
+                    <CardTitle className="flex items-center gap-2" data-testid="section-notifications">
+                      <Bell className="h-5 w-5 text-orange-500" />
+                      Notifiche Recenti
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 gap-3 max-h-[320px]">
-                      {[
-                        { 
-                          icon: ClipboardList, 
-                          label: 'Richieste HR', 
-                          color: 'from-orange-500 to-purple-600',
-                          testId: 'hr-requests',
-                          link: `/${currentTenant}/employee/hr-requests`
-                        },
-                        { 
-                          icon: Receipt, 
-                          label: 'Spese', 
-                          color: 'from-green-500 to-green-600',
-                          testId: 'spese' 
-                        },
-                        { 
-                          icon: GraduationCap, 
-                          label: 'Formazione', 
-                          color: 'from-purple-500 to-purple-600',
-                          testId: 'formazione' 
-                        },
-                        { 
-                          icon: Users, 
-                          label: 'Team', 
-                          color: 'from-orange-500 to-orange-600',
-                          testId: 'team' 
-                        }
-                      ].map(({ icon: Icon, label, color, testId, link }) => {
-                        const CardComponent = (
-                          <Card 
-                            key={testId}
-                            className="group relative overflow-hidden border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer h-[120px] flex flex-col"
-                            data-testid={`card-quickaction-${testId}`}
-                          >
-                            <CardContent className="flex-1 flex flex-col items-center justify-center p-3">
-                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300`}>
-                                <Icon className="h-4 w-4 text-white" />
-                              </div>
-                              <h4 className="text-xs font-semibold text-gray-900 dark:text-white text-center group-hover:text-gray-700 dark:group-hover:text-gray-200">
-                                {label}
-                              </h4>
-                            </CardContent>
-                          </Card>
-                        );
-                        
-                        if (link) {
-                          return (
-                            <Link key={testId} href={link}>
-                              {CardComponent}
-                            </Link>
-                          );
-                        }
-                        
-                        return CardComponent;
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-
-                {/* Performance Goals */}
-                <Card className="lg:col-span-3 backdrop-blur-xl bg-white/80 border-white/20 hover:border-green-300 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer">
-                  <CardHeader>
-                    <CardTitle>Obiettivi di Performance Q4</CardTitle>
-                    <CardDescription>Il tuo progresso verso gli obiettivi trimestrali</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {goals.map((goal) => (
-                        <div key={goal.id} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">{goal.titolo}</span>
-                            <Badge variant={goal.progresso >= 90 ? 'success' : goal.progresso >= 70 ? 'warning' : 'secondary'}>
-                              {goal.progresso}%
+                    <div className="space-y-3">
+                      {notifications.slice(0, 3).map((notification) => (
+                        <Alert key={notification.id} className="border-l-4 border-l-orange-500" data-testid={`item-notification-${notification.id}`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <AlertTitle className="text-sm font-medium" data-testid={`text-notification-title-${notification.id}`}>
+                                {notification.titolo}
+                              </AlertTitle>
+                              <AlertDescription className="text-xs text-gray-600 mt-1" data-testid={`text-notification-message-${notification.id}`}>
+                                {notification.messaggio}
+                              </AlertDescription>
+                            </div>
+                            <Badge variant={notification.letto ? 'secondary' : 'default'} className="ml-2" data-testid={`badge-notification-status-${notification.id}`}>
+                              {notification.letto ? 'Letto' : 'Nuovo'}
                             </Badge>
                           </div>
-                          <Progress value={goal.progresso} className="h-2" />
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>{goal.attuale}</span>
-                            <span>{goal.target}</span>
+                        </Alert>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'time-attendance' && (
+              <div className="space-y-6" data-testid="section-time-attendance">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Clock Widget */}
+                  <div className="lg:col-span-1">
+                    <ClockWidget
+                      userId={userData.id}
+                      userName={`${userData.nome} ${userData.cognome}`}
+                      storeId="store-001"
+                      storeName={userData.store}
+                      className="bg-white/80 backdrop-blur-sm border border-white/20"
+                    />
+                  </div>
+
+                  {/* Time Summary */}
+                  <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                    <CardHeader>
+                      <CardTitle data-testid="section-time-summary">Riepilogo Orari</CardTitle>
+                      <CardDescription>Settimana corrente</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Ore Lavorate</span>
+                          <span className="font-semibold">38h 45m</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Straordinari</span>
+                          <span className="font-semibold text-orange-600">2h 15m</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Pause</span>
+                          <span className="font-semibold">4h 30m</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center text-lg">
+                          <span className="font-medium">Totale Settimana</span>
+                          <span className="font-bold text-purple-600">41h 00m</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recent Time Entries */}
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <CardHeader>
+                    <CardTitle data-testid="section-recent-timesheet">Timbrature Recenti</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Data</th>
+                            <th className="text-left py-2">Entrata</th>
+                            <th className="text-left py-2">Uscita</th>
+                            <th className="text-left py-2">Ore Totali</th>
+                            <th className="text-left py-2">Stato</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { data: 'Oggi', entrata: '08:30', uscita: '-', ore: '7h 30m', stato: 'attivo' },
+                            { data: 'Ieri', entrata: '08:15', uscita: '18:45', ore: '9h 30m', stato: 'completo' },
+                            { data: '18/12', entrata: '09:00', uscita: '17:15', ore: '7h 45m', stato: 'completo' },
+                            { data: '17/12', entrata: '08:45', uscita: '17:30', ore: '8h 15m', stato: 'completo' },
+                            { data: '16/12', entrata: '08:30', uscita: '17:00', ore: '8h 00m', stato: 'completo' }
+                          ].map((entry, index) => (
+                            <tr key={index} className="border-b hover:bg-gray-50/50" data-testid={`row-timesheet-${index}`}>
+                              <td className="py-2" data-testid={`cell-date-${index}`}>{entry.data}</td>
+                              <td className="py-2" data-testid={`cell-entry-${index}`}>{entry.entrata}</td>
+                              <td className="py-2" data-testid={`cell-exit-${index}`}>{entry.uscita}</td>
+                              <td className="py-2" data-testid={`cell-hours-${index}`}>{entry.ore}</td>
+                              <td className="py-2">
+                                <Badge variant={entry.stato === 'attivo' ? 'default' : 'secondary'} data-testid={`badge-status-${index}`}>
+                                  {entry.stato}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'requests' && (
+              <div className="space-y-6" data-testid="section-requests">
+                {/* New Request Button */}
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold">Crea Nuova Richiesta</h3>
+                        <p className="text-gray-600">Ferie, permessi, formazione e molto altro</p>
+                      </div>
+                      <Dialog open={hrRequestModal.open} onOpenChange={(open) => setHrRequestModal({ open, data: null })}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                            data-testid="button-open-modal"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nuova Richiesta
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="modal-hr-request">
+                          <HRRequestWizard
+                            onSuccess={handleHRRequestSuccess}
+                            onCancel={() => setHrRequestModal({ open: false, data: null })}
+                            data-testid="wizard-hr-request"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* My Requests */}
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <CardHeader>
+                    <CardTitle data-testid="section-my-requests">Le Mie Richieste</CardTitle>
+                    <CardDescription>Storico delle richieste inviate</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {myRequests.map((request) => (
+                        <div 
+                          key={request.id} 
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50/50 transition-colors"
+                          data-testid={`item-request-${request.id}`}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Badge variant="outline" className="text-xs" data-testid={`badge-category-${request.id}`}>
+                                {request.categoria}
+                              </Badge>
+                              <h4 className="font-medium" data-testid={`text-request-type-${request.id}`}>{request.tipo}</h4>
+                              <div className={`w-3 h-3 rounded-full ${getStatusColor(request.stato)}`} data-testid={`status-indicator-${request.id}`}></div>
+                            </div>
+                            <p className="text-sm text-gray-600" data-testid={`text-request-dates-${request.id}`}>
+                              {request.dal} {request.al !== request.dal && `- ${request.al}`} 
+                              {request.giorni > 1 && ` (${request.giorni} giorni)`}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1" data-testid={`text-request-submitted-${request.id}`}>
+                              Richiesta inviata il {request.dataRichiesta}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={
+                              request.stato === 'approved' ? 'default' :
+                              request.stato === 'pending' ? 'secondary' :
+                              'destructive'
+                            } data-testid={`badge-request-status-${request.id}`}>
+                              {request.stato === 'approved' ? 'Approvata' :
+                               request.stato === 'pending' ? 'In Attesa' :
+                               'Rifiutata'}
+                            </Badge>
                           </div>
                         </div>
                       ))}
@@ -595,196 +638,269 @@ export default function EmployeeDashboard() {
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            )}
 
-            {/* Tab Timbrature con Sistema Completo */}
-            <TabsContent value="timbrature" className="space-y-6 w-full">
-              <TimbratureTab 
-                userId="USER001"
-                storeId="STORE001" 
-                storeName="Milano Centro"
-              />
-            </TabsContent>
-
-            {/* Altri TabsContent per completezza */}
-            <TabsContent value="ferie" className="space-y-6 w-full">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-                <Card className="lg:col-span-3 backdrop-blur-xl bg-white/80 border-white/20">
+            {activeTab === 'documents' && (
+              <div className="space-y-6" data-testid="section-documents">
+                <PayslipManager data-testid="component-payslip-manager" />
+                
+                {/* Other Documents */}
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
                   <CardHeader>
-                    <CardTitle>Saldo Ferie e Permessi</CardTitle>
-                    <CardDescription>Panoramica delle tue ferie e permessi disponibili</CardDescription>
+                    <CardTitle>Altri Documenti</CardTitle>
+                    <CardDescription>Contratti, certificati e documenti personali</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <Umbrella className="h-8 w-8 text-blue-500" />
-                            <Badge variant="outline">Annuali</Badge>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { nome: 'Contratto di Lavoro', tipo: 'Contratto', data: '15/03/2022', size: '1.2 MB' },
+                        { nome: 'Policy Aziendale 2024', tipo: 'Policy', data: '01/01/2024', size: '890 KB' },
+                        { nome: 'Certificato Sicurezza', tipo: 'Certificato', data: '20/01/2024', size: '156 KB' },
+                        { nome: 'Piano Welfare 2024', tipo: 'Benefit', data: '01/12/2023', size: '2.1 MB' }
+                      ].map((doc, index) => (
+                        <div 
+                          key={index}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-8 w-8 text-purple-600" />
+                            <div>
+                              <h4 className="font-medium">{doc.nome}</h4>
+                              <p className="text-sm text-gray-600">{doc.tipo} • {doc.size}</p>
+                              <p className="text-xs text-gray-500">Caricato il {doc.data}</p>
+                            </div>
                           </div>
-                          <p className="text-2xl font-bold">{leaveBalance.ferieRimanenti}</p>
-                          <p className="text-sm text-gray-600">giorni di ferie</p>
-                          <Progress value={(leaveBalance.ferieUsate / leaveBalance.ferieAnno) * 100} className="h-1 mt-3" />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <Clock className="h-8 w-8 text-green-500" />
-                            <Badge variant="outline">ROL</Badge>
-                          </div>
-                          <p className="text-2xl font-bold">{leaveBalance.permessiRimanenti}</p>
-                          <p className="text-sm text-gray-600">ore permessi</p>
-                          <Progress value={(leaveBalance.permessiUsati / leaveBalance.permessiROL) * 100} className="h-1 mt-3" />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <Heart className="h-8 w-8 text-red-500" />
-                            <Badge variant="outline">2024</Badge>
-                          </div>
-                          <p className="text-2xl font-bold">{leaveBalance.malattia}</p>
-                          <p className="text-sm text-gray-600">giorni malattia</p>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="backdrop-blur-xl bg-white/80 border-white/20">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-2">
-                            <Baby className="h-8 w-8 text-green-500" />
-                            <Badge variant="outline">Extra</Badge>
-                          </div>
-                          <p className="text-2xl font-bold">{leaveBalance.congedi}</p>
-                          <p className="text-sm text-gray-600">congedi parentali</p>
-                        </CardContent>
-                      </Card>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            data-testid={`button-download-doc-${index}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            )}
 
-            <TabsContent value="turni" className="space-y-6 w-full">
-              <Card>
-                <CardHeader>
-                  <CardTitle>I tuoi Turni</CardTitle>
-                  <CardDescription>Visualizza e gestisci i tuoi turni di lavoro</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {shifts.map((shift) => (
-                      <div key={shift.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="text-center">
-                            <p className="text-sm font-medium">{format(new Date(shift.data), 'dd')}</p>
-                            <p className="text-xs text-gray-500">{format(new Date(shift.data), 'MMM', { locale: it })}</p>
+            {activeTab === 'performance' && (
+              <div className="space-y-6" data-testid="section-performance">
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <CardHeader>
+                    <CardTitle>I Miei Obiettivi</CardTitle>
+                    <CardDescription>Performance personale e goals</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {performance.map((goal) => (
+                        <div key={goal.id} className="p-4 border rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium">{goal.titolo}</h4>
+                            <Badge variant={goal.stato === 'completed' ? 'default' : 'secondary'}>
+                              {goal.stato === 'completed' ? 'Completato' :
+                               goal.stato === 'excellent' ? 'Eccellente' : 'In Corso'}
+                            </Badge>
                           </div>
-                          <Separator orientation="vertical" className="h-12" />
-                          <div>
-                            <p className="font-medium">{shift.turno}</p>
-                            <p className="text-sm text-gray-600">{shift.dalle} - {shift.alle}</p>
-                            <p className="text-xs text-gray-500">{shift.store}</p>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>Progresso</span>
+                              <span>{goal.progress}%</span>
+                            </div>
+                            <Progress value={goal.progress} className="h-2" />
                           </div>
+                          <p className="text-sm text-gray-600 mt-3">{goal.dettagli}</p>
+                          <p className="text-xs text-gray-500 mt-2">Scadenza: {goal.scadenza}</p>
                         </div>
-                        <Badge variant={shift.stato === 'attivo' ? 'default' : 'outline'}>
-                          {shift.stato === 'attivo' ? 'In corso' : 'Programmato'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-            <TabsContent value="documenti" className="space-y-6 w-full">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Documenti e Buste Paga</CardTitle>
-                  <CardDescription>Accedi ai tuoi documenti aziendali</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {documents.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            doc.tipo === 'Busta paga' ? 'bg-green-100' :
-                            doc.tipo === 'Contratto' ? 'bg-blue-100' :
-                            doc.tipo === 'Policy' ? 'bg-purple-100' :
-                            doc.tipo === 'Certificato' ? 'bg-orange-100' :
-                            'bg-gray-100'
-                          }`}>
-                            <FileText className={`h-5 w-5 ${
-                              doc.tipo === 'Busta paga' ? 'text-green-600' :
-                              doc.tipo === 'Contratto' ? 'text-blue-600' :
-                              doc.tipo === 'Policy' ? 'text-purple-600' :
-                              doc.tipo === 'Certificato' ? 'text-orange-600' :
-                              'text-gray-600'
-                            }`} />
+            {activeTab === 'training' && (
+              <div className="space-y-6" data-testid="section-training">
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <CardHeader>
+                    <CardTitle>I Miei Corsi</CardTitle>
+                    <CardDescription>Formazione assegnata e volontaria</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {training.map((course) => (
+                        <div key={course.id} className="p-4 border rounded-lg">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="font-medium">{course.titolo}</h4>
+                                <Badge variant="outline" className={getPriorityColor(course.tipo)}>
+                                  {course.tipo}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600">{course.provider}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className={`w-3 h-3 rounded-full ${getStatusColor(course.stato)} mb-1`}></div>
+                              <p className="text-xs text-gray-500">{course.crediti} crediti</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{doc.nome}</p>
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                              <span>{doc.tipo}</span>
-                              <span>•</span>
-                              <span>{doc.data}</span>
-                              <span>•</span>
-                              <span>{doc.size}</span>
+                          
+                          <div className="space-y-2 mb-3">
+                            <div className="flex justify-between text-sm">
+                              <span>Completamento</span>
+                              <span>{course.progress}%</span>
+                            </div>
+                            <Progress value={course.progress} className="h-2" />
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-500">
+                              {course.stato === 'completed' ? 'Completato' : `Scadenza: ${course.scadenza}`}
+                            </p>
+                            <div className="flex gap-2">
+                              {course.certificato && (
+                                <Button variant="outline" size="sm" data-testid={`button-certificate-${course.id}`}>
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Certificato
+                                </Button>
+                              )}
+                              {course.stato !== 'completed' && (
+                                <Button size="sm" data-testid={`button-continue-${course.id}`}>
+                                  {course.progress === 0 ? 'Inizia' : 'Continua'}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'profile' && (
+              <div className="space-y-6" data-testid="section-profile">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Personal Info */}
+                  <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        Informazioni Personali
+                        <Button variant="outline" size="sm" data-testid="button-edit-profile">
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Modifica
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src={userData.foto || undefined} />
+                          <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white text-xl">
+                            {userData.nome[0]}{userData.cognome[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold text-lg">{userData.nome} {userData.cognome}</h3>
+                          <p className="text-gray-600">{userData.ruolo}</p>
+                          <p className="text-sm text-gray-500">Matricola: {userData.matricola}</p>
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Mail className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{userData.email}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{userData.telefono}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Building className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{userData.reparto}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{userData.store}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <CalendarIcon className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">Dal {userData.dataAssunzione}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Account Settings */}
+                  <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                    <CardHeader>
+                      <CardTitle>Impostazioni Account</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm font-medium">Notifiche Email</Label>
+                            <p className="text-xs text-gray-500">Ricevi aggiornamenti via email</p>
+                          </div>
+                          <input type="checkbox" defaultChecked className="rounded" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm font-medium">Notifiche Push</Label>
+                            <p className="text-xs text-gray-500">Notifiche sul dispositivo</p>
+                          </div>
+                          <input type="checkbox" defaultChecked className="rounded" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm font-medium">Modalità Scura</Label>
+                            <p className="text-xs text-gray-500">Tema dell'interfaccia</p>
+                          </div>
+                          <input type="checkbox" className="rounded" />
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Lingua</Label>
+                          <select className="w-full px-3 py-2 border rounded-lg text-sm">
+                            <option value="it">Italiano</option>
+                            <option value="en">English</option>
+                          </select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Fuso Orario</Label>
+                          <select className="w-full px-3 py-2 border rounded-lg text-sm">
+                            <option value="Europe/Rome">Europe/Rome</option>
+                            <option value="Europe/London">Europe/London</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="pt-4">
+                        <Button className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700">
+                          <Save className="h-4 w-4 mr-2" />
+                          Salva Impostazioni
                         </Button>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="formazione" className="space-y-6 w-full">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Corsi di Formazione</CardTitle>
-                  <CardDescription>I tuoi percorsi di apprendimento e sviluppo</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {training.map((course) => (
-                      <div key={course.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h4 className="font-medium">{course.titolo}</h4>
-                            <p className="text-sm text-gray-600">{course.descrizione}</p>
-                          </div>
-                          <Badge variant={getStatusVariant(course.stato)}>
-                            {course.stato === 'completed' ? 'Completato' :
-                             course.stato === 'in_progress' ? 'In Corso' :
-                             course.stato === 'not_started' ? 'Da Iniziare' : course.stato}
-                          </Badge>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Progresso</span>
-                            <span>{course.progresso}%</span>
-                          </div>
-                          <Progress value={course.progresso} className="h-2" />
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>Durata: {course.durata}</span>
-                            <span>Scadenza: {course.scadenza}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>
