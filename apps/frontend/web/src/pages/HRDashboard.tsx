@@ -31,7 +31,7 @@ import {
   Upload, Archive, History, Folder, FolderOpen, Lock, Key, Database, GitBranch, Workflow,
   Signature, FileSignature, BookOpen, Calendar as CalendarView, Tag, Tags, LinkIcon, Server,
   Cloud, HardDrive, Share2, UserCog, Users2, Globe, Layers, CheckSquare, Square,
-  FileImage, FileText as FileText, FileSpreadsheet, FileVideo, FileAudio, File, Play, Pause, RotateCcw,
+  FileImage, FileSpreadsheet, FileVideo, FileAudio, File, Play, Pause, RotateCcw,
   ChevronLeft, ArrowRight, LogOut, Calculator, Wand2, Lightbulb, Cpu, Monitor, Smartphone,
   Tablet, Laptop, Maximize, Minimize, FullScreen, ScanLine, Fingerprint, ShieldCheck, Scale
 } from 'lucide-react';
