@@ -578,6 +578,99 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 
+// ==================== NOTIFICATION TEMPLATES ====================
+export const notificationTemplates = w3suiteSchema.table("notification_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Template Identification
+  templateKey: varchar("template_key", { length: 100 }).notNull(), // e.g., 'hr_request_submitted'
+  category: varchar("category", { length: 50 }).notNull(), // e.g., 'hr_request', 'general'
+  eventType: varchar("event_type", { length: 100 }).notNull(), // e.g., 'status_change', 'deadline_reminder'
+  
+  // Template Content
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  // In-App Notification Template
+  inAppTitle: varchar("in_app_title", { length: 255 }).notNull(),
+  inAppMessage: text("in_app_message").notNull(),
+  inAppUrl: varchar("in_app_url", { length: 500 }), // Deep link template
+  
+  // Email Template
+  emailSubject: varchar("email_subject", { length: 255 }),
+  emailBodyHtml: text("email_body_html"),
+  emailBodyText: text("email_body_text"),
+  
+  // Template Variables (documentation)
+  availableVariables: jsonb("available_variables").default([]), // Array of variable names
+  
+  // Targeting Rules
+  defaultPriority: notificationPriorityEnum("default_priority").notNull().default("medium"),
+  roleTargeting: text("role_targeting").array(), // Default roles to target
+  
+  // Metadata
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("notification_templates_tenant_idx").on(table.tenantId),
+  index("notification_templates_category_idx").on(table.category),
+  uniqueIndex("notification_templates_tenant_key_unique").on(table.tenantId, table.templateKey),
+]);
+
+export const insertNotificationTemplateSchema = createInsertSchema(notificationTemplates).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertNotificationTemplate = z.infer<typeof insertNotificationTemplateSchema>;
+export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
+
+// ==================== NOTIFICATION PREFERENCES ====================
+export const notificationPreferences = w3suiteSchema.table("notification_preferences", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Channel Preferences
+  inAppEnabled: boolean("in_app_enabled").default(true),
+  emailEnabled: boolean("email_enabled").default(true),
+  
+  // Category Preferences (JSON for flexibility)
+  categoryPreferences: jsonb("category_preferences").default({}), // { hr_request: { email: true, inApp: true, priority: 'high' } }
+  
+  // Priority Filtering
+  minPriorityInApp: notificationPriorityEnum("min_priority_in_app").default("low"),
+  minPriorityEmail: notificationPriorityEnum("min_priority_email").default("medium"),
+  
+  // Quiet Hours (24-hour format)
+  quietHoursEnabled: boolean("quiet_hours_enabled").default(false),
+  quietHoursStart: varchar("quiet_hours_start", { length: 5 }), // "22:00"
+  quietHoursEnd: varchar("quiet_hours_end", { length: 5 }), // "08:00"
+  
+  // Digest Preferences
+  dailyDigestEnabled: boolean("daily_digest_enabled").default(false),
+  weeklyDigestEnabled: boolean("weekly_digest_enabled").default(true),
+  digestDeliveryTime: varchar("digest_delivery_time", { length: 5 }).default("09:00"), // "09:00"
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("notification_preferences_tenant_idx").on(table.tenantId),
+  index("notification_preferences_user_idx").on(table.userId),
+  uniqueIndex("notification_preferences_tenant_user_unique").on(table.tenantId, table.userId),
+]);
+
+export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreferences).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+
 
 // ==================== SUPPLIERS (Brand Base + Tenant Override Pattern) ====================
 export const suppliers = w3suiteSchema.table("suppliers", {
@@ -1434,6 +1527,9 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   hrAnnouncements: many(hrAnnouncements),
   // HR Request System relations
   hrRequests: many(hrRequests),
+  // Notification System relations
+  notificationTemplates: many(notificationTemplates),
+  notificationPreferences: many(notificationPreferences),
 }));
 
 // Users Relations
@@ -1464,6 +1560,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   hrRequestComments: many(hrRequestComments),
   hrRequestStatusHistory: many(hrRequestStatusHistory),
   assignedHrRequests: many(hrRequests),
+  // Notification System relations
+  notificationPreferences: many(notificationPreferences),
 }));
 
 // Legal Entities Relations
@@ -1554,11 +1652,6 @@ export const userLegalEntitiesRelations = relations(userLegalEntities, ({ one })
 }));
 
 // Notifications Relations
-export const notificationsRelations = relations(notifications, ({ one }) => ({
-  tenant: one(tenants, { fields: [notifications.tenantId], references: [tenants.id] }),
-  targetUser: one(users, { fields: [notifications.targetUserId], references: [users.id] }),
-}));
-
 // Object Metadata Relations
 export const objectMetadataRelations = relations(objectMetadata, ({ one }) => ({
   tenant: one(tenants, { fields: [objectMetadata.tenantId], references: [tenants.id] }),
@@ -1710,4 +1803,23 @@ export const hrRequestStatusHistoryRelations = relations(hrRequestStatusHistory,
   tenant: one(tenants, { fields: [hrRequestStatusHistory.tenantId], references: [tenants.id] }),
   request: one(hrRequests, { fields: [hrRequestStatusHistory.requestId], references: [hrRequests.id] }),
   changedByUser: one(users, { fields: [hrRequestStatusHistory.changedBy], references: [users.id] }),
+}));
+
+// ==================== NOTIFICATION SYSTEM RELATIONS ====================
+
+// Notifications Relations
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  tenant: one(tenants, { fields: [notifications.tenantId], references: [tenants.id] }),
+  targetUser: one(users, { fields: [notifications.targetUserId], references: [users.id] }),
+}));
+
+// Notification Templates Relations
+export const notificationTemplatesRelations = relations(notificationTemplates, ({ one }) => ({
+  tenant: one(tenants, { fields: [notificationTemplates.tenantId], references: [tenants.id] }),
+}));
+
+// Notification Preferences Relations
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  tenant: one(tenants, { fields: [notificationPreferences.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [notificationPreferences.userId], references: [users.id] }),
 }));

@@ -26,6 +26,7 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import HRRequestCenter from "./pages/HRRequestCenter";
 import ManagerHRDashboard from "./pages/ManagerHRDashboard";
 import ManagerApprovalQueue from "./pages/ManagerApprovalQueue";
+import NotificationCenter from "./pages/NotificationCenter";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -140,6 +141,9 @@ function Router() {
       </Route>
       <Route path="/:tenant/demo-fields">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><StandardFieldsDemo /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      <Route path="/:tenant/notifications">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><NotificationCenter /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}

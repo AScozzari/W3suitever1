@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layout } from '@/components/Layout';
+import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -92,6 +92,7 @@ export default function ManagerApprovalQueue() {
   const { currentTenant } = useTenant();
   const [selectedTab, setSelectedTab] = useState('pending');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+  const [currentModule, setCurrentModule] = useState('hr');
 
   // Data queries
   const { data: statsData, isLoading: statsLoading } = useManagerDashboardStats();
@@ -126,11 +127,8 @@ export default function ManagerApprovalQueue() {
   ];
 
   return (
-    <Layout 
-      title="Manager - Coda Approvazioni"
-      breadcrumbs={breadcrumbs}
-      data-testid="manager-approval-queue-page"
-    >
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="p-6 space-y-6" data-testid="manager-approval-queue-page">
       <div className="space-y-8">
         {/* Page Header */}
         <div className="flex items-center justify-between">
@@ -321,6 +319,7 @@ export default function ManagerApprovalQueue() {
             </TabsContent>
           </Tabs>
         </div>
+      </div>
       </div>
     </Layout>
   );

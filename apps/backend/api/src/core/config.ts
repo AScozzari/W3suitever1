@@ -8,17 +8,41 @@ function initializeJwtSecret(): string {
   let secret = process.env.JWT_SECRET;
 
   if (!secret) {
-    console.error('CRITICAL: JWT_SECRET environment variable is not set. Using default for development only.');
+    console.error('🚨 CRITICAL SECURITY: JWT_SECRET environment variable is not set. Using default for development only.');
     
     if (process.env.NODE_ENV === 'production') {
+      console.error('❌ PRODUCTION DEPLOYMENT BLOCKED: JWT_SECRET must be set for production');
+      console.error('💡 Set a strong JWT_SECRET environment variable with at least 32 characters');
+      console.error('💥 FAILING FAST to prevent security breach');
       throw new Error('JWT_SECRET environment variable is required in production');
     }
     
     // Only in development - use fallback secret
-    secret = "w3suite-dev-secret-2025";
+    secret = "w3suite-dev-secret-2025-fallback-insecure";
     process.env.JWT_SECRET = secret;
     
-    console.log('🔑 Using development JWT secret for authentication');
+    console.log('⚠️  Using INSECURE development JWT secret for authentication');
+    console.log('🔧 Set JWT_SECRET environment variable for secure authentication');
+  } else {
+    // Validate JWT secret strength
+    if (secret.length < 32) {
+      console.warn('⚠️  JWT_SECRET should be at least 32 characters for security');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('❌ PRODUCTION SECURITY ERROR: JWT_SECRET too short for production use');
+        console.error('💥 FAILING FAST to prevent weak authentication');
+        throw new Error('JWT_SECRET must be at least 32 characters in production');
+      }
+    }
+    
+    if (secret === "w3suite-dev-secret-2025" || secret === "w3suite-dev-secret-2025-fallback-insecure") {
+      console.error('🚨 CRITICAL: Using default/fallback JWT_SECRET in production is FORBIDDEN');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('💥 FAILING FAST to prevent security breach');
+        throw new Error('Default JWT_SECRET values are not allowed in production');
+      }
+    }
+    
+    console.log('✅ JWT_SECRET properly configured');
   }
 
   return secret;

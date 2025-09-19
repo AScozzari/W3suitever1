@@ -36,6 +36,7 @@ import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageServi
 import { objectAclService } from "./objectAcl";
 import { HRStorage } from "./hr-storage";
 import { encryptionKeyService } from "./encryption-service";
+import { HRNotificationHelper } from "./notification-service";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
@@ -7104,7 +7105,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = approveRequestBodySchema.parse(req.body);
       
+      // Get current status before making changes for accurate tracking
+      let fromStatus: string | null = null;
+      try {
+        const existingRequest = await storage.getRequestById(tenantId, requestId);
+        fromStatus = existingRequest?.status || null;
+      } catch (error) {
+        logger.warn('Could not retrieve current status for notification tracking', { requestId, tenantId, error });
+      }
+      
       const request = await storage.approveRequest(tenantId, requestId, userId, validatedData.comment);
+      
+      // Send notification for status change with accurate fromStatus
+      try {
+        await HRNotificationHelper.notifyStatusChange(
+          tenantId,
+          requestId,
+          fromStatus, // Actual prior status derived from database
+          'approved',
+          userId,
+          validatedData.comment
+        );
+      } catch (notificationError) {
+        logger.error('Failed to send approval notification', { notificationError, requestId, tenantId });
+        // Don't fail the request if notification fails
+      }
+      
       res.json(request);
     } catch (error) {
       handleApiError(error, res);
@@ -7124,7 +7150,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = rejectRequestBodySchema.parse(req.body);
       
+      // Get current status before making changes for accurate tracking
+      let fromStatus: string | null = null;
+      try {
+        const existingRequest = await storage.getRequestById(tenantId, requestId);
+        fromStatus = existingRequest?.status || null;
+      } catch (error) {
+        logger.warn('Could not retrieve current status for notification tracking', { requestId, tenantId, error });
+      }
+      
       const request = await storage.rejectRequest(tenantId, requestId, userId, validatedData.reason);
+      
+      // Send notification for status change with accurate fromStatus
+      try {
+        await HRNotificationHelper.notifyStatusChange(
+          tenantId,
+          requestId,
+          fromStatus, // Actual prior status derived from database
+          'rejected',
+          userId,
+          validatedData.reason
+        );
+      } catch (notificationError) {
+        logger.error('Failed to send rejection notification', { notificationError, requestId, tenantId });
+        // Don't fail the request if notification fails
+      }
+      
       res.json(request);
     } catch (error) {
       handleApiError(error, res);
@@ -7144,7 +7195,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = cancelRequestBodySchema.parse(req.body);
       
+      // Get current status before making changes for accurate tracking
+      let fromStatus: string | null = null;
+      try {
+        const existingRequest = await storage.getRequestById(tenantId, requestId);
+        fromStatus = existingRequest?.status || null;
+      } catch (error) {
+        logger.warn('Could not retrieve current status for notification tracking', { requestId, tenantId, error });
+      }
+      
       const request = await storage.cancelRequest(tenantId, requestId, userId, validatedData.reason);
+      
+      // Send notification for status change with accurate fromStatus
+      try {
+        await HRNotificationHelper.notifyStatusChange(
+          tenantId,
+          requestId,
+          fromStatus, // Actual prior status derived from database
+          'cancelled',
+          userId,
+          validatedData.reason
+        );
+      } catch (notificationError) {
+        logger.error('Failed to send cancellation notification', { notificationError, requestId, tenantId });
+        // Don't fail the request if notification fails
+      }
+      
       res.json(request);
     } catch (error) {
       handleApiError(error, res);

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import LoginModal from './LoginModal';
+import NotificationBell from './Notifications/NotificationBell';
 
 // Palette colori W3 Suite - Coerente e Professionale
 const COLORS = {
@@ -592,6 +593,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
         {/* Sezione destra - Responsive */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+          {/* Notification Bell */}
+          {user && <NotificationBell isMobile={isMobile} />}
+          
           {/* Selettore Punto Vendita - Professional */}
           {!isMobile && (
             <div style={{ position: 'relative' }} data-store-menu>
