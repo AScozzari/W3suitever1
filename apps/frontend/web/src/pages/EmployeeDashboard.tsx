@@ -189,6 +189,19 @@ export default function EmployeeDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  // Apply loaded class to body to trigger WindTre gradient background
+  useEffect(() => {
+    // Add loaded class after component mount to prevent flash
+    const timeoutId = setTimeout(() => {
+      document.body.classList.add('loaded');
+    }, 100); // Small delay to ensure white background is rendered first
+    
+    return () => {
+      clearTimeout(timeoutId);
+      document.body.classList.remove('loaded');
+    };
+  }, []);
+
   // Format time utility
   const formatTime = (date: Date) => {
     return format(date, 'HH:mm:ss');
@@ -493,9 +506,9 @@ export default function EmployeeDashboard() {
                       {/* Advanced TimbratureTab */}
                       <TabsContent value="timbratura" className="space-y-6">
                         <TimbratureTab
-                          userId={userData.id}
+                          userId={userData?.id}
                           storeId="store-001"
-                          storeName={userData.store}
+                          storeName={userData?.store}
                         />
                       </TabsContent>
 
@@ -783,7 +796,7 @@ export default function EmployeeDashboard() {
                               <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
                                 <div className="flex items-center gap-2 mb-2">
                                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                  <p className="text-sm font-medium">{userData.store}</p>
+                                  <p className="text-sm font-medium">{userData?.store}</p>
                                 </div>
                                 <p className="text-xs text-gray-600">Via Roma 123, Milano, MI</p>
                                 <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
@@ -1170,7 +1183,7 @@ export default function EmployeeDashboard() {
                       {/* Leave Balance Tab */}
                       <TabsContent value="balances" className="space-y-6">
                         <LeaveBalanceWidget 
-                          userId={userData.id}
+                          userId={userData?.id}
                           className="glass-card"
                         />
 
@@ -1720,15 +1733,15 @@ export default function EmployeeDashboard() {
                     <CardContent className="space-y-4">
                       <div className="flex items-center space-x-4">
                         <Avatar className="h-16 w-16">
-                          <AvatarImage src={userData.foto || undefined} />
+                          <AvatarImage src={userData?.foto || undefined} />
                           <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white text-xl">
-                            {userData.nome[0]}{userData.cognome[0]}
+                            {userData?.nome?.[0]}{userData?.cognome?.[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h3 className="font-semibold text-lg">{userData.nome} {userData.cognome}</h3>
-                          <p className="text-gray-600">{userData.ruolo}</p>
-                          <p className="text-sm text-gray-500">Matricola: {userData.matricola}</p>
+                          <h3 className="font-semibold text-lg">{userData?.nome} {userData?.cognome}</h3>
+                          <p className="text-gray-600">{userData?.ruolo}</p>
+                          <p className="text-sm text-gray-500">Matricola: {userData?.matricola}</p>
                         </div>
                       </div>
                       
@@ -1737,23 +1750,23 @@ export default function EmployeeDashboard() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <Mail className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">{userData.email}</span>
+                          <span className="text-sm">{userData?.email}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <Phone className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">{userData.telefono}</span>
+                          <span className="text-sm">{userData?.telefono}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <Building className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">{userData.reparto}</span>
+                          <span className="text-sm">{userData?.reparto}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <MapPin className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">{userData.store}</span>
+                          <span className="text-sm">{userData?.store}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <CalendarIcon className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">Dal {userData.dataAssunzione}</span>
+                          <span className="text-sm">Dal {userData?.dataAssunzione}</span>
                         </div>
                       </div>
                     </CardContent>
