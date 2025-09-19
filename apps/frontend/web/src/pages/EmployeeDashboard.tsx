@@ -118,37 +118,13 @@ export default function EmployeeDashboard() {
   const { user: authUser, isAuthenticated } = useAuth();
   const userId = authUser?.id;
   
-  // ⚡ PERFORMANCE OPTIMIZED: Enable queries only for active tabs to prevent over-fetching
-  
-  // Always needed for user display and authentication
+  // Real data queries with hierarchical cache keys - REVERTED TO STABLE VERSION
   const { data: userData, isLoading: userLoading, error: userError } = useUser(userId);
-  
-  // Tab-specific data queries - only fetch when needed
-  const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId, {
-    enabled: activeTab === 'overview' || activeTab === 'requests'
-  });
-  
-  const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ 
-    status: 'unread', 
-    limit: 3 
-  }, {
-    enabled: activeTab === 'overview' // Only for overview widget
-  });
-  
-  const { data: myRequestsData, isLoading: requestsLoading } = useHRRequests({ 
-    userId, 
-    limit: 5 
-  }, {
-    enabled: activeTab === 'overview' || activeTab === 'requests' // Overview preview + full tab
-  });
-  
-  const { session: currentSession, isLoading: sessionLoading } = useCurrentSession({
-    enabled: activeTab === 'overview' || activeTab === 'time-attendance' // Time tracking tabs only
-  });
-  
-  const { documents, isLoading: documentsLoading } = useDocumentDrive({
-    enabled: activeTab === 'documents' // Only when documents tab is active
-  });
+  const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId);
+  const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
+  const { data: myRequestsData, isLoading: requestsLoading } = useHRRequests({ userId, limit: 5 });
+  const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
+  const { documents, isLoading: documentsLoading } = useDocumentDrive();
   
   // Modal states with proper types - discriminated union to eliminate any
   type ModalState = 
