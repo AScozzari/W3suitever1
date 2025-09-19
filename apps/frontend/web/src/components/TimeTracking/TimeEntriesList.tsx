@@ -97,7 +97,12 @@ export default function TimeEntriesList({
   const [groupBy, setGroupBy] = useState<GroupByPeriod>('day');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Partial<TimeTrackingEntry>>({});
+  const [editForm, setEditForm] = useState<{
+    clockIn?: string;
+    clockOut?: string | null;
+    notes?: string;
+    editReason?: string;
+  }>({});
   const [disputeId, setDisputeId] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
 
@@ -112,7 +117,8 @@ export default function TimeEntriesList({
 
     filtered.forEach((entry) => {
       let key: string;
-      const date = parseISO(entry.clockIn);
+      const clockInStr = typeof entry.clockIn === 'string' ? entry.clockIn : new Date(entry.clockIn).toISOString();
+      const date = parseISO(clockInStr);
 
       if (groupBy === 'day') {
         key = format(date, 'yyyy-MM-dd');
@@ -195,9 +201,9 @@ export default function TimeEntriesList({
   const handleEdit = (entry: TimeTrackingEntry) => {
     setEditingId(entry.id);
     setEditForm({
-      clockIn: entry.clockIn,
-      clockOut: entry.clockOut,
-      notes: entry.notes,
+      clockIn: typeof entry.clockIn === 'string' ? entry.clockIn : new Date(entry.clockIn).toISOString(),
+      clockOut: entry.clockOut ? (typeof entry.clockOut === 'string' ? entry.clockOut : new Date(entry.clockOut).toISOString()) : null,
+      notes: entry.notes || undefined,
       editReason: '',
     });
   };
@@ -215,7 +221,12 @@ export default function TimeEntriesList({
     if (onEdit) {
       const entry = entries.find(e => e.id === editingId);
       if (entry) {
-        onEdit({ ...entry, ...editForm });
+        onEdit({ 
+          ...entry, 
+          clockIn: editForm.clockIn ? (typeof entry.clockIn === 'string' ? editForm.clockIn : editForm.clockIn) : entry.clockIn,
+          clockOut: editForm.clockOut !== undefined ? editForm.clockOut : entry.clockOut,
+          notes: editForm.notes || entry.notes
+        } as TimeTrackingEntry);
       }
     }
 
@@ -243,7 +254,10 @@ export default function TimeEntriesList({
 
   const calculateGroupStats = (entries: TimeTrackingEntry[]) => {
     const totalMinutes = entries.reduce((sum, entry) => {
-      return sum + (entry.totalMinutes || calculateDuration(entry.clockIn, entry.clockOut));
+      return sum + (entry.totalMinutes || calculateDuration(
+        typeof entry.clockIn === 'string' ? entry.clockIn : new Date(entry.clockIn).toISOString(),
+        entry.clockOut ? (typeof entry.clockOut === 'string' ? entry.clockOut : new Date(entry.clockOut).toISOString()) : null
+      ));
     }, 0);
 
     const overtimeMinutes = entries.reduce((sum, entry) => {
@@ -396,9 +410,9 @@ export default function TimeEntriesList({
                                     <label className="text-xs text-gray-400">Entrata</label>
                                     <Input
                                       type="datetime-local"
-                                      value={typeof editForm.clockIn === 'string' ? editForm.clockIn.slice(0, 16) : new Date(editForm.clockIn || '').toISOString().slice(0, 16)}
+                                      value={editForm.clockIn ? (typeof editForm.clockIn === 'string' ? editForm.clockIn.slice(0, 16) : new Date(editForm.clockIn).toISOString().slice(0, 16)) : ''}
                                       onChange={(e) =>
-                                        setEditForm({ ...editForm, clockIn: new Date(e.target.value) })
+                                        setEditForm({ ...editForm, clockIn: e.target.value })
                                       }
                                       className="mt-1"
                                     />
@@ -407,9 +421,9 @@ export default function TimeEntriesList({
                                     <label className="text-xs text-gray-400">Uscita</label>
                                     <Input
                                       type="datetime-local"
-                                      value={typeof editForm.clockOut === 'string' ? editForm.clockOut.slice(0, 16) : (editForm.clockOut ? new Date(editForm.clockOut).toISOString().slice(0, 16) : '')}
+                                      value={editForm.clockOut ? (typeof editForm.clockOut === 'string' ? editForm.clockOut.slice(0, 16) : new Date(editForm.clockOut).toISOString().slice(0, 16)) : ''}
                                       onChange={(e) =>
-                                        setEditForm({ ...editForm, clockOut: new Date(e.target.value) })
+                                        setEditForm({ ...editForm, clockOut: e.target.value || null })
                                       }
                                       className="mt-1"
                                     />
@@ -492,12 +506,12 @@ export default function TimeEntriesList({
                                     {/* Time Range */}
                                     <div className="flex items-center gap-2">
                                       <span className="text-sm font-medium">
-                                        {format(parseISO(entry.clockIn), 'HH:mm')}
+                                        {format(typeof entry.clockIn === 'string' ? parseISO(entry.clockIn) : new Date(entry.clockIn), 'HH:mm')}
                                       </span>
                                       <span className="text-gray-400">→</span>
                                       <span className="text-sm font-medium">
                                         {entry.clockOut
-                                          ? format(parseISO(entry.clockOut), 'HH:mm')
+                                          ? format(typeof entry.clockOut === 'string' ? parseISO(entry.clockOut) : new Date(entry.clockOut), 'HH:mm')
                                           : 'In corso'}
                                       </span>
                                     </div>
@@ -506,7 +520,10 @@ export default function TimeEntriesList({
                                     <Badge variant="secondary" className="text-xs">
                                       {formatDuration(
                                         entry.totalMinutes ||
-                                          calculateDuration(entry.clockIn, entry.clockOut)
+                                          calculateDuration(
+                                            typeof entry.clockIn === 'string' ? entry.clockIn : new Date(entry.clockIn).toISOString(),
+                                            entry.clockOut ? (typeof entry.clockOut === 'string' ? entry.clockOut : new Date(entry.clockOut).toISOString()) : null
+                                          )
                                       )}
                                     </Badge>
 

@@ -131,6 +131,8 @@ export interface NearbyStoresResponse {
   totalFound: number;
   inGeofenceCount: number;
   message: string;
+  isDemoMode?: boolean;
+  fallbackReason?: string;
 }
 
 export interface StoreResolutionResult {
@@ -142,6 +144,17 @@ export interface StoreResolutionResult {
 }
 
 class TimeTrackingService {
+  // ==================== TENANT ID HELPER ====================
+  private getCurrentTenantId(): string {
+    // Fallback to localStorage or demo tenant during loading
+    if (typeof window !== 'undefined') {
+      const storedTenantId = window.localStorage.getItem('currentTenantId');
+      if (storedTenantId) return storedTenantId;
+    }
+    // Demo tenant for development
+    return '00000000-0000-0000-0000-000000000001';
+  }
+
   // ==================== ENCRYPTION HELPERS ====================
   private async encryptSensitiveData(data: ClockInData): Promise<EncryptedClockInData> {
     const encryptedData: EncryptedClockInData = {
@@ -157,8 +170,12 @@ class TimeTrackingService {
     try {
       // Encrypt geoLocation if present
       if (data.geoLocation) {
-        const encrypted = await encryptionManager.encryptData(JSON.stringify(data.geoLocation));
-        encryptedData.encryptedGeoLocation = encrypted.encryptedData;
+        const tenantId = this.getCurrentTenantId();
+        const encrypted = await encryptionManager.encryptSensitiveData(
+          { geoLocation: data.geoLocation }, 
+          tenantId
+        );
+        encryptedData.encryptedGeoLocation = encrypted.data;
         encryptedData.encryptionKeyId = encrypted.keyId;
         encryptionMetadata.geoLocationIv = encrypted.iv;
         encryptionMetadata.geoLocationTag = encrypted.tag;
@@ -166,8 +183,12 @@ class TimeTrackingService {
 
       // Encrypt deviceInfo if present
       if (data.deviceInfo) {
-        const encrypted = await encryptionManager.encryptData(JSON.stringify(data.deviceInfo));
-        encryptedData.encryptedDeviceInfo = encrypted.encryptedData;
+        const tenantId = this.getCurrentTenantId();
+        const encrypted = await encryptionManager.encryptSensitiveData(
+          { deviceInfo: data.deviceInfo }, 
+          tenantId
+        );
+        encryptedData.encryptedDeviceInfo = encrypted.data;
         if (!encryptedData.encryptionKeyId) {
           encryptedData.encryptionKeyId = encrypted.keyId;
         }
@@ -177,8 +198,12 @@ class TimeTrackingService {
 
       // Encrypt notes if present
       if (data.notes) {
-        const encrypted = await encryptionManager.encryptData(data.notes);
-        encryptedData.encryptedNotes = encrypted.encryptedData;
+        const tenantId = this.getCurrentTenantId();
+        const encrypted = await encryptionManager.encryptSensitiveData(
+          { notes: data.notes }, 
+          tenantId
+        );
+        encryptedData.encryptedNotes = encrypted.data;
         if (!encryptedData.encryptionKeyId) {
           encryptedData.encryptionKeyId = encrypted.keyId;
         }
@@ -194,15 +219,21 @@ class TimeTrackingService {
       return encryptedData;
     } catch (error) {
       console.error('🚨 [ENCRYPTION-ERROR] Failed to encrypt sensitive data:', error);
-      // Fallback to non-encrypted data for demo purposes
-      // In production, this should fail gracefully or retry
-      return {
-        ...encryptedData,
-        // Include original data as fallback (not recommended for production)
-        geoLocation: data.geoLocation,
-        deviceInfo: data.deviceInfo,
-        notes: data.notes,
-      } as any;
+      
+      // Security gate: Only allow plaintext fallback in demo mode
+      if ((import.meta as any).env?.VITE_DEMO_MODE === 'true') {
+        console.warn('⚠️ [DEMO-MODE] Using plaintext fallback - NOT for production!');
+        return {
+          ...encryptedData,
+          // Include original data as fallback (only in demo mode)
+          geoLocation: data.geoLocation,
+          deviceInfo: data.deviceInfo,
+          notes: data.notes,
+        } as any;
+      }
+      
+      // Production: Return typed error instead of plaintext
+      throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown encryption error'}`);
     }
   }
 
@@ -216,37 +247,52 @@ class TimeTrackingService {
 
       // Decrypt geoLocation if present
       if (encryptedEntry.encryptedGeoLocation && encryptedEntry.encryptionMetadata?.geoLocationIv) {
-        const decryptedGeoLocation = await encryptionManager.decryptData({
-          encryptedData: encryptedEntry.encryptedGeoLocation,
-          keyId: encryptedEntry.encryptionKeyId,
+        const tenantId = this.getCurrentTenantId();
+        const encryptedData = {
+          data: encryptedEntry.encryptedGeoLocation,
           iv: encryptedEntry.encryptionMetadata.geoLocationIv,
+          salt: '', // Will be handled by encryption manager
           tag: encryptedEntry.encryptionMetadata.geoLocationTag,
-        });
-        decrypted.geoLocation = JSON.parse(decryptedGeoLocation);
+          version: 1,
+          keyId: encryptedEntry.encryptionKeyId,
+          timestamp: Date.now()
+        };
+        const decryptedData = await encryptionManager.decryptSensitiveData(encryptedData, tenantId);
+        decrypted.geoLocation = decryptedData.geoLocation;
         delete decrypted.encryptedGeoLocation;
       }
 
       // Decrypt deviceInfo if present
       if (encryptedEntry.encryptedDeviceInfo && encryptedEntry.encryptionMetadata?.deviceInfoIv) {
-        const decryptedDeviceInfo = await encryptionManager.decryptData({
-          encryptedData: encryptedEntry.encryptedDeviceInfo,
-          keyId: encryptedEntry.encryptionKeyId,
+        const tenantId = this.getCurrentTenantId();
+        const encryptedData = {
+          data: encryptedEntry.encryptedDeviceInfo,
           iv: encryptedEntry.encryptionMetadata.deviceInfoIv,
+          salt: '', // Will be handled by encryption manager
           tag: encryptedEntry.encryptionMetadata.deviceInfoTag,
-        });
-        decrypted.deviceInfo = JSON.parse(decryptedDeviceInfo);
+          version: 1,
+          keyId: encryptedEntry.encryptionKeyId,
+          timestamp: Date.now()
+        };
+        const decryptedData = await encryptionManager.decryptSensitiveData(encryptedData, tenantId);
+        decrypted.deviceInfo = decryptedData.deviceInfo;
         delete decrypted.encryptedDeviceInfo;
       }
 
       // Decrypt notes if present
       if (encryptedEntry.encryptedNotes && encryptedEntry.encryptionMetadata?.notesIv) {
-        const decryptedNotes = await encryptionManager.decryptData({
-          encryptedData: encryptedEntry.encryptedNotes,
-          keyId: encryptedEntry.encryptionKeyId,
+        const tenantId = this.getCurrentTenantId();
+        const encryptedData = {
+          data: encryptedEntry.encryptedNotes,
           iv: encryptedEntry.encryptionMetadata.notesIv,
+          salt: '', // Will be handled by encryption manager
           tag: encryptedEntry.encryptionMetadata.notesTag,
-        });
-        decrypted.notes = decryptedNotes;
+          version: 1,
+          keyId: encryptedEntry.encryptionKeyId,
+          timestamp: Date.now()
+        };
+        const decryptedData = await encryptionManager.decryptSensitiveData(encryptedData, tenantId);
+        decrypted.notes = decryptedData.notes;
         delete decrypted.encryptedNotes;
       }
 

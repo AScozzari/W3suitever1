@@ -151,10 +151,14 @@ class EncryptionManager {
     );
 
     // Derive AES-GCM key using PBKDF2
+    // Create a proper ArrayBuffer from Uint8Array for PBKDF2 compatibility
+    const saltBuffer = new ArrayBuffer(salt.length);
+    new Uint8Array(saltBuffer).set(salt);
+    
     return await crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: salt,
+        salt: saltBuffer,
         iterations: this.config.iterations,
         hash: this.config.hashAlgorithm
       },
@@ -240,9 +244,11 @@ class EncryptionManager {
     const tag = this.base64ToArrayBuffer(encryptedData.tag);
 
     // Combine ciphertext and tag for AES-GCM
-    const encryptedBuffer = new Uint8Array(ciphertext.length + tag.length);
-    encryptedBuffer.set(new Uint8Array(ciphertext));
-    encryptedBuffer.set(new Uint8Array(tag), ciphertext.length);
+    const ciphertextArray = new Uint8Array(ciphertext);
+    const tagArray = new Uint8Array(tag);
+    const encryptedBuffer = new Uint8Array(ciphertextArray.length + tagArray.length);
+    encryptedBuffer.set(ciphertextArray);
+    encryptedBuffer.set(tagArray, ciphertextArray.length);
 
     try {
       // Decrypt using AES-GCM
@@ -277,7 +283,11 @@ class EncryptionManager {
     tenantId: string
   ): Promise<{ lat: number; lng: number; accuracy: number; address?: string }> {
     const decrypted = await this.decryptSensitiveData(encryptedData, tenantId);
-    return decrypted.geoLocation!;
+    if (!decrypted.geoLocation || typeof decrypted.geoLocation.lat !== 'number' || typeof decrypted.geoLocation.lng !== 'number' || typeof decrypted.geoLocation.accuracy !== 'number') {
+      throw new DecryptionError('Invalid or missing geoLocation data');
+    }
+    // Type assertion after validation to ensure proper typing
+    return decrypted.geoLocation as { lat: number; lng: number; accuracy: number; address?: string };
   }
 
   public async encryptDeviceInfo(

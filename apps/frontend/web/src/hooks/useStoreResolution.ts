@@ -188,20 +188,25 @@ export function useStoreResolution(): StoreResolutionState & StoreResolutionActi
     },
     enabled: !!state.gpsPosition && !state.gpsError,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
-    cacheTime: 30 * 60 * 1000, // 30 minutes cache
-    retry: 2,
-    onError: (error) => {
-      console.error('🔴 [STORE-QUERY] Nearby stores API failed:', error);
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
+    retry: 2
+  });
+
+  // Handle query states with useEffect
+  useEffect(() => {
+    if (nearbyStoresQuery.error) {
+      console.error('🔴 [STORE-QUERY] Nearby stores API failed:', nearbyStoresQuery.error);
       setState(prev => ({
         ...prev,
         gpsError: 'Database non disponibile - modalità demo attiva',
         requiresManualSelection: true,
         nearbyStores: getDemoStores() // Fallback to demo stores
       }));
-    },
-    onSuccess: (data) => {
-      console.log('✅ [STORE-QUERY] Nearby stores loaded successfully:', data);
-      if (data.isDemoMode) {
+    }
+
+    if (nearbyStoresQuery.data) {
+      console.log('✅ [STORE-QUERY] Nearby stores loaded successfully:', nearbyStoresQuery.data);
+      if (nearbyStoresQuery.data.isDemoMode) {
         setState(prev => ({
           ...prev,
           gpsError: 'Database offline - usando dati demo',
@@ -209,7 +214,7 @@ export function useStoreResolution(): StoreResolutionState & StoreResolutionActi
         }));
       }
     }
-  });
+  }, [nearbyStoresQuery.error, nearbyStoresQuery.data]);
 
   const storeResolutionMutation = useMutation({
     mutationFn: async (params: { lat: number; lng: number; accuracy: number }) => {
@@ -269,7 +274,7 @@ export function useStoreResolution(): StoreResolutionState & StoreResolutionActi
         queryKey,
         queryFn: () => timeTrackingService.getNearbyStores(lat, lng, radius),
         staleTime: 5 * 60 * 1000, // 5 minutes
-        cacheTime: 30 * 60 * 1000 // 30 minutes
+        gcTime: 30 * 60 * 1000 // 30 minutes
       });
 
       console.log('✅ [STORE-RESOLVE] Stores resolved:', response);
@@ -295,7 +300,7 @@ export function useStoreResolution(): StoreResolutionState & StoreResolutionActi
           stores: cachedStores,
           searchCenter: { lat, lng, radius },
           totalFound: cachedStores.length,
-          inGeofenceCount: cachedStores.filter(s => s.inGeofence).length,
+          inGeofenceCount: cachedStores.filter((s: NearbyStore) => s.inGeofence).length,
           message: 'Database non raggiungibile - usando cache locale',
           isDemoMode: true,
           fallbackReason: 'api_error_with_cache'
@@ -319,7 +324,7 @@ export function useStoreResolution(): StoreResolutionState & StoreResolutionActi
         stores: demoStores,
         searchCenter: { lat, lng, radius },
         totalFound: demoStores.length,
-        inGeofenceCount: demoStores.filter(s => s.inGeofence).length,
+        inGeofenceCount: demoStores.filter((s: NearbyStore) => s.inGeofence).length,
         message: 'Sistema offline - modalità demo attiva',
         isDemoMode: true,
         fallbackReason: 'api_error_demo_fallback'
@@ -343,12 +348,13 @@ export function useStoreResolution(): StoreResolutionState & StoreResolutionActi
     }
 
     setState(prev => ({ ...prev, isResolving: true }));
+    const position = state.gpsPosition; // Type narrowing
 
     try {
       await storeResolutionMutation.mutateAsync({
-        lat: state.gpsPosition.lat,
-        lng: state.gpsPosition.lng,
-        accuracy: state.gpsPosition.accuracy
+        lat: position.lat,
+        lng: position.lng,
+        accuracy: position.accuracy
       });
     } catch (error) {
       console.error('Auto-selection failed:', error);
@@ -401,6 +407,9 @@ export function useStoreResolution(): StoreResolutionState & StoreResolutionActi
 
     try {
       const position = await geoManager.getCurrentPosition();
+      if (!position) {
+        throw new Error('GPS positioning failed - no position returned');
+      }
       setState(prev => ({
         ...prev,
         gpsPosition: position,
