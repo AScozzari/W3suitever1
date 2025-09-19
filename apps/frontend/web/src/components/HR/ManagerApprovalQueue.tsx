@@ -17,7 +17,7 @@ import {
   Search, Filter, CheckCircle, XCircle, AlertTriangle, Clock, User, Calendar, 
   MessageSquare, MoreHorizontal, Eye, FileText, Umbrella, Heart, Shield, 
   Baby, Users, Activity, Home, Building, Globe, Briefcase, ChevronDown,
-  CheckCircle2, XCircle2
+  CheckCircle2
 } from 'lucide-react';
 import { format, parseISO, isWithinInterval, subDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -398,7 +398,7 @@ export default function ManagerApprovalQueue({ className }: ManagerApprovalQueue
                       variant="destructive"
                       data-testid="button-bulk-reject"
                     >
-                      <XCircle2 className="h-4 w-4 mr-1" />
+                      <XCircle className="h-4 w-4 mr-1" />
                       Rifiuta Tutto
                     </Button>
                   </DialogTrigger>
