@@ -80,10 +80,26 @@ export const hrAnnouncementPriorityEnum = pgEnum('hr_announcement_priority', ['l
 export const hrAnnouncementAudienceEnum = pgEnum('hr_announcement_audience', ['all', 'store', 'area', 'role', 'specific']);
 
 // HR Request System Enums
-export const hrRequestCategoryEnum = pgEnum('hr_request_category', ['leave', 'schedule', 'other']);
+export const hrRequestCategoryEnum = pgEnum('hr_request_category', [
+  'leave', 'schedule', 'other', 'italian_legal', 'family', 'professional_development', 
+  'wellness_health', 'remote_work', 'technology_support'
+]);
 export const hrRequestTypeEnum = pgEnum('hr_request_type', [
+  // Original request types (16)
   'vacation', 'sick', 'fmla', 'parental', 'bereavement', 'personal', 'religious', 'military', 
-  'jury_duty', 'medical_appt', 'emergency', 'shift_swap', 'time_change', 'flex_hours', 'wfh', 'overtime'
+  'jury_duty', 'medical_appt', 'emergency', 'shift_swap', 'time_change', 'flex_hours', 'wfh', 'overtime',
+  
+  // Italian-Specific Request Types (10)
+  'marriage_leave', 'maternity_leave', 'paternity_leave', 'parental_leave', 'breastfeeding_leave',
+  'law_104_leave', 'study_leave', 'rol_leave', 'electoral_leave', 'bereavement_extended',
+  
+  // Modern 2024 Request Types (22)
+  'remote_work_request', 'equipment_request', 'training_request', 'certification_request',
+  'sabbatical_request', 'sabbatical_unpaid', 'wellness_program', 'mental_health_support',
+  'gym_membership', 'financial_counseling', 'pet_insurance', 'ergonomic_assessment',
+  'vpn_access', 'internet_stipend', 'mobile_allowance', 'conference_attendance',
+  'mentorship_request', 'skill_assessment', 'career_development', 'experience_rewards',
+  'volunteer_leave', 'donation_leave'
 ]);
 export const hrRequestStatusEnum = pgEnum('hr_request_status', ['draft', 'pending', 'approved', 'rejected', 'cancelled']);
 export const hrRequestApprovalActionEnum = pgEnum('hr_request_approval_action', ['approved', 'rejected', 'requested_changes']);

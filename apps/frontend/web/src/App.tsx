@@ -6,7 +6,7 @@ import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
-import CalendarPage from "./pages/CalendarPage";
+import CalendarPage from "./lib/CalendarPage";
 import TimeTrackingPage from "./pages/TimeTrackingPage";
 import { LeaveManagementPage } from "./pages/LeaveManagementPage";
 import ShiftPlanningPage from "./pages/ShiftPlanningPage";
@@ -24,6 +24,7 @@ import HRReports from "./pages/HRReports";
 import HRAttendance from "./pages/HRAttendance";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import HRRequestCenter from "./pages/HRRequestCenter";
+import ManagerHRDashboard from "./pages/ManagerHRDashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect } from "react";
@@ -79,6 +80,10 @@ function Router() {
       </Route>
       <Route path="/:tenant/employee/hr-requests">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRRequestCenter /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      {/* Manager HR Approval Dashboard */}
+      <Route path="/:tenant/manager/hr-approvals">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ManagerHRDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       {/* Route principale HR - tutte le richieste HR puntano qui */}
       <Route path="/:tenant/hr">

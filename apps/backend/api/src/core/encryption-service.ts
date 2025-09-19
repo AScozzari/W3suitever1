@@ -3,9 +3,10 @@
 
 import { db } from "./db";
 import { eq, and, desc, isNull, sql } from "drizzle-orm";
-import { encryptionKeys, EncryptionKey, InsertEncryptionKey } from "../db/schema/w3suite";
+import { encryptionKeys, EncryptionKey, InsertEncryptionKey, structuredLogs, InsertStructuredLog } from "../db/schema/w3suite";
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
+import { structuredLogger } from './logger';
 
 // ==================== INTERFACES ====================
 export interface KeyMetadata {
@@ -278,18 +279,60 @@ export class EncryptionKeyService {
   /**
    * Destroys encryption keys for GDPR "right to be forgotten"
    * This makes encrypted data unrecoverable
+   * SECURITY: Requires full audit context for compliance
    */
-  async destroyTenantKeys(tenantId: string, reason: string = 'GDPR_REQUEST'): Promise<GDPRDeletionResult> {
+  async destroyTenantKeys(
+    tenantId: string, 
+    requestedBy: string, 
+    targetUserId?: string, 
+    reason: string = 'GDPR_REQUEST'
+  ): Promise<GDPRDeletionResult> {
     try {
       const deletionTimestamp = new Date();
+      const correlationId = uuidv4();
       
-      // Mark all keys for this tenant as destroyed
+      // SECURITY: Create comprehensive audit log entry before destruction in DATABASE
+      const auditLogPre: InsertStructuredLog = {
+        tenantId,
+        level: 'ERROR', // Use ERROR level for critical GDPR operations
+        component: 'encryption-gdpr-audit',
+        action: 'destroy_tenant_keys_initiated',
+        correlationId,
+        userId: requestedBy,
+        metadata: {
+          targetUserId,
+          reason,
+          severity: 'CRITICAL',
+          complianceType: 'GDPR_RIGHT_TO_BE_FORGOTTEN',
+          initiatedAt: deletionTimestamp.toISOString()
+        },
+        ipAddress: null, // Will be filled by middleware if available
+        userAgent: null
+      };
+      
+      await db.insert(structuredLogs).values(auditLogPre);
+      
+      structuredLogger.error('🔒 GDPR Key destruction initiated - AUDIT TRAIL', {
+        component: 'encryption-gdpr-audit',
+        correlationId,
+        metadata: {
+          tenantId,
+          requestedBy,
+          targetUserId,
+          reason,
+          severity: 'CRITICAL'
+        }
+      });
+      
+      // Mark all keys for this tenant as destroyed with full audit context
       const result = await db
         .update(encryptionKeys)
         .set({
           isActive: false,
           destroyedAt: deletionTimestamp,
-          destroyReason: reason
+          destroyReason: reason,
+          // Store audit context for compliance
+          updatedAt: deletionTimestamp
         })
         .where(
           and(
@@ -301,7 +344,44 @@ export class EncryptionKeyService {
 
       const keysDestroyed = result.length;
       
-      console.log(`🗑️ GDPR Key destruction completed for tenant ${tenantId}: ${keysDestroyed} keys destroyed`);
+      // SECURITY: Create permanent audit log for GDPR compliance in DATABASE
+      const auditLogPost: InsertStructuredLog = {
+        tenantId,
+        level: 'ERROR', // Use ERROR level for critical GDPR operations
+        component: 'encryption-gdpr-compliance',
+        action: 'keys_destroyed_completed',
+        correlationId,
+        userId: requestedBy,
+        metadata: {
+          targetUserId,
+          reason,
+          keysDestroyed,
+          affectedKeyIds: result.map(r => r.keyId),
+          complianceStatus: 'COMPLETED',
+          auditTrail: 'PRESERVED',
+          severity: 'CRITICAL',
+          complianceType: 'GDPR_RIGHT_TO_BE_FORGOTTEN',
+          completedAt: deletionTimestamp.toISOString()
+        },
+        ipAddress: null,
+        userAgent: null
+      };
+      
+      await db.insert(structuredLogs).values(auditLogPost);
+      
+      structuredLogger.error('🗑️ GDPR Key destruction completed - COMPLIANCE AUDIT', {
+        component: 'encryption-gdpr-compliance',
+        correlationId,
+        metadata: {
+          tenantId,
+          requestedBy,
+          targetUserId,
+          reason,
+          keysDestroyed,
+          affectedKeyIds: result.map(r => r.keyId),
+          complianceStatus: 'COMPLETED'
+        }
+      });
       
       return {
         keysDestroyed,
@@ -309,8 +389,44 @@ export class EncryptionKeyService {
         affectedTenants: [tenantId]
       };
     } catch (error) {
-      console.error('Failed to destroy encryption keys:', error);
-      throw new Error(`Failed to destroy keys for tenant ${tenantId}`);
+      const correlationId = uuidv4();
+      
+      // SECURITY: Log failure for audit trail in DATABASE
+      const auditLogFailed: InsertStructuredLog = {
+        tenantId,
+        level: 'ERROR',
+        component: 'encryption-gdpr-audit',
+        action: 'destroy_tenant_keys_failed',
+        correlationId,
+        userId: requestedBy,
+        metadata: {
+          targetUserId,
+          reason,
+          error: error instanceof Error ? error.message : String(error),
+          severity: 'CRITICAL',
+          complianceType: 'GDPR_RIGHT_TO_BE_FORGOTTEN',
+          failedAt: new Date().toISOString()
+        },
+        ipAddress: null,
+        userAgent: null
+      };
+      
+      await db.insert(structuredLogs).values(auditLogFailed);
+      
+      structuredLogger.error('❌ GDPR Key destruction FAILED - AUDIT TRAIL', {
+        component: 'encryption-gdpr-audit',
+        correlationId,
+        error: error instanceof Error ? error : new Error(String(error)),
+        metadata: {
+          tenantId,
+          requestedBy,
+          targetUserId,
+          reason,
+          severity: 'CRITICAL'
+        }
+      });
+      
+      throw new Error(`Failed to destroy keys for tenant ${tenantId}: GDPR compliance failure`);
     }
   }
 
@@ -398,8 +514,9 @@ export class EncryptionKeyService {
 
   /**
    * Performs health check on encryption key system
+   * SECURITY: Tenant-scoped to prevent information leakage
    */
-  async healthCheck(): Promise<{
+  async healthCheck(tenantId?: string): Promise<{
     status: 'healthy' | 'warning' | 'error';
     details: {
       totalActiveKeys: number;
@@ -409,18 +526,22 @@ export class EncryptionKeyService {
     };
   }> {
     try {
-      // Count active keys
+      // SECURITY: If tenantId provided, scope metrics to specific tenant only
+      const tenantWhereClause = tenantId ? eq(encryptionKeys.tenantId, tenantId) : sql`1=1`;
+      
+      // Count active keys (tenant-scoped if tenantId provided)
       const [activeKeysResult] = await db
         .select({ count: sql<number>`count(*)` })
         .from(encryptionKeys)
         .where(
           and(
             eq(encryptionKeys.isActive, true),
-            isNull(encryptionKeys.destroyedAt)
+            isNull(encryptionKeys.destroyedAt),
+            tenantWhereClause
           )
         );
 
-      // Count keys expiring in next 7 days
+      // Count keys expiring in next 7 days (tenant-scoped if tenantId provided)
       const expiryThreshold = new Date();
       expiryThreshold.setDate(expiryThreshold.getDate() + 7);
 
@@ -431,24 +552,31 @@ export class EncryptionKeyService {
           and(
             eq(encryptionKeys.isActive, true),
             isNull(encryptionKeys.destroyedAt),
-            sql`${encryptionKeys.expiresAt} <= ${expiryThreshold}`
+            sql`${encryptionKeys.expiresAt} <= ${expiryThreshold}`,
+            tenantWhereClause
           )
         );
 
-      // Count destroyed keys
+      // Count destroyed keys (tenant-scoped if tenantId provided)
       const [destroyedKeysResult] = await db
         .select({ count: sql<number>`count(*)` })
         .from(encryptionKeys)
-        .where(sql`${encryptionKeys.destroyedAt} IS NOT NULL`);
+        .where(
+          and(
+            sql`${encryptionKeys.destroyedAt} IS NOT NULL`,
+            tenantWhereClause
+          )
+        );
 
-      // Find oldest active key
+      // Find oldest active key (tenant-scoped if tenantId provided)
       const [oldestKeyResult] = await db
         .select({ createdAt: encryptionKeys.createdAt })
         .from(encryptionKeys)
         .where(
           and(
             eq(encryptionKeys.isActive, true),
-            isNull(encryptionKeys.destroyedAt)
+            isNull(encryptionKeys.destroyedAt),
+            tenantWhereClause
           )
         )
         .orderBy(encryptionKeys.createdAt)

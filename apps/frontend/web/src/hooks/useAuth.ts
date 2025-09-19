@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { oauth2Client } from '../services/OAuth2Client';
 
 // Unified Authentication Mode Control
-const AUTH_MODE = import.meta.env.VITE_AUTH_MODE || 'development';
-const DEFAULT_TENANT_ID = import.meta.env.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
+const AUTH_MODE = (import.meta as any).env?.VITE_AUTH_MODE || 'development';
+const DEFAULT_TENANT_ID = (import.meta as any).env?.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
 
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(AUTH_MODE === 'oauth2');

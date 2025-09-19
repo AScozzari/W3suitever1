@@ -247,6 +247,23 @@ export interface IStorage extends IHRStorage {
   approveRequest(tenantId: string, requestId: string, approverId: string, comment?: string): Promise<HrRequest>;
   rejectRequest(tenantId: string, requestId: string, approverId: string, reason: string): Promise<HrRequest>;
   cancelRequest(tenantId: string, requestId: string, requesterId: string, reason?: string): Promise<HrRequest>;
+  
+  // Manager-specific methods
+  getRequestsForManager(tenantId: string, managerId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }>;
+  getManagerTeamRequests(tenantId: string, managerId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }>;
+  getManagerApprovalHistory(tenantId: string, managerId: string, filters?: { startDate?: string; endDate?: string; limit?: number }): Promise<any[]>;
+  
+  // Comment and history methods
+  getRequestComments(tenantId: string, requestId: string): Promise<HrRequestComment[]>;
+  getRequestHistory(tenantId: string, requestId: string): Promise<HrRequestStatusHistory[]>;
+  
+  // Manager statistics methods
+  getManagerPendingCount(tenantId: string, managerId: string): Promise<number>;
+  getManagerUrgentCount(tenantId: string, managerId: string): Promise<number>;
+  getManagerApprovedTodayCount(tenantId: string, managerId: string): Promise<number>;
+  getManagerRejectedTodayCount(tenantId: string, managerId: string): Promise<number>;
+  getManagerAvgResponseTime(tenantId: string, managerId: string): Promise<number>;
+  getManagerTeamRequestsCount(tenantId: string, managerId: string): Promise<number>;
 }
 
 // Database is always enabled - no mock data bypass
@@ -1614,8 +1631,63 @@ export class DatabaseStorage implements IStorage {
   
   // ==================== HR REQUEST SYSTEM ====================
   
+  // Italian regulatory compliance validation helper
+  private validateItalianCompliance(data: InsertHrRequest): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    // Marriage leave: Must be within 30 days of wedding date
+    if (data.type === 'marriage_leave' && data.payload?.weddingDate && data.startDate) {
+      const weddingDate = new Date(data.payload.weddingDate);
+      const startDate = new Date(data.startDate);
+      const daysDiff = Math.abs(startDate.getTime() - weddingDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff > 30) {
+        errors.push('Il congedo matrimoniale deve essere richiesto entro 30 giorni dalla data del matrimonio');
+      }
+    }
+    
+    // Law 104: Maximum 3 days per month
+    if (data.type === 'law_104_leave' && data.payload?.durationDays) {
+      if (data.payload.durationDays > 3) {
+        errors.push('La Legge 104 consente massimo 3 giorni al mese');
+      }
+      if (!data.payload?.medicalDocumentation) {
+        errors.push('Documentazione medica richiesta per la Legge 104');
+      }
+    }
+    
+    // Study leave: Maximum 150 hours over 3 years (simplified check)
+    if (data.type === 'study_leave' && data.payload?.durationHours) {
+      if (data.payload.durationHours > 150) {
+        errors.push('Il diritto allo studio consente massimo 150 ore in 3 anni');
+      }
+    }
+    
+    // Medical documentation required for certain types
+    const medicalTypes = ['law_104_leave', 'maternity_leave', 'paternity_leave', 'breastfeeding_leave'];
+    if (medicalTypes.includes(data.type) && !data.payload?.medicalDocumentation) {
+      errors.push('Documentazione medica richiesta per questo tipo di richiesta');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
   async createRequest(data: InsertHrRequest): Promise<HrRequest> {
     await setTenantContext(data.tenantId);
+    
+    // Italian regulatory compliance validation
+    const italianTypes = ['marriage_leave', 'maternity_leave', 'paternity_leave', 'parental_leave', 
+                         'breastfeeding_leave', 'law_104_leave', 'study_leave', 'rol_leave', 
+                         'electoral_leave', 'bereavement_extended'];
+    
+    if (italianTypes.includes(data.type)) {
+      const validation = this.validateItalianCompliance(data);
+      if (!validation.isValid) {
+        throw new Error(`Italian compliance validation failed: ${validation.errors.join(', ')}`);
+      }
+    }
     
     const [request] = await db
       .insert(hrRequests)
@@ -2166,6 +2238,365 @@ export class DatabaseStorage implements IStorage {
         hrSensitive: false,
         metadata: { hrRequestId: requestId }
       });
+  }
+  
+  // ==================== MANAGER-SPECIFIC METHODS ====================
+  
+  async getRequestsForManager(tenantId: string, managerId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [
+      eq(hrRequests.tenantId, tenantId),
+      eq(hrRequests.currentApproverId, managerId),
+      eq(hrRequests.status, 'pending')
+    ];
+    
+    // Apply additional filters
+    if (filters?.category) {
+      conditions.push(eq(hrRequests.category, filters.category as any));
+    }
+    if (filters?.type) {
+      conditions.push(eq(hrRequests.type, filters.type as any));
+    }
+    if (filters?.priority) {
+      conditions.push(eq(hrRequests.priority, filters.priority));
+    }
+    if (filters?.startDate) {
+      conditions.push(gte(hrRequests.startDate, new Date(filters.startDate)));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(hrRequests.endDate, new Date(filters.endDate)));
+    }
+    
+    // Pagination
+    const page = options?.page || 1;
+    const limit = options?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Sort order
+    let orderBy;
+    switch (options?.sortBy) {
+      case 'priority':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.priority) : desc(hrRequests.priority);
+        break;
+      case 'startDate':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.startDate) : desc(hrRequests.startDate);
+        break;
+      default:
+        orderBy = desc(hrRequests.createdAt);
+    }
+    
+    // Get requests with requester details
+    const [requests, totalResult] = await Promise.all([
+      db
+        .select({
+          ...hrRequests,
+          requesterFirstName: users.firstName,
+          requesterLastName: users.lastName,
+          requesterEmail: users.email
+        })
+        .from(hrRequests)
+        .leftJoin(users, eq(hrRequests.requesterId, users.id))
+        .where(and(...conditions))
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+      
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(hrRequests)
+        .where(and(...conditions))
+    ]);
+    
+    const total = Number(totalResult[0]?.count || 0);
+    
+    return {
+      requests,
+      total
+    };
+  }
+  
+  async getManagerTeamRequests(tenantId: string, managerId: string, filters?: HRRequestFilters, options?: HRRequestListOptions): Promise<{ requests: HrRequest[], total: number }> {
+    await setTenantContext(tenantId);
+    
+    // Get team members reporting to this manager
+    // Note: This assumes a simple hierarchy where managerId is stored in user records
+    // In a more complex org structure, you'd need a more sophisticated approach
+    const teamMembers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.tenantId, tenantId),
+        sql`${users.id} IN (
+          SELECT user_id FROM user_assignments ua
+          JOIN roles r ON ua.role_id = r.id
+          WHERE ua.tenant_id = ${tenantId}
+          AND r.name IN ('employee', 'team_member')
+        )`
+      ));
+    
+    const teamMemberIds = teamMembers.map(tm => tm.id);
+    
+    if (teamMemberIds.length === 0) {
+      return { requests: [], total: 0 };
+    }
+    
+    const conditions = [
+      eq(hrRequests.tenantId, tenantId),
+      inArray(hrRequests.requesterId, teamMemberIds)
+    ];
+    
+    // Apply filters
+    if (filters?.status) {
+      conditions.push(eq(hrRequests.status, filters.status as any));
+    }
+    if (filters?.category) {
+      conditions.push(eq(hrRequests.category, filters.category as any));
+    }
+    if (filters?.type) {
+      conditions.push(eq(hrRequests.type, filters.type as any));
+    }
+    if (filters?.priority) {
+      conditions.push(eq(hrRequests.priority, filters.priority));
+    }
+    if (filters?.startDate) {
+      conditions.push(gte(hrRequests.startDate, new Date(filters.startDate)));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(hrRequests.endDate, new Date(filters.endDate)));
+    }
+    
+    // Pagination
+    const page = options?.page || 1;
+    const limit = options?.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Sort order
+    let orderBy;
+    switch (options?.sortBy) {
+      case 'priority':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.priority) : desc(hrRequests.priority);
+        break;
+      case 'startDate':
+        orderBy = options.sortOrder === 'asc' ? asc(hrRequests.startDate) : desc(hrRequests.startDate);
+        break;
+      default:
+        orderBy = desc(hrRequests.createdAt);
+    }
+    
+    // Get requests with requester details
+    const [requests, totalResult] = await Promise.all([
+      db
+        .select({
+          ...hrRequests,
+          requesterFirstName: users.firstName,
+          requesterLastName: users.lastName,
+          requesterEmail: users.email
+        })
+        .from(hrRequests)
+        .leftJoin(users, eq(hrRequests.requesterId, users.id))
+        .where(and(...conditions))
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+      
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(hrRequests)
+        .where(and(...conditions))
+    ]);
+    
+    const total = Number(totalResult[0]?.count || 0);
+    
+    return {
+      requests,
+      total
+    };
+  }
+  
+  async getManagerApprovalHistory(tenantId: string, managerId: string, filters?: { startDate?: string; endDate?: string; limit?: number }): Promise<any[]> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [
+      eq(hrRequestApprovals.tenantId, tenantId),
+      eq(hrRequestApprovals.approverId, managerId)
+    ];
+    
+    if (filters?.startDate) {
+      conditions.push(gte(hrRequestApprovals.createdAt, new Date(filters.startDate)));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(hrRequestApprovals.createdAt, new Date(filters.endDate)));
+    }
+    
+    const limit = filters?.limit || 50;
+    
+    const history = await db
+      .select({
+        id: hrRequestApprovals.id,
+        requestId: hrRequestApprovals.requestId,
+        action: hrRequestApprovals.action,
+        comment: hrRequestApprovals.comment,
+        createdAt: hrRequestApprovals.createdAt,
+        requestType: hrRequests.type,
+        requestCategory: hrRequests.category,
+        requestTitle: hrRequests.title,
+        requesterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+        requesterEmail: users.email
+      })
+      .from(hrRequestApprovals)
+      .leftJoin(hrRequests, eq(hrRequestApprovals.requestId, hrRequests.id))
+      .leftJoin(users, eq(hrRequests.requesterId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(hrRequestApprovals.createdAt))
+      .limit(limit);
+    
+    return history;
+  }
+  
+  // ==================== COMMENT AND HISTORY METHODS ====================
+  
+  async getRequestComments(tenantId: string, requestId: string): Promise<HrRequestComment[]> {
+    await setTenantContext(tenantId);
+    return await db
+      .select()
+      .from(hrRequestComments)
+      .where(and(
+        eq(hrRequestComments.tenantId, tenantId),
+        eq(hrRequestComments.requestId, requestId)
+      ))
+      .orderBy(hrRequestComments.createdAt);
+  }
+  
+  async getRequestHistory(tenantId: string, requestId: string): Promise<HrRequestStatusHistory[]> {
+    await setTenantContext(tenantId);
+    return await db
+      .select()
+      .from(hrRequestStatusHistory)
+      .where(and(
+        eq(hrRequestStatusHistory.tenantId, tenantId),
+        eq(hrRequestStatusHistory.requestId, requestId)
+      ))
+      .orderBy(hrRequestStatusHistory.createdAt);
+  }
+  
+  // ==================== MANAGER STATISTICS METHODS ====================
+  
+  async getManagerPendingCount(tenantId: string, managerId: string): Promise<number> {
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(hrRequests)
+      .where(and(
+        eq(hrRequests.tenantId, tenantId),
+        eq(hrRequests.currentApproverId, managerId),
+        eq(hrRequests.status, 'pending')
+      ));
+    
+    return Number(result[0]?.count || 0);
+  }
+  
+  async getManagerUrgentCount(tenantId: string, managerId: string): Promise<number> {
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(hrRequests)
+      .where(and(
+        eq(hrRequests.tenantId, tenantId),
+        eq(hrRequests.currentApproverId, managerId),
+        eq(hrRequests.status, 'pending'),
+        eq(hrRequests.priority, 'urgent')
+      ));
+    
+    return Number(result[0]?.count || 0);
+  }
+  
+  async getManagerApprovedTodayCount(tenantId: string, managerId: string): Promise<number> {
+    await setTenantContext(tenantId);
+    
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(hrRequestApprovals)
+      .where(and(
+        eq(hrRequestApprovals.tenantId, tenantId),
+        eq(hrRequestApprovals.approverId, managerId),
+        eq(hrRequestApprovals.action, 'approved'),
+        gte(hrRequestApprovals.createdAt, startOfDay)
+      ));
+    
+    return Number(result[0]?.count || 0);
+  }
+  
+  async getManagerRejectedTodayCount(tenantId: string, managerId: string): Promise<number> {
+    await setTenantContext(tenantId);
+    
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(hrRequestApprovals)
+      .where(and(
+        eq(hrRequestApprovals.tenantId, tenantId),
+        eq(hrRequestApprovals.approverId, managerId),
+        eq(hrRequestApprovals.action, 'rejected'),
+        gte(hrRequestApprovals.createdAt, startOfDay)
+      ));
+    
+    return Number(result[0]?.count || 0);
+  }
+  
+  async getManagerAvgResponseTime(tenantId: string, managerId: string): Promise<number> {
+    await setTenantContext(tenantId);
+    
+    // Calculate average response time for requests approved/rejected by this manager
+    const result = await db
+      .select({
+        avgTime: sql<number>`AVG(EXTRACT(EPOCH FROM (ha.created_at - hr.created_at)) / 3600)`
+      })
+      .from(hrRequestApprovals.as('ha'))
+      .leftJoin(hrRequests.as('hr'), eq(sql`ha.request_id`, sql`hr.id`))
+      .where(and(
+        eq(sql`ha.tenant_id`, tenantId),
+        eq(sql`ha.approver_id`, managerId),
+        gte(sql`ha.created_at`, sql`NOW() - INTERVAL '30 days'`)
+      ));
+    
+    return Number(result[0]?.avgTime || 0);
+  }
+  
+  async getManagerTeamRequestsCount(tenantId: string, managerId: string): Promise<number> {
+    await setTenantContext(tenantId);
+    
+    // Get team members reporting to this manager
+    const teamMembers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(
+        eq(users.tenantId, tenantId),
+        sql`${users.id} IN (\n          SELECT user_id FROM user_assignments ua\n          JOIN roles r ON ua.role_id = r.id\n          WHERE ua.tenant_id = ${tenantId}\n          AND r.name IN ('employee', 'team_member')\n        )`
+      ));
+    
+    const teamMemberIds = teamMembers.map(tm => tm.id);
+    
+    if (teamMemberIds.length === 0) {
+      return 0;
+    }
+    
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(hrRequests)
+      .where(and(
+        eq(hrRequests.tenantId, tenantId),
+        inArray(hrRequests.requesterId, teamMemberIds)
+      ));
+    
+    return Number(result[0]?.count || 0);
   }
 
 }

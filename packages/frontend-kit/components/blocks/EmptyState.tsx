@@ -1,21 +1,29 @@
-import { Button } from '../ui/button';
-import { cn } from '../../lib/utils';
-import { 
-  FileX, 
-  Search, 
-  Package, 
-  Users, 
+import { Button } from "../ui/button";
+import { cn } from "../../lib/utils";
+import {
+  FileX,
+  Search,
+  Package,
+  Users,
   FolderOpen,
   Database,
-  AlertCircle 
-} from 'lucide-react';
+  AlertCircle,
+} from "lucide-react";
 
-export type EmptyStateIcon = 'file' | 'search' | 'package' | 'users' | 'folder' | 'database' | 'alert' | React.ReactNode;
+export type EmptyStateIcon =
+  | "file"
+  | "search"
+  | "package"
+  | "users"
+  | "folder"
+  | "database"
+  | "alert"
+  | React.ReactNode;
 
 export interface EmptyStateAction {
   label: string;
   onClick?: () => void;
-  variant?: 'default' | 'outline' | 'secondary';
+  variant?: "default" | "outline" | "secondary";
 }
 
 export interface EmptyStateProps {
@@ -24,7 +32,7 @@ export interface EmptyStateProps {
   icon?: EmptyStateIcon;
   primaryAction?: EmptyStateAction;
   secondaryAction?: EmptyStateAction;
-  variant?: 'default' | 'compact' | 'centered';
+  variant?: "default" | "compact" | "centered";
   className?: string;
 }
 
@@ -41,14 +49,14 @@ const iconMap = {
 export function EmptyState({
   title,
   description,
-  icon = 'package',
+  icon = "package",
   primaryAction,
   secondaryAction,
-  variant = 'default',
-  className = '',
+  variant = "default",
+  className = "",
 }: EmptyStateProps) {
   const getIcon = () => {
-    if (typeof icon === 'string' && icon in iconMap) {
+    if (typeof icon === "string" && icon in iconMap) {
       const IconComponent = iconMap[icon as keyof typeof iconMap];
       return <IconComponent className="h-12 w-12 text-gray-400" />;
     }
@@ -57,38 +65,47 @@ export function EmptyState({
 
   const getContainerStyles = () => {
     switch (variant) {
-      case 'compact':
-        return 'py-6';
-      case 'centered':
-        return 'py-12 min-h-[400px] flex items-center justify-center';
+      case "compact":
+        return "py-6";
+      case "centered":
+        return "py-12 min-h-[400px] flex items-center justify-center";
       default:
-        return 'py-8';
+        return "py-8";
     }
   };
 
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center text-center',
+        "flex flex-col items-center justify-center text-center",
         getContainerStyles(),
-        className
+        className,
       )}
       data-testid="empty-state"
     >
       {/* Icon */}
       {icon && (
-        <div className="mb-4 rounded-full bg-gray-100 p-4" data-testid="empty-state-icon">
+        <div
+          className="mb-4 rounded-full bg-gray-100 p-4"
+          data-testid="empty-state-icon"
+        >
           {getIcon()}
         </div>
       )}
 
       {/* Text Content */}
       <div className="max-w-sm space-y-2">
-        <h3 className="text-lg font-semibold text-gray-900" data-testid="empty-state-title">
+        <h3
+          className="text-lg font-semibold text-gray-900"
+          data-testid="empty-state-title"
+        >
           {title}
         </h3>
         {description && (
-          <p className="text-sm text-gray-600" data-testid="empty-state-description">
+          <p
+            className="text-sm text-gray-600"
+            data-testid="empty-state-description"
+          >
             {description}
           </p>
         )}
@@ -99,7 +116,7 @@ export function EmptyState({
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:gap-3">
           {primaryAction && (
             <Button
-              variant={primaryAction.variant || 'default'}
+              variant={primaryAction.variant || "default"}
               onClick={primaryAction.onClick}
               data-testid="button-primary-action"
             >
@@ -108,7 +125,7 @@ export function EmptyState({
           )}
           {secondaryAction && (
             <Button
-              variant={secondaryAction.variant || 'outline'}
+              variant={secondaryAction.variant || "outline"}
               onClick={secondaryAction.onClick}
               data-testid="button-secondary-action"
             >
@@ -134,7 +151,11 @@ export const NoDataEmptyState = () => (
   />
 );
 
-export const NoSearchResultsEmptyState = ({ searchTerm }: { searchTerm: string }) => (
+export const NoSearchResultsEmptyState = ({
+  searchTerm,
+}: {
+  searchTerm: string;
+}) => (
   <EmptyState
     icon="search"
     title="No results found"

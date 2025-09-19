@@ -18,35 +18,87 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { 
   ArrowRight, ArrowLeft, Check, Calendar as CalendarIcon, Upload, X,
   Umbrella, Heart, Shield, Baby, Users, Clock, Activity, Home, Building, 
-  AlertTriangle, User, Globe, Briefcase, Coffee, MapPin, FileText
+  AlertTriangle, User, Globe, Briefcase, Coffee, MapPin, FileText,
+  Laptop, Monitor, Wifi, Smartphone, GraduationCap, Award, BookOpen,
+  Dumbbell, Brain, Stethoscope, DollarSign, PawPrint, Accessibility,
+  Vote, HandHeart, Droplets, Gift, Target, TrendingUp, Zap, Settings
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 // Request category configuration
 const REQUEST_CATEGORIES = {
-  leave: {
-    label: 'Congedi e Permessi',
-    icon: Umbrella,
+  italian_legal: {
+    label: 'Permessi Italiani',
+    description: 'Congedi previsti dalla legge italiana',
+    icon: Shield,
+    color: 'from-green-600 to-green-700',
+    types: ['marriage_leave', 'maternity_leave', 'paternity_leave', 'parental_leave', 'breastfeeding_leave', 
+             'law_104_leave', 'study_leave', 'rol_leave', 'electoral_leave', 'bereavement_extended']
+  },
+  family: {
+    label: 'Congedi Familiari',
+    description: 'Permessi per eventi familiari e personali',
+    icon: Baby,
+    color: 'from-pink-500 to-pink-600',
+    types: ['parental', 'bereavement', 'personal', 'fmla', 'religious', 'military']
+  },
+  professional_development: {
+    label: 'Sviluppo Professionale',
+    description: 'Formazione, certificazioni e crescita professionale',
+    icon: GraduationCap,
     color: 'from-blue-500 to-blue-600',
-    types: ['vacation', 'sick', 'fmla', 'parental', 'bereavement', 'personal', 'religious', 'military']
+    types: ['training_request', 'certification_request', 'conference_attendance', 'mentorship_request', 
+             'skill_assessment', 'career_development']
+  },
+  wellness_health: {
+    label: 'Benessere e Salute',
+    description: 'Programmi di benessere e supporto salute',
+    icon: Heart,
+    color: 'from-red-500 to-red-600',
+    types: ['wellness_program', 'mental_health_support', 'gym_membership', 'financial_counseling', 
+             'sick', 'medical_appt', 'pet_insurance', 'ergonomic_assessment']
+  },
+  remote_work: {
+    label: 'Lavoro Remoto',
+    description: 'Richieste per lavoro flessibile e remoto',
+    icon: Home,
+    color: 'from-indigo-500 to-indigo-600',
+    types: ['remote_work_request', 'wfh', 'flex_hours', 'sabbatical_request', 'sabbatical_unpaid']
+  },
+  technology_support: {
+    label: 'Supporto Tecnologico',
+    description: 'Attrezzature e strumenti tecnologici',
+    icon: Laptop,
+    color: 'from-cyan-500 to-cyan-600',
+    types: ['equipment_request', 'vpn_access', 'internet_stipend', 'mobile_allowance']
+  },
+  leave: {
+    label: 'Congedi Standard',
+    description: 'Ferie e permessi base',
+    icon: Umbrella,
+    color: 'from-yellow-500 to-yellow-600',
+    types: ['vacation']
   },
   schedule: {
     label: 'Modifiche Orario',
+    description: 'Cambi turno e modifiche orarie',
     icon: Clock,
-    color: 'from-green-500 to-green-600', 
-    types: ['shift_swap', 'time_change', 'flex_hours', 'wfh', 'overtime']
+    color: 'from-green-500 to-green-600',
+    types: ['shift_swap', 'time_change', 'overtime']
   },
   other: {
     label: 'Altre Richieste',
+    description: 'Richieste varie e speciali',
     icon: FileText,
     color: 'from-purple-500 to-purple-600',
-    types: ['jury_duty', 'medical_appt', 'emergency']
+    types: ['jury_duty', 'emergency', 'experience_rewards', 'volunteer_leave', 'donation_leave']
   }
 };
 
 // Request type icons
 const TYPE_ICONS: Record<string, React.ComponentType<any>> = {
+  // Original types
   vacation: Umbrella,
   sick: Heart,
   fmla: Shield,
@@ -62,38 +114,102 @@ const TYPE_ICONS: Record<string, React.ComponentType<any>> = {
   overtime: Clock,
   jury_duty: Building,
   medical_appt: Heart,
-  emergency: AlertTriangle
+  emergency: AlertTriangle,
+  
+  // Italian-specific types
+  marriage_leave: Heart,
+  maternity_leave: Baby,
+  paternity_leave: User,
+  parental_leave: Baby,
+  breastfeeding_leave: Heart,
+  law_104_leave: Accessibility,
+  study_leave: BookOpen,
+  rol_leave: Calendar,
+  electoral_leave: Vote,
+  bereavement_extended: Heart,
+  
+  // Modern 2024 types
+  remote_work_request: Home,
+  equipment_request: Monitor,
+  training_request: GraduationCap,
+  certification_request: Award,
+  sabbatical_request: Calendar,
+  sabbatical_unpaid: Calendar,
+  wellness_program: Activity,
+  mental_health_support: Brain,
+  gym_membership: Dumbbell,
+  financial_counseling: DollarSign,
+  pet_insurance: PawPrint,
+  ergonomic_assessment: Settings,
+  vpn_access: Shield,
+  internet_stipend: Wifi,
+  mobile_allowance: Smartphone,
+  conference_attendance: Users,
+  mentorship_request: User,
+  skill_assessment: Target,
+  career_development: TrendingUp,
+  experience_rewards: Gift,
+  volunteer_leave: HandHeart,
+  donation_leave: Droplets
 };
 
 // Form validation schemas for different steps
 const step1Schema = z.object({
-  category: z.enum(['leave', 'schedule', 'other'], {
+  category: z.enum([
+    'italian_legal', 'family', 'professional_development', 'wellness_health', 
+    'remote_work', 'technology_support', 'leave', 'schedule', 'other'
+  ], {
     required_error: 'Seleziona una categoria'
   })
 });
 
 const step2Schema = z.object({
-  category: z.enum(['leave', 'schedule', 'other']),
+  category: z.enum([
+    'italian_legal', 'family', 'professional_development', 'wellness_health', 
+    'remote_work', 'technology_support', 'leave', 'schedule', 'other'
+  ]),
   type: z.string().min(1, 'Seleziona un tipo di richiesta')
 });
 
 const step3Schema = z.object({
-  category: z.enum(['leave', 'schedule', 'other']),
+  category: z.enum([
+    'italian_legal', 'family', 'professional_development', 'wellness_health', 
+    'remote_work', 'technology_support', 'leave', 'schedule', 'other'
+  ]),
   type: z.string().min(1),
   title: z.string().min(1, 'Il titolo è obbligatorio').max(100, 'Massimo 100 caratteri'),
   description: z.string().optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   priority: z.enum(['normal', 'high', 'urgent']).default('normal'),
-  // Additional fields for different request types
+  // Basic fields
   reason: z.string().optional(),
   coverageArrangement: z.string().optional(),
   shiftDetails: z.string().optional(),
   emergencyContact: z.string().optional(),
   medicalProvider: z.string().optional(),
+  // Italian-specific fields
+  weddingDate: z.date().optional(),
+  durationDays: z.number().optional(),
+  durationHours: z.number().optional(),
+  medicalDocumentation: z.boolean().optional(),
+  // Professional development fields
+  courseTitle: z.string().optional(),
+  provider: z.string().optional(),
+  estimatedCost: z.number().optional(),
+  budget: z.number().optional(),
+  // Technology fields
+  equipmentType: z.string().optional(),
+  specifications: z.string().optional(),
+  // Remote work fields
+  workArrangement: z.string().optional(),
+  workLocation: z.string().optional(),
+  // Wellness fields
+  programType: z.string().optional(),
+  healthProvider: z.string().optional(),
 }).refine((data) => {
   // Date validation for leave requests
-  if (data.category === 'leave' && data.startDate && data.endDate) {
+  if (['leave', 'italian_legal', 'family', 'remote_work'].includes(data.category) && data.startDate && data.endDate) {
     return data.endDate >= data.startDate;
   }
   return true;
@@ -102,7 +218,7 @@ const step3Schema = z.object({
   path: ['endDate']
 }).refine((data) => {
   // Future date validation for certain types
-  const futureRequiredTypes = ['vacation', 'personal', 'wfh', 'shift_swap'];
+  const futureRequiredTypes = ['vacation', 'personal', 'wfh', 'shift_swap', 'remote_work_request', 'sabbatical_request'];
   if (futureRequiredTypes.includes(data.type) && data.startDate) {
     return data.startDate > new Date();
   }
@@ -110,6 +226,44 @@ const step3Schema = z.object({
 }, {
   message: 'Le richieste future devono essere programmate per il futuro',
   path: ['startDate']
+}).refine((data) => {
+  // Italian-specific validation: Marriage leave within 30 days of wedding
+  if (data.type === 'marriage_leave' && data.weddingDate && data.startDate) {
+    const daysDiff = Math.abs(data.startDate.getTime() - data.weddingDate.getTime()) / (1000 * 60 * 60 * 24);
+    return daysDiff <= 30;
+  }
+  return true;
+}, {
+  message: 'Il congedo matrimoniale deve essere richiesto entro 30 giorni dalla data del matrimonio',
+  path: ['startDate']
+}).refine((data) => {
+  // Law 104: Maximum 3 days per month validation
+  if (data.type === 'law_104_leave' && data.durationDays) {
+    return data.durationDays <= 3;
+  }
+  return true;
+}, {
+  message: 'La Legge 104 consente massimo 3 giorni al mese',
+  path: ['durationDays']
+}).refine((data) => {
+  // Study leave: Maximum 150 hours over 3 years (simplified check)
+  if (data.type === 'study_leave' && data.durationHours) {
+    return data.durationHours <= 150;
+  }
+  return true;
+}, {
+  message: 'Il diritto allo studio consente massimo 150 ore in 3 anni',
+  path: ['durationHours']
+}).refine((data) => {
+  // Medical documentation required for certain types
+  const medicalTypes = ['law_104_leave', 'sick', 'fmla', 'medical_appt', 'maternity_leave', 'paternity_leave', 'breastfeeding_leave'];
+  if (medicalTypes.includes(data.type) && data.medicalDocumentation === false) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Documentazione medica richiesta per questo tipo di richiesta',
+  path: ['medicalDocumentation']
 });
 
 type Step1Data = z.infer<typeof step1Schema>;
@@ -216,29 +370,114 @@ export default function HRRequestWizard({ onSuccess, onCancel }: HRRequestWizard
   const getFieldsForType = (type: string): string[] => {
     const commonFields = ['title', 'description', 'priority'];
     const dateFields = ['startDate', 'endDate'];
+    const durationFields = ['durationDays', 'durationHours'];
+    const budgetFields = ['budget', 'estimatedCost'];
     
     switch (type) {
+      // Original leave types
       case 'vacation':
       case 'personal':
       case 'religious':
         return [...commonFields, ...dateFields, 'reason', 'coverageArrangement'];
       case 'sick':
       case 'medical_appt':
-        return [...commonFields, ...dateFields, 'medicalProvider', 'reason'];
+        return [...commonFields, ...dateFields, 'medicalProvider', 'reason', 'medicalDocumentation'];
       case 'fmla':
       case 'parental':
       case 'bereavement':
-        return [...commonFields, ...dateFields, 'reason'];
+        return [...commonFields, ...dateFields, 'reason', 'medicalDocumentation'];
       case 'emergency':
         return [...commonFields, 'reason', 'emergencyContact'];
+        
+      // Schedule types
       case 'wfh':
       case 'flex_hours':
-        return [...commonFields, ...dateFields, 'reason'];
+        return [...commonFields, ...dateFields, 'reason', 'workArrangement'];
       case 'shift_swap':
       case 'time_change':
         return [...commonFields, 'shiftDetails', 'reason'];
       case 'overtime':
         return [...commonFields, 'startDate', 'shiftDetails', 'reason'];
+        
+      // Original other types
+      case 'jury_duty':
+      case 'military':
+        return [...commonFields, ...dateFields, 'reason'];
+        
+      // Italian-specific request types
+      case 'marriage_leave':
+        return [...commonFields, ...dateFields, 'weddingDate', 'reason'];
+      case 'maternity_leave':
+      case 'paternity_leave':
+        return [...commonFields, ...dateFields, 'medicalDocumentation', 'reason'];
+      case 'parental_leave':
+        return [...commonFields, ...dateFields, 'reason', 'coverageArrangement'];
+      case 'breastfeeding_leave':
+        return [...commonFields, ...durationFields, 'medicalDocumentation'];
+      case 'law_104_leave':
+        return [...commonFields, ...durationFields, 'medicalDocumentation', 'reason'];
+      case 'study_leave':
+        return [...commonFields, ...durationFields, 'courseTitle', 'provider', 'reason'];
+      case 'rol_leave':
+        return [...commonFields, ...dateFields, 'reason'];
+      case 'electoral_leave':
+        return [...commonFields, ...dateFields, 'reason'];
+      case 'bereavement_extended':
+        return [...commonFields, ...dateFields, 'reason'];
+        
+      // Professional development types
+      case 'training_request':
+        return [...commonFields, 'courseTitle', 'provider', ...budgetFields, 'reason'];
+      case 'certification_request':
+        return [...commonFields, 'courseTitle', 'provider', ...budgetFields, 'reason'];
+      case 'conference_attendance':
+        return [...commonFields, ...dateFields, 'provider', ...budgetFields, 'reason'];
+      case 'mentorship_request':
+        return [...commonFields, 'reason'];
+      case 'skill_assessment':
+        return [...commonFields, 'reason'];
+      case 'career_development':
+        return [...commonFields, 'reason'];
+        
+      // Technology support types
+      case 'equipment_request':
+        return [...commonFields, 'equipmentType', 'specifications', ...budgetFields, 'reason'];
+      case 'vpn_access':
+        return [...commonFields, 'reason'];
+      case 'internet_stipend':
+        return [...commonFields, ...budgetFields, 'reason'];
+      case 'mobile_allowance':
+        return [...commonFields, ...budgetFields, 'reason'];
+        
+      // Remote work types
+      case 'remote_work_request':
+        return [...commonFields, ...dateFields, 'workArrangement', 'workLocation', 'reason'];
+      case 'sabbatical_request':
+      case 'sabbatical_unpaid':
+        return [...commonFields, ...dateFields, 'reason'];
+        
+      // Wellness & health types
+      case 'wellness_program':
+        return [...commonFields, 'programType', 'provider', ...budgetFields];
+      case 'mental_health_support':
+        return [...commonFields, 'healthProvider', 'reason'];
+      case 'gym_membership':
+        return [...commonFields, 'provider', ...budgetFields];
+      case 'financial_counseling':
+        return [...commonFields, 'provider', 'reason'];
+      case 'pet_insurance':
+        return [...commonFields, 'provider', ...budgetFields];
+      case 'ergonomic_assessment':
+        return [...commonFields, 'workLocation', 'reason'];
+        
+      // Other types
+      case 'experience_rewards':
+        return [...commonFields, 'reason'];
+      case 'volunteer_leave':
+        return [...commonFields, ...dateFields, 'reason'];
+      case 'donation_leave':
+        return [...commonFields, ...dateFields, 'medicalProvider'];
+        
       default:
         return commonFields;
     }

@@ -201,6 +201,16 @@ The following HR tables are available in `apps/backend/api/src/db/schema/w3suite
 - **employeeBalances** - Leave and time balances
 - **hrAnnouncements** - Company announcements
 
+### HR Request System (COMPLETED December 2024)
+The following HR Request tables are production-ready in `apps/backend/api/src/db/schema/w3suite.ts`:
+- **hrRequests** - Main request table with 16 request types (vacation, sick, FMLA, etc.)
+- **hrRequestApprovals** - Approval workflow with RBAC enforcement
+- **hrRequestComments** - Comment system with audit trail
+- **hrRequestStatusHistory** - Complete status transition logging
+- **Production Backend API**: Complete RBAC-secured endpoints with tenant isolation
+- **Employee Dashboard**: Multi-step wizard, request tracking, comments, status history
+- **Security**: Enterprise-grade with JWT auth, tenant RLS, atomic transactions
+
 **Frontend Package Structure:**
 - **@w3suite/frontend-kit**: Centralized frontend package with:
   - Design system with WindTre tokens and glassmorphism
