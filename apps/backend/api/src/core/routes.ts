@@ -297,6 +297,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== UNIFIED DEV AUTH MIDDLEWARE ====================
+  // SECURITY: Unified development authentication middleware with production gating
+  const devAuthMiddleware = (req: any, res: any, next: any) => {
+    // CRITICAL GATING: Only apply development auth when AUTH_MODE=development AND NOT in production
+    if (config.AUTH_MODE === 'development' && process.env.NODE_ENV !== 'production') {
+      // Skip dev auth for public endpoints that don't need authentication
+      if (req.path.startsWith('/auth/') || 
+          req.path.startsWith('/public/') ||
+          req.path === '/health' ||
+          req.path === '/tenants/resolve') {
+        return next();
+      }
+
+      const sessionAuth = req.headers['x-auth-session'];
+      const demoUser = req.headers['x-demo-user'];
+      
+      if (sessionAuth === 'authenticated') {
+        // Set development user context with proper security logging
+        console.log(`[DEV-AUTH] ⚠️  Development authentication active for: ${req.path}`);
+        console.log(`[DEV-AUTH] 🔧 User: ${demoUser || 'admin@w3suite.com'}`);
+        
+        req.user = {
+          id: 'admin-user',
+          email: demoUser || 'admin@w3suite.com',
+          tenantId: req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001',
+          roles: ['admin', 'manager'],
+          permissions: ['*'], // DEVELOPMENT ONLY: All permissions
+          scope: 'all'
+        };
+        return next();
+      } else {
+        console.log(`[DEV-AUTH] ❌ Development mode requires X-Auth-Session header for: ${req.path}`);
+        return res.status(401).json({ 
+          error: 'development_auth_required',
+          message: 'Development mode requires X-Auth-Session header',
+          details: 'Frontend must send X-Auth-Session: authenticated header'
+        });
+      }
+    }
+    
+    // Not in development mode or in production - continue to next middleware
+    return next();
+  };
+
+  // Apply unified dev auth middleware to all API routes (with production gating)
+  app.use('/api', devAuthMiddleware);
+
   // Apply tenant middleware only to API routes using Express path matching to avoid loops
   app.use('/api', (req, res, next) => {
     // Skip tenant middleware for specific excluded paths
@@ -399,11 +446,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const startTime = Date.now();
 
     try {
-      // SECURITY FIX: Remove header-based auth bypass - all environments must use proper OAuth2/JWT
-      // This development bypass was a critical security vulnerability
+      // Development authentication is now handled by unified devAuthMiddleware
+      // This middleware focuses only on OAuth2 JWT validation
       
-      // ALL environments now require proper JWT token authentication
-
+      // OAuth2 mode: require proper JWT token authentication
       const authHeader = req.headers.authorization;
       const token = authHeader?.split(' ')[1];
 

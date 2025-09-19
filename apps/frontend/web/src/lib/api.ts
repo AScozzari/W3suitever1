@@ -1,20 +1,18 @@
-// Centralized API utilities
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
+// SECURITY IMPROVEMENT: Consolidated API utilities - eliminates duplication with queryClient.ts
+// This file now reuses the unified apiRequest from queryClient.ts to prevent duplicate code and logic
+import { apiRequest as unifiedApiRequest } from './queryClient';
 
+export const API_BASE_URL = '/api';
+
+// CONSOLIDATED: Reuse the unified apiRequest from queryClient.ts to eliminate code duplication
+// This prevents inconsistencies between two different API client implementations
 export async function apiRequest<T = any>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-  }
-
-  return response.json();
+  // Ensure URL has proper /api prefix
+  const finalUrl = url.startsWith('/api') ? url : `${API_BASE_URL}${url}`;
+  
+  // SECURITY IMPROVEMENT: Use the unified, secure apiRequest from queryClient.ts
+  // This ensures consistent tenant validation, auth headers, and security checks
+  return unifiedApiRequest(finalUrl, options);
 }
 
 export async function apiGet<T = any>(url: string): Promise<T> {

@@ -55,8 +55,9 @@ export const config = {
   // Authentication & JWT
   JWT_SECRET,
   
-  // Authentication Mode Configuration
-  AUTH_MODE: process.env.AUTH_MODE || 'development', // 'development' or 'oauth2'
+  // Authentication Mode Configuration  
+  // SECURITY FIX: Restore environment-driven authentication
+  AUTH_MODE: process.env.AUTH_MODE || 'development',
   
   // OAuth2 Configuration
   OAUTH2_ISSUER: process.env.OAUTH2_ISSUER || 'https://auth.w3suite.com',

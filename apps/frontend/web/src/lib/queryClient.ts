@@ -19,14 +19,47 @@ export const setCurrentTenantId = (tenantId: string) => {
 // Helper per ottenere il tenant ID corrente - SECURITY FIX: Dynamic tenant resolution
 export const getCurrentTenantId = (): string => {
   // Try current in-memory first
-  if (currentTenantId) return currentTenantId;
+  if (currentTenantId) {
+    console.log(`[TENANT-ID] ✅ Using in-memory tenant ID: ${currentTenantId}`);
+    return currentTenantId;
+  }
   
   // Try localStorage (consistent with TenantProvider)
   const stored = localStorage.getItem('currentTenantId');
-  if (stored) return stored;
+  if (stored && stored !== 'undefined' && stored !== 'null' && stored !== '') {
+    console.log(`[TENANT-ID] ✅ Using localStorage tenant ID: ${stored}`);
+    return stored;
+  }
   
-  // Fallback to env only if unresolved
-  return import.meta.env.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
+  // SECURITY IMPROVEMENT: Limit emergency tenant fallback to development only
+  if (import.meta.env.MODE === 'development') {
+    // Try to extract from current URL path as emergency fallback (development only)
+    const pathTenant = window.location.pathname.split('/')[1];
+    if (pathTenant && pathTenant !== '' && pathTenant !== 'undefined') {
+      console.warn(`[TENANT-ID] ⚠️ Development emergency fallback: Using URL tenant slug: ${pathTenant}`);
+      // For known development tenants, provide UUID mapping
+      const emergencyMapping: Record<string, string> = {
+        'staging': '00000000-0000-0000-0000-000000000001',
+        'demo': '99999999-9999-9999-9999-999999999999',
+        'acme': '11111111-1111-1111-1111-111111111111',
+        'tech': '22222222-2222-2222-2222-222222222222'
+      };
+      const fallbackId = emergencyMapping[pathTenant] || emergencyMapping['staging'];
+      console.warn(`[TENANT-ID] ⚠️ Development emergency mapping: ${pathTenant} -> ${fallbackId}`);
+      return fallbackId;
+    }
+    
+    // Final fallback to env (development only)
+    const envFallback = import.meta.env.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
+    console.error(`[TENANT-ID] ❌ Development: Using final fallback tenant ID: ${envFallback}`);
+    return envFallback;
+  }
+  
+  // SECURITY: In production, throw error if tenantId cannot be resolved
+  console.error(`[TENANT-ID] 🚨 PRODUCTION SECURITY ERROR: Cannot resolve tenant ID!`);
+  console.error(`[TENANT-ID] ❌ No tenant in memory, localStorage, or URL path`);
+  console.error(`[TENANT-ID] 🔒 Production does not allow tenant fallbacks for security`);
+  throw new Error('SECURITY: Tenant ID resolution failed in production. Application cannot proceed without valid tenant context.');
 };
 
 // Global redirect guard to prevent infinite OAuth redirects
@@ -94,6 +127,14 @@ export const queryClient = new QueryClient({
         console.log(`[QUERY-CLIENT] 📡 Making API request to: ${finalUrl}`);
         console.log(`[TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "${tenantId}"`);
         console.log(`[TENANT-VERIFICATION] 🆔 Tenant ID type: ${typeof tenantId}, length: ${tenantId?.length}`);
+        
+        // CRITICAL SECURITY CHECK: Block API calls with undefined/invalid tenant IDs  
+        if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
+          console.error(`[TENANT-ERROR] ❌ BLOCKING API CALL - Invalid tenant ID detected!`);
+          console.error(`[TENANT-ERROR] ❌ URL: ${finalUrl}`);
+          console.error(`[TENANT-ERROR] ❌ Tenant ID: "${tenantId}"`);
+          throw new Error(`Invalid tenant ID for API call: "${tenantId}". Cannot proceed with request.`);
+        }
         
         // Validate tenant ID format (should be UUID)
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -194,10 +235,21 @@ export async function apiRequest(
   }
   
   const tenantId = getCurrentTenantId();
+  
+  // CRITICAL SECURITY CHECK: Block apiRequest calls with undefined/invalid tenant IDs
+  if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
+    console.error(`[TENANT-ERROR] ❌ BLOCKING API REQUEST - Invalid tenant ID detected!`);
+    console.error(`[TENANT-ERROR] ❌ URL: ${finalUrl}`);
+    console.error(`[TENANT-ERROR] ❌ Tenant ID: "${tenantId}"`);
+    throw new Error(`Invalid tenant ID for apiRequest: "${tenantId}". Cannot proceed with request.`);
+  }
+  
   let headers: Record<string, string> = {
     "Content-Type": "application/json",
     'X-Tenant-ID': tenantId, // Header per il tenant ID
   };
+  
+  console.log(`[API-REQUEST] 📡 Making API request to: ${finalUrl} with tenant: ${tenantId}`);
   
   // Mode-based authentication for API requests
   if (AUTH_MODE === 'development') {
