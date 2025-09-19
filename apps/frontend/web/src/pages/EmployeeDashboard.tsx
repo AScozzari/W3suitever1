@@ -471,24 +471,59 @@ export default function EmployeeDashboard() {
 
             {activeTab === 'time-attendance' && (
               <div className="space-y-6" data-testid="section-time-attendance">
-                {/* Advanced Time Tracking with Tabs - WindTre Glass */}
-                <Card className="glass-card hover:shadow-xl transition-all duration-300">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-orange-500" />
-                      Sistema Timbratura Avanzato
+                {/* COMPLETELY REDESIGNED HORIZONTAL TIME ATTENDANCE INTERFACE */}
+                
+                {/* HEADER - COMPACT */}
+                <Card className="glass-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-windtre-orange" />
+                        Sistema Timbratura Avanzato
+                      </div>
+                      <Badge variant="outline" className="glass-button">
+                        Multi-metodo: GPS, NFC, QR, Smart
+                      </Badge>
                     </CardTitle>
-                    <CardDescription>
-                      Multi-metodo: GPS, NFC, QR Code, App e Smart Detection
-                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="timbratura" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4" data-testid="tabs-time-tracking">
-                        <TabsTrigger value="timbratura" data-testid="tab-clock">
-                          <Clock className="h-4 w-4 mr-2" />
-                          Timbratura
-                        </TabsTrigger>
+                </Card>
+
+                {/* MAIN HORIZONTAL LAYOUT - CLOCKWIDGET + TIMBRATURETAB */}
+                <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                  {/* LEFT: ClockWidget (40% - 2 columns) */}
+                  <div className="xl:col-span-2">
+                    <ClockWidget
+                      userId={userData?.id}
+                      userName={`${userData?.nome || ''} ${userData?.cognome || ''}`.trim()}
+                      storeId="store-001" 
+                      storeName={userData?.store}
+                      className="h-full"
+                      onClockIn={() => {
+                        // Refresh data after clock in
+                        refetch();
+                      }}
+                      onClockOut={() => {
+                        // Refresh data after clock out  
+                        refetch();
+                      }}
+                    />
+                  </div>
+                  
+                  {/* RIGHT: TimbratureTab (60% - 3 columns) */}
+                  <div className="xl:col-span-3">
+                    <TimbratureTab
+                      userId={userData?.id}
+                      storeId="store-001"
+                      storeName={userData?.store}
+                    />
+                  </div>
+                </div>
+
+                {/* ALTERNATIVE VIEWS - HORIZONTAL TABS */}
+                <Card className="glass-card">
+                  <CardContent className="p-4">
+                    <Tabs defaultValue="riepilogo" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3" data-testid="tabs-time-tracking">
                         <TabsTrigger value="riepilogo" data-testid="tab-summary">
                           <BarChart3 className="h-4 w-4 mr-2" />
                           Riepilogo
@@ -502,15 +537,6 @@ export default function EmployeeDashboard() {
                           Analytics
                         </TabsTrigger>
                       </TabsList>
-
-                      {/* Advanced TimbratureTab */}
-                      <TabsContent value="timbratura" className="space-y-6">
-                        <TimbratureTab
-                          userId={userData?.id}
-                          storeId="store-001"
-                          storeName={userData?.store}
-                        />
-                      </TabsContent>
 
                       {/* Enhanced Time Summary */}
                       <TabsContent value="riepilogo" className="space-y-6">

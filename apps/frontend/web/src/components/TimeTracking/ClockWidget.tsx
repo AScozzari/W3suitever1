@@ -344,177 +344,173 @@ export default function ClockWidget({
   return (
     <Card
       className={cn(
-        "p-6 bg-white/5 backdrop-blur-xl border-white/10",
+        "glass-card p-4",
         className
       )}
       data-testid="clock-widget"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Clock className="w-5 h-5 text-purple-400" />
-            Timbratura
-          </h3>
-          <p className="text-sm text-gray-400 mt-1">
-            {fallbackStoreName || 'Store'} • {userName || 'User'}
-          </p>
+      {/* HORIZONTAL LAYOUT - 4 COLUMNS */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center h-20">
+        
+        {/* COLUMN 1: TIMER DISPLAY (25%) */}
+        <div className="flex flex-col items-center lg:items-start">
+          <motion.div
+            key={isActive ? 'active' : 'inactive'}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className={cn(
+              "text-2xl lg:text-3xl font-mono font-bold leading-none",
+              isActive ? (isOvertime ? 'text-red-500' : 'text-green-500') : 'text-gray-400'
+            )}
+            data-testid="timer-display"
+          >
+            {formatElapsedTime(elapsedTime)}
+          </motion.div>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge
+              variant={isActive ? (isOnBreak ? "warning" : "default") : "secondary"}
+              className="text-xs"
+            >
+              {isActive ? (isOnBreak ? 'In Pausa' : 'In Turno') : 'Fuori Turno'}
+            </Badge>
+            {isActive && (
+              <Activity className="w-3 h-3 text-green-400 animate-pulse" />
+            )}
+          </div>
         </div>
-        <Badge
-          variant={isActive ? (isOnBreak ? "warning" : "success") : "secondary"}
-          className="text-xs"
-        >
-          {isActive ? (isOnBreak ? 'In Pausa' : 'In Turno') : 'Fuori Turno'}
-        </Badge>
+
+        {/* COLUMN 2: STORE INFO & STATUS (25%) */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-windtre-orange" />
+            <h3 className="text-sm font-semibold">Timbratura</h3>
+          </div>
+          <div className="text-xs text-gray-600 space-y-1">
+            <p>📍 {selectedStore?.name || fallbackStoreName || 'Store non selezionato'}</p>
+            <p>👤 {userName || 'User'}</p>
+            {isActive && (
+              <p className="text-green-600">
+                ⏰ Iniziato: {format(new Date(Date.now() - elapsedTime * 1000), 'HH:mm')}
+              </p>
+            )}
+          </div>
+          {requiresBreak && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-1 text-xs text-orange-500"
+            >
+              <AlertCircle className="w-3 h-3" />
+              <span>Pausa obbligatoria</span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* COLUMN 3: TRACKING METHOD COMPACT (25%) */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-gray-600">Metodo</label>
+          <div className="grid grid-cols-2 gap-1">
+            {TRACKING_METHODS.slice(0, 4).map((method) => {
+              const isSelected = trackingMethod === method.value;
+              return (
+                <Button
+                  key={method.value}
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTrackingMethod(method.value)}
+                  disabled={isActive}
+                  className={cn(
+                    "h-8 px-2 text-xs",
+                    isSelected 
+                      ? "bg-windtre-orange text-white" 
+                      : "glass-light border-white/20"
+                  )}
+                  data-testid={`method-${method.value}`}
+                >
+                  {method.icon}
+                  <span className="ml-1 hidden sm:inline">{method.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* COLUMN 4: ACTION BUTTONS (25%) */}
+        <div className="space-y-2">
+          {!isActive ? (
+            <Button
+              onClick={handleClockIn}
+              disabled={isLoading}
+              className="w-full h-12 bg-gradient-to-r from-windtre-orange to-windtre-purple hover:from-orange-600 hover:to-purple-600 text-white font-bold"
+              data-testid="button-clock-in"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Registrazione...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  <span>ENTRATA</span>
+                </>
+              )}
+            </Button>
+          ) : (
+            <div className="space-y-1">
+              <Button
+                onClick={handleClockOut}
+                disabled={isLoading || isOnBreak}
+                className="w-full h-8 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-bold"
+                data-testid="button-clock-out"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <>
+                    <Power className="w-3 h-3 mr-1" />
+                    USCITA
+                  </>
+                )}
+              </Button>
+              
+              {!isOnBreak ? (
+                <Button
+                  onClick={handleBreak}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="w-full h-8 border-orange-400/50 hover:bg-orange-400/10 text-orange-600 text-sm"
+                  data-testid="button-pause"
+                >
+                  <Pause className="w-3 h-3 mr-1" />
+                  Pausa
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleBreak}
+                  disabled={isLoading}
+                  className="w-full h-8 bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm"
+                  data-testid="button-resume"
+                >
+                  <Play className="w-3 h-3 mr-1" />
+                  Riprendi
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Store Selector - NEW GPS SYSTEM */}
-      <div className="mb-6">
+      {/* STORE SELECTOR - HORIZONTAL INTEGRATION */}
+      <div className="mt-4 pt-4 border-t border-white/10">
         <StoreSelector
           onStoreSelected={handleStoreSelected}
           disabled={isLoading || isResolvingStore}
           autoDetectEnabled={trackingMethod === 'gps'}
+          compact
         />
       </div>
-
-      {/* Timer Display */}
-      <div className="text-center mb-6">
-        <motion.div
-          key={isActive ? 'active' : 'inactive'}
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className={cn(
-            "text-5xl font-mono font-bold",
-            isActive ? (isOvertime ? 'text-orange-400' : 'text-green-400') : 'text-gray-400'
-          )}
-          data-testid="timer-display"
-        >
-          {formatElapsedTime(elapsedTime)}
-        </motion.div>
-        {isActive && (
-          <p className="text-sm text-gray-400 mt-2">
-            Iniziato alle {format(new Date(Date.now() - elapsedTime * 1000), 'HH:mm')}
-          </p>
-        )}
-        {requiresBreak && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-orange-400 mt-2 flex items-center justify-center gap-1"
-          >
-            <AlertCircle className="w-4 h-4" />
-            Pausa obbligatoria dopo 6 ore
-          </motion.p>
-        )}
-      </div>
-
-      {/* Tracking Method Selection */}
-      <div className="mb-6">
-        <label className="text-sm font-medium mb-2 block">Metodo Timbratura</label>
-        <div className="grid grid-cols-3 gap-2">
-          {TRACKING_METHODS.map((method) => (
-            <Button
-              key={method.value}
-              variant={trackingMethod === method.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTrackingMethod(method.value)}
-              disabled={isActive}
-              className="flex items-center gap-1"
-              data-testid={`method-${method.value}`}
-            >
-              {method.icon}
-              <span className="text-xs">{method.label}</span>
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Location Display */}
-      {/* GPS location display removed - now handled by StoreSelector component */}
-
-      {/* Main Clock Button */}
-      <div className="flex gap-3">
-        {!isActive ? (
-          <Button
-            onClick={handleClockIn}
-            disabled={isLoading}
-            className="flex-1 h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
-            data-testid="button-clock-in"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Registrazione...
-              </>
-            ) : (
-              <>
-                <Play className="w-5 h-5 mr-2" />
-                Timbra Entrata
-              </>
-            )}
-          </Button>
-        ) : (
-          <>
-            {!isOnBreak && (
-              <Button
-                onClick={handleBreak}
-                disabled={isLoading}
-                variant="outline"
-                className="flex-1 h-12 border-orange-500/50 hover:bg-orange-500/10"
-                data-testid="button-pause"
-              >
-                <Pause className="w-5 h-5 mr-2" />
-                Pausa
-              </Button>
-            )}
-            {isOnBreak && (
-              <Button
-                onClick={handleBreak}
-                disabled={isLoading}
-                className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-green-500"
-                data-testid="button-resume"
-              >
-                <Play className="w-5 h-5 mr-2" />
-                Riprendi
-              </Button>
-            )}
-            <Button
-              onClick={handleClockOut}
-              disabled={isLoading || isOnBreak}
-              className="flex-1 h-12 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
-              data-testid="button-clock-out"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Registrazione...
-                </>
-              ) : (
-                <>
-                  <Power className="w-5 h-5 mr-2" />
-                  Timbra Uscita
-                </>
-              )}
-            </Button>
-          </>
-        )}
-      </div>
-
-      {/* Status Indicator */}
-      <AnimatePresence>
-        {isActive && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mt-4 flex items-center justify-center gap-2"
-          >
-            <Activity className="w-4 h-4 text-green-400 animate-pulse" />
-            <span className="text-sm text-gray-400">Sessione Attiva</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </Card>
   );
 }
