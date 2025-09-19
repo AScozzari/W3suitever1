@@ -2,6 +2,25 @@ import { useEffect, useState } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { oauth2Client } from '../services/OAuth2Client';
 
+// Type definitions for proper TypeScript support
+interface DevUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  tenantId: string;
+}
+
+interface Session {
+  user: DevUser;
+  token?: string;
+  expiresAt?: string;
+}
+
+interface PermissionsData {
+  permissions: string[];
+}
+
 // Unified Authentication Mode Control
 const AUTH_MODE = (import.meta as any).env?.VITE_AUTH_MODE || 'development';
 const DEFAULT_TENANT_ID = (import.meta as any).env?.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
@@ -28,15 +47,25 @@ export function useAuth() {
     id: 'demo-user',
     name: 'Demo User', 
     email: 'demo@w3suite.com',
-    role: 'admin',
+    role: 'hr_manager', // CRITICAL FIX: Grant HR manager role for HR Dashboard access
     tenantId: DEFAULT_TENANT_ID
   } : null);
   
-  // Query for session data in production
-  const { data: session } = useQuery({
+  // Query for session data in production - properly typed
+  const { data: session } = useQuery<Session>({
     queryKey: ['/api/auth/session'],
     enabled: AUTH_MODE === 'oauth2' && isAuthenticated,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // Provide proper initialData structure for development
+    initialData: AUTH_MODE === 'development' ? {
+      user: {
+        id: 'demo-user',
+        name: 'Demo User',
+        email: 'demo@w3suite.com',
+        role: 'hr_manager', // CRITICAL: Ensure Session provides hr_manager role
+        tenantId: DEFAULT_TENANT_ID
+      }
+    } : undefined,
   });
   
   // Development permissions stub to avoid 401 API noise
@@ -45,7 +74,7 @@ export function useAuth() {
   });
 
   // Query for user permissions - DISABLE in development, ENABLE in OAuth2 production
-  const { data: permissionsData } = useQuery({
+  const { data: permissionsData } = useQuery<PermissionsData>({
     queryKey: ['/api/auth/permissions'],
     enabled: AUTH_MODE === 'oauth2' && !!session?.user, // ONLY enabled in OAuth2 production mode
     staleTime: 5 * 60 * 1000,
@@ -70,7 +99,7 @@ export function useAuth() {
         id: 'demo-user',
         name: 'Demo User',
         email: 'demo@w3suite.com', 
-        role: 'admin',
+        role: 'hr_manager', // CRITICAL FIX: Grant HR manager role for HR Dashboard access
         tenantId: DEFAULT_TENANT_ID
       });
     } else if (AUTH_MODE === 'oauth2') {
@@ -137,7 +166,7 @@ export function useAuth() {
   };
 
   return {
-    user: AUTH_MODE === 'oauth2' ? session?.user : user,
+    user: (AUTH_MODE === 'oauth2' ? session?.user : user) as DevUser | null,
     permissions: getPermissions(),
     isLoading,
     isAuthenticated,

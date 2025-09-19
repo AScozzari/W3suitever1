@@ -33,7 +33,8 @@ import {
   Cloud, HardDrive, Share2, UserCog, Users2, Globe, Layers, CheckSquare, Square,
   FileImage, FileSpreadsheet, FileVideo, FileAudio, File, Play, Pause, RotateCcw,
   ChevronLeft, ArrowRight, LogOut, Calculator, Wand2, Lightbulb, Cpu, Monitor, Smartphone,
-  Tablet, Laptop, Maximize, Minimize, FullScreen, ScanLine, Fingerprint, ShieldCheck, Scale
+  Tablet, Laptop, Maximize, Minimize, Fullscreen, ScanLine, Fingerprint, ShieldCheck, Scale,
+  Package, Shuffle, UserMinus, X, ArrowDown, Rocket, Box, Hash, Share
 } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -153,15 +154,29 @@ export default function HRDashboard() {
     store: 'Sede Centrale Milano'
   };
 
+  // HR Metrics Type
+  interface HRMetrics {
+    totalEmployees: number;
+    activeEmployees: number;
+    onLeave: number;
+    pendingApprovals: number;
+    attendanceRate: number;
+    turnoverRate: number;
+    newHires: number;
+    performanceReviews: number;
+    trainingCompliance: number;
+    avgSalary: number;
+  }
+
   // Real-time HR Metrics Query
-  const { data: hrMetrics, isLoading: metricsLoading, error: metricsError } = useQuery({
+  const { data: hrMetrics, isLoading: metricsLoading, error: metricsError } = useQuery<HRMetrics>({
     queryKey: ['/api/hr/metrics'],
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 10   // 10 minutes
   });
 
   // Fallback for loading/error states
-  const defaultMetrics = {
+  const defaultMetrics: HRMetrics = {
     totalEmployees: 0,
     activeEmployees: 0,
     onLeave: 0,
@@ -173,7 +188,7 @@ export default function HRDashboard() {
     trainingCompliance: 0,
     avgSalary: 0
   };
-  const currentMetrics = hrMetrics || defaultMetrics;
+  const currentMetrics: HRMetrics = hrMetrics ?? defaultMetrics;
 
   // Real-time HR Notifications Query
   const { data: hrNotifications, isLoading: notificationsLoading } = useQuery({
@@ -188,6 +203,9 @@ export default function HRDashboard() {
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30   // 30 minutes
   });
+
+  // Safe employee data access with default fallback
+  const safeEmployeeData = (employeeData as any)?.list ?? (employeeData as any) ?? [];
 
   // Real-time Pending Approvals Query
   const { data: pendingApprovals, isLoading: approvalsLoading, error: approvalsError } = useQuery({
@@ -520,11 +538,15 @@ export default function HRDashboard() {
               {/* Employee Availability Overview */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center p-3 rounded-lg bg-green-50 border border-green-200">
-                  <div className="text-2xl font-bold text-green-600">{hrMetrics.activeEmployees}</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {metricsLoading ? <Skeleton className="h-8 w-16" /> : currentMetrics.activeEmployees}
+                  </div>
                   <div className="text-xs text-green-700">Presenti Oggi</div>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-orange-50 border border-orange-200">
-                  <div className="text-2xl font-bold text-orange-600">{hrMetrics.onLeave}</div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {metricsLoading ? <Skeleton className="h-8 w-16" /> : currentMetrics.onLeave}
+                  </div>
                   <div className="text-xs text-orange-700">In Ferie</div>
                 </div>
               </div>
@@ -709,7 +731,7 @@ export default function HRDashboard() {
           <CardContent>
             <ScrollArea className="h-64">
               <div className="space-y-4">
-                {hrNotifications.map((notification, index) => (
+                {(hrNotifications as any[])?.map((notification: any, index: number) => (
                   <motion.div 
                     key={notification.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -762,7 +784,7 @@ export default function HRDashboard() {
             <Users className="h-5 w-5 text-blue-600" />
             Employee Management
             <Badge variant="outline" className="ml-auto">
-              {employeeData.length} Dipendenti
+              {employeeLoading ? <Skeleton className="h-4 w-16" /> : safeEmployeeData.length} Dipendenti
             </Badge>
           </CardTitle>
           <CardDescription>Directory completa con lifecycle management e operazioni bulk</CardDescription>
@@ -984,14 +1006,40 @@ export default function HRDashboard() {
             <Users className="h-5 w-5 text-blue-600" />
             Directory Dipendenti
             <Badge variant="outline" className="ml-auto">
-              {employeeData.length} dipendenti
+              {employeeLoading ? <Skeleton className="h-4 w-16" /> : safeEmployeeData.length} dipendenti
             </Badge>
           </CardTitle>
           <CardDescription>Gestione completa profili, ruoli e permissions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {employeeData.map((employee, index) => (
+            {employeeLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex items-center justify-between p-4 rounded-lg glass-card">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              ))
+            ) : employeeError ? (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Errore nel caricamento dipendenti</AlertTitle>
+                <AlertDescription>
+                  Impossibile caricare i dati dei dipendenti. Riprova più tardi.
+                </AlertDescription>
+              </Alert>
+            ) : safeEmployeeData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nessun dipendente trovato</p>
+              </div>
+            ) : safeEmployeeData.map((employee: any, index: number) => (
               <motion.div
                 key={employee.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -1091,7 +1139,7 @@ export default function HRDashboard() {
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/20">
             <div className="flex items-center gap-4">
               <div className="text-sm text-muted-foreground">
-                Visualizzati {employeeData.length} di {employeeData.length} dipendenti
+                Visualizzati {safeEmployeeData.length} di {safeEmployeeData.length} dipendenti
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" className="rounded" />
@@ -7102,7 +7150,7 @@ export default function HRDashboard() {
 
 
   return (
-    <Layout>
+    <Layout currentModule="hr" setCurrentModule={() => {}}>
       {/* Header - Direttamente sullo sfondo come Settings */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{
@@ -7329,7 +7377,7 @@ export default function HRDashboard() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <HRRequestWizard onSuccess={handleRequestSuccess} />
+              <HRRequestWizard onSuccess={handleRequestSuccess} onCancel={() => setRequestModal({ open: false, data: null })} />
             </div>
           </DialogContent>
         </Dialog>

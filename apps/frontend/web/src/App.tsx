@@ -69,6 +69,11 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><ProtectedHRRoute tenant={params.tenant} /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
+      {/* CRITICAL FIX: Add missing /staging/hr-dashboard route */}
+      <Route path="/:tenant/hr-dashboard">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><ProtectedHRRoute tenant={params.tenant} /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      
       {/* Redirect da tutti i path HR legacy verso /tenant/hr */}
       <Route path="/:tenant/hr/dashboard">
         {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
