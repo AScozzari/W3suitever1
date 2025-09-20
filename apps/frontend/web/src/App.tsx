@@ -11,6 +11,7 @@ import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 import HRDashboard from "./pages/HRDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import MyPortal from "./pages/MyPortal";
+import HRManagementDashboard from "./pages/HRManagementDashboard";
 import NotificationCenter from "./pages/NotificationCenter";
 import TenantVerificationTest from "./pages/TenantVerificationTest";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -43,6 +44,11 @@ function Router() {
       {/* Il Mio Portale - Employee Self-Service Portal */}
       <Route path="/:tenant/portale">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><MyPortal /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      
+      {/* NEW HR Management Dashboard - Sistema universale con microservizi */}
+      <Route path="/:tenant/hr-management">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRManagementDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
       {/* Legacy HR route redirects - consolidation from 24+ pages to 2 dashboards */}
