@@ -59,6 +59,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import AvatarSelector from '@/components/AvatarSelector';
+import QuickActions, { type QuickAction } from '@/components/QuickActions';
 
 // Tab configuration for Employee Dashboard
 const EMPLOYEE_TABS = [
@@ -421,40 +422,52 @@ export default function MyPortal() {
                     </CardContent>
                   </Card>
 
-                  {/* Quick Actions - WindTre Glass */}
-                  <Card className="glass-card hover:shadow-xl transition-all duration-300">
-                    <CardHeader>
-                      <CardTitle data-testid="section-quick-actions">Azioni Rapide</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button 
-                        onClick={() => setTab('requests')}
-                        className="w-full justify-start bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                        data-testid="button-quick-request"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nuova Richiesta
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setTab('documents')}
-                        className="w-full justify-start"
-                        data-testid="button-quick-documents"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Scarica Buste Paga
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => setTab('time-attendance')}
-                        className="w-full justify-start"
-                        data-testid="button-quick-timesheet"
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Timbrature
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  {/* Quick Actions - Enhanced with QuickActions component */}
+                  <QuickActions
+                    actions={[
+                      {
+                        id: 'leave-request',
+                        title: 'Richiedi Ferie',
+                        description: 'Invia richiesta',
+                        icon: CalendarIcon,
+                        color: '#FF6900',
+                        onClick: () => {
+                          setTab('requests');
+                          setHrRequestModal({ open: true, data: { type: 'leave' } });
+                        }
+                      },
+                      {
+                        id: 'expense-report',
+                        title: 'Nota Spese',
+                        description: 'Compila spese',
+                        icon: Receipt,
+                        color: '#7B2CBF',
+                        onClick: () => {
+                          setTab('requests');
+                          setHrRequestModal({ open: true, data: { type: 'expense' } });
+                        }
+                      },
+                      {
+                        id: 'payslip',
+                        title: 'Buste Paga',
+                        description: 'Scarica PDF',
+                        icon: FileText,
+                        color: '#10B981',
+                        onClick: () => setTab('documents')
+                      },
+                      {
+                        id: 'timesheet',
+                        title: 'Timbrature',
+                        description: 'Registra ore',
+                        icon: Clock,
+                        color: '#3B82F6',
+                        onClick: () => setTab('time-attendance')
+                      }
+                    ] as QuickAction[]}
+                    columns={2}
+                    variant="compact"
+                    className=""
+                  />
                 </div>
 
                 {/* Notifications - WindTre Glass */}
