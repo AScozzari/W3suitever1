@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import session from "express-session";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 // OAuth legacy system removed - using only OAuth2 enterprise
@@ -190,6 +191,21 @@ const gdprDeletionBodySchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // SECURITY: Configure express-session with secure defaults
+  app.use(session({
+    secret: JWT_SECRET, // Use JWT_SECRET for session encryption
+    name: 'w3suite.sid', // Custom session name for security
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      httpOnly: true, // Prevent XSS attacks
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours (SECURITY: Match JWT token duration)
+      sameSite: 'strict' // CSRF protection
+    },
+    rolling: true // Reset expiration on each request
+  }));
 
   // Apply JSON body parser for all routes
   app.use(express.json());

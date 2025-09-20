@@ -93,6 +93,30 @@ class OAuth2Client {
   }
 
   /**
+   * SECURITY: Clean expired tokens from localStorage
+   */
+  private cleanExpiredTokens(): void {
+    try {
+      const storedTokens = localStorage.getItem('oauth2_tokens');
+      if (storedTokens) {
+        const tokens = JSON.parse(storedTokens);
+        if (tokens.expires_at && Date.now() >= tokens.expires_at) {
+          console.log('🧹 SECURITY: Removing expired tokens from localStorage');
+          localStorage.removeItem('oauth2_tokens');
+          localStorage.removeItem('currentTenantId'); // Also clear tenant context
+          this.currentTokens = null;
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error cleaning expired tokens:', error);
+      // If there's any error, clear tokens for security
+      localStorage.removeItem('oauth2_tokens');
+      localStorage.removeItem('currentTenantId');
+      this.currentTokens = null;
+    }
+  }
+
+  /**
    * Start OAuth2 Authorization Code Flow with PKCE
    */
   async startAuthorizationFlow(): Promise<void> {
@@ -219,6 +243,9 @@ class OAuth2Client {
    */
   async getAccessToken(): Promise<string | null> {
     try {
+      // SECURITY: Clean expired tokens first
+      this.cleanExpiredTokens();
+      
       // Load tokens from storage
       if (!this.currentTokens) {
         const storedTokens = localStorage.getItem('oauth2_tokens');
@@ -240,7 +267,7 @@ class OAuth2Client {
           roles: ['admin'],
           scope: 'openid profile email tenant_access',
           iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + 86400 // 24 hours
+          exp: Math.floor(Date.now() / 1000) + 7200 // 2 hours (SECURITY: Reduced from 24h)
         }));
         // Simple signature for development (not secure, only for dev!)
         const signature = btoa('dev-signature');
@@ -250,9 +277,9 @@ class OAuth2Client {
         const devTokens = {
           access_token: devToken,
           token_type: 'Bearer',
-          expires_in: 86400,
+          expires_in: 7200, // 2 hours (SECURITY: Reduced from 24h)
           scope: 'openid profile email tenant_access',
-          expires_at: Date.now() + (86400 * 1000)
+          expires_at: Date.now() + (7200 * 1000) // 2 hours
         };
         
         this.currentTokens = devTokens;
@@ -264,15 +291,16 @@ class OAuth2Client {
         return null;
       }
 
-      // Check if token is expired (with 5 minute buffer for safety)
+      // Check if token is expired (with 2 minute buffer for strict security)
       if (this.currentTokens.expires_at) {
         const expiryTime = this.currentTokens.expires_at;
         const now = Date.now();
-        const fiveMinutesBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
+        const twoMinutesBuffer = 2 * 60 * 1000; // 2 minutes buffer (SECURITY: Reduced from 5 min)
         
-        // Check token expiration
+        // SECURITY: Strict token expiration check
+        console.log(`🔍 Token expiry check: Current time: ${new Date(now).toLocaleTimeString()}, Token expires: ${new Date(expiryTime).toLocaleTimeString()}`);
         
-        if (now >= (expiryTime - fiveMinutesBuffer)) {
+        if (now >= (expiryTime - twoMinutesBuffer)) {
           // Access token expired, attempting refresh
           const refreshedTokens = await this.refreshToken();
           if (!refreshedTokens) {
