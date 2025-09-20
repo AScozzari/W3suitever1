@@ -705,7 +705,7 @@ export default function Header({
               <button
                 onClick={() => {
                   const tenant = localStorage.getItem('currentTenant') || 'staging';
-                  window.location.href = `/${tenant}/portale`;
+                  window.location.href = `/${tenant}`;
                   setUserMenuOpen(false);
                 }}
                 style={{

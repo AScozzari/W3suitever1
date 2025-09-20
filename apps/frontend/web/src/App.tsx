@@ -71,6 +71,10 @@ function Router() {
       <Route path="/:tenant/employee/dashboard">
         {(params) => <Redirect to={`/${params.tenant}/dashboard`} replace />}
       </Route>
+      {/* Redirect from old portale to main dashboard */}
+      <Route path="/:tenant/portale">
+        {(params) => <Redirect to={`/${params.tenant}`} replace />}
+      </Route>
       {/* Route principale HR - ProtectedHRRoute verifica RBAC e reindirizza a /hr-management se autorizzato */}
       <Route path="/:tenant/hr">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><ProtectedHRRoute tenant={params.tenant} /></AuthenticatedApp></TenantWrapper>}

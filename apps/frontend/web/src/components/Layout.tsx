@@ -861,7 +861,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       const tenant = localStorage.getItem('currentTenant') || 'staging';
-                      window.location.href = `/${tenant}/portale`;
+                      window.location.href = `/${tenant}`;
                       setUserMenuOpen(false);
                     }}
                     style={{
@@ -1087,7 +1087,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     } else if (item.id === 'dashboard') {
                       navigate(`/${tenant}`);
                     } else if (item.id === 'employee') {
-                      navigate(`/${tenant}/portale`);
+                      navigate(`/${tenant}`);
                     } else if (item.id === 'hr-management') {
                       navigate(`/${tenant}/hr-management`);
                     } else {
