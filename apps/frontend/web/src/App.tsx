@@ -50,9 +50,9 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRManagementDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* Legacy HR route redirects - ProtectedHRRoute handles access control and redirects to hr-management */}
+      {/* Settings Page Route */}
       <Route path="/:tenant/settings">
-        {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       <Route path="/:tenant/calendar">
         {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
@@ -195,7 +195,7 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
           console.error(`[TENANT-WRAPPER] ❌ Tenant resolution failed: ${response.status} ${response.statusText}`);
           
           // Development fallback only for known tenants
-          if (import.meta.env.MODE === 'development') {
+          if (import.meta.env.DEV) {
             console.warn('[TENANT-WRAPPER] ⚠️ Using fallback tenant mapping (development only)');
             const fallbackMapping: Record<string, string> = {
               'staging': '00000000-0000-0000-0000-000000000001',
@@ -238,7 +238,7 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
         console.error('[TENANT-WRAPPER] 🚨 This could cause cross-tenant data leakage!');
         
         // In development, check known tenants
-        if (import.meta.env.MODE === 'development') {
+        if (import.meta.env.DEV) {
           const fallbackMapping: Record<string, string> = {
             'staging': '00000000-0000-0000-0000-000000000001',
             'demo': '99999999-9999-9999-9999-999999999999',
