@@ -494,12 +494,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Menu items dalla sidebar mostrata negli screenshots
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'employee', label: 'Il Mio Portale', icon: UserCircle },
     { id: 'crm', label: 'CRM', icon: Users },
     { id: 'ai', label: 'AI Tools', icon: Zap },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building },
-    { id: 'hr', label: 'Human Resources', icon: UserPlus },
     { id: 'listini', label: 'Listini', icon: FileText },
     { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
     { id: 'impostazioni', label: 'Impostazioni', icon: Settings }
