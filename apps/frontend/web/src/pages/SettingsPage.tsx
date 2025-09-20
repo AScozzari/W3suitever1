@@ -8,6 +8,11 @@ import HierarchyTreeView from '@/components/HierarchyTreeView';
 import HierarchyNodeDialog from '@/components/HierarchyNodeDialog';
 import WorkflowConfigurator from '@/components/WorkflowConfigurator';
 import {
+  HierarchyManagementTab,
+  WorkflowConfigurationTab,
+  TeamsGroupsTab
+} from '../components/WorkflowManagement';
+import {
   StandardEmailField,
   StandardCityField,
   StandardCapField,
