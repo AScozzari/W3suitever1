@@ -8,7 +8,6 @@ import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 // Legacy imports removed - consolidated into HR and Employee dashboards
-import HRDashboard from "./pages/HRDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import MyPortal from "./pages/MyPortal";
 import HRManagementDashboard from "./pages/HRManagementDashboard";
@@ -290,7 +289,8 @@ function ProtectedHRRoute({ tenant }: { tenant: string }) {
     return <Redirect to={`/${tenant}/employee/dashboard`} />;
   }
   
-  return <HRDashboard />;
+  // Redirect to new HR Management Dashboard
+  return <Redirect to={`/${tenant}/hr-management`} />;
 }
 
 // Wrapper per pagine che richiedono autenticazione
