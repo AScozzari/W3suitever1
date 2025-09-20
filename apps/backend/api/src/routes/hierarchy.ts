@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { eq, and, sql, asc, desc, isNull } from 'drizzle-orm';
 import { db } from '../core/db';
+import { requirePermission } from '../middleware/tenant';
 import { 
   organizationalStructure, 
   approvalWorkflows, 
@@ -20,7 +21,7 @@ const router = Router();
 // ==================== ORGANIZATIONAL STRUCTURE ENDPOINTS ====================
 
 // GET /api/organizational-structure - Get full hierarchy tree for tenant
-router.get('/organizational-structure', async (req: Request, res: Response) => {
+router.get('/organizational-structure', requirePermission('hierarchy.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     
@@ -43,10 +44,11 @@ router.get('/organizational-structure', async (req: Request, res: Response) => {
         validFrom: organizationalStructure.validFrom,
         validTo: organizationalStructure.validTo,
         // Join user data
-        userName: users.name,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
         userEmail: users.email,
         userRole: users.role,
-        userAvatar: users.avatar,
+        userProfileImage: users.profileImageUrl,
       })
       .from(organizationalStructure)
       .leftJoin(users, eq(organizationalStructure.userId, users.id))
@@ -94,7 +96,7 @@ router.get('/organizational-structure', async (req: Request, res: Response) => {
 });
 
 // POST /api/organizational-structure - Create or update hierarchy node
-router.post('/organizational-structure', async (req: Request, res: Response) => {
+router.post('/organizational-structure', requirePermission('hierarchy.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     
@@ -169,7 +171,7 @@ router.post('/organizational-structure', async (req: Request, res: Response) => 
 // ==================== APPROVAL WORKFLOW ENDPOINTS ====================
 
 // GET /api/approval-workflows - Get all workflows for tenant
-router.get('/approval-workflows', async (req: Request, res: Response) => {
+router.get('/approval-workflows', requirePermission('workflows.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const serviceName = req.query.service as string;
@@ -178,19 +180,16 @@ router.get('/approval-workflows', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    let query = db
+    const conditions = [eq(approvalWorkflows.tenantId, tenantId)];
+    
+    if (serviceName) {
+      conditions.push(eq(approvalWorkflows.serviceName, serviceName));
+    }
+    
+    const query = db
       .select()
       .from(approvalWorkflows)
-      .where(eq(approvalWorkflows.tenantId, tenantId));
-
-    if (serviceName) {
-      query = query.where(
-        and(
-          eq(approvalWorkflows.tenantId, tenantId),
-          eq(approvalWorkflows.serviceName, serviceName)
-        )
-      );
-    }
+      .where(and(...conditions))
 
     const workflows = await query.orderBy(desc(approvalWorkflows.priority));
 
@@ -215,7 +214,7 @@ router.get('/approval-workflows', async (req: Request, res: Response) => {
 });
 
 // POST /api/approval-workflows - Create or update workflow
-router.post('/approval-workflows', async (req: Request, res: Response) => {
+router.post('/approval-workflows', requirePermission('workflows.write'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const userId = req.headers['x-user-id'] as string;
@@ -276,7 +275,7 @@ router.post('/approval-workflows', async (req: Request, res: Response) => {
 // ==================== UNIVERSAL REQUESTS ENDPOINTS ====================
 
 // GET /api/universal-requests - Get all requests
-router.get('/universal-requests', async (req: Request, res: Response) => {
+router.get('/universal-requests', requirePermission('requests.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const userId = req.headers['x-user-id'] as string;
@@ -314,7 +313,8 @@ router.get('/universal-requests', async (req: Request, res: Response) => {
         dueDate: universalRequests.dueDate,
         createdAt: universalRequests.createdAt,
         // Join requester data
-        requesterName: users.name,
+        requesterFirstName: users.firstName,
+        requesterLastName: users.lastName,
         requesterEmail: users.email,
       })
       .from(universalRequests)
@@ -335,7 +335,7 @@ router.get('/universal-requests', async (req: Request, res: Response) => {
 });
 
 // POST /api/universal-requests - Create new request
-router.post('/universal-requests', async (req: Request, res: Response) => {
+router.post('/universal-requests', requirePermission('requests.create'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const userId = req.headers['x-user-id'] as string;
@@ -405,7 +405,7 @@ router.post('/universal-requests', async (req: Request, res: Response) => {
 // ==================== SERVICE PERMISSIONS ENDPOINTS ====================
 
 // GET /api/service-permissions - Get permissions for user/role
-router.get('/service-permissions', async (req: Request, res: Response) => {
+router.get('/service-permissions', requirePermission('permissions.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const { userId, roleId, service } = req.query;
