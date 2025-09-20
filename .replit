@@ -113,11 +113,11 @@ localPort = 34765
 localPort = 34777
 
 [[ports]]
-localPort = 35201
-externalPort = 3001
+localPort = 35825
 
 [[ports]]
-localPort = 35825
+localPort = 36465
+externalPort = 3001
 
 [[ports]]
 localPort = 37213

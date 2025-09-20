@@ -1231,6 +1231,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
+    { id: 'Hierarchy Management', label: 'Gestione Gerarchie', icon: Users },
     { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
     { id: 'Channel Settings', label: 'Channel Settings', icon: Globe },
     { id: 'System Settings', label: 'System Settings', icon: Server },
@@ -4600,10 +4601,331 @@ export default function SettingsPage() {
     );
   };
 
+  // ==================== UNIVERSAL HIERARCHY MANAGEMENT ====================
+  const renderHierarchyManagement = () => {
+    // Stati locali per il tab Gestione Gerarchie
+    const [hierarchyView, setHierarchyView] = useState<'tree' | 'workflows' | 'permissions'>('tree');
+    const [selectedNode, setSelectedNode] = useState<any>(null);
+    const [isAddingNode, setIsAddingNode] = useState(false);
+    const [selectedService, setSelectedService] = useState<string>('');
+
+    // Fetch dati gerarchia
+    const { data: hierarchyData, isLoading: loadingHierarchy } = useQuery({
+      queryKey: ['/api/organizational-structure'],
+      enabled: true
+    });
+
+    // Fetch workflows
+    const { data: workflowsData, isLoading: loadingWorkflows } = useQuery({
+      queryKey: ['/api/approval-workflows', selectedService],
+      enabled: !!selectedService
+    });
+
+    // Services disponibili per i workflow
+    const availableServices = [
+      { id: 'hr', name: 'HR - Risorse Umane', icon: UserCog, color: '#ec4899' },
+      { id: 'finance', name: 'Finance - Contabilità', icon: DollarSign, color: '#8b5cf6' },
+      { id: 'operations', name: 'Operations - Operazioni', icon: Settings, color: '#3b82f6' },
+      { id: 'it', name: 'IT - Tecnologia', icon: Cpu, color: '#06b6d4' },
+      { id: 'sales', name: 'Sales - Vendite', icon: TrendingUp, color: '#10b981' }
+    ];
+
+    return (
+      <div>
+        {/* Header del tab */}
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: '0 0 4px 0'
+          }}>
+            Sistema Gerarchico Universale
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Gestione organigramma aziendale e workflow di approvazione multi-servizio
+          </p>
+        </div>
+
+        {/* Barra di navigazione sottosezioni */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '8px',
+          marginBottom: '24px',
+          display: 'flex',
+          gap: '8px'
+        }}>
+          <button
+            onClick={() => setHierarchyView('tree')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: hierarchyView === 'tree' ? 
+                'linear-gradient(135deg, #FF6900, #7B2CBF)' : 
+                'transparent',
+              color: hierarchyView === 'tree' ? 'white' : '#6b7280',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            data-testid="hierarchy-tab-tree"
+          >
+            <Users size={16} />
+            Organigramma
+          </button>
+          
+          <button
+            onClick={() => setHierarchyView('workflows')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: hierarchyView === 'workflows' ? 
+                'linear-gradient(135deg, #FF6900, #7B2CBF)' : 
+                'transparent',
+              color: hierarchyView === 'workflows' ? 'white' : '#6b7280',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            data-testid="hierarchy-tab-workflows"
+          >
+            <Zap size={16} />
+            Workflow Approvazione
+          </button>
+
+          <button
+            onClick={() => setHierarchyView('permissions')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: hierarchyView === 'permissions' ? 
+                'linear-gradient(135deg, #FF6900, #7B2CBF)' : 
+                'transparent',
+              color: hierarchyView === 'permissions' ? 'white' : '#6b7280',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            data-testid="hierarchy-tab-permissions"
+          >
+            <Shield size={16} />
+            Permessi Servizi
+          </button>
+        </div>
+
+        {/* Contenuto basato sulla vista selezionata */}
+        {hierarchyView === 'tree' && (
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0 }}>
+                Struttura Organizzativa
+              </h3>
+              <button
+                onClick={() => setIsAddingNode(true)}
+                style={{
+                  padding: '8px 16px',
+                  background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                data-testid="hierarchy-add-node"
+              >
+                <Plus size={16} />
+                Aggiungi Posizione
+              </button>
+            </div>
+
+            {loadingHierarchy ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                <p style={{ marginTop: '12px' }}>Caricamento struttura...</p>
+              </div>
+            ) : (
+              <div style={{ 
+                minHeight: '400px',
+                border: '1px dashed rgba(255, 105, 0, 0.3)',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center',
+                color: '#6b7280'
+              }}>
+                {hierarchyData && hierarchyData.hierarchy && hierarchyData.hierarchy.length > 0 ? (
+                  <div>
+                    {/* Qui andrà il componente tree interattivo */}
+                    <p>Organigramma con {hierarchyData.totalNodes} nodi</p>
+                  </div>
+                ) : (
+                  <div>
+                    <Users size={48} style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+                    <p>Nessuna struttura gerarchica definita</p>
+                    <p style={{ fontSize: '12px', marginTop: '8px' }}>
+                      Inizia creando il nodo radice dell'organigramma
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {hierarchyView === 'workflows' && (
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 20px' }}>
+              Configurazione Workflow di Approvazione
+            </h3>
+            
+            {/* Selettore servizio */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                Seleziona Servizio
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                {availableServices.map(service => (
+                  <button
+                    key={service.id}
+                    onClick={() => setSelectedService(service.id)}
+                    style={{
+                      padding: '16px',
+                      background: selectedService === service.id ?
+                        `linear-gradient(135deg, ${service.color}88, ${service.color}44)` :
+                        'rgba(255, 255, 255, 0.05)',
+                      border: selectedService === service.id ?
+                        `2px solid ${service.color}` :
+                        '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: selectedService === service.id ? '#111827' : '#6b7280',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    data-testid={`hierarchy-service-${service.id}`}
+                  >
+                    <service.icon size={20} style={{ color: service.color }} />
+                    {service.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {selectedService && (
+              <div style={{
+                marginTop: '24px',
+                padding: '20px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}>
+                {loadingWorkflows ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
+                    Caricamento workflow...
+                  </div>
+                ) : (
+                  <div>
+                    <p style={{ color: '#6b7280', fontSize: '14px' }}>
+                      Workflow configurati per {availableServices.find(s => s.id === selectedService)?.name}
+                    </p>
+                    {/* Qui andrà la lista dei workflow */}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {hierarchyView === 'permissions' && (
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 20px' }}>
+              Permessi per Servizio
+            </h3>
+            <div style={{ 
+              padding: '40px',
+              textAlign: 'center',
+              color: '#6b7280'
+            }}>
+              <Shield size={48} style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+              <p>Configurazione permessi per servizio in arrivo</p>
+              <p style={{ fontSize: '12px', marginTop: '8px' }}>
+                Definisci quali ruoli possono accedere a ciascun servizio
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'Entity Management':
         return renderEntityManagement();
+      case 'Hierarchy Management':
+        return renderHierarchyManagement();
       case 'AI Assistant':
         return renderAIAssistant();
       case 'Channel Settings':

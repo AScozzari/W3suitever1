@@ -801,6 +801,3 @@ export default function HRDashboard() {
 }
 
 export default HRDashboard;
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-muted-foreground">
-                Visualizzati {safeEmployeeData.length} di {safeEmployeeData.length} dipendenti
