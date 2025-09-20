@@ -17,6 +17,59 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect, useState } from "react";
 
+// Dynamic tenant redirect component
+function DynamicTenantRedirect() {
+  const [redirect, setRedirect] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const findAvailableTenant = async () => {
+      try {
+        // Try common tenant slugs in order of preference
+        const defaultTenants = ['staging', 'demo', 'acme', 'tech'];
+        
+        for (const tenantSlug of defaultTenants) {
+          console.log(`[DYNAMIC-REDIRECT] 🔍 Trying tenant: ${tenantSlug}`);
+          
+          const response = await fetch(`/api/tenants/resolve?slug=${tenantSlug}`);
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`[DYNAMIC-REDIRECT] ✅ Found tenant "${tenantSlug}" (${data.name})`);
+            setRedirect(`/${tenantSlug}/dashboard`);
+            return;
+          }
+        }
+        
+        // If no default tenants work, show error
+        console.error('[DYNAMIC-REDIRECT] ❌ No valid tenants found from defaults');
+        setRedirect('/error');
+        
+      } catch (error) {
+        console.error('[DYNAMIC-REDIRECT] ❌ Error finding tenant:', error);
+        setRedirect('/error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    findAvailableTenant();
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">
+      <div className="text-lg">🔍 Detecting tenant...</div>
+    </div>;
+  }
+
+  if (redirect) {
+    return <Redirect to={redirect} />;
+  }
+
+  return <div className="flex items-center justify-center h-screen">
+    <div className="text-lg text-red-500">❌ No tenants available</div>
+  </div>;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -149,9 +202,9 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* Root path - redirect to staging dashboard */}
+      {/* Root path - dynamic tenant redirect */}
       <Route path="/">
-        {() => <Redirect to="/staging/dashboard" />}
+        {() => <DynamicTenantRedirect />}
       </Route>
       
       {/* Route root tenant - redirect basato su auth */}
