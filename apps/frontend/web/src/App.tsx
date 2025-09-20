@@ -45,6 +45,11 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRManagementDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
+      {/* Settings page route */}
+      <Route path="/:tenant/settingpage">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
+      
       {/* Legacy HR route redirects - ProtectedHRRoute handles access control and redirects to hr-management */}
       <Route path="/:tenant/settings">
         {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
