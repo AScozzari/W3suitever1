@@ -1283,6 +1283,7 @@ export default function SettingsPage() {
             { id: 'punti-vendita', icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
             { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
+            { id: 'gestione-workflow', icon: Settings, label: 'Gestione Workflow', color: '#059669' },
             { id: 'fornitori', icon: Truck, label: 'Fornitori', color: '#10b981' }
           ].map((item, index) => {
             const Icon = item.icon;
@@ -1803,6 +1804,235 @@ export default function SettingsPage() {
           </table>
         </div>
       </div>
+      )}
+
+      {/* Gestione Workflow Section */}
+      {selectedEntity === 'gestione-workflow' && (
+        <div style={{ marginBottom: '48px' }}>
+          {/* Header sezione */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '12px',
+            padding: '24px',
+            marginBottom: '32px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #059669, #047857)',
+                  borderRadius: '12px',
+                  padding: '10px',
+                  boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)'
+                }}>
+                  <Settings size={20} style={{ color: 'white' }} />
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: 0
+                  }}>
+                    Gestione Workflow Universali
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: '4px 0 0 0'
+                  }}>
+                    Configura gerarchie di approvazione per servizio e team collaborativi
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Selettore Servizio per Workflow */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              marginBottom: '24px'
+            }}>
+              {[
+                { id: 'hr', name: 'HR Management', icon: Users, color: '#ec4899' },
+                { id: 'finance', name: 'Finance', icon: DollarSign, color: '#8b5cf6' },
+                { id: 'operations', name: 'Operations', icon: Settings, color: '#f59e0b' },
+                { id: 'it', name: 'IT Support', icon: Server, color: '#3b82f6' },
+                { id: 'sales', name: 'Sales', icon: Target, color: '#10b981' }
+              ].map(service => {
+                const Icon = service.icon;
+                return (
+                  <button
+                    key={service.id}
+                    style={{
+                      padding: '16px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = `${service.color}15`;
+                      e.currentTarget.style.borderColor = `${service.color}30`;
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                    data-testid={`workflow-service-${service.id}`}
+                  >
+                    <Icon size={20} style={{ color: service.color }} />
+                    {service.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab per Hierarchy e Workflow */}
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginBottom: '24px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '12px',
+              padding: '6px'
+            }}>
+              {[
+                { id: 'hierarchy', label: 'Struttura Gerarchica', icon: Users },
+                { id: 'workflows', label: 'Configurazione Workflow', icon: Settings },
+                { id: 'teams', label: 'Team & Gruppi', icon: Shield }
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#6b7280',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.color = '#111827';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#6b7280';
+                    }}
+                    data-testid={`workflow-tab-${tab.id}`}
+                  >
+                    <Icon size={16} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Placeholder Content per dimostrazione */}
+            <div style={{
+              padding: '40px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: '12px',
+              border: '1px dashed rgba(5, 150, 105, 0.3)',
+              textAlign: 'center'
+            }}>
+              <Settings size={48} style={{ color: '#059669', marginBottom: '16px' }} />
+              <h4 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: '0 0 8px 0'
+              }}>
+                Workflow Management Enterprise
+              </h4>
+              <p style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                margin: '0 0 20px 0',
+                maxWidth: '600px',
+                lineHeight: 1.5
+              }}>
+                Sistema universale per configurazione gerarchie di approvazione, workflow dinamici e team collaborativi. 
+                Supporta tutti i servizi aziendali con approval chains configurabili e gestione SLA.
+              </p>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                marginTop: '24px'
+              }}>
+                <div style={{
+                  padding: '16px',
+                  background: 'rgba(236, 72, 153, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(236, 72, 153, 0.2)'
+                }}>
+                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#ec4899', margin: '0 0 4px 0' }}>
+                    Service-Agnostic
+                  </h5>
+                  <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                    HR, Finance, IT, Sales, Operations
+                  </p>
+                </div>
+                <div style={{
+                  padding: '16px',
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(139, 92, 246, 0.2)'
+                }}>
+                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#8b5cf6', margin: '0 0 4px 0' }}>
+                    Dynamic Approval
+                  </h5>
+                  <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                    Multi-level chains configurabili
+                  </p>
+                </div>
+                <div style={{
+                  padding: '16px',
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(16, 185, 129, 0.2)'
+                }}>
+                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#10b981', margin: '0 0 4px 0' }}>
+                    Team Collaboration
+                  </h5>
+                  <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                    Shared permissions & gruppi
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Fornitori Section */}
