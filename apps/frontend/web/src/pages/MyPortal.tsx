@@ -1139,18 +1139,18 @@ export default function MyPortal() {
                         currentAvatarUrl={displayUser.foto || undefined}
                         firstName={displayUser.nome}
                         lastName={displayUser.cognome}
-                        username={displayUser.username}
+                        username={displayUser.email}
                         onAvatarChange={async (avatarData) => {
                           console.log('🖼️ Avatar change requested for profile:', avatarData);
                           
                           try {
-                            if (!displayUser.id) {
+                            if (!displayUser.matricola) {
                               console.error('❌ No user ID available for avatar update');
                               return;
                             }
                             
                             // Update avatar using existing API endpoint
-                            const response = await fetch(`/api/users/${displayUser.id}/avatar`, {
+                            const response = await fetch(`/api/users/${displayUser.matricola}/avatar`, {
                               method: 'PUT',
                               headers: {
                                 'Content-Type': 'application/json',
