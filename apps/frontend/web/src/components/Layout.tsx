@@ -1062,6 +1062,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
               
               const isEmployeePath = pathSegments[1] === 'employee';
+              const isHRManagementPath = pathSegments[1] === 'hr-management';
               
               const isActive = item.id === 'impostazioni' 
                 ? isSettingsPath
@@ -1069,6 +1070,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 ? isDashboardPath
                 : item.id === 'employee'
                 ? isEmployeePath
+                : item.id === 'hr-management'
+                ? isHRManagementPath
                 : currentModule === item.id;
               
               return (
@@ -1085,6 +1088,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       navigate(`/${tenant}`);
                     } else if (item.id === 'employee') {
                       navigate(`/${tenant}/portale`);
+                    } else if (item.id === 'hr-management') {
+                      navigate(`/${tenant}/hr-management`);
                     } else {
                       setCurrentModule(item.id);
                     }
