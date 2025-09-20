@@ -444,176 +444,217 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
         </CardHeader>
 
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Clock Section */}
-            <div className="lg:col-span-1 space-y-4">
-              <div className="text-center space-y-3">
-                <div className="text-5xl font-bold text-gray-900" data-testid="text-main-clock">
-                  {format(currentTime, 'HH:mm:ss')}
-                </div>
-                <div className="text-sm text-gray-600">
-                  {format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}
-                </div>
-                {/* Session Info */}
-                {isActive && (
-                  <div className="space-y-2 pt-2 border-t border-gray-200">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tempo lavoro:</span>
-                      <span className={cn("font-medium", isOvertime ? "text-orange-600" : "text-green-600")}>
-                        {formatTime(elapsedTime.totalSeconds)}
-                      </span>
+          {/* Integrated Unified Flow */}
+          <div className="space-y-6">
+            
+            {/* Step 1: Current Time & Session Status */}
+            <div className="text-center bg-gradient-to-r from-orange-50 to-purple-50 p-6 rounded-xl border border-orange-200">
+              <div className="text-6xl font-bold text-gray-900 mb-2" data-testid="text-main-clock">
+                {format(currentTime, 'HH:mm:ss')}
+              </div>
+              <div className="text-lg text-gray-700 mb-4">
+                {format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}
+              </div>
+              
+              {/* Active Session Info */}
+              {isActive && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-orange-200">
+                  <div className="bg-white/60 backdrop-blur-sm p-3 rounded-lg">
+                    <div className="text-sm text-gray-600">Tempo Lavoro</div>
+                    <div className={cn("text-2xl font-bold", isOvertime ? "text-orange-600" : "text-green-600")}>
+                      {formatTime(elapsedTime.totalSeconds)}
                     </div>
-                    {context.isOnBreak && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Tempo pausa:</span>
-                        <span className="font-medium text-blue-600">
-                          {formatTime(breakTime.totalSeconds)}
+                  </div>
+                  {context.isOnBreak && (
+                    <div className="bg-white/60 backdrop-blur-sm p-3 rounded-lg">
+                      <div className="text-sm text-gray-600">Tempo Pausa</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {formatTime(breakTime.totalSeconds)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Step 2: Integrated PDV + System Selection */}
+            <div className="bg-white/60 backdrop-blur-sm p-6 rounded-xl border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                Configura Sistema di Timbratura
+              </h3>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* PDV Selection Integrated */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Building className="h-5 w-5 text-blue-500" />
+                    <span className="font-semibold">Punto Vendita</span>
+                  </div>
+                  
+                  {/* Current PDV Status */}
+                  {context.selectedStore ? (
+                    <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <span className="font-medium text-green-800">PDV Configurato</span>
+                        </div>
+                        {autoDetected && (
+                          <Badge variant="default" className="bg-green-600">Auto</Badge>
+                        )}
+                      </div>
+                      <div className="font-medium text-green-900">{context.selectedStore.name}</div>
+                      <div className="text-sm text-green-700">{context.selectedStore.address}</div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <XCircle className="h-5 w-5 text-red-600" />
+                        <span className="font-medium text-red-800">PDV Richiesto</span>
+                      </div>
+                      <div className="text-sm text-red-700">Seleziona un punto vendita per continuare</div>
+                    </div>
+                  )}
+
+                  {/* Quick PDV Selection */}
+                  {nearbyStores.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-700">PDV Disponibili</div>
+                      {nearbyStores.slice(0, 2).map((store) => {
+                        const isSelected = context.selectedStore?.id === store.id;
+                        const distance = store.distance || 0;
+                        const isWithinGeofence = distance <= 200;
+
+                        return (
+                          <button
+                            key={store.id}
+                            onClick={() => selectStore(store)}
+                            className={cn(
+                              "w-full p-3 rounded-lg border text-left transition-all",
+                              isSelected 
+                                ? "border-green-500 bg-green-50" 
+                                : isWithinGeofence
+                                  ? "border-blue-300 bg-blue-50 hover:bg-blue-100"
+                                  : "border-gray-300 bg-gray-50 hover:bg-gray-100"
+                            )}
+                            data-testid={`integrated-store-${store.id}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">{store.name}</div>
+                                <div className="text-xs text-gray-600">
+                                  {distance > 0 ? `${(distance / 1000).toFixed(1)} km` : store.address}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isWithinGeofence && (
+                                  <Badge variant="default" className="text-xs bg-green-600">In Zona</Badge>
+                                )}
+                                {isSelected && <CheckCircle className="h-5 w-5 text-green-500" />}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setOverrideModalOpen(true)}
+                        className="w-full mt-2"
+                        data-testid="button-integrated-pdv-manage"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Gestisci tutti i PDV
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* System Type Selection Integrated */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="h-5 w-5 text-purple-500" />
+                    <span className="font-semibold">Sistema Timbratura</span>
+                  </div>
+
+                  {/* Current System Status */}
+                  {selectedStrategyType ? (
+                    <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="h-5 w-5 text-purple-600" />
+                        <span className="font-medium text-purple-800">
+                          Sistema {selectedStrategyType.toUpperCase()} Attivo
                         </span>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Store Selection Section */}
-            <div className="lg:col-span-1 space-y-4">
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Building className="h-5 w-5 text-blue-500" />
-                  Seleziona PDV
-                </h3>
-                
-                {/* Selected Store Display */}
-                {context.selectedStore ? (
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="font-medium text-green-800">PDV Attivo</span>
-                      {autoDetected && (
-                        <Badge variant="default" className="text-xs bg-green-600">
-                          Auto-rilevato
-                        </Badge>
+                      {strategiesState.prepareResult?.success && (
+                        <div className="text-sm text-purple-700">✓ Pronto per la timbratura</div>
                       )}
                     </div>
-                    <div className="text-sm text-green-700">
-                      <div className="font-medium">{context.selectedStore.name}</div>
-                      <div className="text-xs">{context.selectedStore.address}</div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium text-yellow-800">Nessun PDV Selezionato</span>
-                    </div>
-                    <div className="text-sm text-yellow-700">
-                      Seleziona un punto vendita per iniziare
-                    </div>
-                  </div>
-                )}
-
-                {/* Quick Store List */}
-                {nearbyStores.length > 0 && (
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {nearbyStores.slice(0, 3).map((store) => {
-                      const isSelected = context.selectedStore?.id === store.id;
-                      const distance = store.distance || 0;
-                      const isWithinGeofence = distance <= 200;
-
-                      return (
-                        <div
-                          key={store.id}
-                          className={cn(
-                            "p-2 rounded border cursor-pointer transition-all text-sm",
-                            isSelected 
-                              ? "border-green-500 bg-green-50" 
-                              : isWithinGeofence
-                                ? "border-blue-200 bg-blue-50 hover:border-blue-300"
-                                : "border-gray-200 bg-gray-50 hover:border-gray-300"
-                          )}
-                          onClick={() => selectStore(store)}
-                          data-testid={`quick-store-${store.id}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="font-medium">{store.name}</div>
-                              {distance > 0 && (
-                                <div className="text-xs text-gray-500">
-                                  {(distance / 1000).toFixed(1)} km
-                                </div>
-                              )}
-                            </div>
-                            {isSelected && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setOverrideModalOpen(true)}
-                  className="w-full"
-                  data-testid="button-quick-store-override"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Gestisci PDV
-                </Button>
-              </div>
-            </div>
-
-            {/* Method Selection Section */}
-            <div className="lg:col-span-1 space-y-4">
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Target className="h-5 w-5 text-purple-500" />
-                  Tipo Sistema
-                </h3>
-                
-                {/* Method Selection Grid */}
-                <div className="grid grid-cols-2 gap-2">
-                  {strategyConfigs.slice(0, 6).map((config) => (
-                    <button
-                      key={config.type}
-                      onClick={() => handleStrategySelect(config.type)}
-                      disabled={!config.available}
-                      className={cn(
-                        "flex flex-col items-center p-3 rounded-lg border transition-all text-xs",
-                        selectedStrategyType === config.type
-                          ? "border-orange-500 bg-orange-50 text-orange-700"
-                          : config.available
-                            ? "border-gray-200 hover:border-gray-300 bg-white"
-                            : "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed"
-                      )}
-                      data-testid={`quick-method-${config.type}`}
-                    >
-                      <config.icon className="h-4 w-4 mb-1" />
-                      <span className="font-medium">{config.name}</span>
-                      <span className="text-xs text-gray-500">{config.description}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Selected Method Display */}
-                {selectedStrategyType && (
-                  <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium text-purple-800">
-                        Sistema {selectedStrategyType.toUpperCase()} Attivo
-                      </span>
-                    </div>
-                    {strategiesState.prepareResult?.success && (
-                      <div className="text-xs text-purple-700 mt-1">
-                        Pronto per la timbratura
+                  ) : (
+                    <div className="p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <XCircle className="h-5 w-5 text-red-600" />
+                        <span className="font-medium text-red-800">Sistema Richiesto</span>
                       </div>
-                    )}
+                      <div className="text-sm text-red-700">Seleziona un tipo di sistema per continuare</div>
+                    </div>
+                  )}
+
+                  {/* System Selection Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {strategyConfigs.slice(0, 6).map((config) => (
+                      <button
+                        key={config.type}
+                        onClick={() => handleStrategySelect(config.type)}
+                        disabled={!config.available}
+                        className={cn(
+                          "flex flex-col items-center p-3 rounded-lg border transition-all",
+                          selectedStrategyType === config.type
+                            ? "border-orange-500 bg-orange-50 text-orange-700 border-2"
+                            : config.available
+                              ? "border-gray-200 hover:border-gray-300 bg-white"
+                              : "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed"
+                        )}
+                        data-testid={`integrated-system-${config.type}`}
+                      >
+                        <config.icon className="h-6 w-6 mb-2" />
+                        <span className="font-medium text-sm">{config.name}</span>
+                        <span className="text-xs text-gray-500 text-center">{config.description}</span>
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
+            </div>
+            
+            {/* Validation Status */}
+            <div className="flex items-center justify-center p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border">
+              {context.selectedStore && selectedStrategyType ? (
+                <div className="flex items-center gap-3 text-green-700">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <div>
+                    <div className="font-semibold">Sistema Pronto</div>
+                    <div className="text-sm">
+                      PDV: {context.selectedStore.name} • Sistema: {selectedStrategyType.toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-orange-700">
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
+                  <div>
+                    <div className="font-semibold">Configurazione Incompleta</div>
+                    <div className="text-sm">
+                      {!context.selectedStore && !selectedStrategyType 
+                        ? "Seleziona PDV e Sistema di timbratura"
+                        : !context.selectedStore 
+                          ? "Seleziona un punto vendita"
+                          : "Seleziona un sistema di timbratura"}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
