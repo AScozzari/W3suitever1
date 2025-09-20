@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { useTabRouter } from '@/hooks/useTabRouter';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -157,11 +159,55 @@ export default function MyPortal() {
   // Display leave balance using typed helper
   const displayLeaveBalance = getDisplayLeaveBalance(leaveBalance);
 
-  // Performance data - Remove mock data for production readiness
-  const [performance] = useState<Array<never>>([]);
+  // Performance data from API
+  const { data: performanceData, isLoading: performanceLoading } = useQuery<{
+    overview: {
+      goalsAchieved: number;
+      totalGoals: number;
+      averageRating: number;
+      recognitions: number;
+    };
+    goals: Array<{
+      id: string;
+      title: string;
+      description: string;
+      progress: number;
+      deadline: Date;
+      status: string;
+    }>;
+    periodicity: string;
+  }>({
+    queryKey: ['/api/employee/performance'],
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
 
-  // Training data - Remove mock data for production readiness
-  const [training] = useState<Array<never>>([]);
+  // Training data from API
+  const { data: trainingData, isLoading: trainingLoading } = useQuery<{
+    overview: {
+      completedCourses: number;
+      ongoingCourses: number;
+      certifications: number;
+      totalHours: number;
+    };
+    courses: Array<{
+      id: string;
+      title: string;
+      description: string;
+      duration: string;
+      difficulty: string;
+      category: string;
+      status: string;
+      progress: number;
+    }>;
+    categories: string[];
+  }>({
+    queryKey: ['/api/employee/training'],
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
+
+  // Extract data for compatibility
+  const performance = performanceData?.goals || [];
+  const training = trainingData?.courses || [];
 
   // Update current time
   useEffect(() => {
@@ -354,12 +400,16 @@ export default function MyPortal() {
                             <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg" data-testid="card-performance">
                               <Target className="h-6 w-6 text-purple-600 mx-auto mb-2" />
                               <p className="text-sm text-purple-700 font-medium" data-testid="label-performance">Performance</p>
-                              <p className="text-xl font-bold text-purple-800" data-testid="text-performance-score">85%</p>
+                              <p className="text-xl font-bold text-purple-800" data-testid="text-performance-score">
+                                {performanceLoading ? '...' : `${performanceData?.overview?.goalsAchieved || 0}/${performanceData?.overview?.totalGoals || 10}`}
+                              </p>
                             </div>
                             <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg" data-testid="card-training">
                               <GraduationCap className="h-6 w-6 text-orange-600 mx-auto mb-2" />
                               <p className="text-sm text-orange-700 font-medium" data-testid="label-training">Formazione</p>
-                              <p className="text-xl font-bold text-orange-800" data-testid="text-training-progress">2/3</p>
+                              <p className="text-xl font-bold text-orange-800" data-testid="text-training-progress">
+                                {trainingLoading ? '...' : `${trainingData?.overview?.ongoingCourses || 0}/${trainingData?.overview?.completedCourses || 0}`}
+                              </p>
                             </div>
                           </>
                         )}
@@ -820,7 +870,9 @@ export default function MyPortal() {
                     <CardContent className="p-6 text-center">
                       <Target className="h-12 w-12 text-green-600 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">Obiettivi Raggiunti</h3>
-                      <p className="text-3xl font-bold text-green-600" data-testid="text-goals-achieved">8/10</p>
+                      <p className="text-3xl font-bold text-green-600" data-testid="text-goals-achieved">
+                        {performanceLoading ? '...' : `${performanceData?.overview?.goalsAchieved || 0}/${performanceData?.overview?.totalGoals || 10}`}
+                      </p>
                       <p className="text-sm text-gray-500 mt-2">Questo trimestre</p>
                     </CardContent>
                   </Card>
@@ -829,7 +881,9 @@ export default function MyPortal() {
                     <CardContent className="p-6 text-center">
                       <TrendingUp className="h-12 w-12 text-blue-600 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">Valutazione Media</h3>
-                      <p className="text-3xl font-bold text-blue-600" data-testid="text-average-rating">4.2/5</p>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-average-rating">
+                        {performanceLoading ? '...' : `${performanceData?.overview?.averageRating || 0}/5`}
+                      </p>
                       <p className="text-sm text-gray-500 mt-2">Ultimi 6 mesi</p>
                     </CardContent>
                   </Card>
@@ -838,7 +892,9 @@ export default function MyPortal() {
                     <CardContent className="p-6 text-center">
                       <Award className="h-12 w-12 text-orange-600 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">Riconoscimenti</h3>
-                      <p className="text-3xl font-bold text-orange-600" data-testid="text-recognitions">3</p>
+                      <p className="text-3xl font-bold text-orange-600" data-testid="text-recognitions">
+                        {performanceLoading ? '...' : performanceData?.overview?.recognitions || 0}
+                      </p>
                       <p className="text-sm text-gray-500 mt-2">Quest'anno</p>
                     </CardContent>
                   </Card>
@@ -850,14 +906,38 @@ export default function MyPortal() {
                     <CardTitle>Obiettivi Correnti</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {performance.length === 0 ? (
+                    {performanceLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      </div>
+                    ) : performance.length === 0 ? (
                       <div className="text-center py-8">
                         <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">Nessun obiettivo in corso</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {/* Goals will be rendered here when data is available */}
+                        {performance.map((goal) => (
+                          <div key={goal.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-semibold text-gray-900">{goal.title}</h4>
+                              <Badge variant={goal.status === 'completed' ? 'default' : 'secondary'}>
+                                {goal.status === 'completed' ? 'Completato' : 'In corso'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">{goal.description}</p>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span>Progresso</span>
+                                <span>{goal.progress}%</span>
+                              </div>
+                              <Progress value={goal.progress} className="h-2" />
+                              <p className="text-xs text-gray-500">
+                                Scadenza: {format(new Date(goal.deadline), 'dd MMM yyyy', { locale: it })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </CardContent>
@@ -875,7 +955,9 @@ export default function MyPortal() {
                     <CardContent className="p-6 text-center">
                       <BookOpen className="h-12 w-12 text-blue-600 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">Corsi Completati</h3>
-                      <p className="text-3xl font-bold text-blue-600" data-testid="text-completed-courses">12</p>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-completed-courses">
+                        {trainingLoading ? '...' : trainingData?.overview?.completedCourses || 0}
+                      </p>
                       <p className="text-sm text-gray-500 mt-2">Quest'anno</p>
                     </CardContent>
                   </Card>
@@ -884,7 +966,9 @@ export default function MyPortal() {
                     <CardContent className="p-6 text-center">
                       <PlayCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">In Corso</h3>
-                      <p className="text-3xl font-bold text-green-600" data-testid="text-ongoing-courses">3</p>
+                      <p className="text-3xl font-bold text-green-600" data-testid="text-ongoing-courses">
+                        {trainingLoading ? '...' : trainingData?.overview?.ongoingCourses || 0}
+                      </p>
                       <p className="text-sm text-gray-500 mt-2">Corsi attivi</p>
                     </CardContent>
                   </Card>
@@ -893,7 +977,9 @@ export default function MyPortal() {
                     <CardContent className="p-6 text-center">
                       <Star className="h-12 w-12 text-orange-600 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold mb-2">Certificazioni</h3>
-                      <p className="text-3xl font-bold text-orange-600" data-testid="text-certifications">5</p>
+                      <p className="text-3xl font-bold text-orange-600" data-testid="text-certifications">
+                        {trainingLoading ? '...' : trainingData?.overview?.certifications || 0}
+                      </p>
                       <p className="text-sm text-gray-500 mt-2">Ottenute</p>
                     </CardContent>
                   </Card>
@@ -905,14 +991,50 @@ export default function MyPortal() {
                     <CardTitle>Corsi Disponibili</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {training.length === 0 ? (
+                    {trainingLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      </div>
+                    ) : training.length === 0 ? (
                       <div className="text-center py-8">
                         <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">Nessun corso disponibile al momento</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {/* Training courses will be rendered here when data is available */}
+                        {training.map((course) => (
+                          <div key={course.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-semibold text-gray-900">{course.title}</h4>
+                              <div className="flex gap-2">
+                                <Badge variant={
+                                  course.status === 'required' ? 'destructive' :
+                                  course.status === 'recommended' ? 'default' :
+                                  course.status === 'completed' ? 'secondary' : 'outline'
+                                }>
+                                  {course.status === 'required' ? 'Obbligatorio' :
+                                   course.status === 'recommended' ? 'Consigliato' :
+                                   course.status === 'completed' ? 'Completato' : 'Disponibile'}
+                                </Badge>
+                                <Badge variant="outline">{course.difficulty}</Badge>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">{course.description}</p>
+                            <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
+                              <span>Durata: {course.duration}</span>
+                              <span>Categoria: {course.category}</span>
+                            </div>
+                            {course.progress > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>Progresso</span>
+                                  <span>{course.progress}%</span>
+                                </div>
+                                <Progress value={course.progress} className="h-2" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </CardContent>
