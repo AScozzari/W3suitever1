@@ -51,6 +51,7 @@ import { useCurrentSession, useTimeBalance } from '@/hooks/useTimeTracking';
 import { useHRRequests, HRRequestFilters } from '@/hooks/useHRRequests';
 import { useLeaveBalance } from '@/hooks/useLeaveManagement';
 import { useDocumentDrive } from '@/hooks/useDocumentDrive';
+import { CurrentSession, ModalState, DocumentCategoriesProps, DocumentGridProps } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -751,17 +752,32 @@ export default function MyPortal() {
                 </div>
 
                 {/* Document Categories */}
-                <DocumentCategories onCategorySelect={(category) => {
-                  // Handle category selection
-                }} />
+                <DocumentCategories 
+                  categories={[]}
+                  selectedCategory={null}
+                  onSelectCategory={(categoryId: string | null) => {
+                    // Handle category selection
+                  }}
+                  onCategorySelect={(category: any) => {
+                    // Handle category selection
+                  }}
+                  documentCounts={{}}
+                />
 
                 {/* Document Grid */}
                 <DocumentGrid
                   documents={documents}
-                  isLoading={documentsLoading}
-                  onDocumentClick={(document) => {
+                  viewMode="grid"
+                  selectedDocuments={new Set<string>()}
+                  onSelectDocument={(docId: string, isSelected: boolean) => {}}
+                  onViewDocument={(doc: any) => {
+                    setDocumentViewerModal({ open: true, data: doc });
+                  }}
+                  onDeleteDocument={async (docId: string) => {}}
+                  onDocumentClick={(document: any) => {
                     setDocumentViewerModal({ open: true, data: document });
                   }}
+                  isLoading={documentsLoading}
                 />
 
                 {/* Payslip Manager */}
@@ -780,7 +796,7 @@ export default function MyPortal() {
                 {/* Document Viewer Modal */}
                 <Dialog 
                   open={documentViewerModal.open} 
-                  onOpenChange={(open) => setDocumentViewerModal(open ? { open, data: documentViewerModal.data } : { open: false, data: null })}
+                  onOpenChange={(open) => setDocumentViewerModal(open ? { open, data: documentViewerModal.data || {} } : { open: false, data: null })}
                 >
                   <DialogContent className="max-w-4xl max-h-[90vh]">
                     {documentViewerModal.open && documentViewerModal.data && (

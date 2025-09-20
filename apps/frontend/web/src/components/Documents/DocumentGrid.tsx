@@ -25,6 +25,7 @@ interface DocumentGridProps {
   onSelectDocument: (docId: string, isSelected: boolean) => void;
   onViewDocument: (doc: Document) => void;
   onDeleteDocument: (docId: string) => Promise<void>;
+  onDocumentClick?: (document: any) => void; // Added missing prop
   isLoading: boolean;
 }
 

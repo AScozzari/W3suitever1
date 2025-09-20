@@ -9,6 +9,7 @@ import { oauth2Client } from '../../services/OAuth2Client';
 import { queryClient } from '../../lib/queryClient';
 import { apiService } from '../../services/ApiService';
 import { useUserAvatar } from '../../hooks/useUserAvatar';
+import { UserData, NotificationsApiResponse, UnreadCountApiResponse, NotificationResponse } from '@/types';
 
 // Palette colori W3 Suite - Consistent con Layout
 const COLORS = {
@@ -43,7 +44,7 @@ export default function Header({
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   
-  const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
+  const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   
   // Use avatar hook for enhanced avatar functionality
   const userAvatar = useUserAvatar(user, {
@@ -52,14 +53,14 @@ export default function Header({
   });
 
   // Notification queries - Use default queryClient fetcher for proper tenant middleware
-  const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery({
+  const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery<UnreadCountApiResponse>({
     queryKey: ['/api/notifications/unread-count'],
     // No custom queryFn - use default fetcher from queryClient for proper auth/tenant headers
     refetchInterval: 15000, // Poll every 15 seconds
     enabled: !!user
   });
 
-  const { data: notificationsData, refetch: refetchNotifications } = useQuery({
+  const { data: notificationsData, refetch: refetchNotifications } = useQuery<NotificationsApiResponse>({
     queryKey: ['/api/notifications', { status: 'unread', limit: 10 }],
     // No custom queryFn - use default fetcher from queryClient for proper auth/tenant headers
     enabled: !!user && notificationMenuOpen
@@ -420,7 +421,7 @@ export default function Header({
                   <button
                     onClick={async () => {
                       try {
-                        const unreadIds = notifications.filter(n => n.status === 'unread').map(n => n.id);
+                        const unreadIds = notifications.filter((n: NotificationResponse) => n.status === 'unread').map((n: NotificationResponse) => n.id);
                         if (unreadIds.length > 0) {
                           await apiService.bulkMarkNotificationsRead(unreadIds);
                           refetchUnreadCount();
@@ -633,8 +634,8 @@ export default function Header({
               }}
               data-testid="header-user-avatar"
               title={user?.firstName && user?.lastName 
-                ? `${(user as any)?.firstName} ${(user as any)?.lastName}` 
-                : (user as any)?.email || 'User Avatar'}
+                ? `${user.firstName} ${user.lastName}` 
+                : user?.email || 'User Avatar'}
             >
               {/* Loading overlay */}
               {userAvatar.isLoading && (

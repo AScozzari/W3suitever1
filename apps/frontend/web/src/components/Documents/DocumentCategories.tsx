@@ -13,6 +13,7 @@ interface DocumentCategoriesProps {
   categories: Category[];
   selectedCategory: string | null;
   onSelectCategory: (categoryId: string | null) => void;
+  onCategorySelect?: (category: any) => void; // Added missing prop
   documentCounts: Record<string, number>;
 }
 

@@ -105,6 +105,10 @@ export interface CurrentSession {
   trackingMethod: string;
   elapsedMinutes: number;
   breakMinutes: number;
+  // Additional properties for compatibility
+  totalHours: string;
+  breakTime: string;
+  status: 'active' | 'completed' | 'break' | 'overtime';
   currentBreak?: {
     start: string;
     duration: number;
@@ -461,6 +465,10 @@ class TimeTrackingService {
           trackingMethod: 'app',
           elapsedMinutes: elapsed,
           breakMinutes: 0,
+          // Added missing properties for compatibility
+          totalHours: `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`,
+          breakTime: '0:00',
+          status: elapsed > 0 ? 'active' : 'completed' as 'active' | 'completed' | 'break' | 'overtime',
           isOvertime: elapsed > 480, // 8 hours
           requiresBreak: elapsed > 360, // 6 hours
         };

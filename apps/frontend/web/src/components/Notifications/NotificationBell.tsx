@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, CheckCircle, Clock, AlertTriangle, Info, ExternalLink } from 'lucide-react';
-import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useMarkAllNotificationsRead, type Notification } from '@/hooks/useNotifications';
+import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useNotifications';
+import { Notification } from '@/types';
 import { useLocation, useParams } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -37,7 +38,8 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications and unread count
-  const { data: unreadCount = 0 } = useUnreadNotificationCount();
+  const { data: unreadCountData } = useUnreadNotificationCount();
+  const unreadCount = typeof unreadCountData === 'number' ? unreadCountData : (unreadCountData as any)?.count || 0;
   const { data: notifications = [], isLoading } = useNotifications({ 
     status: 'unread', 
     limit: 5 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { oauth2Client } from '../services/OAuth2Client';
+import { UserData } from '@/types';
 import { 
   User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
@@ -75,7 +76,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   
-  const { data: user } = useQuery({ queryKey: ["/api/auth/session"] });
+  const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   const [location, navigate] = useLocation();
 
   // Estrai tenant dal path URL per il context
