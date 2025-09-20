@@ -1,21 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-
-export interface Notification {
-  id: string;
-  tenantId: string;
-  targetUserId: string;
-  type: 'hr_request' | 'system' | 'custom';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  message: string;
-  url?: string;
-  status: 'read' | 'unread';
-  data: Record<string, any>;
-  expiresAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Notification, QueryResult } from '@/types';
 
 export interface NotificationPreference {
   id: string;
@@ -43,7 +28,7 @@ export function useNotifications(filters?: {
   priority?: string;
   limit?: number;
   offset?: number;
-}) {
+}): QueryResult<Notification[]> {
   const queryParams = { 
     status: filters?.status, 
     type: filters?.type, 
@@ -52,20 +37,20 @@ export function useNotifications(filters?: {
     offset: filters?.offset 
   };
   
-  return useQuery({
+  return useQuery<Notification[]>({
     queryKey: ['/api/notifications', queryParams],
     // Use default queryFn from queryClient - no custom queryFn needed
     refetchInterval: 30000, // Refetch every 30 seconds
-  });
+  }) as QueryResult<Notification[]>;
 }
 
 // Hook for fetching unread notification count
-export function useUnreadNotificationCount() {
-  return useQuery({
+export function useUnreadNotificationCount(): QueryResult<{count: number}> {
+  return useQuery<{count: number}>({
     queryKey: ['/api/notifications/unread-count'],
     // Use default queryFn from queryClient - no custom queryFn needed
     refetchInterval: 15000, // Refetch every 15 seconds for real-time updates
-  });
+  }) as QueryResult<{count: number}>;
 }
 
 // Hook for marking notification as read

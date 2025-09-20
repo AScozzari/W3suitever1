@@ -1,39 +1,7 @@
 import { useQuery, useMutation, useInfiniteQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-
-// Types based on backend schema
-export interface HRRequest {
-  id: string;
-  tenantId: string;
-  requesterId: string;
-  category: 'leave' | 'schedule' | 'other' | 'italian_legal' | 'family' | 'professional_development' | 
-           'wellness_health' | 'remote_work' | 'technology_support';
-  type: 'vacation' | 'sick' | 'fmla' | 'parental' | 'bereavement' | 'personal' | 'religious' | 'military' | 
-        'jury_duty' | 'medical_appt' | 'emergency' | 'shift_swap' | 'time_change' | 'flex_hours' | 'wfh' | 'overtime' |
-        // Italian-Specific Request Types
-        'marriage_leave' | 'maternity_leave' | 'paternity_leave' | 'parental_leave' | 'breastfeeding_leave' |
-        'law_104_leave' | 'study_leave' | 'rol_leave' | 'electoral_leave' | 'bereavement_extended' |
-        // Modern 2024 Request Types
-        'remote_work_request' | 'equipment_request' | 'training_request' | 'certification_request' |
-        'sabbatical_request' | 'sabbatical_unpaid' | 'wellness_program' | 'mental_health_support' |
-        'gym_membership' | 'financial_counseling' | 'pet_insurance' | 'ergonomic_assessment' |
-        'vpn_access' | 'internet_stipend' | 'mobile_allowance' | 'conference_attendance' |
-        'mentorship_request' | 'skill_assessment' | 'career_development' | 'experience_rewards' |
-        'volunteer_leave' | 'donation_leave';
-  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled';
-  title: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  priority: 'normal' | 'high' | 'urgent';
-  payload?: Record<string, any>;
-  attachments?: string[];
-  currentApproverId?: string;
-  submittedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { HRRequest, QueryResult, extractHRRequests } from '@/types';
 
 export interface HRRequestComment {
   id: string;
@@ -89,7 +57,7 @@ export interface CreateHRRequestData {
 }
 
 // Hook to get HR requests with filters and pagination
-export function useHRRequests(filters?: HRRequestFilters) {
+export function useHRRequests(filters?: HRRequestFilters): QueryResult<HRRequest[]> {
   const params = new URLSearchParams();
   
   if (filters) {
@@ -103,20 +71,21 @@ export function useHRRequests(filters?: HRRequestFilters) {
   const queryString = params.toString();
   const url = queryString ? `/api/hr/requests?${queryString}` : '/api/hr/requests';
   
-  return useQuery({
+  return useQuery<HRRequest[]>({
     queryKey: [url],
     // Use default queryFn - no custom queryFn needed
     staleTime: 30000, // 30 seconds
-  });
+    select: (data) => extractHRRequests(data)
+  }) as QueryResult<HRRequest[]>;
 }
 
 // Hook to get a single HR request by ID
-export function useHRRequest(id: string) {
-  return useQuery({
+export function useHRRequest(id: string): QueryResult<HRRequest> {
+  return useQuery<HRRequest>({
     queryKey: [`/api/hr/requests/${id}`],
     // Use default queryFn - no custom queryFn needed
     enabled: !!id,
-  });
+  }) as QueryResult<HRRequest>;
 }
 
 // Hook to get HR request comments

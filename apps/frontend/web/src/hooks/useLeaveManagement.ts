@@ -1,22 +1,23 @@
 // Leave Management Hook - Custom hooks for leave operations
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { leaveService, LeaveRequest, LeaveBalance, LeavePolicies, TeamCalendarEvent, LeaveStatistics } from '@/services/leaveService';
+import { leaveService, LeavePolicies, TeamCalendarEvent, LeaveStatistics } from '@/services/leaveService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { LeaveRequest, EmployeeBalance, QueryResult } from '@/types';
 import { useState, useEffect, useMemo } from 'react';
 
 // Hook for leave balance
-export function useLeaveBalance(userId?: string) {
+export function useLeaveBalance(userId?: string): QueryResult<EmployeeBalance> {
   const { user } = useAuth();
   const targetUserId = userId || (user && typeof user === 'object' && 'id' in user ? (user as any).id : undefined);
   
-  return useQuery({
+  return useQuery<EmployeeBalance>({
     queryKey: ['/api/hr/leave/balance', targetUserId],
     queryFn: () => leaveService.getBalance(targetUserId!),
     enabled: !!targetUserId,
     staleTime: 5 * 60 * 1000 // 5 minutes
-  });
+  }) as QueryResult<EmployeeBalance>;
 }
 
 // Hook for leave requests

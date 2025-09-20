@@ -1,44 +1,24 @@
 // useUsers Hook - Employee/User Data Management
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from './use-toast';
-
-// User/Employee interface based on the w3suite schema
-interface User {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  profileImageUrl?: string;
-  role?: string;
-  storeId?: string;
-  phone?: string;
-  position?: string;
-  department?: string;
-  hireDate?: string;
-  contractType?: string;
-  status: 'attivo' | 'sospeso' | 'off-boarding';
-  createdAt: string;
-  updatedAt: string;
-  lastLoginAt?: string;
-  tenantId: string;
-}
+import { User, QueryResult } from '@/types';
 
 // Hook to fetch all users for current tenant
-export function useUsers(filters?: any) {
-  return useQuery({
+export function useUsers(filters?: any): QueryResult<User[]> {
+  return useQuery<User[]>({
     queryKey: ['/api/users', filters],
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchInterval: 1000 * 60 * 10, // Refresh every 10 minutes
-  });
+  }) as QueryResult<User[]>;
 }
 
-// Hook to fetch single user by ID
-export function useUser(userId: string) {
-  return useQuery({
+// Hook to fetch single user by ID  
+export function useUser(userId: string): QueryResult<User> {
+  return useQuery<User>({
     queryKey: ['/api/users', userId],
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+  }) as QueryResult<User>;
 }
 
 // Hook to create a new user
