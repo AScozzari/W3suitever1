@@ -7543,6 +7543,392 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== UNIVERSAL APPROVAL SYSTEM API ====================
+  
+  // Get user permissions for RBAC
+  app.get('/api/users/me/permissions', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'EMPLOYEE';
+      const tenantId = req.user?.tenantId;
+      
+      if (!userId || !tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Map role to permissions (extendible for fine-grained RBAC)
+      const rolePermissions: Record<string, string[]> = {
+        ADMIN: [
+          'hr.workforce.view', 'hr.workforce.edit', 'hr.workforce.manage',
+          'hr.approvals.view', 'hr.approvals.approve', 'hr.approvals.configure',
+          'hr.analytics.view', 'hr.analytics.export', 'hr.analytics.configure',
+          'hr.documents.view', 'hr.documents.upload', 'hr.documents.manage',
+          'hr.admin.configure', 'hr.admin.workflows', 'hr.admin.rbac',
+          'hr.timetracking.read', 'hr.requests.view.all', 'hr.requests.approve'
+        ],
+        HR_MANAGER: [
+          'hr.workforce.view', 'hr.workforce.edit',
+          'hr.approvals.view', 'hr.approvals.approve',
+          'hr.analytics.view', 'hr.analytics.export',
+          'hr.documents.view', 'hr.documents.upload',
+          'hr.timetracking.read', 'hr.requests.view.all', 'hr.requests.approve'
+        ],
+        STORE_MANAGER: [
+          'hr.workforce.view',
+          'hr.approvals.view', 'hr.approvals.approve',
+          'hr.analytics.view',
+          'hr.timetracking.read', 'hr.requests.view.team', 'hr.requests.approve'
+        ],
+        TEAM_LEADER: [
+          'hr.workforce.view',
+          'hr.approvals.view',
+          'hr.timetracking.read', 'hr.requests.view.team'
+        ],
+        EMPLOYEE: [
+          'hr.requests.view.self', 'hr.timetracking.read'
+        ]
+      };
+      
+      const permissions = rolePermissions[userRole] || rolePermissions.EMPLOYEE;
+      
+      res.json({
+        userId,
+        role: userRole,
+        permissions,
+        tenantId
+      });
+    } catch (error) {
+      console.error('Get permissions error:', error);
+      res.status(500).json({ error: 'Failed to get permissions' });
+    }
+  });
+  
+  // Universal Requests API - Service-agnostic approval system
+  app.get('/api/universal-requests', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'EMPLOYEE';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const { serviceType, status, priority } = req.query;
+      
+      // For demo, return mock universal requests
+      const mockRequests = [
+        {
+          id: '1',
+          serviceType: serviceType || 'hr',
+          requestType: 'vacation',
+          title: 'Richiesta Ferie Estive',
+          description: 'Richiesta ferie dal 15 al 30 luglio',
+          requesterId: userId,
+          requesterName: 'Mario Rossi',
+          status: 'pending',
+          priority: 'normal',
+          currentApproverId: userId,
+          approvalLevel: 1,
+          metadata: { days: 15, type: 'vacation' },
+          createdAt: new Date('2024-01-10'),
+          updatedAt: new Date('2024-01-10')
+        },
+        {
+          id: '2',
+          serviceType: serviceType || 'hr',
+          requestType: 'expense',
+          title: 'Rimborso Spese Viaggio',
+          description: 'Rimborso trasferta Milano',
+          requesterId: userId,
+          requesterName: 'Luigi Verdi',
+          status: 'pending',
+          priority: 'high',
+          currentApproverId: userId,
+          approvalLevel: 1,
+          metadata: { amount: 350.50, currency: 'EUR' },
+          createdAt: new Date('2024-01-09'),
+          updatedAt: new Date('2024-01-09')
+        },
+        {
+          id: '3',
+          serviceType: serviceType || 'hr',
+          requestType: 'training',
+          title: 'Corso Formazione Leadership',
+          description: 'Richiesta partecipazione corso leadership',
+          requesterId: userId,
+          requesterName: 'Anna Bianchi',
+          status: 'approved',
+          priority: 'normal',
+          approvalLevel: 2,
+          metadata: { cost: 1200, duration: '3 days' },
+          createdAt: new Date('2024-01-08'),
+          updatedAt: new Date('2024-01-09')
+        }
+      ];
+      
+      // Filter by status if provided
+      let filtered = mockRequests;
+      if (status) {
+        filtered = filtered.filter(r => r.status === status);
+      }
+      if (priority) {
+        filtered = filtered.filter(r => r.priority === priority);
+      }
+      
+      res.json(filtered);
+    } catch (error) {
+      console.error('Get universal requests error:', error);
+      res.status(500).json({ error: 'Failed to get universal requests' });
+    }
+  });
+  
+  // Approve/Reject Universal Request
+  app.post('/api/universal-requests/:id/approve', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = req.params.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const { action, comments } = req.body;
+      
+      if (!action || !['approve', 'reject'].includes(action)) {
+        return res.status(400).json({ error: 'Invalid action' });
+      }
+      
+      // Mock approval response
+      res.json({
+        success: true,
+        requestId,
+        action,
+        processedBy: userId,
+        processedAt: new Date(),
+        comments
+      });
+    } catch (error) {
+      console.error('Process universal request error:', error);
+      res.status(500).json({ error: 'Failed to process request' });
+    }
+  });
+  
+  // Bulk Process Universal Requests
+  app.post('/api/universal-requests/bulk', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const { requestIds, action } = req.body;
+      
+      if (!Array.isArray(requestIds) || requestIds.length === 0) {
+        return res.status(400).json({ error: 'Request IDs required' });
+      }
+      
+      if (!action || !['approve', 'reject', 'delegate'].includes(action)) {
+        return res.status(400).json({ error: 'Invalid action' });
+      }
+      
+      // Mock bulk response
+      res.json({
+        success: true,
+        processed: requestIds.length,
+        action,
+        processedBy: userId,
+        processedAt: new Date()
+      });
+    } catch (error) {
+      console.error('Bulk process error:', error);
+      res.status(500).json({ error: 'Failed to process bulk requests' });
+    }
+  });
+  
+  // Get Organizational Structure
+  app.get('/api/organizational-structure', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Mock organizational structure
+      const structure = [
+        {
+          id: '1',
+          nodeType: 'company',
+          name: 'WindTre S.p.A.',
+          parentId: null,
+          managerId: null,
+          metadata: {
+            approvalLimit: 50000,
+            delegationEnabled: true,
+            autoApproveRules: []
+          }
+        },
+        {
+          id: '2',
+          nodeType: 'division',
+          name: 'HR Division',
+          parentId: '1',
+          managerId: 'manager-1',
+          metadata: {
+            approvalLimit: 10000,
+            delegationEnabled: true,
+            autoApproveRules: ['vacation_under_3_days']
+          }
+        },
+        {
+          id: '3',
+          nodeType: 'department',
+          name: 'Recruiting Department',
+          parentId: '2',
+          managerId: 'manager-2',
+          metadata: {
+            approvalLimit: 5000,
+            delegationEnabled: false,
+            autoApproveRules: []
+          }
+        }
+      ];
+      
+      res.json(structure);
+    } catch (error) {
+      console.error('Get org structure error:', error);
+      res.status(500).json({ error: 'Failed to get organizational structure' });
+    }
+  });
+  
+  // Get/Manage Approval Workflows
+  app.get('/api/approval-workflows', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Mock approval workflows
+      const workflows = [
+        {
+          id: '1',
+          serviceType: 'hr',
+          requestType: 'vacation',
+          name: 'Workflow Approvazione Ferie',
+          levels: [
+            { level: 1, role: 'TEAM_LEADER', escalationTime: 24 },
+            { level: 2, role: 'HR_MANAGER', escalationTime: 48 }
+          ],
+          isActive: true
+        },
+        {
+          id: '2',
+          serviceType: 'finance',
+          requestType: 'expense',
+          name: 'Workflow Rimborsi Spese',
+          levels: [
+            { level: 1, role: 'STORE_MANAGER', conditions: { maxAmount: 500 } },
+            { level: 2, role: 'AREA_MANAGER', conditions: { maxAmount: 2000 } },
+            { level: 3, role: 'ADMIN', escalationTime: 72 }
+          ],
+          isActive: true
+        },
+        {
+          id: '3',
+          serviceType: 'it',
+          requestType: 'equipment',
+          name: 'Workflow Richiesta Attrezzature',
+          levels: [
+            { level: 1, role: 'IT_MANAGER', escalationTime: 24 }
+          ],
+          isActive: true
+        }
+      ];
+      
+      const { serviceType } = req.query;
+      if (serviceType) {
+        res.json(workflows.filter(w => w.serviceType === serviceType));
+      } else {
+        res.json(workflows);
+      }
+    } catch (error) {
+      console.error('Get workflows error:', error);
+      res.status(500).json({ error: 'Failed to get workflows' });
+    }
+  });
+  
+  // Create/Update Approval Workflow
+  app.post('/api/approval-workflows', tenantMiddleware, rbacMiddleware, requirePermission('hr.admin.workflows'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const workflow = req.body;
+      
+      // Mock create/update response
+      res.json({
+        ...workflow,
+        id: workflow.id || `workflow-${Date.now()}`,
+        createdBy: userId,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    } catch (error) {
+      console.error('Save workflow error:', error);
+      res.status(500).json({ error: 'Failed to save workflow' });
+    }
+  });
+  
+  // HR Metrics Real-time API
+  app.get('/api/hr/metrics/realtime', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Get real metrics from users table
+      const [userStats] = await db
+        .select({
+          totalEmployees: sql<number>`count(*)`,
+          activeEmployees: sql<number>`count(case when status = 'active' then 1 end)`,
+          avgTenure: sql<number>`avg(extract(day from now() - created_at) / 365.0)`
+        })
+        .from(users)
+        .where(eq(users.tenantId, tenantId));
+      
+      // Calculate additional metrics
+      const metrics = {
+        totalEmployees: userStats?.totalEmployees || 0,
+        activeEmployees: userStats?.activeEmployees || 0,
+        avgTenure: Math.round((userStats?.avgTenure || 0) * 10) / 10,
+        avgProcessingTime: 4.5, // Mock value in hours
+        complianceRate: 96.5, // Mock percentage
+        pendingRequests: 12, // Mock count
+        approvedToday: 8, // Mock count
+        rejectedToday: 2, // Mock count
+        escalations: 3, // Mock count
+        slaCompliance: 94.2 // Mock percentage
+      };
+      
+      res.json(metrics);
+    } catch (error) {
+      console.error('Get HR metrics error:', error);
+      res.status(500).json({ error: 'Failed to get HR metrics' });
+    }
+  });
+
   // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
   // Mount the hierarchy system router with authentication
   app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
