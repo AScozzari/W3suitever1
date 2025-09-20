@@ -1,472 +1,1056 @@
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useTabRouter } from '@/hooks/useTabRouter';
+import { useTenant } from '@/contexts/TenantContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/hooks/useUsers';
+import { useNotifications } from '@/hooks/useNotifications';
+import { getDisplayUser, getDisplayLeaveBalance, extractHRRequests } from '@/types';
+import Layout from '@/components/Layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Calendar,
-  Clock,
-  FileText,
-  Users,
-  Bell,
-  Settings,
-  Home,
-  TrendingUp,
-  Briefcase,
-  DollarSign,
-  Heart,
-  Plane,
-  Receipt,
-  UserCheck,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Timer,
-  CalendarDays,
-  ClipboardList,
-  Upload
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar } from '@/components/ui/calendar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+  Clock, FileText, GraduationCap,
+  Download, Target, Sun,
+  Home, Bell, Plus, User, CheckCircle, ClipboardList,
+  LogIn, LogOut, Play, Pause, Smartphone, MapPin, Wifi, QrCode,
+  BarChart3, Activity, Coffee, Shield, RefreshCw, AlertCircle,
+  Calendar as CalendarIcon, Edit3, Mail, Phone, Building, Save,
+  Filter, Eye, Search, Award, BookOpen, TrendingUp, Star,
+  Bookmark, PlayCircle, Lock, Settings, Camera, Briefcase,
+  ChevronRight, MessageSquare, Users2, PieChart, Calendar1,
+  Globe, Palette, Key, History, Smartphone as SmartphoneIcon,
+  Share2, Upload
 } from 'lucide-react';
+import { format, addDays } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { Link } from 'wouter';
+import ClockWidget from '@/components/TimeTracking/ClockWidget';
+import TimeAttendancePage from '@/components/TimeTracking/TimeAttendancePage';
+import HRRequestWizard from '@/components/HR/HRRequestWizard';
+import HRRequestDetails from '@/components/HR/HRRequestDetails';
+import PayslipManager from '@/components/Documents/PayslipManager';
+import DocumentGrid from '@/components/Documents/DocumentGrid';
+import DocumentCategories from '@/components/Documents/DocumentCategories';
+import DocumentUploadModal from '@/components/Documents/DocumentUploadModal';
+import DocumentViewer from '@/components/Documents/DocumentViewer';
+import { LeaveBalanceWidget } from '@/components/Leave/LeaveBalanceWidget';
+import { LeaveCalendar } from '@/components/Leave/LeaveCalendar';
+import { useCurrentSession, useTimeBalance } from '@/hooks/useTimeTracking';
+import { useHRRequests, HRRequestFilters } from '@/hooks/useHRRequests';
+import { useLeaveBalance } from '@/hooks/useLeaveManagement';
+import { useDocumentDrive } from '@/hooks/useDocumentDrive';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+// Tab configuration for Employee Dashboard
+const EMPLOYEE_TABS = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    icon: Home,
+    description: 'Dashboard personale e notifiche'
+  },
+  {
+    id: 'time-attendance',
+    label: 'Time & Attendance', 
+    icon: Clock,
+    description: 'Timbrature e calendario eventi'
+  },
+  {
+    id: 'requests',
+    label: 'My Requests',
+    icon: ClipboardList,
+    description: 'Richieste ferie e permessi'
+  },
+  {
+    id: 'documents',
+    label: 'Documents',
+    icon: FileText,
+    description: 'Buste paga e documenti'
+  },
+  {
+    id: 'performance',
+    label: 'My Performance',
+    icon: Target,
+    description: 'Goals e recensioni personali'
+  },
+  {
+    id: 'training',
+    label: 'Training',
+    icon: GraduationCap,
+    description: 'Corsi e certificazioni'
+  },
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: User,
+    description: 'Impostazioni personali'
+  }
+];
+
+// SECURITY: Valid tabs for Employee Dashboard - prevents malformed deep links
+const VALID_EMPLOYEE_TABS = ['overview', 'time-attendance', 'requests', 'documents', 'performance', 'training', 'profile'];
+const VALID_EMPLOYEE_SECTIONS = ['pending', 'approved', 'rejected']; // for requests tab
 
 export default function MyPortal() {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('overview');
-  
-  // Fetch current user data
-  const { data: userData } = useQuery({
-    queryKey: ['/api/users/me'],
-    enabled: true
+  // Tab Router Hook with security validation - seguendo pattern Settings
+  const { activeTab, setTab, getTabUrl } = useTabRouter({
+    defaultTab: 'overview',
+    validTabs: VALID_EMPLOYEE_TABS,
+    validSections: VALID_EMPLOYEE_SECTIONS
   });
+
+  // Use proper tenant context instead of URL parsing
+  const { currentTenant } = useTenant();
   
-  // Fetch employee balance (ferie, permessi, etc.)
-  const { data: balanceData } = useQuery({
-    queryKey: ['/api/hr/balances/me'],
-    enabled: true
-  });
+  // Authentication and user data
+  const { user: authUser, isAuthenticated } = useAuth();
+  const userId = authUser?.id;
   
-  // Fetch my requests (universal system with serviceType='hr')
-  const { data: myRequests } = useQuery({
-    queryKey: ['/api/universal-requests', { serviceType: 'hr', requesterId: 'me' }],
-    enabled: true
-  });
+  // Real data queries with hierarchical cache keys - REVERTED TO STABLE VERSION
+  const { data: userData, isLoading: userLoading, error: userError } = useUser(userId || '');
+  const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
+  const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
+  const { data: myRequestsData, isLoading: requestsLoading } = useHRRequests({ status: 'pending', limit: 5 });
+  const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
+  const { documents, isLoading: documentsLoading } = useDocumentDrive();
   
-  // Fetch team calendar
-  const { data: teamCalendar } = useQuery({
-    queryKey: ['/api/hr/team-calendar'],
-    enabled: true
-  });
+  // Modal states with proper types - discriminated union to eliminate any
+  type ModalState = 
+    | { open: false; data: null }
+    | { open: true; data: Record<string, unknown> };
+  const [hrRequestModal, setHrRequestModal] = useState<ModalState>({ open: false, data: null });
+  const [documentViewerModal, setDocumentViewerModal] = useState<ModalState>({ open: false, data: null });
+  const [profileEditModal, setProfileEditModal] = useState<ModalState>({ open: false, data: null });
   
-  // Fetch current time tracking
-  const { data: timeTracking } = useQuery({
-    queryKey: ['/api/hr/time-tracking/current'],
-    enabled: true
-  });
+  // Stati principali
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isClockedIn, setIsClockedIn] = useState(false);
+  const [clockInTime, setClockInTime] = useState<Date | null>(null);
+  const [breakTime, setBreakTime] = useState(0);
+  const [isOnBreak, setIsOnBreak] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
-  // Clock in/out mutation
-  const clockMutation = useMutation({
-    mutationFn: async (action: 'in' | 'out') => {
-      return apiRequest('/api/hr/time-tracking/clock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, method: 'digital' })
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/time-tracking/current'] });
-      toast({
-        title: 'Timbratura registrata',
-        description: 'La tua timbratura è stata registrata con successo'
-      });
+  // Extract requests from response using typed helper
+  const myRequests = extractHRRequests(myRequestsData);
+  
+  // Loading states
+  const isLoading = userLoading || leaveLoading || notificationsLoading || requestsLoading;
+  
+  // Display user info using typed helper
+  const displayUser = getDisplayUser(userData, authUser);
+  
+  // Display leave balance using typed helper
+  const displayLeaveBalance = getDisplayLeaveBalance(leaveBalance);
+
+  // Performance data - Remove mock data for production readiness
+  const [performance] = useState<Array<never>>([]);
+
+  // Training data - Remove mock data for production readiness
+  const [training] = useState<Array<never>>([]);
+
+  // Update current time
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Apply loaded class to body to trigger WindTre gradient background
+  useEffect(() => {
+    // Add loaded class after component mount to prevent flash
+    const timeoutId = setTimeout(() => {
+      document.body.classList.add('loaded');
+    }, 100); // Small delay to ensure white background is rendered first
+    
+    return () => {
+      clearTimeout(timeoutId);
+      document.body.classList.remove('loaded');
+    };
+  }, []);
+
+  // Format time utility
+  const formatTime = (date: Date) => {
+    return format(date, 'HH:mm:ss');
+  };
+
+  // Handle HR Request
+  const handleHRRequestSuccess = () => {
+    setHrRequestModal({ open: false as false, data: null });
+    // Refresh requests data
+  };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'bg-green-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'rejected': return 'bg-red-500';
+      case 'in_progress': return 'bg-blue-500';
+      case 'completed': return 'bg-green-500';
+      default: return 'bg-gray-500';
     }
-  });
+  };
 
-  // Quick Actions
-  const quickActions = [
-    { 
-      icon: Plane, 
-      label: 'Richiedi Ferie', 
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      onClick: () => console.log('Open vacation request')
-    },
-    { 
-      icon: Heart, 
-      label: 'Segnala Malattia', 
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      onClick: () => console.log('Open sick leave')
-    },
-    { 
-      icon: Receipt, 
-      label: 'Nota Spese', 
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      onClick: () => console.log('Open expense report')
-    },
-    { 
-      icon: FileText, 
-      label: 'Carica Documento', 
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      onClick: () => console.log('Upload document')
+  // Get priority color
+  const getPriorityColor = (type: string) => {
+    switch (type) {
+      case 'Obbligatorio': return 'bg-red-100 text-red-800';
+      case 'Sviluppo Carriera': return 'bg-blue-100 text-blue-800';
+      case 'Volontario': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  ];
-
-  // Balance cards data
-  const balanceCards = [
-    {
-      title: 'Ferie',
-      value: balanceData?.vacation || 0,
-      total: 22,
-      unit: 'giorni',
-      color: 'bg-blue-500'
-    },
-    {
-      title: 'Permessi',
-      value: balanceData?.permits || 0,
-      total: 104,
-      unit: 'ore',
-      color: 'bg-green-500'
-    },
-    {
-      title: 'ROL',
-      value: balanceData?.rol || 0,
-      total: 8,
-      unit: 'giorni',
-      color: 'bg-purple-500'
-    },
-    {
-      title: 'Straordinari',
-      value: balanceData?.overtime || 0,
-      total: null,
-      unit: 'ore',
-      color: 'bg-orange-500'
-    }
-  ];
-
-  const renderOverview = () => (
-    <div className="space-y-6">
-      {/* Welcome Card */}
-      <Card className="bg-gradient-to-r from-orange-50 to-purple-50 border-0">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Benvenuto, {userData?.firstName || 'Utente'}!
-              </h2>
-              <p className="text-gray-600 mt-1">
-                {userData?.role || 'Dipendente'} - {userData?.department || 'Team'}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">
-                {new Date().toLocaleDateString('it-IT', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </p>
-              <div className="mt-2">
-                {timeTracking?.clockedIn ? (
-                  <Badge className="bg-green-100 text-green-800">
-                    <Clock className="w-3 h-3 mr-1" />
-                    In servizio dalle {timeTracking.clockInTime}
-                  </Badge>
-                ) : (
-                  <Badge className="bg-gray-100 text-gray-800">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Non in servizio
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Azioni Rapide</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickActions.map((action, index) => (
-            <button
-              key={index}
-              onClick={action.onClick}
-              className={`${action.bgColor} p-6 rounded-xl hover:shadow-md transition-all duration-200 text-center group`}
-              data-testid={`quick-action-${index}`}
-            >
-              <action.icon className={`w-8 h-8 ${action.color} mx-auto mb-2 group-hover:scale-110 transition-transform`} />
-              <span className={`text-sm font-medium ${action.color}`}>
-                {action.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Balance Cards */}
-      <div>
-        <h3 className="text-lg font-semibold mb-4">I Miei Saldi</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {balanceCards.map((card, index) => (
-            <Card key={index} className="overflow-hidden">
-              <div className={`h-2 ${card.color}`} />
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">{card.title}</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold">{card.value}</span>
-                    <span className="text-sm text-gray-500">
-                      {card.total && `/ ${card.total}`} {card.unit}
-                    </span>
-                  </div>
-                  {card.total && (
-                    <Progress 
-                      value={(card.value / card.total) * 100} 
-                      className="h-2"
-                    />
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Requests */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Le Mie Richieste Recenti</span>
-            <Button variant="ghost" size="sm">
-              Vedi tutte
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {myRequests && myRequests.length > 0 ? (
-              myRequests.slice(0, 5).map((request: any) => (
-                <div 
-                  key={request.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-white rounded-lg">
-                      {request.requestType === 'vacation' && <Plane className="w-4 h-4 text-blue-600" />}
-                      {request.requestType === 'sick_leave' && <Heart className="w-4 h-4 text-red-600" />}
-                      {request.requestType === 'permit' && <Clock className="w-4 h-4 text-orange-600" />}
-                      {request.requestType === 'expense' && <Receipt className="w-4 h-4 text-green-600" />}
-                    </div>
-                    <div>
-                      <p className="font-medium">{request.title || request.requestType}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(request.createdAt).toLocaleDateString('it-IT')}
-                        {request.startDate && ` • Dal ${new Date(request.startDate).toLocaleDateString('it-IT')}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {request.status === 'approved' && (
-                      <Badge className="bg-green-100 text-green-800">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Approvata
-                      </Badge>
-                    )}
-                    {request.status === 'pending' && (
-                      <Badge className="bg-yellow-100 text-yellow-800">
-                        <Timer className="w-3 h-3 mr-1" />
-                        In attesa
-                      </Badge>
-                    )}
-                    {request.status === 'rejected' && (
-                      <Badge className="bg-red-100 text-red-800">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Rifiutata
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <ClipboardList className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Nessuna richiesta recente</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderTimeTracking = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Timbratura</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Current Status */}
-        <div className="text-center py-8">
-          {timeTracking?.clockedIn ? (
-            <>
-              <div className="w-24 h-24 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-                <Clock className="w-12 h-12 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">In Servizio</h3>
-              <p className="text-gray-600 mb-6">
-                Entrata alle {timeTracking.clockInTime}
-              </p>
-              <Button 
-                size="lg"
-                variant="destructive"
-                onClick={() => clockMutation.mutate('out')}
-                disabled={clockMutation.isPending}
-                data-testid="clock-out-btn"
-              >
-                <Clock className="w-5 h-5 mr-2" />
-                Timbra Uscita
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                <Clock className="w-12 h-12 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Non in Servizio</h3>
-              <p className="text-gray-600 mb-6">
-                Pronto per iniziare la giornata?
-              </p>
-              <Button 
-                size="lg"
-                className="bg-gradient-to-r from-orange-500 to-purple-600"
-                onClick={() => clockMutation.mutate('in')}
-                disabled={clockMutation.isPending}
-                data-testid="clock-in-btn"
-              >
-                <Clock className="w-5 h-5 mr-2" />
-                Timbra Entrata
-              </Button>
-            </>
-          )}
-        </div>
-
-        {/* Today's Timeline */}
-        <div>
-          <h4 className="font-medium mb-4">Oggi</h4>
-          <div className="space-y-2">
-            {timeTracking?.todayEntries?.map((entry: any, index: number) => (
-              <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className={`w-2 h-2 rounded-full ${entry.type === 'in' ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-sm font-medium">{entry.time}</span>
-                <span className="text-sm text-gray-600">
-                  {entry.type === 'in' ? 'Entrata' : 'Uscita'}
-                </span>
-                <span className="text-xs text-gray-400 ml-auto">{entry.method}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  };
 
   return (
-    <Layout>
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Il Mio Portale</h1>
-          <p className="text-gray-600 mt-1">Gestisci le tue informazioni e richieste HR</p>
+    <Layout currentModule="employee" setCurrentModule={() => {}}>
+      {/* Header - Direttamente sullo sfondo come Settings */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: '700',
+          color: '#111827',
+          margin: '0 0 8px 0'
+        }} data-testid="text-dashboard-title">
+          Il mio Portale
+        </h1>
+        <div className="flex items-center justify-between mt-4">
+          <div></div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-500" data-testid="label-current-time">Ora corrente</p>
+              <p className="text-xl font-mono font-bold text-gray-900" data-testid="text-current-time">
+                {formatTime(currentTime)}
+              </p>
+            </div>
+            {userLoading ? (
+              <Skeleton className="h-12 w-12 rounded-full" />
+            ) : (
+              <Avatar className="h-12 w-12" data-testid="avatar-user">
+                <AvatarImage src={displayUser.foto || undefined} alt={`${displayUser.nome} ${displayUser.cognome}`} />
+                <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white" data-testid="avatar-fallback">
+                  {displayUser.nome[0]}{displayUser.cognome[0]}
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </div>
         </div>
+      </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">
-              <Home className="w-4 h-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="requests">
-              <ClipboardList className="w-4 h-4 mr-2" />
-              Richieste
-            </TabsTrigger>
-            <TabsTrigger value="timetracking">
-              <Clock className="w-4 h-4 mr-2" />
-              Presenze
-            </TabsTrigger>
-            <TabsTrigger value="documents">
-              <FileText className="w-4 h-4 mr-2" />
-              Documenti
-            </TabsTrigger>
-            <TabsTrigger value="team">
-              <Users className="w-4 h-4 mr-2" />
-              Il Mio Team
-            </TabsTrigger>
-          </TabsList>
+      {/* Tabs Container - Glassmorphism come Settings */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          background: 'rgba(243, 244, 246, 0.5)',
+          borderRadius: '12px',
+          padding: '4px',
+          gap: '4px',
+          flexWrap: 'wrap'
+        }}>
+          {EMPLOYEE_TABS.map((tab) => {
+            const IconComponent = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={getTabUrl(tab.id)}
+                onClick={() => setTab(tab.id)}
+                style={{
+                  flex: '1 1 auto',
+                  minWidth: '120px',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                    : 'transparent',
+                  color: isActive ? 'white' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px 20px',
+                  fontSize: '14px',
+                  fontWeight: isActive ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isActive 
+                    ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                    : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  textAlign: 'center',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  textDecoration: 'none'
+                }}
+                data-testid={`tab-${tab.id}`}
+              >
+                <IconComponent size={16} />
+                {tab.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
-          <TabsContent value="overview" className="mt-6">
-            {renderOverview()}
-          </TabsContent>
+      {/* Content Area - Direttamente sullo sfondo come Settings */}
+      <div>
+            {activeTab === 'overview' && (
+              <div className="space-y-6" data-testid="section-overview">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Welcome Card - WindTre Glass */}
+                  <Card className="lg:col-span-2 glass-card hover:shadow-xl transition-all duration-300">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Sun className="h-5 w-5 text-orange-500" />
+                        Benvenuto, {displayUser.nome}!
+                      </CardTitle>
+                      <CardDescription>
+                        {format(new Date(), 'EEEE d MMMM yyyy', { locale: it })}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {leaveLoading ? (
+                          <>
+                            <Skeleton className="h-24 rounded-lg" />
+                            <Skeleton className="h-24 rounded-lg" />
+                            <Skeleton className="h-24 rounded-lg" />
+                            <Skeleton className="h-24 rounded-lg" />
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg" data-testid="card-leave-balance">
+                              <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                              <p className="text-sm text-green-700 font-medium" data-testid="label-leave-remaining">Ferie Rimanenti</p>
+                              <p className="text-xl font-bold text-green-800" data-testid="text-leave-remaining">{displayLeaveBalance.ferieRimanenti}</p>
+                            </div>
+                            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg" data-testid="card-rol-balance">
+                              <Clock className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                              <p className="text-sm text-blue-700 font-medium" data-testid="label-rol-remaining">Permessi ROL</p>
+                              <p className="text-xl font-bold text-blue-800" data-testid="text-rol-remaining">{displayLeaveBalance.permessiRimanenti}</p>
+                            </div>
+                            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg" data-testid="card-performance">
+                              <Target className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                              <p className="text-sm text-purple-700 font-medium" data-testid="label-performance">Performance</p>
+                              <p className="text-xl font-bold text-purple-800" data-testid="text-performance-score">85%</p>
+                            </div>
+                            <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg" data-testid="card-training">
+                              <GraduationCap className="h-6 w-6 text-orange-600 mx-auto mb-2" />
+                              <p className="text-sm text-orange-700 font-medium" data-testid="label-training">Formazione</p>
+                              <p className="text-xl font-bold text-orange-800" data-testid="text-training-progress">2/3</p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-          <TabsContent value="requests" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Le Mie Richieste</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Gestione richieste in sviluppo...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="timetracking" className="mt-6">
-            {renderTimeTracking()}
-          </TabsContent>
-
-          <TabsContent value="documents" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>I Miei Documenti</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Upload className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Repository documenti in sviluppo...</p>
+                  {/* Quick Actions - WindTre Glass */}
+                  <Card className="glass-card hover:shadow-xl transition-all duration-300">
+                    <CardHeader>
+                      <CardTitle data-testid="section-quick-actions">Azioni Rapide</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Button 
+                        onClick={() => setTab('requests')}
+                        className="w-full justify-start bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                        data-testid="button-quick-request"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nuova Richiesta
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setTab('documents')}
+                        className="w-full justify-start"
+                        data-testid="button-quick-documents"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Scarica Buste Paga
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setTab('time-attendance')}
+                        className="w-full justify-start"
+                        data-testid="button-quick-timesheet"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Timbrature
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="team" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Il Mio Team</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {teamCalendar?.teamMembers?.map((member: any) => (
-                    <div key={member.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {member.firstName?.[0]}{member.lastName?.[0]}
+                {/* Notifications - WindTre Glass */}
+                <Card className="glass-card hover:shadow-xl transition-all duration-300">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2" data-testid="section-notifications">
+                      <Bell className="h-5 w-5 text-orange-500" />
+                      Notifiche Recenti
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {notificationsLoading ? (
+                      <div className="space-y-3">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{member.firstName} {member.lastName}</p>
-                        <p className="text-sm text-gray-500">{member.role}</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {(Array.isArray(notifications) ? notifications : []).slice(0, 3).map((notification) => (
+                          <Alert key={notification.id} className="border-l-4 border-l-orange-500" data-testid={`item-notification-${notification.id}`}>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <AlertTitle className="text-sm font-medium" data-testid={`text-notification-title-${notification.id}`}>
+                                  {notification.title || notification.titolo}
+                                </AlertTitle>
+                                <AlertDescription className="text-xs text-gray-600 mt-1" data-testid={`text-notification-message-${notification.id}`}>
+                                  {notification.message || notification.messaggio}
+                                </AlertDescription>
+                              </div>
+                              <Badge variant={notification.status === 'read' || notification.letto ? 'secondary' : 'default'} className="ml-2" data-testid={`badge-notification-status-${notification.id}`}>
+                                {notification.status === 'read' || notification.letto ? 'Letto' : 'Nuovo'}
+                              </Badge>
+                            </div>
+                          </Alert>
+                        ))}
+                        {(!Array.isArray(notifications) || notifications.length === 0) && (
+                          <Alert>
+                            <AlertDescription className="text-gray-500 text-center">
+                              Nessuna notifica recente
+                            </AlertDescription>
+                          </Alert>
+                        )}
                       </div>
-                      <Badge variant={member.status === 'present' ? 'success' : 'secondary'}>
-                        {member.status === 'present' ? 'Presente' : 'Assente'}
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'time-attendance' && (
+              <div className="space-y-6" data-testid="section-time-attendance">
+                {/* COMPLETELY REDESIGNED HORIZONTAL TIME ATTENDANCE INTERFACE */}
+                
+                {/* HEADER - COMPACT */}
+                <Card className="glass-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-windtre-orange" />
+                        Sistema Timbratura Avanzato
+                      </div>
+                      <Badge variant="outline" className="glass-button">
+                        Multi-metodo: GPS, NFC, QR, Smart
                       </Badge>
-                    </div>
-                  ))}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+
+                {/* RESPONSIVE FLEXBOX LAYOUT - FULL HORIZONTAL UTILIZATION */}
+                <div className="flex flex-col xl:flex-row gap-6 w-full">
+                  {/* LEFT: ClockWidget (Mobile: Full Width, Desktop: 40%) */}
+                  <div className="w-full xl:w-[40%] xl:flex-none">
+                    <ClockWidget
+                      userId={displayUser.matricola}
+                      userName={`${displayUser.nome} ${displayUser.cognome}`.trim()}
+                      storeId="store-001" 
+                      storeName={displayUser.store}
+                      className="h-full"
+                      onClockIn={() => {
+                        // Refresh data after clock in
+                      }}
+                      onClockOut={() => {
+                        // Refresh data after clock out  
+                      }}
+                    />
+                  </div>
+                  
+                  {/* RIGHT: TimeAttendancePage (Mobile: Full Width, Desktop: 60%) */}
+                  <div className="w-full xl:w-[60%] xl:flex-1">
+                    <TimeAttendancePage
+                      userId={displayUser.matricola}
+                    />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+
+                {/* ALTERNATIVE VIEWS - HORIZONTAL TABS */}
+                <Card className="glass-card">
+                  <CardContent className="p-4">
+                    <Tabs defaultValue="riepilogo" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3" data-testid="tabs-time-tracking">
+                        <TabsTrigger value="riepilogo" data-testid="tab-summary">
+                          <BarChart3 className="h-4 w-4 mr-2" />
+                          Riepilogo
+                        </TabsTrigger>
+                        <TabsTrigger value="presenze" data-testid="tab-attendance">
+                          <Clock className="h-4 w-4 mr-2" />
+                          Presenze
+                        </TabsTrigger>
+                        <TabsTrigger value="turni" data-testid="tab-shifts">
+                          <Calendar1 className="h-4 w-4 mr-2" />
+                          Turni
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="riepilogo" className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <Card className="glass-card">
+                            <CardContent className="p-4 text-center">
+                              <ClipboardList className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">Ore di Lavoro</p>
+                              <p className="text-2xl font-bold text-gray-900" data-testid="text-work-hours">
+                                {currentSession?.totalHours || '0:00'}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card className="glass-card">
+                            <CardContent className="p-4 text-center">
+                              <Coffee className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">Pause</p>
+                              <p className="text-2xl font-bold text-gray-900" data-testid="text-break-time">
+                                {currentSession?.breakTime || '0:00'}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card className="glass-card">
+                            <CardContent className="p-4 text-center">
+                              <Activity className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">Status</p>
+                              <p className="text-lg font-semibold text-gray-900" data-testid="text-work-status">
+                                {currentSession?.status || 'Fuori Turno'}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card className="glass-card">
+                            <CardContent className="p-4 text-center">
+                              <Target className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">Produttività</p>
+                              <p className="text-2xl font-bold text-gray-900" data-testid="text-productivity">
+                                92%
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </TabsContent>
+                      
+                      <TabsContent value="presenze" className="space-y-4">
+                        <Card className="glass-card">
+                          <CardHeader>
+                            <CardTitle>Registro Presenze</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span className="font-medium">Oggi</span>
+                                <span className="text-green-600 font-semibold">8:30 - In corso</span>
+                              </div>
+                              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span className="font-medium">Ieri</span>
+                                <span className="text-gray-600">8:30 - 17:30</span>
+                              </div>
+                              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span className="font-medium">Mercoledì</span>
+                                <span className="text-gray-600">8:30 - 17:30</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                      
+                      <TabsContent value="turni" className="space-y-4">
+                        <Card className="glass-card">
+                          <CardHeader>
+                            <CardTitle>Turni Programmati</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                                <span className="font-medium">Oggi</span>
+                                <span className="text-blue-600 font-semibold">8:30 - 17:30</span>
+                              </div>
+                              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span className="font-medium">Domani</span>
+                                <span className="text-gray-600">8:30 - 17:30</span>
+                              </div>
+                              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <span className="font-medium">Sabato</span>
+                                <span className="text-gray-600">Riposo</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'requests' && (
+              <div className="space-y-6" data-testid="section-requests">
+                {/* Enhanced Requests Section with HR Request Wizard */}
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">Le mie Richieste</h2>
+                  <Button 
+                    onClick={() => setHrRequestModal({ open: true, data: {} })}
+                    className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                    data-testid="button-new-request"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuova Richiesta
+                  </Button>
+                </div>
+
+                {/* Request Status Filter */}
+                <div className="flex gap-4 mb-6">
+                  <Select defaultValue="all">
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filtra per stato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le richieste</SelectItem>
+                      <SelectItem value="pending">In attesa</SelectItem>
+                      <SelectItem value="approved">Approvate</SelectItem>
+                      <SelectItem value="rejected">Rifiutate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Requests Grid */}
+                <div className="grid gap-4">
+                  {requestsLoading ? (
+                    <>
+                      <Skeleton className="h-24 w-full" />
+                      <Skeleton className="h-24 w-full" />
+                      <Skeleton className="h-24 w-full" />
+                    </>
+                  ) : (
+                    <>
+                      {myRequests.length === 0 ? (
+                        <Card className="glass-card">
+                          <CardContent className="p-8 text-center">
+                            <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500">Nessuna richiesta presente</p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        myRequests.map((request) => (
+                          <Card key={request.id} className="glass-card hover:shadow-lg transition-all duration-200" data-testid={`card-request-${request.id}`}>
+                            <CardContent className="p-6">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="font-semibold text-lg" data-testid={`text-request-title-${request.id}`}>
+                                      {request.tipo}
+                                    </h3>
+                                    <Badge 
+                                      className={`${getStatusColor(request.stato)} text-white`}
+                                      data-testid={`badge-request-status-${request.id}`}
+                                    >
+                                      {request.stato}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-gray-600 mb-3" data-testid={`text-request-description-${request.id}`}>
+                                    {request.descrizione}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                                    <span data-testid={`text-request-date-${request.id}`}>
+                                      Creata: {format(new Date(request.dataCreazione), 'dd/MM/yyyy')}
+                                    </span>
+                                    {request.dataInizio && (
+                                      <span data-testid={`text-request-start-${request.id}`}>
+                                        Dal: {format(new Date(request.dataInizio), 'dd/MM/yyyy')}
+                                      </span>
+                                    )}
+                                    {request.dataFine && (
+                                      <span data-testid={`text-request-end-${request.id}`}>
+                                        Al: {format(new Date(request.dataFine), 'dd/MM/yyyy')}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Open request details
+                                  }}
+                                  data-testid={`button-view-request-${request.id}`}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* HR Request Modal */}
+                <Dialog 
+                  open={hrRequestModal.open} 
+                  onOpenChange={(open) => setHrRequestModal(open ? { open, data: {} } : { open: false, data: null })}
+                >
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Nuova Richiesta HR</DialogTitle>
+                      <DialogDescription>
+                        Compila il modulo per inviare una nuova richiesta
+                      </DialogDescription>
+                    </DialogHeader>
+                    {hrRequestModal.open && hrRequestModal.data && (
+                      <HRRequestWizard
+                        onSuccess={handleHRRequestSuccess}
+                        onCancel={() => setHrRequestModal({ open: false, data: null })}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+
+            {activeTab === 'documents' && (
+              <div className="space-y-6" data-testid="section-documents">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">I miei Documenti</h2>
+                  <Button 
+                    className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                    data-testid="button-upload-document"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Carica Documento
+                  </Button>
+                </div>
+
+                {/* Document Categories */}
+                <DocumentCategories onCategorySelect={(category) => {
+                  // Handle category selection
+                }} />
+
+                {/* Document Grid */}
+                <DocumentGrid
+                  documents={documents}
+                  isLoading={documentsLoading}
+                  onDocumentClick={(document) => {
+                    setDocumentViewerModal({ open: true, data: document });
+                  }}
+                />
+
+                {/* Payslip Manager */}
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-orange-500" />
+                      Buste Paga
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PayslipManager />
+                  </CardContent>
+                </Card>
+
+                {/* Document Viewer Modal */}
+                <Dialog 
+                  open={documentViewerModal.open} 
+                  onOpenChange={(open) => setDocumentViewerModal(open ? { open, data: documentViewerModal.data } : { open: false, data: null })}
+                >
+                  <DialogContent className="max-w-4xl max-h-[90vh]">
+                    {documentViewerModal.open && documentViewerModal.data && (
+                      <DocumentViewer
+                        document={documentViewerModal.data}
+                        onClose={() => setDocumentViewerModal({ open: false, data: null })}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+
+            {activeTab === 'performance' && (
+              <div className="space-y-6" data-testid="section-performance">
+                <h2 className="text-2xl font-bold text-gray-900">Le mie Performance</h2>
+                
+                {/* Performance Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="glass-card">
+                    <CardContent className="p-6 text-center">
+                      <Target className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Obiettivi Raggiunti</h3>
+                      <p className="text-3xl font-bold text-green-600" data-testid="text-goals-achieved">8/10</p>
+                      <p className="text-sm text-gray-500 mt-2">Questo trimestre</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="glass-card">
+                    <CardContent className="p-6 text-center">
+                      <TrendingUp className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Valutazione Media</h3>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-average-rating">4.2/5</p>
+                      <p className="text-sm text-gray-500 mt-2">Ultimi 6 mesi</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="glass-card">
+                    <CardContent className="p-6 text-center">
+                      <Award className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Riconoscimenti</h3>
+                      <p className="text-3xl font-bold text-orange-600" data-testid="text-recognitions">3</p>
+                      <p className="text-sm text-gray-500 mt-2">Quest'anno</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Current Goals */}
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Obiettivi Correnti</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {performance.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">Nessun obiettivo in corso</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Goals will be rendered here when data is available */}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'training' && (
+              <div className="space-y-6" data-testid="section-training">
+                <h2 className="text-2xl font-bold text-gray-900">Formazione e Sviluppo</h2>
+                
+                {/* Training Progress */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="glass-card">
+                    <CardContent className="p-6 text-center">
+                      <BookOpen className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Corsi Completati</h3>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-completed-courses">12</p>
+                      <p className="text-sm text-gray-500 mt-2">Quest'anno</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="glass-card">
+                    <CardContent className="p-6 text-center">
+                      <PlayCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">In Corso</h3>
+                      <p className="text-3xl font-bold text-green-600" data-testid="text-ongoing-courses">3</p>
+                      <p className="text-sm text-gray-500 mt-2">Corsi attivi</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="glass-card">
+                    <CardContent className="p-6 text-center">
+                      <Star className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Certificazioni</h3>
+                      <p className="text-3xl font-bold text-orange-600" data-testid="text-certifications">5</p>
+                      <p className="text-sm text-gray-500 mt-2">Ottenute</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Available Courses */}
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Corsi Disponibili</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {training.length === 0 ? (
+                      <div className="text-center py-8">
+                        <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">Nessun corso disponibile al momento</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Training courses will be rendered here when data is available */}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'profile' && (
+              <div className="space-y-6" data-testid="section-profile">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">Il mio Profilo</h2>
+                  <Button 
+                    onClick={() => setProfileEditModal({ open: true, data: {} })}
+                    variant="outline"
+                    data-testid="button-edit-profile"
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Modifica
+                  </Button>
+                </div>
+
+                {/* Profile Information */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Personal Information */}
+                  <Card className="lg:col-span-2 glass-card">
+                    <CardHeader>
+                      <CardTitle>Informazioni Personali</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {userLoading ? (
+                        <div className="space-y-4">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Nome</Label>
+                            <p className="text-gray-900 font-medium" data-testid="text-profile-firstname">{displayUser.nome}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Cognome</Label>
+                            <p className="text-gray-900 font-medium" data-testid="text-profile-lastname">{displayUser.cognome}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Email</Label>
+                            <p className="text-gray-900" data-testid="text-profile-email">{displayUser.email}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Telefono</Label>
+                            <p className="text-gray-900" data-testid="text-profile-phone">{displayUser.telefono || 'Non specificato'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Matricola</Label>
+                            <p className="text-gray-900 font-mono" data-testid="text-profile-id">{displayUser.matricola}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Ruolo</Label>
+                            <p className="text-gray-900" data-testid="text-profile-role">{displayUser.ruolo}</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Profile Picture */}
+                  <Card className="glass-card">
+                    <CardHeader>
+                      <CardTitle>Foto Profilo</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center">
+                      <Avatar className="h-32 w-32 mx-auto mb-4" data-testid="avatar-profile-large">
+                        <AvatarImage src={displayUser.foto || undefined} alt={`${displayUser.nome} ${displayUser.cognome}`} />
+                        <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white text-2xl" data-testid="avatar-profile-fallback">
+                          {displayUser.nome[0]}{displayUser.cognome[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Button variant="outline" size="sm" data-testid="button-change-photo">
+                        <Camera className="h-4 w-4 mr-2" />
+                        Cambia Foto
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Work Information */}
+                <Card className="glass-card">
+                  <CardHeader>
+                    <CardTitle>Informazioni Lavorative</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Punto Vendita</Label>
+                        <p className="text-gray-900" data-testid="text-profile-store">{displayUser.store || 'Non assegnato'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Dipartimento</Label>
+                        <p className="text-gray-900" data-testid="text-profile-department">{displayUser.department || 'Non specificato'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Data Assunzione</Label>
+                        <p className="text-gray-900" data-testid="text-profile-hire-date">{displayUser.dataAssunzione || 'Non specificata'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Profile Edit Modal */}
+                <Dialog 
+                  open={profileEditModal.open} 
+                  onOpenChange={(open) => setProfileEditModal(open ? { open, data: {} } : { open: false, data: null })}
+                >
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Modifica Profilo</DialogTitle>
+                      <DialogDescription>
+                        Aggiorna le tue informazioni personali
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName">Nome</Label>
+                          <Input id="firstName" defaultValue={displayUser.nome} />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName">Cognome</Label>
+                          <Input id="lastName" defaultValue={displayUser.cognome} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" defaultValue={displayUser.email} />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Telefono</Label>
+                        <Input id="phone" defaultValue={displayUser.telefono || ''} />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setProfileEditModal({ open: false, data: null })}>
+                        Annulla
+                      </Button>
+                      <Button className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700">
+                        <Save className="h-4 w-4 mr-2" />
+                        Salva Modifiche
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
       </div>
     </Layout>
   );
