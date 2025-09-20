@@ -31,27 +31,11 @@ export const getCurrentTenantId = (): string => {
     return stored;
   }
   
-  // SECURITY IMPROVEMENT: Limit emergency tenant fallback to development only
+  // SECURITY IMPROVEMENT: Always use UUID, never slug
   if (import.meta.env.MODE === 'development') {
-    // Try to extract from current URL path as emergency fallback (development only)
-    const pathTenant = window.location.pathname.split('/')[1];
-    if (pathTenant && pathTenant !== '' && pathTenant !== 'undefined') {
-      console.warn(`[TENANT-ID] ⚠️ Development emergency fallback: Using URL tenant slug: ${pathTenant}`);
-      // For known development tenants, provide UUID mapping
-      const emergencyMapping: Record<string, string> = {
-        'staging': '00000000-0000-0000-0000-000000000001',
-        'demo': '99999999-9999-9999-9999-999999999999',
-        'acme': '11111111-1111-1111-1111-111111111111',
-        'tech': '22222222-2222-2222-2222-222222222222'
-      };
-      const fallbackId = emergencyMapping[pathTenant] || emergencyMapping['staging'];
-      console.warn(`[TENANT-ID] ⚠️ Development emergency mapping: ${pathTenant} -> ${fallbackId}`);
-      return fallbackId;
-    }
-    
-    // Final fallback to env (development only)
+    // Final fallback to env (development only) - ALWAYS use UUID
     const envFallback = import.meta.env.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
-    console.error(`[TENANT-ID] ❌ Development: Using final fallback tenant ID: ${envFallback}`);
+    console.log(`[TENANT-ID] 🔧 Development: Using fallback tenant ID: ${envFallback}`);
     return envFallback;
   }
   
