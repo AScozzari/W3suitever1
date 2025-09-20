@@ -490,6 +490,30 @@ export default function SettingsPage() {
   // Workflow Management State
   const [workflowSubTab, setWorkflowSubTab] = useState('hierarchy');
   const [selectedWorkflowService, setSelectedWorkflowService] = useState('hr');
+
+  // Hierarchy Management State (moved from renderHierarchyManagement function)
+  const [hierarchyView, setHierarchyView] = useState<'tree' | 'workflows' | 'permissions'>('tree');
+  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [nodeDialogOpen, setNodeDialogOpen] = useState(false);
+  const [editingNode, setEditingNode] = useState<any>(null);
+  const [parentIdForNewNode, setParentIdForNewNode] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<string>('');
+
+  // Hierarchy Management Queries (moved from renderHierarchyManagement function)
+  const { data: hierarchyData, isLoading: loadingHierarchy, refetch: refetchHierarchy } = useQuery({
+    queryKey: ['/api/organizational-structure'],
+    enabled: true
+  });
+
+  const { data: workflowsData, isLoading: loadingWorkflows } = useQuery({
+    queryKey: ['/api/approval-workflows', selectedService],
+    enabled: !!selectedService
+  });
+  
+  const { data: rolesData } = useQuery({
+    queryKey: ['/api/roles'],
+    enabled: true
+  });
   
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
@@ -4788,31 +4812,6 @@ export default function SettingsPage() {
 
   // ==================== UNIVERSAL HIERARCHY MANAGEMENT ====================
   const renderHierarchyManagement = () => {
-    // Stati locali per il tab Gestione Gerarchie
-    const [hierarchyView, setHierarchyView] = useState<'tree' | 'workflows' | 'permissions'>('tree');
-    const [selectedNode, setSelectedNode] = useState<any>(null);
-    const [nodeDialogOpen, setNodeDialogOpen] = useState(false);
-    const [editingNode, setEditingNode] = useState<any>(null);
-    const [parentIdForNewNode, setParentIdForNewNode] = useState<string | null>(null);
-    const [selectedService, setSelectedService] = useState<string>('');
-
-    // Fetch dati gerarchia
-    const { data: hierarchyData, isLoading: loadingHierarchy, refetch: refetchHierarchy } = useQuery({
-      queryKey: ['/api/organizational-structure'],
-      enabled: true
-    });
-
-    // Fetch workflows
-    const { data: workflowsData, isLoading: loadingWorkflows } = useQuery({
-      queryKey: ['/api/approval-workflows', selectedService],
-      enabled: !!selectedService
-    });
-    
-    // Fetch ruoli disponibili
-    const { data: rolesData } = useQuery({
-      queryKey: ['/api/roles'],
-      enabled: true
-    });
 
     // Services disponibili per i workflow
     const availableServices = [
