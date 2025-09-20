@@ -2,8 +2,8 @@
 // Centralized type exports to eliminate (as any) casts throughout the frontend
 // ARCHITECT REQUIREMENT: Single source of truth for all domain types
 
-// Re-export all backend schema types from SDK
-export * from '@w3suite/sdk/schema';
+// Re-export all backend schema types using absolute path
+export * from '../../../../backend/api/src/db/schema';
 
 // Re-export specific types for clarity and IDE support
 export type {
