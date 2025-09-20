@@ -232,15 +232,10 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
   return <>{children}</>;
 }
 
-// Componente per gestire il redirect dalla root
+// Componente per gestire il redirect dalla root - Fixed SPA navigation
 function RootRedirect() {
-  useEffect(() => {
-    // Usa history API invece di window.location per evitare loop
-    window.history.replaceState(null, '', '/staging/dashboard');
-    window.location.reload();
-  }, []);
-  
-  return <div>Caricamento in corso...</div>;
+  // Use proper Wouter navigation instead of window.location.reload()
+  return <Redirect to="/staging/dashboard" replace />;
 }
 
 // Componente per gestire il redirect dal root tenant

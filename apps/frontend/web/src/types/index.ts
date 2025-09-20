@@ -39,6 +39,15 @@ export type {
 
 // ==================== FRONTEND-SPECIFIC UTILITY TYPES ====================
 
+// AuthUser type for proper authentication typing
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  tenantId: string;
+}
+
 // Modal State Types - Discriminated union to prevent any casts
 export type ModalState<T = Record<string, unknown>> = 
   | { open: false; data: null }

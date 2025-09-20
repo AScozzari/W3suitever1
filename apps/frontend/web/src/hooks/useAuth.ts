@@ -1,18 +1,11 @@
 import { useEffect, useState } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { oauth2Client } from '../services/OAuth2Client';
+import { AuthUser } from '@/types';
 
-// Type definitions for proper TypeScript support
-interface DevUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  tenantId: string;
-}
-
+// Session interface using the centralized AuthUser type
 interface Session {
-  user: DevUser;
+  user: AuthUser;
   token?: string;
   expiresAt?: string;
 }
@@ -40,10 +33,10 @@ const DEMO_PERMISSIONS = [
   'analytics:view'
 ];
 
-export function useAuth() {
+export function useAuth(): { user: AuthUser | null; isAuthenticated: boolean; isLoading: boolean; permissions: string[]; hasPermission: (permission: string) => boolean; hasHRAccess: () => boolean } {
   const [isLoading, setIsLoading] = useState(AUTH_MODE === 'oauth2');
   const [isAuthenticated, setIsAuthenticated] = useState(AUTH_MODE === 'development');
-  const [user, setUser] = useState(AUTH_MODE === 'development' ? {
+  const [user, setUser] = useState<AuthUser | null>(AUTH_MODE === 'development' ? {
     id: 'demo-user',
     name: 'Demo User', 
     email: 'demo@w3suite.com',
@@ -166,7 +159,7 @@ export function useAuth() {
   };
 
   return {
-    user: (AUTH_MODE === 'oauth2' ? session?.user : user) as DevUser | null,
+    user: AUTH_MODE === 'oauth2' ? session?.user ?? null : user,
     permissions: getPermissions(),
     isLoading,
     isAuthenticated,
