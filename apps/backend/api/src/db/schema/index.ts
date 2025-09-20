@@ -65,58 +65,9 @@ export {
 export const scopeTypeEnum = pgEnum('scope_type', ['tenant', 'legal_entity', 'store']);
 export const permModeEnum = pgEnum('perm_mode', ['grant', 'revoke']);
 
-// ==================== USERS TABLE (OAuth2 Enterprise) ====================
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey(), // OAuth2 standard sub field
-  email: varchar("email", { length: 255 }).unique(),
-  firstName: varchar("first_name", { length: 100 }),
-  lastName: varchar("last_name", { length: 100 }),
-  profileImageUrl: varchar("profile_image_url", { length: 500 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  isSystemAdmin: boolean("is_system_admin").default(false),
-  lastLoginAt: timestamp("last_login_at"),
-  tenantId: uuid("tenant_id").references(() => tenants.id),
-  status: varchar("status", { length: 50 }).default("active"),
-  mfaEnabled: boolean("mfa_enabled").default(false),
-  // Extended enterprise fields
-  role: varchar("role", { length: 50 }),
-  storeId: uuid("store_id").references(() => stores.id),
-  phone: varchar("phone", { length: 20 }),
-  position: varchar("position", { length: 100 }),
-  department: varchar("department", { length: 100 }),
-  hireDate: date("hire_date"),
-  contractType: varchar("contract_type", { length: 50 }),
-});
-
-export const insertUserSchema = createInsertSchema(users).omit({ 
-  createdAt: true, 
-  updatedAt: true 
-});
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type UpsertUser = InsertUser;
-
-// ==================== TENANTS ====================
-export const tenants = pgTable("tenants", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 100 }).unique(),
-  status: varchar("status", { length: 50 }).default("active"),
-  settings: jsonb("settings").default({}),
-  features: jsonb("features").default({}),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  archivedAt: timestamp("archived_at"),
-});
-
-export const insertTenantSchema = createInsertSchema(tenants).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-});
-export type InsertTenant = z.infer<typeof insertTenantSchema>;
-export type Tenant = typeof tenants.$inferSelect;
+// ==================== USERS & TENANTS MOVED TO W3SUITE SCHEMA ====================
+// Users and Tenants are now defined in w3suite.ts with proper tenant isolation
+// Import them from w3suite schema instead of defining duplicates here
 
 // ==================== LEGAL ENTITIES ====================
 export const legalEntities = pgTable("legal_entities", {
@@ -274,49 +225,9 @@ export const storeDriverPotential = pgTable("store_driver_potential", {
   primaryKey({ columns: [table.storeId, table.driverId] }),
 ]);
 
-// ==================== RBAC SYSTEM ====================
-export const roles = pgTable("roles", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  isSystem: boolean("is_system").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  uniqueIndex("roles_tenant_name_unique").on(table.tenantId, table.name),
-]);
-
-export const insertRoleSchema = createInsertSchema(roles).omit({ 
-  id: true, 
-  createdAt: true 
-});
-export type InsertRole = z.infer<typeof insertRoleSchema>;
-export type Role = typeof roles.$inferSelect;
-
-export const rolePerms = pgTable("role_perms", {
-  roleId: uuid("role_id").notNull().references(() => roles.id, { onDelete: 'cascade' }),
-  perm: varchar("perm", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.roleId, table.perm] }),
-]);
-
-export const userAssignments = pgTable("user_assignments", {
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  roleId: uuid("role_id").notNull().references(() => roles.id, { onDelete: 'cascade' }),
-  scopeType: scopeTypeEnum("scope_type").notNull(),
-  scopeId: uuid("scope_id").notNull(),
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.userId, table.roleId, table.scopeType, table.scopeId] }),
-]);
-
-export const insertUserAssignmentSchema = createInsertSchema(userAssignments).omit({ 
-  createdAt: true 
-});
-export type InsertUserAssignment = z.infer<typeof insertUserAssignmentSchema>;
-export type UserAssignment = typeof userAssignments.$inferSelect;
+// ==================== RBAC SYSTEM MOVED TO W3SUITE SCHEMA ====================
+// RBAC tables (roles, rolePerms, userAssignments) are now defined in w3suite.ts 
+// with proper tenant isolation and RLS policies. Import from w3suite schema instead.
 
 // ==================== REFERENCE TABLES ====================
 
@@ -373,38 +284,11 @@ export const italianCities = pgTable("italian_cities", {
   uniqueIndex("italian_cities_unique").on(table.name, table.province),
 ]);
 
-export const userExtraPerms = pgTable("user_extra_perms", {
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  perm: varchar("perm", { length: 255 }).notNull(),
-  mode: permModeEnum("mode").notNull(),
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.userId, table.perm] }),
-]);
+// ==================== USER EXTRA PERMS MOVED TO W3SUITE SCHEMA ====================
+// userExtraPerms is now defined in w3suite.ts with proper tenant isolation
 
-// ==================== ENTITY LOGS ====================
-export const entityLogs = pgTable('entity_logs', {
-  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
-  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'legal_entity', 'store', 'user'
-  entityId: uuid('entity_id').notNull(),
-  action: varchar('action', { length: 50 }).notNull(), // 'created', 'status_changed', 'updated', 'deleted'
-  previousStatus: varchar('previous_status', { length: 50 }),
-  newStatus: varchar('new_status', { length: 50 }),
-  changes: jsonb('changes'), // JSON con tutti i cambiamenti
-  userId: uuid('user_id'), // Chi ha fatto il cambio
-  userEmail: varchar('user_email', { length: 255 }),
-  notes: text('notes'),
-  createdAt: timestamp('created_at').defaultNow(),
-});
-
-export const insertEntityLogSchema = createInsertSchema(entityLogs).omit({ 
-  id: true, 
-  createdAt: true 
-});
-export type InsertEntityLog = z.infer<typeof insertEntityLogSchema>;
-export type EntityLog = typeof entityLogs.$inferSelect;
+// ==================== ENTITY LOGS MOVED TO W3SUITE SCHEMA ====================
+// entityLogs is now defined in w3suite.ts with proper tenant isolation
 
 // ==================== BRAND INTERFACE MOVED TO SEPARATE SCHEMA ====================
 // Brand Interface tables are now in brand-interface.ts with dedicated 'brand_interface' schema
