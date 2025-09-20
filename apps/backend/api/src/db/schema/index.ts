@@ -65,9 +65,16 @@ export {
 export const scopeTypeEnum = pgEnum('scope_type', ['tenant', 'legal_entity', 'store']);
 export const permModeEnum = pgEnum('perm_mode', ['grant', 'revoke']);
 
-// ==================== USERS & TENANTS MOVED TO W3SUITE SCHEMA ====================
-// Users and Tenants are now defined in w3suite.ts with proper tenant isolation
-// Import them from w3suite schema instead of defining duplicates here
+// ==================== USERS & TENANTS RE-EXPORTED FROM W3SUITE ====================
+// Import and re-export from w3suite schema for backward compatibility
+import { users as w3suiteUsersTable, tenants as w3suiteTenantsTable } from './w3suite';
+
+export const users = w3suiteUsersTable;
+export const tenants = w3suiteTenantsTable;
+
+// Export types for backward compatibility
+export type { InsertUser, User } from './w3suite';
+export type { InsertTenant, Tenant } from './w3suite';
 
 // ==================== LEGAL ENTITIES ====================
 export const legalEntities = pgTable("legal_entities", {
@@ -225,9 +232,21 @@ export const storeDriverPotential = pgTable("store_driver_potential", {
   primaryKey({ columns: [table.storeId, table.driverId] }),
 ]);
 
-// ==================== RBAC SYSTEM MOVED TO W3SUITE SCHEMA ====================
-// RBAC tables (roles, rolePerms, userAssignments) are now defined in w3suite.ts 
-// with proper tenant isolation and RLS policies. Import from w3suite schema instead.
+// ==================== RBAC SYSTEM RE-EXPORTED FROM W3SUITE ====================
+// Import and re-export from w3suite schema for backward compatibility
+import { 
+  roles as w3suiteRolesTable, 
+  rolePerms as w3suiteRolePermsTable, 
+  userAssignments as w3suiteUserAssignmentsTable 
+} from './w3suite';
+
+export const roles = w3suiteRolesTable;
+export const rolePerms = w3suiteRolePermsTable;
+export const userAssignments = w3suiteUserAssignmentsTable;
+
+// Export types for backward compatibility
+export type { InsertRole, Role } from './w3suite';
+export type { InsertUserAssignment, UserAssignment } from './w3suite';
 
 // ==================== REFERENCE TABLES ====================
 
@@ -284,11 +303,14 @@ export const italianCities = pgTable("italian_cities", {
   uniqueIndex("italian_cities_unique").on(table.name, table.province),
 ]);
 
-// ==================== USER EXTRA PERMS MOVED TO W3SUITE SCHEMA ====================
-// userExtraPerms is now defined in w3suite.ts with proper tenant isolation
+// ==================== USER EXTRA PERMS RE-EXPORTED FROM W3SUITE ====================
+import { userExtraPerms as w3suiteUserExtraPermsTable } from './w3suite';
+export const userExtraPerms = w3suiteUserExtraPermsTable;
 
-// ==================== ENTITY LOGS MOVED TO W3SUITE SCHEMA ====================
-// entityLogs is now defined in w3suite.ts with proper tenant isolation
+// ==================== ENTITY LOGS RE-EXPORTED FROM W3SUITE ====================
+import { entityLogs as w3suiteEntityLogsTable } from './w3suite';
+export const entityLogs = w3suiteEntityLogsTable;
+export type { InsertEntityLog, EntityLog } from './w3suite';
 
 // ==================== BRAND INTERFACE MOVED TO SEPARATE SCHEMA ====================
 // Brand Interface tables are now in brand-interface.ts with dedicated 'brand_interface' schema
