@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   ArrowRight, ArrowLeft, Check, Calendar as CalendarIcon, Upload, X,
   Umbrella, Heart, Shield, Baby, Users, Clock, Activity, Home, Building, 
@@ -124,7 +125,7 @@ const TYPE_ICONS: Record<string, React.ComponentType<any>> = {
   breastfeeding_leave: Heart,
   law_104_leave: Accessibility,
   study_leave: BookOpen,
-  rol_leave: Calendar,
+  rol_leave: CalendarIcon,
   electoral_leave: Vote,
   bereavement_extended: Heart,
   
@@ -133,8 +134,8 @@ const TYPE_ICONS: Record<string, React.ComponentType<any>> = {
   equipment_request: Monitor,
   training_request: GraduationCap,
   certification_request: Award,
-  sabbatical_request: Calendar,
-  sabbatical_unpaid: Calendar,
+  sabbatical_request: CalendarIcon,
+  sabbatical_unpaid: CalendarIcon,
   wellness_program: Activity,
   mental_health_support: Brain,
   gym_membership: Dumbbell,
@@ -279,6 +280,7 @@ export default function HRRequestWizard({ onSuccess, onCancel }: HRRequestWizard
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<Step3Data>>({});
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const createMutation = useCreateHRRequest();
 
@@ -696,77 +698,287 @@ export default function HRRequestWizard({ onSuccess, onCancel }: HRRequestWizard
                   )}
                 />
 
-                {/* Date Fields */}
+                {/* Professional Date Selection */}
                 {getFieldsForType(formData.type).includes('startDate') && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={step3Form.control}
-                      name="startDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Data Inizio</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className="w-full pl-3 text-left font-normal"
-                                  data-testid="button-start-date"
-                                >
-                                  {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 z-50" align="start" side="bottom" sideOffset={4}>
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <CalendarIcon className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">Periodo Richiesta</h3>
+                        <p className="text-sm text-gray-600">Seleziona le date per la tua richiesta</p>
+                      </div>
+                      <Dialog open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            className="h-12 px-6 bg-gradient-to-r from-orange-50 to-purple-50 border-orange-200 hover:from-orange-100 hover:to-purple-100 transition-all"
+                            data-testid="button-open-date-picker"
+                          >
+                            <CalendarIcon className="h-5 w-5 mr-2 text-orange-600" />
+                            <span className="font-medium text-gray-700">
+                              {step3Form.watch('startDate') || step3Form.watch('endDate') 
+                                ? 'Modifica Date' 
+                                : 'Seleziona Date'}
+                            </span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-lg">
+                          <DialogHeader className="text-center space-y-3">
+                            <div className="mx-auto w-12 h-12 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <CalendarIcon className="h-6 w-6 text-white" />
+                            </div>
+                            <DialogTitle className="text-xl font-bold text-gray-900">
+                              Selezione Date
+                            </DialogTitle>
+                            <DialogDescription className="text-gray-600">
+                              Scegli il periodo per la tua richiesta di {HR_REQUEST_TYPES[formData.type as keyof typeof HR_REQUEST_TYPES]}
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          <div className="space-y-6 py-4">
+                            {/* Date Range Selection */}
+                            <div className="grid grid-cols-1 gap-4">
+                              <FormField
+                                control={step3Form.control}
+                                name="startDate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-sm font-semibold text-gray-700">
+                                      Data Inizio
+                                    </FormLabel>
+                                    <div className="relative">
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <FormControl>
+                                            <Button
+                                              variant="outline"
+                                              className="w-full h-12 justify-start text-left font-normal bg-gray-50 hover:bg-gray-100 border-gray-300"
+                                              data-testid="button-start-date-in-dialog"
+                                            >
+                                              <CalendarIcon className="mr-3 h-4 w-4 text-gray-500" />
+                                              {field.value ? (
+                                                <span className="text-gray-900 font-medium">
+                                                  {format(field.value, 'EEEE, dd MMMM yyyy', { locale: it })}
+                                                </span>
+                                              ) : (
+                                                <span className="text-gray-500">Clicca per selezionare</span>
+                                              )}
+                                            </Button>
+                                          </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                          <Calendar
+                                            mode="single"
+                                            selected={field.value}
+                                            onSelect={field.onChange}
+                                            disabled={(date) => date < new Date()}
+                                            initialFocus
+                                            className="rounded-md border"
+                                          />
+                                        </PopoverContent>
+                                      </Popover>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
-                    {getFieldsForType(formData.type).includes('endDate') && (
-                      <FormField
-                        control={step3Form.control}
-                        name="endDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Data Fine</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className="w-full pl-3 text-left font-normal"
-                                    data-testid="button-end-date"
-                                  >
-                                    {field.value ? format(field.value, 'PPP', { locale: it }) : 'Seleziona data'}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 z-50" align="end" side="bottom" sideOffset={4}>
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) => date < new Date()}
-                                  initialFocus
+                              {getFieldsForType(formData.type).includes('endDate') && (
+                                <FormField
+                                  control={step3Form.control}
+                                  name="endDate"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-sm font-semibold text-gray-700">
+                                        Data Fine
+                                      </FormLabel>
+                                      <div className="relative">
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <FormControl>
+                                              <Button
+                                                variant="outline"
+                                                className="w-full h-12 justify-start text-left font-normal bg-gray-50 hover:bg-gray-100 border-gray-300"
+                                                data-testid="button-end-date-in-dialog"
+                                              >
+                                                <CalendarIcon className="mr-3 h-4 w-4 text-gray-500" />
+                                                {field.value ? (
+                                                  <span className="text-gray-900 font-medium">
+                                                    {format(field.value, 'EEEE, dd MMMM yyyy', { locale: it })}
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-gray-500">Clicca per selezionare</span>
+                                                )}
+                                              </Button>
+                                            </FormControl>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                              mode="single"
+                                              selected={field.value}
+                                              onSelect={field.onChange}
+                                              disabled={(date) => {
+                                                const today = new Date();
+                                                const startDate = step3Form.watch('startDate');
+                                                if (date < today) return true;
+                                                if (startDate && date < startDate) return true;
+                                                return false;
+                                              }}
+                                              initialFocus
+                                              className="rounded-md border"
+                                            />
+                                          </PopoverContent>
+                                        </Popover>
+                                      </div>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
                                 />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                              )}
+                            </div>
+
+                            {/* Duration Summary */}
+                            {step3Form.watch('startDate') && step3Form.watch('endDate') && (
+                              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                    <Check className="h-4 w-4 text-white" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-green-900">Periodo Selezionato</p>
+                                    <p className="text-sm text-green-700">
+                                      {(() => {
+                                        const start = step3Form.watch('startDate');
+                                        const end = step3Form.watch('endDate');
+                                        if (!start || !end) return '';
+                                        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                                        return `${days} giorn${days === 1 ? 'o' : 'i'} dal ${format(start!, 'dd/MM', { locale: it })} al ${format(end!, 'dd/MM/yyyy', { locale: it })}`;
+                                      })()}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Quick Date Presets */}
+                            <div className="space-y-3">
+                              <p className="text-sm font-medium text-gray-700">Selezioni Rapide</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const today = new Date();
+                                    step3Form.setValue('startDate', today);
+                                    step3Form.setValue('endDate', today);
+                                  }}
+                                  className="text-xs"
+                                  data-testid="button-today"
+                                >
+                                  Oggi
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const tomorrow = addDays(new Date(), 1);
+                                    step3Form.setValue('startDate', tomorrow);
+                                    step3Form.setValue('endDate', tomorrow);
+                                  }}
+                                  className="text-xs"
+                                  data-testid="button-tomorrow"
+                                >
+                                  Domani
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const nextWeek = addDays(new Date(), 7);
+                                    step3Form.setValue('startDate', nextWeek);
+                                    step3Form.setValue('endDate', addDays(nextWeek, 4));
+                                  }}
+                                  className="text-xs"
+                                  data-testid="button-next-week"
+                                >
+                                  Pross. Settimana
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    step3Form.setValue('startDate', undefined);
+                                    step3Form.setValue('endDate', undefined);
+                                  }}
+                                  className="text-xs text-red-600 hover:text-red-700"
+                                  data-testid="button-clear-dates"
+                                >
+                                  Cancella
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Dialog Actions */}
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setDatePickerOpen(false)}
+                                data-testid="button-close-date-picker"
+                              >
+                                Chiudi
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={() => setDatePickerOpen(false)}
+                                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                                data-testid="button-confirm-dates"
+                              >
+                                <Check className="mr-2 h-4 w-4" />
+                                Conferma Date
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+
+                    {/* Selected Dates Summary in Main Form */}
+                    {(step3Form.watch('startDate') || step3Form.watch('endDate')) && (
+                      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <CalendarIcon className="h-5 w-5 text-blue-600" />
+                            <div>
+                              <p className="font-medium text-blue-900">Date Selezionate</p>
+                              <div className="flex items-center gap-4 text-sm text-blue-700">
+                                {step3Form.watch('startDate') && (
+                                  <span>Inizio: {format(step3Form.watch('startDate')!, 'dd/MM/yyyy', { locale: it })}</span>
+                                )}
+                                {step3Form.watch('endDate') && (
+                                  <span>Fine: {format(step3Form.watch('endDate')!, 'dd/MM/yyyy', { locale: it })}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDatePickerOpen(true)}
+                            className="text-blue-600 hover:text-blue-700"
+                            data-testid="button-edit-dates"
+                          >
+                            Modifica
+                          </Button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
