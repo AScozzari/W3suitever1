@@ -9,6 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -117,6 +121,8 @@ export default function HRManagementDashboard() {
   const [activeService, setActiveService] = useState('workforce');
   const [selectedRequest, setSelectedRequest] = useState<UniversalRequest | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
+  const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
+  const [isPositionModalOpen, setIsPositionModalOpen] = useState(false);
 
   // Fetch user permissions per RBAC
   const { data: userPermissions } = useQuery<{ permissions: string[], roles: any[] }>({
@@ -222,11 +228,43 @@ export default function HRManagementDashboard() {
     }
   });
 
+  // Create Organizational Position Mutation  
+  const createPositionMutation = useMutation({
+    mutationFn: async (position: {
+      userId: string;
+      parentId?: string;
+      organizationalUnit: string;
+      unitType: string;
+      permissions?: string[];
+    }) => {
+      return apiRequest('/api/organizational-structure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(position)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/organizational-structure'] });
+      toast({
+        title: 'Posizione creata',
+        description: 'La nuova posizione organizzativa è stata creata con successo'
+      });
+      setIsPositionModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore creazione posizione',
+        description: error.message || 'Si è verificato un errore durante la creazione della posizione',
+        variant: 'destructive'
+      });
+    }
+  });
+
   // Workflow Configuration Mutation
   const workflowMutation = useMutation({
     mutationFn: async (workflow: Partial<ApprovalWorkflow>) => {
       return apiRequest('/api/approval-workflows', {
-        method: workflow.id ? 'PUT' : 'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(workflow)
       });
@@ -236,6 +274,14 @@ export default function HRManagementDashboard() {
       toast({
         title: 'Workflow salvato',
         description: 'Il workflow è stato configurato con successo'
+      });
+      setIsWorkflowModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Errore creazione workflow',
+        description: error.message || 'Si è verificato un errore durante la creazione del workflow',
+        variant: 'destructive'
       });
     }
   });
@@ -562,14 +608,207 @@ export default function HRManagementDashboard() {
               </div>
             </div>
           ))}
-          <Button className="w-full" variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo Workflow
-          </Button>
+          <Dialog open={isWorkflowModalOpen} onOpenChange={setIsWorkflowModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full" variant="outline" data-testid="button-nuovo-workflow">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuovo Workflow
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Crea Nuovo Workflow di Approvazione</DialogTitle>
+              </DialogHeader>
+              <NewWorkflowForm onSubmit={workflowMutation.mutate} isLoading={workflowMutation.isPending} />
+            </DialogContent>
+          </Dialog>
         </div>
       </CardContent>
     </Card>
   );
+
+  // Form Components
+  const NewWorkflowForm = ({ onSubmit, isLoading }: { 
+    onSubmit: (data: any) => void, 
+    isLoading: boolean 
+  }) => {
+    const [serviceName, setServiceName] = useState('hr');
+    const [workflowType, setWorkflowType] = useState('');
+    const [levels, setLevels] = useState([{ level: 1, role: '', escalationTime: 24 }]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      onSubmit({
+        serviceName,
+        workflowType,
+        rules: { levels }
+      });
+    };
+
+    const addLevel = () => {
+      setLevels([...levels, { level: levels.length + 1, role: '', escalationTime: 24 }]);
+    };
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="serviceName">Servizio</Label>
+            <Select value={serviceName} onValueChange={setServiceName}>
+              <SelectTrigger data-testid="select-serviceName">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hr">HR</SelectItem>
+                <SelectItem value="finance">Finance</SelectItem>
+                <SelectItem value="it">IT</SelectItem>
+                <SelectItem value="operations">Operations</SelectItem>
+                <SelectItem value="sales">Sales</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="workflowType">Tipo Workflow</Label>
+            <Input
+              data-testid="input-workflowType"
+              value={workflowType}
+              onChange={(e) => setWorkflowType(e.target.value)}
+              placeholder="es: vacation, expense, equipment"
+              required
+            />
+          </div>
+        </div>
+        
+        <div>
+          <Label>Livelli di Approvazione</Label>
+          {levels.map((level, index) => (
+            <div key={index} className="flex gap-2 mt-2">
+              <Input
+                data-testid={`input-role-${index}`}
+                placeholder="Ruolo"
+                value={level.role}
+                onChange={(e) => {
+                  const newLevels = [...levels];
+                  newLevels[index].role = e.target.value;
+                  setLevels(newLevels);
+                }}
+              />
+              <Input
+                data-testid={`input-escalationTime-${index}`}
+                type="number"
+                placeholder="Ore"
+                value={level.escalationTime}
+                onChange={(e) => {
+                  const newLevels = [...levels];
+                  newLevels[index].escalationTime = parseInt(e.target.value);
+                  setLevels(newLevels);
+                }}
+              />
+            </div>
+          ))}
+          <Button type="button" onClick={addLevel} variant="outline" className="mt-2">
+            <Plus className="h-4 w-4 mr-2" />
+            Aggiungi Livello
+          </Button>
+        </div>
+        
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setIsWorkflowModalOpen(false)}>
+            Annulla
+          </Button>
+          <Button type="submit" disabled={isLoading} data-testid="button-submit-workflow">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Crea Workflow
+          </Button>
+        </div>
+      </form>
+    );
+  };
+
+  const NewPositionForm = ({ onSubmit, isLoading }: { 
+    onSubmit: (data: any) => void, 
+    isLoading: boolean 
+  }) => {
+    const [userId, setUserId] = useState('');
+    const [parentId, setParentId] = useState('');
+    const [organizationalUnit, setOrganizationalUnit] = useState('');
+    const [unitType, setUnitType] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      onSubmit({
+        userId,
+        parentId: parentId || null,
+        organizationalUnit,
+        unitType,
+        permissions: ['read', 'write']
+      });
+    };
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="userId">ID Utente</Label>
+            <Input
+              data-testid="input-userId"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              placeholder="es: user-001"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="parentId">Manager (Opzionale)</Label>
+            <Input
+              data-testid="input-parentId"
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+              placeholder="es: manager-001"
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="organizationalUnit">Unità Organizzativa</Label>
+            <Input
+              data-testid="input-organizationalUnit"
+              value={organizationalUnit}
+              onChange={(e) => setOrganizationalUnit(e.target.value)}
+              placeholder="es: IT Department"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="unitType">Tipo Unità</Label>
+            <Select value={unitType} onValueChange={setUnitType}>
+              <SelectTrigger data-testid="select-unitType">
+                <SelectValue placeholder="Seleziona tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="company">Company</SelectItem>
+                <SelectItem value="division">Division</SelectItem>
+                <SelectItem value="department">Department</SelectItem>
+                <SelectItem value="team">Team</SelectItem>
+                <SelectItem value="role">Role</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setIsPositionModalOpen(false)}>
+            Annulla
+          </Button>
+          <Button type="submit" disabled={isLoading} data-testid="button-submit-position">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Crea Posizione
+          </Button>
+        </div>
+      </form>
+    );
+  };
 
   // State for Layout props
   const [currentModule, setCurrentModule] = useState('hr-management');
@@ -707,6 +946,58 @@ export default function HRManagementDashboard() {
                   </CardHeader>
                   <CardContent>
                     {renderWorkflowConfigurator()}
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>🏢 Struttura Organizzativa</CardTitle>
+                    <CardDescription>Gestione posizioni e gerarchia aziendale</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">
+                          {organizationalStructure?.length || 0} posizioni definite
+                        </span>
+                        <Dialog open={isPositionModalOpen} onOpenChange={setIsPositionModalOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" data-testid="button-aggiungi-posizione">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Aggiungi Posizione
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[500px]">
+                            <DialogHeader>
+                              <DialogTitle>Crea Nuova Posizione Organizzativa</DialogTitle>
+                            </DialogHeader>
+                            <NewPositionForm onSubmit={createPositionMutation.mutate} isLoading={createPositionMutation.isPending} />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                      
+                      {organizationalStructure && organizationalStructure.length > 0 ? (
+                        <div className="grid gap-2">
+                          {organizationalStructure.slice(0, 5).map((node) => (
+                            <div key={node.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div>
+                                <div className="font-medium">{node.name}</div>
+                                <div className="text-sm text-muted-foreground">{node.nodeType}</div>
+                              </div>
+                              <Button size="sm" variant="ghost">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>Nessuna posizione organizzativa definita</p>
+                          <p className="text-sm">Clicca "Aggiungi Posizione" per iniziare</p>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
