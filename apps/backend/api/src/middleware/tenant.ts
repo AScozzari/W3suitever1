@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { db } from '../core/db';
+import { db, setTenantContext } from '../core/db';
 import { tenants, userAssignments, roles, rolePerms, userExtraPerms } from '../db/schema/w3suite';
 import { eq, and, or, sql } from 'drizzle-orm';
 import { rbacStorage } from '../core/rbac-storage';
@@ -102,14 +102,14 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     
     console.log(`[TENANT-SUCCESS] Tenant resolved: ${tenant.name} (${tenant.id})`);
     
-    // Impostiamo il tenant_id per RLS (Row Level Security)
+    // Impostiamo il tenant_id per RLS (Row Level Security) usando sistema unificato
     try {
       if (tenant.id) {
-        await db.execute(sql.raw(`SET app.tenant_id = '${tenant.id}'`));
-        console.log(`[RLS-SUCCESS] Set tenant_id for RLS: ${tenant.id}`);
+        await setTenantContext(tenant.id);
+        console.log(`[RLS-SUCCESS] Set unified tenant context for RLS: ${tenant.id}`);
       }
     } catch (error) {
-      console.log(`[RLS-WARNING] Failed to set RLS tenant_id: ${tenant.id}`, error);
+      console.log(`[RLS-WARNING] Failed to set unified RLS tenant context: ${tenant.id}`, error);
       // RLS configuration might not be set up yet, continue without error
     }
     
