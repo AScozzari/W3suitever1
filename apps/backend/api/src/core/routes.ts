@@ -9,7 +9,7 @@ import { correlationMiddleware, logger, structuredLogger } from "./logger";
 import { createHmac, timingSafeEqual } from "crypto";
 import jwt from "jsonwebtoken";
 import { db, setTenantContext } from "./db";
-import { sql, eq, inArray, and, or, between, gte, lte, desc, isNull } from "drizzle-orm";
+import { sql, eq, inArray, and, or, between, gte, lte, desc, isNull, not } from "drizzle-orm";
 import { 
   tenants, 
   users, 
@@ -7629,12 +7629,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // RBAC filtering - show only appropriate requests based on user role
       if (userRole === 'EMPLOYEE') {
-        conditions.push(eq(hrRequests.userId, userId));
+        conditions.push(eq(hrRequests.requesterId, userId));
       } else if (userRole === 'TEAM_LEADER') {
         // Team leaders can see their team's requests (simplified - could be enhanced with team relationships)
         // For now, show requests they can approve or their own
         conditions.push(or(
-          eq(hrRequests.userId, userId),
+          eq(hrRequests.requesterId, userId),
           eq(hrRequests.status, 'pending')
         ));
       }
@@ -7644,7 +7644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = db
         .select()
         .from(hrRequests)
-        .leftJoin(users, eq(hrRequests.userId, users.id))
+        .leftJoin(users, eq(hrRequests.requesterId, users.id))
         .where(and(...conditions))
         .orderBy(desc(hrRequests.createdAt))
         .limit(50);
@@ -7655,16 +7655,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const universalRequests = requests.map(req => ({
         id: req.hr_requests.id,
         serviceType: serviceType,
-        requestType: req.hr_requests.requestType,
-        title: req.hr_requests.title,
-        description: req.hr_requests.description || '',
-        requesterId: req.hr_requests.userId,
+        requestType: req.hr_requests.category,
+        title: `${req.hr_requests.category} Request`,
+        description: req.hr_requests.notes || '',
+        requesterId: req.hr_requests.requesterId,
         requesterName: req.users ? `${req.users.firstName || 'N/A'} ${req.users.lastName || ''}`.trim() : 'N/A',
         status: req.hr_requests.status,
         priority: req.hr_requests.priority || 'normal',
         currentApproverId: null, // Could be enhanced with approval flow
         approvalLevel: req.hr_requests.status === 'pending' ? 1 : (req.hr_requests.status === 'approved' ? 2 : 0),
-        metadata: req.hr_requests.metadata || {},
+        metadata: {},
         createdAt: req.hr_requests.createdAt,
         updatedAt: req.hr_requests.updatedAt
       }));
@@ -7981,7 +7981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(hrRequests)
         .where(and(
           eq(hrRequests.tenantId, tenantId),
-          eq(hrRequests.userId, userId),
+          eq(hrRequests.requesterId, userId),
           not(eq(hrRequests.status, 'draft'))
         ));
 
