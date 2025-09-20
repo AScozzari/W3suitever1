@@ -492,34 +492,23 @@ export default function SettingsPage() {
   // Note: fornitoriList is now managed by TanStack Query as suppliersList
   
   
-  // TanStack Query hooks for payment data (renamed to avoid conflicts)
+  // TanStack Query hooks for payment data using ApiService
   const { data: paymentMethodsList, isLoading: paymentMethodsLoading } = useQuery({
     queryKey: ['paymentMethods'],
     queryFn: async () => {
-      const response = await fetch('/api/payment-methods', {
-        headers: {
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'x-demo-user': 'admin@w3suite.com'
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch payment methods');
-      const data = await response.json();
-      return data.paymentMethods || [];
+      const result = await apiService.getPaymentMethods();
+      if (!result.success) throw new Error(result.error || 'Failed to fetch payment methods');
+      return result.data || [];
     }
   });
 
   const { data: paymentConditionsList, isLoading: paymentConditionsLoading } = useQuery({
     queryKey: ['paymentConditions'],
     queryFn: async () => {
-      const response = await fetch('/api/payment-conditions', {
-        headers: {
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'x-demo-user': 'admin@w3suite.com'
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch payment conditions');
-      const data = await response.json();
-      return data.paymentConditions || [];
+      // Using reference payment methods as fallback until payment-conditions endpoint is added
+      const result = await apiService.getPaymentMethods();
+      if (!result.success) throw new Error(result.error || 'Failed to fetch payment conditions');
+      return result.data || [];
     }
   });
 
@@ -917,19 +906,13 @@ export default function SettingsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Load suppliers data with TanStack Query for proper cache management
+  // Load suppliers data with TanStack Query using ApiService
   const { data: suppliersList = [], isLoading: suppliersLoading, error: suppliersError, isError: suppliersIsError, refetch: refetchSuppliersQuery } = useQuery({
     queryKey: ['/api/suppliers'],
     queryFn: async () => {
-      const response = await fetch('/api/suppliers', {
-        headers: {
-          'X-Tenant-ID': DEMO_TENANT_ID,
-          'x-demo-user': 'admin@w3suite.com'
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch suppliers');
-      const data = await response.json();
-      return data.suppliers || [];
+      const result = await apiService.getSuppliers();
+      if (!result.success) throw new Error(result.error || 'Failed to fetch suppliers');
+      return result.data || [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 3, // Retry failed requests 3 times
