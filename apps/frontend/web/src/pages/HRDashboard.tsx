@@ -799,5 +799,3 @@ export default function HRDashboard() {
 
   // END: All JSX orphaned completely removed - clean termination
 }
-
-export default HRDashboard;

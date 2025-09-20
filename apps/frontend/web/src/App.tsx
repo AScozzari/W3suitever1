@@ -10,6 +10,7 @@ import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 // Legacy imports removed - consolidated into HR and Employee dashboards
 import HRDashboard from "./pages/HRDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
+import MyPortal from "./pages/MyPortal";
 import NotificationCenter from "./pages/NotificationCenter";
 import TenantVerificationTest from "./pages/TenantVerificationTest";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -38,6 +39,11 @@ function Router() {
       </Route>
       
       {/* ===== ENTERPRISE HR CONSOLIDATION: ONLY 2 HR ROUTES ===== */}
+      
+      {/* Il Mio Portale - Employee Self-Service Portal */}
+      <Route path="/:tenant/portale">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><MyPortal /></AuthenticatedApp></TenantWrapper>}
+      </Route>
       
       {/* Legacy HR route redirects - consolidation from 24+ pages to 2 dashboards */}
       <Route path="/:tenant/settings">
