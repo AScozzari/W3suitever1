@@ -436,7 +436,7 @@ interface RolePermissionsResponse {
 export default function SettingsPage() {
   const [currentModule, setCurrentModule] = useState('impostazioni');
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState('Hierarchy Management');
+  const [activeTab, setActiveTab] = useState('Entity Management');
   
   // Custom roles state (must be declared before allRoles)
   const [customRoles, setCustomRoles] = useState<any[]>([]);
