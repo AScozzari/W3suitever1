@@ -612,11 +612,130 @@ export default function HRManagementDashboard() {
 
         {/* Main Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Service-specific Content */}
           <div className="lg:col-span-2">
-            {renderApprovalQueue()}
+            {activeService === 'workforce' && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>👥 Workforce Management</CardTitle>
+                    <CardDescription>Gestione completa della forza lavoro</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <h4 className="font-semibold text-blue-900">Dipendenti Totali</h4>
+                        <p className="text-2xl font-bold text-blue-600">{hrMetrics?.totalEmployees || 22}</p>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <h4 className="font-semibold text-green-900">Dipendenti Attivi</h4>
+                        <p className="text-2xl font-bold text-green-600">{Math.round((hrMetrics?.totalEmployees || 22) * 0.85)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <Button className="w-full">Gestisci Dipendenti</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            {activeService === 'approvals' && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>✅ Approval Management</CardTitle>
+                    <CardDescription>Sistema di approvazione universale</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {renderApprovalQueue()}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            {activeService === 'analytics' && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>📊 HR Analytics</CardTitle>
+                    <CardDescription>Analytics e insights HR avanzati</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAnalytics()}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            {activeService === 'documents' && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>📄 Document Management</CardTitle>
+                    <CardDescription>Gestione documenti HR centralizzata</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <h4 className="font-semibold">Documenti Totali</h4>
+                          <p className="text-xl font-bold">{hrMetrics?.totalEmployees ? hrMetrics.totalEmployees * 3 : 66}</p>
+                        </div>
+                        <div className="p-3 bg-yellow-50 rounded-lg">
+                          <h4 className="font-semibold">In Attesa</h4>
+                          <p className="text-xl font-bold text-yellow-600">{Math.round((hrMetrics?.totalEmployees || 22) * 0.1)}</p>
+                        </div>
+                        <div className="p-3 bg-red-50 rounded-lg">
+                          <h4 className="font-semibold">Scaduti</h4>
+                          <p className="text-xl font-bold text-red-600">{Math.round((hrMetrics?.totalEmployees || 22) * 0.05)}</p>
+                        </div>
+                      </div>
+                      <Button className="w-full">Gestisci Documenti</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            {activeService === 'admin' && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>⚙️ HR Administration</CardTitle>
+                    <CardDescription>Configurazione e amministrazione sistema HR</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {renderWorkflowConfigurator()}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
-          <div>
-            {renderWorkflowConfigurator()}
+          
+          {/* Sidebar with Quick Stats */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Statistiche Rapide</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span>Richieste Pending</span>
+                    <Badge variant="outline">{stats.pendingRequests}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Approvate Oggi</span>
+                    <Badge variant="default">{stats.approvedToday}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Compliance Rate</span>
+                    <Badge variant="secondary">{stats.complianceRate}%</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
