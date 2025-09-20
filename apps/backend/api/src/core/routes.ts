@@ -7616,34 +7616,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { serviceType = 'hr', status, priority } = req.query;
       
-      // Get real HR requests from database
-      let query = db
-        .select({
-          id: hrRequests.id,
-          requestType: hrRequests.requestType,
-          title: hrRequests.title,
-          description: hrRequests.description,
-          requesterId: hrRequests.userId,
-          status: hrRequests.status,
-          priority: hrRequests.priority,
-          metadata: hrRequests.metadata,
-          createdAt: hrRequests.createdAt,
-          updatedAt: hrRequests.updatedAt,
-          // Get requester details
-          requesterFirstName: users.firstName,
-          requesterLastName: users.lastName
-        })
-        .from(hrRequests)
-        .leftJoin(users, eq(hrRequests.userId, users.id))
-        .where(and(
-          eq(hrRequests.tenantId, tenantId),
-          sql`${hrRequests.status} != 'draft'`
-        ))
-        .orderBy(desc(hrRequests.createdAt))
-        .limit(50);
-
-      // Apply filters
-      const conditions = [eq(hrRequests.tenantId, tenantId), sql`${hrRequests.status} != 'draft'`];
+      // Build filter conditions
+      const conditions = [eq(hrRequests.tenantId, tenantId), not(eq(hrRequests.status, 'draft'))];
       
       if (status) {
         conditions.push(eq(hrRequests.status, status as any));
@@ -7661,31 +7635,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For now, show requests they can approve or their own
         conditions.push(or(
           eq(hrRequests.userId, userId),
-          sql`${hrRequests.status} = 'pending'`
+          eq(hrRequests.status, 'pending')
         ));
       }
       // HR_MANAGER and ADMIN can see all requests
 
-      query = query.where(and(...conditions));
+      // Get real HR requests from database with all conditions
+      const query = db
+        .select()
+        .from(hrRequests)
+        .leftJoin(users, eq(hrRequests.userId, users.id))
+        .where(and(...conditions))
+        .orderBy(desc(hrRequests.createdAt))
+        .limit(50);
       
       const requests = await query;
       
       // Transform to Universal Request format
       const universalRequests = requests.map(req => ({
-        id: req.id,
+        id: req.hr_requests.id,
         serviceType: serviceType,
-        requestType: req.requestType,
-        title: req.title,
-        description: req.description || '',
-        requesterId: req.requesterId,
-        requesterName: `${req.requesterFirstName || 'N/A'} ${req.requesterLastName || ''}`.trim(),
-        status: req.status,
-        priority: req.priority || 'normal',
+        requestType: req.hr_requests.requestType,
+        title: req.hr_requests.title,
+        description: req.hr_requests.description || '',
+        requesterId: req.hr_requests.userId,
+        requesterName: req.users ? `${req.users.firstName || 'N/A'} ${req.users.lastName || ''}`.trim() : 'N/A',
+        status: req.hr_requests.status,
+        priority: req.hr_requests.priority || 'normal',
         currentApproverId: null, // Could be enhanced with approval flow
-        approvalLevel: req.status === 'pending' ? 1 : (req.status === 'approved' ? 2 : 0),
-        metadata: req.metadata || {},
-        createdAt: req.createdAt,
-        updatedAt: req.updatedAt
+        approvalLevel: req.hr_requests.status === 'pending' ? 1 : (req.hr_requests.status === 'approved' ? 2 : 0),
+        metadata: req.hr_requests.metadata || {},
+        createdAt: req.hr_requests.createdAt,
+        updatedAt: req.hr_requests.updatedAt
       }));
       
       res.json(universalRequests);
@@ -7993,15 +7974,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [performanceStats] = await db
         .select({
           totalRequests: sql<number>`count(*)`,
-          approvedRequests: sql<number>`count(case when status = 'approved' then 1 end)`,
-          onTimeRequests: sql<number>`count(case when status = 'approved' and extract(epoch from updated_at - created_at) <= 86400 then 1 end)`,
-          avgResponseTime: sql<number>`avg(extract(epoch from updated_at - created_at) / 3600.0)`
+          approvedRequests: sql<number>`count(case when ${hrRequests.status} = 'approved' then 1 end)`,
+          onTimeRequests: sql<number>`count(case when ${hrRequests.status} = 'approved' and extract(epoch from ${hrRequests.updatedAt} - ${hrRequests.createdAt}) <= 86400 then 1 end)`,
+          avgResponseTime: sql<number>`avg(extract(epoch from ${hrRequests.updatedAt} - ${hrRequests.createdAt}) / 3600.0)`
         })
         .from(hrRequests)
         .where(and(
           eq(hrRequests.tenantId, tenantId),
           eq(hrRequests.userId, userId),
-          sql`status != 'draft'`
+          not(eq(hrRequests.status, 'draft'))
         ));
 
       // Calculate derived performance metrics
