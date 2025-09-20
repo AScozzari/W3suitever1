@@ -1,14 +1,6 @@
 // Strategy Pattern - Centralized exports for all time attendance strategies
 export { BaseStrategy } from './BaseStrategy';
 
-// Individual Strategy Implementations
-export { GPSStrategy, gpsStrategy } from './GPSStrategy';
-export { NFCStrategy, nfcStrategy } from './NFCStrategy';
-export { QRStrategy, qrStrategy } from './QRStrategy';
-export { SmartStrategy, smartStrategy } from './SmartStrategy';
-export { WebStrategy, webStrategy } from './WebStrategy';
-export { BadgeStrategy, badgeStrategy } from './BadgeStrategy';
-
 // Types from TimeAttendanceFSM
 export type {
   TimeAttendanceStrategy,
@@ -17,6 +9,23 @@ export type {
   StrategyPrepareResult,
   StrategyPanelProps
 } from '@/types/timeAttendanceFSM';
+
+// Individual Strategy Implementations
+export { GPSStrategy, gpsStrategy } from './GPSStrategy';
+export { NFCStrategy, nfcStrategy } from './NFCStrategy';
+export { QRStrategy, qrStrategy } from './QRStrategy';
+export { SmartStrategy, smartStrategy } from './SmartStrategy';
+export { WebStrategy, webStrategy } from './WebStrategy';
+export { BadgeStrategy, badgeStrategy } from './BadgeStrategy';
+
+// Import strategy instances to use in functions
+import { gpsStrategy } from './GPSStrategy';
+import { nfcStrategy } from './NFCStrategy';
+import { qrStrategy } from './QRStrategy';
+import { smartStrategy } from './SmartStrategy';
+import { webStrategy } from './WebStrategy';
+import { badgeStrategy } from './BadgeStrategy';
+import type { TimeAttendanceStrategy, StrategyType } from '@/types/timeAttendanceFSM';
 
 // Strategy Registry - All available strategies (lazy loaded to avoid circular imports)
 export const ALL_STRATEGIES = {
