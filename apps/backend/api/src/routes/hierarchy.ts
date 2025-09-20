@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { eq, and, sql, asc, desc, isNull } from 'drizzle-orm';
-import { db } from '../db/db';
+import { db } from '../core/db';
 import { 
   organizationalStructure, 
   approvalWorkflows, 
