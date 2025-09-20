@@ -854,13 +854,16 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
 
   // ==================== QUICK STATS & HISTORY (BOTTOM-RIGHT) ====================
   function QuickStatsPanel() {
-    const todayEntries = timeEntries.filter(entry => {
+    // Safety check for timeEntries to prevent crashes
+    const safeTimeEntries = timeEntries || [];
+    
+    const todayEntries = safeTimeEntries.filter(entry => {
       const entryDate = new Date(entry.clockIn);
       const today = new Date();
       return entryDate.toDateString() === today.toDateString();
     });
 
-    const weekEntries = timeEntries.filter(entry => {
+    const weekEntries = safeTimeEntries.filter(entry => {
       const entryDate = new Date(entry.clockIn);
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -932,7 +935,7 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
             </div>
 
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {timeEntries.slice(0, 5).map((entry) => {
+              {safeTimeEntries.slice(0, 5).map((entry) => {
                 const clockInTime = new Date(entry.clockIn);
                 const clockOutTime = entry.clockOut ? new Date(entry.clockOut) : null;
                 const duration = clockOutTime 
@@ -976,7 +979,7 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
                 );
               })}
 
-              {timeEntries.length === 0 && (
+              {safeTimeEntries.length === 0 && (
                 <div className="text-sm text-gray-500 text-center py-4">
                   Nessuna timbratura registrata
                 </div>
