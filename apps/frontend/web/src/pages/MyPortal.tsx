@@ -39,7 +39,8 @@ import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Link } from 'wouter';
 import ClockWidget from '@/components/TimeTracking/ClockWidget';
-import TimeAttendancePage from '@/components/TimeTracking/TimeAttendancePage';
+// Lazy load TimeAttendancePage to improve initial load time
+const TimeAttendancePage = React.lazy(() => import('@/components/TimeTracking/TimeAttendancePage'));
 import HRRequestWizard from '@/components/HR/HRRequestWizard';
 import HRRequestDetails from '@/components/HR/HRRequestDetails';
 import PayslipManager from '@/components/Documents/PayslipManager';
@@ -160,7 +161,7 @@ export default function MyPortal() {
   // Display leave balance using typed helper
   const displayLeaveBalance = getDisplayLeaveBalance(leaveBalance);
 
-  // Performance data from API
+  // Performance data from API - only load when needed
   const { data: performanceData, isLoading: performanceLoading } = useQuery<{
     overview: {
       goalsAchieved: number;
@@ -179,10 +180,11 @@ export default function MyPortal() {
     periodicity: string;
   }>({
     queryKey: ['/api/employee/performance'],
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: activeTab === 'performance' || activeTab === 'overview'  // Only load on relevant tabs
   });
 
-  // Training data from API
+  // Training data from API - only load when needed
   const { data: trainingData, isLoading: trainingLoading } = useQuery<{
     overview: {
       completedCourses: number;
@@ -203,7 +205,8 @@ export default function MyPortal() {
     categories: string[];
   }>({
     queryKey: ['/api/employee/training'],
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: activeTab === 'training' || activeTab === 'overview'  // Only load on relevant tabs
   });
 
   // Extract data for compatibility
@@ -540,11 +543,22 @@ export default function MyPortal() {
                     />
                   </div>
                   
-                  {/* RIGHT: TimeAttendancePage (Mobile: Full Width, Desktop: 60%) */}
+                  {/* RIGHT: TimeAttendancePage (Mobile: Full Width, Desktop: 60%) - Lazy loaded */}
                   <div className="w-full xl:w-[60%] xl:flex-1">
-                    <TimeAttendancePage
-                      userId={displayUser.matricola}
-                    />
+                    <React.Suspense fallback={
+                      <Card className="glass-card h-full flex items-center justify-center">
+                        <CardContent>
+                          <div className="text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                            <p className="text-gray-500">Caricamento Time & Attendance...</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    }>
+                      <TimeAttendancePage
+                        userId={displayUser.matricola}
+                      />
+                    </React.Suspense>
                   </div>
                 </div>
 
