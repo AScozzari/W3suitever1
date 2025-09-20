@@ -9,9 +9,9 @@ interface WorkflowTabProps {
 
 export const HierarchyManagementTab: React.FC<WorkflowTabProps> = ({ selectedService }) => {
   const { data: hierarchyData, isLoading } = useQuery({
-    queryKey: ['/api/organizational-structure', selectedService],
-    queryFn: () => apiRequest(`/api/organizational-structure?service=${selectedService}`),
-    enabled: !!selectedService
+    queryKey: ['/api/organizational-structure'],
+    queryFn: () => apiRequest('/api/organizational-structure'),
+    enabled: true
   });
 
   const { data: usersData } = useQuery({
@@ -76,9 +76,9 @@ export const HierarchyManagementTab: React.FC<WorkflowTabProps> = ({ selectedSer
       </div>
       
       <div style={{ minHeight: '400px' }}>
-        {hierarchyData?.data && hierarchyData.data.length > 0 ? (
+        {hierarchyData && hierarchyData.length > 0 ? (
           <div style={{ display: 'grid', gap: '12px' }}>
-            {hierarchyData.data.map((node: any, index: number) => (
+            {hierarchyData.map((node: any, index: number) => (
               <div
                 key={node.id || index}
                 style={{
@@ -153,9 +153,9 @@ export const HierarchyManagementTab: React.FC<WorkflowTabProps> = ({ selectedSer
 
 export const WorkflowConfigurationTab: React.FC<WorkflowTabProps> = ({ selectedService }) => {
   const { data: workflowsData, isLoading } = useQuery({
-    queryKey: ['/api/approval-workflows', selectedService],
-    queryFn: () => apiRequest(`/api/approval-workflows?service=${selectedService}`),
-    enabled: !!selectedService
+    queryKey: ['/api/approval-workflows'],
+    queryFn: () => apiRequest('/api/approval-workflows'),
+    enabled: true
   });
 
   if (isLoading) {
@@ -172,7 +172,7 @@ export const WorkflowConfigurationTab: React.FC<WorkflowTabProps> = ({ selectedS
     );
   }
 
-  const serviceWorkflows = workflowsData?.workflows?.[selectedService] || [];
+  const serviceWorkflows = workflowsData?.filter((workflow: any) => workflow.serviceType === selectedService) || [];
 
   return (
     <div style={{
