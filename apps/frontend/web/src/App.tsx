@@ -8,7 +8,6 @@ import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 // Legacy imports removed - consolidated into HR and Employee dashboards
-import MyPortal from "./pages/MyPortal";
 import HRManagementDashboard from "./pages/HRManagementDashboard";
 import NotificationCenter from "./pages/NotificationCenter";
 import NotFound from "./pages/NotFound";
@@ -40,10 +39,6 @@ function Router() {
       
       {/* ===== ENTERPRISE HR CONSOLIDATION: ONLY 2 HR ROUTES ===== */}
       
-      {/* Il Mio Portale - Employee Self-Service Portal */}
-      <Route path="/:tenant/portale">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><MyPortal /></AuthenticatedApp></TenantWrapper>}
-      </Route>
       
       {/* NEW HR Management Dashboard - Sistema universale con microservizi */}
       <Route path="/:tenant/hr-management">
@@ -55,26 +50,26 @@ function Router() {
         {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/calendar">
-        {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
+        {(params) => <Redirect to={`/${params.tenant}/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/time-tracking">
-        {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
+        {(params) => <Redirect to={`/${params.tenant}/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/leave-management">
-        {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
+        {(params) => <Redirect to={`/${params.tenant}/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/shift-planning">
         {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
       <Route path="/:tenant/documents">
-        {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
+        {(params) => <Redirect to={`/${params.tenant}/dashboard`} replace />}
       </Route>
       <Route path="/:tenant/expense-management">
-        {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
+        {(params) => <Redirect to={`/${params.tenant}/dashboard`} replace />}
       </Route>
-      {/* Backward compatibility redirect from old employee dashboard to new portal */}
+      {/* Backward compatibility redirect from old employee dashboard to main dashboard */}
       <Route path="/:tenant/employee/dashboard">
-        {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
+        {(params) => <Redirect to={`/${params.tenant}/dashboard`} replace />}
       </Route>
       {/* Route principale HR - ProtectedHRRoute verifica RBAC e reindirizza a /hr-management se autorizzato */}
       <Route path="/:tenant/hr">
@@ -342,8 +337,8 @@ function ProtectedHRRoute({ tenant }: { tenant: string }) {
   
   // Check if user has HR management permissions
   if (!hasHRAccess()) {
-    // Redirect to employee portal for non-HR users
-    return <Redirect to={`/${tenant}/portale`} />;
+    // Redirect to main dashboard for non-HR users
+    return <Redirect to={`/${tenant}/dashboard`} />;
   }
   
   // Redirect authorized HR users to new HR Management Dashboard
