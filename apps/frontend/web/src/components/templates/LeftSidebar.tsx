@@ -54,7 +54,7 @@ const defaultMenuItems: MenuItem[] = [
   { id: 'amministrazione', label: 'Amministrazione', icon: Building },
   { id: 'listini', label: 'Listini', icon: FileText },
   { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
-  { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settingpage' }
+  { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
 ];
 
 export default function LeftSidebar({
@@ -161,7 +161,7 @@ export default function LeftSidebar({
       if (item.path === '/') {
         navigate(`/${tenant}`);
       } else if (item.id === 'impostazioni') {
-        navigate(`/${tenant}/settingpage`);
+        navigate(`/${tenant}/settings`);
       } else {
         navigate(`/${tenant}${item.path}`);
       }
@@ -173,7 +173,7 @@ export default function LeftSidebar({
   // Check if item is active
   const isItemActive = (item: MenuItem) => {
     if (item.path === '/' && currentModule === 'dashboard') return true;
-    if (item.id === 'impostazioni' && location.includes('/settingpage')) return true;
+    if (item.id === 'impostazioni' && location.includes('/settings')) return true;
     if (item.hasSubmenu) {
       return item.submenuItems?.some(subItem => location.includes(subItem.path || ''));
     }

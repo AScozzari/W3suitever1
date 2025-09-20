@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { oauth2Client } from '../services/OAuth2Client';
 import { UserData } from '@/types';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
@@ -13,7 +12,7 @@ import {
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
-  LogOut, HelpCircle, MapPin, UserCircle, Store, UserCog
+  LogOut, HelpCircle, MapPin, UserCircle, Store
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import LoginModal from './LoginModal';
@@ -74,7 +73,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [isTablet, setIsTablet] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
-  const { hasHRAccess } = useAuth();
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   
@@ -494,30 +492,18 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   };
 
   // Menu items dalla sidebar mostrata negli screenshots
-  const baseMenuItems = [
+  const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'employee', label: 'Il Mio Portale', icon: UserCircle },
     { id: 'crm', label: 'CRM', icon: Users },
     { id: 'ai', label: 'AI Tools', icon: Zap },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building },
+    { id: 'hr', label: 'Human Resources', icon: UserPlus },
+    { id: 'listini', label: 'Listini', icon: FileText },
+    { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
+    { id: 'impostazioni', label: 'Impostazioni', icon: Settings }
   ];
-  
-  // Add HR Management if user has RBAC access
-  const menuItems = React.useMemo(() => {
-    const items = [...baseMenuItems];
-    
-    if (hasHRAccess()) {
-      items.push({ id: 'hr-management', label: 'HR Management', icon: UserCog });
-    }
-    
-    items.push(
-      { id: 'listini', label: 'Listini', icon: FileText },
-      { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
-      { id: 'impostazioni', label: 'Impostazioni', icon: Settings }
-    );
-    
-    return items;
-  }, [hasHRAccess]);
 
   return (
     <div style={{
@@ -861,7 +847,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                   <button
                     onClick={() => {
                       const tenant = localStorage.getItem('currentTenant') || 'staging';
-                      window.location.href = `/${tenant}`;
+                      window.location.href = `/${tenant}/portale`;
                       setUserMenuOpen(false);
                     }}
                     style={{
@@ -1058,11 +1044,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               // Controlla se il menu è attivo considerando il tenant nel path
               const currentPath = window.location.pathname;
               const pathSegments = currentPath.split('/').filter(Boolean);
-              const isSettingsPath = pathSegments[1] === 'settingpage';
+              const isSettingsPath = pathSegments[1] === 'settings';
               const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
               
               const isEmployeePath = pathSegments[1] === 'employee';
-              const isHRManagementPath = pathSegments[1] === 'hr-management';
               
               const isActive = item.id === 'impostazioni' 
                 ? isSettingsPath
@@ -1070,8 +1055,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 ? isDashboardPath
                 : item.id === 'employee'
                 ? isEmployeePath
-                : item.id === 'hr-management'
-                ? isHRManagementPath
                 : currentModule === item.id;
               
               return (
@@ -1083,13 +1066,11 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     const tenant = currentPath.split('/')[1] || 'staging';
                     
                     if (item.id === 'impostazioni') {
-                      navigate(`/${tenant}/settingpage`);
+                      navigate(`/${tenant}/settings`);
                     } else if (item.id === 'dashboard') {
                       navigate(`/${tenant}`);
                     } else if (item.id === 'employee') {
-                      navigate(`/${tenant}`);
-                    } else if (item.id === 'hr-management') {
-                      navigate(`/${tenant}/hr-management`);
+                      navigate(`/${tenant}/portale`);
                     } else {
                       setCurrentModule(item.id);
                     }
