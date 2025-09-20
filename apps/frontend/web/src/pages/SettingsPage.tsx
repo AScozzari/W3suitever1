@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import AvatarSelector from '../components/AvatarSelector';
 import HierarchyTreeView from '@/components/HierarchyTreeView';
 import HierarchyNodeDialog from '@/components/HierarchyNodeDialog';
+import WorkflowConfigurator from '@/components/WorkflowConfigurator';
 import {
   StandardEmailField,
   StandardCityField,
@@ -4900,12 +4901,34 @@ export default function SettingsPage() {
                     Caricamento workflow...
                   </div>
                 ) : (
-                  <div>
-                    <p style={{ color: '#6b7280', fontSize: '14px' }}>
-                      Workflow configurati per {availableServices.find(s => s.id === selectedService)?.name}
-                    </p>
-                    {/* Qui andrà la lista dei workflow */}
-                  </div>
+                  <WorkflowConfigurator
+                    serviceType={selectedService}
+                    serviceName={availableServices.find(s => s.id === selectedService)?.name || ''}
+                    serviceColor={availableServices.find(s => s.id === selectedService)?.color || '#FF6900'}
+                    workflows={workflowsData?.workflows || []}
+                    availableRoles={rolesData || []}
+                    availablePositions={hierarchyData?.hierarchy?.map((node: any) => ({
+                      id: node.id,
+                      name: node.name
+                    })) || []}
+                    onSave={async (workflow) => {
+                      await apiRequest('/api/approval-workflows', {
+                        method: workflow.id ? 'PATCH' : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          ...workflow,
+                          serviceType: selectedService
+                        })
+                      });
+                      await queryClient.invalidateQueries({ queryKey: ['/api/approval-workflows', selectedService] });
+                    }}
+                    onDelete={async (workflowId) => {
+                      await apiRequest(`/api/approval-workflows/${workflowId}`, {
+                        method: 'DELETE'
+                      });
+                      await queryClient.invalidateQueries({ queryKey: ['/api/approval-workflows', selectedService] });
+                    }}
+                  />
                 )}
               </div>
             )}
