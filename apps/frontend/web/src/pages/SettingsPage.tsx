@@ -4984,7 +4984,7 @@ export default function SettingsPage() {
                 padding: '20px'
               }}>
                 <HierarchyTreeView
-                  data={hierarchyData?.hierarchy || []}
+                  data={hierarchyData || []}
                   selectedNodeId={selectedNode?.id}
                   onNodeSelect={(node) => setSelectedNode(node)}
                   onNodeAdd={(parentId) => {
@@ -5082,9 +5082,9 @@ export default function SettingsPage() {
                     serviceType={selectedService}
                     serviceName={availableServices.find(s => s.id === selectedService)?.name || ''}
                     serviceColor={availableServices.find(s => s.id === selectedService)?.color || '#FF6900'}
-                    workflows={workflowsData?.workflows || []}
+                    workflows={workflowsData || []}
                     availableRoles={rolesData || []}
-                    availablePositions={hierarchyData?.hierarchy?.map((node: any) => ({
+                    availablePositions={hierarchyData?.map((node: any) => ({
                       id: node.id,
                       name: node.name
                     })) || []}
