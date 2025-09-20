@@ -57,6 +57,7 @@ import { CurrentSession, ModalState, DocumentCategoriesProps, DocumentGridProps 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import AvatarSelector from '@/components/AvatarSelector';
 
 // Tab configuration for Employee Dashboard
 const EMPLOYEE_TABS = [
@@ -1101,22 +1102,59 @@ export default function MyPortal() {
                     </CardContent>
                   </Card>
 
-                  {/* Profile Picture */}
+                  {/* Profile Picture - Now with working avatar upload */}
                   <Card className="glass-card">
                     <CardHeader>
                       <CardTitle>Foto Profilo</CardTitle>
                     </CardHeader>
                     <CardContent className="text-center">
-                      <Avatar className="h-32 w-32 mx-auto mb-4" data-testid="avatar-profile-large">
-                        <AvatarImage src={displayUser.foto || undefined} alt={`${displayUser.nome} ${displayUser.cognome}`} />
-                        <AvatarFallback className="bg-gradient-to-r from-orange-500 to-purple-500 text-white text-2xl" data-testid="avatar-profile-fallback">
-                          {displayUser.nome[0]}{displayUser.cognome[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <Button variant="outline" size="sm" data-testid="button-change-photo">
-                        <Camera className="h-4 w-4 mr-2" />
-                        Cambia Foto
-                      </Button>
+                      <AvatarSelector
+                        currentAvatarUrl={displayUser.foto || undefined}
+                        firstName={displayUser.nome}
+                        lastName={displayUser.cognome}
+                        username={displayUser.username}
+                        onAvatarChange={async (avatarData) => {
+                          console.log('🖼️ Avatar change requested for profile:', avatarData);
+                          
+                          try {
+                            if (!displayUser.id) {
+                              console.error('❌ No user ID available for avatar update');
+                              return;
+                            }
+                            
+                            // Update avatar using existing API endpoint
+                            const response = await fetch(`/api/users/${displayUser.id}/avatar`, {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'X-Tenant-ID': localStorage.getItem('currentTenantId') || '00000000-0000-0000-0000-000000000001'
+                              },
+                              body: JSON.stringify({
+                                avatarUrl: avatarData.url || null
+                              })
+                            });
+
+                            if (!response.ok) {
+                              const errorData = await response.json();
+                              throw new Error(errorData.message || `Failed to update avatar: ${response.statusText}`);
+                            }
+
+                            const result = await response.json();
+                            console.log('✅ Avatar updated successfully:', result);
+                            
+                            // Refresh user data to show updated avatar
+                            setTimeout(() => {
+                              window.location.reload();
+                            }, 1000);
+
+                          } catch (error) {
+                            console.error('❌ Error updating avatar:', error);
+                            alert('Errore durante l\'aggiornamento dell\'avatar. Riprova.');
+                          }
+                        }}
+                        loading={false}
+                        size={120}
+                      />
                     </CardContent>
                   </Card>
                 </div>

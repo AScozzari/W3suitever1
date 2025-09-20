@@ -9615,29 +9615,71 @@ export default function SettingsPage() {
                       return;
                     }
                     
-                    // Aggiungi l'utente alla lista
-                    const newUserEntry = {
-                      id: utentiList.length + 1,
-                      tenant_id: getCurrentTenantId(),
-                      username: newUser.username,
-                      nome: newUser.nome,
-                      cognome: newUser.cognome,
-                      email: newUser.email,
-                      telefono: newUser.telefono,
-                      ruolo: newUser.ruolo,
-                      ambito: newUser.scopeLevel === 'organizzazione' ? 'Organizzazione' : 
-                              newUser.scopeLevel === 'ragioni_sociali' ? 
-                                (newUser.selectedStores.length > 0 ? 
-                                  `${newUser.selectedLegalEntities.length} RS, ${newUser.selectedStores.length} PV` :
-                                  `${newUser.selectedLegalEntities.length} Ragioni Sociali`) :
-                              `${newUser.selectedStores.length} Punti Vendita`,
-                      stato: newUser.stato,
-                      ultimoAccesso: 'Mai',
-                      createdAt: new Date().toISOString().split('T')[0]
-                    };
+                    // 🔥 SAVE USER TO DATABASE WITH AVATAR
+                    console.log('💾 Creating new user with avatar:', newUser.avatar);
                     
-                    setUtentiList([...utentiList, newUserEntry]);
-                    setUserModal({ open: false, data: null });
+                    const createUser = async () => {
+                      try {
+                        const userData = {
+                          username: newUser.username,
+                          nome: newUser.nome,
+                          cognome: newUser.cognome,
+                          email: newUser.email,
+                          telefono: newUser.telefono,
+                          ruolo: newUser.ruolo,
+                          stato: newUser.stato,
+                          foto: newUser.avatar?.url || null, // ✅ INCLUDE AVATAR URL
+                          password: newUser.password,
+                          tenant_id: getCurrentTenantId()
+                        };
+
+                        console.log('📤 Sending user data to API:', userData);
+                        
+                        const response = await fetch('/api/users', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'X-Tenant-ID': getCurrentTenantId()
+                          },
+                          body: JSON.stringify(userData)
+                        });
+
+                        if (!response.ok) {
+                          throw new Error(`Failed to create user: ${response.statusText}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('✅ User created successfully:', result);
+
+                        // Refresh user list from API
+                        await refetchUserData();
+                        setUserModal({ open: false, data: null });
+
+                        // Reset form
+                        setNewUser({
+                          username: '',
+                          password: '',
+                          confirmPassword: '',
+                          nome: '',
+                          cognome: '',
+                          email: '',
+                          telefono: '',
+                          ruolo: '',
+                          stato: 'attivo',
+                          scopeLevel: 'organizzazione',
+                          selectAllLegalEntities: true,
+                          selectedLegalEntities: [],
+                          selectedStores: [],
+                          avatar: null
+                        });
+
+                      } catch (error) {
+                        console.error('❌ Error creating user:', error);
+                        alert('Errore durante la creazione dell\'utente. Riprova.');
+                      }
+                    };
+
+                    createUser();
                   }}
                   style={{
                     padding: '10px 24px',
