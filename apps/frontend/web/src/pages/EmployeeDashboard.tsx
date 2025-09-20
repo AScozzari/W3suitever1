@@ -4,6 +4,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUser } from '@/hooks/useUsers';
 import { useNotifications } from '@/hooks/useNotifications';
+import { getDisplayUser, getDisplayLeaveBalance, extractHRRequests } from '@/types';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -143,44 +144,23 @@ export default function EmployeeDashboard() {
   const [isOnBreak, setIsOnBreak] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
-  // Extract requests from response and provide fallbacks
-  const myRequests = Array.isArray(myRequestsData) ? myRequestsData : ((myRequestsData as any)?.data || []);
+  // Extract requests from response using typed helper
+  const myRequests = extractHRRequests(myRequestsData);
   
   // Loading states
   const isLoading = userLoading || leaveLoading || notificationsLoading || requestsLoading;
   
-  // Display user info with fallbacks
-  const displayUser = {
-    nome: (userData as any)?.firstName || authUser?.name?.split(' ')[0] || 'Demo',
-    cognome: (userData as any)?.lastName || authUser?.name?.split(' ')[1] || 'User',
-    email: (userData as any)?.email || authUser?.email || 'demo@windtre.it',
-    telefono: (userData as any)?.phone || '+39 335 123 4567',
-    ruolo: (userData as any)?.position || 'Employee',
-    reparto: (userData as any)?.department || 'General',
-    matricola: (userData as any)?.id || 'W3-DEMO',
-    foto: (userData as any)?.profileImageUrl || null,
-    dataAssunzione: (userData as any)?.hireDate || '15/03/2022',
-    manager: 'Laura Bianchi',
-    store: 'Milano Centro'
-  };
+  // Display user info using typed helper
+  const displayUser = getDisplayUser(userData, authUser);
   
-  // Display leave balance with fallbacks
-  const displayLeaveBalance = {
-    ferieRimanenti: (leaveBalance as any)?.remainingVacationDays || (leaveBalance as any)?.vacationDaysRemaining || 18,
-    permessiRimanenti: (leaveBalance as any)?.remainingPersonalDays || (leaveBalance as any)?.personalDaysRemaining || 20,
-    ferieAnno: (leaveBalance as any)?.totalVacationDays || 26,
-    ferieUsate: (leaveBalance as any)?.usedVacationDays || 8,
-    permessiROL: (leaveBalance as any)?.totalPersonalDays || 32,
-    permessiUsati: (leaveBalance as any)?.usedPersonalDays || 12,
-    malattia: (leaveBalance as any)?.sickDays || 5,
-    congedi: (leaveBalance as any)?.otherLeave || 0
-  };
+  // Display leave balance using typed helper
+  const displayLeaveBalance = getDisplayLeaveBalance(leaveBalance);
 
   // Performance data - Remove mock data for production readiness
-  const [performance] = useState([] as any[]);
+  const [performance] = useState<Array<never>>([]);
 
   // Training data - Remove mock data for production readiness
-  const [training] = useState([] as any[]);
+  const [training] = useState<Array<never>>([]);
 
   // Update current time
   useEffect(() => {
@@ -1206,7 +1186,7 @@ export default function EmployeeDashboard() {
                       {/* Leave Balance Tab */}
                       <TabsContent value="balances" className="space-y-6">
                         <LeaveBalanceWidget 
-                          userId={(userData as any)?.id || 'admin-user'}
+                          userId={displayUser.matricola}
                           className="glass-card"
                         />
 
