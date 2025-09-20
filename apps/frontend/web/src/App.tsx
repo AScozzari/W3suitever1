@@ -8,7 +8,7 @@ import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 // Legacy imports removed - consolidated into HR and Employee dashboards
-// import HRDashboard from "./pages/HRDashboard"; // TEMP: Commented out due to compilation error
+import HRDashboard from "./pages/HRDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import NotificationCenter from "./pages/NotificationCenter";
 import TenantVerificationTest from "./pages/TenantVerificationTest";
@@ -283,8 +283,7 @@ function ProtectedHRRoute({ tenant }: { tenant: string }) {
     return <Redirect to={`/${tenant}/employee/dashboard`} />;
   }
   
-  // return <HRDashboard />; // TEMP: Commented out due to compilation error
-  return <div className="p-8 text-center">HR Dashboard temporaneamente non disponibile (compilazione in corso)</div>;
+  return <HRDashboard />;
 }
 
 // Wrapper per pagine che richiedono autenticazione
