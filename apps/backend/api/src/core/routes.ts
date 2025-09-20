@@ -33,6 +33,7 @@ import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, 
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
+import hierarchyRouter from "../routes/hierarchy";
 import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
 import { objectAclService } from "./objectAcl";
 import { HRStorage } from "./hr-storage";
@@ -7542,6 +7543,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
+  // Mount the hierarchy system router with authentication
+  app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
+  
   // Direct health check route (outside /api prefix)
   app.get("/health", async (req, res) => {
     try {

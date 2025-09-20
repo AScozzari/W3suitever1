@@ -1805,6 +1805,197 @@ export const hrRequestStatusHistoryRelations = relations(hrRequestStatusHistory,
   changedByUser: one(users, { fields: [hrRequestStatusHistory.changedBy], references: [users.id] }),
 }));
 
+// ==================== UNIVERSAL HIERARCHY SYSTEM ====================
+
+// Organizational Structure - Gerarchia universale per tutti i servizi
+export const organizationalStructure = w3suiteSchema.table("organizational_structure", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // User hierarchy
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  parentId: varchar("parent_id").references(() => users.id), // Manager diretto
+  
+  // Tree structure optimization
+  pathTree: text("path_tree").array().default([]), // ['ceo_id', 'area_mgr_id', 'store_mgr_id', 'user_id']
+  depth: integer("depth").notNull().default(0), // Livello nell'albero (0 = CEO)
+  
+  // Organizational unit
+  organizationalUnit: varchar("organizational_unit", { length: 100 }), // 'store_milano', 'it_dept', 'finance_team'
+  unitType: varchar("unit_type", { length: 50 }), // 'store', 'department', 'team', 'division'
+  
+  // Deleghe temporanee
+  delegates: jsonb("delegates").default([]), // [{userId, fromDate, toDate, permissions}]
+  
+  // Temporal validity
+  validFrom: timestamp("valid_from").notNull().defaultNow(),
+  validTo: timestamp("valid_to"),
+  
+  // RBAC permissions scope
+  permissions: jsonb("permissions").default({}), // Service-specific permissions
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("org_structure_tenant_user_idx").on(table.tenantId, table.userId),
+  index("org_structure_parent_idx").on(table.parentId),
+  index("org_structure_unit_idx").on(table.organizationalUnit),
+  index("org_structure_path_gin_idx").using("gin", table.pathTree),
+  uniqueIndex("org_structure_user_valid_unique").on(table.userId, table.validFrom),
+]);
+
+export const insertOrganizationalStructureSchema = createInsertSchema(organizationalStructure).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertOrganizationalStructure = z.infer<typeof insertOrganizationalStructureSchema>;
+export type OrganizationalStructure = typeof organizationalStructure.$inferSelect;
+
+// Approval Workflows - Definizione workflow di approvazione per ogni servizio
+export const approvalWorkflows = w3suiteSchema.table("approval_workflows", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Service identification
+  serviceName: varchar("service_name", { length: 50 }).notNull(), // 'hr', 'finance', 'operations', 'it', 'sales'
+  workflowType: varchar("workflow_type", { length: 100 }).notNull(), // 'leave_request', 'purchase_order', 'discount_approval'
+  
+  // Workflow rules (JSONB for flexibility)
+  rules: jsonb("rules").notNull(), /* {
+    levels: [
+      { condition: "amount <= 1000", approvers: ["direct_manager"], slaHours: 24 },
+      { condition: "amount > 1000", approvers: ["direct_manager", "department_head"], slaHours: 48 }
+    ],
+    escalation: { afterHours: 24, escalateTo: "next_level" },
+    autoApprove: { condition: "amount < 100" }
+  } */
+  
+  // Configuration
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(100), // Higher priority workflows are evaluated first
+  
+  // Metadata
+  description: text("description"),
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("approval_workflows_service_idx").on(table.serviceName, table.workflowType),
+  index("approval_workflows_tenant_active_idx").on(table.tenantId, table.isActive),
+  uniqueIndex("approval_workflows_unique").on(table.tenantId, table.serviceName, table.workflowType),
+]);
+
+export const insertApprovalWorkflowSchema = createInsertSchema(approvalWorkflows).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertApprovalWorkflow = z.infer<typeof insertApprovalWorkflowSchema>;
+export type ApprovalWorkflow = typeof approvalWorkflows.$inferSelect;
+
+// Universal Requests - Richieste universali per tutti i servizi
+export const universalRequests = w3suiteSchema.table("universal_requests", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Service identification
+  serviceName: varchar("service_name", { length: 50 }).notNull(), // 'hr', 'finance', 'operations'
+  requestType: varchar("request_type", { length: 100 }).notNull(), // 'leave', 'purchase', 'access'
+  
+  // Requester information
+  requesterId: varchar("requester_id").notNull().references(() => users.id),
+  onBehalfOf: varchar("on_behalf_of").references(() => users.id), // For delegated requests
+  
+  // Request data (flexible for each service)
+  requestData: jsonb("request_data").notNull(), // Service-specific data
+  
+  // Approval status
+  status: varchar("status", { length: 50 }).notNull().default("draft"), // draft, pending, approved, rejected, cancelled
+  currentLevel: integer("current_level").default(0),
+  approvalChain: jsonb("approval_chain").default([]), // Approval history
+  
+  // SLA tracking
+  priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, urgent
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  
+  // Metadata
+  tags: text("tags").array().default([]),
+  attachments: jsonb("attachments").default([]),
+  notes: text("notes"),
+  
+  // Audit
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("universal_requests_service_idx").on(table.serviceName, table.requestType),
+  index("universal_requests_status_idx").on(table.status, table.currentLevel),
+  index("universal_requests_requester_idx").on(table.requesterId),
+  index("universal_requests_tenant_created_idx").on(table.tenantId, table.createdAt),
+]);
+
+export const insertUniversalRequestSchema = createInsertSchema(universalRequests).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertUniversalRequest = z.infer<typeof insertUniversalRequestSchema>;
+export type UniversalRequest = typeof universalRequests.$inferSelect;
+
+// Service Permissions - Definizione permessi per ogni servizio
+export const servicePermissions = w3suiteSchema.table("service_permissions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Service and permission
+  serviceName: varchar("service_name", { length: 50 }).notNull(),
+  resource: varchar("resource", { length: 100 }).notNull(),
+  action: varchar("action", { length: 50 }).notNull(),
+  
+  // Permission scope
+  roleId: uuid("role_id").references(() => roles.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
+  
+  // Conditions
+  conditions: jsonb("conditions").default({}), // { maxAmount: 1000, maxDays: 10, etc }
+  
+  // Validity
+  isActive: boolean("is_active").default(true),
+  validFrom: timestamp("valid_from").defaultNow(),
+  validTo: timestamp("valid_to"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+}, (table) => [
+  index("service_permissions_service_idx").on(table.serviceName),
+  index("service_permissions_role_idx").on(table.roleId),
+  index("service_permissions_user_idx").on(table.userId),
+  uniqueIndex("service_permissions_unique").on(
+    table.tenantId, 
+    table.serviceName, 
+    table.resource, 
+    table.action, 
+    table.roleId,
+    table.userId
+  ),
+]);
+
+export const insertServicePermissionSchema = createInsertSchema(servicePermissions).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertServicePermission = z.infer<typeof insertServicePermissionSchema>;
+export type ServicePermission = typeof servicePermissions.$inferSelect;
+
 // ==================== NOTIFICATION SYSTEM RELATIONS ====================
 
 // Notifications Relations
