@@ -124,7 +124,7 @@ export default function HRManagementDashboard() {
   const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
 
   // Fetch user permissions per RBAC
-  const { data: userPermissions } = useQuery({
+  const { data: userPermissions } = useQuery<{ permissions: string[] }>({
     queryKey: ['/api/users/me/permissions'],
     staleTime: 1000 * 60 * 5
   });
@@ -154,7 +154,13 @@ export default function HRManagementDashboard() {
   });
 
   // Real-time HR Metrics from actual users table
-  const { data: hrMetrics, isLoading: metricsLoading } = useQuery({
+  const { data: hrMetrics, isLoading: metricsLoading } = useQuery<{
+    avgProcessingTime: number;
+    complianceRate: number;
+    totalEmployees: number;
+    activeRequests: number;
+    completedToday: number;
+  }>({
     queryKey: ['/api/hr/metrics/realtime'],
     refetchInterval: refreshInterval,
     staleTime: 1000 * 30
@@ -509,8 +515,11 @@ export default function HRManagementDashboard() {
     </Card>
   );
 
+  // State for Layout props
+  const [currentModule, setCurrentModule] = useState('hr-management');
+
   return (
-    <Layout>
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
