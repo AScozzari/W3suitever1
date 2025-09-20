@@ -11,6 +11,7 @@ import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 import MyPortal from "./pages/MyPortal";
 import HRManagementDashboard from "./pages/HRManagementDashboard";
 import NotificationCenter from "./pages/NotificationCenter";
+import NotFound from "./pages/NotFound";
 import TenantVerificationTest from "./pages/TenantVerificationTest";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
@@ -148,9 +149,9 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* Root path - serve directly staging dashboard */}
+      {/* Root path - redirect to staging dashboard */}
       <Route path="/">
-        {() => <TenantWrapper params={{tenant: 'staging'}}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
+        {() => <Redirect to="/staging/dashboard" />}
       </Route>
       
       {/* Route root tenant - redirect basato su auth */}
@@ -158,9 +159,9 @@ function Router() {
         {(params) => <TenantWrapper params={params}><TenantRoot /></TenantWrapper>}
       </Route>
       
-      {/* Fallback for any unmatched routes */}
+      {/* Fallback for any unmatched routes - Security-focused 404 page */}
       <Route>
-        {() => <TenantWrapper params={{tenant: 'staging'}}><AuthenticatedApp><DashboardPage /></AuthenticatedApp></TenantWrapper>}
+        {() => <NotFound />}
       </Route>
     </Switch>
   );
@@ -169,11 +170,15 @@ function Router() {
 // Component wrapper per gestire il tenant
 function TenantWrapper({ params, children }: { params: any, children: React.ReactNode }) {
   const tenant = params.tenant;
+  const [tenantValid, setTenantValid] = useState<boolean | null>(null);
   
   useEffect(() => {
     // CRITICAL SECURITY FIX: Proper tenant UUID resolution via API call
     const resolveAndSetTenant = async () => {
-      if (!tenant) return;
+      if (!tenant) {
+        setTenantValid(false);
+        return;
+      }
       
       try {
         console.log(`[TENANT-WRAPPER] 🔍 Resolving tenant slug "${tenant}" to UUID via API`);
@@ -189,19 +194,28 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
         if (!response.ok) {
           console.error(`[TENANT-WRAPPER] ❌ Tenant resolution failed: ${response.status} ${response.statusText}`);
           
-          // Fallback to hardcoded mapping for development only
-          console.warn('[TENANT-WRAPPER] ⚠️ Using fallback tenant mapping (development only)');
-          const fallbackMapping: Record<string, string> = {
-            'staging': '00000000-0000-0000-0000-000000000001',
-            'demo': '99999999-9999-9999-9999-999999999999',
-            'acme': '11111111-1111-1111-1111-111111111111',
-            'tech': '22222222-2222-2222-2222-222222222222'
-          };
+          // Development fallback only for known tenants
+          if (import.meta.env.MODE === 'development') {
+            console.warn('[TENANT-WRAPPER] ⚠️ Using fallback tenant mapping (development only)');
+            const fallbackMapping: Record<string, string> = {
+              'staging': '00000000-0000-0000-0000-000000000001',
+              'demo': '99999999-9999-9999-9999-999999999999',
+              'acme': '11111111-1111-1111-1111-111111111111',
+              'tech': '22222222-2222-2222-2222-222222222222'
+            };
+            
+            const fallbackId = fallbackMapping[tenant];
+            if (fallbackId) {
+              localStorage.setItem('currentTenantId', fallbackId);
+              setCurrentTenantId(fallbackId);
+              console.warn(`[TENANT-WRAPPER] ⚠️ Using fallback UUID: ${fallbackId}`);
+              setTenantValid(true);
+              return;
+            }
+          }
           
-          const fallbackId = fallbackMapping[tenant] || fallbackMapping['staging'];
-          localStorage.setItem('currentTenantId', fallbackId);
-          setCurrentTenantId(fallbackId);
-          console.warn(`[TENANT-WRAPPER] ⚠️ Using fallback UUID: ${fallbackId}`);
+          // Tenant not found - mark as invalid
+          setTenantValid(false);
           return;
         }
         
@@ -217,29 +231,71 @@ function TenantWrapper({ params, children }: { params: any, children: React.Reac
         console.log(`[TENANT-WRAPPER] 📋 Tenant name: "${data.name}"`);
         console.log(`[TENANT-WRAPPER] ✅ Ready for authenticated API calls with proper tenant headers`);
         
+        setTenantValid(true);
+        
       } catch (error) {
         console.error('[TENANT-WRAPPER] ❌ CRITICAL ERROR: Tenant resolution failed:', error);
         console.error('[TENANT-WRAPPER] 🚨 This could cause cross-tenant data leakage!');
         
-        // In production, this should block rendering or redirect to error page
-        // For development, fallback to hardcoded mapping with warnings
-        const fallbackMapping: Record<string, string> = {
-          'staging': '00000000-0000-0000-0000-000000000001',
-          'demo': '99999999-9999-9999-9999-999999999999',
-          'acme': '11111111-1111-1111-1111-111111111111',
-          'tech': '22222222-2222-2222-2222-222222222222'
-        };
+        // In development, check known tenants
+        if (import.meta.env.MODE === 'development') {
+          const fallbackMapping: Record<string, string> = {
+            'staging': '00000000-0000-0000-0000-000000000001',
+            'demo': '99999999-9999-9999-9999-999999999999',
+            'acme': '11111111-1111-1111-1111-111111111111',
+            'tech': '22222222-2222-2222-2222-222222222222'
+          };
+          
+          const fallbackId = fallbackMapping[tenant];
+          if (fallbackId) {
+            localStorage.setItem('currentTenantId', fallbackId);
+            setCurrentTenantId(fallbackId);
+            console.error(`[TENANT-WRAPPER] ⚠️ EMERGENCY FALLBACK: Using UUID ${fallbackId}`);
+            setTenantValid(true);
+            return;
+          }
+        }
         
-        const fallbackId = fallbackMapping[tenant] || fallbackMapping['staging'];
-        localStorage.setItem('currentTenantId', fallbackId);
-        setCurrentTenantId(fallbackId);
-        console.error(`[TENANT-WRAPPER] ⚠️ EMERGENCY FALLBACK: Using UUID ${fallbackId}`);
+        // Mark as invalid tenant
+        setTenantValid(false);
       }
     };
     
     resolveAndSetTenant();
   }, [tenant]);
   
+  // Show loading while validating tenant
+  if (tenantValid === null) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 25%, 96%))'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #FF6900',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }} />
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>Verifica tenant...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If tenant is invalid, show 404 page
+  if (tenantValid === false) {
+    return <NotFound />;
+  }
+  
+  // Tenant is valid, render children
   return <>{children}</>;
 }
 
