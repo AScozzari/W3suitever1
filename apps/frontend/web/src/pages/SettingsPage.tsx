@@ -4955,7 +4955,7 @@ export default function SettingsPage() {
                 Struttura Organizzativa
               </h3>
               <button
-                onClick={() => setIsAddingNode(true)}
+                onClick={() => setNodeDialogOpen(true)}
                 style={{
                   padding: '8px 16px',
                   background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
