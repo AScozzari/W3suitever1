@@ -482,6 +482,10 @@ export default function SettingsPage() {
   // Selected entity tab
   const [selectedEntity, setSelectedEntity] = useState('ragione-sociale');
   
+  // Workflow Management State
+  const [workflowSubTab, setWorkflowSubTab] = useState('hierarchy');
+  const [selectedWorkflowService, setSelectedWorkflowService] = useState('hr');
+  
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
   const [puntiVenditaList, setPuntiVenditaList] = useState<any[]>([]);
@@ -1873,14 +1877,19 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={service.id}
+                    onClick={() => setSelectedWorkflowService(service.id)}
                     style={{
                       padding: '16px',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: selectedWorkflowService === service.id 
+                        ? `linear-gradient(135deg, ${service.color}20, ${service.color}10)`
+                        : 'rgba(255, 255, 255, 0.05)',
+                      border: selectedWorkflowService === service.id 
+                        ? `2px solid ${service.color}`
+                        : '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '12px',
-                      color: '#374151',
+                      color: selectedWorkflowService === service.id ? '#111827' : '#374151',
                       fontSize: '14px',
-                      fontWeight: '500',
+                      fontWeight: selectedWorkflowService === service.id ? '600' : '500',
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       display: 'flex',
@@ -1888,14 +1897,18 @@ export default function SettingsPage() {
                       gap: '8px'
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = `${service.color}15`;
-                      e.currentTarget.style.borderColor = `${service.color}30`;
-                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      if (selectedWorkflowService !== service.id) {
+                        e.currentTarget.style.background = `${service.color}15`;
+                        e.currentTarget.style.borderColor = `${service.color}30`;
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.transform = 'translateY(0)';
+                      if (selectedWorkflowService !== service.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
                     }}
                     data-testid={`workflow-service-${service.id}`}
                   >
@@ -1924,15 +1937,18 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={tab.id}
+                    onClick={() => setWorkflowSubTab(tab.id)}
                     style={{
                       flex: 1,
                       padding: '12px 16px',
-                      background: 'transparent',
+                      background: workflowSubTab === tab.id 
+                        ? 'rgba(255, 255, 255, 0.15)' 
+                        : 'transparent',
                       border: 'none',
                       borderRadius: '8px',
-                      color: '#6b7280',
+                      color: workflowSubTab === tab.id ? '#111827' : '#6b7280',
                       fontSize: '14px',
-                      fontWeight: '500',
+                      fontWeight: workflowSubTab === tab.id ? '600' : '500',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -1941,12 +1957,16 @@ export default function SettingsPage() {
                       transition: 'all 0.2s'
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.color = '#111827';
+                      if (workflowSubTab !== tab.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.color = '#111827';
+                      }
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = '#6b7280';
+                      if (workflowSubTab !== tab.id) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#6b7280';
+                      }
                     }}
                     data-testid={`workflow-tab-${tab.id}`}
                   >
@@ -1957,80 +1977,254 @@ export default function SettingsPage() {
               })}
             </div>
 
-            {/* Placeholder Content per dimostrazione */}
-            <div style={{
-              padding: '40px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '12px',
-              border: '1px dashed rgba(5, 150, 105, 0.3)',
-              textAlign: 'center'
-            }}>
-              <Settings size={48} style={{ color: '#059669', marginBottom: '16px' }} />
-              <h4 style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#111827',
-                margin: '0 0 8px 0'
-              }}>
-                Workflow Management Enterprise
-              </h4>
-              <p style={{
-                fontSize: '14px',
-                color: '#6b7280',
-                margin: '0 0 20px 0',
-                maxWidth: '600px',
-                lineHeight: 1.5
-              }}>
-                Sistema universale per configurazione gerarchie di approvazione, workflow dinamici e team collaborativi. 
-                Supporta tutti i servizi aziendali con approval chains configurabili e gestione SLA.
-              </p>
+            {/* Rendering Condizionale per Sotto-Tab */}
+            {workflowSubTab === 'hierarchy' && (
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '16px',
-                marginTop: '24px'
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '24px'
               }}>
                 <div style={{
-                  padding: '16px',
-                  background: 'rgba(236, 72, 153, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(236, 72, 153, 0.2)'
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '20px'
                 }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#ec4899', margin: '0 0 4px 0' }}>
-                    Service-Agnostic
-                  </h5>
-                  <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
-                    HR, Finance, IT, Sales, Operations
-                  </p>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: 0
+                  }}>
+                    Struttura Gerarchica Organizzativa
+                  </h4>
+                  <button
+                    style={{
+                      padding: '8px 16px',
+                      background: 'linear-gradient(135deg, #059669, #047857)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    data-testid="hierarchy-add-node"
+                  >
+                    <Plus size={16} />
+                    Aggiungi Posizione
+                  </button>
                 </div>
-                <div style={{
-                  padding: '16px',
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(139, 92, 246, 0.2)'
+                
+                <div style={{ 
+                  minHeight: '400px',
+                  border: '1px dashed rgba(5, 150, 105, 0.3)',
+                  borderRadius: '12px',
+                  padding: '20px'
                 }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#8b5cf6', margin: '0 0 4px 0' }}>
-                    Dynamic Approval
-                  </h5>
-                  <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
-                    Multi-level chains configurabili
-                  </p>
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '60px 20px',
+                    color: '#6b7280'
+                  }}>
+                    <Users size={48} style={{ color: '#059669', marginBottom: '16px' }} />
+                    <h5 style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: '0 0 8px 0'
+                    }}>
+                      Struttura Gerarchica per {selectedWorkflowService.toUpperCase()}
+                    </h5>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#6b7280',
+                      margin: 0
+                    }}>
+                      HierarchyTreeView sarà integrato qui con API /api/organizational-structure
+                    </p>
+                  </div>
                 </div>
-                <div style={{
-                  padding: '16px',
-                  background: 'rgba(16, 185, 129, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(16, 185, 129, 0.2)'
+              </div>
+            )}
+
+            {workflowSubTab === 'workflows' && (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '24px'
+              }}>
+                <h4 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0 0 20px 0'
                 }}>
-                  <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#10b981', margin: '0 0 4px 0' }}>
-                    Team Collaboration
+                  Configurazione Workflow per {selectedWorkflowService.toUpperCase()}
+                </h4>
+                
+                <div style={{
+                  textAlign: 'center',
+                  padding: '60px 20px',
+                  color: '#6b7280'
+                }}>
+                  <Settings size={48} style={{ color: '#059669', marginBottom: '16px' }} />
+                  <h5 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: '0 0 8px 0'
+                  }}>
+                    WorkflowConfigurator Avanzato
                   </h5>
-                  <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
-                    Shared permissions & gruppi
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: 0
+                  }}>
+                    WorkflowConfigurator sarà integrato qui con API /api/approval-workflows
                   </p>
                 </div>
               </div>
-            </div>
+            )}
+
+            {workflowSubTab === 'teams' && (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '24px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: 0
+                  }}>
+                    Team & Gruppi per {selectedWorkflowService.toUpperCase()}
+                  </h4>
+                  <button
+                    style={{
+                      padding: '8px 16px',
+                      background: 'linear-gradient(135deg, #059669, #047857)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    data-testid="team-create-group"
+                  >
+                    <Plus size={16} />
+                    Crea Gruppo
+                  </button>
+                </div>
+                
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '16px'
+                }}>
+                  {[
+                    { name: 'Team Approvals', members: 8, permissions: 'Gestione richieste' },
+                    { name: 'Finance Review', members: 4, permissions: 'Review finanziario' },
+                    { name: 'HR Operations', members: 12, permissions: 'Operazioni HR' }
+                  ].map((team, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        padding: '20px'
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '16px'
+                      }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #059669, #047857)',
+                          borderRadius: '8px',
+                          padding: '8px'
+                        }}>
+                          <Shield size={16} style={{ color: 'white' }} />
+                        </div>
+                        <div>
+                          <h5 style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#111827',
+                            margin: 0
+                          }}>
+                            {team.name}
+                          </h5>
+                          <p style={{
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            margin: '2px 0 0 0'
+                          }}>
+                            {team.members} membri attivi
+                          </p>
+                        </div>
+                      </div>
+                      <p style={{
+                        fontSize: '13px',
+                        color: '#6b7280',
+                        margin: '0 0 16px 0'
+                      }}>
+                        {team.permissions}
+                      </p>
+                      <div style={{
+                        display: 'flex',
+                        gap: '8px'
+                      }}>
+                        <button style={{
+                          flex: 1,
+                          padding: '6px 12px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: '6px',
+                          color: '#374151',
+                          fontSize: '12px',
+                          cursor: 'pointer'
+                        }}>
+                          Gestisci
+                        </button>
+                        <button style={{
+                          padding: '6px 8px',
+                          background: 'transparent',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: '6px',
+                          color: '#6b7280',
+                          fontSize: '12px',
+                          cursor: 'pointer'
+                        }}>
+                          <MoreVertical size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
