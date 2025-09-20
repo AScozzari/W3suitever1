@@ -498,7 +498,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'ai', label: 'AI Tools', icon: Zap },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building },
-    { id: 'hr-management', label: 'HR Management', icon: UserPlus }, // Solo per utenti con permessi RBAC
+    { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' }, // Solo per utenti con permessi RBAC
     { id: 'listini', label: 'Listini', icon: FileText },
     { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
     { id: 'impostazioni', label: 'Impostazioni', icon: Settings }
@@ -1047,6 +1047,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
               
               const isEmployeePath = pathSegments[1] === 'employee';
+              const isHRManagementPath = pathSegments[1] === 'hr-management';
               
               const isActive = item.id === 'impostazioni' 
                 ? isSettingsPath
@@ -1054,6 +1055,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 ? isDashboardPath
                 : item.id === 'employee'
                 ? isEmployeePath
+                : item.id === 'hr-management'
+                ? isHRManagementPath
                 : currentModule === item.id;
               
               return (
@@ -1070,6 +1073,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       navigate(`/${tenant}`);
                     } else if (item.id === 'employee') {
                       navigate(`/${tenant}/portale`);
+                    } else if (item.id === 'hr-management') {
+                      navigate(`/${tenant}/hr-management`);
                     } else {
                       setCurrentModule(item.id);
                     }
