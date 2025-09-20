@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Home, Users, Zap, Briefcase, Building, UserPlus, 
   FileText, ShoppingBag, Settings, ChevronLeft, 
   ChevronRight, Menu, Calendar, Clock, CalendarDays,
   BarChart3, UserCheck, Award, DollarSign, BookOpen,
   FileBarChart, Receipt, ChevronDown, ChevronUp,
-  Target, Clipboard, TrendingUp, Shield
+  Target, Clipboard, TrendingUp, Shield, UserCog
 } from 'lucide-react';
 
 // Palette colori W3 Suite - Consistent con Header
@@ -69,8 +70,30 @@ export default function LeftSidebar({
   autoCollapseDelay = 3000
 }: LeftSidebarProps) {
   const [location, navigate] = useLocation();
+  const { hasHRAccess } = useAuth();
   const [collapseTimer, setCollapseTimer] = useState<NodeJS.Timeout | null>(null);
   const [expandedSubmenus, setExpandedSubmenus] = useState<Set<string>>(new Set());
+  
+  // Build dynamic menu with HR Management if user has access
+  const dynamicMenuItems = React.useMemo(() => {
+    const items = [...menuItems];
+    
+    // Add HR Management if user has RBAC access
+    if (hasHRAccess()) {
+      // Find position after amministrazione or at end
+      const adminIndex = items.findIndex(item => item.id === 'amministrazione');
+      const insertIndex = adminIndex !== -1 ? adminIndex + 1 : items.length - 1;
+      
+      items.splice(insertIndex, 0, {
+        id: 'hr-management',
+        label: 'HR Management',
+        icon: UserCog,
+        path: '/hr-management'
+      });
+    }
+    
+    return items;
+  }, [menuItems, hasHRAccess]);
 
   // Auto-collapse logic
   const handleMouseEnter = () => {
@@ -280,7 +303,7 @@ export default function LeftSidebar({
           overflowX: isMobile ? 'auto' : 'visible',
           paddingBottom: '16px'
         }}>
-          {menuItems.map((item) => {
+          {dynamicMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = isItemActive(item);
             const isExpanded = expandedSubmenus.has(item.id);

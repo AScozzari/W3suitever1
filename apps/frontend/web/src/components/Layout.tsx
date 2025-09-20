@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { oauth2Client } from '../services/OAuth2Client';
 import { UserData } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   User, Search, Bell, Settings, Menu, ChevronLeft, ChevronRight,
   BarChart3, Users, ShoppingBag, TrendingUp, DollarSign, 
@@ -12,7 +13,7 @@ import {
   Eye, CheckCircle, UserPlus, FileCheck, MoreHorizontal,
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
-  LogOut, HelpCircle, MapPin, UserCircle, Store
+  LogOut, HelpCircle, MapPin, UserCircle, Store, UserCog
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import LoginModal from './LoginModal';
@@ -73,6 +74,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const [isTablet, setIsTablet] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+  const { hasHRAccess } = useAuth();
   const [selectedStore, setSelectedStore] = useState<any>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   
@@ -492,16 +494,30 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   };
 
   // Menu items dalla sidebar mostrata negli screenshots
-  const menuItems = [
+  const baseMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'crm', label: 'CRM', icon: Users },
     { id: 'ai', label: 'AI Tools', icon: Zap },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building },
-    { id: 'listini', label: 'Listini', icon: FileText },
-    { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
-    { id: 'impostazioni', label: 'Impostazioni', icon: Settings }
   ];
+  
+  // Add HR Management if user has RBAC access
+  const menuItems = React.useMemo(() => {
+    const items = [...baseMenuItems];
+    
+    if (hasHRAccess()) {
+      items.push({ id: 'hr-management', label: 'HR Management', icon: UserCog });
+    }
+    
+    items.push(
+      { id: 'listini', label: 'Listini', icon: FileText },
+      { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
+      { id: 'impostazioni', label: 'Impostazioni', icon: Settings }
+    );
+    
+    return items;
+  }, [hasHRAccess]);
 
   return (
     <div style={{
