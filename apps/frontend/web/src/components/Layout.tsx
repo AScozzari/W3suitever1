@@ -1058,7 +1058,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
               // Controlla se il menu è attivo considerando il tenant nel path
               const currentPath = window.location.pathname;
               const pathSegments = currentPath.split('/').filter(Boolean);
-              const isSettingsPath = pathSegments[1] === 'settings';
+              const isSettingsPath = pathSegments[1] === 'settingpage';
               const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
               
               const isEmployeePath = pathSegments[1] === 'employee';
@@ -1083,7 +1083,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     const tenant = currentPath.split('/')[1] || 'staging';
                     
                     if (item.id === 'impostazioni') {
-                      navigate(`/${tenant}/settings`);
+                      navigate(`/${tenant}/settingpage`);
                     } else if (item.id === 'dashboard') {
                       navigate(`/${tenant}`);
                     } else if (item.id === 'employee') {
