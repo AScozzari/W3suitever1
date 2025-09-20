@@ -175,7 +175,7 @@ export default function HRManagementDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/universal-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/metrics/realtime'] });
       toast({
         title: 'Azione completata',
         description: 'La richiesta è stata processata con successo'

@@ -50,7 +50,7 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRManagementDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* Legacy HR route redirects - consolidation from 24+ pages to 2 dashboards */}
+      {/* Legacy HR route redirects - ProtectedHRRoute handles access control and redirects to hr-management */}
       <Route path="/:tenant/settings">
         {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
@@ -75,17 +75,17 @@ function Router() {
       <Route path="/:tenant/employee/dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><EmployeeDashboard /></AuthenticatedApp></TenantWrapper>}
       </Route>
-      {/* Route principale HR - tutte le richieste HR puntano qui */}
+      {/* Route principale HR - ProtectedHRRoute verifica RBAC e reindirizza a /hr-management se autorizzato */}
       <Route path="/:tenant/hr">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><ProtectedHRRoute tenant={params.tenant} /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* CRITICAL FIX: Add missing /staging/hr-dashboard route */}
+      {/* Legacy hr-dashboard route - ProtectedHRRoute gestisce accesso e reindirizzamento */}
       <Route path="/:tenant/hr-dashboard">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><ProtectedHRRoute tenant={params.tenant} /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* Redirect da tutti i path HR legacy verso /tenant/hr */}
+      {/* Redirect da tutti i path HR legacy verso /tenant/hr che poi usa ProtectedHRRoute */}
       <Route path="/:tenant/hr/dashboard">
         {(params) => <Redirect to={`/${params.tenant}/hr`} replace />}
       </Route>
@@ -265,7 +265,8 @@ function LoginPage() {
   return <Login tenantCode={tenant} />;
 }
 
-// SECURITY: Protected HR Route Component - RBAC Guard
+// SECURITY: Protected HR Route Component - RBAC Guard with RBAC-based routing
+// Routes HR-authorized users to hr-management, others to employee dashboard
 function ProtectedHRRoute({ tenant }: { tenant: string }) {
   const { hasHRAccess } = useAuth();
   const { toast } = useToast();
@@ -285,11 +286,11 @@ function ProtectedHRRoute({ tenant }: { tenant: string }) {
   
   // Check if user has HR management permissions
   if (!hasHRAccess()) {
-    // Redirect to employee dashboard
+    // Redirect to employee dashboard for non-HR users
     return <Redirect to={`/${tenant}/employee/dashboard`} />;
   }
   
-  // Redirect to new HR Management Dashboard
+  // Redirect authorized HR users to new HR Management Dashboard
   return <Redirect to={`/${tenant}/hr-management`} />;
 }
 
