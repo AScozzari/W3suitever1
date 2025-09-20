@@ -4,6 +4,8 @@ import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import AvatarSelector from '../components/AvatarSelector';
+import HierarchyTreeView from '@/components/HierarchyTreeView';
+import HierarchyNodeDialog from '@/components/HierarchyNodeDialog';
 import {
   StandardEmailField,
   StandardCityField,
@@ -4606,11 +4608,13 @@ export default function SettingsPage() {
     // Stati locali per il tab Gestione Gerarchie
     const [hierarchyView, setHierarchyView] = useState<'tree' | 'workflows' | 'permissions'>('tree');
     const [selectedNode, setSelectedNode] = useState<any>(null);
-    const [isAddingNode, setIsAddingNode] = useState(false);
+    const [nodeDialogOpen, setNodeDialogOpen] = useState(false);
+    const [editingNode, setEditingNode] = useState<any>(null);
+    const [parentIdForNewNode, setParentIdForNewNode] = useState<string | null>(null);
     const [selectedService, setSelectedService] = useState<string>('');
 
     // Fetch dati gerarchia
-    const { data: hierarchyData, isLoading: loadingHierarchy } = useQuery({
+    const { data: hierarchyData, isLoading: loadingHierarchy, refetch: refetchHierarchy } = useQuery({
       queryKey: ['/api/organizational-structure'],
       enabled: true
     });
@@ -4619,6 +4623,12 @@ export default function SettingsPage() {
     const { data: workflowsData, isLoading: loadingWorkflows } = useQuery({
       queryKey: ['/api/approval-workflows', selectedService],
       enabled: !!selectedService
+    });
+    
+    // Fetch ruoli disponibili
+    const { data: rolesData } = useQuery({
+      queryKey: ['/api/roles'],
+      enabled: true
     });
 
     // Services disponibili per i workflow
@@ -4793,24 +4803,35 @@ export default function SettingsPage() {
                 minHeight: '400px',
                 border: '1px dashed rgba(255, 105, 0, 0.3)',
                 borderRadius: '12px',
-                padding: '20px',
-                textAlign: 'center',
-                color: '#6b7280'
+                padding: '20px'
               }}>
-                {hierarchyData && hierarchyData.hierarchy && hierarchyData.hierarchy.length > 0 ? (
-                  <div>
-                    {/* Qui andrà il componente tree interattivo */}
-                    <p>Organigramma con {hierarchyData.totalNodes} nodi</p>
-                  </div>
-                ) : (
-                  <div>
-                    <Users size={48} style={{ opacity: 0.3, margin: '0 auto 16px' }} />
-                    <p>Nessuna struttura gerarchica definita</p>
-                    <p style={{ fontSize: '12px', marginTop: '8px' }}>
-                      Inizia creando il nodo radice dell'organigramma
-                    </p>
-                  </div>
-                )}
+                <HierarchyTreeView
+                  data={hierarchyData?.hierarchy || []}
+                  selectedNodeId={selectedNode?.id}
+                  onNodeSelect={(node) => setSelectedNode(node)}
+                  onNodeAdd={(parentId) => {
+                    setEditingNode(null);
+                    setParentIdForNewNode(parentId);
+                    setNodeDialogOpen(true);
+                  }}
+                  onNodeEdit={(node) => {
+                    setEditingNode(node);
+                    setParentIdForNewNode(null);
+                    setNodeDialogOpen(true);
+                  }}
+                  onNodeDelete={async (nodeId) => {
+                    if (confirm('Sei sicuro di voler eliminare questo nodo e tutti i suoi sotto-nodi?')) {
+                      try {
+                        await apiRequest('/api/organizational-structure/' + nodeId, {
+                          method: 'DELETE'
+                        });
+                        await refetchHierarchy();
+                      } catch (error) {
+                        console.error('Errore eliminazione nodo:', error);
+                      }
+                    }
+                  }}
+                />
               </div>
             )}
           </div>
@@ -4916,6 +4937,41 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+        
+        {/* Dialog per aggiungere/modificare nodi */}
+        <HierarchyNodeDialog
+          open={nodeDialogOpen}
+          onOpenChange={setNodeDialogOpen}
+          node={editingNode}
+          parentId={parentIdForNewNode}
+          availableRoles={rolesData || []}
+          onSave={async (nodeData) => {
+            try {
+              if (editingNode) {
+                // Modifica nodo esistente
+                await apiRequest(`/api/organizational-structure/${editingNode.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(nodeData)
+                });
+              } else {
+                // Crea nuovo nodo
+                await apiRequest('/api/organizational-structure', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(nodeData)
+                });
+              }
+              await refetchHierarchy();
+              setNodeDialogOpen(false);
+              setEditingNode(null);
+              setParentIdForNewNode(null);
+            } catch (error) {
+              console.error('Errore salvataggio nodo:', error);
+              throw error;
+            }
+          }}
+        />
       </div>
     );
   };
