@@ -7614,69 +7614,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
       
-      const { serviceType, status, priority } = req.query;
+      const { serviceType = 'hr', status, priority } = req.query;
       
-      // For demo, return mock universal requests
-      const mockRequests = [
-        {
-          id: '1',
-          serviceType: serviceType || 'hr',
-          requestType: 'vacation',
-          title: 'Richiesta Ferie Estive',
-          description: 'Richiesta ferie dal 15 al 30 luglio',
-          requesterId: userId,
-          requesterName: 'Mario Rossi',
-          status: 'pending',
-          priority: 'normal',
-          currentApproverId: userId,
-          approvalLevel: 1,
-          metadata: { days: 15, type: 'vacation' },
-          createdAt: new Date('2024-01-10'),
-          updatedAt: new Date('2024-01-10')
-        },
-        {
-          id: '2',
-          serviceType: serviceType || 'hr',
-          requestType: 'expense',
-          title: 'Rimborso Spese Viaggio',
-          description: 'Rimborso trasferta Milano',
-          requesterId: userId,
-          requesterName: 'Luigi Verdi',
-          status: 'pending',
-          priority: 'high',
-          currentApproverId: userId,
-          approvalLevel: 1,
-          metadata: { amount: 350.50, currency: 'EUR' },
-          createdAt: new Date('2024-01-09'),
-          updatedAt: new Date('2024-01-09')
-        },
-        {
-          id: '3',
-          serviceType: serviceType || 'hr',
-          requestType: 'training',
-          title: 'Corso Formazione Leadership',
-          description: 'Richiesta partecipazione corso leadership',
-          requesterId: userId,
-          requesterName: 'Anna Bianchi',
-          status: 'approved',
-          priority: 'normal',
-          approvalLevel: 2,
-          metadata: { cost: 1200, duration: '3 days' },
-          createdAt: new Date('2024-01-08'),
-          updatedAt: new Date('2024-01-09')
-        }
-      ];
+      // Get real HR requests from database
+      let query = db
+        .select({
+          id: hrRequests.id,
+          requestType: hrRequests.requestType,
+          title: hrRequests.title,
+          description: hrRequests.description,
+          requesterId: hrRequests.userId,
+          status: hrRequests.status,
+          priority: hrRequests.priority,
+          metadata: hrRequests.metadata,
+          createdAt: hrRequests.createdAt,
+          updatedAt: hrRequests.updatedAt,
+          // Get requester details
+          requesterFirstName: users.firstName,
+          requesterLastName: users.lastName
+        })
+        .from(hrRequests)
+        .leftJoin(users, eq(hrRequests.userId, users.id))
+        .where(and(
+          eq(hrRequests.tenantId, tenantId),
+          sql`${hrRequests.status} != 'draft'`
+        ))
+        .orderBy(desc(hrRequests.createdAt))
+        .limit(50);
+
+      // Apply filters
+      const conditions = [eq(hrRequests.tenantId, tenantId), sql`${hrRequests.status} != 'draft'`];
       
-      // Filter by status if provided
-      let filtered = mockRequests;
       if (status) {
-        filtered = filtered.filter(r => r.status === status);
-      }
-      if (priority) {
-        filtered = filtered.filter(r => r.priority === priority);
+        conditions.push(eq(hrRequests.status, status as any));
       }
       
-      res.json(filtered);
+      if (priority) {
+        conditions.push(eq(hrRequests.priority, priority as any));
+      }
+
+      // RBAC filtering - show only appropriate requests based on user role
+      if (userRole === 'EMPLOYEE') {
+        conditions.push(eq(hrRequests.userId, userId));
+      } else if (userRole === 'TEAM_LEADER') {
+        // Team leaders can see their team's requests (simplified - could be enhanced with team relationships)
+        // For now, show requests they can approve or their own
+        conditions.push(or(
+          eq(hrRequests.userId, userId),
+          sql`${hrRequests.status} = 'pending'`
+        ));
+      }
+      // HR_MANAGER and ADMIN can see all requests
+
+      query = query.where(and(...conditions));
+      
+      const requests = await query;
+      
+      // Transform to Universal Request format
+      const universalRequests = requests.map(req => ({
+        id: req.id,
+        serviceType: serviceType,
+        requestType: req.requestType,
+        title: req.title,
+        description: req.description || '',
+        requesterId: req.requesterId,
+        requesterName: `${req.requesterFirstName || 'N/A'} ${req.requesterLastName || ''}`.trim(),
+        status: req.status,
+        priority: req.priority || 'normal',
+        currentApproverId: null, // Could be enhanced with approval flow
+        approvalLevel: req.status === 'pending' ? 1 : (req.status === 'approved' ? 2 : 0),
+        metadata: req.metadata || {},
+        createdAt: req.createdAt,
+        updatedAt: req.updatedAt
+      }));
+      
+      res.json(universalRequests);
     } catch (error) {
       console.error('Get universal requests error:', error);
       res.status(500).json({ error: 'Failed to get universal requests' });
@@ -7907,19 +7919,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .from(users)
         .where(eq(users.tenantId, tenantId));
+
+      // Get real HR request metrics
+      const [requestStats] = await db
+        .select({
+          totalRequests: sql<number>`count(*)`,
+          pendingRequests: sql<number>`count(case when status = 'pending' then 1 end)`,
+          approvedToday: sql<number>`count(case when status = 'approved' and date(updated_at) = current_date then 1 end)`,
+          rejectedToday: sql<number>`count(case when status = 'rejected' and date(updated_at) = current_date then 1 end)`,
+          avgProcessingTime: sql<number>`avg(extract(epoch from updated_at - created_at) / 3600.0)`
+        })
+        .from(hrRequests)
+        .where(and(
+          eq(hrRequests.tenantId, tenantId),
+          sql`status != 'draft'`
+        ));
+
+      // Calculate real compliance and SLA metrics
+      const [complianceStats] = await db
+        .select({
+          onTimeApprovals: sql<number>`count(case when status = 'approved' and extract(epoch from updated_at - created_at) <= 86400 then 1 end)`,
+          totalApprovals: sql<number>`count(case when status = 'approved' then 1 end)`,
+          escalations: sql<number>`count(case when extract(epoch from updated_at - created_at) > 172800 and status = 'pending' then 1 end)`
+        })
+        .from(hrRequests)
+        .where(and(
+          eq(hrRequests.tenantId, tenantId),
+          sql`status != 'draft'`
+        ));
       
-      // Calculate additional metrics
+      // Calculate real metrics
+      const complianceRate = complianceStats?.totalApprovals > 0 
+        ? Math.round((complianceStats.onTimeApprovals / complianceStats.totalApprovals) * 100 * 10) / 10
+        : 100;
+      
+      const slaCompliance = requestStats?.totalRequests > 0
+        ? Math.max(0, Math.round((100 - (complianceStats?.escalations || 0) / requestStats.totalRequests * 100) * 10) / 10)
+        : 100;
+
       const metrics = {
         totalEmployees: userStats?.totalEmployees || 0,
         activeEmployees: userStats?.activeEmployees || 0,
         avgTenure: Math.round((userStats?.avgTenure || 0) * 10) / 10,
-        avgProcessingTime: 4.5, // Mock value in hours
-        complianceRate: 96.5, // Mock percentage
-        pendingRequests: 12, // Mock count
-        approvedToday: 8, // Mock count
-        rejectedToday: 2, // Mock count
-        escalations: 3, // Mock count
-        slaCompliance: 94.2 // Mock percentage
+        avgProcessingTime: Math.round((requestStats?.avgProcessingTime || 0) * 10) / 10,
+        complianceRate,
+        pendingRequests: requestStats?.pendingRequests || 0,
+        approvedToday: requestStats?.approvedToday || 0,
+        rejectedToday: requestStats?.rejectedToday || 0,
+        escalations: complianceStats?.escalations || 0,
+        slaCompliance
       };
       
       res.json(metrics);
