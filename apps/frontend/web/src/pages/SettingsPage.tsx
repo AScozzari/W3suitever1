@@ -941,7 +941,7 @@ export default function SettingsPage() {
     queryFn: async () => {
       const result = await apiService.getSuppliers();
       if (!result.success) throw new Error(result.error || 'Failed to fetch suppliers');
-      return result.data || [];
+      return result.suppliers || [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 3, // Retry failed requests 3 times
