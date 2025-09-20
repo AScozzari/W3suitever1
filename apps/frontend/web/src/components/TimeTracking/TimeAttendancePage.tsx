@@ -324,19 +324,23 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
 
   return (
     <div className="w-full h-full min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-pink-50 p-4">
+      {/* Main Control Panel - Clock + PDV + Sistema Timbratura */}
+      <div className="mb-6">
+        <MainControlPanel />
+      </div>
+
+      {/* Secondary Panels */}
       {/* Mobile Layout: Single Column Stack */}
       <div className="block lg:hidden space-y-4">
-        <StatusPanel />
-        <MethodSelectorPanel />
-        <StoreCompliancePanel />
+        <ActionButtonsPanel />
+        <StoreDetailsPanel />
         <QuickStatsPanel />
       </div>
 
-      {/* Desktop Layout: 2x2 Grid */}
-      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 lg:h-[calc(100vh-2rem)]">
-        <StatusPanel />
-        <MethodSelectorPanel />
-        <StoreCompliancePanel />
+      {/* Desktop Layout: 3-Column Grid */}
+      <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
+        <ActionButtonsPanel />
+        <StoreDetailsPanel />
         <QuickStatsPanel />
       </div>
 
@@ -413,88 +417,302 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
     </div>
   );
 
-  // ==================== STATUS PANEL (TOP-LEFT) ====================
-  function StatusPanel() {
+  // ==================== MAIN CONTROL PANEL - Clock + PDV + Sistema Timbratura ====================
+  function MainControlPanel() {
     return (
       <Card 
         className="glass-card border-0 backdrop-blur-md bg-white/10 border-white/20 shadow-lg"
-        data-testid="panel-status"
+        data-testid="panel-main-control"
       >
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              <span>Status Timbratura</span>
+              <Clock className="h-6 w-6 text-orange-500" />
+              <span className="text-xl">Sistema Timbratura Avanzato</span>
             </div>
             <Badge 
               variant={isActive ? "default" : "secondary"}
               className={cn(
-                "transition-colors",
+                "transition-colors text-sm px-3 py-1",
                 isActive ? "bg-green-500 hover:bg-green-600" : "bg-gray-500"
               )}
-              data-testid="badge-status"
+              data-testid="badge-main-status"
             >
               {getStatusText()}
             </Badge>
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Current Time Display */}
-          <div className="text-center space-y-2">
-            <div 
-              className="text-4xl font-bold text-gray-900"
-              data-testid="text-current-time"
-            >
-              {format(currentTime, 'HH:mm:ss')}
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Clock Section */}
+            <div className="lg:col-span-1 space-y-4">
+              <div className="text-center space-y-3">
+                <div className="text-5xl font-bold text-gray-900" data-testid="text-main-clock">
+                  {format(currentTime, 'HH:mm:ss')}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}
+                </div>
+                {/* Session Info */}
+                {isActive && (
+                  <div className="space-y-2 pt-2 border-t border-gray-200">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tempo lavoro:</span>
+                      <span className={cn("font-medium", isOvertime ? "text-orange-600" : "text-green-600")}>
+                        {formatTime(elapsedTime.totalSeconds)}
+                      </span>
+                    </div>
+                    {context.isOnBreak && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Tempo pausa:</span>
+                        <span className="font-medium text-blue-600">
+                          {formatTime(breakTime.totalSeconds)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
-              {format(currentTime, 'EEEE, dd MMMM yyyy', { locale: it })}
-            </div>
-          </div>
 
-          {/* Status Indicators */}
-          <div className="space-y-3">
-            {/* Selected Store */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Negozio:</span>
-              <span className="text-sm font-medium" data-testid="text-selected-store">
-                {context.selectedStore?.name || 'Nessuno selezionato'}
-              </span>
-            </div>
+            {/* Store Selection Section */}
+            <div className="lg:col-span-1 space-y-4">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Building className="h-5 w-5 text-blue-500" />
+                  Seleziona PDV
+                </h3>
+                
+                {/* Selected Store Display */}
+                {context.selectedStore ? (
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800">PDV Attivo</span>
+                      {autoDetected && (
+                        <Badge variant="default" className="text-xs bg-green-600">
+                          Auto-rilevato
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-sm text-green-700">
+                      <div className="font-medium">{context.selectedStore.name}</div>
+                      <div className="text-xs">{context.selectedStore.address}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium text-yellow-800">Nessun PDV Selezionato</span>
+                    </div>
+                    <div className="text-sm text-yellow-700">
+                      Seleziona un punto vendita per iniziare
+                    </div>
+                  </div>
+                )}
 
-            {/* Selected Method */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Metodo:</span>
-              <span className="text-sm font-medium" data-testid="text-selected-method">
-                {selectedStrategyType?.toUpperCase() || 'Nessuno'}
-              </span>
-            </div>
+                {/* Quick Store List */}
+                {nearbyStores.length > 0 && (
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {nearbyStores.slice(0, 3).map((store) => {
+                      const isSelected = context.selectedStore?.id === store.id;
+                      const distance = store.distance || 0;
+                      const isWithinGeofence = distance <= 200;
 
-            {/* Session Time */}
-            {isActive && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Tempo lavoro:</span>
-                <span 
-                  className={cn("text-sm font-medium", isOvertime ? "text-orange-600" : "text-green-600")}
-                  data-testid="text-elapsed-time"
+                      return (
+                        <div
+                          key={store.id}
+                          className={cn(
+                            "p-2 rounded border cursor-pointer transition-all text-sm",
+                            isSelected 
+                              ? "border-green-500 bg-green-50" 
+                              : isWithinGeofence
+                                ? "border-blue-200 bg-blue-50 hover:border-blue-300"
+                                : "border-gray-200 bg-gray-50 hover:border-gray-300"
+                          )}
+                          onClick={() => selectStore(store)}
+                          data-testid={`quick-store-${store.id}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium">{store.name}</div>
+                              {distance > 0 && (
+                                <div className="text-xs text-gray-500">
+                                  {(distance / 1000).toFixed(1)} km
+                                </div>
+                              )}
+                            </div>
+                            {isSelected && <CheckCircle className="h-4 w-4 text-green-500" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOverrideModalOpen(true)}
+                  className="w-full"
+                  data-testid="button-quick-store-override"
                 >
-                  {formatTime(elapsedTime.totalSeconds)}
-                </span>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Gestisci PDV
+                </Button>
               </div>
-            )}
+            </div>
 
-            {/* Break Time */}
-            {context.isOnBreak && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Tempo pausa:</span>
-                <span className="text-sm font-medium text-blue-600" data-testid="text-break-time">
-                  {formatTime(breakTime.totalSeconds)}
-                </span>
+            {/* Method Selection Section */}
+            <div className="lg:col-span-1 space-y-4">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Target className="h-5 w-5 text-purple-500" />
+                  Tipo Sistema
+                </h3>
+                
+                {/* Method Selection Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {strategyConfigs.slice(0, 6).map((config) => (
+                    <button
+                      key={config.type}
+                      onClick={() => handleStrategySelect(config.type)}
+                      disabled={!config.available}
+                      className={cn(
+                        "flex flex-col items-center p-3 rounded-lg border transition-all text-xs",
+                        selectedStrategyType === config.type
+                          ? "border-orange-500 bg-orange-50 text-orange-700"
+                          : config.available
+                            ? "border-gray-200 hover:border-gray-300 bg-white"
+                            : "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed"
+                      )}
+                      data-testid={`quick-method-${config.type}`}
+                    >
+                      <config.icon className="h-4 w-4 mb-1" />
+                      <span className="font-medium">{config.name}</span>
+                      <span className="text-xs text-gray-500">{config.description}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Selected Method Display */}
+                {selectedStrategyType && (
+                  <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-purple-600" />
+                      <span className="font-medium text-purple-800">
+                        Sistema {selectedStrategyType.toUpperCase()} Attivo
+                      </span>
+                    </div>
+                    {strategiesState.prepareResult?.success && (
+                      <div className="text-xs text-purple-700 mt-1">
+                        Pronto per la timbratura
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
+          {/* Strategy Interaction Panel */}
+          {strategiesState.selectedStrategy && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-orange-500" />
+                  Configurazione {selectedStrategyType?.toUpperCase()}
+                </h3>
+                
+                {/* Strategy Interaction UI */}
+                <div data-testid={`panel-strategy-${selectedStrategyType}`}>
+                  {strategiesState.selectedStrategy.renderPanel({
+                    isActive: true,
+                    isLoading: strategiesState.isPreparing || strategiesState.isValidating,
+                    context: context,
+                    onAction: (action, data) => {
+                      console.log(`Strategy action: ${action}`, data);
+                    },
+                    compact: true
+                  })}
+                </div>
+
+                {/* Strategy Status Alerts */}
+                {strategiesState.prepareResult && (
+                  <div className="space-y-2">
+                    {strategiesState.prepareResult.success ? (
+                      <Alert className="border-green-200 bg-green-50">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          Sistema {selectedStrategyType?.toUpperCase()} pronto per l'uso
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <Alert variant="destructive">
+                        <XCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {strategiesState.prepareResult.error}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+
+                {/* Validation Results */}
+                {strategiesState.validationResult && (
+                  <div className="space-y-2">
+                    {strategiesState.validationResult.isValid ? (
+                      <Alert className="border-green-200 bg-green-50">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          Validazione completata con successo
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <Alert variant="destructive">
+                        <XCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          {strategiesState.validationResult.error}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Warnings */}
+                    {strategiesState.validationResult.warnings?.map((warning, index) => (
+                      <Alert key={index} className="border-yellow-200 bg-yellow-50">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <AlertDescription className="text-yellow-800">
+                          {warning}
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ==================== ACTION BUTTONS PANEL ====================
+  function ActionButtonsPanel() {
+    return (
+      <Card 
+        className="glass-card border-0 backdrop-blur-md bg-white/10 border-white/20 shadow-lg"
+        data-testid="panel-actions"
+      >
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-green-500" />
+            <span>Azioni Timbratura</span>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
           {/* Alerts */}
           {needsBreak && !context.isOnBreak && (
             <Alert className="border-yellow-200 bg-yellow-50">
@@ -521,19 +739,33 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
             </Alert>
           )}
 
+          {/* Validation Check */}
+          {(!context.selectedStore || !selectedStrategyType) && (
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                {!context.selectedStore && !selectedStrategyType 
+                  ? "Seleziona un PDV e un sistema di timbratura"
+                  : !context.selectedStore 
+                    ? "Seleziona un punto vendita"
+                    : "Seleziona un sistema di timbratura"}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Primary Actions */}
           <div className="space-y-3">
             {!isActive ? (
               <Button
                 onClick={handleClockIn}
-                disabled={!canClockIn || fsmLoading || !context.selectedStore}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                disabled={!canClockIn || fsmLoading || !context.selectedStore || !selectedStrategyType}
+                className="w-full bg-green-600 hover:bg-green-700 text-white h-12 text-lg"
                 data-testid="button-clock-in"
               >
                 {fsmLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
                 ) : (
-                  <LogIn className="h-4 w-4 mr-2" />
+                  <LogIn className="h-5 w-5 mr-2" />
                 )}
                 Timbra Entrata
               </Button>
@@ -545,7 +777,7 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
                       onClick={() => startBreak()}
                       disabled={!canStartBreak || fsmLoading}
                       variant="outline"
-                      className="w-full"
+                      className="w-full h-10"
                       data-testid="button-start-break"
                     >
                       <Coffee className="h-4 w-4 mr-2" />
@@ -554,10 +786,10 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
                     <Button
                       onClick={handleClockOut}
                       disabled={!canClockOut || fsmLoading}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white"
+                      className="w-full bg-red-600 hover:bg-red-700 text-white h-12 text-lg"
                       data-testid="button-clock-out"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
+                      <LogOut className="h-5 w-5 mr-2" />
                       Timbra Uscita
                     </Button>
                   </>
@@ -565,170 +797,67 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
                   <Button
                     onClick={() => endBreak()}
                     disabled={!canEndBreak || fsmLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-lg"
                     data-testid="button-end-break"
                   >
-                    <Play className="h-4 w-4 mr-2" />
+                    <Play className="h-5 w-5 mr-2" />
                     Termina Pausa
                   </Button>
                 )}
               </div>
             )}
           </div>
+
+          {/* Current Status Summary */}
+          <div className="pt-4 border-t border-gray-200 space-y-2">
+            <div className="text-sm font-medium text-gray-700">Riepilogo Stato</div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">PDV:</span>
+                <span className="font-medium">
+                  {context.selectedStore?.name || 'Non selezionato'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Sistema:</span>
+                <span className="font-medium">
+                  {selectedStrategyType?.toUpperCase() || 'Non selezionato'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Stato:</span>
+                <span className={cn("font-medium", getStatusColor())}>
+                  {getStatusText()}
+                </span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  // ==================== METHOD SELECTOR + DYNAMIC PANELS (TOP-RIGHT) ====================
-  function MethodSelectorPanel() {
+  // ==================== STORE DETAILS PANEL ====================
+  function StoreDetailsPanel() {
     return (
       <Card 
         className="glass-card border-0 backdrop-blur-md bg-white/10 border-white/20 shadow-lg"
-        data-testid="panel-method-selector"
-      >
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-purple-500" />
-            <span>Metodo Timbratura</span>
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Method Selection Tabs */}
-          <Tabs 
-            value={selectedStrategyType || ''} 
-            onValueChange={(value) => handleStrategySelect(value as StrategyType)}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1 bg-white/50">
-              {strategyConfigs.map((config) => (
-                <TabsTrigger
-                  key={config.type}
-                  value={config.type}
-                  disabled={!config.available}
-                  className={cn(
-                    "flex flex-col items-center p-3 h-auto text-xs transition-all",
-                    "data-[state=active]:bg-white data-[state=active]:shadow-sm",
-                    !config.available && "opacity-50"
-                  )}
-                  data-testid={`tab-strategy-${config.type}`}
-                >
-                  <config.icon className="h-4 w-4 mb-1" />
-                  <span>{config.name}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {/* Dynamic Strategy Panels */}
-            {strategyConfigs.map((config) => (
-              <TabsContent key={config.type} value={config.type} className="mt-4">
-                <div className="space-y-4">
-                  {/* Strategy Info */}
-                  <div className={cn("p-4 rounded-lg", config.bgClass)}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <config.icon className="h-5 w-5" />
-                      <span className="font-medium">{config.name}</span>
-                      <Badge variant="secondary">{config.description}</Badge>
-                    </div>
-                  </div>
-
-                  {/* Strategy Panel */}
-                  {strategiesState.selectedStrategy?.type === config.type && (
-                    <div data-testid={`panel-strategy-${config.type}`}>
-                      {strategiesState.selectedStrategy.renderPanel({
-                        isActive: true,
-                        isLoading: strategiesState.isPreparing || strategiesState.isValidating,
-                        context: context,
-                        onAction: (action, data) => {
-                          console.log(`Strategy action: ${action}`, data);
-                        },
-                        compact: false
-                      })}
-                    </div>
-                  )}
-
-                  {/* Strategy Status */}
-                  {strategiesState.selectedStrategy?.type === config.type && strategiesState.prepareResult && (
-                    <div className="space-y-2">
-                      {strategiesState.prepareResult.success ? (
-                        <Alert className="border-green-200 bg-green-50">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <AlertDescription className="text-green-800">
-                            Strategia {config.name} pronta per l'uso
-                          </AlertDescription>
-                        </Alert>
-                      ) : (
-                        <Alert variant="destructive">
-                          <XCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            {strategiesState.prepareResult.error}
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Validation Results */}
-                  {strategiesState.selectedStrategy?.type === config.type && strategiesState.validationResult && (
-                    <div className="space-y-2">
-                      {strategiesState.validationResult.isValid ? (
-                        <Alert className="border-green-200 bg-green-50">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <AlertDescription className="text-green-800">
-                            Validazione completata con successo
-                          </AlertDescription>
-                        </Alert>
-                      ) : (
-                        <Alert variant="destructive">
-                          <XCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            {strategiesState.validationResult.error}
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {/* Warnings */}
-                      {strategiesState.validationResult.warnings?.map((warning, index) => (
-                        <Alert key={index} className="border-yellow-200 bg-yellow-50">
-                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                          <AlertDescription className="text-yellow-800">
-                            {warning}
-                          </AlertDescription>
-                        </Alert>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // ==================== STORE COMPLIANCE PANEL (BOTTOM-LEFT) ====================
-  function StoreCompliancePanel() {
-    return (
-      <Card 
-        className="glass-card border-0 backdrop-blur-md bg-white/10 border-white/20 shadow-lg"
-        data-testid="panel-store-compliance"
+        data-testid="panel-store-details"
       >
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-blue-500" />
-              <span>Negozi & Compliance</span>
+              <span>Dettagli Negozi</span>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setOverrideModalOpen(true)}
-              data-testid="button-store-override"
+              data-testid="button-store-details-override"
             >
               <Settings className="h-4 w-4 mr-2" />
-              Override
+              Gestisci
             </Button>
           </CardTitle>
         </CardHeader>
@@ -755,21 +884,31 @@ export default function TimeAttendancePage({ userId }: TimeAttendancePageProps) 
             </div>
           )}
 
-          {/* Selected Store Info */}
+          {/* Selected Store Extended Info */}
           {context.selectedStore && (
-            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200 space-y-3">
+              <div className="flex items-center gap-2">
                 <Building className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-green-800">Negozio Selezionato</span>
+                <span className="font-medium text-green-800">PDV Attivo</span>
                 {autoDetected && (
                   <Badge variant="default" className="text-xs bg-green-600">
                     Auto-rilevato
                   </Badge>
                 )}
               </div>
-              <div className="text-sm text-green-700">
+              <div className="space-y-2 text-sm text-green-700">
                 <div className="font-medium">{context.selectedStore.name}</div>
                 <div className="text-xs">{context.selectedStore.address}</div>
+                {strategiesState.selectedStrategy && (
+                  <div className="pt-2 border-t border-green-200">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-3 w-3" />
+                      <span className="text-xs">
+                        Sistema {selectedStrategyType?.toUpperCase()} configurato
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
