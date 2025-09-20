@@ -76,55 +76,10 @@ export const tenants = w3suiteTenantsTable;
 export type { InsertUser, User } from './w3suite';
 export type { InsertTenant, Tenant } from './w3suite';
 
-// ==================== LEGAL ENTITIES ====================
-export const legalEntities = pgTable("legal_entities", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  codice: varchar("codice", { length: 20 }).notNull().unique(),
-  nome: varchar("nome", { length: 255 }).notNull(),
-  pIva: varchar("piva", { length: 50 }),
-  billingProfileId: uuid("billing_profile_id"),
-  stato: varchar("stato", { length: 50 }).default("Attiva"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  archivedAt: timestamp("archived_at"),
-  // Extended enterprise fields
-  codiceFiscale: varchar("codiceFiscale", { length: 50 }),
-  formaGiuridica: varchar("formaGiuridica", { length: 100 }),
-  capitaleSociale: varchar("capitaleSociale", { length: 50 }),
-  dataCostituzione: date("dataCostituzione"),
-  indirizzo: text("indirizzo"),
-  citta: varchar("citta", { length: 100 }),
-  provincia: varchar("provincia", { length: 10 }),
-  cap: varchar("cap", { length: 10 }),
-  telefono: varchar("telefono", { length: 50 }),
-  email: varchar("email", { length: 255 }),
-  pec: varchar("pec", { length: 255 }),
-  rea: varchar("rea", { length: 100 }),
-  registroImprese: varchar("registroImprese", { length: 255 }),
-  // New enterprise fields for enhanced functionality
-  logo: text("logo"), // PNG file path or base64
-  codiceSDI: varchar("codiceSDI", { length: 10 }),
-  // Administrative contact section - using camelCase column names
-  refAmminNome: varchar("refAmminNome", { length: 100 }),
-  refAmminCognome: varchar("refAmminCognome", { length: 100 }),
-  refAmminEmail: varchar("refAmminEmail", { length: 255 }),
-  refAmminCodiceFiscale: varchar("refAmminCodiceFiscale", { length: 16 }),
-  refAmminIndirizzo: text("refAmminIndirizzo"),
-  refAmminCitta: varchar("refAmminCitta", { length: 100 }),
-  refAmminCap: varchar("refAmminCap", { length: 10 }),
-  refAmminPaese: varchar("refAmminPaese", { length: 100 }),
-  // Dynamic notes field
-  note: text("note"),
-});
-
-export const insertLegalEntitySchema = createInsertSchema(legalEntities).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-});
-export type InsertLegalEntity = z.infer<typeof insertLegalEntitySchema>;
-export type LegalEntity = typeof legalEntities.$inferSelect;
+// ==================== LEGAL ENTITIES RE-EXPORTED FROM W3SUITE ====================
+import { legalEntities as w3suiteLegalEntitiesTable } from './w3suite';
+export const legalEntities = w3suiteLegalEntitiesTable;
+export type { InsertLegalEntity, LegalEntity } from './w3suite';
 
 // ==================== BRANDS ====================
 export const brands = pgTable("brands", {
@@ -168,48 +123,10 @@ export const drivers = pgTable("drivers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// ==================== STORES ====================
-export const stores = pgTable("stores", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  legalEntityId: uuid("legal_entity_id").notNull().references(() => legalEntities.id),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-  nome: varchar("nome", { length: 255 }).notNull(),
-  channelId: uuid("channel_id").notNull().references(() => channels.id),
-  commercialAreaId: uuid("commercial_area_id").references(() => commercialAreas.id),
-  address: text("address"),
-  citta: varchar("citta", { length: 100 }),
-  provincia: varchar("provincia", { length: 10 }),
-  cap: varchar("cap", { length: 10 }),
-  region: varchar("region", { length: 100 }),
-  geo: jsonb("geo"),
-  status: varchar("status", { length: 50 }).default("active"),
-  openedAt: date("opened_at"),
-  closedAt: date("closed_at"),
-  billingOverrideId: uuid("billing_override_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  archivedAt: timestamp("archived_at"),
-  // Contact fields
-  phone: varchar("phone", { length: 50 }),
-  email: varchar("email", { length: 255 }),
-  // Social and digital contact fields
-  whatsapp1: varchar("whatsapp1", { length: 20 }),
-  whatsapp2: varchar("whatsapp2", { length: 20 }),
-  facebook: varchar("facebook", { length: 255 }),
-  instagram: varchar("instagram", { length: 255 }),
-  tiktok: varchar("tiktok", { length: 255 }),
-  googleMapsUrl: text("google_maps_url"),
-  telegram: varchar("telegram", { length: 255 }),
-});
-
-export const insertStoreSchema = createInsertSchema(stores).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-});
-export type InsertStore = z.infer<typeof insertStoreSchema>;
-export type Store = typeof stores.$inferSelect;
+// ==================== STORES RE-EXPORTED FROM W3SUITE ====================
+import { stores as w3suiteStoresTable } from './w3suite';
+export const stores = w3suiteStoresTable;
+export type { InsertStore, Store } from './w3suite';
 
 // ==================== STORE ASSOCIATIONS ====================
 export const storeBrands = pgTable("store_brands", {
