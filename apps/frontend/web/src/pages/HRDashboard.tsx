@@ -797,5 +797,98 @@ export default function HRDashboard() {
   // Note: All HR Dashboard JSX components temporarily removed to ensure stable compilation
   // TODO: Re-implement HR Dashboard sections with proper JSX structure when ready
 
-  // END: All JSX orphaned completely removed - clean termination
+  // Main return statement - ESSENTIAL for component to render
+  return (
+    <Layout>
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* HR Dashboard Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-purple-600 bg-clip-text text-transparent">
+            HR Management Dashboard
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Gestione risorse umane e controllo operativo
+          </p>
+        </div>
+
+        {/* Tab Navigation */}
+        <Tabs value={activeTab} onValueChange={setTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 gap-2 h-auto p-1">
+            {HR_TABS.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="flex flex-col items-center gap-1 p-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                data-testid={`hr-tab-${tab.id}`}
+              >
+                <tab.icon className="h-4 w-4" />
+                <span className="text-xs font-medium">{tab.name}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {/* Tab Content */}
+          <TabsContent value="overview" className="space-y-6">
+            {renderOverview()}
+          </TabsContent>
+
+          <TabsContent value="employees" className="space-y-6">
+            <div className="text-center p-8">
+              <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">Employee Management (Under Development)</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="time-management" className="space-y-6">
+            <div className="text-center p-8">
+              <Clock className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">Time Management (Under Development)</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="leave-management" className="space-y-6">
+            <div className="text-center p-8">
+              <CalendarIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">Leave Management (Under Development)</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-6">
+            <div className="text-center p-8">
+              <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">Document Management (Under Development)</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="performance" className="space-y-6">
+            <div className="text-center p-8">
+              <Target className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">Performance Management (Under Development)</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="training" className="space-y-6">
+            <div className="text-center p-8">
+              <GraduationCap className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">Training Management (Under Development)</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="text-center p-8">
+              <TrendingUp className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">Analytics & Reports (Under Development)</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <div className="text-center p-8">
+              <Settings className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg text-muted-foreground">HR Settings (Under Development)</p>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
 }
