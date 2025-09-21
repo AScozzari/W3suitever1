@@ -223,149 +223,140 @@ export default function WorkflowManagementPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
-                      {/* ===== 6 CATEGORIE SPECIFICHE CON PERMESSI ATOMICI ===== */}
+                      {/* ===== 6 CATEGORIE SPECIFICHE BUSINESS-ALIGNED ===== */}
                       
-                      {/* HR - Risorse Umane */}
+                      {/* 1. HR - Leave, Attendance, Scheduling */}
                       <div>
                         <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                           <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                          HR - Risorse Umane
+                          HR - Leave & Attendance
                         </h4>
                         <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-approve-leave">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-leave-approve">
                             <CheckCircle className="w-3 h-3 mr-2 text-green-500" />
-                            hr.approve_vacation_max_5_days
+                            hr.leave.approve.max_5d
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-approve-sick">
-                            <CheckCircle className="w-3 h-3 mr-2 text-green-500" />
-                            hr.approve_sick_leave_unlimited
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-attendance-check">
+                            <Clock className="w-3 h-3 mr-2 text-green-500" />
+                            hr.attendance.validate.daily
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-reject">
-                            <AlertCircle className="w-3 h-3 mr-2 text-red-500" />
-                            hr.reject_request_with_reason
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-schedule-publish">
+                            <Activity className="w-3 h-3 mr-2 text-green-500" />
+                            hr.schedule.publish.weekly
                           </Badge>
                         </div>
                       </div>
 
-                      {/* Finance - Finanza */}
+                      {/* 2. Finance/Expenses - Budget Thresholds */}
                       <div>
                         <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                           <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          Finance - Finanza
+                          Finance/Expenses
                         </h4>
                         <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-approve-expense">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-expense-approve">
                             <CheckCircle className="w-3 h-3 mr-2 text-blue-500" />
-                            finance.approve_expense_max_1000
+                            finance.expense.approve.le_1000
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-budget-check">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-budget-validate">
                             <Target className="w-3 h-3 mr-2 text-blue-500" />
-                            finance.budget_validation_required
+                            finance.budget.validate.monthly
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-payment">
-                            <CheckCircle className="w-3 h-3 mr-2 text-blue-500" />
-                            finance.authorize_payment_approval
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-payment-authorize">
+                            <Zap className="w-3 h-3 mr-2 text-blue-500" />
+                            finance.payment.authorize.urgent
                           </Badge>
                         </div>
                       </div>
 
-                      {/* Operations - Operazioni */}
+                      {/* 3. Operations/Store - Shifts, Publishing, Notifications */}
                       <div>
                         <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                           <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                          Operations - Operazioni
+                          Operations/Store
                         </h4>
                         <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-notify">
-                            <Clock className="w-3 h-3 mr-2 text-orange-500" />
-                            ops.send_notification_email
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-escalate">
-                            <Zap className="w-3 h-3 mr-2 text-orange-500" />
-                            ops.escalate_to_supervisor
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-warehouse">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-shift-publish">
                             <Activity className="w-3 h-3 mr-2 text-orange-500" />
-                            ops.warehouse_stock_approval
+                            ops.shift.publish.store
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-notification-send">
+                            <Zap className="w-3 h-3 mr-2 text-orange-500" />
+                            ops.notification.send.broadcast
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-inventory-update">
+                            <Settings className="w-3 h-3 mr-2 text-orange-500" />
+                            ops.inventory.update.critical
                           </Badge>
                         </div>
                       </div>
 
-                      {/* IT - Information Technology */}
+                      {/* 4. Legal/Compliance - Policies, Privacy 231 */}
+                      <div>
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                          Legal/Compliance
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-legal-policy-ack">
+                            <CheckCircle className="w-3 h-3 mr-2 text-red-500" />
+                            legal.policy.ack.tenant
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-legal-privacy-validate">
+                            <AlertCircle className="w-3 h-3 mr-2 text-red-500" />
+                            legal.privacy.validate.231
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-legal-gdpr-process">
+                            <Users className="w-3 h-3 mr-2 text-red-500" />
+                            legal.gdpr.process.request
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* 5. Procurement/Suppliers - PO Approvals */}
                       <div>
                         <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                           <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                          IT - Information Technology
+                          Procurement/Suppliers
                         </h4>
                         <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-hardware">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-procurement-supplier-create">
+                            <Plus className="w-3 h-3 mr-2 text-purple-500" />
+                            procurement.supplier.create
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-procurement-po-approve">
                             <CheckCircle className="w-3 h-3 mr-2 text-purple-500" />
-                            it.approve_hardware_request
+                            procurement.po.approve.le_5000
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-software">
-                            <Settings className="w-3 h-3 mr-2 text-purple-500" />
-                            it.software_license_approval
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-access">
-                            <Users className="w-3 h-3 mr-2 text-purple-500" />
-                            it.system_access_grant
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-procurement-contract-validate">
+                            <Target className="w-3 h-3 mr-2 text-purple-500" />
+                            procurement.contract.validate
                           </Badge>
                         </div>
                       </div>
 
-                      {/* CRM - Customer Relationship */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
-                          CRM - Customer Relationship
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-crm-discount">
-                            <Target className="w-3 h-3 mr-2 text-pink-500" />
-                            crm.approve_discount_max_10
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-crm-contract">
-                            <CheckCircle className="w-3 h-3 mr-2 text-pink-500" />
-                            crm.contract_approval_required
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Support - Supporto Clienti */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                          Support - Supporto Clienti
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-support-refund">
-                            <CheckCircle className="w-3 h-3 mr-2 text-yellow-500" />
-                            support.approve_refund_max_500
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-support-escalate">
-                            <Zap className="w-3 h-3 mr-2 text-yellow-500" />
-                            support.escalate_to_manager
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* Sales - Vendite */}
+                      {/* 6. IT/Security - Access, Device Provisioning */}
                       <div>
                         <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                           <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
-                          Sales - Vendite
+                          IT/Security
                         </h4>
                         <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-sales-quote">
-                            <Target className="w-3 h-3 mr-2 text-cyan-500" />
-                            sales.approve_quote_discount
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-sales-commission">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-access-grant">
                             <CheckCircle className="w-3 h-3 mr-2 text-cyan-500" />
-                            sales.commission_approval
+                            it.access.grant.store
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-device-provision">
+                            <Settings className="w-3 h-3 mr-2 text-cyan-500" />
+                            it.device.provision.laptop
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-account-create">
+                            <Users className="w-3 h-3 mr-2 text-cyan-500" />
+                            it.account.create.domain
                           </Badge>
                         </div>
                       </div>
+
                     </CardContent>
                   </Card>
                 </div>
