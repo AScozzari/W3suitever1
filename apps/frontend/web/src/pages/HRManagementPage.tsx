@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
@@ -85,7 +84,8 @@ interface HRDocument {
 
 const HRManagementPage: React.FC = () => {
   const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees'>('dashboard');
+  const [currentModule, setCurrentModule] = useState('hr');
   
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -1104,57 +1104,138 @@ const HRManagementPage: React.FC = () => {
 
   // ==================== MAIN RENDER ====================
 
+  // HR Tabs Configuration
+  const hrTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'requests', label: 'Richieste', icon: FileText },
+    { id: 'shifts', label: 'Turni', icon: Calendar },
+    { id: 'documents', label: 'Documenti', icon: FileText },
+    { id: 'analytics', label: 'Analytics', icon: Brain },
+    { id: 'employees', label: 'Dipendenti', icon: Users }
+  ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardSection />;
+      case 'requests':
+        return <RequestsSection />;
+      case 'shifts':
+        return <ShiftsSection />;
+      case 'documents':
+        return <DocumentsSection />;
+      case 'analytics':
+        return <AnalyticsSection />;
+      case 'employees':
+        return <EmployeesSection />;
+      default:
+        return <DashboardSection />;
+    }
+  };
+
   return (
-    <Layout currentModule="hr" setCurrentModule={() => {}}>
-      <div className="min-h-screen bg-white">
-        {/* Navigation Tabs */}
-        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200">
-          <div className="px-6">
-            <Tabs value={activeSection} onValueChange={(value) => setActiveSection(value as any)}>
-              <TabsList className="grid w-full grid-cols-6 bg-slate-100/50">
-                <TabsTrigger value="dashboard" className="flex items-center gap-2" data-testid="tab-dashboard">
-                  <BarChart3 className="w-4 h-4" />
-                  Dashboard
-                </TabsTrigger>
-                <TabsTrigger value="requests" className="flex items-center gap-2" data-testid="tab-requests">
-                  <FileText className="w-4 h-4" />
-                  Richieste
-                </TabsTrigger>
-                <TabsTrigger value="shifts" className="flex items-center gap-2" data-testid="tab-shifts">
-                  <Calendar className="w-4 h-4" />
-                  Turni
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="flex items-center gap-2" data-testid="tab-documents">
-                  <FileText className="w-4 h-4" />
-                  Documenti
-                </TabsTrigger>
-                <TabsTrigger value="analytics" className="flex items-center gap-2" data-testid="tab-analytics">
-                  <Brain className="w-4 h-4" />
-                  Analytics
-                </TabsTrigger>
-                <TabsTrigger value="employees" className="flex items-center gap-2" data-testid="tab-employees">
-                  <Users className="w-4 h-4" />
-                  Dipendenti
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+    <>
+      {/* Modals */}
+      <RequestModal />
+
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        {/* Header */}
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#111827',
+            margin: '0 0 8px 0'
+          }}>
+            Sistema HR Management
+          </h1>
+          <p style={{
+            fontSize: '15px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Gestione completa risorse umane con workflow automatizzati
+          </p>
+        </div>
+
+        {/* Tabs Container */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+          <div style={{
+            display: 'flex',
+            background: 'rgba(243, 244, 246, 0.5)',
+            borderRadius: '12px',
+            padding: '4px',
+            gap: '4px'
+          }}>
+            {hrTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  style={{
+                    flex: 1,
+                    background: isActive 
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      : 'transparent',
+                    color: isActive ? 'white' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px 20px',
+                    fontSize: '14px',
+                    fontWeight: isActive ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: isActive 
+                      ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                      : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    textAlign: 'center',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'hsla(255, 255, 255, 0.08)';
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
+                  }}
+                  data-testid={`hr-tab-${tab.id}`}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="p-6">
-          {activeSection === 'dashboard' && <DashboardSection />}
-          {activeSection === 'requests' && <RequestsSection />}
-          {activeSection === 'shifts' && <ShiftsSection />}
-          {activeSection === 'documents' && <DocumentsSection />}
-          {activeSection === 'analytics' && <AnalyticsSection />}
-          {activeSection === 'employees' && <EmployeesSection />}
+        <div>
+          {renderContent()}
         </div>
-
-        {/* Modals */}
-        <RequestModal />
-      </div>
-    </Layout>
+      </Layout>
+    </>
   );
 };
 
