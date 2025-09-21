@@ -34,7 +34,8 @@ import {
   useWorkflowViewport,
   useWorkflowUI,
   useWorkflowHistory,
-  useWorkflowTemplates
+  useWorkflowTemplates,
+  useWorkflowHasHydrated
 } from '@/stores/workflowStore';
 
 // UI Components
@@ -651,7 +652,7 @@ const WorkflowManagementPage: React.FC = () => {
   const templates = zustandTemplates;
   
   // 🌱 INITIALIZE WITH DEFAULT NODES AFTER HYDRATION
-  const hasHydrated = workflowStore((state) => state.hasHydrated);
+  const hasHydrated = useWorkflowHasHydrated();
   
   useEffect(() => {
     if (hasHydrated && zustandNodes.length === 0 && zustandEdges.length === 0) {
