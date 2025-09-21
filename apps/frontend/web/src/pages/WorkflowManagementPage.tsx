@@ -743,7 +743,7 @@ const WorkflowManagementPage: React.FC = () => {
   const onConnect = useCallback(
     (params: Connection) => {
       console.log('Creating connection:', params);
-      setEdges((eds) => addEdge(params, eds));
+      setEdges(addEdge(params, edges));
       toast({
         title: "Connection Created",
         description: "Nodes connected successfully",
@@ -758,12 +758,10 @@ const WorkflowManagementPage: React.FC = () => {
       console.log('Deleting nodes:', deleted.map(n => n.id));
       
       // Remove edges connected to deleted nodes
-      setEdges((currentEdges) => {
-        const deletedIds = deleted.map(node => node.id);
-        return currentEdges.filter(edge => 
-          !deletedIds.includes(edge.source) && !deletedIds.includes(edge.target)
-        );
-      });
+      const deletedIds = deleted.map(node => node.id);
+      setEdges(edges.filter(edge => 
+        !deletedIds.includes(edge.source) && !deletedIds.includes(edge.target)
+      ));
 
       toast({
         title: "Nodes Deleted", 
@@ -977,7 +975,7 @@ const WorkflowManagementPage: React.FC = () => {
       },
     };
     
-    setNodes((nds) => nds.concat(newNode));
+    setNodes([...nodes, newNode]);
     
     toast({
       title: "Action Added",
@@ -997,7 +995,7 @@ const WorkflowManagementPage: React.FC = () => {
       },
     };
     
-    setNodes((nds) => nds.concat(newNode));
+    setNodes([...nodes, newNode]);
     
     toast({
       title: "Decision Node Added",
@@ -1044,7 +1042,7 @@ const WorkflowManagementPage: React.FC = () => {
       },
     };
     
-    setNodes((nds) => [newNode, ...nds]); // Trigger al primo posto
+    setNodes([newNode, ...nodes]); // Trigger al primo posto
     
     toast({
       title: "Trigger Added",
@@ -1339,7 +1337,7 @@ const WorkflowManagementPage: React.FC = () => {
       data: itemData,
     };
 
-    setNodes((nds) => nds.concat(newNode));
+    setNodes([...nodes, newNode]);
     
     toast({
       title: `${itemData.name} Added`,
