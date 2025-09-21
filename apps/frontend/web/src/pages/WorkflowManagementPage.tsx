@@ -779,6 +779,13 @@ const WorkflowManagementPage: React.FC = () => {
   const [showValidation, setShowValidation] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
+  // 📋 TEMPLATE MANAGEMENT SYSTEM INTEGRATION
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [templateCategory, setTemplateCategory] = useState('general');
+
   // Real-time validation (debounced)
   useEffect(() => {
     if (nodes.length === 0) {
@@ -1794,6 +1801,34 @@ const WorkflowManagementPage: React.FC = () => {
                     <Save className="w-4 h-4 mr-1" />
                     Save
                   </Button>
+
+                  {/* 📋 TEMPLATE MANAGEMENT BUTTONS */}
+                  <div className="flex gap-1 mr-2 p-1 rounded-md bg-white/5 border border-white/10">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowSaveTemplateDialog(true)}
+                      disabled={nodes.length === 0}
+                      className="h-8 px-2 text-xs hover:bg-white/10 disabled:opacity-30"
+                      title="Save as Template"
+                      data-testid="button-save-template"
+                    >
+                      <Database className="w-3 h-3 mr-1" />
+                      Save Template
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowTemplateLibrary(!showTemplateLibrary)}
+                      className="h-8 px-2 text-xs hover:bg-white/10"
+                      title="Browse Templates"
+                      data-testid="button-browse-templates"
+                    >
+                      <Folder className="w-3 h-3 mr-1" />
+                      Templates
+                    </Button>
+                  </div>
+
                   <Button 
                     size="sm" 
                     onClick={handleRunWorkflow}
@@ -1974,6 +2009,219 @@ const WorkflowManagementPage: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* 📋 SAVE TEMPLATE DIALOG */}
+              <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Database className="w-5 h-5" />
+                      Save Workflow Template
+                    </DialogTitle>
+                    <DialogDescription>
+                      Save this workflow as a reusable template for future use.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div>
+                      <Label htmlFor="template-name">Template Name *</Label>
+                      <Input
+                        id="template-name"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        placeholder="e.g., Employee Onboarding Workflow"
+                        className="mt-1"
+                        data-testid="input-template-name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="template-description">Description</Label>
+                      <Textarea
+                        id="template-description"
+                        value={templateDescription}
+                        onChange={(e) => setTemplateDescription(e.target.value)}
+                        placeholder="Describe what this workflow does and when to use it..."
+                        className="mt-1 h-20"
+                        data-testid="input-template-description"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="template-category">Category</Label>
+                      <Select value={templateCategory} onValueChange={setTemplateCategory}>
+                        <SelectTrigger className="mt-1" data-testid="select-template-category">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="general">General</SelectItem>
+                          <SelectItem value="hr">Human Resources</SelectItem>
+                          <SelectItem value="finance">Finance</SelectItem>
+                          <SelectItem value="operations">Operations</SelectItem>
+                          <SelectItem value="sales">Sales</SelectItem>
+                          <SelectItem value="support">Customer Support</SelectItem>
+                          <SelectItem value="approval">Approval Workflows</SelectItem>
+                          <SelectItem value="automation">Process Automation</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowSaveTemplateDialog(false);
+                        setTemplateName('');
+                        setTemplateDescription('');
+                        setTemplateCategory('general');
+                      }}
+                      data-testid="button-cancel-save-template"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (!templateName.trim()) {
+                          toast({
+                            title: '❌ Template name required',
+                            description: 'Please enter a name for your template',
+                            variant: 'destructive'
+                          });
+                          return;
+                        }
+
+                        // Save template using Zustand store
+                        const templateId = `template_${Date.now()}`;
+                        const template = {
+                          id: templateId,
+                          name: templateName.trim(),
+                          description: templateDescription.trim(),
+                          category: templateCategory,
+                          nodes: nodes,
+                          edges: edges,
+                          viewport: { x: 0, y: 0, zoom: 1 },
+                          createdAt: new Date().toISOString(),
+                          metadata: {
+                            nodeCount: nodes.length,
+                            edgeCount: edges.length,
+                            complexity: nodes.length > 15 ? 'high' : nodes.length > 5 ? 'medium' : 'low'
+                          }
+                        };
+
+                        saveTemplate(template);
+                        
+                        toast({
+                          title: '✅ Template saved successfully',
+                          description: `"${templateName}" has been added to your template library`,
+                        });
+
+                        setShowSaveTemplateDialog(false);
+                        setTemplateName('');
+                        setTemplateDescription('');
+                        setTemplateCategory('general');
+                      }}
+                      disabled={!templateName.trim()}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600"
+                      data-testid="button-confirm-save-template"
+                    >
+                      <Database className="w-4 h-4 mr-1" />
+                      Save Template
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* 📁 TEMPLATE LIBRARY PANEL */}
+              {showTemplateLibrary && (
+                <div className="mb-4 p-4 rounded-lg border bg-white/5 backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium flex items-center gap-2">
+                      <Folder className="w-4 h-4" />
+                      Template Library ({templates.length})
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowTemplateLibrary(false)}
+                      className="h-6 px-2"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+
+                  {templates.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No templates saved yet</p>
+                      <p className="text-xs">Create a workflow and click "Save Template" to get started</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {templates.map((template) => (
+                        <div key={template.id} className="p-3 rounded border bg-white/5 hover:bg-white/10 transition-colors">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm truncate">{template.name}</h4>
+                              <Badge variant="secondary" className="text-xs mt-1 capitalize">
+                                {template.category}
+                              </Badge>
+                            </div>
+                            <div className="flex gap-1 ml-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  loadTemplate(template.id);
+                                  toast({
+                                    title: '📁 Template loaded',
+                                    description: `"${template.name}" has been loaded into the workflow builder`,
+                                  });
+                                  setShowTemplateLibrary(false);
+                                }}
+                                className="h-6 w-6 p-0"
+                                title="Load Template"
+                                data-testid={`button-load-template-${template.id}`}
+                              >
+                                <Download className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  deleteTemplate(template.id);
+                                  toast({
+                                    title: '🗑️ Template deleted',
+                                    description: `"${template.name}" has been removed from your library`,
+                                  });
+                                }}
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                                title="Delete Template"
+                                data-testid={`button-delete-template-${template.id}`}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          {template.description && (
+                            <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                              {template.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Activity className="w-3 h-3" />
+                              {template.metadata?.nodeCount || 0} nodes
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <ArrowRight className="w-3 h-3" />
+                              {template.metadata?.edgeCount || 0} connections
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
