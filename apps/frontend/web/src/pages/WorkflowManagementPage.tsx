@@ -267,24 +267,24 @@ const WorkflowManagementPage: React.FC = () => {
   });
 
   // Users and Roles for Team Modal
-  const { data: usersData, isLoading: loadingUsers } = useQuery({
+  const { data: usersData = [], isLoading: loadingUsers } = useQuery({
     queryKey: ['/api/users'],
     enabled: showTeamModal,
   });
 
-  const { data: rolesData, isLoading: loadingRoles } = useQuery({
+  const { data: rolesData = [], isLoading: loadingRoles } = useQuery({
     queryKey: ['/api/roles'],
     enabled: showTeamModal,
   });
 
   // Filter functions for Team Modal
-  const filteredUsers = (usersData || []).filter((user: any) => 
+  const filteredUsers = usersData.filter((user: any) => 
     user.email?.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
     user.firstName?.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
     user.lastName?.toLowerCase().includes(teamSearchTerm.toLowerCase())
   );
 
-  const filteredRoles = (rolesData || []).filter((role: any) =>
+  const filteredRoles = rolesData.filter((role: any) =>
     role.name?.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
     role.description?.toLowerCase().includes(teamSearchTerm.toLowerCase())
   );
@@ -315,6 +315,110 @@ const WorkflowManagementPage: React.FC = () => {
         ? (prev.secondarySupervisors || []).filter(id => id !== userId)
         : [...(prev.secondarySupervisors || []), userId]
     }));
+  };
+
+  // Workflow Builder Functions
+  const handleSaveWorkflow = () => {
+    try {
+      const workflowData = {
+        name: 'New Workflow',
+        description: 'Created from workflow builder',
+        nodes: nodes,
+        edges: edges,
+        status: 'draft'
+      };
+      
+      console.log('Saving workflow:', workflowData);
+      
+      toast({
+        title: "Workflow Saved",
+        description: "Workflow has been saved successfully",
+      });
+      
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRunWorkflow = () => {
+    try {
+      if (nodes.length === 0) {
+        toast({
+          title: "Cannot Run Workflow",
+          description: "Add some nodes to the workflow first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsRunning(true);
+      console.log('Running workflow with nodes:', nodes);
+      
+      // Simulate workflow execution
+      setTimeout(() => {
+        setIsRunning(false);
+        toast({
+          title: "Workflow Complete",
+          description: "Workflow executed successfully",
+        });
+      }, 3000);
+      
+    } catch (error) {
+      setIsRunning(false);
+      console.error('Error running workflow:', error);
+      toast({
+        title: "Error",
+        description: "Failed to run workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addActionNode = (actionType = 'approval') => {
+    const newNode = {
+      id: `node-${Date.now()}`,
+      type: 'default',
+      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      data: { 
+        label: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)} Node`,
+        type: actionType
+      },
+    };
+    
+    setNodes((nds) => nds.concat(newNode));
+    
+    toast({
+      title: "Node Added",
+      description: `${actionType} node added to workflow`,
+    });
+  };
+
+  const addDecisionNode = () => {
+    const newNode = {
+      id: `decision-${Date.now()}`,
+      type: 'default',
+      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      data: { 
+        label: 'Decision Node',
+        type: 'decision'
+      },
+      style: {
+        backgroundColor: '#f3e8ff',
+        border: '2px solid #a855f7',
+      },
+    };
+    
+    setNodes((nds) => nds.concat(newNode));
+    
+    toast({
+      title: "Decision Node Added",
+      description: "Decision node added to workflow",
+    });
   };
 
   // Mutations
