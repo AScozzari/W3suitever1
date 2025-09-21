@@ -10,7 +10,7 @@ import WorkflowManagementPage from "./pages/WorkflowManagementPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 // Legacy imports removed - consolidated into HR and Employee dashboards
 import MyPortal from "./pages/MyPortal";
-import HRManagementDashboard from "./pages/HRManagementDashboard";
+import HRManagementPage from "./pages/HRManagementPage";
 import NotificationCenter from "./pages/NotificationCenter";
 import NotFound from "./pages/NotFound";
 import TenantVerificationTest from "./pages/TenantVerificationTest";
@@ -51,9 +51,9 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><MyPortal /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* NEW HR Management Dashboard - Sistema universale con microservizi */}
+      {/* HR Management - Complete HR system that inherits from WorkflowManagement */}
       <Route path="/:tenant/hr-management">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRManagementDashboard /></AuthenticatedApp></TenantWrapper>}
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><HRManagementPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
       {/* Settings Page Route */}

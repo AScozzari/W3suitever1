@@ -267,12 +267,12 @@ const WorkflowManagementPage: React.FC = () => {
   });
 
   // Users and Roles for Team Modal
-  const { data: usersData = [], isLoading: loadingUsers } = useQuery({
+  const { data: usersData = [], isLoading: loadingUsers } = useQuery<any[]>({
     queryKey: ['/api/users'],
     enabled: showTeamModal,
   });
 
-  const { data: rolesData = [], isLoading: loadingRoles } = useQuery({
+  const { data: rolesData = [], isLoading: loadingRoles } = useQuery<any[]>({
     queryKey: ['/api/roles'],
     enabled: showTeamModal,
   });
