@@ -609,43 +609,133 @@ const WorkflowManagementPage: React.FC = () => {
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   
-  // 🏪 TEMPORARY LOCAL STATE (Zustand disabled to fix infinite loop)
-  const [nodes, setNodes] = useState<any[]>([]);
-  const [edges, setEdges] = useState<any[]>([]);
-  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isRunning, setRunning] = useState(false);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<any[]>([]);
+  // 🏪 ZUSTAND STATE MANAGEMENT - REINTEGRATED WITH CONTROLLED SYNC
+  const workflowStore = useWorkflowStore();
+  const {
+    nodes: zustandNodes,
+    edges: zustandEdges,
+    viewport: zustandViewport,
+    searchTerm: zustandSearchTerm,
+    selectedCategory: zustandSelectedCategory,
+    isRunning: zustandIsRunning,
+    selectedNodeId: zustandSelectedNodeId,
+    templates: zustandTemplates,
+    setNodes: setZustandNodes,
+    setEdges: setZustandEdges,
+    setViewport: setZustandViewport,
+    setSearchTerm: setZustandSearchTerm,
+    setSelectedCategory: setZustandSelectedCategory,
+    setRunning: setZustandRunning,
+    saveSnapshot: zustandSaveSnapshot,
+    undo: zustandUndo,
+    redo: zustandRedo,
+    saveTemplate: zustandSaveTemplate,
+    loadTemplate: zustandLoadTemplate,
+    clearWorkflow: zustandClearWorkflow,
+    history,
+    historyIndex
+  } = workflowStore;
+
+  // 🎯 REACT FLOW STATE (PRIMARY SOURCE) - syncs to Zustand with debouncing
+  const [nodes, setNodes, onNodesChange] = useNodesState(zustandNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(zustandEdges);
+  const [viewport, setViewport] = useState(zustandViewport);
   
-  // Temporary placeholder actions
-  const canUndo = false;
-  const canRedo = false;
-  const historyLength = 0;
-  const undo = () => {};
-  const redo = () => {};
-  const saveSnapshot = () => {};
-  const saveTemplate = () => {};
-  const loadTemplate = () => {};
+  // 🔄 UI STATE - direct Zustand bindings (no local state needed)
+  const searchTerm = zustandSearchTerm;
+  const selectedCategory = zustandSelectedCategory;
+  const isRunning = zustandIsRunning;
+  const selectedNodeId = zustandSelectedNodeId;
+  const templates = zustandTemplates;
+  
+  // 🔄 DEBOUNCED SYNC: React Flow → Zustand (prevents infinite loops)
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      // Only sync if nodes differ from Zustand state (avoid unnecessary updates)
+      if (JSON.stringify(nodes) !== JSON.stringify(zustandNodes)) {
+        setZustandNodes(nodes);
+        zustandSaveSnapshot('Nodes updated');
+      }
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(debounceTimer);
+  }, [nodes, setZustandNodes, zustandNodes, zustandSaveSnapshot]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      // Only sync if edges differ from Zustand state
+      if (JSON.stringify(edges) !== JSON.stringify(zustandEdges)) {
+        setZustandEdges(edges);
+        zustandSaveSnapshot('Edges updated');
+      }
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(debounceTimer);
+  }, [edges, setZustandEdges, zustandEdges, zustandSaveSnapshot]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      // Only sync if viewport differs
+      if (JSON.stringify(viewport) !== JSON.stringify(zustandViewport)) {
+        setZustandViewport(viewport);
+      }
+    }, 500); // 500ms debounce for viewport (less frequent)
+    
+    return () => clearTimeout(debounceTimer);
+  }, [viewport, setZustandViewport, zustandViewport]);
+
+  // 🎯 WORKFLOW ACTIONS - now fully functional with history
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+  const historyLength = history.length;
+  
+  // Enhanced actions with Zustand integration
+  const undo = () => {
+    const success = zustandUndo();
+    if (success) {
+      const currentState = workflowStore.getState();
+      setNodes(currentState.nodes);
+      setEdges(currentState.edges);
+      setViewport(currentState.viewport);
+    }
+    return success;
+  };
+  
+  const redo = () => {
+    const success = zustandRedo();
+    if (success) {
+      const currentState = workflowStore.getState();
+      setNodes(currentState.nodes);
+      setEdges(currentState.edges);
+      setViewport(currentState.viewport);
+    }
+    return success;
+  };
+
+  const saveSnapshot = (action: string) => zustandSaveSnapshot(action);
+  const saveTemplate = zustandSaveTemplate;
+  const loadTemplate = (templateId: string) => {
+    zustandLoadTemplate(templateId);
+    const currentState = workflowStore.getState();
+    setNodes(currentState.nodes);
+    setEdges(currentState.edges);
+    setViewport(currentState.viewport);
+  };
+  
   const clearWorkflow = () => {
+    zustandClearWorkflow();
     setNodes([]);
     setEdges([]);
+    setViewport({ x: 0, y: 0, zoom: 1 });
   };
+  
   const addNode = (node: any) => setNodes(prev => [...prev, node]);
   const removeNode = (id: string) => setNodes(prev => prev.filter(n => n.id !== id));
   const addStoreEdge = (edge: any) => setEdges(prev => [...prev, edge]);
   const removeEdge = (id: string) => setEdges(prev => prev.filter(e => e.id !== id));
 
-  // React Flow change handlers (integrate with Zustand)
-  const onNodesChange = useCallback((changes: any) => {
-    // For now, we'll implement a simple sync - can be enhanced later
-    // This maintains React Flow's built-in functionality
-  }, []);
-
-  const onEdgesChange = useCallback((changes: any) => {
-    // For now, we'll implement a simple sync - can be enhanced later  
-  }, []);
+  // React Flow change handlers are now provided by useNodesState/useEdgesState
+  // onNodesChange and onEdgesChange are automatically handled
   
   // Team Modal State  
   const [teamFormData, setTeamFormData] = useState<Partial<Team>>({
@@ -1386,7 +1476,7 @@ const WorkflowManagementPage: React.FC = () => {
                 <Input
                   placeholder="Search actions..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)} // ✅ UPDATED: Uses Zustand store action
+                  onChange={(e) => setZustandSearchTerm(e.target.value)} // ✅ UPDATED: Uses Zustand store action
                   className="pl-10 bg-white/5 border-white/20"
                 />
               </div>
@@ -1396,7 +1486,7 @@ const WorkflowManagementPage: React.FC = () => {
                 <Button
                   size="sm"
                   variant={selectedCategory === null ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(null)} // ✅ UPDATED: Uses Zustand store action
+                  onClick={() => setZustandSelectedCategory(null)} // ✅ UPDATED: Uses Zustand store action
                   className="h-7 px-2 text-xs"
                 >
                   All
@@ -1408,7 +1498,7 @@ const WorkflowManagementPage: React.FC = () => {
                       key={key}
                       size="sm"
                       variant={selectedCategory === key ? "default" : "outline"}
-                      onClick={() => setSelectedCategory(key)} // ✅ UPDATED: Uses Zustand store action
+                      onClick={() => setZustandSelectedCategory(key)} // ✅ UPDATED: Uses Zustand store action
                       className={`h-7 px-2 text-xs ${selectedCategory === key ? category.bgClass : ''}`}
                     >
                       <Icon className="w-3 h-3 mr-1" />
