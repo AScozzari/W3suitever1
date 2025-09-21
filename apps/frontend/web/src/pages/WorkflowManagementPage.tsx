@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import WorkflowBuilder from '../components/WorkflowBuilder';
 import PositionsManager from '../components/PositionsManager';
+import ActionLibrary from '../components/ActionLibrary';
 import Layout from '../components/Layout';
 import { 
   Card, 
@@ -223,141 +224,13 @@ export default function WorkflowManagementPage() {
                         Drag actions into your workflow
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
-                      {/* ===== 6 CATEGORIE SPECIFICHE BUSINESS-ALIGNED ===== */}
-                      
-                      {/* 1. HR - Leave, Attendance, Scheduling */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                          HR - Leave & Attendance
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-leave-approve">
-                            <CheckCircle className="w-3 h-3 mr-2 text-green-500" />
-                            hr.leave.approve.max_5d
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-attendance-check">
-                            <Clock className="w-3 h-3 mr-2 text-green-500" />
-                            hr.attendance.validate.daily
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-schedule-publish">
-                            <Activity className="w-3 h-3 mr-2 text-green-500" />
-                            hr.schedule.publish.weekly
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* 2. Finance/Expenses - Budget Thresholds */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          Finance/Expenses
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-expense-approve">
-                            <CheckCircle className="w-3 h-3 mr-2 text-blue-500" />
-                            finance.expense.approve.le_1000
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-budget-validate">
-                            <Target className="w-3 h-3 mr-2 text-blue-500" />
-                            finance.budget.validate.monthly
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-payment-authorize">
-                            <Zap className="w-3 h-3 mr-2 text-blue-500" />
-                            finance.payment.authorize.urgent
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* 3. Operations/Store - Shifts, Publishing, Notifications */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                          Operations/Store
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-shift-publish">
-                            <Activity className="w-3 h-3 mr-2 text-orange-500" />
-                            ops.shift.publish.store
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-notification-send">
-                            <Zap className="w-3 h-3 mr-2 text-orange-500" />
-                            ops.notification.send.broadcast
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-inventory-update">
-                            <Settings className="w-3 h-3 mr-2 text-orange-500" />
-                            ops.inventory.update.critical
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* 4. Legal/Compliance - Policies, Privacy 231 */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                          Legal/Compliance
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-legal-policy-ack">
-                            <CheckCircle className="w-3 h-3 mr-2 text-red-500" />
-                            legal.policy.ack.tenant
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-legal-privacy-validate">
-                            <AlertCircle className="w-3 h-3 mr-2 text-red-500" />
-                            legal.privacy.validate.231
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-legal-gdpr-process">
-                            <Users className="w-3 h-3 mr-2 text-red-500" />
-                            legal.gdpr.process.request
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* 5. Procurement/Suppliers - PO Approvals */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                          Procurement/Suppliers
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-procurement-supplier-create">
-                            <Plus className="w-3 h-3 mr-2 text-purple-500" />
-                            procurement.supplier.create
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-procurement-po-approve">
-                            <CheckCircle className="w-3 h-3 mr-2 text-purple-500" />
-                            procurement.po.approve.le_5000
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-procurement-contract-validate">
-                            <Target className="w-3 h-3 mr-2 text-purple-500" />
-                            procurement.contract.validate
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {/* 6. IT/Security - Access, Device Provisioning */}
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
-                          IT/Security
-                        </h4>
-                        <div className="space-y-1 text-xs">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-access-grant">
-                            <CheckCircle className="w-3 h-3 mr-2 text-cyan-500" />
-                            it.access.grant.store
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-device-provision">
-                            <Settings className="w-3 h-3 mr-2 text-cyan-500" />
-                            it.device.provision.laptop
-                          </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-account-create">
-                            <Users className="w-3 h-3 mr-2 text-cyan-500" />
-                            it.account.create.domain
-                          </Badge>
-                        </div>
-                      </div>
-
+                    <CardContent className="p-4">
+                      <ActionLibrary
+                        onActionDrag={(action) => {
+                          console.log('Action dragged from library:', action);
+                          // TODO: Integrate with WorkflowBuilder drag-and-drop
+                        }}
+                      />
                     </CardContent>
                   </Card>
                 </div>
