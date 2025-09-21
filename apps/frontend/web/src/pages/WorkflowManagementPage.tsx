@@ -66,6 +66,7 @@ interface WorkflowInstance {
 
 const WorkflowManagementPage: React.FC = () => {
   const { toast } = useToast();
+  const [currentModule, setCurrentModule] = useState('workflow');
   const [activeTab, setActiveTab] = useState<'teams' | 'builder' | 'assignment' | 'monitor'>('teams');
   const [selectedCategory, setSelectedCategory] = useState('hr');
   
@@ -84,44 +85,44 @@ const WorkflowManagementPage: React.FC = () => {
   const [selectedInstance, setSelectedInstance] = useState<WorkflowInstance | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'running' | 'completed' | 'failed'>('all');
 
-  // Queries
-  const { data: teamsData, isLoading: loadingTeams, refetch: refetchTeams } = useQuery({
+  // Queries with proper typing
+  const { data: teamsData, isLoading: loadingTeams, refetch: refetchTeams } = useQuery<Team[]>({
     queryKey: ['/api/teams'],
     enabled: true,
   });
 
-  const { data: templatesData, isLoading: loadingTemplates, refetch: refetchTemplates } = useQuery({
+  const { data: templatesData, isLoading: loadingTemplates, refetch: refetchTemplates } = useQuery<WorkflowTemplate[]>({
     queryKey: ['/api/workflow-templates', selectedCategory],
     enabled: !!selectedCategory,
   });
 
-  const { data: assignmentsData, isLoading: loadingAssignments, refetch: refetchAssignments } = useQuery({
+  const { data: assignmentsData, isLoading: loadingAssignments, refetch: refetchAssignments } = useQuery<TeamWorkflowAssignment[]>({
     queryKey: ['/api/team-workflow-assignments'],
     enabled: true,
   });
 
-  const { data: instancesData, isLoading: loadingInstances, refetch: refetchInstances } = useQuery({
+  const { data: instancesData, isLoading: loadingInstances, refetch: refetchInstances } = useQuery<WorkflowInstance[]>({
     queryKey: ['/api/workflow-instances'],
     enabled: activeTab === 'monitor',
     refetchInterval: 5000, // Auto-refresh every 5 seconds
   });
 
-  const { data: usersData, isLoading: loadingUsers } = useQuery({
+  const { data: usersData, isLoading: loadingUsers } = useQuery<any[]>({
     queryKey: ['/api/users'],
     enabled: activeTab === 'teams' || showTeamModal,
   });
 
-  const { data: rolesData, isLoading: loadingRoles } = useQuery({
+  const { data: rolesData, isLoading: loadingRoles } = useQuery<any[]>({
     queryKey: ['/api/roles'],
     enabled: activeTab === 'teams' || showTeamModal,
   });
 
-  const { data: workflowActionsData } = useQuery({
+  const { data: workflowActionsData } = useQuery<any[]>({
     queryKey: ['/api/workflow-actions', selectedCategory],
     enabled: activeTab === 'builder' && !!selectedCategory,
   });
 
-  const { data: workflowTriggersData } = useQuery({
+  const { data: workflowTriggersData } = useQuery<any[]>({
     queryKey: ['/api/workflow-triggers', selectedCategory],
     enabled: activeTab === 'builder' && !!selectedCategory,
   });
@@ -470,9 +471,9 @@ const WorkflowManagementPage: React.FC = () => {
   // Render Builder Tab
   const renderBuilderTab = () => (
     <WorkflowBuilderTab
-      workflowActionsData={workflowActionsData}
-      workflowTriggersData={workflowTriggersData}
-      templatesData={templatesData}
+      workflowActionsData={workflowActionsData || []}
+      workflowTriggersData={workflowTriggersData || []}
+      templatesData={templatesData || []}
       loadingTemplates={loadingTemplates}
       selectedCategory={selectedCategory}
       saveTemplateMutation={saveTemplateMutation}
@@ -1120,7 +1121,7 @@ const WorkflowManagementPage: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
       <div style={{ padding: '24px' }}>
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
