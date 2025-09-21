@@ -76,12 +76,12 @@ import 'reactflow/dist/style.css';
 
 // Icons
 import {
-  Users, Plus, Settings, GitBranch, Activity, Zap, Target, 
-  BarChart3, CheckCircle, Clock, AlertCircle, TrendingUp,
+  Users, User, Plus, Settings, GitBranch, Activity, Zap, Target, 
+  BarChart3, CheckCircle, Clock, AlertCircle, AlertTriangle, TrendingUp,
   ArrowRight, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
   Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
-  RefreshCw, Database, Mail, Undo2, Redo2, Upload // ✅ FIXED: Added Upload icon for file upload trigger
+  RefreshCw, Database, Mail, Undo2, Redo2, Upload, Server // ✅ FIXED: Added missing icons
 } from 'lucide-react';
 
 // Types
