@@ -236,7 +236,24 @@ const ALL_PERMISSIONS = [
   'marketing.view',
   'marketing.manage',
   'campaigns.view',
-  'campaigns.manage'
+  'campaigns.manage',
+  // Workflow Management Permissions
+  'workflow.read',
+  'workflow.create',
+  'workflow.update',
+  'workflow.delete',
+  // HR Workflow Actions (examples)
+  'workflow.action.hr.approve_vacation',
+  'workflow.action.hr.reject_vacation',
+  'workflow.action.hr.approve_sick_leave',
+  'workflow.action.hr.approve_training_request',
+  'workflow.action.hr.approve_expense',
+  // HR Workflow Triggers (examples)
+  'workflow.trigger.hr.notify_team',
+  'workflow.trigger.hr.update_calendar',
+  'workflow.trigger.hr.send_reminder',
+  'workflow.trigger.hr.escalate_to_manager',
+  'workflow.trigger.hr.auto_approve_small_request'
 ];
 
 // Lista di province italiane

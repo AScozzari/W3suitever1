@@ -12,7 +12,22 @@ import {
   insertOrganizationalStructureSchema,
   insertApprovalWorkflowSchema,
   insertUniversalRequestSchema,
-  insertServicePermissionSchema
+  insertServicePermissionSchema,
+  // Workflow tables
+  workflowActions,
+  workflowTriggers,
+  workflowTemplates,
+  workflowSteps,
+  teams,
+  teamWorkflowAssignments,
+  workflowInstances,
+  workflowExecutions,
+  insertWorkflowActionSchema,
+  insertWorkflowTriggerSchema,
+  insertWorkflowTemplateSchema,
+  insertTeamSchema,
+  insertTeamWorkflowAssignmentSchema,
+  insertWorkflowInstanceSchema
 } from '../db/schema/w3suite';
 import { z } from 'zod';
 
@@ -587,5 +602,478 @@ function calculateDueDate(rules: any): Date {
   dueDate.setHours(dueDate.getHours() + maxSla);
   return dueDate;
 }
+
+// ==================== WORKFLOW MANAGEMENT ENDPOINTS ====================
+
+// GET /api/teams - Get all teams for tenant
+router.get('/teams', requirePermission('workflow.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const result = await db
+      .select()
+      .from(teams)
+      .where(eq(teams.tenantId, tenantId))
+      .orderBy(desc(teams.createdAt));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+// POST /api/teams - Create new team
+router.post('/teams', requirePermission('workflow.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const teamData = {
+      ...req.body,
+      tenantId,
+      createdBy: userId,
+      updatedBy: userId
+    };
+
+    const validated = insertTeamSchema.parse(teamData);
+    
+    const result = await db
+      .insert(teams)
+      .values(validated)
+      .returning();
+
+    res.json(result[0]);
+  } catch (error) {
+    console.error('Error creating team:', error);
+    res.status(500).json({ error: 'Failed to create team' });
+  }
+});
+
+// PATCH /api/teams/:id - Update team
+router.patch('/teams/:id', requirePermission('workflow.update'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const result = await db
+      .update(teams)
+      .set({
+        ...req.body,
+        updatedBy: userId,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(teams.id, id),
+        eq(teams.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    res.json(result[0]);
+  } catch (error) {
+    console.error('Error updating team:', error);
+    res.status(500).json({ error: 'Failed to update team' });
+  }
+});
+
+// DELETE /api/teams/:id - Delete team
+router.delete('/teams/:id', requirePermission('workflow.delete'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id } = req.params;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const result = await db
+      .delete(teams)
+      .where(and(
+        eq(teams.id, id),
+        eq(teams.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting team:', error);
+    res.status(500).json({ error: 'Failed to delete team' });
+  }
+});
+
+// GET /api/workflow-templates - Get workflow templates
+router.get('/workflow-templates', requirePermission('workflow.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const category = req.query.category as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [eq(workflowTemplates.tenantId, tenantId)];
+    if (category) {
+      conditions.push(eq(workflowTemplates.category, category));
+    }
+
+    const result = await db
+      .select()
+      .from(workflowTemplates)
+      .where(and(...conditions))
+      .orderBy(desc(workflowTemplates.createdAt));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching workflow templates:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow templates' });
+  }
+});
+
+// POST /api/workflow-templates - Create workflow template
+router.post('/workflow-templates', requirePermission('workflow.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const templateData = {
+      ...req.body,
+      tenantId,
+      createdBy: userId,
+      updatedBy: userId
+    };
+
+    const validated = insertWorkflowTemplateSchema.parse(templateData);
+    
+    const result = await db
+      .insert(workflowTemplates)
+      .values(validated)
+      .returning();
+
+    res.json(result[0]);
+  } catch (error) {
+    console.error('Error creating workflow template:', error);
+    res.status(500).json({ error: 'Failed to create workflow template' });
+  }
+});
+
+// GET /api/team-workflow-assignments - Get assignments
+router.get('/team-workflow-assignments', requirePermission('workflow.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const result = await db
+      .select()
+      .from(teamWorkflowAssignments)
+      .where(eq(teamWorkflowAssignments.tenantId, tenantId))
+      .orderBy(desc(teamWorkflowAssignments.createdAt));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching team workflow assignments:', error);
+    res.status(500).json({ error: 'Failed to fetch team workflow assignments' });
+  }
+});
+
+// POST /api/team-workflow-assignments - Create assignment
+router.post('/team-workflow-assignments', requirePermission('workflow.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const assignmentData = {
+      ...req.body,
+      tenantId,
+      createdBy: userId
+    };
+
+    const validated = insertTeamWorkflowAssignmentSchema.parse(assignmentData);
+    
+    const result = await db
+      .insert(teamWorkflowAssignments)
+      .values(validated)
+      .returning();
+
+    res.json(result[0]);
+  } catch (error) {
+    console.error('Error creating team workflow assignment:', error);
+    res.status(500).json({ error: 'Failed to create team workflow assignment' });
+  }
+});
+
+// GET /api/workflow-instances - Get workflow instances
+router.get('/workflow-instances', requirePermission('workflow.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const status = req.query.status as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [eq(workflowInstances.tenantId, tenantId)];
+    if (status && status !== 'all') {
+      conditions.push(eq(workflowInstances.currentStatus, status));
+    }
+
+    const result = await db
+      .select()
+      .from(workflowInstances)
+      .where(and(...conditions))
+      .orderBy(desc(workflowInstances.createdAt));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching workflow instances:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow instances' });
+  }
+});
+
+// POST /api/workflow-instances - Create workflow instance
+router.post('/workflow-instances', requirePermission('workflow.create'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const instanceData = {
+      ...req.body,
+      tenantId,
+      requesterId: userId,
+      currentStatus: 'initialized',
+      instanceData: req.body.instanceData || {}
+    };
+
+    const validated = insertWorkflowInstanceSchema.parse(instanceData);
+    
+    const result = await db
+      .insert(workflowInstances)
+      .values(validated)
+      .returning();
+
+    res.json(result[0]);
+  } catch (error) {
+    console.error('Error creating workflow instance:', error);
+    res.status(500).json({ error: 'Failed to create workflow instance' });
+  }
+});
+
+// GET /api/workflow-actions - Get workflow actions
+router.get('/workflow-actions', requirePermission('workflow.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const category = req.query.category as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [
+      eq(workflowActions.tenantId, tenantId),
+      eq(workflowActions.isActive, true)
+    ];
+    
+    if (category) {
+      conditions.push(eq(workflowActions.category, category));
+    }
+
+    const result = await db
+      .select()
+      .from(workflowActions)
+      .where(and(...conditions))
+      .orderBy(asc(workflowActions.priority));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching workflow actions:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow actions' });
+  }
+});
+
+// GET /api/workflow-triggers - Get workflow triggers
+router.get('/workflow-triggers', requirePermission('workflow.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const category = req.query.category as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [
+      eq(workflowTriggers.tenantId, tenantId),
+      eq(workflowTriggers.isActive, true)
+    ];
+    
+    if (category) {
+      conditions.push(eq(workflowTriggers.category, category));
+    }
+
+    const result = await db
+      .select()
+      .from(workflowTriggers)
+      .where(and(...conditions))
+      .orderBy(asc(workflowTriggers.name));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching workflow triggers:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow triggers' });
+  }
+});
+
+// ==================== RBAC PERMISSIONS ENDPOINT ====================
+
+// GET /api/rbac/permissions - Get all available RBAC permissions including workflow actions and triggers
+router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Static base permissions
+    const staticPermissions = [
+      'dashboard.view',
+      'dashboard.manage',
+      'users.view',
+      'users.manage',
+      'stores.view',
+      'stores.manage',
+      'store.manage',
+      'inventory.view',
+      'inventory.manage',
+      'pos.use',
+      'customers.view',
+      'customers.manage',
+      'finance.view',
+      'finance.manage',
+      'reports.view',
+      'reports.manage',
+      'analytics.view',
+      'analytics.manage',
+      'hr.view',
+      'hr.manage',
+      'training.view',
+      'training.manage',
+      'sales.view',
+      'sales.manage',
+      'transactions.view',
+      'transactions.manage',
+      'cash.manage',
+      'warehouse.view',
+      'warehouse.manage',
+      'products.view',
+      'products.manage',
+      'marketing.view',
+      'marketing.manage',
+      'campaigns.view',
+      'campaigns.manage',
+      // Workflow management permissions
+      'workflow.read',
+      'workflow.create',
+      'workflow.update',
+      'workflow.delete',
+      // Hierarchy permissions
+      'hierarchy.read',
+      'hierarchy.create',
+      'hierarchy.update',
+      'hierarchy.delete',
+      // RBAC permissions
+      'rbac.permissions.read',
+      'rbac.permissions.manage',
+      // Other permissions
+      'permissions.read',
+      'permissions.write'
+    ];
+
+    // Fetch dynamic workflow actions from database
+    const actions = await db
+      .select({
+        category: workflowActions.category,
+        actionId: workflowActions.actionId,
+        requiredPermission: workflowActions.requiredPermission
+      })
+      .from(workflowActions)
+      .where(and(
+        eq(workflowActions.tenantId, tenantId),
+        eq(workflowActions.isActive, true)
+      ));
+
+    // Fetch dynamic workflow triggers from database
+    const triggers = await db
+      .select({
+        category: workflowTriggers.category,
+        triggerId: workflowTriggers.triggerId,
+        requiredPermission: workflowTriggers.requiredPermission
+      })
+      .from(workflowTriggers)
+      .where(and(
+        eq(workflowTriggers.tenantId, tenantId),
+        eq(workflowTriggers.isActive, true)
+      ));
+
+    // Convert workflow actions to permissions
+    const actionPermissions = actions.map(action => 
+      action.requiredPermission || `workflow.action.${action.category}.${action.actionId}`
+    );
+
+    // Convert workflow triggers to permissions
+    const triggerPermissions = triggers.map(trigger => 
+      trigger.requiredPermission || `workflow.trigger.${trigger.category}.${trigger.triggerId}`
+    );
+
+    // Combine all permissions and remove duplicates
+    const allPermissions = [...new Set([
+      ...staticPermissions,
+      ...actionPermissions,
+      ...triggerPermissions
+    ])];
+
+    res.json({
+      success: true,
+      permissions: allPermissions
+    });
+  } catch (error) {
+    console.error('Error fetching RBAC permissions:', error);
+    res.status(500).json({ error: 'Failed to fetch RBAC permissions' });
+  }
+});
 
 export default router;
