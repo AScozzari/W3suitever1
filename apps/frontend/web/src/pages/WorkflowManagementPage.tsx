@@ -4,6 +4,17 @@ import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
+// 🚀 WORKFLOW EXECUTION ENGINE
+import { 
+  executeWorkflow,
+  getWorkflowStatus,
+  pauseWorkflow,
+  resumeWorkflow,
+  cancelWorkflow,
+  workflowEngine,
+  ExecutionStatus
+} from '@/services/workflowExecution';
+
 // 🏪 ZUSTAND STATE MANAGEMENT  
 import { 
   useWorkflowStore,
@@ -748,6 +759,10 @@ const WorkflowManagementPage: React.FC = () => {
     [setEdges, toast]
   );
 
+  // 🚀 PROFESSIONAL WORKFLOW EXECUTION ENGINE INTEGRATION
+  const [executionInstanceId, setExecutionInstanceId] = useState<string | null>(null);
+  const [executionStatus, setExecutionStatus] = useState<any>(null);
+
   // Workflow Builder Functions
   const handleSaveWorkflow = () => {
     try {
@@ -776,7 +791,8 @@ const WorkflowManagementPage: React.FC = () => {
     }
   };
 
-  const handleRunWorkflow = () => {
+  // 🚀 ENHANCED: Real Workflow Execution with Engine
+  const handleRunWorkflow = async () => {
     try {
       if (nodes.length === 0) {
         toast({
@@ -788,23 +804,59 @@ const WorkflowManagementPage: React.FC = () => {
       }
 
       setRunning(true); // ✅ UPDATED: Use Zustand store action
-      console.log('Running workflow with nodes:', nodes);
+      console.log('🚀 Starting workflow execution with nodes:', nodes);
       
-      // Simulate workflow execution
-      setTimeout(() => {
-        setRunning(false); // ✅ UPDATED: Use Zustand store action
-        toast({
-          title: "Workflow Complete",
-          description: "Workflow executed successfully",
-        });
-      }, 3000);
+      // 🌟 USE REAL EXECUTION ENGINE
+      const instanceId = await executeWorkflow(
+        `workflow-${Date.now()}`,
+        nodes,
+        edges,
+        { startedBy: 'user', timestamp: new Date() },
+        { userId: 'current-user', tenantId: 'current-tenant' }
+      );
+      
+      setExecutionInstanceId(instanceId);
+      
+      // Listen to execution events
+      workflowEngine.addEventListener(instanceId, (event: string, data: any) => {
+        console.log(`📡 Workflow Event: ${event}`, data);
+        
+        if (event === 'workflowCompleted') {
+          setRunning(false);
+          setExecutionStatus('completed');
+          toast({
+            title: "🎉 Workflow Completed!",
+            description: `Executed ${data.completedNodes} nodes in ${Math.round(data.duration / 1000)}s`,
+          });
+        } else if (event === 'executionError') {
+          setRunning(false);
+          setExecutionStatus('failed');
+          toast({
+            title: "❌ Workflow Failed",
+            description: `Error in node: ${data.nodeId}`,
+            variant: "destructive",
+          });
+        } else if (event === 'waitingForApproval') {
+          setExecutionStatus('waiting');
+          toast({
+            title: "⏳ Waiting for Approval",
+            description: `${data.message} from ${data.approverRole}`,
+          });
+        }
+      });
+      
+      toast({
+        title: "🚀 Workflow Started",
+        description: `Execution ID: ${instanceId.slice(-8)}`,
+      });
       
     } catch (error) {
-      setRunning(false); // ✅ UPDATED: Use Zustand store action
+      setRunning(false);
+      setExecutionStatus('failed');
       console.error('Error running workflow:', error);
       toast({
-        title: "Error",
-        description: "Failed to run workflow",
+        title: "❌ Execution Error",
+        description: "Failed to start workflow execution",
         variant: "destructive",
       });
     }
