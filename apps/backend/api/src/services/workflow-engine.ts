@@ -10,6 +10,8 @@ import {
   teams,
   teamWorkflowAssignments,
   users,
+  userRoles,
+  roles,
   notifications
 } from '../db/schema/w3suite';
 import { nanoid } from 'nanoid';
@@ -448,15 +450,197 @@ export class WorkflowEngine {
 
   /**
    * Verify if user is authorized to approve current step
+   * Implements complete RBAC verification logic
    */
   private async verifyApprover(
     instanceId: string,
     approverId: string,
     stepId: string
   ): Promise<boolean> {
-    // TODO: Implement RBAC verification logic
-    // For now, just check if user is part of assigned team
-    return true;
+    try {
+      // Get the workflow instance with tenant context
+      const [instance] = await db
+        .select()
+        .from(workflowInstances)
+        .where(eq(workflowInstances.id, instanceId))
+        .limit(1);
+
+      if (!instance) {
+        console.error('Workflow instance not found for RBAC verification');
+        return false;
+      }
+
+      // Get the workflow step with approval requirements
+      const [step] = await db
+        .select()
+        .from(workflowSteps)
+        .where(eq(workflowSteps.id, stepId))
+        .limit(1);
+
+      if (!step) {
+        console.error('Workflow step not found for RBAC verification');
+        return false;
+      }
+
+      // Get the template with RBAC action requirements
+      const [template] = await db
+        .select()
+        .from(workflowTemplates)
+        .where(eq(workflowTemplates.id, step.templateId))
+        .limit(1);
+
+      if (!template) {
+        console.error('Workflow template not found for RBAC verification');
+        return false;
+      }
+
+      // Check 1: User must belong to the same tenant
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.id, approverId),
+            eq(users.tenantId, instance.tenantId)
+          )
+        )
+        .limit(1);
+
+      if (!user || !user.isActive) {
+        console.warn(`User ${approverId} not found or inactive in tenant ${instance.tenantId}`);
+        return false;
+      }
+
+      // Check 2: Verify approver logic from workflow step
+      const approverLogic = step.approverLogic as any || {};
+      
+      // If specific user is assigned
+      if (approverLogic.userId && approverLogic.userId === approverId) {
+        return true;
+      }
+
+      // If role-based approval
+      if (approverLogic.roleId) {
+        const hasRole = await db
+          .select()
+          .from(userRoles)
+          .where(
+            and(
+              eq(userRoles.userId, approverId),
+              eq(userRoles.roleId, approverLogic.roleId),
+              eq(userRoles.tenantId, instance.tenantId)
+            )
+          )
+          .limit(1);
+        
+        if (hasRole.length > 0) {
+          return true;
+        }
+      }
+
+      // Check 3: Team-based approval with supervisor hierarchy
+      if (approverLogic.teamId) {
+        const [team] = await db
+          .select()
+          .from(teams)
+          .where(
+            and(
+              eq(teams.id, approverLogic.teamId),
+              eq(teams.tenantId, instance.tenantId)
+            )
+          )
+          .limit(1);
+
+        if (team) {
+          // Check if user is primary supervisor
+          if (team.primarySupervisor === approverId) {
+            return true;
+          }
+
+          // Check if user is secondary supervisor
+          if (team.secondarySupervisors?.includes(approverId)) {
+            return true;
+          }
+
+          // Check if user is a team member
+          if (team.userMembers?.includes(approverId)) {
+            return true;
+          }
+
+          // Check if user has a role that's part of the team
+          if (team.roleMembers && team.roleMembers.length > 0) {
+            const userRolesList = await db
+              .select()
+              .from(userRoles)
+              .where(
+                and(
+                  eq(userRoles.userId, approverId),
+                  eq(userRoles.tenantId, instance.tenantId)
+                )
+              );
+
+            for (const userRole of userRolesList) {
+              if (team.roleMembers.includes(userRole.roleId)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+
+      // Check 4: RBAC action-based permission
+      if (template.requiredActionId) {
+        // Get user's roles
+        const userRolesList = await db
+          .select()
+          .from(userRoles)
+          .where(
+            and(
+              eq(userRoles.userId, approverId),
+              eq(userRoles.tenantId, instance.tenantId)
+            )
+          );
+
+        // Check if any of the user's roles have the required action permission
+        for (const userRole of userRolesList) {
+          const [role] = await db
+            .select()
+            .from(roles)
+            .where(
+              and(
+                eq(roles.id, userRole.roleId),
+                eq(roles.tenantId, instance.tenantId)
+              )
+            )
+            .limit(1);
+
+          if (role && role.permissions) {
+            const permissions = role.permissions as string[];
+            if (permissions.includes(template.requiredActionId)) {
+              return true;
+            }
+          }
+        }
+      }
+
+      // Check 5: Delegation check
+      const delegatedAuth = (instance.instanceData as any)?.delegations?.find(
+        (d: any) => d.stepId === stepId && d.delegateToId === approverId
+      );
+      
+      if (delegatedAuth) {
+        return true;
+      }
+
+      console.warn(
+        `User ${approverId} failed all authorization checks for workflow instance ${instanceId}, step ${stepId}`
+      );
+      return false;
+
+    } catch (error) {
+      console.error('Error in RBAC verification:', error);
+      return false;
+    }
   }
 
   /**
