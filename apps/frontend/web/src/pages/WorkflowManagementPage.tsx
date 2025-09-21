@@ -13,7 +13,15 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import Layout from '../components/Layout';
+import TeamModal from '../components/TeamModal';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Users, Plus, Settings, Search, Filter, Check, X, Edit3, Trash2,
   Zap, Play, Calendar, Shield, ChevronRight, Save, RefreshCw,
@@ -65,6 +73,7 @@ interface WorkflowInstance {
 }
 
 const WorkflowManagementPage: React.FC = () => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'teams' | 'builder' | 'assignment' | 'monitor'>('teams');
   const [selectedCategory, setSelectedCategory] = useState('hr');
   
@@ -136,9 +145,20 @@ const WorkflowManagementPage: React.FC = () => {
       body: JSON.stringify(team)
     }),
     onSuccess: () => {
-      refetchTeams();
+      queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
       setShowTeamModal(false);
       setEditingTeam(null);
+      toast({
+        title: 'Team created',
+        description: 'The team has been created successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error creating team',
+        description: error.message || 'Failed to create team. Please try again.',
+        variant: 'destructive',
+      });
     }
   });
 
@@ -149,9 +169,20 @@ const WorkflowManagementPage: React.FC = () => {
       body: JSON.stringify(team)
     }),
     onSuccess: () => {
-      refetchTeams();
+      queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
       setShowTeamModal(false);
       setEditingTeam(null);
+      toast({
+        title: 'Team updated',
+        description: 'The team has been updated successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error updating team',
+        description: error.message || 'Failed to update team. Please try again.',
+        variant: 'destructive',
+      });
     }
   });
 
@@ -160,10 +191,29 @@ const WorkflowManagementPage: React.FC = () => {
       method: 'DELETE'
     }),
     onSuccess: () => {
-      refetchTeams();
+      queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
       setSelectedTeam(null);
+      toast({
+        title: 'Team deleted',
+        description: 'The team has been deleted successfully.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error deleting team',
+        description: error.message || 'Failed to delete team. Please try again.',
+        variant: 'destructive',
+      });
     }
   });
+
+  const handleSaveTeam = (team: Partial<Team>) => {
+    if (editingTeam?.id) {
+      updateTeamMutation.mutate({ ...team, id: editingTeam.id } as Team);
+    } else {
+      createTeamMutation.mutate(team);
+    }
+  };
 
   const saveTemplateMutation = useMutation({
     mutationFn: (template: Partial<WorkflowTemplate>) => apiRequest('/api/workflow-templates', {
@@ -218,272 +268,242 @@ const WorkflowManagementPage: React.FC = () => {
 
   // Render Teams Tab
   const renderTeamsTab = () => (
-    <div style={{ display: 'flex', gap: '24px', height: 'calc(100vh - 200px)' }}>
-      {/* Team List */}
-      <div style={{
-        flex: '0 0 35%',
-        background: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '16px',
-        padding: '24px',
-        overflowY: 'auto'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px'
-        }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0 }}>
-            Teams
-          </h3>
-          <button
-            onClick={() => setShowTeamModal(true)}
-            style={{
-              padding: '8px 16px',
-              background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            data-testid="add-team"
-          >
-            <Plus size={16} />
-            Create Team
-          </button>
+    <>
+      <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)]">
+        {/* Team List */}
+        <div className="col-span-4">
+          <Card className="h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-base font-semibold">Teams</CardTitle>
+              <Button
+                onClick={() => {
+                  setEditingTeam(null);
+                  setShowTeamModal(true);
+                }}
+                size="sm"
+                className="bg-gradient-to-r from-orange-500 to-purple-600"
+                data-testid="add-team"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Team
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[calc(100vh-320px)]">
+                {loadingTeams ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-24 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {(teamsData || []).length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Users className="mx-auto h-12 w-12 mb-3 opacity-30" />
+                        <p className="text-sm">No teams created yet</p>
+                        <p className="text-xs mt-1">Click "Create Team" to get started</p>
+                      </div>
+                    ) : (
+                      (teamsData || []).map((team: Team) => (
+                        <div
+                          key={team.id}
+                          onClick={() => setSelectedTeam(team)}
+                          className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                            selectedTeam?.id === team.id
+                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 hover:dark:border-gray-600'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-semibold">{team.name}</h4>
+                            <Badge variant={team.isActive ? 'default' : 'destructive'}>
+                              {team.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {team.description || 'No description'}
+                          </p>
+                          <div className="flex gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {team.userMembers.length} users
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Shield className="h-3 w-3" />
+                              {team.roleMembers.length} roles
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
 
-        {loadingTeams ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-            <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
-            <p style={{ marginTop: '12px' }}>Loading teams...</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {(teamsData || []).map((team: Team) => (
-              <div
-                key={team.id}
-                onClick={() => setSelectedTeam(team)}
-                style={{
-                  padding: '16px',
-                  background: selectedTeam?.id === team.id ? 'rgba(255, 105, 0, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                  border: selectedTeam?.id === team.id ? '2px solid #FF6900' : '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '8px'
-                }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: 0 }}>
-                    {team.name}
-                  </h4>
-                  <span style={{
-                    padding: '2px 8px',
-                    background: team.isActive ? '#10b981' : '#ef4444',
-                    color: 'white',
-                    borderRadius: '4px',
-                    fontSize: '10px',
-                    fontWeight: '600'
-                  }}>
-                    {team.isActive ? 'Active' : 'Inactive'}
-                  </span>
+        {/* Team Details */}
+        <div className="col-span-8">
+          <Card className="h-full">
+            <CardContent className="p-6">
+              {selectedTeam ? (
+                <>
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">{selectedTeam.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {selectedTeam.description || 'No description provided'}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          setEditingTeam(selectedTeam);
+                          setShowTeamModal(true);
+                        }}
+                        size="sm"
+                        variant="outline"
+                        data-testid="edit-team"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this team?')) {
+                            deleteTeamMutation.mutate(selectedTeam.id);
+                          }
+                        }}
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        data-testid="delete-team"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Team Members Section */}
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-base font-semibold mb-4">Members</h4>
+                      
+                      {/* Users */}
+                      <div className="mb-4">
+                        <h5 className="text-sm font-medium text-muted-foreground mb-2">
+                          Direct Users ({selectedTeam.userMembers.length})
+                        </h5>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedTeam.userMembers.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">No direct users assigned</span>
+                          ) : (
+                            selectedTeam.userMembers.map(userId => {
+                              const user = (usersData || []).find((u: any) => u.id === userId);
+                              return (
+                                <Badge key={userId} variant="secondary">
+                                  {user?.email || userId}
+                                </Badge>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Roles */}
+                      <div>
+                        <h5 className="text-sm font-medium text-muted-foreground mb-2">
+                          Role Members ({selectedTeam.roleMembers.length})
+                        </h5>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedTeam.roleMembers.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">No roles assigned</span>
+                          ) : (
+                            selectedTeam.roleMembers.map(roleId => {
+                              const role = (rolesData || []).find((r: any) => r.id === roleId);
+                              return (
+                                <Badge key={roleId} variant="outline">
+                                  <Shield className="mr-1 h-3 w-3" />
+                                  {role?.name || roleId}
+                                </Badge>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Supervisors Section */}
+                    <div>
+                      <h4 className="text-base font-semibold mb-4">Supervisors</h4>
+                      <Card className="bg-muted/30">
+                        <CardContent className="pt-4">
+                          <div className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                Primary Supervisor
+                              </label>
+                              <div className="mt-1 text-sm font-medium">
+                                {selectedTeam.primarySupervisor ? (
+                                  <Badge variant="default">
+                                    <UserCog className="mr-1 h-3 w-3" />
+                                    {(usersData || []).find((u: any) => u.id === selectedTeam.primarySupervisor)?.email || selectedTeam.primarySupervisor}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">Not assigned</span>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                Co-Supervisors
+                              </label>
+                              <div className="mt-1 flex flex-wrap gap-2">
+                                {selectedTeam.secondarySupervisors.length > 0 ? (
+                                  selectedTeam.secondarySupervisors.map(supervisorId => {
+                                    const user = (usersData || []).find((u: any) => u.id === supervisorId);
+                                    return (
+                                      <Badge key={supervisorId} variant="outline">
+                                        <UserCog className="mr-1 h-3 w-3" />
+                                        {user?.email || supervisorId}
+                                      </Badge>
+                                    );
+                                  })
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">None assigned</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <Users className="h-12 w-12 mb-4 opacity-30" />
+                  <p className="text-sm">Select a team to view details</p>
                 </div>
-                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px' }}>
-                  {team.description || 'No description'}
-                </p>
-                <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#9ca3af' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Users size={12} />
-                    {team.userMembers.length} users
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Shield size={12} />
-                    {team.roleMembers.length} roles
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Team Details */}
-      <div style={{
-        flex: 1,
-        background: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '16px',
-        padding: '24px',
-        overflowY: 'auto'
-      }}>
-        {selectedTeam ? (
-          <>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '24px'
-            }}>
-              <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', margin: '0 0 4px' }}>
-                  {selectedTeam.name}
-                </h3>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-                  {selectedTeam.description}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => {
-                    setEditingTeam(selectedTeam);
-                    setShowTeamModal(true);
-                  }}
-                  style={{
-                    padding: '8px',
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.2)',
-                    borderRadius: '8px',
-                    color: '#3b82f6',
-                    cursor: 'pointer'
-                  }}
-                  data-testid="edit-team"
-                >
-                  <Edit3 size={16} />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm('Are you sure you want to delete this team?')) {
-                      deleteTeamMutation.mutate(selectedTeam.id);
-                    }
-                  }}
-                  style={{
-                    padding: '8px',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                    borderRadius: '8px',
-                    color: '#ef4444',
-                    cursor: 'pointer'
-                  }}
-                  data-testid="delete-team"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Team Members Section */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', margin: '0 0 16px' }}>
-                Members
-              </h4>
-              
-              {/* Users */}
-              <div style={{ marginBottom: '16px' }}>
-                <h5 style={{ fontSize: '14px', fontWeight: '500', color: '#6b7280', margin: '0 0 8px' }}>
-                  Direct Users ({selectedTeam.userMembers.length})
-                </h5>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px'
-                }}>
-                  {selectedTeam.userMembers.map(userId => (
-                    <span key={userId} style={{
-                      padding: '4px 12px',
-                      background: 'rgba(59, 130, 246, 0.1)',
-                      border: '1px solid rgba(59, 130, 246, 0.2)',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      color: '#3b82f6'
-                    }}>
-                      {userId}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Roles */}
-              <div>
-                <h5 style={{ fontSize: '14px', fontWeight: '500', color: '#6b7280', margin: '0 0 8px' }}>
-                  Role Members ({selectedTeam.roleMembers.length})
-                </h5>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px'
-                }}>
-                  {selectedTeam.roleMembers.map(roleId => (
-                    <span key={roleId} style={{
-                      padding: '4px 12px',
-                      background: 'rgba(139, 92, 246, 0.1)',
-                      border: '1px solid rgba(139, 92, 246, 0.2)',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      color: '#8b5cf6'
-                    }}>
-                      {roleId}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Supervisors Section */}
-            <div>
-              <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', margin: '0 0 16px' }}>
-                Supervisors
-              </h4>
-              <div style={{
-                padding: '16px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.08)'
-              }}>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-                    Primary Supervisor
-                  </label>
-                  <div style={{ fontSize: '14px', color: '#111827', fontWeight: '500' }}>
-                    {selectedTeam.primarySupervisor || 'Not assigned'}
-                  </div>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-                    Co-Supervisors
-                  </label>
-                  <div style={{ fontSize: '14px', color: '#111827' }}>
-                    {selectedTeam.secondarySupervisors.length > 0
-                      ? selectedTeam.secondarySupervisors.join(', ')
-                      : 'None assigned'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            color: '#6b7280'
-          }}>
-            <Users size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
-            <p>Select a team to view details</p>
-          </div>
-        )}
-      </div>
-    </div>
+      {/* Team Modal */}
+      <TeamModal
+        isOpen={showTeamModal}
+        onClose={() => {
+          setShowTeamModal(false);
+          setEditingTeam(null);
+        }}
+        onSave={handleSaveTeam}
+        team={editingTeam}
+        isLoading={createTeamMutation.isPending || updateTeamMutation.isPending}
+      />
+    </>
   );
 
   // Render Builder Tab
@@ -1240,9 +1260,6 @@ const WorkflowManagementPage: React.FC = () => {
         {activeTab === 'builder' && renderBuilderTab()}
         {activeTab === 'assignment' && renderAssignmentTab()}
         {activeTab === 'monitor' && renderMonitorTab()}
-
-        {/* Modals */}
-        {renderTeamModal()}
       </div>
     </Layout>
   );
