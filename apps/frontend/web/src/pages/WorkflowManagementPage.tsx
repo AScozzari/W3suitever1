@@ -1,19 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import ReactFlow, {
-  Node,
-  Edge,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Connection,
-  Controls,
-  Background,
-  MiniMap
-} from 'reactflow';
-import 'reactflow/dist/style.css';
 import Layout from '../components/Layout';
 import TeamModal from '../components/TeamModal';
+import WorkflowBuilderTab from '../components/WorkflowBuilderTab';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -30,7 +19,7 @@ import {
   Zap, Play, Calendar, Shield, ChevronRight, Save, RefreshCw,
   Activity, Clock, AlertCircle, MoreVertical, UserPlus,
   BarChart3, TrendingUp, Eye, ArrowRight, ArrowLeft,
-  Layers, GitBranch, Target, DollarSign, Package, User, UserCog
+  Layers, GitBranch, Target, DollarSign, Package, User, UserCog, Info
 } from 'lucide-react';
 
 interface Team {
@@ -87,9 +76,6 @@ const WorkflowManagementPage: React.FC = () => {
   
   // Builder Tab State
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   
   // Assignment Tab State
   const [assignmentMatrix, setAssignmentMatrix] = useState<Map<string, Map<string, boolean>>>(new Map());
@@ -240,34 +226,6 @@ const WorkflowManagementPage: React.FC = () => {
     }
   });
 
-  // React Flow handlers
-  const onConnect = useCallback((params: Connection | Edge) => {
-    setEdges((eds) => addEdge(params, eds));
-  }, [setEdges]);
-
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    setSelectedNode(node);
-  }, []);
-
-  const onDrop = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    const type = event.dataTransfer.getData('application/reactflow');
-    const position = { x: event.clientX - 250, y: event.clientY - 100 };
-    
-    const newNode: Node = {
-      id: `node-${Date.now()}`,
-      type,
-      position,
-      data: { label: type }
-    };
-    
-    setNodes((nds) => [...nds, newNode]);
-  }, [setNodes]);
-
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
 
   // Render Teams Tab
   const renderTeamsTab = () => (
@@ -511,284 +469,14 @@ const WorkflowManagementPage: React.FC = () => {
 
   // Render Builder Tab
   const renderBuilderTab = () => (
-    <div style={{ display: 'flex', gap: '24px', height: 'calc(100vh - 200px)' }}>
-      {/* Action Library */}
-      <div style={{
-        flex: '0 0 250px',
-        background: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '16px',
-        padding: '16px',
-        overflowY: 'auto'
-      }}>
-        <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: '0 0 16px' }}>
-          Actions Library
-        </h3>
-        
-        {/* Category Selector */}
-        <div style={{ marginBottom: '16px' }}>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              color: '#111827',
-              fontSize: '12px'
-            }}
-          >
-            <option value="hr">HR</option>
-            <option value="finance">Finance</option>
-            <option value="operations">Operations</option>
-            <option value="crm">CRM</option>
-            <option value="support">Support</option>
-            <option value="sales">Sales</option>
-          </select>
-        </div>
-
-        {/* Actions */}
-        <div style={{ marginBottom: '16px' }}>
-          <h4 style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', margin: '0 0 8px' }}>
-            Actions
-          </h4>
-          {(workflowActionsData || []).map((action: any) => (
-            <div
-              key={action.id}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('application/reactflow', 'action');
-                e.dataTransfer.setData('actionData', JSON.stringify(action));
-              }}
-              style={{
-                padding: '8px 12px',
-                background: 'rgba(255, 105, 0, 0.1)',
-                border: '1px solid rgba(255, 105, 0, 0.2)',
-                borderRadius: '8px',
-                marginBottom: '8px',
-                cursor: 'move',
-                fontSize: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <Zap size={14} />
-              {action.name}
-            </div>
-          ))}
-        </div>
-
-        {/* Triggers */}
-        <div>
-          <h4 style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', margin: '0 0 8px' }}>
-            Triggers
-          </h4>
-          {(workflowTriggersData || []).map((trigger: any) => (
-            <div
-              key={trigger.id}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('application/reactflow', 'trigger');
-                e.dataTransfer.setData('triggerData', JSON.stringify(trigger));
-              }}
-              style={{
-                padding: '8px 12px',
-                background: 'rgba(123, 44, 191, 0.1)',
-                border: '1px solid rgba(123, 44, 191, 0.2)',
-                borderRadius: '8px',
-                marginBottom: '8px',
-                cursor: 'move',
-                fontSize: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <Play size={14} />
-              {trigger.name}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Canvas */}
-      <div style={{
-        flex: 1,
-        background: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '16px',
-        overflow: 'hidden'
-      }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          fitView
-        >
-          <Controls />
-          <MiniMap />
-          <Background variant="dots" gap={12} size={1} />
-        </ReactFlow>
-        
-        {/* Save Button */}
-        <button
-          onClick={() => {
-            const template = {
-              name: `Template ${Date.now()}`,
-              category: selectedCategory,
-              templateType: 'custom',
-              nodes,
-              edges,
-              isActive: true
-            };
-            saveTemplateMutation.mutate(template);
-          }}
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            right: '20px',
-            padding: '10px 20px',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-          }}
-          data-testid="save-workflow"
-        >
-          <Save size={16} />
-          Save Workflow
-        </button>
-      </div>
-
-      {/* Properties Panel */}
-      {selectedNode && (
-        <div style={{
-          flex: '0 0 300px',
-          background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '16px',
-          padding: '16px',
-          overflowY: 'auto'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '16px'
-          }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: 0 }}>
-              Node Properties
-            </h3>
-            <button
-              onClick={() => setSelectedNode(null)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#6b7280',
-                cursor: 'pointer'
-              }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-                Node ID
-              </label>
-              <input
-                type="text"
-                value={selectedNode.id}
-                disabled
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '6px',
-                  color: '#6b7280',
-                  fontSize: '12px'
-                }}
-              />
-            </div>
-            
-            <div>
-              <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-                Team Assignment
-              </label>
-              <select
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '6px',
-                  color: '#111827',
-                  fontSize: '12px'
-                }}
-              >
-                <option value="">Auto-assign</option>
-                {(teamsData || []).map((team: Team) => (
-                  <option key={team.id} value={team.id}>{team.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-                SLA (hours)
-              </label>
-              <input
-                type="number"
-                placeholder="24"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '6px',
-                  color: '#111827',
-                  fontSize: '12px'
-                }}
-              />
-            </div>
-            
-            <div>
-              <label style={{ fontSize: '12px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
-                Conditions
-              </label>
-              <textarea
-                placeholder="JSON conditions..."
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '6px',
-                  color: '#111827',
-                  fontSize: '12px',
-                  minHeight: '80px',
-                  resize: 'vertical'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    <WorkflowBuilderTab
+      workflowActionsData={workflowActionsData}
+      workflowTriggersData={workflowTriggersData}
+      templatesData={templatesData}
+      loadingTemplates={loadingTemplates}
+      selectedCategory={selectedCategory}
+      saveTemplateMutation={saveTemplateMutation}
+    />
   );
 
   // Render Assignment Tab
