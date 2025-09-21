@@ -182,6 +182,8 @@ export interface LeaveRequestFilters {
 }
 
 export interface DateRange {
+  start?: Date | string;
+  end?: Date | string;
   startDate?: Date | string;
   endDate?: Date | string;
 }
@@ -423,16 +425,50 @@ export class HRStorage implements IHRStorage {
   
   // Shifts
   async getShifts(tenantId: string, storeId: string, dateRange: DateRange): Promise<Shift[]> {
-    return await db.select()
-      .from(shifts)
-      .where(and(
-        eq(shifts.tenantId, tenantId),
-        eq(shifts.storeId, storeId),
+    // Fix: Handle undefined dateRange values with sensible defaults
+    const startDate = dateRange?.start || new Date();
+    const endDate = dateRange?.end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 days
+    
+    const conditions = [
+      eq(shifts.tenantId, tenantId),
+      eq(shifts.storeId, storeId)
+    ];
+    
+    // Only add date filtering if we have valid dates
+    if (startDate || endDate) {
+      conditions.push(
         between(shifts.date, 
-          dateRange.start.toISOString().split('T')[0], 
-          dateRange.end.toISOString().split('T')[0]
+          startDate.toISOString().split('T')[0], 
+          endDate.toISOString().split('T')[0]
         )
-      ))
+      );
+    }
+    
+    return await db.select({
+      id: shifts.id,
+      tenantId: shifts.tenantId,
+      storeId: shifts.storeId,
+      name: shifts.name,
+      code: shifts.code,
+      date: shifts.date,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      breakMinutes: shifts.breakMinutes,
+      requiredStaff: shifts.requiredStaff,
+      assignedUsers: shifts.assignedUsers,
+      shiftType: shifts.shiftType,
+      templateId: shifts.templateId,
+      skills: shifts.skills,
+      status: shifts.status,
+      notes: shifts.notes,
+      color: shifts.color,
+      createdAt: shifts.createdAt,
+      updatedAt: shifts.updatedAt,
+      // Temporaneamente omesso created_by finché non risolvo database
+      createdBy: sql<string>`'system'`
+    })
+      .from(shifts)
+      .where(and(...conditions))
       .orderBy(shifts.date, shifts.startTime);
   }
   

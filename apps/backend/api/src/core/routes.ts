@@ -2801,10 +2801,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date();
-      const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
+      const startDate = req.query.startDate ? new Date(req.query.startDate) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate) : undefined;
       
-      const shifts = await hrStorage.getShifts(tenantId, storeId, { startDate, endDate });
+      const shifts = await hrStorage.getShifts(tenantId, storeId, { start: startDate, end: endDate });
       
       res.json(shifts);
     } catch (error) {
