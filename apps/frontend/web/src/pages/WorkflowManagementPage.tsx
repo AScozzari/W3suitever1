@@ -381,6 +381,141 @@ const ENTERPRISE_ACTIONS = {
   }
 };
 
+// ==================== ENTERPRISE TRIGGER LIBRARY ====================
+
+// Enterprise Trigger Library - 8+ triggers essenziali per iniziare workflow
+const ENTERPRISE_TRIGGERS = {
+  // SCHEDULE TRIGGERS (3 triggers)
+  'schedule-time': {
+    id: 'schedule-time',
+    name: 'Scheduled Time',
+    description: 'Start workflow at specific time/date',
+    category: 'schedule',
+    icon: Clock,
+    configurableFields: ['datetime', 'timezone', 'recurring'],
+    priority: 95
+  },
+  'recurring-daily': {
+    id: 'recurring-daily',
+    name: 'Daily Recurring',
+    description: 'Start workflow daily at specified time',
+    category: 'schedule',
+    icon: RefreshCw,
+    configurableFields: ['time', 'timezone', 'weekdays'],
+    priority: 90
+  },
+  'cron-expression': {
+    id: 'cron-expression',
+    name: 'Cron Schedule',
+    description: 'Advanced cron-based scheduling',
+    category: 'schedule',
+    icon: Clock,
+    configurableFields: ['cronExpression', 'timezone'],
+    priority: 85
+  },
+
+  // EVENT TRIGGERS (3 triggers)
+  'database-change': {
+    id: 'database-change',
+    name: 'Database Change',
+    description: 'Trigger on database record changes',
+    category: 'event',
+    icon: Database,
+    configurableFields: ['table', 'operation', 'conditions'],
+    priority: 90
+  },
+  'email-received': {
+    id: 'email-received',
+    name: 'Email Received',
+    description: 'Start workflow when email is received',
+    category: 'event',
+    icon: Mail,
+    configurableFields: ['emailAddress', 'subject', 'filters'],
+    priority: 85
+  },
+  'webhook-received': {
+    id: 'webhook-received',
+    name: 'Webhook Received',
+    description: 'Trigger from external API webhook',
+    category: 'event',
+    icon: Zap,
+    configurableFields: ['endpoint', 'method', 'authentication'],
+    priority: 80
+  },
+
+  // USER TRIGGERS (2 triggers)
+  'manual-start': {
+    id: 'manual-start',
+    name: 'Manual Start',
+    description: 'User manually starts the workflow',
+    category: 'user',
+    icon: Play,
+    configurableFields: ['buttonText', 'permissions', 'confirmation'],
+    priority: 100
+  },
+  'form-submission': {
+    id: 'form-submission',
+    name: 'Form Submission',
+    description: 'Trigger when form is submitted',
+    category: 'user',
+    icon: FileText,
+    configurableFields: ['formId', 'requiredFields', 'validation'],
+    priority: 95
+  },
+
+  // SYSTEM TRIGGERS (2 triggers)
+  'file-upload': {
+    id: 'file-upload',
+    name: 'File Upload',
+    description: 'Start workflow when file is uploaded',
+    category: 'system',
+    icon: Upload,
+    configurableFields: ['location', 'fileTypes', 'maxSize'],
+    priority: 75
+  },
+  'error-occurred': {
+    id: 'error-occurred',
+    name: 'Error/Exception',
+    description: 'Trigger on system errors or exceptions',
+    category: 'system',
+    icon: AlertTriangle,
+    configurableFields: ['errorType', 'severity', 'source'],
+    priority: 70
+  }
+};
+
+// Trigger Category configurations
+const TRIGGER_CATEGORIES = {
+  'schedule': {
+    icon: Clock,
+    color: 'bg-purple-500',
+    bgClass: 'bg-purple-100 dark:bg-purple-900',
+    textClass: 'text-purple-700 dark:text-purple-300',
+    label: 'Schedule'
+  },
+  'event': {
+    icon: Zap,
+    color: 'bg-cyan-500',
+    bgClass: 'bg-cyan-100 dark:bg-cyan-900',
+    textClass: 'text-cyan-700 dark:text-cyan-300',
+    label: 'Event'
+  },
+  'user': {
+    icon: User,
+    color: 'bg-teal-500',
+    bgClass: 'bg-teal-100 dark:bg-teal-900',
+    textClass: 'text-teal-700 dark:text-teal-300',
+    label: 'User'
+  },
+  'system': {
+    icon: Server,
+    color: 'bg-slate-500',
+    bgClass: 'bg-slate-100 dark:bg-slate-900',
+    textClass: 'text-slate-700 dark:text-slate-300',
+    label: 'System'
+  }
+};
+
 // Category configurations with icons and colors for Action Library
 const CATEGORIES = {
   'hr': {
@@ -688,6 +823,53 @@ const WorkflowManagementPage: React.FC = () => {
     });
   };
 
+  // ✅ NEW: addTriggerNode con Enterprise Trigger Library
+  const addTriggerNode = (triggerId: string) => {
+    const trigger = ENTERPRISE_TRIGGERS[triggerId as keyof typeof ENTERPRISE_TRIGGERS];
+    
+    if (!trigger) {
+      toast({
+        title: "Error",
+        description: "Unknown trigger type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if there's already a trigger (start node) in the workflow
+    const existingTrigger = nodes.find(node => node.type === 'start' || node.data?.nodeType === 'trigger');
+    if (existingTrigger) {
+      toast({
+        title: "Trigger Already Exists",
+        description: "Workflows can only have one trigger/start point",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newNode = {
+      id: `trigger-${Date.now()}`,
+      type: 'start', // Trigger nodes sono start nodes
+      position: { x: 50, y: 50 }, // Posizione fissa per start node
+      data: { 
+        label: trigger.name,
+        category: trigger.category,
+        description: trigger.description,
+        triggerId: trigger.id,
+        configurableFields: trigger.configurableFields,
+        priority: trigger.priority,
+        nodeType: 'trigger' // Identificatore per trigger nodes
+      },
+    };
+    
+    setNodes((nds) => [newNode, ...nds]); // Trigger al primo posto
+    
+    toast({
+      title: "Trigger Added",
+      description: `${trigger.name} trigger added as workflow start point`,
+    });
+  };
+
   // Mutations
   const createTeamMutation = useMutation({
     mutationFn: async (teamData: Partial<Team>) => {
@@ -968,9 +1150,9 @@ const WorkflowManagementPage: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Layers className="w-5 h-5" />
-                Enterprise Actions
+                Workflow Library
               </CardTitle>
-              <CardDescription>22 professional workflow actions</CardDescription>
+              <CardDescription>Triggers, Actions & Control Flow</CardDescription>
               
               {/* Search Actions */}
               <div className="relative">
@@ -1013,7 +1195,130 @@ const WorkflowManagementPage: React.FC = () => {
             
             <CardContent className="p-4">
               <ScrollArea className="h-[350px]">
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  {/* ✅ ENTERPRISE TRIGGER LIBRARY */}
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
+                      <Play className="w-5 h-5 text-purple-600" />
+                      Workflow Triggers (10)
+                    </h3>
+                    
+                    {/* Schedule Triggers */}
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2 flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Schedule Triggers ({Object.values(ENTERPRISE_TRIGGERS).filter(t => t.category === 'schedule').length})
+                      </h4>
+                      <div className="space-y-1">
+                        {Object.values(ENTERPRISE_TRIGGERS)
+                          .filter(trigger => trigger.category === 'schedule')
+                          .filter(trigger => !searchTerm || trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) || trigger.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .sort((a, b) => b.priority - a.priority)
+                          .map(trigger => {
+                            const Icon = trigger.icon;
+                            return (
+                              <Button
+                                key={trigger.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addTriggerNode(trigger.id)}
+                                className="w-full justify-start h-auto p-3 bg-purple-50/50 hover:bg-purple-100/70 border-purple-200/50 text-left"
+                                data-testid={`trigger-${trigger.id}`}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Icon className="w-4 h-4 mt-0.5 text-purple-600 flex-shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-medium text-sm text-purple-800">{trigger.name}</div>
+                                    <div className="text-xs text-purple-600 mt-0.5 truncate">{trigger.description}</div>
+                                  </div>
+                                </div>
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
+
+                    {/* Event Triggers */}
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-cyan-700 dark:text-cyan-300 mb-2 flex items-center gap-2">
+                        <Zap className="w-4 h-4" />
+                        Event Triggers ({Object.values(ENTERPRISE_TRIGGERS).filter(t => t.category === 'event').length})
+                      </h4>
+                      <div className="space-y-1">
+                        {Object.values(ENTERPRISE_TRIGGERS)
+                          .filter(trigger => trigger.category === 'event')
+                          .filter(trigger => !searchTerm || trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) || trigger.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .sort((a, b) => b.priority - a.priority)
+                          .map(trigger => {
+                            const Icon = trigger.icon;
+                            return (
+                              <Button
+                                key={trigger.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addTriggerNode(trigger.id)}
+                                className="w-full justify-start h-auto p-3 bg-cyan-50/50 hover:bg-cyan-100/70 border-cyan-200/50 text-left"
+                                data-testid={`trigger-${trigger.id}`}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Icon className="w-4 h-4 mt-0.5 text-cyan-600 flex-shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-medium text-sm text-cyan-800">{trigger.name}</div>
+                                    <div className="text-xs text-cyan-600 mt-0.5 truncate">{trigger.description}</div>
+                                  </div>
+                                </div>
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
+
+                    {/* User & System Triggers */}
+                    <div className="mb-3">
+                      <h4 className="text-sm font-medium text-teal-700 dark:text-teal-300 mb-2 flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        User & System Triggers ({Object.values(ENTERPRISE_TRIGGERS).filter(t => t.category === 'user' || t.category === 'system').length})
+                      </h4>
+                      <div className="space-y-1">
+                        {Object.values(ENTERPRISE_TRIGGERS)
+                          .filter(trigger => trigger.category === 'user' || trigger.category === 'system')
+                          .filter(trigger => !searchTerm || trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) || trigger.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .sort((a, b) => b.priority - a.priority)
+                          .map(trigger => {
+                            const Icon = trigger.icon;
+                            const isUser = trigger.category === 'user';
+                            return (
+                              <Button
+                                key={trigger.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addTriggerNode(trigger.id)}
+                                className={`w-full justify-start h-auto p-3 ${isUser ? 'bg-teal-50/50 hover:bg-teal-100/70 border-teal-200/50' : 'bg-slate-50/50 hover:bg-slate-100/70 border-slate-200/50'} text-left`}
+                                data-testid={`trigger-${trigger.id}`}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Icon className={`w-4 h-4 mt-0.5 ${isUser ? 'text-teal-600' : 'text-slate-600'} flex-shrink-0`} />
+                                  <div className="min-w-0 flex-1">
+                                    <div className={`font-medium text-sm ${isUser ? 'text-teal-800' : 'text-slate-800'}`}>{trigger.name}</div>
+                                    <div className={`text-xs ${isUser ? 'text-teal-600' : 'text-slate-600'} mt-0.5 truncate`}>{trigger.description}</div>
+                                  </div>
+                                </div>
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="my-4" />
+                  
+                  {/* ✅ ENTERPRISE ACTION LIBRARY */}
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-orange-600" />
+                      Workflow Actions (22)
+                    </h3>
+                    
                   {/* HR Actions */}
                   {(!selectedCategory || selectedCategory === 'hr') && (
                     <div>
@@ -1147,6 +1452,8 @@ const WorkflowManagementPage: React.FC = () => {
                       </div>
                     </Button>
                   </div>
+                  
+                  </div> {/* End Actions */}
                 </div>
               </ScrollArea>
             </CardContent>
