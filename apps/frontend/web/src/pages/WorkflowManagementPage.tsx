@@ -172,43 +172,258 @@ const initialNodes: Node[] = [
 
 const initialEdges: Edge[] = [];
 
+// ==================== ENTERPRISE ACTION LIBRARY ====================
+
+// Enterprise Action Library - 15+ azioni professionali
+const ENTERPRISE_ACTIONS = {
+  // HR ACTIONS (8 azioni)
+  'hr-approval': {
+    id: 'hr-approval',
+    name: 'HR Approval',
+    description: 'Standard HR approval process',
+    category: 'hr',
+    icon: CheckCircle,
+    requiredPermission: 'hr.approve',
+    priority: 100
+  },
+  'leave-request': {
+    id: 'leave-request', 
+    name: 'Leave Request',
+    description: 'Process employee leave requests',
+    category: 'hr',
+    icon: Clock,
+    requiredPermission: 'hr.leave.process',
+    priority: 90
+  },
+  'timesheet-approval': {
+    id: 'timesheet-approval',
+    name: 'Timesheet Approval', 
+    description: 'Approve employee timesheets',
+    category: 'hr',
+    icon: Clock,
+    requiredPermission: 'hr.timesheet.approve',
+    priority: 80
+  },
+  'performance-review': {
+    id: 'performance-review',
+    name: 'Performance Review',
+    description: 'Employee performance evaluation',
+    category: 'hr', 
+    icon: Target,
+    requiredPermission: 'hr.review.conduct',
+    priority: 70
+  },
+  'onboarding-flow': {
+    id: 'onboarding-flow',
+    name: 'Onboarding Process',
+    description: 'New employee onboarding workflow',
+    category: 'hr',
+    icon: Users,
+    requiredPermission: 'hr.onboarding.manage',
+    priority: 85
+  },
+  'termination-process': {
+    id: 'termination-process',
+    name: 'Termination Process',
+    description: 'Employee termination workflow',
+    category: 'hr',
+    icon: X,
+    requiredPermission: 'hr.termination.process',
+    priority: 95
+  },
+  'training-assignment': {
+    id: 'training-assignment',
+    name: 'Training Assignment',
+    description: 'Assign training to employees',
+    category: 'hr',
+    icon: Users,
+    requiredPermission: 'hr.training.assign',
+    priority: 60
+  },
+  'compliance-check': {
+    id: 'compliance-check',
+    name: 'Compliance Check',
+    description: 'HR compliance verification',
+    category: 'hr',
+    icon: Shield,
+    requiredPermission: 'hr.compliance.check',
+    priority: 75
+  },
+
+  // FINANCE ACTIONS (7 azioni)
+  'expense-approval': {
+    id: 'expense-approval',
+    name: 'Expense Approval',
+    description: 'Approve employee expenses',
+    category: 'finance',
+    icon: DollarSign,
+    requiredPermission: 'finance.expense.approve',
+    priority: 90
+  },
+  'invoice-processing': {
+    id: 'invoice-processing',
+    name: 'Invoice Processing',
+    description: 'Process vendor invoices',
+    category: 'finance',
+    icon: FileText,
+    requiredPermission: 'finance.invoice.process',
+    priority: 85
+  },
+  'budget-check': {
+    id: 'budget-check',
+    name: 'Budget Verification',
+    description: 'Verify budget availability',
+    category: 'finance',
+    icon: BarChart3,
+    requiredPermission: 'finance.budget.check',
+    priority: 80
+  },
+  'payment-authorization': {
+    id: 'payment-authorization',
+    name: 'Payment Authorization',
+    description: 'Authorize financial payments',
+    category: 'finance',
+    icon: DollarSign,
+    requiredPermission: 'finance.payment.authorize',
+    priority: 95
+  },
+  'purchase-order': {
+    id: 'purchase-order',
+    name: 'Purchase Order',
+    description: 'Create and approve purchase orders',
+    category: 'finance',
+    icon: FileText,
+    requiredPermission: 'finance.po.create',
+    priority: 75
+  },
+  'vendor-payment': {
+    id: 'vendor-payment',
+    name: 'Vendor Payment',
+    description: 'Process vendor payments',
+    category: 'finance',
+    icon: DollarSign,
+    requiredPermission: 'finance.vendor.pay',
+    priority: 85
+  },
+  'audit-trigger': {
+    id: 'audit-trigger',
+    name: 'Audit Trigger',
+    description: 'Trigger financial audit process',
+    category: 'finance',
+    icon: Shield,
+    requiredPermission: 'finance.audit.trigger',
+    priority: 70
+  },
+
+  // OPERATIONS ACTIONS (7 azioni)
+  'email-notification': {
+    id: 'email-notification',
+    name: 'Send Email',
+    description: 'Send email notifications',
+    category: 'operations',
+    icon: Bell,
+    requiredPermission: 'operations.email.send',
+    priority: 60
+  },
+  'webhook-trigger': {
+    id: 'webhook-trigger',
+    name: 'Webhook Call',
+    description: 'Trigger external webhook',
+    category: 'operations',
+    icon: Zap,
+    requiredPermission: 'operations.webhook.call',
+    priority: 70
+  },
+  'database-operation': {
+    id: 'database-operation',
+    name: 'Database Operation',
+    description: 'Execute database operations',
+    category: 'operations',
+    icon: Settings,
+    requiredPermission: 'operations.db.execute',
+    priority: 75
+  },
+  'api-call': {
+    id: 'api-call',
+    name: 'API Request',
+    description: 'Make external API calls',
+    category: 'operations',
+    icon: Zap,
+    requiredPermission: 'operations.api.call',
+    priority: 65
+  },
+  'conditional-branch': {
+    id: 'conditional-branch',
+    name: 'Conditional Logic',
+    description: 'If/then/else branching',
+    category: 'operations',
+    icon: GitBranch,
+    requiredPermission: 'operations.logic.branch',
+    priority: 50
+  },
+  'delay-timer': {
+    id: 'delay-timer',
+    name: 'Wait/Delay',
+    description: 'Pause workflow execution',
+    category: 'operations',
+    icon: Clock,
+    requiredPermission: 'operations.timer.set',
+    priority: 40
+  },
+  'escalation-trigger': {
+    id: 'escalation-trigger',
+    name: 'Escalation Trigger',
+    description: 'Escalate to supervisor',
+    category: 'operations',
+    icon: AlertCircle,
+    requiredPermission: 'operations.escalate',
+    priority: 80
+  }
+};
+
 // Category configurations with icons and colors for Action Library
 const CATEGORIES = {
-  'HR': {
+  'hr': {
     icon: Users,
     color: 'bg-green-500',
     bgClass: 'bg-green-100 dark:bg-green-900',
-    textClass: 'text-green-700 dark:text-green-300'
+    textClass: 'text-green-700 dark:text-green-300',
+    label: 'HR'
   },
-  'Finance': {
+  'finance': {
     icon: DollarSign,
     color: 'bg-blue-500',
     bgClass: 'bg-blue-100 dark:bg-blue-900',
-    textClass: 'text-blue-700 dark:text-blue-300'
+    textClass: 'text-blue-700 dark:text-blue-300',
+    label: 'Finance'
   },
-  'Operations': {
+  'operations': {
     icon: Settings,
     color: 'bg-orange-500',
     bgClass: 'bg-orange-100 dark:bg-orange-900',
-    textClass: 'text-orange-700 dark:text-orange-300'
+    textClass: 'text-orange-700 dark:text-orange-300',
+    label: 'Operations'
   },
-  'Legal': {
+  'legal': {
     icon: Shield,
     color: 'bg-purple-500',
     bgClass: 'bg-purple-100 dark:bg-purple-900',
-    textClass: 'text-purple-700 dark:text-purple-300'
+    textClass: 'text-purple-700 dark:text-purple-300',
+    label: 'Legal'
   },
-  'Procurement': {
+  'procurement': {
     icon: FileText,
     color: 'bg-pink-500',
     bgClass: 'bg-pink-100 dark:bg-pink-900',
-    textClass: 'text-pink-700 dark:text-pink-300'
+    textClass: 'text-pink-700 dark:text-pink-300',
+    label: 'Procurement'
   },
-  'IT': {
+  'it': {
     icon: Wrench,
     color: 'bg-cyan-500',
     bgClass: 'bg-cyan-100 dark:bg-cyan-900',
-    textClass: 'text-cyan-700 dark:text-cyan-300'
+    textClass: 'text-cyan-700 dark:text-cyan-300',
+    label: 'IT'
   }
 };
 
@@ -418,25 +633,38 @@ const WorkflowManagementPage: React.FC = () => {
     }
   };
 
-  // ✅ FIX CRITICAL: Correggere node types - Usare custom types
-  const addActionNode = (actionType = 'approval') => {
+  // ✅ UPDATED: addActionNode con Enterprise Action Library
+  const addActionNode = (actionId: string) => {
+    const action = ENTERPRISE_ACTIONS[actionId as keyof typeof ENTERPRISE_ACTIONS];
+    
+    if (!action) {
+      toast({
+        title: "Error",
+        description: "Unknown action type",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newNode = {
       id: `node-${Date.now()}`,
-      type: 'action', // ✅ FIXED: Usa custom type invece di 'default'
+      type: 'action',
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: { 
-        label: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)} Node`,
-        category: 'hr', // Categoria di default
-        description: `${actionType} action node`,
-        type: actionType
+        label: action.name,
+        category: action.category,
+        description: action.description,
+        actionId: action.id,
+        requiredPermission: action.requiredPermission,
+        priority: action.priority
       },
     };
     
     setNodes((nds) => nds.concat(newNode));
     
     toast({
-      title: "Node Added",
-      description: `${actionType} node added to workflow`,
+      title: "Action Added",
+      description: `${action.name} added to workflow`,
     });
   };
 
@@ -734,41 +962,193 @@ const WorkflowManagementPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Action Library Sidebar */}
+        {/* ✅ ENTERPRISE ACTION LIBRARY PALETTE */}
         <div className="lg:col-span-1">
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-[600px]">
             <CardHeader>
-              <CardTitle className="text-lg">Action Library</CardTitle>
-              <CardDescription>Drag actions to build your workflow</CardDescription>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Layers className="w-5 h-5" />
+                Enterprise Actions
+              </CardTitle>
+              <CardDescription>22 professional workflow actions</CardDescription>
+              
+              {/* Search Actions */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  placeholder="Search actions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white/5 border-white/20"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  size="sm"
+                  variant={selectedCategory === null ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(null)}
+                  className="h-7 px-2 text-xs"
+                >
+                  All
+                </Button>
+                {Object.entries(CATEGORIES).map(([key, category]) => {
+                  const Icon = category.icon;
+                  return (
+                    <Button
+                      key={key}
+                      size="sm"
+                      variant={selectedCategory === key ? "default" : "outline"}
+                      onClick={() => setSelectedCategory(key)}
+                      className={`h-7 px-2 text-xs ${selectedCategory === key ? category.bgClass : ''}`}
+                    >
+                      <Icon className="w-3 h-3 mr-1" />
+                      {category.label}
+                    </Button>
+                  );
+                })}
+              </div>
             </CardHeader>
-            <CardContent className="p-4 space-y-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => addActionNode('approval')}
-                className="w-full justify-start"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Add Approval
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => addActionNode('notification')}
-                className="w-full justify-start"
-              >
-                <Bell className="w-4 h-4 mr-2" />
-                Add Notification
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={addDecisionNode}
-                className="w-full justify-start"
-              >
-                <AlertCircle className="w-4 h-4 mr-2" />
-                Add Decision
-              </Button>
+            
+            <CardContent className="p-4">
+              <ScrollArea className="h-[350px]">
+                <div className="space-y-3">
+                  {/* HR Actions */}
+                  {(!selectedCategory || selectedCategory === 'hr') && (
+                    <div>
+                      <h4 className="text-sm font-medium text-green-700 dark:text-green-300 mb-2 flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        HR Actions ({Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === 'hr').length})
+                      </h4>
+                      <div className="space-y-1">
+                        {Object.values(ENTERPRISE_ACTIONS)
+                          .filter(action => action.category === 'hr')
+                          .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .sort((a, b) => b.priority - a.priority)
+                          .map(action => {
+                            const Icon = action.icon;
+                            return (
+                              <Button
+                                key={action.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addActionNode(action.id)}
+                                className="w-full justify-start h-auto p-3 bg-green-50/50 hover:bg-green-100/70 border-green-200/50 text-left"
+                                data-testid={`action-${action.id}`}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Icon className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-medium text-sm text-green-800">{action.name}</div>
+                                    <div className="text-xs text-green-600 mt-0.5 truncate">{action.description}</div>
+                                  </div>
+                                </div>
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Finance Actions */}
+                  {(!selectedCategory || selectedCategory === 'finance') && (
+                    <div>
+                      <h4 className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" />
+                        Finance Actions ({Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === 'finance').length})
+                      </h4>
+                      <div className="space-y-1">
+                        {Object.values(ENTERPRISE_ACTIONS)
+                          .filter(action => action.category === 'finance')
+                          .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .sort((a, b) => b.priority - a.priority)
+                          .map(action => {
+                            const Icon = action.icon;
+                            return (
+                              <Button
+                                key={action.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addActionNode(action.id)}
+                                className="w-full justify-start h-auto p-3 bg-blue-50/50 hover:bg-blue-100/70 border-blue-200/50 text-left"
+                                data-testid={`action-${action.id}`}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Icon className="w-4 h-4 mt-0.5 text-blue-600 flex-shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-medium text-sm text-blue-800">{action.name}</div>
+                                    <div className="text-xs text-blue-600 mt-0.5 truncate">{action.description}</div>
+                                  </div>
+                                </div>
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Operations Actions */}
+                  {(!selectedCategory || selectedCategory === 'operations') && (
+                    <div>
+                      <h4 className="text-sm font-medium text-orange-700 dark:text-orange-300 mb-2 flex items-center gap-2">
+                        <Settings className="w-4 h-4" />
+                        Operations Actions ({Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === 'operations').length})
+                      </h4>
+                      <div className="space-y-1">
+                        {Object.values(ENTERPRISE_ACTIONS)
+                          .filter(action => action.category === 'operations')
+                          .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .sort((a, b) => b.priority - a.priority)
+                          .map(action => {
+                            const Icon = action.icon;
+                            return (
+                              <Button
+                                key={action.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addActionNode(action.id)}
+                                className="w-full justify-start h-auto p-3 bg-orange-50/50 hover:bg-orange-100/70 border-orange-200/50 text-left"
+                                data-testid={`action-${action.id}`}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Icon className="w-4 h-4 mt-0.5 text-orange-600 flex-shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-medium text-sm text-orange-800">{action.name}</div>
+                                    <div className="text-xs text-orange-600 mt-0.5 truncate">{action.description}</div>
+                                  </div>
+                                </div>
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Decision Node */}
+                  <div>
+                    <h4 className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2 flex items-center gap-2">
+                      <GitBranch className="w-4 h-4" />
+                      Control Flow
+                    </h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={addDecisionNode}
+                      className="w-full justify-start h-auto p-3 bg-yellow-50/50 hover:bg-yellow-100/70 border-yellow-200/50 text-left"
+                      data-testid="action-decision-node"
+                    >
+                      <div className="flex items-start gap-2 w-full">
+                        <AlertCircle className="w-4 h-4 mt-0.5 text-yellow-600 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm text-yellow-800">Decision Node</div>
+                          <div className="text-xs text-yellow-600 mt-0.5">Conditional branching logic</div>
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
