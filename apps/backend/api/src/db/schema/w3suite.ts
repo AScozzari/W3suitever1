@@ -101,7 +101,7 @@ export const hrRequestTypeEnum = pgEnum('hr_request_type', [
   'mentorship_request', 'skill_assessment', 'career_development', 'experience_rewards',
   'volunteer_leave', 'donation_leave'
 ]);
-export const hrRequestStatusEnum = pgEnum('hr_request_status', ['draft', 'pending', 'approved', 'rejected', 'cancelled']);
+export const hrRequestStatusEnum = pgEnum('hr_request_status', ['draft', 'revisione', 'approvata', 'respinta']);
 export const hrRequestApprovalActionEnum = pgEnum('hr_request_approval_action', ['approved', 'rejected', 'requested_changes']);
 
 // ==================== TENANTS ====================
