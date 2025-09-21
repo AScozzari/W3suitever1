@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -651,6 +651,31 @@ const WorkflowManagementPage: React.FC = () => {
   const selectedNodeId = zustandSelectedNodeId;
   const templates = zustandTemplates;
   
+  // 🎯 MEMOIZED FILTERS FOR PERFORMANCE
+  const filteredHRActions = useMemo(() => {
+    if (selectedCategory && selectedCategory !== 'hr') return [];
+    return Object.values(ENTERPRISE_ACTIONS)
+      .filter(action => action.category === 'hr')
+      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => b.priority - a.priority);
+  }, [selectedCategory, searchTerm]);
+  
+  const filteredFinanceActions = useMemo(() => {
+    if (selectedCategory && selectedCategory !== 'finance') return [];
+    return Object.values(ENTERPRISE_ACTIONS)
+      .filter(action => action.category === 'finance')
+      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => b.priority - a.priority);
+  }, [selectedCategory, searchTerm]);
+  
+  const filteredOperationsActions = useMemo(() => {
+    if (selectedCategory && selectedCategory !== 'operations') return [];
+    return Object.values(ENTERPRISE_ACTIONS)
+      .filter(action => action.category === 'operations')
+      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => b.priority - a.priority);
+  }, [selectedCategory, searchTerm]);
+
   // 🌱 INITIALIZE WITH DEFAULT NODES AFTER HYDRATION
   const hasHydrated = useWorkflowHasHydrated();
   
@@ -1706,11 +1731,7 @@ const WorkflowManagementPage: React.FC = () => {
                         HR Actions ({Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === 'hr').length})
                       </h4>
                       <div className="space-y-1">
-                        {Object.values(ENTERPRISE_ACTIONS)
-                          .filter(action => action.category === 'hr')
-                          .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                          .sort((a, b) => b.priority - a.priority)
-                          .map(action => {
+                        {filteredHRActions.map(action => {
                             const Icon = action.icon;
                             return (
                               <Button
@@ -1753,11 +1774,7 @@ const WorkflowManagementPage: React.FC = () => {
                         Finance Actions ({Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === 'finance').length})
                       </h4>
                       <div className="space-y-1">
-                        {Object.values(ENTERPRISE_ACTIONS)
-                          .filter(action => action.category === 'finance')
-                          .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                          .sort((a, b) => b.priority - a.priority)
-                          .map(action => {
+                        {filteredFinanceActions.map(action => {
                             const Icon = action.icon;
                             return (
                               <Button
@@ -1800,11 +1817,7 @@ const WorkflowManagementPage: React.FC = () => {
                         Operations Actions ({Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === 'operations').length})
                       </h4>
                       <div className="space-y-1">
-                        {Object.values(ENTERPRISE_ACTIONS)
-                          .filter(action => action.category === 'operations')
-                          .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                          .sort((a, b) => b.priority - a.priority)
-                          .map(action => {
+                        {filteredOperationsActions.map(action => {
                             const Icon = action.icon;
                             return (
                               <Button
