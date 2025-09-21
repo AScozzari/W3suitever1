@@ -1,0 +1,158 @@
+{tenantId: '00000000-0000-0000-0000-000000000001', name: 'Staging Environment', slug: 'staging', resolved: true, timestamp: '2025-09-21T21:42:45.283Z', …}
+App.tsx:241 [TENANT-WRAPPER] 🔒 Tenant UUID resolved and set: "00000000-0000-0000-0000-000000000001"
+App.tsx:242 [TENANT-WRAPPER] 📋 Tenant name: "Staging Environment"
+App.tsx:243 [TENANT-WRAPPER] ✅ Ready for authenticated API calls with proper tenant headers
+workflowStore.ts:441 Warning: The result of getSnapshot should be cached to avoid an infinite loop Error Component Stack
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:602:21)
+    at AuthenticatedApp (App.tsx:338:29)
+    at TenantWrapper (App.tsx:182:26)
+    at Route (wouter.js?v=9b35b141:206:16)
+    at Switch (wouter.js?v=9b35b141:262:17)
+    at Router (<anonymous>)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=9b35b141:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+printWarning @ chunk-ZHRYBLGQ.js?v=9b35b141:521
+error @ chunk-ZHRYBLGQ.js?v=9b35b141:505
+mountSyncExternalStore @ chunk-ZHRYBLGQ.js?v=9b35b141:11891
+useSyncExternalStore @ chunk-ZHRYBLGQ.js?v=9b35b141:12573
+useSyncExternalStore @ chunk-L7SIRVDC.js?v=9b35b141:1120
+useStore @ zustand.js?v=9b35b141:36
+useBoundStore @ zustand.js?v=9b35b141:46
+useWorkflowUI @ workflowStore.ts:441
+WorkflowManagementPage @ WorkflowManagementPage.tsx:615
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9b35b141:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9b35b141:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9b35b141:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9b35b141:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9b35b141:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+reactflow.js?v=9b35b141:2692 Uncaught Error: [React Flow]: Seems like you have not used zustand provider as an ancestor. Help: https://reactflow.dev/error#001
+    at useStoreApi (reactflow.js?v=9b35b141:2692:11)
+    at useViewportHelper (reactflow.js?v=9b35b141:4143:17)
+    at useReactFlow (reactflow.js?v=9b35b141:4214:26)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:1308:23)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9b35b141:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9b35b141:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9b35b141:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9b35b141:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9b35b141:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9b35b141:3733:39)
+useStoreApi @ reactflow.js?v=9b35b141:2692
+useViewportHelper @ reactflow.js?v=9b35b141:4143
+useReactFlow @ reactflow.js?v=9b35b141:4214
+WorkflowManagementPage @ WorkflowManagementPage.tsx:1308
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9b35b141:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9b35b141:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9b35b141:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9b35b141:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9b35b141:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9b35b141:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9b35b141:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9b35b141:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+reactflow.js?v=9b35b141:2692 Uncaught Error: [React Flow]: Seems like you have not used zustand provider as an ancestor. Help: https://reactflow.dev/error#001
+    at useStoreApi (reactflow.js?v=9b35b141:2692:11)
+    at useViewportHelper (reactflow.js?v=9b35b141:4143:17)
+    at useReactFlow (reactflow.js?v=9b35b141:4214:26)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:1308:23)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9b35b141:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9b35b141:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9b35b141:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=9b35b141:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=9b35b141:3699:24)
+    at invokeGuardedCallback (chunk-ZHRYBLGQ.js?v=9b35b141:3733:39)
+useStoreApi @ reactflow.js?v=9b35b141:2692
+useViewportHelper @ reactflow.js?v=9b35b141:4143
+useReactFlow @ reactflow.js?v=9b35b141:4214
+WorkflowManagementPage @ WorkflowManagementPage.tsx:1308
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9b35b141:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9b35b141:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9b35b141:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=9b35b141:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=9b35b141:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=9b35b141:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9b35b141:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9b35b141:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9b35b141:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+hook.js:608 The above error occurred in the <WorkflowManagementPage> component:
+
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx?t=1758490901250:618:21)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx?t=1758490901250:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx?t=1758490901250:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9b35b141:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=9b35b141:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=9b35b141:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=9b35b141:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=9b35b141:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9b35b141:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=9b35b141:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=9b35b141:18760
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+chunk-ZHRYBLGQ.js?v=9b35b141:19413 Uncaught Error: [React Flow]: Seems like you have not used zustand provider as an ancestor. Help: https://reactflow.dev/error#001
+    at useStoreApi (reactflow.js?v=9b35b141:2692:11)
+    at useViewportHelper (reactflow.js?v=9b35b141:4143:17)
+    at useReactFlow (reactflow.js?v=9b35b141:4214:26)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:1308:23)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=9b35b141:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=9b35b141:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=9b35b141:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=9b35b141:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=9b35b141:19198:20)
+    at workLoopSync (chunk-ZHRYBLGQ.js?v=9b35b141:19137:13)
+useStoreApi @ reactflow.js?v=9b35b141:2692
+useViewportHelper @ reactflow.js?v=9b35b141:4143
+useReactFlow @ reactflow.js?v=9b35b141:4214
+WorkflowManagementPage @ WorkflowManagementPage.tsx:1308
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=9b35b141:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=9b35b141:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=9b35b141:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=9b35b141:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=9b35b141:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=9b35b141:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=9b35b141:18736
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18684
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+App.tsx:203 [TENANT-WRAPPER] 📡 API response status: 200
+App.tsx:234 [TENANT-WRAPPER] ✅ Tenant resolution successful: {tenantId: '00000000-0000-0000-0000-000000000001', name: 'Staging Environment', slug: 'staging', resolved: true, timestamp: '2025-09-21T21:42:45.571Z', …}
+App.tsx:241 [TENANT-WRAPPER] 🔒 Tenant UUID resolved and set: "00000000-0000-0000-0000-000000000001"
+App.tsx:242 [TENANT-WRAPPER] 📋 Tenant name: "Staging Environment"
+App.tsx:243 [TENANT-WRAPPER] ✅ Ready for authenticated API calls with proper tenant headers

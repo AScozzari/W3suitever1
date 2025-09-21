@@ -1304,52 +1304,6 @@ const WorkflowManagementPage: React.FC = () => {
     </div>
   );
 
-  // 🚀 DRAG & DROP HANDLERS for Professional Palette
-  const { project } = useReactFlow();
-  
-  // Handle drag start for palette items
-  const handleDragStart = (event: React.DragEvent, nodeType: string, itemData: any) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.setData('application/itemdata', JSON.stringify(itemData));
-    event.dataTransfer.effectAllowed = 'move';
-  };
-
-  // Handle drop on React Flow canvas
-  const handleDrop = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    
-    const reactFlowBounds = event.currentTarget.getBoundingClientRect();
-    const nodeType = event.dataTransfer.getData('application/reactflow');
-    const itemData = JSON.parse(event.dataTransfer.getData('application/itemdata'));
-    
-    if (!nodeType || !itemData) return;
-    
-    const position = project({
-      x: event.clientX - reactFlowBounds.left,
-      y: event.clientY - reactFlowBounds.top,
-    });
-
-    // Create new node based on type
-    const newNode = {
-      id: `${nodeType}-${Date.now()}`,
-      type: nodeType,
-      position,
-      data: itemData,
-    };
-
-    setNodes((nds) => nds.concat(newNode));
-    
-    toast({
-      title: `${itemData.name} Added`,
-      description: `${itemData.name} added to workflow via drag & drop`,
-    });
-  }, [project, setNodes, toast]);
-
-  const handleDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
-
   // Visual Workflow Builder Component
   const WorkflowBuilderView = () => (
     <div className="space-y-6">
