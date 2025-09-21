@@ -702,8 +702,34 @@ const WorkflowManagementPage: React.FC = () => {
               <CardTitle className="text-lg">Action Library</CardTitle>
               <CardDescription>Drag actions to build your workflow</CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <ActionLibrary />
+            <CardContent className="p-4 space-y-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => addActionNode('approval')}
+                className="w-full justify-start"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Add Approval
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => addActionNode('notification')}
+                className="w-full justify-start"
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                Add Notification
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={addDecisionNode}
+                className="w-full justify-start"
+              >
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Add Decision
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -711,23 +737,34 @@ const WorkflowManagementPage: React.FC = () => {
         {/* Main Builder Canvas */}
         <div className="lg:col-span-3">
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-[600px]">
-            <CardContent className="p-0 h-full">
-              <WorkflowBuilder 
-                onSave={(nodes, edges) => {
-                  console.log('Saving workflow:', { nodes, edges });
-                  toast({
-                    title: "Workflow Saved",
-                    description: "Your workflow has been saved successfully.",
-                  });
-                }}
-                onRun={(nodes, edges) => {
-                  console.log('Running workflow:', { nodes, edges });
-                  toast({
-                    title: "Workflow Started",
-                    description: "Your workflow is now running.",
-                  });
-                }}
-              />
+            <CardContent className="p-4 h-full">
+              <div className="mb-4 flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
+                  <Save className="w-4 h-4 mr-1" />
+                  Save
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleRunWorkflow}
+                  disabled={isRunning}
+                  className="bg-gradient-to-r from-green-500 to-green-600"
+                >
+                  {isRunning ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Play className="w-4 h-4 mr-1" />}
+                  {isRunning ? 'Running...' : 'Run'}
+                </Button>
+              </div>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                nodeTypes={nodeTypes}
+                className="workflow-canvas h-[450px] rounded-lg border"
+              >
+                <Controls />
+                <Background />
+              </ReactFlow>
             </CardContent>
           </Card>
         </div>

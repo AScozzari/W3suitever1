@@ -2353,7 +2353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         query = query.where(eq(workflowInstances.templateId, templateId));
       }
       
-      const instances = await query.orderBy(desc(workflowInstances.createdAt));
+      const instances = await query.orderBy(desc(workflowInstances.startedAt));
       res.json(instances);
     } catch (error) {
       handleApiError(error, res, 'recupero istanze workflow');
