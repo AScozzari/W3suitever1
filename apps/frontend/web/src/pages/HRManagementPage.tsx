@@ -274,7 +274,7 @@ const HRManagementPage: React.FC = () => {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => setActiveSection('shifts')}
+                onClick={() => setActiveTab('shifts')}
                 className="backdrop-blur-sm bg-white/10 border-white/30 hover:bg-white/20"
                 data-testid="button-manage-shifts"
               >
@@ -404,7 +404,7 @@ const HRManagementPage: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start hover:bg-purple-500/10 hover:text-purple-600"
-                  onClick={() => setActiveSection('shifts')}
+                  onClick={() => setActiveTab('shifts')}
                   data-testid="quick-action-shifts"
                 >
                   <Calendar className="w-4 h-4 mr-3" />
@@ -413,7 +413,7 @@ const HRManagementPage: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start hover:bg-emerald-500/10 hover:text-emerald-600"
-                  onClick={() => setActiveSection('documents')}
+                  onClick={() => setActiveTab('documents')}
                   data-testid="quick-action-documents"
                 >
                   <FileText className="w-4 h-4 mr-3" />
@@ -422,7 +422,7 @@ const HRManagementPage: React.FC = () => {
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start hover:bg-blue-500/10 hover:text-blue-600"
-                  onClick={() => setActiveSection('analytics')}
+                  onClick={() => setActiveTab('analytics')}
                   data-testid="quick-action-analytics"
                 >
                   <BarChart3 className="w-4 h-4 mr-3" />
