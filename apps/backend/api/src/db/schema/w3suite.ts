@@ -1996,6 +1996,371 @@ export const insertServicePermissionSchema = createInsertSchema(servicePermissio
 export type InsertServicePermission = z.infer<typeof insertServicePermissionSchema>;
 export type ServicePermission = typeof servicePermissions.$inferSelect;
 
+// ==================== WORKFLOW SYSTEM TABLES ====================
+
+// Workflow Actions - Libreria azioni per categoria (HR, Finance, Operations, etc.)
+export const workflowActions = w3suiteSchema.table("workflow_actions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Category and Action identification
+  category: varchar("category", { length: 50 }).notNull(), // 'hr', 'finance', 'operations', 'crm', 'support', 'sales'
+  actionId: varchar("action_id", { length: 100 }).notNull(), // 'approve_vacation', 'reject_vacation', 'approve_expense'
+  name: varchar("name", { length: 200 }).notNull(), // 'Approva Ferie', 'Rifiuta Ferie'
+  description: text("description"),
+  
+  // RBAC Integration
+  requiredPermission: varchar("required_permission", { length: 200 }).notNull(), // 'hr.approve_vacation_max_5_days'
+  constraints: jsonb("constraints").default({}), // { maxAmount: 1000, maxDays: 5, excludedPeriods: [] }
+  
+  // Action Configuration
+  actionType: varchar("action_type", { length: 50 }).notNull().default("approval"), // 'approval', 'rejection', 'delegation', 'notification'
+  priority: integer("priority").default(100),
+  isActive: boolean("is_active").default(true),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("workflow_actions_category_idx").on(table.category),
+  index("workflow_actions_permission_idx").on(table.requiredPermission),
+  uniqueIndex("workflow_actions_unique").on(table.tenantId, table.category, table.actionId),
+]);
+
+// Workflow Triggers - Libreria trigger per automazione
+export const workflowTriggers = w3suiteSchema.table("workflow_triggers", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Trigger identification
+  category: varchar("category", { length: 50 }).notNull(), // 'hr', 'finance', etc.
+  triggerId: varchar("trigger_id", { length: 100 }).notNull(), // 'notify_team', 'update_calendar', 'start_timer'
+  name: varchar("name", { length: 200 }).notNull(), // 'Notifica Team', 'Aggiorna Calendario'
+  description: text("description"),
+  
+  // Trigger Configuration
+  triggerType: varchar("trigger_type", { length: 50 }).notNull(), // 'notification', 'timer', 'webhook', 'conditional', 'integration'
+  config: jsonb("config").notNull(), // Configurazione specifica per tipo trigger
+  
+  // Execution settings
+  isAsync: boolean("is_async").default(false), // Esecuzione asincrona
+  retryPolicy: jsonb("retry_policy").default({}), // { maxRetries: 3, backoff: 'exponential' }
+  timeout: integer("timeout").default(30000), // Timeout in milliseconds
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(100),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("workflow_triggers_category_idx").on(table.category),
+  index("workflow_triggers_type_idx").on(table.triggerType),
+  uniqueIndex("workflow_triggers_unique").on(table.tenantId, table.category, table.triggerId),
+]);
+
+// Workflow Templates - Definizione visual workflow (reusable templates)
+export const workflowTemplates = w3suiteSchema.table("workflow_templates", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Template identification
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(), // 'hr', 'finance', etc.
+  templateType: varchar("template_type", { length: 100 }).notNull(), // 'vacation_approval', 'expense_approval'
+  
+  // Visual Workflow Definition (React Flow format)
+  nodes: jsonb("nodes").notNull(), // Array of workflow nodes with positions
+  edges: jsonb("edges").notNull(), // Array of connections between nodes
+  viewport: jsonb("viewport").default({ x: 0, y: 0, zoom: 1 }), // Canvas viewport
+  
+  // Template settings
+  isPublic: boolean("is_public").default(false), // Can be shared across tenants
+  version: integer("version").default(1),
+  isActive: boolean("is_active").default(true),
+  tags: text("tags").array().default([]),
+  
+  // Usage tracking
+  usageCount: integer("usage_count").default(0),
+  lastUsed: timestamp("last_used"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("workflow_templates_category_idx").on(table.category),
+  index("workflow_templates_type_idx").on(table.templateType),
+  index("workflow_templates_tenant_active_idx").on(table.tenantId, table.isActive),
+  uniqueIndex("workflow_templates_name_unique").on(table.tenantId, table.name),
+]);
+
+// Workflow Steps - Singoli step all'interno di un workflow template
+export const workflowSteps = w3suiteSchema.table("workflow_steps", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  templateId: uuid("template_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  
+  // Step identification
+  nodeId: varchar("node_id", { length: 100 }).notNull(), // ID del nodo nel visual editor
+  stepType: varchar("step_type", { length: 50 }).notNull(), // 'action', 'condition', 'timer', 'trigger'
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  
+  // Step configuration
+  actionId: uuid("action_id").references(() => workflowActions.id), // Per step di tipo 'action'
+  triggerId: uuid("trigger_id").references(() => workflowTriggers.id), // Per step di tipo 'trigger'
+  conditions: jsonb("conditions").default({}), // Condizioni per esecuzione
+  config: jsonb("config").default({}), // Configurazione specifica step
+  
+  // Approval logic
+  approverLogic: varchar("approver_logic", { length: 100 }), // 'team_supervisor', 'role:HR', 'department:Finance'
+  escalationTimeout: integer("escalation_timeout"), // Timeout escalation in hours
+  escalationTarget: varchar("escalation_target", { length: 100 }), // Target escalation
+  
+  // Step order and flow
+  order: integer("order").notNull(), // Ordine esecuzione
+  isOptional: boolean("is_optional").default(false),
+  canSkip: boolean("can_skip").default(false),
+  
+  // Visual position (React Flow)
+  position: jsonb("position").default({ x: 0, y: 0 }),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("workflow_steps_template_idx").on(table.templateId),
+  index("workflow_steps_order_idx").on(table.templateId, table.order),
+  uniqueIndex("workflow_steps_node_unique").on(table.templateId, table.nodeId),
+]);
+
+// Teams - Team ibridi con utenti e ruoli, supervisor RBAC-validated
+export const teams = w3suiteSchema.table("teams", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  
+  // Team identification
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  teamType: varchar("team_type", { length: 50 }).default("functional"), // 'functional', 'project', 'department'
+  
+  // Hybrid membership (users + roles)
+  userMembers: text("user_members").array().default([]), // Array of user IDs
+  roleMembers: text("role_members").array().default([]), // Array of role IDs (tutti gli utenti con questi ruoli)
+  
+  // Supervisor configuration (RBAC validated)
+  primarySupervisor: varchar("primary_supervisor").references(() => users.id), // Supervisor principale
+  secondarySupervisors: text("secondary_supervisors").array().default([]), // Co-supervisors
+  requiredSupervisorPermission: varchar("required_supervisor_permission", { length: 200 }).default("team.manage"),
+  
+  // Team scope and permissions
+  scope: jsonb("scope").default({}), // Scope ereditato o personalizzato
+  permissions: jsonb("permissions").default({}), // Permessi team-specific
+  
+  // Configuration
+  isActive: boolean("is_active").default(true),
+  autoAssignWorkflows: boolean("auto_assign_workflows").default(true), // Auto-assign workflow ai membri
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("teams_tenant_active_idx").on(table.tenantId, table.isActive),
+  index("teams_supervisor_idx").on(table.primarySupervisor),
+  uniqueIndex("teams_name_unique").on(table.tenantId, table.name),
+]);
+
+// Team Workflow Assignments - Mapping N:M tra team e workflow (con condizioni)
+export const teamWorkflowAssignments = w3suiteSchema.table("team_workflow_assignments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  teamId: uuid("team_id").notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  templateId: uuid("template_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  
+  // Assignment configuration
+  autoAssign: boolean("auto_assign").default(true), // Auto-assign a richieste membri team
+  priority: integer("priority").default(100), // Se multipli workflow per team, quale usare primo
+  
+  // Conditions for workflow usage
+  conditions: jsonb("conditions").default({}), // { requestType: 'vacation', amountRange: [0, 1000], customRules: {} }
+  
+  // Overrides specifici per questo team
+  overrides: jsonb("overrides").default({}), // { skipSteps: [], alternateApprovers: {}, customSLA: 24 }
+  
+  // Status and validity
+  isActive: boolean("is_active").default(true),
+  validFrom: timestamp("valid_from").defaultNow(),
+  validTo: timestamp("valid_to"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+  updatedBy: varchar("updated_by").references(() => users.id),
+}, (table) => [
+  index("team_workflow_assignments_team_idx").on(table.teamId),
+  index("team_workflow_assignments_template_idx").on(table.templateId),
+  index("team_workflow_assignments_active_idx").on(table.isActive),
+  uniqueIndex("team_workflow_assignments_unique").on(table.teamId, table.templateId),
+]);
+
+// Workflow Instances - Istanze runtime di workflow in esecuzione
+export const workflowInstances = w3suiteSchema.table("workflow_instances", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  templateId: uuid("template_id").notNull().references(() => workflowTemplates.id),
+  requestId: uuid("request_id").references(() => universalRequests.id), // Collegato a richiesta
+  
+  // Instance identification
+  instanceName: varchar("instance_name", { length: 200 }),
+  requesterId: varchar("requester_id").notNull().references(() => users.id),
+  teamId: uuid("team_id").references(() => teams.id), // Team che gestisce
+  
+  // Instance data
+  instanceData: jsonb("instance_data").notNull(), // Dati runtime specifici istanza
+  context: jsonb("context").default({}), // Contesto variabili per risoluzione dinamica
+  
+  // State machine
+  currentStatus: varchar("current_status", { length: 50 }).notNull().default("initialized"), 
+  // 'initialized', 'running', 'waiting_approval', 'completed', 'failed', 'cancelled'
+  currentStepId: uuid("current_step_id").references(() => workflowSteps.id),
+  
+  // Execution tracking
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  
+  // SLA and priority
+  priority: varchar("priority", { length: 20 }).default("normal"), // 'low', 'normal', 'high', 'urgent'
+  slaDeadline: timestamp("sla_deadline"),
+  escalationCount: integer("escalation_count").default(0),
+  
+  // Results
+  finalResult: varchar("final_result", { length: 50 }), // 'approved', 'rejected', 'cancelled', 'failed'
+  resultData: jsonb("result_data").default({}),
+  failureReason: text("failure_reason"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("workflow_instances_template_idx").on(table.templateId),
+  index("workflow_instances_requester_idx").on(table.requesterId),
+  index("workflow_instances_status_idx").on(table.currentStatus),
+  index("workflow_instances_team_idx").on(table.teamId),
+  index("workflow_instances_sla_idx").on(table.slaDeadline),
+]);
+
+// Workflow Executions - Log dettagliato esecuzioni step e trigger
+export const workflowExecutions = w3suiteSchema.table("workflow_executions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  instanceId: uuid("instance_id").notNull().references(() => workflowInstances.id, { onDelete: 'cascade' }),
+  stepId: uuid("step_id").references(() => workflowSteps.id),
+  
+  // Execution details
+  executionType: varchar("execution_type", { length: 50 }).notNull(), // 'action', 'trigger', 'condition', 'timer'
+  executorId: varchar("executor_id").references(() => users.id), // Chi ha eseguito (per azioni manuali)
+  automatedBy: varchar("automated_by", { length: 100 }), // Sistema che ha eseguito automaticamente
+  
+  // Execution data
+  inputData: jsonb("input_data").default({}),
+  outputData: jsonb("output_data").default({}),
+  
+  // Results and status
+  status: varchar("status", { length: 50 }).notNull(), // 'success', 'failed', 'pending', 'skipped', 'timeout'
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  
+  // Timing
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+  duration: integer("duration"), // Durata in millisecondi
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("workflow_executions_instance_idx").on(table.instanceId),
+  index("workflow_executions_step_idx").on(table.stepId),
+  index("workflow_executions_executor_idx").on(table.executorId),
+  index("workflow_executions_status_idx").on(table.status),
+  index("workflow_executions_started_idx").on(table.startedAt),
+]);
+
+// Insert Schemas and Types for new workflow tables
+export const insertWorkflowActionSchema = createInsertSchema(workflowActions).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertWorkflowAction = z.infer<typeof insertWorkflowActionSchema>;
+export type WorkflowAction = typeof workflowActions.$inferSelect;
+
+export const insertWorkflowTriggerSchema = createInsertSchema(workflowTriggers).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertWorkflowTrigger = z.infer<typeof insertWorkflowTriggerSchema>;
+export type WorkflowTrigger = typeof workflowTriggers.$inferSelect;
+
+export const insertWorkflowTemplateSchema = createInsertSchema(workflowTemplates).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertWorkflowTemplate = z.infer<typeof insertWorkflowTemplateSchema>;
+export type WorkflowTemplate = typeof workflowTemplates.$inferSelect;
+
+export const insertWorkflowStepSchema = createInsertSchema(workflowSteps).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertWorkflowStep = z.infer<typeof insertWorkflowStepSchema>;
+export type WorkflowStep = typeof workflowSteps.$inferSelect;
+
+export const insertTeamSchema = createInsertSchema(teams).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type Team = typeof teams.$inferSelect;
+
+export const insertTeamWorkflowAssignmentSchema = createInsertSchema(teamWorkflowAssignments).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertTeamWorkflowAssignment = z.infer<typeof insertTeamWorkflowAssignmentSchema>;
+export type TeamWorkflowAssignment = typeof teamWorkflowAssignments.$inferSelect;
+
+export const insertWorkflowInstanceSchema = createInsertSchema(workflowInstances).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertWorkflowInstance = z.infer<typeof insertWorkflowInstanceSchema>;
+export type WorkflowInstance = typeof workflowInstances.$inferSelect;
+
+export const insertWorkflowExecutionSchema = createInsertSchema(workflowExecutions).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertWorkflowExecution = z.infer<typeof insertWorkflowExecutionSchema>;
+export type WorkflowExecution = typeof workflowExecutions.$inferSelect;
+
 // ==================== NOTIFICATION SYSTEM RELATIONS ====================
 
 // Notifications Relations
