@@ -26,7 +26,10 @@ import {
   ReactFlow, 
   useNodesState, 
   useEdgesState, 
-  addEdge, 
+  addEdge,
+  getIncomers,
+  getOutgoers, 
+  getConnectedEdges,
   Controls,
   Background,
   Node,
@@ -317,6 +320,42 @@ const WorkflowManagementPage: React.FC = () => {
     }));
   };
 
+  // ==================== WORKFLOW BUILDER CORE FUNCTIONS ====================
+  
+  // ✅ FIX CRITICAL: onConnect handler - Far funzionare le connessioni
+  const onConnect = useCallback(
+    (params: Connection) => {
+      console.log('Creating connection:', params);
+      setEdges((eds) => addEdge(params, eds));
+      toast({
+        title: "Connection Created",
+        description: "Nodes connected successfully",
+      });
+    },
+    [setEdges, toast]
+  );
+
+  // ✅ FIX CRITICAL: onNodesDelete handler - Permettere cancellazione nodi  
+  const onNodesDelete = useCallback(
+    (deleted: Node[]) => {
+      console.log('Deleting nodes:', deleted.map(n => n.id));
+      
+      // Remove edges connected to deleted nodes
+      setEdges((currentEdges) => {
+        const deletedIds = deleted.map(node => node.id);
+        return currentEdges.filter(edge => 
+          !deletedIds.includes(edge.source) && !deletedIds.includes(edge.target)
+        );
+      });
+
+      toast({
+        title: "Nodes Deleted", 
+        description: `${deleted.length} node(s) and their connections removed`,
+      });
+    },
+    [setEdges, toast]
+  );
+
   // Workflow Builder Functions
   const handleSaveWorkflow = () => {
     try {
@@ -379,13 +418,16 @@ const WorkflowManagementPage: React.FC = () => {
     }
   };
 
+  // ✅ FIX CRITICAL: Correggere node types - Usare custom types
   const addActionNode = (actionType = 'approval') => {
     const newNode = {
       id: `node-${Date.now()}`,
-      type: 'default',
+      type: 'action', // ✅ FIXED: Usa custom type invece di 'default'
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: { 
         label: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)} Node`,
+        category: 'hr', // Categoria di default
+        description: `${actionType} action node`,
         type: actionType
       },
     };
@@ -401,15 +443,12 @@ const WorkflowManagementPage: React.FC = () => {
   const addDecisionNode = () => {
     const newNode = {
       id: `decision-${Date.now()}`,
-      type: 'default',
+      type: 'decision', // ✅ FIXED: Usa custom type invece di 'default'
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: { 
         label: 'Decision Node',
-        type: 'decision'
-      },
-      style: {
-        backgroundColor: '#f3e8ff',
-        border: '2px solid #a855f7',
+        type: 'decision',
+        description: 'Conditional branching logic'
       },
     };
     
@@ -758,9 +797,12 @@ const WorkflowManagementPage: React.FC = () => {
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                onConnect={(params) => console.log('Connection:', params)}
+                onConnect={onConnect}
+                onNodesDelete={onNodesDelete}
                 nodeTypes={nodeTypes}
                 className="workflow-canvas h-[450px] rounded-lg border"
+                deleteKeyCode={['Backspace', 'Delete']}
+                multiSelectionKeyCode={['Meta', 'Ctrl']}
               >
                 <Controls />
                 <Background />
