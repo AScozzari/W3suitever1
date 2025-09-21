@@ -607,33 +607,33 @@ const WorkflowManagementPage: React.FC = () => {
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   
-  // 🏪 PROFESSIONAL ZUSTAND STATE MANAGEMENT (replaces local useState)
-  const nodes = useWorkflowNodes();
-  const edges = useWorkflowEdges();
-  const viewport = useWorkflowViewport();
-  const { searchTerm, selectedCategory, isRunning, selectedNodeId } = useWorkflowUI();
-  const { canUndo, canRedo, historyLength } = useWorkflowHistory();
-  const templates = useWorkflowTemplates();
+  // 🏪 TEMPORARY LOCAL STATE (Zustand disabled to fix infinite loop)
+  const [nodes, setNodes] = useState<any[]>([]);
+  const [edges, setEdges] = useState<any[]>([]);
+  const [viewport, setViewport] = useState({ x: 0, y: 0, zoom: 1 });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isRunning, setRunning] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
   
-  // Zustand store actions
-  const { 
-    setNodes, 
-    setEdges,
-    setViewport,
-    addNode,
-    removeNode,
-    addEdge: addStoreEdge,
-    removeEdge,
-    setSearchTerm,
-    setSelectedCategory,
-    setRunning,
-    saveSnapshot,
-    undo,
-    redo,
-    saveTemplate,
-    loadTemplate,
-    clearWorkflow
-  } = useWorkflowStore();
+  // Temporary placeholder actions
+  const canUndo = false;
+  const canRedo = false;
+  const historyLength = 0;
+  const undo = () => {};
+  const redo = () => {};
+  const saveSnapshot = () => {};
+  const saveTemplate = () => {};
+  const loadTemplate = () => {};
+  const clearWorkflow = () => {
+    setNodes([]);
+    setEdges([]);
+  };
+  const addNode = (node: any) => setNodes(prev => [...prev, node]);
+  const removeNode = (id: string) => setNodes(prev => prev.filter(n => n.id !== id));
+  const addStoreEdge = (edge: any) => setEdges(prev => [...prev, edge]);
+  const removeEdge = (id: string) => setEdges(prev => prev.filter(e => e.id !== id));
 
   // React Flow change handlers (integrate with Zustand)
   const onNodesChange = useCallback((changes: any) => {
