@@ -53,6 +53,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // React Flow + Drag & Drop
 import { 
@@ -1206,7 +1207,7 @@ const WorkflowManagementPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 overflow-y-auto">
+            <ScrollArea className="h-64">
               <div className="space-y-3">
                 {instancesData.slice(0, 5).map((instance) => (
                   <div key={instance.id} className="flex items-center justify-between p-3 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
@@ -1237,7 +1238,7 @@ const WorkflowManagementPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </ScrollArea>
           </CardContent>
         </Card>
 
@@ -1419,7 +1420,7 @@ const WorkflowManagementPage: React.FC = () => {
             </CardHeader>
             
             <CardContent className="p-4">
-              <div className="h-[350px] overflow-y-auto">
+              <ScrollArea className="h-[350px]">
                 <div className="space-y-4">
                   {/* ✅ ENTERPRISE TRIGGER LIBRARY */}
                   <div>
@@ -1748,7 +1749,7 @@ const WorkflowManagementPage: React.FC = () => {
                   
                   </div> {/* End Actions */}
                 </div>
-              </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
@@ -2294,7 +2295,7 @@ const WorkflowManagementPage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="h-[500px] overflow-y-auto">
+                <ScrollArea className="h-[500px]">
                   <div className="space-y-3">
                     {teamsData.map((team) => (
                       <div
@@ -2345,7 +2346,7 @@ const WorkflowManagementPage: React.FC = () => {
                       </div>
                     )}
                   </div>
-                </div>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
