@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -59,9 +59,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ReactFlow, 
   ReactFlowProvider,
-  useNodesState, 
-  useEdgesState, 
   addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
   getIncomers,
   getOutgoers, 
   getConnectedEdges,
@@ -71,6 +71,8 @@ import {
   Edge,
   Connection,
   NodeTypes,
+  NodeChange,
+  EdgeChange,
   useReactFlow // ✅ ADDED: For drag & drop coordinate conversion
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -636,10 +638,10 @@ const WorkflowManagementPage: React.FC = () => {
     historyIndex
   } = workflowStore;
 
-  // 🎯 REACT FLOW STATE (PRIMARY SOURCE) - syncs to Zustand with debouncing
-  const [nodes, setNodes, onNodesChange] = useNodesState(zustandNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(zustandEdges);
-  const [viewport, setViewport] = useState(zustandViewport);
+  // 🎯 ZUSTAND AS SINGLE SOURCE OF TRUTH - Direct binding to React Flow
+  const nodes = zustandNodes;
+  const edges = zustandEdges;
+  const viewport = zustandViewport;
   
   // 🔄 UI STATE - direct Zustand bindings (no local state needed)
   const searchTerm = zustandSearchTerm;
@@ -648,41 +650,23 @@ const WorkflowManagementPage: React.FC = () => {
   const selectedNodeId = zustandSelectedNodeId;
   const templates = zustandTemplates;
   
-  // 🔄 DEBOUNCED SYNC: React Flow → Zustand (TEMPORARILY DISABLED FOR DEBUGGING)
-  // useEffect(() => {
-  //   const debounceTimer = setTimeout(() => {
-  //     // Only sync if nodes differ from Zustand state (avoid unnecessary updates)
-  //     if (JSON.stringify(nodes) !== JSON.stringify(zustandNodes)) {
-  //       setZustandNodes(nodes);
-  //       zustandSaveSnapshot('Nodes updated');
-  //     }
-  //   }, 300); // 300ms debounce
-    
-  //   return () => clearTimeout(debounceTimer);
-  // }, [nodes, setZustandNodes, zustandNodes, zustandSaveSnapshot]);
-
-  // useEffect(() => {
-  //   const debounceTimer = setTimeout(() => {
-  //     // Only sync if edges differ from Zustand state
-  //     if (JSON.stringify(edges) !== JSON.stringify(zustandEdges)) {
-  //       setZustandEdges(edges);
-  //       zustandSaveSnapshot('Edges updated');
-  //     }
-  //   }, 300); // 300ms debounce
-    
-  //   return () => clearTimeout(debounceTimer);
-  // }, [edges, setZustandEdges, zustandEdges, zustandSaveSnapshot]);
-
-  // useEffect(() => {
-  //   const debounceTimer = setTimeout(() => {
-  //     // Only sync if viewport differs
-  //     if (JSON.stringify(viewport) !== JSON.stringify(zustandViewport)) {
-  //       setZustandViewport(viewport);
-  //     }
-  //   }, 500); // 500ms debounce for viewport (less frequent)
-    
-  //   return () => clearTimeout(debounceTimer);
-  // }, [viewport, setZustandViewport, zustandViewport]);
+  // 🌱 INITIALIZE WITH DEFAULT NODES IF EMPTY
+  useEffect(() => {
+    if (zustandNodes.length === 0 && zustandEdges.length === 0) {
+      const initialNode: Node = {
+        id: 'start-node',
+        type: 'start',
+        position: { x: 250, y: 100 },
+        data: { 
+          label: 'Start',
+          type: 'start',
+          description: 'Workflow starts here'
+        }
+      };
+      setZustandNodes([initialNode]);
+      zustandSaveSnapshot('Initial node added');
+    }
+  }, []); // Run only once on mount
 
   // 🎯 WORKFLOW ACTIONS - now fully functional with history
   const canUndo = historyIndex > 0;
@@ -692,23 +676,11 @@ const WorkflowManagementPage: React.FC = () => {
   // Enhanced actions with Zustand integration
   const undo = () => {
     const success = zustandUndo();
-    if (success) {
-      const currentState = workflowStore.getState();
-      setNodes(currentState.nodes);
-      setEdges(currentState.edges);
-      setViewport(currentState.viewport);
-    }
     return success;
   };
   
   const redo = () => {
     const success = zustandRedo();
-    if (success) {
-      const currentState = workflowStore.getState();
-      setNodes(currentState.nodes);
-      setEdges(currentState.edges);
-      setViewport(currentState.viewport);
-    }
     return success;
   };
 
@@ -716,26 +688,69 @@ const WorkflowManagementPage: React.FC = () => {
   const saveTemplate = zustandSaveTemplate;
   const loadTemplate = (templateId: string) => {
     zustandLoadTemplate(templateId);
-    const currentState = workflowStore.getState();
-    setNodes(currentState.nodes);
-    setEdges(currentState.edges);
-    setViewport(currentState.viewport);
   };
   
   const clearWorkflow = () => {
     zustandClearWorkflow();
-    setNodes([]);
-    setEdges([]);
-    setViewport({ x: 0, y: 0, zoom: 1 });
   };
   
-  const addNode = (node: any) => setNodes(prev => [...prev, node]);
-  const removeNode = (id: string) => setNodes(prev => prev.filter(n => n.id !== id));
-  const addStoreEdge = (edge: any) => setEdges(prev => [...prev, edge]);
-  const removeEdge = (id: string) => setEdges(prev => prev.filter(e => e.id !== id));
+  const addNode = (node: any) => {
+    const updatedNodes = [...zustandNodes, node];
+    setZustandNodes(updatedNodes);
+    zustandSaveSnapshot('Node added');
+  };
+  
+  const removeNode = (id: string) => {
+    const updatedNodes = zustandNodes.filter(n => n.id !== id);
+    setZustandNodes(updatedNodes);
+    zustandSaveSnapshot('Node removed');
+  };
+  
+  const addStoreEdge = (edge: any) => {
+    const updatedEdges = [...zustandEdges, edge];
+    setZustandEdges(updatedEdges);
+    zustandSaveSnapshot('Edge added');
+  };
+  
+  const removeEdge = (id: string) => {
+    const updatedEdges = zustandEdges.filter(e => e.id !== id);
+    setZustandEdges(updatedEdges);
+    zustandSaveSnapshot('Edge removed');
+  };
 
-  // React Flow change handlers are now provided by useNodesState/useEdgesState
-  // onNodesChange and onEdgesChange are automatically handled
+  // 🔄 REACT FLOW CHANGE HANDLERS - Update Zustand directly with debouncing
+  const nodeChangeTimerRef = useRef<NodeJS.Timeout>();
+  const edgeChangeTimerRef = useRef<NodeJS.Timeout>();
+  const viewportChangeTimerRef = useRef<NodeJS.Timeout>();
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const updatedNodes = applyNodeChanges(changes, zustandNodes);
+    setZustandNodes(updatedNodes);
+    
+    // Debounced snapshot
+    clearTimeout(nodeChangeTimerRef.current);
+    nodeChangeTimerRef.current = setTimeout(() => {
+      zustandSaveSnapshot('Nodes updated');
+    }, 300);
+  }, [zustandNodes, setZustandNodes, zustandSaveSnapshot]);
+
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const updatedEdges = applyEdgeChanges(changes, zustandEdges);
+    setZustandEdges(updatedEdges);
+    
+    // Debounced snapshot
+    clearTimeout(edgeChangeTimerRef.current);
+    edgeChangeTimerRef.current = setTimeout(() => {
+      zustandSaveSnapshot('Edges updated');
+    }, 300);
+  }, [zustandEdges, setZustandEdges, zustandSaveSnapshot]);
+
+  const onViewportChange = useCallback((viewport: any) => {
+    clearTimeout(viewportChangeTimerRef.current);
+    viewportChangeTimerRef.current = setTimeout(() => {
+      setZustandViewport(viewport);
+    }, 500);
+  }, [setZustandViewport]);
   
   // Team Modal State  
   const [teamFormData, setTeamFormData] = useState<Partial<Team>>({
@@ -832,13 +847,15 @@ const WorkflowManagementPage: React.FC = () => {
   const onConnect = useCallback(
     (params: Connection) => {
       console.log('Creating connection:', params);
-      setEdges((eds) => addEdge(params, eds));
+      const updatedEdges = addEdge(params, zustandEdges);
+      setZustandEdges(updatedEdges);
+      zustandSaveSnapshot('Edge connected');
       toast({
         title: "Connection Created",
         description: "Nodes connected successfully",
       });
     },
-    [setEdges, toast]
+    [zustandEdges, setZustandEdges, zustandSaveSnapshot, toast]
   );
 
   // ✅ FIX CRITICAL: onNodesDelete handler - Permettere cancellazione nodi  
@@ -847,19 +864,20 @@ const WorkflowManagementPage: React.FC = () => {
       console.log('Deleting nodes:', deleted.map(n => n.id));
       
       // Remove edges connected to deleted nodes
-      setEdges((currentEdges) => {
-        const deletedIds = deleted.map(node => node.id);
-        return currentEdges.filter(edge => 
-          !deletedIds.includes(edge.source) && !deletedIds.includes(edge.target)
-        );
-      });
+      const deletedIds = deleted.map(node => node.id);
+      const updatedEdges = zustandEdges.filter(edge => 
+        !deletedIds.includes(edge.source) && !deletedIds.includes(edge.target)
+      );
+      
+      setZustandEdges(updatedEdges);
+      zustandSaveSnapshot('Nodes deleted');
 
       toast({
         title: "Nodes Deleted", 
         description: `${deleted.length} node(s) and their connections removed`,
       });
     },
-    [setEdges, toast]
+    [zustandEdges, setZustandEdges, zustandSaveSnapshot, toast]
   );
 
   // 🚀 PROFESSIONAL WORKFLOW EXECUTION ENGINE INTEGRATION
@@ -1066,7 +1084,9 @@ const WorkflowManagementPage: React.FC = () => {
       },
     };
     
-    setNodes((nds) => nds.concat(newNode));
+    const updatedNodes = [...zustandNodes, newNode];
+    setZustandNodes(updatedNodes);
+    zustandSaveSnapshot('Action node added');
     
     toast({
       title: "Action Added",
@@ -1086,7 +1106,9 @@ const WorkflowManagementPage: React.FC = () => {
       },
     };
     
-    setNodes((nds) => nds.concat(newNode));
+    const updatedNodes = [...zustandNodes, newNode];
+    setZustandNodes(updatedNodes);
+    zustandSaveSnapshot('Decision node added');
     
     toast({
       title: "Decision Node Added",
@@ -1133,7 +1155,9 @@ const WorkflowManagementPage: React.FC = () => {
       },
     };
     
-    setNodes((nds) => [newNode, ...nds]); // Trigger al primo posto
+    const updatedNodes = [newNode, ...zustandNodes]; // Trigger al primo posto
+    setZustandNodes(updatedNodes);
+    zustandSaveSnapshot('Trigger node added');
     
     toast({
       title: "Trigger Added",
@@ -1430,7 +1454,9 @@ const WorkflowManagementPage: React.FC = () => {
         };
 
         // Add the new node to the flow
-        setNodes((nds) => nds.concat(newNode));
+        const updatedNodes = [...zustandNodes, newNode];
+        setZustandNodes(updatedNodes);
+        zustandSaveSnapshot('Node added from drag');
 
         // Show success feedback
         toast({
@@ -2320,12 +2346,14 @@ const WorkflowManagementPage: React.FC = () => {
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 onNodesDelete={onNodesDelete}
+                onViewportChange={onViewportChange}
                 nodeTypes={nodeTypes}
                 onDrop={handleDrop} // ✅ ADDED: Professional drag & drop support
                 onDragOver={handleDragOver} // ✅ ADDED: Drag over handling
-                className="workflow-canvas h-[450px] rounded-lg border drop-zone" 
+                className="workflow-canvas h-[600px] min-h-[500px] rounded-lg border drop-zone" 
                 deleteKeyCode={['Backspace', 'Delete']}
                 multiSelectionKeyCode={['Meta', 'Ctrl']}
+                defaultViewport={viewport}
               >
                 <Controls />
                 <Background />
