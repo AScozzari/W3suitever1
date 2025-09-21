@@ -42,7 +42,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1206,7 +1205,7 @@ const WorkflowManagementPage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-64">
+            <div className="h-64 overflow-y-auto">
               <div className="space-y-3">
                 {instancesData.slice(0, 5).map((instance) => (
                   <div key={instance.id} className="flex items-center justify-between p-3 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
@@ -1237,7 +1236,7 @@ const WorkflowManagementPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </CardContent>
         </Card>
 
@@ -1374,7 +1373,7 @@ const WorkflowManagementPage: React.FC = () => {
             </CardHeader>
             
             <CardContent className="p-4">
-              <ScrollArea className="h-[350px]">
+              <div className="h-[350px] overflow-y-auto">
                 <div className="space-y-4">
                   {/* ✅ ENTERPRISE TRIGGER LIBRARY */}
                   <div>
@@ -1703,7 +1702,7 @@ const WorkflowManagementPage: React.FC = () => {
                   
                   </div> {/* End Actions */}
                 </div>
-              </ScrollArea>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -1863,7 +1862,7 @@ const WorkflowManagementPage: React.FC = () => {
                           <AlertCircle className="w-4 h-4" />
                           Errors ({validationResult.errors.length})
                         </h4>
-                        <ScrollArea className="h-24">
+                        <div className="h-24 overflow-y-auto">
                           <div className="space-y-1">
                             {validationResult.errors.slice(0, 3).map((error, index) => (
                               <div key={error.id} className="text-xs p-2 rounded bg-red-50/50 border border-red-200/50">
@@ -1880,7 +1879,7 @@ const WorkflowManagementPage: React.FC = () => {
                               </div>
                             )}
                           </div>
-                        </ScrollArea>
+                        </div>
                       </div>
                     )}
 
@@ -1891,7 +1890,7 @@ const WorkflowManagementPage: React.FC = () => {
                           <AlertCircle className="w-4 h-4" />
                           Warnings ({validationResult.warnings.length})
                         </h4>
-                        <ScrollArea className="h-24">
+                        <div className="h-24 overflow-y-auto">
                           <div className="space-y-1">
                             {validationResult.warnings.slice(0, 3).map((warning, index) => (
                               <div key={warning.id} className="text-xs p-2 rounded bg-yellow-50/50 border border-yellow-200/50">
@@ -1905,7 +1904,7 @@ const WorkflowManagementPage: React.FC = () => {
                               </div>
                             )}
                           </div>
-                        </ScrollArea>
+                        </div>
                       </div>
                     )}
 
@@ -1916,7 +1915,7 @@ const WorkflowManagementPage: React.FC = () => {
                           <Info className="w-4 h-4" />
                           Suggestions ({validationResult.suggestions.length})
                         </h4>
-                        <ScrollArea className="h-24">
+                        <div className="h-24 overflow-y-auto">
                           <div className="space-y-1">
                             {validationResult.suggestions.slice(0, 3).map((suggestion, index) => (
                               <div key={suggestion.id} className="text-xs p-2 rounded bg-blue-50/50 border border-blue-200/50">
@@ -1930,7 +1929,7 @@ const WorkflowManagementPage: React.FC = () => {
                               </div>
                             )}
                           </div>
-                        </ScrollArea>
+                        </div>
                       </div>
                     )}
 
@@ -2248,7 +2247,7 @@ const WorkflowManagementPage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <ScrollArea className="h-[500px]">
+                <div className="h-[500px] overflow-y-auto">
                   <div className="space-y-3">
                     {teamsData.map((team) => (
                       <div
@@ -2299,7 +2298,7 @@ const WorkflowManagementPage: React.FC = () => {
                       </div>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               )}
             </CardContent>
           </Card>
