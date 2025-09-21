@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// React Flow
+// React Flow + Drag & Drop
 import { 
   ReactFlow, 
   useNodesState, 
@@ -35,7 +35,8 @@ import {
   Node,
   Edge,
   Connection,
-  NodeTypes
+  NodeTypes,
+  useReactFlow // ✅ ADDED: For drag & drop coordinate conversion
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -45,7 +46,8 @@ import {
   BarChart3, CheckCircle, Clock, AlertCircle, TrendingUp,
   ArrowRight, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
-  Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2
+  Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
+  RefreshCw, Database, Mail // ✅ FIXED: Added all missing icon imports
 } from 'lucide-react';
 
 // Types
@@ -1124,6 +1126,52 @@ const WorkflowManagementPage: React.FC = () => {
     </div>
   );
 
+  // 🚀 DRAG & DROP HANDLERS for Professional Palette
+  const { project } = useReactFlow();
+  
+  // Handle drag start for palette items
+  const handleDragStart = (event: React.DragEvent, nodeType: string, itemData: any) => {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.setData('application/itemdata', JSON.stringify(itemData));
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  // Handle drop on React Flow canvas
+  const handleDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    
+    const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+    const nodeType = event.dataTransfer.getData('application/reactflow');
+    const itemData = JSON.parse(event.dataTransfer.getData('application/itemdata'));
+    
+    if (!nodeType || !itemData) return;
+    
+    const position = project({
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    });
+
+    // Create new node based on type
+    const newNode = {
+      id: `${nodeType}-${Date.now()}`,
+      type: nodeType,
+      position,
+      data: itemData,
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+    
+    toast({
+      title: `${itemData.name} Added`,
+      description: `${itemData.name} added to workflow via drag & drop`,
+    });
+  }, [project, setNodes, toast]);
+
+  const handleDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
   // Visual Workflow Builder Component
   const WorkflowBuilderView = () => (
     <div className="space-y-6">
@@ -1221,8 +1269,18 @@ const WorkflowManagementPage: React.FC = () => {
                                 key={trigger.id}
                                 variant="outline"
                                 size="sm"
+                                draggable // ✅ ADDED: Make draggable
+                                onDragStart={(e) => handleDragStart(e, 'start', { 
+                                  label: trigger.name,
+                                  type: 'start',
+                                  description: trigger.description,
+                                  icon: trigger.icon,
+                                  category: trigger.category,
+                                  triggerId: trigger.id,
+                                  ...trigger
+                                })} // ✅ ADDED: Professional drag & drop
                                 onClick={() => addTriggerNode(trigger.id)}
-                                className="w-full justify-start h-auto p-3 bg-purple-50/50 hover:bg-purple-100/70 border-purple-200/50 text-left"
+                                className="w-full justify-start h-auto p-3 bg-purple-50/50 hover:bg-purple-100/70 border-purple-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]" 
                                 data-testid={`trigger-${trigger.id}`}
                               >
                                 <div className="flex items-start gap-2 w-full">
@@ -1256,8 +1314,18 @@ const WorkflowManagementPage: React.FC = () => {
                                 key={trigger.id}
                                 variant="outline"
                                 size="sm"
+                                draggable // ✅ ADDED: Make draggable
+                                onDragStart={(e) => handleDragStart(e, 'start', { 
+                                  label: trigger.name,
+                                  type: 'start',
+                                  description: trigger.description,
+                                  icon: trigger.icon,
+                                  category: trigger.category,
+                                  triggerId: trigger.id,
+                                  ...trigger
+                                })} // ✅ ADDED: Event triggers drag & drop
                                 onClick={() => addTriggerNode(trigger.id)}
-                                className="w-full justify-start h-auto p-3 bg-cyan-50/50 hover:bg-cyan-100/70 border-cyan-200/50 text-left"
+                                className="w-full justify-start h-auto p-3 bg-cyan-50/50 hover:bg-cyan-100/70 border-cyan-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
                                 data-testid={`trigger-${trigger.id}`}
                               >
                                 <div className="flex items-start gap-2 w-full">
@@ -1292,8 +1360,18 @@ const WorkflowManagementPage: React.FC = () => {
                                 key={trigger.id}
                                 variant="outline"
                                 size="sm"
+                                draggable // ✅ ADDED: Make draggable
+                                onDragStart={(e) => handleDragStart(e, 'start', { 
+                                  label: trigger.name,
+                                  type: 'start',
+                                  description: trigger.description,
+                                  icon: trigger.icon,
+                                  category: trigger.category,
+                                  triggerId: trigger.id,
+                                  ...trigger
+                                })} // ✅ ADDED: User/System triggers drag & drop
                                 onClick={() => addTriggerNode(trigger.id)}
-                                className={`w-full justify-start h-auto p-3 ${isUser ? 'bg-teal-50/50 hover:bg-teal-100/70 border-teal-200/50' : 'bg-slate-50/50 hover:bg-slate-100/70 border-slate-200/50'} text-left`}
+                                className={`w-full justify-start h-auto p-3 ${isUser ? 'bg-teal-50/50 hover:bg-teal-100/70 border-teal-200/50' : 'bg-slate-50/50 hover:bg-slate-100/70 border-slate-200/50'} text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]`}
                                 data-testid={`trigger-${trigger.id}`}
                               >
                                 <div className="flex items-start gap-2 w-full">
@@ -1338,8 +1416,18 @@ const WorkflowManagementPage: React.FC = () => {
                                 key={action.id}
                                 variant="outline"
                                 size="sm"
+                                draggable // ✅ ADDED: Make draggable
+                                onDragStart={(e) => handleDragStart(e, 'action', { 
+                                  label: action.name,
+                                  type: 'action',
+                                  description: action.description,
+                                  icon: action.icon,
+                                  category: action.category,
+                                  actionId: action.id,
+                                  ...action
+                                })} // ✅ ADDED: HR actions drag & drop
                                 onClick={() => addActionNode(action.id)}
-                                className="w-full justify-start h-auto p-3 bg-green-50/50 hover:bg-green-100/70 border-green-200/50 text-left"
+                                className="w-full justify-start h-auto p-3 bg-green-50/50 hover:bg-green-100/70 border-green-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
                                 data-testid={`action-${action.id}`}
                               >
                                 <div className="flex items-start gap-2 w-full">
@@ -1375,8 +1463,18 @@ const WorkflowManagementPage: React.FC = () => {
                                 key={action.id}
                                 variant="outline"
                                 size="sm"
+                                draggable // ✅ ADDED: Make draggable
+                                onDragStart={(e) => handleDragStart(e, 'action', { 
+                                  label: action.name,
+                                  type: 'action',
+                                  description: action.description,
+                                  icon: action.icon,
+                                  category: action.category,
+                                  actionId: action.id,
+                                  ...action
+                                })} // ✅ ADDED: Finance actions drag & drop
                                 onClick={() => addActionNode(action.id)}
-                                className="w-full justify-start h-auto p-3 bg-blue-50/50 hover:bg-blue-100/70 border-blue-200/50 text-left"
+                                className="w-full justify-start h-auto p-3 bg-blue-50/50 hover:bg-blue-100/70 border-blue-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
                                 data-testid={`action-${action.id}`}
                               >
                                 <div className="flex items-start gap-2 w-full">
@@ -1412,8 +1510,18 @@ const WorkflowManagementPage: React.FC = () => {
                                 key={action.id}
                                 variant="outline"
                                 size="sm"
+                                draggable // ✅ ADDED: Make draggable
+                                onDragStart={(e) => handleDragStart(e, 'action', { 
+                                  label: action.name,
+                                  type: 'action',
+                                  description: action.description,
+                                  icon: action.icon,
+                                  category: action.category,
+                                  actionId: action.id,
+                                  ...action
+                                })} // ✅ ADDED: Operations actions drag & drop
                                 onClick={() => addActionNode(action.id)}
-                                className="w-full justify-start h-auto p-3 bg-orange-50/50 hover:bg-orange-100/70 border-orange-200/50 text-left"
+                                className="w-full justify-start h-auto p-3 bg-orange-50/50 hover:bg-orange-100/70 border-orange-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
                                 data-testid={`action-${action.id}`}
                               >
                                 <div className="flex items-start gap-2 w-full">
@@ -1439,8 +1547,16 @@ const WorkflowManagementPage: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
+                      draggable // ✅ ADDED: Make draggable
+                      onDragStart={(e) => handleDragStart(e, 'decision', { 
+                        label: 'Decision Node',
+                        type: 'decision',
+                        description: 'Conditional branching logic',
+                        icon: AlertCircle,
+                        category: 'control-flow'
+                      })} // ✅ ADDED: Decision node drag & drop
                       onClick={addDecisionNode}
-                      className="w-full justify-start h-auto p-3 bg-yellow-50/50 hover:bg-yellow-100/70 border-yellow-200/50 text-left"
+                      className="w-full justify-start h-auto p-3 bg-yellow-50/50 hover:bg-yellow-100/70 border-yellow-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
                       data-testid="action-decision-node"
                     >
                       <div className="flex items-start gap-2 w-full">
@@ -1487,7 +1603,9 @@ const WorkflowManagementPage: React.FC = () => {
                 onConnect={onConnect}
                 onNodesDelete={onNodesDelete}
                 nodeTypes={nodeTypes}
-                className="workflow-canvas h-[450px] rounded-lg border"
+                onDrop={handleDrop} // ✅ ADDED: Professional drag & drop support
+                onDragOver={handleDragOver} // ✅ ADDED: Drag over handling
+                className="workflow-canvas h-[450px] rounded-lg border drop-zone" 
                 deleteKeyCode={['Backspace', 'Delete']}
                 multiSelectionKeyCode={['Meta', 'Ctrl']}
               >
