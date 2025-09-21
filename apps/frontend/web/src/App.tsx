@@ -7,8 +7,6 @@ import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
 import WorkflowManagementPage from "./pages/WorkflowManagementPage";
-import TestPage from "./pages/TestPage";
-import SimpleTestPage from "./pages/SimpleTestPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 // Legacy imports removed - consolidated into HR and Employee dashboards
 import MyPortal from "./pages/MyPortal";
@@ -61,16 +59,6 @@ function Router() {
       {/* Settings Page Route */}
       <Route path="/:tenant/settings">
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
-      </Route>
-      
-      {/* Simple Test Page Route - NO WRAPPERS */}
-      <Route path="/:tenant/simple">
-        <SimpleTestPage />
-      </Route>
-      
-      {/* Test Page Route */}
-      <Route path="/:tenant/test">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><TestPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
       {/* Workflow Management Page Route */}
