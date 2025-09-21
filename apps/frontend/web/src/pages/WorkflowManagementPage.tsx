@@ -2738,7 +2738,7 @@ const WorkflowManagementPage: React.FC = () => {
                           <SelectValue placeholder="Select primary supervisor" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {(usersData || []).map((user: any) => (
                             <SelectItem key={user.id} value={user.id}>
                               {user.email} {user.firstName && user.lastName && `(${user.firstName} ${user.lastName})`}
