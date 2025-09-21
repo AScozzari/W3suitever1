@@ -109,14 +109,11 @@ export class WorkflowEngine {
         tenantId: context.tenantId,
         instanceId: instance.id,
         stepId: firstStep.id,
+        executionType: firstStep.stepType || 'action',
         executorId: assigneeId || 'system',
-        status: 'initiated',
-        stepResult: 'pending',
-        executedAt: new Date(),
-        metadata: {
-          stepName: firstStep.name,
-          stepType: firstStep.stepType
-        }
+        status: 'pending',
+        inputData: context.metadata || {},
+        startedAt: new Date()
       });
 
       // Send notification to assignee
@@ -184,15 +181,17 @@ export class WorkflowEngine {
         tenantId: instance.tenantId,
         instanceId: instance.id,
         stepId: instance.currentStepId!,
+        executionType: 'action',
         executorId: decision.approverId,
-        status: decision.decision,
-        stepResult: decision.decision === 'approve' ? 'completed' : 'rejected',
-        notes: decision.comment,
-        executedAt: new Date(),
-        metadata: {
+        status: decision.decision === 'approve' ? 'success' : 'failed',
+        outputData: {
+          decision: decision.decision,
+          comment: decision.comment,
           attachments: decision.attachments,
           delegateToId: decision.delegateToId
-        }
+        },
+        startedAt: new Date(),
+        completedAt: new Date()
       });
 
       // Handle different decisions
@@ -682,7 +681,7 @@ export class WorkflowEngine {
         .select()
         .from(workflowExecutions)
         .where(eq(workflowExecutions.instanceId, instanceId))
-        .orderBy(asc(workflowExecutions.executedAt));
+        .orderBy(asc(workflowExecutions.startedAt));
 
       // Get all steps for context
       const steps = await db
