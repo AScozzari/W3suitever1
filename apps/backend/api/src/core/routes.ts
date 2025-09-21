@@ -128,6 +128,11 @@ const cancelRequestBodySchema = z.object({
   reason: z.string().max(1000).optional()
 });
 
+const updateStatusBodySchema = z.object({
+  status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled', 'revisione', 'approvata', 'respinta']),
+  reason: z.string().max(1000).optional()
+});
+
 // Zod validation schemas for file upload and ACL routes
 const uploadInitBody = z.object({ 
   fileName: z.string().min(1), 
@@ -7452,6 +7457,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(request);
+    } catch (error) {
+      handleApiError(error, res);
+    }
+  });
+  
+  // Update request status
+  app.patch('/api/hr/requests/:id/status', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.approve'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const requestId = req.params.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      const validatedData = updateStatusBodySchema.parse(req.body);
+      
+      // Verify request exists and user has access
+      const existingRequest = await storage.getRequestById(tenantId, requestId);
+      if (!existingRequest) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      
+      // Map new Italian status names to database enum values
+      const statusMapping: Record<string, string> = {
+        'revisione': 'pending',
+        'approvata': 'approved', 
+        'respinta': 'rejected'
+      };
+      
+      const dbStatus = statusMapping[validatedData.status] || validatedData.status;
+      
+      // Update request status using storage transitionStatus method
+      const updatedRequest = await storage.transitionStatus(
+        requestId,
+        dbStatus,
+        userId,
+        validatedData.reason
+      );
+      
+      res.json(updatedRequest);
     } catch (error) {
       handleApiError(error, res);
     }

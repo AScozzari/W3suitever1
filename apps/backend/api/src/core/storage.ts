@@ -1943,8 +1943,7 @@ export class DatabaseStorage implements IStorage {
           changedBy,
           fromStatus: oldStatus as any,
           toStatus: newStatus as any,
-          reason,
-          automaticChange: false
+          reason
         });
       
       return updatedRequest;
@@ -2187,11 +2186,10 @@ export class DatabaseStorage implements IStorage {
   private isValidStatusTransition(from: string, to: string): boolean {
     // Centralized transition map with enhanced validation
     const validTransitions: Record<string, string[]> = {
-      'draft': ['pending', 'cancelled'],
-      'pending': ['approved', 'rejected', 'cancelled'],
-      'approved': ['cancelled'],
-      'rejected': ['pending'], // Allow resubmission
-      'cancelled': []
+      'draft': ['pending'],
+      'pending': ['approved', 'rejected'],
+      'approved': [],
+      'rejected': ['pending'] // Allow resubmission
     };
     
     return validTransitions[from]?.includes(to) || false;

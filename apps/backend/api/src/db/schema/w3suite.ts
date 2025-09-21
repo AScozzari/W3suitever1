@@ -101,7 +101,7 @@ export const hrRequestTypeEnum = pgEnum('hr_request_type', [
   'mentorship_request', 'skill_assessment', 'career_development', 'experience_rewards',
   'volunteer_leave', 'donation_leave'
 ]);
-export const hrRequestStatusEnum = pgEnum('hr_request_status', ['draft', 'revisione', 'approvata', 'respinta']);
+export const hrRequestStatusEnum = pgEnum('hr_request_status', ['draft', 'pending', 'approved', 'rejected', 'cancelled']);
 export const hrRequestApprovalActionEnum = pgEnum('hr_request_approval_action', ['approved', 'rejected', 'requested_changes']);
 
 // ==================== TENANTS ====================
@@ -1476,10 +1476,10 @@ export const hrRequestStatusHistory = w3suiteSchema.table("hr_request_status_his
   
   // Change context
   reason: text("reason"), // Reason for status change
-  automaticChange: boolean("automatic_change").default(false), // System vs manual change
   
   // Additional metadata
-  metadata: jsonb("metadata").default({}), // Any additional context data
+  // metadata: jsonb("metadata").default({}), // Temporarily disabled - not in database
+  // automaticChange: boolean("automatic_change").default(false), // Temporarily disabled - not in database
   
   // Audit
   createdAt: timestamp("created_at").defaultNow(),
@@ -1490,7 +1490,7 @@ export const hrRequestStatusHistory = w3suiteSchema.table("hr_request_status_his
   index("hr_request_status_history_tenant_request_created_idx").on(table.tenantId, table.requestId, table.createdAt),
   index("hr_request_status_history_from_status_idx").on(table.fromStatus),
   index("hr_request_status_history_to_status_idx").on(table.toStatus),
-  index("hr_request_status_history_automatic_idx").on(table.automaticChange),
+  // index("hr_request_status_history_automatic_idx").on(table.automaticChange), // Temporarily disabled
 ]);
 
 export const insertHrRequestStatusHistorySchema = createInsertSchema(hrRequestStatusHistory).omit({ 
