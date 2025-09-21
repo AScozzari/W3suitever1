@@ -30,6 +30,7 @@ import {
   insertWorkflowInstanceSchema
 } from '../db/schema/w3suite';
 import { z } from 'zod';
+import { workflowEngine } from '../services/workflow-engine';
 
 const router = Router();
 
@@ -1469,27 +1470,28 @@ router.post('/workflow-instances', requirePermission('workflows.write'), async (
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    const validatedData = insertWorkflowInstanceSchema.parse({
-      ...req.body,
-      tenantId,
-      initiatorId: userId || 'system',
-      status: 'pending',
-      createdAt: new Date()
-    });
+    const { templateId, requestId, requestType, metadata } = req.body;
 
-    const [newInstance] = await db
-      .insert(workflowInstances)
-      .values(validatedData)
-      .returning();
+    if (!templateId) {
+      return res.status(400).json({ error: 'Template ID is required' });
+    }
 
-    res.status(201).json(newInstance);
+    // Use workflow engine to create instance
+    const instance = await workflowEngine.createInstance(
+      templateId,
+      {
+        tenantId,
+        initiatorId: userId || 'system',
+        requestId,
+        requestType,
+        metadata
+      }
+    );
+
+    res.status(201).json(instance);
   } catch (error: any) {
     console.error('Error creating workflow instance:', error);
-    if (error.name === 'ZodError') {
-      res.status(400).json({ error: 'Invalid instance data', details: error.errors });
-    } else {
-      res.status(500).json({ error: 'Failed to create workflow instance' });
-    }
+    res.status(500).json({ error: error.message || 'Failed to create workflow instance' });
   }
 });
 
@@ -1504,44 +1506,21 @@ router.post('/workflow-instances/:id/approve', requirePermission('workflows.appr
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // Get current instance
-    const [instance] = await db
-      .select()
-      .from(workflowInstances)
-      .where(and(
-        eq(workflowInstances.id, instanceId),
-        eq(workflowInstances.tenantId, tenantId)
-      ))
-      .limit(1);
+    const { comment, attachments } = req.body;
 
-    if (!instance) {
-      return res.status(404).json({ error: 'Workflow instance not found' });
-    }
+    // Use workflow engine to process approval
+    const result = await workflowEngine.processApproval({
+      instanceId,
+      approverId: userId || 'system',
+      decision: 'approve',
+      comment,
+      attachments
+    });
 
-    if (instance.status !== 'pending' && instance.status !== 'running') {
-      return res.status(400).json({ error: 'Workflow is not in approvable state' });
-    }
-
-    // TODO: Implement workflow step progression logic
-    // For now, just mark as completed
-    const [updated] = await db
-      .update(workflowInstances)
-      .set({
-        status: 'completed',
-        completedAt: new Date(),
-        metadata: {
-          ...instance.metadata,
-          approvedBy: userId,
-          approvalComment: req.body.comment
-        }
-      })
-      .where(eq(workflowInstances.id, instanceId))
-      .returning();
-
-    res.json(updated);
-  } catch (error) {
+    res.json(result);
+  } catch (error: any) {
     console.error('Error approving workflow:', error);
-    res.status(500).json({ error: 'Failed to approve workflow' });
+    res.status(500).json({ error: error.message || 'Failed to approve workflow' });
   }
 });
 
@@ -1556,43 +1535,73 @@ router.post('/workflow-instances/:id/reject', requirePermission('workflows.appro
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    // Get current instance
-    const [instance] = await db
-      .select()
-      .from(workflowInstances)
-      .where(and(
-        eq(workflowInstances.id, instanceId),
-        eq(workflowInstances.tenantId, tenantId)
-      ))
-      .limit(1);
+    const { reason, comment } = req.body;
 
-    if (!instance) {
-      return res.status(404).json({ error: 'Workflow instance not found' });
-    }
+    // Use workflow engine to process rejection
+    const result = await workflowEngine.processApproval({
+      instanceId,
+      approverId: userId || 'system',
+      decision: 'reject',
+      comment: reason || comment
+    });
 
-    if (instance.status !== 'pending' && instance.status !== 'running') {
-      return res.status(400).json({ error: 'Workflow is not in rejectable state' });
-    }
-
-    // Mark as rejected
-    const [updated] = await db
-      .update(workflowInstances)
-      .set({
-        status: 'rejected',
-        completedAt: new Date(),
-        metadata: {
-          ...instance.metadata,
-          rejectedBy: userId,
-          rejectionReason: req.body.reason
-        }
-      })
-      .where(eq(workflowInstances.id, instanceId))
-      .returning();
-
-    res.json(updated);
-  } catch (error) {
+    res.json(result);
+  } catch (error: any) {
     console.error('Error rejecting workflow:', error);
-    res.status(500).json({ error: 'Failed to reject workflow' });
+    res.status(500).json({ error: error.message || 'Failed to reject workflow' });
+  }
+});
+
+// POST /api/workflow-instances/:id/delegate - Delegate workflow step
+router.post('/workflow-instances/:id/delegate', requirePermission('workflows.approve'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const instanceId = req.params.id;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const { delegateToId, comment } = req.body;
+
+    if (!delegateToId) {
+      return res.status(400).json({ error: 'Delegate user ID is required' });
+    }
+
+    // Use workflow engine to process delegation
+    const result = await workflowEngine.processApproval({
+      instanceId,
+      approverId: userId || 'system',
+      decision: 'delegate',
+      delegateToId,
+      comment
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error delegating workflow:', error);
+    res.status(500).json({ error: error.message || 'Failed to delegate workflow' });
+  }
+});
+
+// GET /api/workflow-instances/:id/details - Get workflow instance details with history
+router.get('/workflow-instances/:id/details', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const instanceId = req.params.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Use workflow engine to get detailed instance information
+    const details = await workflowEngine.getInstanceDetails(instanceId);
+
+    res.json(details);
+  } catch (error: any) {
+    console.error('Error getting workflow details:', error);
+    res.status(500).json({ error: error.message || 'Failed to get workflow details' });
   }
 });
 
