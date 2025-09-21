@@ -510,6 +510,37 @@ export default function SettingsPage() {
     queryKey: ['/api/roles'],
     enabled: true
   });
+
+  // Workflow Management Queries
+  const { data: workflowActionsData, isLoading: loadingWorkflowActions } = useQuery({
+    queryKey: ['/api/workflow-actions'],
+    enabled: true,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: workflowTriggersData, isLoading: loadingWorkflowTriggers } = useQuery({
+    queryKey: ['/api/workflow-triggers'],
+    enabled: true,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: teamsData, isLoading: loadingTeams, refetch: refetchTeams } = useQuery({
+    queryKey: ['/api/teams'],
+    enabled: true,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: workflowTemplatesData, isLoading: loadingTemplates, refetch: refetchTemplates } = useQuery({
+    queryKey: ['/api/workflow-templates'],
+    enabled: true,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: teamAssignmentsData, isLoading: loadingAssignments, refetch: refetchAssignments } = useQuery({
+    queryKey: ['/api/team-workflow-assignments'],
+    enabled: true,
+    staleTime: 5 * 60 * 1000
+  });
   
   // Local state for managing items - inizializzati vuoti, caricati dal DB
   const [ragioneSocialiList, setRagioneSocialiList] = useState<any[]>([]);
@@ -1027,22 +1058,81 @@ export default function SettingsPage() {
   const organizePermissionsByCategory = (permissions: string[]) => {
     const categories: { [key: string]: string[] } = {};
     
-    permissions.forEach(permission => {
-      // Extract category from permission string (e.g., "dashboard.view" -> "dashboard")
-      const parts = permission.split('.');
-      const category = parts[0] || 'other';
-      
-      if (!categories[category]) {
-        categories[category] = [];
+    // Add workflow actions and triggers to permissions if available
+    let allPermissions = [...(permissions || [])];
+    
+    // Add workflow actions as permissions
+    if (workflowActionsData && Array.isArray(workflowActionsData)) {
+      workflowActionsData.forEach((action: any) => {
+        if (action.requiredPermission && !allPermissions.includes(action.requiredPermission)) {
+          allPermissions.push(action.requiredPermission);
+        }
+      });
+    }
+    
+    // Add workflow triggers as permissions
+    if (workflowTriggersData && Array.isArray(workflowTriggersData)) {
+      workflowTriggersData.forEach((trigger: any) => {
+        const triggerPermission = `workflow.trigger.${trigger.category}.${trigger.triggerId}`;
+        if (!allPermissions.includes(triggerPermission)) {
+          allPermissions.push(triggerPermission);
+        }
+      });
+    }
+    
+    allPermissions.forEach(permission => {
+      // Special handling for workflow permissions
+      if (permission.startsWith('workflow.action.')) {
+        const parts = permission.split('.');
+        const categoryKey = `workflow-actions-${parts[2]}`; // workflow.action.hr.xxx -> workflow-actions-hr
+        if (!categories[categoryKey]) {
+          categories[categoryKey] = [];
+        }
+        categories[categoryKey].push(permission);
+      } else if (permission.startsWith('workflow.trigger.')) {
+        const parts = permission.split('.');
+        const categoryKey = `workflow-triggers-${parts[2]}`; // workflow.trigger.hr.xxx -> workflow-triggers-hr
+        if (!categories[categoryKey]) {
+          categories[categoryKey] = [];
+        }
+        categories[categoryKey].push(permission);
+      } else {
+        // Standard permissions
+        const parts = permission.split('.');
+        const category = parts[0] || 'other';
+        
+        if (!categories[category]) {
+          categories[category] = [];
+        }
+        categories[category].push(permission);
       }
-      categories[category].push(permission);
     });
 
-    // Convert to array format expected by UI
-    return Object.entries(categories).map(([category, perms]) => ({
-      category: category.charAt(0).toUpperCase() + category.slice(1),
-      permissions: perms
-    }));
+    // Convert to array format with proper labels
+    return Object.entries(categories).map(([category, perms]) => {
+      let displayName = category;
+      
+      // Special display names for workflow categories
+      if (category.startsWith('workflow-actions-')) {
+        const service = category.replace('workflow-actions-', '');
+        displayName = `Workflow Actions - ${service.toUpperCase()}`;
+      } else if (category.startsWith('workflow-triggers-')) {
+        const service = category.replace('workflow-triggers-', '');
+        displayName = `Workflow Triggers - ${service.toUpperCase()}`;
+      } else {
+        displayName = category.charAt(0).toUpperCase() + category.slice(1);
+      }
+      
+      return {
+        category: displayName,
+        permissions: perms
+      };
+    }).sort((a, b) => {
+      // Sort workflow categories to the end
+      if (a.category.startsWith('Workflow') && !b.category.startsWith('Workflow')) return 1;
+      if (!a.category.startsWith('Workflow') && b.category.startsWith('Workflow')) return -1;
+      return a.category.localeCompare(b.category);
+    });
   };
 
   // Permission management state and functions
@@ -5198,20 +5288,168 @@ export default function SettingsPage() {
             borderRadius: '16px',
             padding: '24px'
           }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 20px' }}>
-              Permessi per Servizio
-            </h3>
-            <div style={{ 
-              padding: '40px',
-              textAlign: 'center',
-              color: '#6b7280'
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
             }}>
-              <Shield size={48} style={{ opacity: 0.3, margin: '0 auto 16px' }} />
-              <p>Configurazione permessi per servizio in arrivo</p>
-              <p style={{ fontSize: '12px', marginTop: '8px' }}>
-                Definisci quali ruoli possono accedere a ciascun servizio
-              </p>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0 }}>
+                Workflow Permissions Management
+              </h3>
+              {isPermissionsDirty && selectedRole && (
+                <button
+                  onClick={saveRolePermissions}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                  data-testid="save-permissions"
+                >
+                  <Save size={16} />
+                  Salva Permessi
+                </button>
+              )}
             </div>
+
+            {/* Role Selector */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                Seleziona Ruolo
+              </label>
+              <select
+                value={selectedRole || ''}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px'
+                }}
+                data-testid="role-selector"
+              >
+                <option value="">Seleziona un ruolo...</option>
+                {allRoles.map(role => (
+                  <option key={role.code} value={role.code}>
+                    {role.name} {role.isSystemRole && '(Sistema)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Permissions by Category */}
+            {selectedRole && (
+              <div>
+                {rolePermissionsLoading || loadingWorkflowActions || loadingWorkflowTriggers ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                    <p style={{ marginTop: '12px' }}>Caricamento permessi...</p>
+                  </div>
+                ) : (
+                  <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+                    {organizePermissionsByCategory(rbacPermissionsData?.permissions || []).map(category => (
+                      <div key={category.category} style={{
+                        marginBottom: '20px',
+                        padding: '16px',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '12px'
+                        }}>
+                          <h4 style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: category.category.includes('Workflow') ? '#FF6900' : '#374151',
+                            margin: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            {category.category.includes('Workflow Actions') && <Zap size={16} />}
+                            {category.category.includes('Workflow Triggers') && <Play size={16} />}
+                            {category.category}
+                          </h4>
+                          <label style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer'
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={isCategoryEnabled(category.category)}
+                              onChange={(e) => toggleCategoryPermissions(category.category, e.target.checked)}
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                cursor: 'pointer'
+                              }}
+                              data-testid={`category-toggle-${category.category}`}
+                            />
+                            <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                              Seleziona tutto
+                            </span>
+                          </label>
+                        </div>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                          gap: '8px'
+                        }}>
+                          {category.permissions.map(permission => (
+                            <label key={permission} style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '8px',
+                              background: isPermissionEnabled(permission) ? 'rgba(255, 105, 0, 0.1)' : 'transparent',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              transition: 'background 0.2s'
+                            }}>
+                              <input
+                                type="checkbox"
+                                checked={isPermissionEnabled(permission)}
+                                onChange={() => togglePermission(permission)}
+                                style={{
+                                  width: '14px',
+                                  height: '14px',
+                                  cursor: 'pointer'
+                                }}
+                                data-testid={`permission-${permission}`}
+                              />
+                              <span style={{
+                                fontSize: '12px',
+                                color: isPermissionEnabled(permission) ? '#111827' : '#6b7280'
+                              }}>
+                                {permission}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
         
