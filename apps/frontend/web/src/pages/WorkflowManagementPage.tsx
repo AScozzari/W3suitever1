@@ -266,6 +266,57 @@ const WorkflowManagementPage: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Users and Roles for Team Modal
+  const { data: usersData, isLoading: loadingUsers } = useQuery({
+    queryKey: ['/api/users'],
+    enabled: showTeamModal,
+  });
+
+  const { data: rolesData, isLoading: loadingRoles } = useQuery({
+    queryKey: ['/api/roles'],
+    enabled: showTeamModal,
+  });
+
+  // Filter functions for Team Modal
+  const filteredUsers = (usersData || []).filter((user: any) => 
+    user.email?.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
+    user.firstName?.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
+    user.lastName?.toLowerCase().includes(teamSearchTerm.toLowerCase())
+  );
+
+  const filteredRoles = (rolesData || []).filter((role: any) =>
+    role.name?.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
+    role.description?.toLowerCase().includes(teamSearchTerm.toLowerCase())
+  );
+
+  // Toggle functions for Team Modal
+  const toggleUserMember = (userId: string) => {
+    setTeamFormData(prev => ({
+      ...prev,
+      userMembers: (prev.userMembers || []).includes(userId)
+        ? (prev.userMembers || []).filter(id => id !== userId)
+        : [...(prev.userMembers || []), userId]
+    }));
+  };
+
+  const toggleRoleMember = (roleId: string) => {
+    setTeamFormData(prev => ({
+      ...prev,
+      roleMembers: (prev.roleMembers || []).includes(roleId)
+        ? (prev.roleMembers || []).filter(id => id !== roleId)
+        : [...(prev.roleMembers || []), roleId]
+    }));
+  };
+
+  const toggleSecondarySupervisor = (userId: string) => {
+    setTeamFormData(prev => ({
+      ...prev,
+      secondarySupervisors: (prev.secondarySupervisors || []).includes(userId)
+        ? (prev.secondarySupervisors || []).filter(id => id !== userId)
+        : [...(prev.secondarySupervisors || []), userId]
+    }));
+  };
+
   // Mutations
   const createTeamMutation = useMutation({
     mutationFn: async (teamData: Partial<Team>) => {
@@ -935,8 +986,7 @@ const WorkflowManagementPage: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
 
-          </div>
-
+            <div className="space-y-6">
               {/* Basic Information */}
               <div className="space-y-4">
                 <div>
@@ -1206,7 +1256,6 @@ const WorkflowManagementPage: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
     </Layout>
   );
 };
