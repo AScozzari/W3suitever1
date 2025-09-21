@@ -104,25 +104,25 @@ const HRManagementPage: React.FC = () => {
 
   // HR Requests data
   const { data: hrRequests = [], isLoading: loadingRequests } = useQuery<HRRequest[]>({
-    queryKey: ['/api/hr-requests'],
+    queryKey: ['/api/hr/requests'],
     staleTime: 2 * 60 * 1000,
   });
 
   // Employees data
   const { data: employees = [], isLoading: loadingEmployees } = useQuery<Employee[]>({
-    queryKey: ['/api/employees'],
+    queryKey: ['/api/users'],
     staleTime: 5 * 60 * 1000,
   });
 
   // Shifts data
   const { data: shifts = [], isLoading: loadingShifts } = useQuery<any[]>({
-    queryKey: ['/api/shifts'],
+    queryKey: ['/api/hr/shifts'],
     staleTime: 2 * 60 * 1000,
   });
 
   // Documents data
   const { data: documents = [], isLoading: loadingDocuments } = useQuery<HRDocument[]>({
-    queryKey: ['/api/hr-documents'],
+    queryKey: ['/api/hr/documents'],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -131,7 +131,7 @@ const HRManagementPage: React.FC = () => {
   const createHRRequestMutation = useMutation({
     mutationFn: async (requestData: Partial<HRRequest>) => {
       // Step 1: Create HR request
-      const hrRequest = await apiRequest('/api/hr-requests', {
+      const hrRequest = await apiRequest('/api/hr/requests', {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
@@ -165,7 +165,7 @@ const HRManagementPage: React.FC = () => {
       return { hrRequest, workflowInstance };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/requests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/workflow-instances'] });
       toast({
         title: "Richiesta Creata",
