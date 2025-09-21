@@ -40,6 +40,7 @@ import {
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Link } from 'wouter';
+import { z } from 'zod';
 import ClockWidget from '@/components/TimeTracking/ClockWidget';
 // Lazy load TimeAttendancePage to improve initial load time
 const TimeAttendancePage = React.lazy(() => import('@/components/TimeTracking/TimeAttendancePage'));
@@ -1294,14 +1295,43 @@ interface HRRequestFormProps {
   isSubmitting: boolean;
 }
 
+// HR Request validation schema aligned with backend
+const hrRequestSchema = z.object({
+  category: z.enum(['leave', 'schedule', 'other', 'italian_legal', 'family', 'professional_development', 'wellness_health', 'remote_work', 'technology_support']),
+  type: z.enum([
+    // Leave types
+    'vacation', 'sick', 'fmla', 'parental', 'bereavement', 'personal', 'religious', 'military',
+    'jury_duty', 'medical_appt', 'emergency', 'shift_swap', 'time_change', 'flex_hours', 'wfh', 'overtime',
+    // Italian-specific
+    'marriage_leave', 'maternity_leave', 'paternity_leave', 'parental_leave', 'breastfeeding_leave',
+    'law_104_leave', 'study_leave', 'rol_leave', 'electoral_leave', 'bereavement_extended',
+    // Modern types
+    'remote_work_request', 'equipment_request', 'training_request', 'certification_request',
+    'sabbatical_request', 'sabbatical_unpaid', 'wellness_program', 'mental_health_support',
+    'gym_membership', 'financial_counseling', 'pet_insurance', 'ergonomic_assessment',
+    'vpn_access', 'internet_stipend', 'mobile_allowance', 'conference_attendance',
+    'mentorship_request', 'skill_assessment', 'career_development', 'experience_rewards',
+    'volunteer_leave', 'donation_leave'
+  ]),
+  startDate: z.string().min(1, "Data di inizio è obbligatoria"),
+  endDate: z.string().optional(),
+  reason: z.string().min(5, "Motivo deve essere di almeno 5 caratteri").max(1000, "Motivo troppo lungo"),
+  priority: z.enum(['normal', 'high', 'urgent']).optional().default('normal')
+});
+
+type HRRequestFormData = z.infer<typeof hrRequestSchema>;
+
 const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSubmit, isSubmitting }) => {
-  const [formData, setFormData] = useState({
-    type: '',
+  const [formData, setFormData] = useState<HRRequestFormData>({
+    type: 'vacation',
     startDate: '',
     endDate: '',
     reason: '',
-    category: 'leave'
+    category: 'leave',
+    priority: 'normal'
   });
+
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Helper function to get display name for request type
   const getTypeDisplayName = (type: string): string => {
@@ -1324,32 +1354,48 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.type || !formData.startDate || !formData.reason) {
+    // Clear previous validation errors
+    setValidationErrors({});
+    
+    // Validate form data with zod schema
+    const validationResult = hrRequestSchema.safeParse(formData);
+    
+    if (!validationResult.success) {
+      // Set validation errors
+      const errors: Record<string, string> = {};
+      validationResult.error.errors.forEach((error) => {
+        if (error.path.length > 0) {
+          errors[error.path[0]] = error.message;
+        }
+      });
+      setValidationErrors(errors);
       return;
     }
 
     // Submit data with proper format for backend API
+    const validatedData = validationResult.data;
     onSubmit({
       requesterId: 'admin-user', // Current user ID from auth
-      title: `${getTypeDisplayName(formData.type)} - ${formData.startDate}`, // Required field
-      type: formData.type,
-      startDate: `${formData.startDate}T00:00:00.000Z`, // Convert to datetime
-      endDate: `${formData.endDate || formData.startDate}T23:59:59.999Z`, // Convert to datetime
-      notes: formData.reason,
-      priority: 'normal',
-      category: formData.category
+      title: `${getTypeDisplayName(validatedData.type)} - ${validatedData.startDate}`, // Required field
+      type: validatedData.type,
+      startDate: `${validatedData.startDate}T00:00:00.000Z`, // Convert to datetime
+      endDate: validatedData.endDate ? `${validatedData.endDate}T23:59:59.999Z` : `${validatedData.startDate}T23:59:59.999Z`, // Convert to datetime
+      notes: validatedData.reason,
+      priority: validatedData.priority || 'normal',
+      category: validatedData.category
     });
   };
 
   const resetForm = () => {
     setFormData({
-      type: '',
+      type: 'vacation',
       startDate: '',
       endDate: '',
       reason: '',
-      category: 'leave'
+      category: 'leave',
+      priority: 'normal'
     });
+    setValidationErrors({});
   };
 
   return (
@@ -1493,7 +1539,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </Button>
             <Button 
               type="submit"
-              disabled={isSubmitting || !formData.type || !formData.startDate || !formData.reason}
+              disabled={isSubmitting || Object.keys(validationErrors).length > 0}
               className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 flex-1"
             >
               {isSubmitting ? (
