@@ -53,6 +53,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
 // React Flow + Drag & Drop
 import { 
@@ -81,7 +82,7 @@ import {
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
   Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
   RefreshCw, Database, Mail, Undo2, Redo2, Upload, Server, 
-  Download, Trash2, Folder // ✅ FIXED: Added all missing icon imports + Undo/Redo + Upload/Server/Folder
+  Download, Trash2, Folder, AlertTriangle, User // ✅ FIXED: Removed duplicate Separator from lucide-react (it's a UI component)
 } from 'lucide-react';
 
 // Types
@@ -633,6 +634,7 @@ const WorkflowManagementPage: React.FC = () => {
     redo,
     saveTemplate,
     loadTemplate,
+    deleteTemplate,
     clearWorkflow
   } = useWorkflowStore();
 
