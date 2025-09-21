@@ -28,9 +28,18 @@ import {
   hrRequests,
   hrRequestApprovals,
   hrRequestComments,
-  hrRequestStatusHistory
+  hrRequestStatusHistory,
+  // Workflow System
+  workflowActions,
+  workflowTriggers,
+  workflowTemplates,
+  workflowSteps,
+  teams,
+  teamWorkflowAssignments,
+  workflowInstances,
+  workflowExecutions
 } from "../db/schema/w3suite";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -2073,6 +2082,340 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching reports:", error);
       res.status(500).json({ error: "Failed to fetch reports" });
+    }
+  });
+
+  // ==================== WORKFLOW SYSTEM ENDPOINTS ====================
+
+  // Get workflow actions by category
+  app.get('/api/workflow-actions', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { category } = req.query;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      let query = db.select().from(workflowActions).where(eq(workflowActions.tenantId, tenantId));
+      
+      if (category) {
+        query = query.where(eq(workflowActions.category, category));
+      }
+      
+      const actions = await query;
+      res.json(actions);
+    } catch (error) {
+      handleApiError(error, res, 'recupero azioni workflow');
+    }
+  });
+
+  // Create workflow action
+  app.post('/api/workflow-actions', tenantMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      const validatedData = insertWorkflowActionSchema.parse({
+        ...req.body,
+        tenantId
+      });
+
+      await setTenantContext(tenantId);
+      const result = await db.insert(workflowActions).values(validatedData).returning();
+      
+      res.status(201).json(result[0]);
+    } catch (error) {
+      handleApiError(error, res, 'creazione azione workflow');
+    }
+  });
+
+  // Get workflow templates by category
+  app.get('/api/workflow-templates', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { category, templateType } = req.query;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      let query = db.select().from(workflowTemplates)
+        .where(and(
+          eq(workflowTemplates.tenantId, tenantId),
+          eq(workflowTemplates.isActive, true)
+        ));
+      
+      if (category) {
+        query = query.where(eq(workflowTemplates.category, category));
+      }
+      
+      if (templateType) {
+        query = query.where(eq(workflowTemplates.templateType, templateType));
+      }
+      
+      const templates = await query;
+      res.json(templates);
+    } catch (error) {
+      handleApiError(error, res, 'recupero template workflow');
+    }
+  });
+
+  // Create workflow template
+  app.post('/api/workflow-templates', tenantMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      const validatedData = insertWorkflowTemplateSchema.parse({
+        ...req.body,
+        tenantId
+      });
+
+      await setTenantContext(tenantId);
+      const result = await db.insert(workflowTemplates).values(validatedData).returning();
+      
+      res.status(201).json(result[0]);
+    } catch (error) {
+      handleApiError(error, res, 'creazione template workflow');
+    }
+  });
+
+  // Get teams (with hybrid composition support)
+  app.get('/api/teams', tenantMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      const teamsData = await db.select().from(teams)
+        .where(and(
+          eq(teams.tenantId, tenantId),
+          eq(teams.isActive, true)
+        ));
+      
+      res.json(teamsData);
+    } catch (error) {
+      handleApiError(error, res, 'recupero teams');
+    }
+  });
+
+  // Create team
+  app.post('/api/teams', tenantMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const validatedData = insertTeamSchema.parse({
+        ...req.body,
+        tenantId,
+        createdBy: userId
+      });
+
+      await setTenantContext(tenantId);
+      const result = await db.insert(teams).values(validatedData).returning();
+      
+      res.status(201).json(result[0]);
+    } catch (error) {
+      handleApiError(error, res, 'creazione team');
+    }
+  });
+
+  // Update team
+  app.put('/api/teams/:id', tenantMiddleware, async (req: any, res) => {
+    try {
+      const teamId = validateUUIDParam(req.params.id, 'Team ID');
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const updateData = {
+        ...req.body,
+        updatedBy: userId,
+        updatedAt: new Date()
+      };
+
+      await setTenantContext(tenantId);
+      const result = await db.update(teams)
+        .set(updateData)
+        .where(and(
+          eq(teams.id, teamId),
+          eq(teams.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (result.length === 0) {
+        return res.status(404).json({ error: 'Team non trovato' });
+      }
+      
+      res.json(result[0]);
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento team');
+    }
+  });
+
+  // Get team workflow assignments (N:M relationships)
+  app.get('/api/team-assignments', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { teamId, workflowTemplateId } = req.query;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      let query = db.select().from(teamWorkflowAssignments)
+        .where(eq(teamWorkflowAssignments.tenantId, tenantId));
+      
+      if (teamId) {
+        query = query.where(eq(teamWorkflowAssignments.teamId, teamId));
+      }
+      
+      if (workflowTemplateId) {
+        query = query.where(eq(teamWorkflowAssignments.workflowTemplateId, workflowTemplateId));
+      }
+      
+      const assignments = await query;
+      res.json(assignments);
+    } catch (error) {
+      handleApiError(error, res, 'recupero assegnazioni team');
+    }
+  });
+
+  // Create team workflow assignment
+  app.post('/api/team-assignments', tenantMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const validatedData = insertTeamWorkflowAssignmentSchema.parse({
+        ...req.body,
+        tenantId,
+        createdBy: userId
+      });
+
+      await setTenantContext(tenantId);
+      const result = await db.insert(teamWorkflowAssignments).values(validatedData).returning();
+      
+      res.status(201).json(result[0]);
+    } catch (error) {
+      handleApiError(error, res, 'creazione assegnazione team');
+    }
+  });
+
+  // Get workflow instances (active executions)
+  app.get('/api/workflow-instances', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { status, templateId } = req.query;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      let query = db.select().from(workflowInstances)
+        .where(eq(workflowInstances.tenantId, tenantId));
+      
+      if (status) {
+        query = query.where(eq(workflowInstances.currentStatus, status));
+      }
+      
+      if (templateId) {
+        query = query.where(eq(workflowInstances.templateId, templateId));
+      }
+      
+      const instances = await query.orderBy(desc(workflowInstances.createdAt));
+      res.json(instances);
+    } catch (error) {
+      handleApiError(error, res, 'recupero istanze workflow');
+    }
+  });
+
+  // Create workflow instance
+  app.post('/api/workflow-instances', tenantMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const validatedData = insertWorkflowInstanceSchema.parse({
+        ...req.body,
+        tenantId,
+        requesterId: userId
+      });
+
+      await setTenantContext(tenantId);
+      const result = await db.insert(workflowInstances).values(validatedData).returning();
+      
+      res.status(201).json(result[0]);
+    } catch (error) {
+      handleApiError(error, res, 'creazione istanza workflow');
+    }
+  });
+
+  // Get workflow executions (monitoring data)
+  app.get('/api/workflow-executions', tenantMiddleware, async (req: any, res) => {
+    try {
+      const { instanceId, status, executorId } = req.query;
+      const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({ error: 'Tenant context required' });
+      }
+
+      await setTenantContext(tenantId);
+      
+      let query = db.select().from(workflowExecutions)
+        .where(eq(workflowExecutions.tenantId, tenantId));
+      
+      if (instanceId) {
+        query = query.where(eq(workflowExecutions.instanceId, instanceId));
+      }
+      
+      if (status) {
+        query = query.where(eq(workflowExecutions.status, status));
+      }
+      
+      if (executorId) {
+        query = query.where(eq(workflowExecutions.executorId, executorId));
+      }
+      
+      const executions = await query.orderBy(desc(workflowExecutions.startedAt));
+      res.json(executions);
+    } catch (error) {
+      handleApiError(error, res, 'recupero esecuzioni workflow');
     }
   });
 
