@@ -3,6 +3,7 @@ import { apiService } from '../services/ApiService';
 import Layout from '../components/Layout';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import AvatarSelector from '../components/AvatarSelector';
 import HierarchyTreeView from '@/components/HierarchyTreeView';
 import HierarchyNodeDialog from '@/components/HierarchyNodeDialog';
@@ -452,6 +453,7 @@ interface RolePermissionsResponse {
 // Dati caricati dal database
 
 export default function SettingsPage() {
+  const [, setLocation] = useLocation();
   const [currentModule, setCurrentModule] = useState('impostazioni');
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('Entity Management');
@@ -5513,7 +5515,24 @@ export default function SettingsPage() {
       case 'Entity Management':
         return renderEntityManagement();
       case 'Hierarchy Management':
-        return renderHierarchyManagement();
+        // Redirect to new WorkflowManagementPage instead of showing old inline content
+        const currentTenant = localStorage.getItem('currentTenant') || 'staging';
+        setLocation(`/${currentTenant}/workflow-management`);
+        return (
+          <div style={{
+            textAlign: 'center',
+            padding: '40px',
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px'
+          }}>
+            <Users size={48} style={{ color: '#6b7280', marginBottom: '16px' }} />
+            <h3 style={{ color: '#111827', marginBottom: '8px' }}>Reindirizzamento...</h3>
+            <p style={{ color: '#6b7280' }}>Stai per essere reindirizzato alla nuova pagina Workflow Management.</p>
+          </div>
+        );
       case 'AI Assistant':
         return renderAIAssistant();
       case 'Channel Settings':
