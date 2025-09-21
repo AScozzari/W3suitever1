@@ -86,9 +86,9 @@ export class WorkflowEngine {
         .values({
           tenantId: context.tenantId,
           templateId,
-          requestId: context.requestId,
+          referenceId: context.requestId, // ✅ FIXED: Updated to match schema
+          instanceType: 'manual', // ✅ FIXED: Required field
           instanceName: context.instanceName || `${template.name} - ${new Date().toISOString()}`,
-          requesterId: context.requesterId,
           currentStatus: 'running',
           currentStepId: firstStep.id,
           instanceData: {

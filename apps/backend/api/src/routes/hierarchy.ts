@@ -1437,10 +1437,10 @@ router.get('/workflow-instances', requirePermission('workflows.read'), async (re
       .select({
         id: workflowInstances.id,
         templateId: workflowInstances.templateId,
-        requestId: workflowInstances.requestId,
-        status: workflowInstances.status,
+        referenceId: workflowInstances.referenceId, // ✅ FIXED: Updated to match schema  
+        status: workflowInstances.currentStatus, // ✅ FIXED: Updated column name
         currentStepId: workflowInstances.currentStepId,
-        currentAssigneeId: workflowInstances.currentAssigneeId,
+        currentAssignee: workflowInstances.currentAssignee, // ✅ FIXED: Updated column name
         metadata: workflowInstances.metadata,
         createdAt: workflowInstances.createdAt,
         completedAt: workflowInstances.completedAt,
@@ -1470,7 +1470,7 @@ router.post('/workflow-instances', requirePermission('workflows.write'), async (
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    const { templateId, requestId, requestType, metadata } = req.body;
+    const { templateId, referenceId, requestType, metadata } = req.body; // ✅ FIXED: Updated parameter name
 
     if (!templateId) {
       return res.status(400).json({ error: 'Template ID is required' });
@@ -1482,7 +1482,7 @@ router.post('/workflow-instances', requirePermission('workflows.write'), async (
       {
         tenantId,
         initiatorId: userId || 'system',
-        requestId,
+        referenceId, // ✅ FIXED: Updated parameter name
         requestType,
         metadata
       }

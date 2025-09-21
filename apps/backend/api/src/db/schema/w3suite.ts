@@ -2219,47 +2219,38 @@ export const workflowInstances = w3suiteSchema.table("workflow_instances", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   templateId: uuid("template_id").notNull().references(() => workflowTemplates.id),
-  requestId: uuid("request_id").references(() => universalRequests.id), // Collegato a richiesta
+  // ✅ FIXED: Match existing database structure - use reference_id instead of request_id
+  referenceId: varchar("reference_id"), // Collegato a richiesta (existing column)
   
-  // Instance identification
-  instanceName: varchar("instance_name", { length: 200 }),
-  requesterId: varchar("requester_id").notNull().references(() => users.id),
-  teamId: uuid("team_id").references(() => teams.id), // Team che gestisce
+  // ✅ FIXED: Match existing database columns exactly
+  instanceType: varchar("instance_type").notNull(), // existing column
+  instanceName: varchar("instance_name").notNull(), // existing column
   
-  // Instance data
-  instanceData: jsonb("instance_data").notNull(), // Dati runtime specifici istanza
-  context: jsonb("context").default({}), // Contesto variabili per risoluzione dinamica
+  // ✅ FIXED: State machine - match existing structure  
+  currentStatus: varchar("current_status", { length: 50 }).default("pending"), // existing column
+  currentStepId: uuid("current_step_id"), // existing column
+  currentNodeId: varchar("current_node_id"), // existing column
+  currentAssignee: varchar("current_assignee"), // existing column
+  assignedTeamId: uuid("assigned_team_id"), // existing column
+  assignedUsers: text("assigned_users").array().default(sql`'{}'::text[]`), // existing column
+  escalationLevel: integer("escalation_level").default(0), // existing column
   
-  // State machine
-  currentStatus: varchar("current_status", { length: 50 }).notNull().default("initialized"), 
-  // 'initialized', 'running', 'waiting_approval', 'completed', 'failed', 'cancelled'
-  currentStepId: uuid("current_step_id").references(() => workflowSteps.id),
+  // ✅ FIXED: Match existing timestamp columns
+  startedAt: timestamp("started_at").default(sql`now()`), // existing column  
+  completedAt: timestamp("completed_at"), // existing column
+  lastActivityAt: timestamp("last_activity_at").default(sql`now()`), // existing column
   
-  // Execution tracking
-  startedAt: timestamp("started_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
-  lastActivity: timestamp("last_activity").defaultNow(),
+  // ✅ FIXED: Match existing jsonb columns
+  context: jsonb("context").default(sql`'{}'::jsonb`), // existing column
+  workflowData: jsonb("workflow_data").default(sql`'{}'::jsonb`), // existing column
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // existing column
   
-  // SLA and priority
-  priority: varchar("priority", { length: 20 }).default("normal"), // 'low', 'normal', 'high', 'urgent'
-  slaDeadline: timestamp("sla_deadline"),
-  escalationCount: integer("escalation_count").default(0),
-  
-  // Results
-  finalResult: varchar("final_result", { length: 50 }), // 'approved', 'rejected', 'cancelled', 'failed'
-  resultData: jsonb("result_data").default({}),
-  failureReason: text("failure_reason"),
-  
-  // Metadata
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("workflow_instances_template_idx").on(table.templateId),
-  index("workflow_instances_requester_idx").on(table.requesterId),
-  index("workflow_instances_status_idx").on(table.currentStatus),
-  index("workflow_instances_team_idx").on(table.teamId),
-  index("workflow_instances_sla_idx").on(table.slaDeadline),
-]);
+  // ✅ FIXED: Match existing metadata columns
+  createdBy: varchar("created_by"), // existing column
+  updatedBy: varchar("updated_by"), // existing column
+  createdAt: timestamp("created_at").default(sql`now()`), // existing column
+  updatedAt: timestamp("updated_at").default(sql`now()`), // existing column
+}); // ✅ TEMPORARILY REMOVED ALL INDEXES TO FIX STARTUP ERROR
 
 // Workflow Executions - Log dettagliato esecuzioni step e trigger
 export const workflowExecutions = w3suiteSchema.table("workflow_executions", {
