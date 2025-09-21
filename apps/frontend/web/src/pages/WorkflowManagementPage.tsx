@@ -15,6 +15,17 @@ import {
   ExecutionStatus
 } from '@/services/workflowExecution';
 
+// 🔍 WORKFLOW VALIDATION SYSTEM
+import { 
+  validateWorkflow,
+  validateQuick,
+  getValidationSummary,
+  ValidationResult,
+  ValidationError,
+  ValidationWarning,
+  ValidationSuggestion
+} from '@/services/workflowValidation';
+
 // 🏪 ZUSTAND STATE MANAGEMENT  
 import { 
   useWorkflowStore,
@@ -762,6 +773,33 @@ const WorkflowManagementPage: React.FC = () => {
   // 🚀 PROFESSIONAL WORKFLOW EXECUTION ENGINE INTEGRATION
   const [executionInstanceId, setExecutionInstanceId] = useState<string | null>(null);
   const [executionStatus, setExecutionStatus] = useState<any>(null);
+
+  // 🔍 ENTERPRISE VALIDATION SYSTEM INTEGRATION
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Real-time validation (debounced)
+  useEffect(() => {
+    if (nodes.length === 0) {
+      setValidationResult(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setIsValidating(true);
+      try {
+        const result = validateWorkflow(nodes, edges);
+        setValidationResult(result);
+      } catch (error) {
+        console.error('Validation error:', error);
+      } finally {
+        setIsValidating(false);
+      }
+    }, 1000); // Debounce 1 second
+
+    return () => clearTimeout(timeoutId);
+  }, [nodes, edges]);
 
   // Workflow Builder Functions
   const handleSaveWorkflow = () => {
@@ -1672,21 +1710,192 @@ const WorkflowManagementPage: React.FC = () => {
         <div className="lg:col-span-3">
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-[600px]">
             <CardContent className="p-4 h-full">
-              <div className="mb-4 flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
-                  <Save className="w-4 h-4 mr-1" />
-                  Save
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleRunWorkflow}
-                  disabled={isRunning}
-                  className="bg-gradient-to-r from-green-500 to-green-600"
-                >
-                  {isRunning ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Play className="w-4 h-4 mr-1" />}
-                  {isRunning ? 'Running...' : 'Run'}
-                </Button>
+              <div className="mb-4 flex gap-2 items-center justify-between">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
+                    <Save className="w-4 h-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleRunWorkflow}
+                    disabled={isRunning || (validationResult && !validationResult.isValid)}
+                    className="bg-gradient-to-r from-green-500 to-green-600 disabled:from-gray-400 disabled:to-gray-500"
+                  >
+                    {isRunning ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Play className="w-4 h-4 mr-1" />}
+                    {isRunning ? 'Running...' : 'Run'}
+                  </Button>
+                </div>
+
+                {/* 🔍 VALIDATION STATUS DISPLAY */}
+                {validationResult && (
+                  <div className="flex items-center gap-2">
+                    {isValidating ? (
+                      <Badge variant="secondary" className="animate-pulse">
+                        <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                        Validating...
+                      </Badge>
+                    ) : (
+                      <>
+                        <Badge 
+                          variant={validationResult.isValid ? 'default' : 'destructive'}
+                          className={`cursor-pointer transition-all hover:scale-105 ${
+                            validationResult.isValid 
+                              ? 'bg-green-500 hover:bg-green-600' 
+                              : 'bg-red-500 hover:bg-red-600'
+                          }`}
+                          onClick={() => setShowValidation(!showValidation)}
+                          data-testid="validation-status-badge"
+                        >
+                          {validationResult.isValid ? (
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                          ) : (
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                          )}
+                          Score: {validationResult.score}/100
+                        </Badge>
+                        
+                        {validationResult.errors.length > 0 && (
+                          <Badge variant="destructive" className="text-xs">
+                            {validationResult.errors.length} errors
+                          </Badge>
+                        )}
+                        
+                        {validationResult.warnings.length > 0 && (
+                          <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                            {validationResult.warnings.length} warnings  
+                          </Badge>
+                        )}
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowValidation(!showValidation)}
+                          className="h-6 px-2 text-xs"
+                          data-testid="toggle-validation-panel"
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          {showValidation ? 'Hide' : 'Details'}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
+
+              {/* 🔍 VALIDATION DETAILS PANEL */}
+              {showValidation && validationResult && (
+                <div className="mb-4 p-4 rounded-lg border bg-white/5 backdrop-blur-sm">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    
+                    {/* Errors Section */}
+                    {validationResult.errors.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Errors ({validationResult.errors.length})
+                        </h4>
+                        <ScrollArea className="h-24">
+                          <div className="space-y-1">
+                            {validationResult.errors.slice(0, 3).map((error, index) => (
+                              <div key={error.id} className="text-xs p-2 rounded bg-red-50/50 border border-red-200/50">
+                                <div className="font-medium text-red-800">{error.message}</div>
+                                <div className="text-red-600 mt-1">{error.description}</div>
+                                {error.fix && (
+                                  <div className="text-red-500 mt-1 italic">💡 {error.fix.description}</div>
+                                )}
+                              </div>
+                            ))}
+                            {validationResult.errors.length > 3 && (
+                              <div className="text-xs text-red-600 p-1">
+                                +{validationResult.errors.length - 3} more errors...
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {/* Warnings Section */}
+                    {validationResult.warnings.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-yellow-600 dark:text-yellow-400 mb-2 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Warnings ({validationResult.warnings.length})
+                        </h4>
+                        <ScrollArea className="h-24">
+                          <div className="space-y-1">
+                            {validationResult.warnings.slice(0, 3).map((warning, index) => (
+                              <div key={warning.id} className="text-xs p-2 rounded bg-yellow-50/50 border border-yellow-200/50">
+                                <div className="font-medium text-yellow-800">{warning.message}</div>
+                                <div className="text-yellow-600 mt-1">{warning.description}</div>
+                              </div>
+                            ))}
+                            {validationResult.warnings.length > 3 && (
+                              <div className="text-xs text-yellow-600 p-1">
+                                +{validationResult.warnings.length - 3} more warnings...
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {/* Suggestions Section */}
+                    {validationResult.suggestions.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-2">
+                          <Info className="w-4 h-4" />
+                          Suggestions ({validationResult.suggestions.length})
+                        </h4>
+                        <ScrollArea className="h-24">
+                          <div className="space-y-1">
+                            {validationResult.suggestions.slice(0, 3).map((suggestion, index) => (
+                              <div key={suggestion.id} className="text-xs p-2 rounded bg-blue-50/50 border border-blue-200/50">
+                                <div className="font-medium text-blue-800">{suggestion.message}</div>
+                                <div className="text-blue-600 mt-1">{suggestion.description}</div>
+                              </div>
+                            ))}
+                            {validationResult.suggestions.length > 3 && (
+                              <div className="text-xs text-blue-600 p-1">
+                                +{validationResult.suggestions.length - 3} more suggestions...
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {/* Workflow Metadata */}
+                    {validationResult.errors.length === 0 && validationResult.warnings.length === 0 && (
+                      <div className="lg:col-span-3">
+                        <h4 className="font-medium text-green-600 dark:text-green-400 mb-2 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          Workflow Analysis
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                          <div className="text-center p-2 rounded bg-green-50/50">
+                            <div className="font-medium text-green-800">{validationResult.metadata.totalNodes}</div>
+                            <div className="text-green-600">Nodes</div>
+                          </div>
+                          <div className="text-center p-2 rounded bg-blue-50/50">
+                            <div className="font-medium text-blue-800">{validationResult.metadata.totalEdges}</div>
+                            <div className="text-blue-600">Connections</div>
+                          </div>
+                          <div className="text-center p-2 rounded bg-purple-50/50">
+                            <div className="font-medium text-purple-800 capitalize">{validationResult.metadata.complexity}</div>
+                            <div className="text-purple-600">Complexity</div>
+                          </div>
+                          <div className="text-center p-2 rounded bg-orange-50/50">
+                            <div className="font-medium text-orange-800">{validationResult.metadata.estimatedDuration}m</div>
+                            <div className="text-orange-600">Est. Duration</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
