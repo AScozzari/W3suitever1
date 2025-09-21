@@ -6,4 +6,4 @@ echo "🚀 Starting W3 Suite without file watching for stable development"
 export NODE_ENV=development
 
 # Start without TSX file watching
-exec node --loader tsx/esm apps/backend/api/src/index.ts
+exec node --import tsx/esm apps/backend/api/src/index.ts
