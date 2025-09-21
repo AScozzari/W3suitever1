@@ -650,9 +650,11 @@ const WorkflowManagementPage: React.FC = () => {
   const selectedNodeId = zustandSelectedNodeId;
   const templates = zustandTemplates;
   
-  // 🌱 INITIALIZE WITH DEFAULT NODES IF EMPTY
+  // 🌱 INITIALIZE WITH DEFAULT NODES AFTER HYDRATION
+  const hasHydrated = workflowStore((state) => state.hasHydrated);
+  
   useEffect(() => {
-    if (zustandNodes.length === 0 && zustandEdges.length === 0) {
+    if (hasHydrated && zustandNodes.length === 0 && zustandEdges.length === 0) {
       const initialNode: Node = {
         id: 'start-node',
         type: 'start',
@@ -666,7 +668,7 @@ const WorkflowManagementPage: React.FC = () => {
       setZustandNodes([initialNode]);
       zustandSaveSnapshot('Initial node added');
     }
-  }, []); // Run only once on mount
+  }, [hasHydrated]); // Run after hydration
 
   // 🎯 WORKFLOW ACTIONS - now fully functional with history
   const canUndo = historyIndex > 0;
@@ -1485,11 +1487,11 @@ const WorkflowManagementPage: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)] min-h-0">
         {/* ✅ ENTERPRISE ACTION LIBRARY PALETTE */}
-        <div className="lg:col-span-1">
-          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-[600px]">
-            <CardHeader>
+        <div className="lg:col-span-1 h-full min-h-0">
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
+            <CardHeader className="flex-none">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Layers className="w-5 h-5" />
                 Workflow Library
@@ -1535,8 +1537,8 @@ const WorkflowManagementPage: React.FC = () => {
               </div>
             </CardHeader>
             
-            <CardContent className="p-4">
-              <ScrollArea className="h-[350px]">
+            <CardContent className="p-4 flex-1 min-h-0 overflow-hidden">
+              <div className="h-full overflow-y-auto pr-2">
                 <div className="space-y-4">
                   {/* ✅ ENTERPRISE TRIGGER LIBRARY */}
                   <div>
@@ -1865,15 +1867,15 @@ const WorkflowManagementPage: React.FC = () => {
                   
                   </div> {/* End Actions */}
                 </div>
-              </ScrollArea>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Builder Canvas */}
-        <div className="lg:col-span-3">
-          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-[600px]">
-            <CardContent className="p-4 h-full">
+        <div className="lg:col-span-3 h-full min-h-0">
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
+            <CardContent className="p-4 flex-1 min-h-0">
               <div className="mb-4 flex gap-2 items-center justify-between">
                 <div className="flex gap-2">
                   {/* 🔄 UNDO/REDO BUTTONS */}

@@ -14,6 +14,9 @@ interface WorkflowState {
   edges: Edge[];
   viewport: Viewport;
   
+  // Hydration state
+  hasHydrated: boolean;
+  
   // Template management
   templates: WorkflowTemplate[];
   currentTemplate: WorkflowTemplate | null;
@@ -104,6 +107,7 @@ const INITIAL_STATE: WorkflowState = {
   nodes: [],
   edges: [],
   viewport: { x: 0, y: 0, zoom: 1 },
+  hasHydrated: false,
   templates: [],
   currentTemplate: null,
   selectedNodeId: null,
@@ -409,11 +413,19 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         name: 'w3-workflow-store',
         storage: createJSONStorage(() => localStorage),
         partialize: (state) => ({
-          // Only persist essential data, not UI state
+          // Persist workflow data and templates
+          nodes: state.nodes,
+          edges: state.edges,
           templates: state.templates,
           viewport: state.viewport,
-          // Don't persist: nodes, edges (they're temporary), selectedNodeId, isRunning, etc.
+          currentTemplate: state.currentTemplate,
+          // Don't persist: selectedNodeId, isRunning, history, etc.
         }),
+        onRehydrateStorage: () => (state) => {
+          if (state) {
+            state.hasHydrated = true;
+          }
+        },
         version: 1,
         migrate: (persistedState: any, version: number) => {
           // Handle migration between versions
@@ -437,6 +449,7 @@ export const useWorkflowNodes = () => useWorkflowStore((state) => state.nodes);
 export const useWorkflowEdges = () => useWorkflowStore((state) => state.edges);
 export const useWorkflowViewport = () => useWorkflowStore((state) => state.viewport);
 export const useWorkflowTemplates = () => useWorkflowStore((state) => state.templates);
+export const useWorkflowHasHydrated = () => useWorkflowStore((state) => state.hasHydrated);
 export const useWorkflowUI = () => useWorkflowStore((state) => ({
   isRunning: state.isRunning,
   searchTerm: state.searchTerm,

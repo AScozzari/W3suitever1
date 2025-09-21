@@ -1,0 +1,32 @@
+{tenantId: '00000000-0000-0000-0000-000000000001', name: 'Staging Environment', slug: 'staging', resolved: true, timestamp: '2025-09-21T22:38:57.695Z', …}
+App.tsx:241 [TENANT-WRAPPER] 🔒 Tenant UUID resolved and set: "00000000-0000-0000-0000-000000000001"
+App.tsx:242 [TENANT-WRAPPER] 📋 Tenant name: "Staging Environment"
+App.tsx:243 [TENANT-WRAPPER] ✅ Ready for authenticated API calls with proper tenant headers
+WorkflowManagementPage.tsx:1467 Uncaught ReferenceError: setNodes is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:1467:27)
+WorkflowManagementPage.tsx:1467 Uncaught ReferenceError: setNodes is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:1467:27)
+hook.js:608 The above error occurred in the <WorkflowBuilderView> component:
+
+    at WorkflowBuilderView (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:1577:31)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:98:34)
+    at ReactFlowProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/reactflow.js?v=9b35b141:6492:38)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:614:21)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9b35b141:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=9b35b141:9129 Uncaught ReferenceError: setNodes is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:1467:27)
