@@ -135,8 +135,17 @@ const HRManagementPage: React.FC = () => {
 
   // ==================== MUTATIONS ====================
 
+  // ✅ UPDATED: HR Request mutation with retry logic for authentication timing issues
   const createHRRequestMutation = useMutation({
     mutationFn: async (requestData: Partial<HRRequest>) => {
+      // Pre-validate HR authentication readiness before attempt
+      if (!hrQueriesEnabled) {
+        console.warn('🚨 [HR-MUTATION] Blocking HR request - authentication not ready');
+        throw new Error('HR_AUTH_NOT_READY: Authentication not initialized. Please wait.');
+      }
+      
+      console.log('🚀 [HR-MUTATION] Creating HR request:', requestData.type);
+      
       // Step 1: Create HR request
       const hrRequest = await apiRequest('/api/hr/requests', {
         method: 'POST',
@@ -181,10 +190,37 @@ const HRManagementPage: React.FC = () => {
       setShowRequestModal(false);
       setRequestFormData({});
     },
+    // ✅ NEW: Retry configuration for HR authentication timing issues
+    retry: (failureCount, error: any) => {
+      const isHRAuthError = error?.message?.includes('HR_AUTH_NOT_READY') || 
+                           error?.message?.includes('Tenant ID') ||
+                           error?.message?.includes('Invalid tenant');
+      
+      if (isHRAuthError && failureCount < 3) {
+        console.log(`⏳ [HR-RETRY] Retry attempt ${failureCount + 1}/3 for auth timing issue`);
+        return true;
+      }
+      
+      console.log(`❌ [HR-RETRY] No more retries. Failure count: ${failureCount}, Error: ${error?.message}`);
+      return false;
+    },
+    retryDelay: (attemptIndex) => {
+      const delay = Math.min(1000 * Math.pow(2, attemptIndex), 5000); // Exponential backoff max 5s
+      console.log(`⏳ [HR-RETRY] Waiting ${delay}ms before retry attempt ${attemptIndex + 1}`);
+      return delay;
+    },
     onError: (error: any) => {
+      console.error('🚨 [HR-MUTATION] Final error after retries:', error);
+      
+      const isAuthError = error?.message?.includes('HR_AUTH_NOT_READY');
+      const title = isAuthError ? "Sistema non pronto" : "Errore";
+      const description = isAuthError 
+        ? "Il sistema HR si sta ancora inizializzando. Riprova tra qualche secondo."
+        : error.message || "Errore nella creazione della richiesta";
+      
       toast({
-        title: "Errore",
-        description: error.message || "Errore nella creazione della richiesta",
+        title,
+        description,
         variant: "destructive",
       });
     },
