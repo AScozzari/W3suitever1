@@ -648,41 +648,41 @@ const WorkflowManagementPage: React.FC = () => {
   const selectedNodeId = zustandSelectedNodeId;
   const templates = zustandTemplates;
   
-  // 🔄 DEBOUNCED SYNC: React Flow → Zustand (prevents infinite loops)
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      // Only sync if nodes differ from Zustand state (avoid unnecessary updates)
-      if (JSON.stringify(nodes) !== JSON.stringify(zustandNodes)) {
-        setZustandNodes(nodes);
-        zustandSaveSnapshot('Nodes updated');
-      }
-    }, 300); // 300ms debounce
+  // 🔄 DEBOUNCED SYNC: React Flow → Zustand (TEMPORARILY DISABLED FOR DEBUGGING)
+  // useEffect(() => {
+  //   const debounceTimer = setTimeout(() => {
+  //     // Only sync if nodes differ from Zustand state (avoid unnecessary updates)
+  //     if (JSON.stringify(nodes) !== JSON.stringify(zustandNodes)) {
+  //       setZustandNodes(nodes);
+  //       zustandSaveSnapshot('Nodes updated');
+  //     }
+  //   }, 300); // 300ms debounce
     
-    return () => clearTimeout(debounceTimer);
-  }, [nodes, setZustandNodes, zustandNodes, zustandSaveSnapshot]);
+  //   return () => clearTimeout(debounceTimer);
+  // }, [nodes, setZustandNodes, zustandNodes, zustandSaveSnapshot]);
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      // Only sync if edges differ from Zustand state
-      if (JSON.stringify(edges) !== JSON.stringify(zustandEdges)) {
-        setZustandEdges(edges);
-        zustandSaveSnapshot('Edges updated');
-      }
-    }, 300); // 300ms debounce
+  // useEffect(() => {
+  //   const debounceTimer = setTimeout(() => {
+  //     // Only sync if edges differ from Zustand state
+  //     if (JSON.stringify(edges) !== JSON.stringify(zustandEdges)) {
+  //       setZustandEdges(edges);
+  //       zustandSaveSnapshot('Edges updated');
+  //     }
+  //   }, 300); // 300ms debounce
     
-    return () => clearTimeout(debounceTimer);
-  }, [edges, setZustandEdges, zustandEdges, zustandSaveSnapshot]);
+  //   return () => clearTimeout(debounceTimer);
+  // }, [edges, setZustandEdges, zustandEdges, zustandSaveSnapshot]);
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      // Only sync if viewport differs
-      if (JSON.stringify(viewport) !== JSON.stringify(zustandViewport)) {
-        setZustandViewport(viewport);
-      }
-    }, 500); // 500ms debounce for viewport (less frequent)
+  // useEffect(() => {
+  //   const debounceTimer = setTimeout(() => {
+  //     // Only sync if viewport differs
+  //     if (JSON.stringify(viewport) !== JSON.stringify(zustandViewport)) {
+  //       setZustandViewport(viewport);
+  //     }
+  //   }, 500); // 500ms debounce for viewport (less frequent)
     
-    return () => clearTimeout(debounceTimer);
-  }, [viewport, setZustandViewport, zustandViewport]);
+  //   return () => clearTimeout(debounceTimer);
+  // }, [viewport, setZustandViewport, zustandViewport]);
 
   // 🎯 WORKFLOW ACTIONS - now fully functional with history
   const canUndo = historyIndex > 0;
