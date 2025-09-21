@@ -1467,7 +1467,7 @@ const WorkflowManagementPage: React.FC = () => {
           description: `Added ${type} node to the workflow`,
         });
       },
-      [reactFlowInstance, setNodes, toast]
+      [reactFlowInstance, setZustandNodes, toast]
     );
 
     return (
