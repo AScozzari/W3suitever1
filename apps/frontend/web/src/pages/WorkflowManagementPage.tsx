@@ -1,22 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/Layout';
-import WorkflowBuilder from '../components/WorkflowBuilder';
-import ActionLibrary from '../components/ActionLibrary';
-import TeamModal from '../components/TeamModal';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+
+// UI Components
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// React Flow
+import { 
+  ReactFlow, 
+  useNodesState, 
+  useEdgesState, 
+  addEdge, 
+  Controls,
+  Background,
+  Node,
+  Edge,
+  Connection,
+  NodeTypes
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
+// Icons
 import {
   Users, Plus, Settings, GitBranch, Activity, Zap, Target, 
   BarChart3, CheckCircle, Clock, AlertCircle, TrendingUp,
   ArrowRight, Filter, Search, Layers, Play, Pause,
-  Building, Shield, UserCog, Eye, MoreHorizontal, Workflow
+  Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
+  Save, DollarSign, FileText, Wrench, X, Info
 } from 'lucide-react';
 
 // Types
@@ -53,15 +79,172 @@ interface WorkflowInstance {
   currentStep?: string;
 }
 
+// ==================== REACT FLOW WORKFLOW BUILDER ====================
+
+// Custom node types for workflow actions
+const ActionNode = ({ data }: { data: any }) => (
+  <div className="bg-white border-2 border-slate-200 rounded-lg p-4 shadow-md min-w-[200px]">
+    <div className="flex items-center gap-2 mb-2">
+      <div className={`w-3 h-3 rounded-full ${
+        data.category === 'hr' ? 'bg-green-500' :
+        data.category === 'finance' ? 'bg-blue-500' :
+        data.category === 'operations' ? 'bg-orange-500' :
+        data.category === 'it' ? 'bg-purple-500' :
+        data.category === 'crm' ? 'bg-pink-500' :
+        data.category === 'support' ? 'bg-yellow-500' : 'bg-slate-500'
+      }`} />
+      <span className="font-medium text-sm text-slate-700">{data.category?.toUpperCase()}</span>
+    </div>
+    <div className="text-sm font-semibold text-slate-900 mb-1">
+      {data.label}
+    </div>
+    <div className="text-xs text-slate-600">
+      {data.description}
+    </div>
+    {data.approver && (
+      <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+        <Users className="w-3 h-3" />
+        {data.approver}
+      </div>
+    )}
+  </div>
+);
+
+const StartNode = ({ data }: { data: any }) => (
+  <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-4 shadow-md">
+    <div className="flex items-center gap-2">
+      <Play className="w-4 h-4" />
+      <span className="font-semibold">START</span>
+    </div>
+    <div className="text-xs mt-1 opacity-80">
+      {data.label || 'Workflow Start'}
+    </div>
+  </div>
+);
+
+const EndNode = ({ data }: { data: any }) => (
+  <div className="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg p-4 shadow-md">
+    <div className="flex items-center gap-2">
+      <CheckCircle className="w-4 h-4" />
+      <span className="font-semibold">END</span>
+    </div>
+    <div className="text-xs mt-1 opacity-80">
+      {data.label || 'Workflow End'}
+    </div>
+  </div>
+);
+
+const DecisionNode = ({ data }: { data: any }) => (
+  <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-lg p-4 shadow-md transform rotate-45">
+    <div className="flex items-center gap-2 transform -rotate-45">
+      <AlertCircle className="w-4 h-4" />
+      <span className="font-semibold text-xs">DECISION</span>
+    </div>
+  </div>
+);
+
+// Define custom node types
+const nodeTypes: NodeTypes = {
+  action: ActionNode,
+  start: StartNode,
+  end: EndNode,
+  decision: DecisionNode,
+};
+
+// Initial workflow nodes
+const initialNodes: Node[] = [
+  {
+    id: 'start',
+    type: 'start',
+    position: { x: 100, y: 100 },
+    data: { label: 'Workflow Start' }
+  },
+  {
+    id: 'end',
+    type: 'end', 
+    position: { x: 100, y: 400 },
+    data: { label: 'Workflow Complete' }
+  }
+];
+
+const initialEdges: Edge[] = [];
+
+// Category configurations with icons and colors for Action Library
+const CATEGORIES = {
+  'HR': {
+    icon: Users,
+    color: 'bg-green-500',
+    bgClass: 'bg-green-100 dark:bg-green-900',
+    textClass: 'text-green-700 dark:text-green-300'
+  },
+  'Finance': {
+    icon: DollarSign,
+    color: 'bg-blue-500',
+    bgClass: 'bg-blue-100 dark:bg-blue-900',
+    textClass: 'text-blue-700 dark:text-blue-300'
+  },
+  'Operations': {
+    icon: Settings,
+    color: 'bg-orange-500',
+    bgClass: 'bg-orange-100 dark:bg-orange-900',
+    textClass: 'text-orange-700 dark:text-orange-300'
+  },
+  'Legal': {
+    icon: Shield,
+    color: 'bg-purple-500',
+    bgClass: 'bg-purple-100 dark:bg-purple-900',
+    textClass: 'text-purple-700 dark:text-purple-300'
+  },
+  'Procurement': {
+    icon: FileText,
+    color: 'bg-pink-500',
+    bgClass: 'bg-pink-100 dark:bg-pink-900',
+    textClass: 'text-pink-700 dark:text-pink-300'
+  },
+  'IT': {
+    icon: Wrench,
+    color: 'bg-cyan-500',
+    bgClass: 'bg-cyan-100 dark:bg-cyan-900',
+    textClass: 'text-cyan-700 dark:text-cyan-300'
+  }
+};
+
 const WorkflowManagementPage: React.FC = () => {
   const { toast } = useToast();
   const [currentModule, setCurrentModule] = useState('workflow');
   const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'teams' | 'analytics'>('dashboard');
+  
+  // Team Management State
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  
+  // Workflow Builder State
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [isRunning, setIsRunning] = useState(false);
+  
+  // Action Library State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  // Team Modal State  
+  const [teamFormData, setTeamFormData] = useState<Team>({
+    name: '',
+    description: '',
+    teamType: 'functional',
+    userMembers: [],
+    roleMembers: [],
+    primarySupervisor: undefined,
+    secondarySupervisors: [],
+    isActive: true
+  });
+  const [selectedTab, setSelectedTab] = useState<'users' | 'roles'>('users');
+  const [teamSearchTerm, setTeamSearchTerm] = useState('');
 
-  // Queries with proper typing
+  // ==================== DATA QUERIES ====================
+  
+  // Teams data
   const { data: teamsData = [], isLoading: loadingTeams } = useQuery<Team[]>({
     queryKey: ['/api/teams'],
     staleTime: 2 * 60 * 1000,
@@ -735,17 +918,294 @@ const WorkflowManagementPage: React.FC = () => {
           {activeView === 'analytics' && <AnalyticsView />}
         </div>
 
-        {/* Team Modal */}
-        <TeamModal
-          isOpen={showTeamModal}
-          onClose={() => {
+        {/* Integrated Team Modal */}
+        <Dialog open={showTeamModal} onOpenChange={(open) => {
+          if (!open) {
             setShowTeamModal(false);
             setEditingTeam(null);
-          }}
-          onSave={handleSaveTeam}
-          team={editingTeam}
-          isLoading={createTeamMutation.isPending}
-        />
+          }
+        }}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5 text-orange-500" />
+                {editingTeam ? 'Edit Team' : 'Create New Team'}
+              </DialogTitle>
+              <DialogDescription>
+                Configure team members, roles, and supervisors with RBAC-validated permissions
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Team Name*</Label>
+                  <Input
+                    id="name"
+                    value={teamFormData.name}
+                    onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
+                    placeholder="e.g., HR Department, Finance Team"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={teamFormData.description}
+                    onChange={(e) => setTeamFormData({ ...teamFormData, description: e.target.value })}
+                    placeholder="Describe the team's purpose and responsibilities"
+                    className="mt-1 h-20"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="teamType">Team Type</Label>
+                    <Select
+                      value={teamFormData.teamType}
+                      onValueChange={(value: 'functional' | 'project' | 'department') => 
+                        setTeamFormData({ ...teamFormData, teamType: value })
+                      }
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="functional">Functional</SelectItem>
+                        <SelectItem value="project">Project</SelectItem>
+                        <SelectItem value="department">Department</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="isActive">Active Status</Label>
+                    <Switch
+                      id="isActive"
+                      checked={teamFormData.isActive}
+                      onCheckedChange={(checked) => setTeamFormData({ ...teamFormData, isActive: checked })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Members Selection */}
+              <div className="space-y-4">
+                <div>
+                  <Label>Team Members</Label>
+                  <Alert className="mt-2 mb-3">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Teams can include both direct users and role-based members. 
+                      Role members automatically include all users with that role.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Tabs value={selectedTab} onValueChange={(v) => setSelectedTab(v as 'users' | 'roles')}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="users" className="flex-1">
+                        <Users className="h-4 w-4 mr-2" />
+                        Users ({teamFormData.userMembers.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="roles" className="flex-1">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Roles ({teamFormData.roleMembers.length})
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <div className="mt-3">
+                      <Input
+                        placeholder="Search..."
+                        value={teamSearchTerm}
+                        onChange={(e) => setTeamSearchTerm(e.target.value)}
+                        className="mb-3"
+                      />
+                    </div>
+
+                    <TabsContent value="users" className="mt-3">
+                      <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1">
+                        {loadingUsers ? (
+                          <div className="text-center py-4 text-muted-foreground">Loading users...</div>
+                        ) : filteredUsers.length === 0 ? (
+                          <div className="text-center py-4 text-muted-foreground">No users found</div>
+                        ) : (
+                          filteredUsers.map((user: any) => (
+                            <div key={user.id} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
+                              <Checkbox
+                                id={`user-${user.id}`}
+                                checked={teamFormData.userMembers.includes(user.id)}
+                                onCheckedChange={() => toggleUserMember(user.id)}
+                              />
+                              <label 
+                                htmlFor={`user-${user.id}`}
+                                className="flex-1 cursor-pointer text-sm"
+                              >
+                                <div className="font-medium">{user.email}</div>
+                                {(user.firstName || user.lastName) && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {user.firstName} {user.lastName}
+                                  </div>
+                                )}
+                              </label>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="roles" className="mt-3">
+                      <div className="max-h-48 overflow-y-auto border rounded-lg p-2 space-y-1">
+                        {loadingRoles ? (
+                          <div className="text-center py-4 text-muted-foreground">Loading roles...</div>
+                        ) : filteredRoles.length === 0 ? (
+                          <div className="text-center py-4 text-muted-foreground">No roles found</div>
+                        ) : (
+                          filteredRoles.map((role: any) => (
+                            <div key={role.id} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
+                              <Checkbox
+                                id={`role-${role.id}`}
+                                checked={teamFormData.roleMembers.includes(role.id)}
+                                onCheckedChange={() => toggleRoleMember(role.id)}
+                              />
+                              <label 
+                                htmlFor={`role-${role.id}`}
+                                className="flex-1 cursor-pointer text-sm"
+                              >
+                                <div className="font-medium">{role.name}</div>
+                                {role.description && (
+                                  <div className="text-muted-foreground text-xs">{role.description}</div>
+                                )}
+                              </label>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
+
+              {/* Supervisors Section */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex items-center gap-2">
+                    <UserCog className="h-4 w-4" />
+                    Supervisors
+                  </Label>
+                  
+                  <Alert className="mt-2 mb-3">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      Supervisors must have RBAC permissions for the workflow categories they oversee.
+                      Only users with appropriate permissions can approve workflow steps.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="primarySupervisor">Primary Supervisor</Label>
+                      <Select
+                        value={teamFormData.primarySupervisor || ''}
+                        onValueChange={(value) => 
+                          setTeamFormData({ ...teamFormData, primarySupervisor: value || undefined })
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select primary supervisor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">None</SelectItem>
+                          {(usersData || []).map((user: any) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.email} {user.firstName && user.lastName && `(${user.firstName} ${user.lastName})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Co-Supervisors</Label>
+                      <div className="mt-2 max-h-32 overflow-y-auto border rounded-lg p-2 space-y-1">
+                        {loadingUsers ? (
+                          <div className="text-center py-2 text-muted-foreground text-sm">Loading...</div>
+                        ) : (usersData || []).length === 0 ? (
+                          <div className="text-center py-2 text-muted-foreground text-sm">No users available</div>
+                        ) : (
+                          (usersData || [])
+                            .filter((user: any) => user.id !== teamFormData.primarySupervisor)
+                            .map((user: any) => (
+                              <div key={user.id} className="flex items-center space-x-2 p-1">
+                                <Checkbox
+                                  id={`supervisor-${user.id}`}
+                                  checked={teamFormData.secondarySupervisors.includes(user.id)}
+                                  onCheckedChange={() => toggleSecondarySupervisor(user.id)}
+                                />
+                                <label 
+                                  htmlFor={`supervisor-${user.id}`}
+                                  className="flex-1 cursor-pointer text-sm"
+                                >
+                                  {user.email}
+                                </label>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="border-t pt-4">
+                <div className="flex flex-wrap gap-2">
+                  {teamFormData.userMembers.length > 0 && (
+                    <Badge variant="secondary">
+                      {teamFormData.userMembers.length} Direct User{teamFormData.userMembers.length !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  {teamFormData.roleMembers.length > 0 && (
+                    <Badge variant="secondary">
+                      {teamFormData.roleMembers.length} Role{teamFormData.roleMembers.length !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  {teamFormData.primarySupervisor && (
+                    <Badge variant="outline">Primary Supervisor Set</Badge>
+                  )}
+                  {teamFormData.secondarySupervisors.length > 0 && (
+                    <Badge variant="outline">
+                      {teamFormData.secondarySupervisors.length} Co-Supervisor{teamFormData.secondarySupervisors.length !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  {teamFormData.isActive ? (
+                    <Badge className="bg-green-500">Active</Badge>
+                  ) : (
+                    <Badge variant="destructive">Inactive</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="outline" onClick={() => {
+                setShowTeamModal(false);
+                setEditingTeam(null);
+              }} disabled={createTeamMutation.isPending}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveTeam} 
+                disabled={createTeamMutation.isPending || !teamFormData.name.trim() || 
+                        (teamFormData.userMembers.length === 0 && teamFormData.roleMembers.length === 0)}
+              >
+                {createTeamMutation.isPending ? 'Saving...' : editingTeam ? 'Update Team' : 'Create Team'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
