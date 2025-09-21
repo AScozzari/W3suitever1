@@ -1,396 +1,480 @@
-import React, { useState } from 'react';
-import WorkflowBuilder from '../components/WorkflowBuilder';
-import PositionsManager from '../components/PositionsManager';
-import ActionLibrary from '../components/ActionLibrary';
-import Layout from '../components/Layout';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
+import React from 'react';
+import { SettingsPageTemplate, SettingsSection } from '@w3suite/frontend-kit/templates';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Settings,
+import WorkflowBuilder from '@/components/WorkflowBuilder';
+import PositionsManager from '@/components/PositionsManager';
+import ActionLibrary from '@/components/ActionLibrary';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { 
+  Settings, 
+  Users, 
+  FileText, 
+  Activity, 
   Workflow,
-  Users,
-  FileText,
-  Activity,
-  Plus,
   Play,
-  Pause,
-  AlertCircle,
+  Plus,
   CheckCircle,
+  AlertCircle,
   Clock,
-  Zap,
   Target,
   BarChart3
 } from 'lucide-react';
 
-/**
- * WORKFLOW MANAGEMENT PAGE
- * 
- * Universal scalable approval hierarchy system per W3 Suite
- * Architettura team-based supervision con RBAC integration
- * 
- * 4 TAB PRINCIPALI:
- * 1. Workflow Builder - Visual workflow creation con React Flow
- * 2. Team Management - Teams, supervisors, assignments N:M
- * 3. Templates - Libreria template predefiniti per 6 categorie
- * 4. Execution Monitor - Monitoring workflow attivi e analytics
- */
 export default function WorkflowManagementPage() {
-  const [activeTab, setActiveTab] = useState('builder');
-  const [currentModule, setCurrentModule] = useState('workflow-management');
+  // Refs for connecting UI buttons to builder functions
+  const workflowBuilderRef = React.useRef<any>(null);
+  // React Query hooks using default fetcher (handles auth + tenant automatically)
+  const { data: workflowActions, isLoading: actionsLoading } = useQuery({
+    queryKey: ['/api/workflow-actions']
+  });
 
-  return (
-    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {/* HEADER SECTION */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-purple-600">
-                <Workflow className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  Workflow Management
-                </h1>
-                <p className="text-slate-600 dark:text-slate-400 mt-1">
-                  Universal approval hierarchy system with team-based supervision
-                </p>
-              </div>
-            </div>
-            
-            {/* QUICK STATS */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card className="border-l-4 border-l-orange-500">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        Active Workflows
-                      </p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        12
-                      </p>
-                    </div>
-                    <Activity className="w-8 h-8 text-orange-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-l-4 border-l-purple-500">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        Teams Assigned
-                      </p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        8
-                      </p>
-                    </div>
-                    <Users className="w-8 h-8 text-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-l-4 border-l-blue-500">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        Templates
-                      </p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        24
-                      </p>
-                    </div>
-                    <FileText className="w-8 h-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-l-4 border-l-green-500">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        Success Rate
-                      </p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                        94%
-                      </p>
-                    </div>
-                    <CheckCircle className="w-8 h-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+  const { data: workflowTemplates, isLoading: templatesLoading } = useQuery({
+    queryKey: ['/api/workflow-templates']
+  });
+
+  const { data: teams, isLoading: teamsLoading } = useQuery({
+    queryKey: ['/api/teams']
+  });
+
+  const { data: teamAssignments, isLoading: assignmentsLoading } = useQuery({
+    queryKey: ['/api/team-assignments'] // Backend endpoint confirmed in routes.ts
+  });
+
+  const { data: workflowInstances, isLoading: instancesLoading } = useQuery({
+    queryKey: ['/api/workflow-instances']
+  });
+
+  // Mutations using apiRequest with proper auth/tenant handling
+  const saveTemplateMutation = useMutation({
+    mutationFn: async (template: any) => {
+      return apiRequest('/api/workflow-templates', {
+        method: 'POST',
+        body: JSON.stringify(template)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workflow-templates'] });
+    }
+  });
+
+  const executeWorkflowMutation = useMutation({
+    mutationFn: async ({ templateId, instanceData }: { templateId: string; instanceData: any }) => {
+      return apiRequest('/api/workflow-instances', {
+        method: 'POST',
+        body: JSON.stringify({ templateId, instanceData })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workflow-instances'] });
+    }
+  });
+
+  // Settings sections configuration
+  const sections: SettingsSection[] = [
+    {
+      id: 'builder',
+      title: 'Workflow Builder',
+      description: 'Create and edit visual workflows with drag-and-drop interface',
+      icon: <Workflow className="w-5 h-5" />,
+      content: (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+          {/* Main Workflow Canvas */}
+          <div className="lg:col-span-2">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-orange-500" />
+                  Visual Workflow Designer
+                </CardTitle>
+                <CardDescription>
+                  Drag actions from the library to create approval workflows
+                </CardDescription>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      // Trigger save via builder ref
+                      if (workflowBuilderRef.current?.save) {
+                        workflowBuilderRef.current.save();
+                      } else {
+                        console.warn('WorkflowBuilder save method not available via ref');
+                      }
+                    }}
+                    disabled={saveTemplateMutation.isPending}
+                    data-testid="button-save-workflow"
+                  >
+                    {saveTemplateMutation.isPending ? (
+                      <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                    )}
+                    Save Template
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      // Trigger test run via builder ref
+                      if (workflowBuilderRef.current?.run) {
+                        workflowBuilderRef.current.run();
+                      } else {
+                        console.warn('WorkflowBuilder run method not available via ref');
+                      }
+                    }}
+                    disabled={executeWorkflowMutation.isPending}
+                    data-testid="button-execute-workflow"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Test Run
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="h-[500px] p-0">
+                <WorkflowBuilder
+                  ref={workflowBuilderRef}
+                  onSave={(nodes, edges) => {
+                    // Map React Flow nodes/edges to backend workflowSteps format with proper ordering
+                    console.log('Mapping React Flow to backend workflowSteps...');
+                    console.log('Input nodes:', nodes.length, 'edges:', edges.length);
+                    
+                    // Create template with React Flow structure (backend expects nodes/edges)
+                    const template = {
+                      name: `Workflow ${new Date().toISOString().split('T')[0]}`,
+                      description: 'Visual workflow created via builder',
+                      category: 'hr', // TODO: Make configurable based on selected actions
+                      templateType: 'custom',
+                      nodes: nodes, // React Flow nodes (backend will process for workflowSteps)
+                      edges: edges, // React Flow edges (backend will process for step transitions)  
+                      viewport: { x: 0, y: 0, zoom: 1 }, // Canvas state
+                      isActive: true,
+                      version: 1
+                    };
+                    
+                    // Backend mapping logic (to be implemented in backend API):
+                    // 1. For each node: create workflowStep with actionId from node.data.action?.id
+                    // 2. Order by topological sort of nodes via edges
+                    // 3. Map approver logic from node.data.approver or teamAssignments  
+                    // 4. Convert edge conditions to step.conditions
+                    // 5. Validate against insertWorkflowStepSchema
+                    
+                    console.log('Template structure prepared for backend processing:', {
+                      name: template.name,
+                      nodesCount: nodes.length,
+                      edgesCount: edges.length,
+                      category: template.category
+                    });
+                    
+                    saveTemplateMutation.mutate(template);
+                  }}
+                  onRun={(nodes, edges, instanceData) => {
+                    // First create a temporary template, then execute it
+                    const tempTemplate = {
+                      name: `Test Run ${Date.now()}`,
+                      description: 'Temporary template for test execution', 
+                      category: 'hr',
+                      templateType: 'test',
+                      nodes: nodes,
+                      edges: edges,
+                      viewport: { x: 0, y: 0, zoom: 1 },
+                      isActive: true,
+                      version: 1
+                    };
+                    
+                    // Save template first, then execute
+                    console.log('Creating temporary template for execution:', tempTemplate);
+                    console.log('Instance data:', instanceData || { testRun: true });
+                    
+                    saveTemplateMutation.mutate(tempTemplate, {
+                      onSuccess: (savedTemplate: any) => {
+                        console.log('Template saved, now executing workflow...');
+                        // Execute the workflow with the saved template ID
+                        executeWorkflowMutation.mutate({
+                          templateId: savedTemplate.id,
+                          instanceData: instanceData || { 
+                            testRun: true, 
+                            startedAt: new Date().toISOString(),
+                            priority: 'normal'
+                          }
+                        });
+                      }
+                    });
+                  }}
+                />
+              </CardContent>
+            </Card>
           </div>
 
-          {/* MAIN TABS */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4 h-auto">
-              <TabsTrigger 
-                value="builder" 
-                className="flex items-center gap-2 h-12"
-                data-testid="tab-workflow-builder"
-              >
-                <Zap className="w-4 h-4" />
-                <span className="hidden sm:inline">Workflow Builder</span>
-                <span className="sm:hidden">Builder</span>
-              </TabsTrigger>
-              
-              <TabsTrigger 
-                value="teams" 
-                className="flex items-center gap-2 h-12"
-                data-testid="tab-team-management"
-              >
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Team Management</span>
-                <span className="sm:hidden">Teams</span>
-              </TabsTrigger>
-              
-              <TabsTrigger 
-                value="templates" 
-                className="flex items-center gap-2 h-12"
-                data-testid="tab-templates"
-              >
-                <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">Templates</span>
-                <span className="sm:hidden">Templates</span>
-              </TabsTrigger>
-              
-              <TabsTrigger 
-                value="monitor" 
-                className="flex items-center gap-2 h-12"
-                data-testid="tab-execution-monitor"
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span className="hidden sm:inline">Execution Monitor</span>
-                <span className="sm:hidden">Monitor</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* TAB 1: WORKFLOW BUILDER */}
-            <TabsContent value="builder" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Visual Builder Area */}
-                <div className="lg:col-span-2">
-                  <Card className="h-[600px]">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-orange-500" />
-                        Visual Workflow Builder
-                      </CardTitle>
-                      <CardDescription>
-                        Drag and drop workflow components to create approval chains
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="h-[500px] rounded-b-lg overflow-hidden">
-                        <WorkflowBuilder 
-                          onSave={(nodes, edges) => {
-                            console.log('Workflow saved:', { nodes, edges });
-                            // TODO: Save to database via API
-                          }}
-                          onRun={(nodes, edges) => {
-                            console.log('Workflow running:', { nodes, edges });
-                            // TODO: Execute workflow via API
-                          }}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Action Library Sidebar */}
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Action Library</CardTitle>
-                      <CardDescription>
-                        Drag actions into your workflow
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      <ActionLibrary
-                        onActionDrag={(action) => {
-                          console.log('Action dragged from library:', action);
-                          // TODO: Integrate with WorkflowBuilder drag-and-drop
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* TAB 2: TEAM MANAGEMENT - POSITIONS SYSTEM */}
-            <TabsContent value="teams" className="space-y-6">
-              <PositionsManager
-                onPositionSelect={(position) => {
-                  console.log('Position selected for workflow assignment:', position);
-                  // TODO: Integrate with workflow builder for node assignment
-                }}
-              />
-            </TabsContent>
-
-            {/* TAB 3: TEMPLATES */}
-            <TabsContent value="templates" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                    Workflow Templates
-                  </CardTitle>
-                  <CardDescription>
-                    Pre-built templates for HR, Finance, Operations, IT, CRM, Support, and Sales
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[
-                      { category: 'HR', count: 12, color: 'bg-green-500', description: 'Ferie, permessi, malattie, valutazioni' },
-                      { category: 'Finance', count: 8, color: 'bg-blue-500', description: 'Spese, budget, pagamenti, approvazioni' },
-                      { category: 'Operations', count: 6, color: 'bg-orange-500', description: 'Magazzino, produzione, logistica' },
-                      { category: 'IT', count: 5, color: 'bg-purple-500', description: 'Hardware, software, accessi, sicurezza' },
-                      { category: 'CRM', count: 4, color: 'bg-pink-500', description: 'Sconti, contratti, lead management' },
-                      { category: 'Support', count: 3, color: 'bg-yellow-500', description: 'Rimborsi, escalation, ticket priority' },
-                      { category: 'Sales', count: 7, color: 'bg-cyan-500', description: 'Preventivi, commissioni, autorizzazioni' }
-                    ].map((template) => (
-                      <Card key={template.category} className="cursor-pointer hover:shadow-md transition-shadow" data-testid={`template-${template.category.toLowerCase()}`}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-semibold">{template.category}</h3>
-                            <div className={`w-3 h-3 rounded-full ${template.color}`} />
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
-                            {template.description}
-                          </p>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">{template.count} templates</span>
-                            <Badge variant="outline" className="text-xs">RBAC</Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* TAB 4: EXECUTION MONITOR */}
-            <TabsContent value="monitor" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-green-500" />
-                        Active Workflow Executions
-                      </CardTitle>
-                      <CardDescription>
-                        Real-time monitoring and analytics
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {/* Mock active workflows */}
-                        {[
-                          { id: '1', name: 'Leave Request - Maria Rossi', status: 'pending', step: '2/3' },
-                          { id: '2', name: 'Expense Approval - Budget Q3', status: 'running', step: '1/4' },
-                          { id: '3', name: 'IT Support - New Hardware', status: 'paused', step: '3/3' }
-                        ].map((workflow) => (
-                          <div key={workflow.id} className="flex items-center justify-between p-3 border rounded-lg" data-testid={`workflow-execution-${workflow.id}`}>
-                            <div>
-                              <p className="font-medium">{workflow.name}</p>
-                              <p className="text-sm text-slate-600 dark:text-slate-400">
-                                Step {workflow.step}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant={workflow.status === 'pending' ? 'outline' : 
-                                        workflow.status === 'running' ? 'default' : 'secondary'}
-                              >
-                                {workflow.status === 'running' && <Play className="w-3 h-3 mr-1" />}
-                                {workflow.status === 'paused' && <Pause className="w-3 h-3 mr-1" />}
-                                {workflow.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
-                                {workflow.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">System Health</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Workflow Engine</span>
-                          <Badge variant="default" className="bg-green-500">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Healthy
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Database</span>
-                          <Badge variant="default" className="bg-green-500">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Connected
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Queue System</span>
-                          <Badge variant="default" className="bg-green-500">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Active
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start" data-testid="button-pause-all">
-                        <Pause className="w-4 h-4 mr-2" />
-                        Pause All Workflows
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start" data-testid="button-export-logs">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Export Execution Logs
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* Action Library Sidebar */}
+          <div className="space-y-4">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Action Library</CardTitle>
+                <CardDescription>
+                  Drag actions into your workflow
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 h-[500px] overflow-y-auto">
+                <ActionLibrary
+                  actions={workflowActions || []}
+                  isLoading={actionsLoading}
+                  onActionDrag={(action) => {
+                    console.log('Action dragged from library:', action);
+                    // TODO: Integrate with WorkflowBuilder drag-and-drop
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    </Layout>
+      )
+    },
+    {
+      id: 'teams',
+      title: 'Team Management',
+      description: 'Manage teams and assign workflow responsibilities',
+      icon: <Users className="w-5 h-5" />,
+      content: (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-500" />
+              Teams & Positions
+            </CardTitle>
+            <CardDescription>
+              Manage teams with hybrid composition (users + roles) and RBAC-validated supervisors
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PositionsManager
+              teams={teams || []}
+              isLoading={teamsLoading}
+              onPositionSelect={(position) => {
+                console.log('Position selected for workflow assignment:', position);
+                // TODO: Integrate with workflow builder for node assignment
+              }}
+            />
+          </CardContent>
+        </Card>
+      )
+    },
+    {
+      id: 'templates',
+      title: 'Template Library',
+      description: 'Browse and manage pre-built workflow templates',
+      icon: <FileText className="w-5 h-5" />,
+      content: (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-green-500" />
+              Workflow Templates
+            </CardTitle>
+            <CardDescription>
+              Pre-built templates for HR, Finance, Operations, Legal, CRM, Support, and Sales
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {templatesLoading ? (
+                // Loading skeletons
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+                ))
+              ) : workflowTemplates && workflowTemplates.length > 0 ? (
+                workflowTemplates.map((template: any) => (
+                  <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">{template.name}</CardTitle>
+                        <span className="text-xs text-gray-500 capitalize">{template.category}</span>
+                      </div>
+                      {template.description && (
+                        <CardDescription className="text-xs">{template.description}</CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Usage: {template.usageCount || 0}</span>
+                        <span>v{template.version}</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="w-full mt-2"
+                        onClick={() => {
+                          console.log('Loading template:', template);
+                          // TODO: Load template into workflow builder
+                        }}
+                        data-testid={`button-load-template-${template.id}`}
+                      >
+                        Load Template
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full text-center text-gray-500 py-8">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No templates available</p>
+                  <Button 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => {
+                      // TODO: Create new template
+                      console.log('Creating new template...');
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Template
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )
+    },
+    {
+      id: 'monitor',
+      title: 'Execution Monitor',
+      description: 'Monitor workflow executions and performance metrics',
+      icon: <Activity className="w-5 h-5" />,
+      content: (
+        <div className="space-y-6">
+          {/* Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Workflows</CardTitle>
+                <Activity className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {instancesLoading ? '...' : workflowInstances?.filter((w: any) => w.currentStatus === 'running').length || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Currently running</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
+                <Clock className="h-4 w-4 text-orange-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {instancesLoading ? '...' : workflowInstances?.filter((w: any) => w.currentStatus === 'waiting_approval').length || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Awaiting approval</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {instancesLoading ? '...' : workflowInstances?.filter((w: any) => w.currentStatus === 'completed').length || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Successful completions</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Failed Executions</CardTitle>
+                <AlertCircle className="h-4 w-4 text-red-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {instancesLoading ? '...' : workflowInstances?.filter((w: any) => w.currentStatus === 'failed').length || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Require attention</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Execution List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-500" />
+                Recent Executions
+              </CardTitle>
+              <CardDescription>
+                Monitor workflow execution status and performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {instancesLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-16 bg-gray-200 rounded animate-pulse" />
+                  ))}
+                </div>
+              ) : workflowInstances && workflowInstances.length > 0 ? (
+                <div className="space-y-4">
+                  {workflowInstances.slice(0, 10).map((instance: any) => (
+                    <div key={instance.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-2 h-2 rounded-full ${
+                          instance.currentStatus === 'running' ? 'bg-blue-500' :
+                          instance.currentStatus === 'waiting_approval' ? 'bg-orange-500' :
+                          instance.currentStatus === 'completed' ? 'bg-green-500' :
+                          instance.currentStatus === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+                        }`} />
+                        <div>
+                          <p className="font-medium">{instance.instanceName || `Workflow ${instance.id.slice(0, 8)}`}</p>
+                          <p className="text-sm text-gray-500">Requester: {instance.requesterId}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          instance.currentStatus === 'running' ? 'bg-blue-100 text-blue-800' :
+                          instance.currentStatus === 'waiting_approval' ? 'bg-orange-100 text-orange-800' :
+                          instance.currentStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                          instance.currentStatus === 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {instance.currentStatus.replace('_', ' ')}
+                        </span>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(instance.startedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No workflow executions yet</p>
+                  <p className="text-sm">Start by creating and running a workflow</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <SettingsPageTemplate
+      title="Workflow Management"
+      subtitle="Create, manage, and monitor approval workflows for your organization"
+      breadcrumbs={[
+        { label: 'Dashboard', href: '/' },
+        { label: 'Settings', href: '/settings' },
+        { label: 'Workflows' }
+      ]}
+      sections={sections}
+      variant="sidebar"
+      defaultSection="builder"
+      className="workflow-management-page"
+    />
   );
 }

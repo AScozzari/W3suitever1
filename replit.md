@@ -166,7 +166,23 @@ The project utilizes an enterprise monorepo structure, segmenting `W3 Suite` (te
 - **Data Architecture Patterns**:
     - **Brand Base + Tenant Override**: For entities collaboratively managed by Brand and Tenants (e.g., Suppliers, Products).
     - **Brand-Only**: For entities exclusively controlled by Brand (e.g., Stores, Legal Entities), with tenant read-only access managed by `assigned_tenants`.
-- **Universal Workflow System**: Features a workflow-team separation (N:M relationship), team-based supervision with RBAC integration, and an event-driven architecture using state machines. The UI includes a node-based visual workflow builder (React Flow), dual-list team composition, and RBAC-validated supervisor selection. HR specific tables (`hrRequests`, `hrRequestApprovals`, etc.) are available for a comprehensive HR request system.
+- **Universal Workflow System**: A comprehensive approval hierarchy system with 6 core database tables supporting workflow-team separation (N:M), RBAC-integrated supervision, and event-driven state machines. Architecture includes:
+  
+  **Core Tables:**
+  - `workflowActions` - RBAC actions by category (hr, finance, operations, crm, support, sales)  
+  - `workflowTemplates` - React Flow visual templates (nodes, edges, viewport persistence)
+  - `workflowSteps` - Individual steps with approver logic, escalation, conditions
+  - `teams` - Hybrid teams (users+roles) with RBAC-validated supervisors  
+  - `teamWorkflowAssignments` - N:M mapping teams→templates with conditions
+  - `workflowInstances` - Runtime execution with state machine tracking
+  
+  **Key Features:**
+  - Visual workflow builder (React Flow) with backend persistence
+  - Team-based supervision with scope-aware assignments (tenant/legal_entity/store)
+  - Progressive approval chains with escalation timeouts
+  - Dynamic runtime resolution through team/supervisor assignments
+  - Event-driven automation with comprehensive audit trails
+  - Template reusability across teams with conditional overrides
 - **Frontend Package Structure**: The `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library for rapid and consistent development.
 
 # External Dependencies
