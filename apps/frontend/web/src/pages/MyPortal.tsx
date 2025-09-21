@@ -136,9 +136,9 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // ✅ RESTORED: HR Requests data for employee portal
+  // ✅ RESTORED: HR Requests data for employee portal (scoped to current user)
   const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
-    queryKey: ['/api/hr/requests'],
+    queryKey: ['/api/hr/requests/mine'],
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
@@ -176,7 +176,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/requests/mine'] });
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
