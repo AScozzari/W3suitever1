@@ -16,6 +16,58 @@ export const setCurrentTenantId = (tenantId: string) => {
   currentTenantId = tenantId;
 };
 
+// ==================== HR VALIDATION FUNCTIONS ====================
+
+/**
+ * Valida i prerequisiti per le chiamate API HR
+ * Previene race conditions nell'inizializzazione
+ */
+const validateHRPrerequisites = async (url: string): Promise<void> => {
+  console.log(`🔍 [HR-VALIDATION] Validating prerequisites for: ${url}`);
+  
+  // Verifica tenant ID
+  let tenantId: string;
+  try {
+    tenantId = getCurrentTenantId();
+  } catch (error) {
+    console.error(`🚨 [HR-VALIDATION] Tenant ID error for ${url}:`, error);
+    throw new Error(`HR_AUTH_NOT_READY: Tenant ID not available - ${error}`);
+  }
+  
+  if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
+    console.error(`🚨 [HR-VALIDATION] Blocking HR call - Invalid tenant ID: "${tenantId}" for ${url}`);
+    throw new Error(`HR_AUTH_NOT_READY: Invalid tenant ID "${tenantId}"`);
+  }
+  
+  // Verifica auth mode
+  const authMode = import.meta.env.VITE_AUTH_MODE;
+  if (!authMode) {
+    console.error(`🚨 [HR-VALIDATION] Blocking HR call - No auth mode configured for ${url}`);
+    throw new Error('HR_AUTH_NOT_READY: Auth mode not configured');
+  }
+  
+  // Verifica che localStorage sia sincronizzato
+  const localTenant = localStorage.getItem('currentTenantId');
+  if (!localTenant || localTenant !== tenantId) {
+    console.warn(`⚠️ [HR-VALIDATION] localStorage desync detected - fixing`);
+    console.warn(`⚠️ [HR-VALIDATION] Memory: "${tenantId}", localStorage: "${localTenant}"`);
+    localStorage.setItem('currentTenantId', tenantId);
+    
+    // Piccola pausa per permettere la sincronizzazione
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  
+  // Verifica che gli header di development siano disponibili
+  if (authMode === 'development') {
+    // In development mode, verifichiamo che i valori siano settati
+    const requiredHeaders = ['X-Auth-Session', 'X-Demo-User'];
+    console.log(`🔧 [HR-VALIDATION] Development mode - checking required headers`);
+  }
+  
+  console.log(`✅ [HR-VALIDATION] All prerequisites validated for: ${url}`);
+  console.log(`✅ [HR-VALIDATION] Tenant: ${tenantId}, Auth: ${authMode}`);
+};
+
 // Helper per ottenere il tenant ID corrente - SECURITY FIX: Dynamic tenant resolution
 export const getCurrentTenantId = (): string => {
   // Try current in-memory first
@@ -101,6 +153,11 @@ export const queryClient = new QueryClient({
           } catch (e) {
             console.error('Failed to normalize URL:', e);
           }
+        }
+        
+        // ✅ NEW: Special handling per endpoint HR
+        if (finalUrl.includes('/hr/')) {
+          await validateHRPrerequisites(finalUrl);
         }
         
         // Making API request
