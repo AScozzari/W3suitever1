@@ -81,7 +81,7 @@ import {
   ArrowRight, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
   Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
-  RefreshCw, Database, Mail, Undo2, Redo2, Upload, Server // ✅ FIXED: Added missing icons
+  RefreshCw, Database, Mail, Undo2, Redo2, Upload, Server, Folder // ✅ FIXED: Added missing icons
 } from 'lucide-react';
 
 // Types
