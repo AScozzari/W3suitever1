@@ -22,6 +22,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Users, Plus, Settings, Search, Filter, Check, X, Edit3, Trash2,
   Zap, Play, Calendar, Shield, ChevronRight, Save, RefreshCw,
@@ -790,130 +793,367 @@ const WorkflowManagementPage: React.FC = () => {
 
   // Render Assignment Tab
   const renderAssignmentTab = () => {
-    const teams = teamsData || [];
-    const templates = templatesData || [];
+    const [selectedAssignment, setSelectedAssignment] = useState<TeamWorkflowAssignment | null>(null);
+    const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+    const [assignmentFormData, setAssignmentFormData] = useState({
+      teamId: '',
+      templateId: '',
+      priority: 50,
+      autoAssign: true,
+      conditions: '{}'
+    });
+
+    const handleCreateAssignment = () => {
+      try {
+        const conditions = JSON.parse(assignmentFormData.conditions);
+        updateAssignmentMutation.mutate({
+          teamId: assignmentFormData.teamId,
+          templateId: assignmentFormData.templateId,
+          autoAssign: assignmentFormData.autoAssign,
+          priority: assignmentFormData.priority,
+          conditions,
+          isActive: true
+        });
+        setShowAssignmentModal(false);
+        setAssignmentFormData({
+          teamId: '',
+          templateId: '',
+          priority: 50,
+          autoAssign: true,
+          conditions: '{}'
+        });
+      } catch (e) {
+        toast({
+          title: 'Invalid JSON',
+          description: 'Please enter valid JSON for conditions',
+          variant: 'destructive'
+        });
+      }
+    };
+
+    const deleteAssignment = (assignment: TeamWorkflowAssignment) => {
+      if (confirm('Are you sure you want to delete this assignment?')) {
+        updateAssignmentMutation.mutate({
+          ...assignment,
+          isActive: false
+        });
+      }
+    };
 
     return (
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '16px',
-        padding: '24px',
-        height: 'calc(100vh - 200px)',
-        overflowY: 'auto'
-      }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 20px' }}>
-          Team-Workflow Assignment Matrix
-        </h3>
-
-        {loadingTeams || loadingTemplates || loadingAssignments ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-            <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
-            <p style={{ marginTop: '12px' }}>Loading assignment matrix...</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '12px',
-              overflow: 'hidden'
-            }}>
-              <thead>
-                <tr style={{ background: 'rgba(255, 105, 0, 0.1)' }}>
-                  <th style={{
-                    padding: '12px',
-                    textAlign: 'left',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#111827',
-                    borderBottom: '2px solid rgba(255, 105, 0, 0.2)'
-                  }}>
-                    Team / Workflow
-                  </th>
-                  {templates.map((template: WorkflowTemplate) => (
-                    <th key={template.id} style={{
-                      padding: '12px',
-                      textAlign: 'center',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      color: '#374151',
-                      borderBottom: '2px solid rgba(255, 105, 0, 0.2)',
-                      minWidth: '120px'
-                    }}>
-                      {template.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {teams.map((team: Team) => (
-                  <tr key={team.id}>
-                    <td style={{
-                      padding: '12px',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      color: '#111827',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
-                    }}>
-                      {team.name}
-                    </td>
-                    {templates.map((template: WorkflowTemplate) => {
-                      const assignment = (assignmentsData || []).find(
-                        (a: TeamWorkflowAssignment) => a.teamId === team.id && a.templateId === template.id
-                      );
-                      return (
-                        <td key={template.id} style={{
-                          padding: '12px',
-                          textAlign: 'center',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
-                        }}>
-                          <button
-                            onClick={() => {
-                              if (assignment) {
-                                // Remove assignment
-                                updateAssignmentMutation.mutate({
-                                  ...assignment,
-                                  isActive: false
-                                });
-                              } else {
-                                // Create assignment
-                                updateAssignmentMutation.mutate({
-                                  teamId: team.id,
-                                  templateId: template.id,
-                                  autoAssign: true,
-                                  priority: 100,
-                                  isActive: true,
-                                  conditions: {}
-                                });
-                              }
-                            }}
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '8px',
-                              border: assignment ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.2)',
-                              background: assignment ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
-                              color: assignment ? '#10b981' : '#6b7280',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                            data-testid={`assign-${team.id}-${template.id}`}
+      <>
+        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)]">
+          {/* Assignment List */}
+          <div className="col-span-8">
+            <Card className="h-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Workflow Assignment Matrix</CardTitle>
+                    <CardDescription>
+                      Configure automatic workflow routing based on teams and conditions
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setShowAssignmentModal(true)}
+                    size="sm"
+                    className="bg-gradient-to-r from-orange-500 to-purple-600"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Assignment
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[calc(100vh-350px)]">
+                  {loadingAssignments || loadingTeams || loadingTemplates ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map(i => (
+                        <Skeleton key={i} className="h-20 w-full" />
+                      ))}
+                    </div>
+                  ) : (assignmentsData || []).length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Layers className="mx-auto h-12 w-12 mb-3 opacity-30" />
+                      <p className="text-sm">No workflow assignments configured</p>
+                      <p className="text-xs mt-1">Click "New Assignment" to get started</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(assignmentsData || []).map((assignment: TeamWorkflowAssignment) => {
+                        const team = (teamsData || []).find((t: Team) => t.id === assignment.teamId);
+                        const template = (templatesData || []).find((t: WorkflowTemplate) => t.id === assignment.templateId);
+                        
+                        return (
+                          <div
+                            key={assignment.id}
+                            onClick={() => setSelectedAssignment(assignment)}
+                            className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                              selectedAssignment?.id === assignment.id
+                                ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                                : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 hover:dark:border-gray-600'
+                            }`}
                           >
-                            {assignment && <Check size={16} />}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium text-sm">{team?.name || 'Unknown Team'}</span>
+                                  </div>
+                                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                  <div className="flex items-center gap-2">
+                                    <GitBranch className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm">{template?.name || 'Unknown Workflow'}</span>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 flex-wrap">
+                                  {assignment.autoAssign && (
+                                    <Badge variant="default" className="bg-green-500">
+                                      <Zap className="mr-1 h-3 w-3" />
+                                      Auto-Assign
+                                    </Badge>
+                                  )}
+                                  <Badge variant="secondary">
+                                    Priority: {assignment.priority}
+                                  </Badge>
+                                  {template?.category && (
+                                    <Badge variant="outline">{template.category}</Badge>
+                                  )}
+                                  <Badge variant={assignment.isActive ? "default" : "destructive"}>
+                                    {assignment.isActive ? "Active" : "Inactive"}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteAssignment(assignment);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Assignment Details */}
+          <div className="col-span-4">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Assignment Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedAssignment ? (
+                  <ScrollArea className="h-[calc(100vh-350px)]">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Team</label>
+                        <Card className="mt-2 p-3 bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {(teamsData || []).find((t: Team) => t.id === selectedAssignment.teamId)?.name || 'Unknown'}
+                            </span>
+                          </div>
+                        </Card>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Workflow Template</label>
+                        <Card className="mt-2 p-3 bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <GitBranch className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {(templatesData || []).find((t: WorkflowTemplate) => t.id === selectedAssignment.templateId)?.name || 'Unknown'}
+                            </span>
+                          </div>
+                        </Card>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Configuration</label>
+                        <div className="mt-2 space-y-2">
+                          <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                            <span className="text-sm">Auto-Assign</span>
+                            <Badge variant={selectedAssignment.autoAssign ? "default" : "outline"}>
+                              {selectedAssignment.autoAssign ? "Enabled" : "Disabled"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                            <span className="text-sm">Priority</span>
+                            <Badge variant="secondary">{selectedAssignment.priority}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                            <span className="text-sm">Status</span>
+                            <Badge variant={selectedAssignment.isActive ? "default" : "destructive"}>
+                              {selectedAssignment.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Routing Conditions</label>
+                        <Card className="mt-2 bg-muted/30">
+                          <CardContent className="pt-4">
+                            <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                              {JSON.stringify(selectedAssignment.conditions || {}, null, 2)}
+                            </pre>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <Target className="h-12 w-12 mb-4 opacity-30" />
+                    <p className="text-sm">Select an assignment to view details</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Assignment Modal */}
+        {showAssignmentModal && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+            <div className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg sm:rounded-lg">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Layers className="h-5 w-5 text-orange-500" />
+                    Create Workflow Assignment
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Configure automatic workflow routing for teams
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="teamId">Select Team*</Label>
+                      <select
+                        id="teamId"
+                        value={assignmentFormData.teamId}
+                        onChange={(e) => setAssignmentFormData({ ...assignmentFormData, teamId: e.target.value })}
+                        className="mt-2 w-full px-3 py-2 border rounded-md text-sm"
+                      >
+                        <option value="">Choose a team...</option>
+                        {(teamsData || []).map((team: Team) => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="templateId">Select Workflow*</Label>
+                      <select
+                        id="templateId"
+                        value={assignmentFormData.templateId}
+                        onChange={(e) => setAssignmentFormData({ ...assignmentFormData, templateId: e.target.value })}
+                        className="mt-2 w-full px-3 py-2 border rounded-md text-sm"
+                      >
+                        <option value="">Choose a workflow...</option>
+                        {(templatesData || []).map((template: WorkflowTemplate) => (
+                          <option key={template.id} value={template.id}>
+                            {template.name} ({template.category})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="priority">Priority (1-100)</Label>
+                      <Input
+                        id="priority"
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={assignmentFormData.priority}
+                        onChange={(e) => setAssignmentFormData({ 
+                          ...assignmentFormData, 
+                          priority: parseInt(e.target.value) || 50 
+                        })}
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div className="flex items-end">
+                      <label className="flex items-center gap-2">
+                        <input 
+                          type="checkbox"
+                          checked={assignmentFormData.autoAssign}
+                          onChange={(e) => setAssignmentFormData({ 
+                            ...assignmentFormData, 
+                            autoAssign: e.target.checked 
+                          })}
+                        />
+                        <span className="text-sm font-medium">Enable Auto-Assign</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="conditions">Routing Conditions (JSON)</Label>
+                    <Textarea
+                      id="conditions"
+                      placeholder='{"department": "hr", "requestType": "leave"}'
+                      value={assignmentFormData.conditions}
+                      onChange={(e) => setAssignmentFormData({ 
+                        ...assignmentFormData, 
+                        conditions: e.target.value 
+                      })}
+                      className="mt-2 font-mono text-sm h-32"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAssignmentModal(false);
+                      setAssignmentFormData({
+                        teamId: '',
+                        templateId: '',
+                        priority: 50,
+                        autoAssign: true,
+                        conditions: '{}'
+                      });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreateAssignment}
+                    disabled={!assignmentFormData.teamId || !assignmentFormData.templateId}
+                    className="bg-gradient-to-r from-orange-500 to-purple-600"
+                  >
+                    Create Assignment
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
+      </>
     );
   };
 
