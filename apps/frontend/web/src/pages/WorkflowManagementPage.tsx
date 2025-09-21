@@ -229,7 +229,7 @@ const WorkflowManagementPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   // Team Modal State  
-  const [teamFormData, setTeamFormData] = useState<Team>({
+  const [teamFormData, setTeamFormData] = useState<Partial<Team>>({
     name: '',
     description: '',
     teamType: 'functional',
@@ -857,8 +857,7 @@ const WorkflowManagementPage: React.FC = () => {
 
   return (
     <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
-      <div className="min-h-screen bg-white">
-        <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6">
           {/* Modern Navigation Bar */}
           <div className="backdrop-blur-md bg-gradient-to-r from-white/20 via-white/10 to-transparent border border-white/30 rounded-2xl p-4 shadow-xl">
             <div className="flex items-center justify-between">
@@ -936,7 +935,8 @@ const WorkflowManagementPage: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6">
+          </div>
+
               {/* Basic Information */}
               <div className="space-y-4">
                 <div>
@@ -1197,9 +1197,9 @@ const WorkflowManagementPage: React.FC = () => {
                 Cancel
               </Button>
               <Button 
-                onClick={handleSaveTeam} 
-                disabled={createTeamMutation.isPending || !teamFormData.name.trim() || 
-                        (teamFormData.userMembers.length === 0 && teamFormData.roleMembers.length === 0)}
+                onClick={() => handleSaveTeam()} 
+                disabled={createTeamMutation.isPending || !teamFormData.name?.trim() || 
+                        ((teamFormData.userMembers || []).length === 0 && (teamFormData.roleMembers || []).length === 0)}
               >
                 {createTeamMutation.isPending ? 'Saving...' : editingTeam ? 'Update Team' : 'Create Team'}
               </Button>
