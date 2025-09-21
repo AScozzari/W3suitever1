@@ -224,54 +224,147 @@ export default function WorkflowManagementPage() {
                         Drag actions into your workflow
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      {/* HR Actions */}
+                    <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
+                      {/* ===== 6 CATEGORIE SPECIFICHE CON PERMESSI ATOMICI ===== */}
+                      
+                      {/* HR - Risorse Umane */}
                       <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2">
-                          HR Actions
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          HR - Risorse Umane
                         </h4>
-                        <div className="space-y-2">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-approve-leave">
-                            <CheckCircle className="w-3 h-3 mr-2" />
-                            Approve Leave Request
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-approve-leave">
+                            <CheckCircle className="w-3 h-3 mr-2 text-green-500" />
+                            hr.approve_vacation_max_5_days
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-reject-leave">
-                            <AlertCircle className="w-3 h-3 mr-2" />
-                            Reject Request
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-approve-sick">
+                            <CheckCircle className="w-3 h-3 mr-2 text-green-500" />
+                            hr.approve_sick_leave_unlimited
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-hr-reject">
+                            <AlertCircle className="w-3 h-3 mr-2 text-red-500" />
+                            hr.reject_request_with_reason
                           </Badge>
                         </div>
                       </div>
 
-                      {/* Finance Actions */}
+                      {/* Finance - Finanza */}
                       <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2">
-                          Finance Actions
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          Finance - Finanza
                         </h4>
-                        <div className="space-y-2">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-approve-expense">
-                            <CheckCircle className="w-3 h-3 mr-2" />
-                            Approve Expense
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-approve-expense">
+                            <CheckCircle className="w-3 h-3 mr-2 text-blue-500" />
+                            finance.approve_expense_max_1000
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-budget-check">
-                            <Target className="w-3 h-3 mr-2" />
-                            Budget Check
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-budget-check">
+                            <Target className="w-3 h-3 mr-2 text-blue-500" />
+                            finance.budget_validation_required
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-finance-payment">
+                            <CheckCircle className="w-3 h-3 mr-2 text-blue-500" />
+                            finance.authorize_payment_approval
                           </Badge>
                         </div>
                       </div>
 
-                      {/* Operations Actions */}
+                      {/* Operations - Operazioni */}
                       <div>
-                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2">
-                          Operations
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                          Operations - Operazioni
                         </h4>
-                        <div className="space-y-2">
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-notify-email">
-                            <Clock className="w-3 h-3 mr-2" />
-                            Send Notification
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-notify">
+                            <Clock className="w-3 h-3 mr-2 text-orange-500" />
+                            ops.send_notification_email
                           </Badge>
-                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-escalate">
-                            <Zap className="w-3 h-3 mr-2" />
-                            Escalate to Manager
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-escalate">
+                            <Zap className="w-3 h-3 mr-2 text-orange-500" />
+                            ops.escalate_to_supervisor
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-ops-warehouse">
+                            <Activity className="w-3 h-3 mr-2 text-orange-500" />
+                            ops.warehouse_stock_approval
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* IT - Information Technology */}
+                      <div>
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                          IT - Information Technology
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-hardware">
+                            <CheckCircle className="w-3 h-3 mr-2 text-purple-500" />
+                            it.approve_hardware_request
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-software">
+                            <Settings className="w-3 h-3 mr-2 text-purple-500" />
+                            it.software_license_approval
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-it-access">
+                            <Users className="w-3 h-3 mr-2 text-purple-500" />
+                            it.system_access_grant
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* CRM - Customer Relationship */}
+                      <div>
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                          CRM - Customer Relationship
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-crm-discount">
+                            <Target className="w-3 h-3 mr-2 text-pink-500" />
+                            crm.approve_discount_max_10
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-crm-contract">
+                            <CheckCircle className="w-3 h-3 mr-2 text-pink-500" />
+                            crm.contract_approval_required
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Support - Supporto Clienti */}
+                      <div>
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                          Support - Supporto Clienti
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-support-refund">
+                            <CheckCircle className="w-3 h-3 mr-2 text-yellow-500" />
+                            support.approve_refund_max_500
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-support-escalate">
+                            <Zap className="w-3 h-3 mr-2 text-yellow-500" />
+                            support.escalate_to_manager
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Sales - Vendite */}
+                      <div>
+                        <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
+                          Sales - Vendite
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-sales-quote">
+                            <Target className="w-3 h-3 mr-2 text-cyan-500" />
+                            sales.approve_quote_discount
+                          </Badge>
+                          <Badge variant="outline" className="w-full justify-start p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="action-sales-commission">
+                            <CheckCircle className="w-3 h-3 mr-2 text-cyan-500" />
+                            sales.commission_approval
                           </Badge>
                         </div>
                       </div>
@@ -284,42 +377,124 @@ export default function WorkflowManagementPage() {
             {/* TAB 2: TEAM MANAGEMENT */}
             <TabsContent value="teams" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* HYBRID TEAM COMPOSITION - Ruoli E/O Utenti */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-purple-500" />
-                      Team Management
+                      Team Composition (Hybrid)
                     </CardTitle>
                     <CardDescription>
-                      Manage teams and workflow assignments (N:M relationships)
+                      Seleziona posizioni per ruoli E/O utenti individuali
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <Button className="w-full" data-testid="button-create-team">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create New Team
-                      </Button>
-                      <div className="text-center text-slate-500 dark:text-slate-400">
-                        Team management interface will be implemented here
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button className="w-full" data-testid="button-create-team">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nuovo Team
+                        </Button>
+                        <Button variant="outline" className="w-full" data-testid="button-assign-workflows">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Assegna Workflows
+                        </Button>
+                      </div>
+                      
+                      {/* MOCK TEAM LIST con N:M relationships */}
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Team Attivi:</h4>
+                        
+                        <div className="border rounded p-3 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">HR Approvals Team</span>
+                            <Badge variant="outline" className="text-xs">3 workflows</Badge>
+                          </div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">
+                            <div><strong>Ruoli:</strong> hr_manager, senior_hr</div>
+                            <div><strong>Utenti:</strong> Maria Rossi, Giuseppe Verdi</div>
+                            <div><strong>Supervisore:</strong> Anna Bianchi (hr.supervisor)</div>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded p-3 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Finance Control Team</span>
+                            <Badge variant="outline" className="text-xs">2 workflows</Badge>
+                          </div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">
+                            <div><strong>Ruoli:</strong> finance_manager</div>
+                            <div><strong>Utenti:</strong> Luca Ferrari</div>
+                            <div><strong>Supervisore:</strong> Mario Rossi (finance.approve_all)</div>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded p-3 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">IT Support Team</span>
+                            <Badge variant="outline" className="text-xs">4 workflows</Badge>
+                          </div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">
+                            <div><strong>Ruoli:</strong> it_admin, it_support</div>
+                            <div><strong>Utenti:</strong> -</div>
+                            <div><strong>Supervisore:</strong> Paolo Neri (it.manage_all)</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* RBAC-VALIDATED SUPERVISOR SELECTION */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Settings className="w-5 h-5 text-blue-500" />
-                      Supervisor Selection
+                      Supervisor Selection (RBAC)
                     </CardTitle>
                     <CardDescription>
-                      RBAC-validated supervisor assignments
+                      Solo utenti con permessi team.manage per categoria
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center text-slate-500 dark:text-slate-400">
-                      Supervisor selection interface will be implemented here
+                    <div className="space-y-4">
+                      <div className="text-sm">
+                        <h4 className="font-medium mb-2">Supervisori Disponibili per Categoria:</h4>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center p-2 border rounded">
+                            <div>
+                              <span className="font-medium">HR - Anna Bianchi</span>
+                              <br />
+                              <span className="text-xs text-slate-600">Permessi: hr.supervisor, team.manage.hr</span>
+                            </div>
+                            <Badge variant="default" className="bg-green-500">Attivo</Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center p-2 border rounded">
+                            <div>
+                              <span className="font-medium">Finance - Mario Rossi</span>
+                              <br />
+                              <span className="text-xs text-slate-600">Permessi: finance.approve_all, team.manage.finance</span>
+                            </div>
+                            <Badge variant="default" className="bg-green-500">Attivo</Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center p-2 border rounded">
+                            <div>
+                              <span className="font-medium">IT - Paolo Neri</span>
+                              <br />
+                              <span className="text-xs text-slate-600">Permessi: it.manage_all, team.manage.it</span>
+                            </div>
+                            <Badge variant="default" className="bg-green-500">Attivo</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button variant="outline" className="w-full" data-testid="button-manage-supervisors">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Gestisci Supervisori RBAC
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -341,12 +516,13 @@ export default function WorkflowManagementPage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[
-                      { category: 'HR', count: 8, color: 'bg-green-500' },
-                      { category: 'Finance', count: 6, color: 'bg-blue-500' },
-                      { category: 'Operations', count: 4, color: 'bg-orange-500' },
-                      { category: 'IT', count: 3, color: 'bg-purple-500' },
-                      { category: 'CRM', count: 2, color: 'bg-pink-500' },
-                      { category: 'Support', count: 1, color: 'bg-yellow-500' }
+                      { category: 'HR', count: 12, color: 'bg-green-500', description: 'Ferie, permessi, malattie, valutazioni' },
+                      { category: 'Finance', count: 8, color: 'bg-blue-500', description: 'Spese, budget, pagamenti, approvazioni' },
+                      { category: 'Operations', count: 6, color: 'bg-orange-500', description: 'Magazzino, produzione, logistica' },
+                      { category: 'IT', count: 5, color: 'bg-purple-500', description: 'Hardware, software, accessi, sicurezza' },
+                      { category: 'CRM', count: 4, color: 'bg-pink-500', description: 'Sconti, contratti, lead management' },
+                      { category: 'Support', count: 3, color: 'bg-yellow-500', description: 'Rimborsi, escalation, ticket priority' },
+                      { category: 'Sales', count: 7, color: 'bg-cyan-500', description: 'Preventivi, commissioni, autorizzazioni' }
                     ].map((template) => (
                       <Card key={template.category} className="cursor-pointer hover:shadow-md transition-shadow" data-testid={`template-${template.category.toLowerCase()}`}>
                         <CardContent className="p-4">
@@ -354,9 +530,13 @@ export default function WorkflowManagementPage() {
                             <h3 className="font-semibold">{template.category}</h3>
                             <div className={`w-3 h-3 rounded-full ${template.color}`} />
                           </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {template.count} templates available
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                            {template.description}
                           </p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">{template.count} templates</span>
+                            <Badge variant="outline" className="text-xs">RBAC</Badge>
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
