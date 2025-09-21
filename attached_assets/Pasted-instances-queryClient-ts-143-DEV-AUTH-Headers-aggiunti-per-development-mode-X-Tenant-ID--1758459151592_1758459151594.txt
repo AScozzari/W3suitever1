@@ -1,0 +1,38 @@
+instances
+queryClient.ts:143 🔧 [DEV-AUTH] Headers aggiunti per development mode: 
+{X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+queryClient.ts:171 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/workflow-instances 500 (Internal Server Error)
+WorkflowManagementPage.tsx:706 Uncaught ReferenceError: ActionLibrary is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:706:16)
+WorkflowManagementPage.tsx:706 Uncaught ReferenceError: ActionLibrary is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:706:16)
+hook.js:608 The above error occurred in the <WorkflowBuilderView> component:
+
+    at WorkflowBuilderView (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:1038:98)
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:98:34)
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:248:21)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:674:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:485:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=b976381d:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=b976381d:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=b976381d:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=b976381d:9129 Uncaught ReferenceError: ActionLibrary is not defined
+    at WorkflowBuilderView (WorkflowManagementPage.tsx:706:16)
+client:736 
+ GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
+ping	@	client:736
+waitForSuccessfulPing	@	client:755
+await in waitForSuccessfulPing		
+(anonymous)	@	client:561

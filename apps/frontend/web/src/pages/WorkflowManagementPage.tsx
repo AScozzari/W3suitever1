@@ -42,7 +42,7 @@ import {
   BarChart3, CheckCircle, Clock, AlertCircle, TrendingUp,
   ArrowRight, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
-  Save, DollarSign, FileText, Wrench, X, Info
+  Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2
 } from 'lucide-react';
 
 // Types
@@ -758,7 +758,7 @@ const WorkflowManagementPage: React.FC = () => {
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
+                onConnect={(params) => console.log('Connection:', params)}
                 nodeTypes={nodeTypes}
                 className="workflow-canvas h-[450px] rounded-lg border"
               >
