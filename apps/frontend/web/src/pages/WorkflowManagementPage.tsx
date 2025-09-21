@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import WorkflowBuilder from '../components/WorkflowBuilder';
+import PositionsManager from '../components/PositionsManager';
 import Layout from '../components/Layout';
 import { 
   Card, 
@@ -363,131 +364,14 @@ export default function WorkflowManagementPage() {
               </div>
             </TabsContent>
 
-            {/* TAB 2: TEAM MANAGEMENT */}
+            {/* TAB 2: TEAM MANAGEMENT - POSITIONS SYSTEM */}
             <TabsContent value="teams" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* HYBRID TEAM COMPOSITION - Ruoli E/O Utenti */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-purple-500" />
-                      Team Composition (Hybrid)
-                    </CardTitle>
-                    <CardDescription>
-                      Seleziona posizioni per ruoli E/O utenti individuali
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button className="w-full" data-testid="button-create-team">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Nuovo Team
-                        </Button>
-                        <Button variant="outline" className="w-full" data-testid="button-assign-workflows">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Assegna Workflows
-                        </Button>
-                      </div>
-                      
-                      {/* MOCK TEAM LIST con N:M relationships */}
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Team Attivi:</h4>
-                        
-                        <div className="border rounded p-3 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">HR Approvals Team</span>
-                            <Badge variant="outline" className="text-xs">3 workflows</Badge>
-                          </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-400">
-                            <div><strong>Ruoli:</strong> hr_manager, senior_hr</div>
-                            <div><strong>Utenti:</strong> Maria Rossi, Giuseppe Verdi</div>
-                            <div><strong>Supervisore:</strong> Anna Bianchi (hr.supervisor)</div>
-                          </div>
-                        </div>
-                        
-                        <div className="border rounded p-3 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">Finance Control Team</span>
-                            <Badge variant="outline" className="text-xs">2 workflows</Badge>
-                          </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-400">
-                            <div><strong>Ruoli:</strong> finance_manager</div>
-                            <div><strong>Utenti:</strong> Luca Ferrari</div>
-                            <div><strong>Supervisore:</strong> Mario Rossi (finance.approve_all)</div>
-                          </div>
-                        </div>
-                        
-                        <div className="border rounded p-3 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">IT Support Team</span>
-                            <Badge variant="outline" className="text-xs">4 workflows</Badge>
-                          </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-400">
-                            <div><strong>Ruoli:</strong> it_admin, it_support</div>
-                            <div><strong>Utenti:</strong> -</div>
-                            <div><strong>Supervisore:</strong> Paolo Neri (it.manage_all)</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* RBAC-VALIDATED SUPERVISOR SELECTION */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-blue-500" />
-                      Supervisor Selection (RBAC)
-                    </CardTitle>
-                    <CardDescription>
-                      Solo utenti con permessi team.manage per categoria
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-sm">
-                        <h4 className="font-medium mb-2">Supervisori Disponibili per Categoria:</h4>
-                        
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center p-2 border rounded">
-                            <div>
-                              <span className="font-medium">HR - Anna Bianchi</span>
-                              <br />
-                              <span className="text-xs text-slate-600">Permessi: hr.supervisor, team.manage.hr</span>
-                            </div>
-                            <Badge variant="default" className="bg-green-500">Attivo</Badge>
-                          </div>
-                          
-                          <div className="flex justify-between items-center p-2 border rounded">
-                            <div>
-                              <span className="font-medium">Finance - Mario Rossi</span>
-                              <br />
-                              <span className="text-xs text-slate-600">Permessi: finance.approve_all, team.manage.finance</span>
-                            </div>
-                            <Badge variant="default" className="bg-green-500">Attivo</Badge>
-                          </div>
-                          
-                          <div className="flex justify-between items-center p-2 border rounded">
-                            <div>
-                              <span className="font-medium">IT - Paolo Neri</span>
-                              <br />
-                              <span className="text-xs text-slate-600">Permessi: it.manage_all, team.manage.it</span>
-                            </div>
-                            <Badge variant="default" className="bg-green-500">Attivo</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button variant="outline" className="w-full" data-testid="button-manage-supervisors">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Gestisci Supervisori RBAC
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <PositionsManager
+                onPositionSelect={(position) => {
+                  console.log('Position selected for workflow assignment:', position);
+                  // TODO: Integrate with workflow builder for node assignment
+                }}
+              />
             </TabsContent>
 
             {/* TAB 3: TEMPLATES */}
