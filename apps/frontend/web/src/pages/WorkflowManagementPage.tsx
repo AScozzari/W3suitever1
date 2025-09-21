@@ -669,7 +669,7 @@ const WorkflowManagementPage: React.FC = () => {
       setZustandNodes([initialNode]);
       zustandSaveSnapshot('Initial node added');
     }
-  }, [hasHydrated]); // Run after hydration
+  }, [hasHydrated, setZustandNodes, zustandSaveSnapshot]); // Include dependencies to avoid stale closures
 
   // 🎯 WORKFLOW ACTIONS - now fully functional with history
   const canUndo = historyIndex > 0;
@@ -774,23 +774,27 @@ const WorkflowManagementPage: React.FC = () => {
   // Teams data
   const { data: teamsData = [], isLoading: loadingTeams } = useQuery<Team[]>({
     queryKey: ['/api/teams'],
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minuti
+    refetchOnWindowFocus: false, // Evito refetch quando la finestra torna in focus
   });
 
   const { data: templatesData = [], isLoading: loadingTemplates } = useQuery<WorkflowTemplate[]>({
     queryKey: ['/api/workflow-templates'],
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minuti
+    refetchOnWindowFocus: false, // Evito refetch quando la finestra torna in focus
   });
 
   const { data: instancesData = [], isLoading: loadingInstances } = useQuery<WorkflowInstance[]>({
     queryKey: ['/api/workflow-instances'],
-    staleTime: 30 * 1000,
-    refetchInterval: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minuti
+    refetchInterval: false, // Disabilito il polling automatico per evitare troppe chiamate
   });
 
   const { data: workflowActionsData = [] } = useQuery<any[]>({
     queryKey: ['/api/workflow-actions'],
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minuti - questi dati cambiano raramente
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Non refetch quando il componente si monta di nuovo
   });
 
   // Users and Roles for Team Modal
