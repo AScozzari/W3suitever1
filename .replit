@@ -98,14 +98,12 @@ localPort = 33625
 
 [[ports]]
 localPort = 33691
-externalPort = 3000
 
 [[ports]]
 localPort = 33933
 
 [[ports]]
 localPort = 34147
-externalPort = 8000
 
 [[ports]]
 localPort = 34205
@@ -121,7 +119,6 @@ localPort = 34777
 
 [[ports]]
 localPort = 35003
-externalPort = 8080
 
 [[ports]]
 localPort = 35191
@@ -131,11 +128,9 @@ localPort = 35825
 
 [[ports]]
 localPort = 36179
-externalPort = 3001
 
 [[ports]]
 localPort = 36907
-externalPort = 5000
 
 [[ports]]
 localPort = 37213
@@ -144,15 +139,10 @@ localPort = 37213
 localPort = 37873
 
 [[ports]]
-localPort = 37911
-externalPort = 8008
-
-[[ports]]
 localPort = 37939
 
 [[ports]]
 localPort = 38051
-externalPort = 6800
 
 [[ports]]
 localPort = 38927
@@ -174,7 +164,6 @@ localPort = 40379
 
 [[ports]]
 localPort = 40785
-externalPort = 3003
 
 [[ports]]
 localPort = 40925
@@ -193,18 +182,15 @@ localPort = 42289
 
 [[ports]]
 localPort = 42407
-externalPort = 5173
 
 [[ports]]
 localPort = 42505
-externalPort = 4200
 
 [[ports]]
 localPort = 43267
 
 [[ports]]
 localPort = 43269
-externalPort = 3002
 
 [[ports]]
 localPort = 43483
@@ -223,6 +209,10 @@ localPort = 43893
 
 [[ports]]
 localPort = 44031
+
+[[ports]]
+localPort = 44713
+externalPort = 3000
 
 [[ports]]
 localPort = 44719
@@ -247,7 +237,6 @@ localPort = 46391
 
 [[ports]]
 localPort = 46461
-externalPort = 6000
 
 [[ports]]
 localPort = 46513
