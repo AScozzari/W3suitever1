@@ -786,8 +786,8 @@ const WorkflowManagementPage: React.FC = () => {
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateCategory, setTemplateCategory] = useState('general');
 
-  // Real-time validation (debounced)
-  useEffect(() => {
+  // Real-time validation (debounced) - DISABLED to prevent infinite loop
+  /*useEffect(() => {
     if (nodes.length === 0) {
       setValidationResult(null);
       return;
@@ -806,10 +806,10 @@ const WorkflowManagementPage: React.FC = () => {
     }, 1000); // Debounce 1 second
 
     return () => clearTimeout(timeoutId);
-  }, [nodes, edges]);
+  }, [nodes, edges]);*/
 
-  // 🔄 KEYBOARD SHORTCUTS FOR UNDO/REDO
-  useEffect(() => {
+  // 🔄 KEYBOARD SHORTCUTS FOR UNDO/REDO - DISABLED to prevent infinite loop
+  /*useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Prevent shortcuts when typing in input fields
       if (event.target instanceof HTMLInputElement || 
@@ -846,7 +846,7 @@ const WorkflowManagementPage: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [canUndo, canRedo, undo, redo, toast]);
+  }, [canUndo, canRedo, undo, redo, toast]);*/
 
   // Workflow Builder Functions
   const handleSaveWorkflow = () => {

@@ -1,0 +1,144 @@
+🔍 [API-DEBUG] Making request to: /api/workflow-actions
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: {X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+hook.js:608 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:601:21)
+    at AuthenticatedApp (App.tsx:338:29)
+    at TenantWrapper (App.tsx:182:26)
+    at Route (wouter.js?v=9b35b141:206:16)
+    at Switch (wouter.js?v=9b35b141:262:17)
+    at Router (<anonymous>)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=9b35b141:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+printWarning @ chunk-ZHRYBLGQ.js?v=9b35b141:521
+error @ chunk-ZHRYBLGQ.js?v=9b35b141:505
+checkForNestedUpdates @ chunk-ZHRYBLGQ.js?v=9b35b141:19665
+scheduleUpdateOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:18533
+forceStoreRerender @ chunk-ZHRYBLGQ.js?v=9b35b141:11999
+updateStoreInstance @ chunk-ZHRYBLGQ.js?v=9b35b141:11975
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9b35b141:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9b35b141:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9b35b141:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9b35b141:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=9b35b141:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+chunk-ZHRYBLGQ.js?v=9b35b141:19659 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-ZHRYBLGQ.js?v=9b35b141:19659:19)
+    at scheduleUpdateOnFiber (chunk-ZHRYBLGQ.js?v=9b35b141:18533:11)
+    at forceStoreRerender (chunk-ZHRYBLGQ.js?v=9b35b141:11999:13)
+    at updateStoreInstance (chunk-ZHRYBLGQ.js?v=9b35b141:11975:13)
+    at commitHookEffectListMount (chunk-ZHRYBLGQ.js?v=9b35b141:16915:34)
+    at commitPassiveMountOnFiber (chunk-ZHRYBLGQ.js?v=9b35b141:18156:19)
+    at commitPassiveMountEffects_complete (chunk-ZHRYBLGQ.js?v=9b35b141:18129:17)
+    at commitPassiveMountEffects_begin (chunk-ZHRYBLGQ.js?v=9b35b141:18119:15)
+    at commitPassiveMountEffects (chunk-ZHRYBLGQ.js?v=9b35b141:18109:11)
+    at flushPassiveEffectsImpl (chunk-ZHRYBLGQ.js?v=9b35b141:19490:11)
+checkForNestedUpdates @ chunk-ZHRYBLGQ.js?v=9b35b141:19659
+scheduleUpdateOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:18533
+forceStoreRerender @ chunk-ZHRYBLGQ.js?v=9b35b141:11999
+updateStoreInstance @ chunk-ZHRYBLGQ.js?v=9b35b141:11975
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9b35b141:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9b35b141:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9b35b141:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9b35b141:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=9b35b141:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+hook.js:608 The above error occurred in the <WorkflowManagementPage> component:
+
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:616:21)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9b35b141:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=9b35b141:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=9b35b141:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=9b35b141:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=9b35b141:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9b35b141:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=9b35b141:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9b35b141:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=9b35b141:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+chunk-ZHRYBLGQ.js?v=9b35b141:19659 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-ZHRYBLGQ.js?v=9b35b141:19659:19)
+    at scheduleUpdateOnFiber (chunk-ZHRYBLGQ.js?v=9b35b141:18533:11)
+    at forceStoreRerender (chunk-ZHRYBLGQ.js?v=9b35b141:11999:13)
+    at updateStoreInstance (chunk-ZHRYBLGQ.js?v=9b35b141:11975:13)
+    at commitHookEffectListMount (chunk-ZHRYBLGQ.js?v=9b35b141:16915:34)
+    at commitPassiveMountOnFiber (chunk-ZHRYBLGQ.js?v=9b35b141:18156:19)
+    at commitPassiveMountEffects_complete (chunk-ZHRYBLGQ.js?v=9b35b141:18129:17)
+    at commitPassiveMountEffects_begin (chunk-ZHRYBLGQ.js?v=9b35b141:18119:15)
+    at commitPassiveMountEffects (chunk-ZHRYBLGQ.js?v=9b35b141:18109:11)
+    at flushPassiveEffectsImpl (chunk-ZHRYBLGQ.js?v=9b35b141:19490:11)
+checkForNestedUpdates @ chunk-ZHRYBLGQ.js?v=9b35b141:19659
+scheduleUpdateOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:18533
+forceStoreRerender @ chunk-ZHRYBLGQ.js?v=9b35b141:11999
+updateStoreInstance @ chunk-ZHRYBLGQ.js?v=9b35b141:11975
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9b35b141:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9b35b141:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9b35b141:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9b35b141:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9b35b141:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9b35b141:9119
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9b35b141:19432
+commitRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:19277
+finishConcurrentRender @ chunk-ZHRYBLGQ.js?v=9b35b141:18805
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9b35b141:18718
+workLoop @ chunk-ZHRYBLGQ.js?v=9b35b141:197
+flushWork @ chunk-ZHRYBLGQ.js?v=9b35b141:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=9b35b141:384Understand this error
+App.tsx:203 [TENANT-WRAPPER] 📡 API response status: 200
+App.tsx:234 [TENANT-WRAPPER] ✅ Tenant resolution successful: {tenantId: '00000000-0000-0000-0000-000000000001', name: 'Staging Environment', slug: 'staging', resolved: true, timestamp: '2025-09-21T21:51:09.708Z', …}
+App.tsx:241 [TENANT-WRAPPER] 🔒 Tenant UUID resolved and set: "00000000-0000-0000-0000-000000000001"
+App.tsx:242 [TENANT-WRAPPER] 📋 Tenant name: "Staging Environment"
+App.tsx:243 [TENANT-WRAPPER] ✅ Ready for authenticated API calls with proper tenant headers
