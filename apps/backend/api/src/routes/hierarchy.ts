@@ -1076,4 +1076,524 @@ router.get('/rbac/permissions', requirePermission('rbac.permissions.read'), asyn
   }
 });
 
+// ==================== TEAMS ENDPOINTS ====================
+
+// GET /api/teams - Get all teams for tenant
+router.get('/teams', requirePermission('teams.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const allTeams = await db
+      .select()
+      .from(teams)
+      .where(eq(teams.tenantId, tenantId))
+      .orderBy(asc(teams.name));
+
+    res.json(allTeams);
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+// POST /api/teams - Create new team
+router.post('/teams', requirePermission('teams.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const validatedData = insertTeamSchema.parse({
+      ...req.body,
+      tenantId,
+      createdBy: userId || 'system'
+    });
+
+    const [newTeam] = await db
+      .insert(teams)
+      .values(validatedData)
+      .returning();
+
+    res.status(201).json(newTeam);
+  } catch (error: any) {
+    console.error('Error creating team:', error);
+    if (error.name === 'ZodError') {
+      res.status(400).json({ error: 'Invalid team data', details: error.errors });
+    } else {
+      res.status(500).json({ error: 'Failed to create team' });
+    }
+  }
+});
+
+// PATCH /api/teams/:id - Update team
+router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const teamId = req.params.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const [updatedTeam] = await db
+      .update(teams)
+      .set({
+        ...req.body,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(teams.id, teamId),
+        eq(teams.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!updatedTeam) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    res.json(updatedTeam);
+  } catch (error) {
+    console.error('Error updating team:', error);
+    res.status(500).json({ error: 'Failed to update team' });
+  }
+});
+
+// DELETE /api/teams/:id - Delete team
+router.delete('/teams/:id', requirePermission('teams.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const teamId = req.params.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const [deletedTeam] = await db
+      .delete(teams)
+      .where(and(
+        eq(teams.id, teamId),
+        eq(teams.tenantId, tenantId)
+      ))
+      .returning();
+
+    if (!deletedTeam) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    res.json({ success: true, deleted: deletedTeam });
+  } catch (error) {
+    console.error('Error deleting team:', error);
+    res.status(500).json({ error: 'Failed to delete team' });
+  }
+});
+
+// ==================== WORKFLOW TEMPLATES ENDPOINTS ====================
+
+// GET /api/workflow-templates - Get workflow templates with optional category filter
+router.get('/workflow-templates', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const category = req.query.category as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [
+      eq(workflowTemplates.tenantId, tenantId),
+      eq(workflowTemplates.isActive, true)
+    ];
+
+    if (category) {
+      conditions.push(eq(workflowTemplates.category, category));
+    }
+
+    const templates = await db
+      .select()
+      .from(workflowTemplates)
+      .where(and(...conditions))
+      .orderBy(asc(workflowTemplates.name));
+
+    res.json(templates);
+  } catch (error) {
+    console.error('Error fetching workflow templates:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow templates' });
+  }
+});
+
+// POST /api/workflow-templates - Create new workflow template
+router.post('/workflow-templates', requirePermission('workflows.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const validatedData = insertWorkflowTemplateSchema.parse({
+      ...req.body,
+      tenantId,
+      createdBy: userId || 'system'
+    });
+
+    const [newTemplate] = await db
+      .insert(workflowTemplates)
+      .values(validatedData)
+      .returning();
+
+    res.status(201).json(newTemplate);
+  } catch (error: any) {
+    console.error('Error creating workflow template:', error);
+    if (error.name === 'ZodError') {
+      res.status(400).json({ error: 'Invalid template data', details: error.errors });
+    } else {
+      res.status(500).json({ error: 'Failed to create workflow template' });
+    }
+  }
+});
+
+// ==================== WORKFLOW ACTIONS ENDPOINTS ====================
+
+// GET /api/workflow-actions - Get workflow actions with optional category filter
+router.get('/workflow-actions', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const category = req.query.category as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [
+      eq(workflowActions.tenantId, tenantId),
+      eq(workflowActions.isActive, true)
+    ];
+
+    if (category) {
+      conditions.push(eq(workflowActions.category, category));
+    }
+
+    const actions = await db
+      .select()
+      .from(workflowActions)
+      .where(and(...conditions))
+      .orderBy(asc(workflowActions.name));
+
+    res.json(actions);
+  } catch (error) {
+    console.error('Error fetching workflow actions:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow actions' });
+  }
+});
+
+// ==================== WORKFLOW TRIGGERS ENDPOINTS ====================
+
+// GET /api/workflow-triggers - Get workflow triggers with optional category filter
+router.get('/workflow-triggers', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const category = req.query.category as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [
+      eq(workflowTriggers.tenantId, tenantId),
+      eq(workflowTriggers.isActive, true)
+    ];
+
+    if (category) {
+      conditions.push(eq(workflowTriggers.category, category));
+    }
+
+    const triggers = await db
+      .select()
+      .from(workflowTriggers)
+      .where(and(...conditions))
+      .orderBy(asc(workflowTriggers.name));
+
+    res.json(triggers);
+  } catch (error) {
+    console.error('Error fetching workflow triggers:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow triggers' });
+  }
+});
+
+// ==================== TEAM-WORKFLOW ASSIGNMENTS ENDPOINTS ====================
+
+// GET /api/team-workflow-assignments - Get all assignments
+router.get('/team-workflow-assignments', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const assignments = await db
+      .select()
+      .from(teamWorkflowAssignments)
+      .where(eq(teamWorkflowAssignments.tenantId, tenantId))
+      .orderBy(desc(teamWorkflowAssignments.priority));
+
+    res.json(assignments);
+  } catch (error) {
+    console.error('Error fetching team-workflow assignments:', error);
+    res.status(500).json({ error: 'Failed to fetch assignments' });
+  }
+});
+
+// POST /api/team-workflow-assignments - Create or update assignment
+router.post('/team-workflow-assignments', requirePermission('workflows.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const { teamId, templateId, ...assignmentData } = req.body;
+
+    // Check if assignment already exists
+    const existing = await db
+      .select()
+      .from(teamWorkflowAssignments)
+      .where(and(
+        eq(teamWorkflowAssignments.tenantId, tenantId),
+        eq(teamWorkflowAssignments.teamId, teamId),
+        eq(teamWorkflowAssignments.templateId, templateId)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing assignment
+      const [updated] = await db
+        .update(teamWorkflowAssignments)
+        .set({
+          ...assignmentData,
+          updatedAt: new Date()
+        })
+        .where(eq(teamWorkflowAssignments.id, existing[0].id))
+        .returning();
+
+      res.json(updated);
+    } else {
+      // Create new assignment
+      const validatedData = insertTeamWorkflowAssignmentSchema.parse({
+        teamId,
+        templateId,
+        ...assignmentData,
+        tenantId,
+        createdBy: userId || 'system'
+      });
+
+      const [newAssignment] = await db
+        .insert(teamWorkflowAssignments)
+        .values(validatedData)
+        .returning();
+
+      res.status(201).json(newAssignment);
+    }
+  } catch (error: any) {
+    console.error('Error creating/updating assignment:', error);
+    if (error.name === 'ZodError') {
+      res.status(400).json({ error: 'Invalid assignment data', details: error.errors });
+    } else {
+      res.status(500).json({ error: 'Failed to create/update assignment' });
+    }
+  }
+});
+
+// ==================== WORKFLOW INSTANCES ENDPOINTS ====================
+
+// GET /api/workflow-instances - Get workflow instances with optional status filter
+router.get('/workflow-instances', requirePermission('workflows.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const status = req.query.status as string;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const conditions = [eq(workflowInstances.tenantId, tenantId)];
+
+    if (status && status !== 'all') {
+      conditions.push(eq(workflowInstances.status, status));
+    }
+
+    const instances = await db
+      .select({
+        id: workflowInstances.id,
+        templateId: workflowInstances.templateId,
+        requestId: workflowInstances.requestId,
+        status: workflowInstances.status,
+        currentStepId: workflowInstances.currentStepId,
+        currentAssigneeId: workflowInstances.currentAssigneeId,
+        metadata: workflowInstances.metadata,
+        createdAt: workflowInstances.createdAt,
+        completedAt: workflowInstances.completedAt,
+        // Join template name
+        templateName: workflowTemplates.name,
+        templateCategory: workflowTemplates.category
+      })
+      .from(workflowInstances)
+      .leftJoin(workflowTemplates, eq(workflowInstances.templateId, workflowTemplates.id))
+      .where(and(...conditions))
+      .orderBy(desc(workflowInstances.createdAt));
+
+    res.json(instances);
+  } catch (error) {
+    console.error('Error fetching workflow instances:', error);
+    res.status(500).json({ error: 'Failed to fetch workflow instances' });
+  }
+});
+
+// POST /api/workflow-instances - Create new workflow instance
+router.post('/workflow-instances', requirePermission('workflows.write'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const validatedData = insertWorkflowInstanceSchema.parse({
+      ...req.body,
+      tenantId,
+      initiatorId: userId || 'system',
+      status: 'pending',
+      createdAt: new Date()
+    });
+
+    const [newInstance] = await db
+      .insert(workflowInstances)
+      .values(validatedData)
+      .returning();
+
+    res.status(201).json(newInstance);
+  } catch (error: any) {
+    console.error('Error creating workflow instance:', error);
+    if (error.name === 'ZodError') {
+      res.status(400).json({ error: 'Invalid instance data', details: error.errors });
+    } else {
+      res.status(500).json({ error: 'Failed to create workflow instance' });
+    }
+  }
+});
+
+// POST /api/workflow-instances/:id/approve - Approve workflow step
+router.post('/workflow-instances/:id/approve', requirePermission('workflows.approve'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const instanceId = req.params.id;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Get current instance
+    const [instance] = await db
+      .select()
+      .from(workflowInstances)
+      .where(and(
+        eq(workflowInstances.id, instanceId),
+        eq(workflowInstances.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!instance) {
+      return res.status(404).json({ error: 'Workflow instance not found' });
+    }
+
+    if (instance.status !== 'pending' && instance.status !== 'running') {
+      return res.status(400).json({ error: 'Workflow is not in approvable state' });
+    }
+
+    // TODO: Implement workflow step progression logic
+    // For now, just mark as completed
+    const [updated] = await db
+      .update(workflowInstances)
+      .set({
+        status: 'completed',
+        completedAt: new Date(),
+        metadata: {
+          ...instance.metadata,
+          approvedBy: userId,
+          approvalComment: req.body.comment
+        }
+      })
+      .where(eq(workflowInstances.id, instanceId))
+      .returning();
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Error approving workflow:', error);
+    res.status(500).json({ error: 'Failed to approve workflow' });
+  }
+});
+
+// POST /api/workflow-instances/:id/reject - Reject workflow step
+router.post('/workflow-instances/:id/reject', requirePermission('workflows.approve'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const instanceId = req.params.id;
+    const userId = (req as any).user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Get current instance
+    const [instance] = await db
+      .select()
+      .from(workflowInstances)
+      .where(and(
+        eq(workflowInstances.id, instanceId),
+        eq(workflowInstances.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!instance) {
+      return res.status(404).json({ error: 'Workflow instance not found' });
+    }
+
+    if (instance.status !== 'pending' && instance.status !== 'running') {
+      return res.status(400).json({ error: 'Workflow is not in rejectable state' });
+    }
+
+    // Mark as rejected
+    const [updated] = await db
+      .update(workflowInstances)
+      .set({
+        status: 'rejected',
+        completedAt: new Date(),
+        metadata: {
+          ...instance.metadata,
+          rejectedBy: userId,
+          rejectionReason: req.body.reason
+        }
+      })
+      .where(eq(workflowInstances.id, instanceId))
+      .returning();
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Error rejecting workflow:', error);
+    res.status(500).json({ error: 'Failed to reject workflow' });
+  }
+});
+
 export default router;
