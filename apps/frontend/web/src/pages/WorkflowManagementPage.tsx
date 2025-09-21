@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import WorkflowBuilder from '../components/WorkflowBuilder';
 import Layout from '../components/Layout';
 import { 
   Card, 
@@ -196,20 +197,17 @@ export default function WorkflowManagementPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <div className="h-[500px] bg-slate-50 dark:bg-slate-900 rounded-b-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center">
-                        <div className="text-center">
-                          <Workflow className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                            React Flow Integration
-                          </h3>
-                          <p className="text-slate-500 dark:text-slate-400 max-w-md">
-                            Visual workflow builder will be implemented here using React Flow
-                          </p>
-                          <Button className="mt-4" data-testid="button-create-workflow">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Create New Workflow
-                          </Button>
-                        </div>
+                      <div className="h-[500px] rounded-b-lg overflow-hidden">
+                        <WorkflowBuilder 
+                          onSave={(nodes, edges) => {
+                            console.log('Workflow saved:', { nodes, edges });
+                            // TODO: Save to database via API
+                          }}
+                          onRun={(nodes, edges) => {
+                            console.log('Workflow running:', { nodes, edges });
+                            // TODO: Execute workflow via API
+                          }}
+                        />
                       </div>
                     </CardContent>
                   </Card>
