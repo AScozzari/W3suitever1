@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
+import HRCalendar from '@/components/HRCalendar';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -766,49 +767,8 @@ const HRManagementPage: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar View */}
-        <Card className="lg:col-span-2 backdrop-blur-md bg-white/10 border-white/20">
-          <CardHeader>
-            <CardTitle>Calendario Turni</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="aspect-[4/3] bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-              <div className="text-center text-slate-500">
-                <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p>Vista calendario turni</p>
-                <p className="text-sm">Integrazione FullCalendar.js</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Shift Templates */}
-        <Card className="backdrop-blur-md bg-white/10 border-white/20">
-          <CardHeader>
-            <CardTitle>Template Turni</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="p-3 bg-white/10 rounded-lg">
-                <h4 className="font-medium">Turno Mattina</h4>
-                <p className="text-sm text-slate-500">08:00 - 16:00 (8h)</p>
-                <Badge variant="outline" className="mt-1">Attivo</Badge>
-              </div>
-              <div className="p-3 bg-white/10 rounded-lg">
-                <h4 className="font-medium">Turno Pomeriggio</h4>
-                <p className="text-sm text-slate-500">14:00 - 22:00 (8h)</p>
-                <Badge variant="outline" className="mt-1">Attivo</Badge>
-              </div>
-              <div className="p-3 bg-white/10 rounded-lg">
-                <h4 className="font-medium">Turno Spezzato</h4>
-                <p className="text-sm text-slate-500">08:00-13:00, 15:00-20:00</p>
-                <Badge variant="outline" className="mt-1">Attivo</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Professional HR Calendar */}
+      <HRCalendar />
 
       {/* Gantt Chart */}
       <Card className="backdrop-blur-md bg-white/10 border-white/20">
