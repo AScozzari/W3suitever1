@@ -80,7 +80,7 @@ import {
   ArrowRight, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
   Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
-  RefreshCw, Database, Mail // ✅ FIXED: Added all missing icon imports
+  RefreshCw, Database, Mail, Undo2, Redo2 // ✅ FIXED: Added all missing icon imports + Undo/Redo
 } from 'lucide-react';
 
 // Types
@@ -800,6 +800,46 @@ const WorkflowManagementPage: React.FC = () => {
 
     return () => clearTimeout(timeoutId);
   }, [nodes, edges]);
+
+  // 🔄 KEYBOARD SHORTCUTS FOR UNDO/REDO
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Prevent shortcuts when typing in input fields
+      if (event.target instanceof HTMLInputElement || 
+          event.target instanceof HTMLTextAreaElement ||
+          event.target instanceof HTMLSelectElement) {
+        return;
+      }
+
+      // Handle Ctrl+Z (Undo)
+      if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        if (canUndo) {
+          undo();
+          toast({
+            title: '🔄 Undo successful',
+            description: 'Workflow state restored to previous version',
+          });
+        }
+      }
+
+      // Handle Ctrl+Y or Ctrl+Shift+Z (Redo)  
+      if ((event.ctrlKey && event.key === 'y') || 
+          (event.ctrlKey && event.shiftKey && event.key === 'z')) {
+        event.preventDefault();
+        if (canRedo) {
+          redo();
+          toast({
+            title: '⏩ Redo successful', 
+            description: 'Workflow state moved forward',
+          });
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undo, redo, toast]);
 
   // Workflow Builder Functions
   const handleSaveWorkflow = () => {
@@ -1712,6 +1752,44 @@ const WorkflowManagementPage: React.FC = () => {
             <CardContent className="p-4 h-full">
               <div className="mb-4 flex gap-2 items-center justify-between">
                 <div className="flex gap-2">
+                  {/* 🔄 UNDO/REDO BUTTONS */}
+                  <div className="flex gap-1 mr-2 p-1 rounded-md bg-white/5 border border-white/10">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        undo();
+                        toast({
+                          title: '🔄 Undo successful',
+                          description: 'Workflow state restored to previous version',
+                        });
+                      }}
+                      disabled={!canUndo}
+                      className="h-8 w-8 p-0 hover:bg-white/10 disabled:opacity-30"
+                      title="Undo (Ctrl+Z)"
+                      data-testid="button-undo"
+                    >
+                      <Undo2 className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        redo();
+                        toast({
+                          title: '⏩ Redo successful',
+                          description: 'Workflow state moved forward',
+                        });
+                      }}
+                      disabled={!canRedo}
+                      className="h-8 w-8 p-0 hover:bg-white/10 disabled:opacity-30"
+                      title="Redo (Ctrl+Y)"
+                      data-testid="button-redo"
+                    >
+                      <Redo2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+
                   <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
                     <Save className="w-4 h-4 mr-1" />
                     Save
