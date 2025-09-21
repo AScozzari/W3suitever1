@@ -143,6 +143,14 @@ export default function MyPortal() {
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
+
+  // Query HR workflow templates for automatic workflow creation
+  const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
+    queryKey: ['/api/workflow-templates', { category: 'hr' }],
+    queryFn: () => apiRequest('/api/workflow-templates?category=hr'),
+    enabled: hrQueriesEnabled,
+    staleTime: 5 * 60 * 1000,
+  });
   const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
   const { documents, isLoading: documentsLoading } = useDocumentDrive();
   
