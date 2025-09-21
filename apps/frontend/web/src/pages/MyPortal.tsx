@@ -6,7 +6,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUser } from '@/hooks/useUsers';
 import { useNotifications } from '@/hooks/useNotifications';
-import { getDisplayUser, getDisplayLeaveBalance, extractHRRequests } from '@/types';
+import { getDisplayUser, getDisplayLeaveBalance } from '@/types';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +41,7 @@ import { Link } from 'wouter';
 import ClockWidget from '@/components/TimeTracking/ClockWidget';
 // Lazy load TimeAttendancePage to improve initial load time
 const TimeAttendancePage = React.lazy(() => import('@/components/TimeTracking/TimeAttendancePage'));
-import HRRequestWizard from '@/components/HR/HRRequestWizard';
-import HRRequestDetails from '@/components/HR/HRRequestDetails';
+// HR components removed - now handled in dedicated HRManagementPage
 import PayslipManager from '@/components/Documents/PayslipManager';
 import DocumentGrid from '@/components/Documents/DocumentGrid';
 import DocumentCategories from '@/components/Documents/DocumentCategories';
@@ -51,7 +50,7 @@ import DocumentViewer from '@/components/Documents/DocumentViewer';
 import { LeaveBalanceWidget } from '@/components/Leave/LeaveBalanceWidget';
 import { LeaveCalendar } from '@/components/Leave/LeaveCalendar';
 import { useCurrentSession, useTimeBalance } from '@/hooks/useTimeTracking';
-import { useHRRequests, HRRequestFilters } from '@/hooks/useHRRequests';
+// useHRRequests hook removed - now handled in HRManagementPage
 import { useLeaveBalance } from '@/hooks/useLeaveManagement';
 import { useDocumentDrive } from '@/hooks/useDocumentDrive';
 import { CurrentSession, ModalState, DocumentCategoriesProps, DocumentGridProps } from '@/types';
@@ -130,7 +129,9 @@ export default function MyPortal() {
   const { data: userData, isLoading: userLoading, error: userError } = useUser(userId || '');
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
-  const { data: myRequestsData, isLoading: requestsLoading } = useHRRequests({ status: 'pending', limit: 5 });
+  // HR requests now handled in dedicated HRManagementPage - show placeholder
+  const myRequestsData: any[] = [];
+  const requestsLoading = false;
   const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
   const { documents, isLoading: documentsLoading } = useDocumentDrive();
   
@@ -150,8 +151,8 @@ export default function MyPortal() {
   const [isOnBreak, setIsOnBreak] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
-  // Extract requests from response using typed helper
-  const myRequests = extractHRRequests(myRequestsData);
+  // HR requests now managed in HRManagementPage
+  const myRequests: any[] = [];
   
   // Loading states
   const isLoading = userLoading || leaveLoading || notificationsLoading || requestsLoading;
@@ -793,24 +794,44 @@ export default function MyPortal() {
                   )}
                 </div>
 
-                {/* HR Request Modal */}
+                {/* HR Request Modal - Now redirects to dedicated HR Management page */}
                 <Dialog 
                   open={hrRequestModal.open} 
                   onOpenChange={(open) => setHrRequestModal(open ? { open, data: {} } : { open: false, data: null })}
                 >
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Nuova Richiesta HR</DialogTitle>
+                      <DialogTitle>Sistema HR Dedicato</DialogTitle>
                       <DialogDescription>
-                        Compila il modulo per inviare una nuova richiesta
+                        Le richieste HR sono ora gestite in una sezione dedicata con workflow completi
                       </DialogDescription>
                     </DialogHeader>
-                    {hrRequestModal.open && hrRequestModal.data && (
-                      <HRRequestWizard
-                        onSuccess={handleHRRequestSuccess}
-                        onCancel={() => setHrRequestModal({ open: false, data: null })}
-                      />
-                    )}
+                    <div className="space-y-4">
+                      <p>Accedi al nuovo sistema HR per:</p>
+                      <ul className="list-disc pl-6 space-y-2">
+                        <li>Creare richieste con approvazione automatica</li>
+                        <li>Monitorare lo stato dei workflow</li>
+                        <li>Gestire documenti e turni</li>
+                        <li>Visualizzare analytics avanzate</li>
+                      </ul>
+                      <div className="flex gap-3 pt-4">
+                        <Button 
+                          onClick={() => {
+                            setHrRequestModal({ open: false, data: null });
+                            window.location.href = `/staging/hr-management`;
+                          }}
+                          className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
+                        >
+                          Vai al Sistema HR
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => setHrRequestModal({ open: false, data: null })}
+                        >
+                          Annulla
+                        </Button>
+                      </div>
+                    </div>
                   </DialogContent>
                 </Dialog>
               </div>
