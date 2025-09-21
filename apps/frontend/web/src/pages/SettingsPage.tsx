@@ -6,12 +6,8 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import AvatarSelector from '../components/AvatarSelector';
 import HierarchyTreeView from '@/components/HierarchyTreeView';
 import HierarchyNodeDialog from '@/components/HierarchyNodeDialog';
-import WorkflowConfigurator from '@/components/WorkflowConfigurator';
-import {
-  HierarchyManagementTab,
-  WorkflowConfigurationTab,
-  TeamsGroupsTab
-} from '../components/WorkflowManagement';
+// WorkflowConfigurator removed - replaced with new workflow management system
+// WorkflowManagement components removed - replaced with new system
 import {
   StandardEmailField,
   StandardCityField,
@@ -1250,7 +1246,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'Entity Management', label: 'Entity Management', icon: Building2 },
-    { id: 'Hierarchy Management', label: 'Gestione Gerarchie', icon: Users },
+    { id: 'Hierarchy Management', label: 'Workflow & Teams', icon: Users },
     { id: 'AI Assistant', label: 'AI Assistant', icon: Cpu },
     { id: 'Channel Settings', label: 'Channel Settings', icon: Globe },
     { id: 'System Settings', label: 'System Settings', icon: Server },
@@ -1941,7 +1937,7 @@ export default function SettingsPage() {
               padding: '6px'
             }}>
               {[
-                { id: 'hierarchy', label: 'Struttura Gerarchica', icon: Users },
+                { id: 'hierarchy', label: 'Team Structure', icon: Users },
                 { id: 'workflows', label: 'Configurazione Workflow', icon: Settings },
                 { id: 'teams', label: 'Team & Gruppi', icon: Shield }
               ].map(tab => {
@@ -1991,21 +1987,93 @@ export default function SettingsPage() {
 
             {/* Rendering Condizionale per Sotto-Tab */}
             {workflowSubTab === 'hierarchy' && (
-              <HierarchyManagementTab 
-                selectedService={selectedWorkflowService}
-              />
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#6b7280'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #059669, #047857)',
+                  borderRadius: '12px',
+                  width: '60px',
+                  height: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <span style={{ fontSize: '24px', color: 'white' }}>🏗️</span>
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                  Team Management in Costruzione
+                </h3>
+                <p style={{ fontSize: '14px' }}>
+                  Il nuovo sistema di gestione team e gerarchie sarà disponibile nel sistema unificato.
+                </p>
+              </div>
             )}
 
             {workflowSubTab === 'workflows' && (
-              <WorkflowConfigurationTab 
-                selectedService={selectedWorkflowService}
-              />
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#6b7280'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #FF6900, #FF6900cc)',
+                  borderRadius: '12px',
+                  width: '60px',
+                  height: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <span style={{ fontSize: '24px', color: 'white' }}>⚙️</span>
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                  Visual Workflow Builder in Costruzione
+                </h3>
+                <p style={{ fontSize: '14px' }}>
+                  Il nuovo builder visuale per workflow sarà disponibile nella pagina dedicata.
+                </p>
+              </div>
             )}
 
             {workflowSubTab === 'teams' && (
-              <TeamsGroupsTab 
-                selectedService={selectedWorkflowService}
-              />
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#6b7280'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                  borderRadius: '12px',
+                  width: '60px',
+                  height: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <span style={{ fontSize: '24px', color: 'white' }}>👥</span>
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                  Team & Groups in Costruzione
+                </h3>
+                <p style={{ fontSize: '14px' }}>
+                  La nuova gestione team ibridi (utenti + ruoli) sarà disponibile nel sistema unificato.
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -4832,7 +4900,7 @@ export default function SettingsPage() {
             color: '#111827',
             margin: '0 0 4px 0'
           }}>
-            Sistema Gerarchico Universale
+            Sistema Workflow & Teams
           </h2>
           <p style={{
             fontSize: '14px',
@@ -5082,34 +5150,39 @@ export default function SettingsPage() {
                     Caricamento workflow...
                   </div>
                 ) : (
-                  <WorkflowConfigurator
-                    serviceType={selectedService}
-                    serviceName={availableServices.find(s => s.id === selectedService)?.name || ''}
-                    serviceColor={availableServices.find(s => s.id === selectedService)?.color || '#FF6900'}
-                    workflows={workflowsData || []}
-                    availableRoles={rolesData || []}
-                    availablePositions={hierarchyData?.map((node: any) => ({
-                      id: node.id,
-                      name: node.name
-                    })) || []}
-                    onSave={async (workflow) => {
-                      await apiRequest('/api/approval-workflows', {
-                        method: workflow.id ? 'PATCH' : 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          ...workflow,
-                          serviceType: selectedService
-                        })
-                      });
-                      await queryClient.invalidateQueries({ queryKey: ['/api/approval-workflows', selectedService] });
-                    }}
-                    onDelete={async (workflowId) => {
-                      await apiRequest(`/api/approval-workflows/${workflowId}`, {
-                        method: 'DELETE'
-                      });
-                      await queryClient.invalidateQueries({ queryKey: ['/api/approval-workflows', selectedService] });
-                    }}
-                  />
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    <div style={{ 
+                      background: 'linear-gradient(135deg, #FF6900, #FF6900cc)',
+                      borderRadius: '12px',
+                      width: '60px',
+                      height: '60px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 16px'
+                    }}>
+                      <span style={{ fontSize: '24px', color: 'white' }}>🔄</span>
+                    </div>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                      Nuovo Sistema Workflow in Costruzione
+                    </h3>
+                    <p style={{ fontSize: '14px', margin: '0 0 16px' }}>
+                      Il sistema di gestione workflow è in fase di aggiornamento con una nuova architettura enterprise.
+                    </p>
+                    <div style={{ 
+                      background: 'rgba(255, 105, 0, 0.1)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '12px',
+                      border: '1px solid rgba(255, 105, 0, 0.2)'
+                    }}>
+                      <strong>Nuove Features:</strong><br/>
+                      • Visual Workflow Builder<br/>
+                      • Team-based Management<br/>
+                      • RBAC Integration<br/>
+                      • Event-driven Architecture
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -8867,7 +8940,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Modal Nuovo Utente con Selezione Gerarchica */}
+      {/* Modal Nuovo Utente con Selezione Team */}
       {userModal.open && (
         <div style={{
           position: 'fixed',
