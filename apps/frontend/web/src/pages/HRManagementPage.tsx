@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -87,6 +88,9 @@ const HRManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees'>('dashboard');
   const [currentModule, setCurrentModule] = useState('hr');
   
+  // ✅ NEW: HR Authentication Readiness Hook
+  const { enabled: hrQueriesEnabled, loading: hrAuthLoading, attempts, debugInfo } = useHRQueryReadiness();
+  
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showShiftModal, setShowShiftModal] = useState(false);
@@ -102,27 +106,30 @@ const HRManagementPage: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // HR Requests data
+  // ✅ UPDATED: HR Requests data with authentication readiness
   const { data: hrRequests = [], isLoading: loadingRequests } = useQuery<HRRequest[]>({
     queryKey: ['/api/hr/requests'],
+    enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
 
-  // Employees data
+  // ✅ UPDATED: Employees data (non-HR endpoint, no dependency needed)
   const { data: employees = [], isLoading: loadingEmployees } = useQuery<Employee[]>({
     queryKey: ['/api/users'],
     staleTime: 5 * 60 * 1000,
   });
 
-  // Shifts data
+  // ✅ UPDATED: Shifts data with authentication readiness  
   const { data: shifts = [], isLoading: loadingShifts } = useQuery<any[]>({
     queryKey: ['/api/hr/shifts'],
+    enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
 
-  // Documents data
+  // ✅ UPDATED: Documents data with authentication readiness
   const { data: documents = [], isLoading: loadingDocuments } = useQuery<HRDocument[]>({
     queryKey: ['/api/hr/documents'],
+    enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 5 * 60 * 1000,
   });
 
