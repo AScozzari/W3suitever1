@@ -1305,7 +1305,52 @@ const WorkflowManagementPage: React.FC = () => {
   );
 
   // Visual Workflow Builder Component
-  const WorkflowBuilderView = () => (
+  const WorkflowBuilderView = () => {
+    const reactFlowInstance = useReactFlow(); // Get React Flow instance for coordinate conversion
+
+    // Handle drag over event - allows dropping
+    const handleDragOver = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    }, []);
+
+    // Handle drop event - creates new node at drop position
+    const handleDrop = useCallback(
+      (event: React.DragEvent) => {
+        event.preventDefault();
+
+        const type = event.dataTransfer.getData('application/reactflow');
+        
+        if (typeof type === 'undefined' || !type) {
+          return;
+        }
+
+        // Get the position where the element was dropped
+        const position = reactFlowInstance.project({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        const newNode = {
+          id: `${type}_${Date.now()}`,
+          type,
+          position,
+          data: { label: `${type} node` },
+        };
+
+        // Add the new node to the flow
+        setNodes((nds) => nds.concat(newNode));
+
+        // Show success feedback
+        toast({
+          title: 'Node added',
+          description: `Added ${type} node to the workflow`,
+        });
+      },
+      [reactFlowInstance, setNodes, toast]
+    );
+
+    return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -2199,7 +2244,8 @@ const WorkflowManagementPage: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // Team Management View
   const TeamManagementView = () => (
