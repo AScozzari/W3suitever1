@@ -2104,11 +2104,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await setTenantContext(tenantId);
       
-      let query = db.select().from(workflowActions).where(eq(workflowActions.tenantId, tenantId));
+      let whereConditions = [eq(workflowActions.tenantId, tenantId)];
       
       if (category) {
-        query = query.where(eq(workflowActions.category, category));
+        whereConditions.push(eq(workflowActions.category, category));
       }
+      
+      const query = db.select().from(workflowActions).where(and(...whereConditions));
       
       const actions = await query;
       res.json(actions);
@@ -2152,19 +2154,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await setTenantContext(tenantId);
       
-      let query = db.select().from(workflowTemplates)
-        .where(and(
-          eq(workflowTemplates.tenantId, tenantId),
-          eq(workflowTemplates.isActive, true)
-        ));
+      let whereConditions = [
+        eq(workflowTemplates.tenantId, tenantId),
+        eq(workflowTemplates.isActive, true)
+      ];
       
       if (category) {
-        query = query.where(eq(workflowTemplates.category, category));
+        whereConditions.push(eq(workflowTemplates.category, category));
       }
       
       if (templateType) {
-        query = query.where(eq(workflowTemplates.templateType, templateType));
+        whereConditions.push(eq(workflowTemplates.templateType, templateType));
       }
+      
+      const query = db.select().from(workflowTemplates).where(and(...whereConditions));
       
       const templates = await query;
       res.json(templates);
@@ -2292,16 +2295,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await setTenantContext(tenantId);
       
-      let query = db.select().from(teamWorkflowAssignments)
-        .where(eq(teamWorkflowAssignments.tenantId, tenantId));
+      let whereConditions = [eq(teamWorkflowAssignments.tenantId, tenantId)];
       
       if (teamId) {
-        query = query.where(eq(teamWorkflowAssignments.teamId, teamId));
+        whereConditions.push(eq(teamWorkflowAssignments.teamId, teamId));
       }
       
       if (workflowTemplateId) {
-        query = query.where(eq(teamWorkflowAssignments.workflowTemplateId, workflowTemplateId));
+        whereConditions.push(eq(teamWorkflowAssignments.templateId, workflowTemplateId));
       }
+      
+      const query = db.select().from(teamWorkflowAssignments).where(and(...whereConditions));
       
       const assignments = await query;
       res.json(assignments);
@@ -2347,16 +2351,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await setTenantContext(tenantId);
       
-      let query = db.select().from(workflowInstances)
-        .where(eq(workflowInstances.tenantId, tenantId));
+      let whereConditions = [eq(workflowInstances.tenantId, tenantId)];
       
       if (status) {
-        query = query.where(eq(workflowInstances.currentStatus, status));
+        whereConditions.push(eq(workflowInstances.currentStatus, status));
       }
       
       if (templateId) {
-        query = query.where(eq(workflowInstances.templateId, templateId));
+        whereConditions.push(eq(workflowInstances.templateId, templateId));
       }
+      
+      const query = db.select().from(workflowInstances).where(and(...whereConditions));
       
       const instances = await query.orderBy(desc(workflowInstances.startedAt));
       res.json(instances);
@@ -2402,20 +2407,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await setTenantContext(tenantId);
       
-      let query = db.select().from(workflowExecutions)
-        .where(eq(workflowExecutions.tenantId, tenantId));
+      let whereConditions = [eq(workflowExecutions.tenantId, tenantId)];
       
       if (instanceId) {
-        query = query.where(eq(workflowExecutions.instanceId, instanceId));
+        whereConditions.push(eq(workflowExecutions.instanceId, instanceId));
       }
       
       if (status) {
-        query = query.where(eq(workflowExecutions.status, status));
+        whereConditions.push(eq(workflowExecutions.status, status));
       }
       
       if (executorId) {
-        query = query.where(eq(workflowExecutions.executorId, executorId));
+        whereConditions.push(eq(workflowExecutions.executorId, executorId));
       }
+      
+      const query = db.select().from(workflowExecutions).where(and(...whereConditions));
       
       const executions = await query.orderBy(desc(workflowExecutions.startedAt));
       res.json(executions);
