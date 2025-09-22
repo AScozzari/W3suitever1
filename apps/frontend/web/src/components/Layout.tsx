@@ -17,7 +17,7 @@ import {
 import { useLocation } from 'wouter';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
-import LeftSidebar from './templates/LeftSidebar';
+import CompactCalendar from './Sidebar/CompactCalendar';
 
 // Palette colori W3 Suite - Coerente e Professionale
 const COLORS = {
@@ -1010,15 +1010,145 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             </button>
           ) : null}
 
-          {/* LeftSidebar Component with CompactCalendar */}
-          <LeftSidebar 
-            collapsed={leftSidebarCollapsed}
-            onToggleCollapse={setLeftSidebarCollapsed}
-            isMobile={isMobile}
-            isTablet={isTablet}
-            currentModule={currentModule}
-            onModuleChange={setCurrentModule}
-          />
+          {/* Navigation menu originale */}
+          <nav style={{
+            padding: isMobile ? '8px' : (leftSidebarCollapsed ? '16px 8px' : '24px 16px'),
+            display: 'flex',
+            flexDirection: isMobile ? 'row' : 'column',
+            gap: isMobile ? '0' : '8px',
+            overflowX: isMobile ? 'auto' : 'visible'
+          }}>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              // Controlla se il menu è attivo considerando il tenant nel path
+              const currentPath = window.location.pathname;
+              const pathSegments = currentPath.split('/').filter(Boolean);
+              const isSettingsPath = pathSegments[1] === 'settings';
+              const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
+              
+              const isEmployeePath = pathSegments[1] === 'employee';
+              const isHRManagementPath = pathSegments[1] === 'hr-management';
+              
+              const isActive = item.id === 'impostazioni' 
+                ? isSettingsPath
+                : item.id === 'dashboard'
+                ? isDashboardPath
+                : item.id === 'employee'
+                ? isEmployeePath
+                : item.id === 'hr-management'
+                ? isHRManagementPath
+                : currentModule === item.id;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    // Ottieni il tenant corrente dal path
+                    const currentPath = window.location.pathname;
+                    const tenant = currentPath.split('/')[1] || 'staging';
+                    
+                    if (item.id === 'impostazioni') {
+                      navigate(`/${tenant}/settings`);
+                    } else if (item.id === 'dashboard') {
+                      navigate(`/${tenant}`);
+                    } else if (item.id === 'employee') {
+                      navigate(`/${tenant}/portale`);
+                    } else if (item.id === 'hr-management') {
+                      navigate(`/${tenant}/hr-management`);
+                    } else {
+                      setCurrentModule(item.id);
+                    }
+                  }}
+                  style={{
+                    width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
+                    height: leftSidebarCollapsed && !isMobile ? '40px' : 'auto',
+                    minWidth: isMobile ? '80px' : 'auto',
+                    padding: isMobile ? '12px' : (leftSidebarCollapsed ? '12px' : '12px 16px'),
+                    marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
+                    background: isActive 
+                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
+                      : 'transparent',
+                    backdropFilter: 'none',
+                    WebkitBackdropFilter: 'none',
+                    border: 'none',
+                    borderRadius: leftSidebarCollapsed ? '12px' : '8px',
+                    color: isActive ? 'white' : '#374151',
+                    fontSize: isMobile ? '12px' : '14px',
+                    fontWeight: isActive ? 600 : 500,
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? '4px' : (leftSidebarCollapsed ? '0' : '12px'),
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: leftSidebarCollapsed ? 'center' : 'left',
+                    justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start',
+                    boxShadow: 'none'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.transform = leftSidebarCollapsed ? 'scale(1.1)' : 'translateX(4px)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.transform = 'scale(1) translateX(0)';
+                    }
+                  }}
+                >
+                  {/* Icon con effetti speciali per dashboard */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative'
+                  }}>
+                    <Icon size={leftSidebarCollapsed && !isMobile ? 18 : (isMobile ? 16 : 20)} />
+                    {isActive && (
+                      <>
+                        {/* Glow effect base */}
+                        <div style={{
+                          position: 'absolute',
+                          inset: '-6px',
+                          background: 'rgba(255, 105, 0, 0.4)',
+                          borderRadius: '50%',
+                          filter: 'blur(12px)',
+                          zIndex: -1,
+                          animation: leftSidebarCollapsed ? 'none' : 'dashboardPulse 2s ease-in-out infinite'
+                        }} />
+                        {/* Enhanced glow quando aperta */}
+                        {!leftSidebarCollapsed && (
+                          <div style={{
+                            position: 'absolute',
+                            inset: '-10px',
+                            background: 'rgba(255, 105, 0, 0.2)',
+                            borderRadius: '50%',
+                            filter: 'blur(20px)',
+                            zIndex: -2,
+                            animation: 'dashboardGlow 3s ease-in-out infinite alternate'
+                          }} />
+                        )}
+                      </>
+                    )}
+                  </div>
+                  {(!leftSidebarCollapsed || isMobile) && <span>{item.label}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Compact Calendar - aggiungo alla fine della sidebar */}
+          {!isMobile && (
+            <div style={{
+              marginTop: 'auto',
+              padding: leftSidebarCollapsed ? '8px' : '16px',
+              borderTop: '1px solid hsla(255, 255, 255, 0.12)'
+            }}>
+              <CompactCalendar />
+            </div>
+          )}
         </aside>
 
         {/* Main Content - IDENTICO margini WindTreDashboard */}
