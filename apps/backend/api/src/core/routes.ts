@@ -2162,52 +2162,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Get workflow templates by category
-  app.get('/api/workflow-templates', tenantMiddleware, async (req: any, res) => {
-    try {
-      await setTenantContext(tenantId);
-      
-      const teamsData = await db.select().from(teams)
-        .where(and(
-          eq(teams.tenantId, tenantId),
-          eq(teams.isActive, true)
-        ));
-      
-      res.json(teamsData);
-    } catch (error) {
-      handleApiError(error, res, 'recupero teams');
-    }
-  });
-
-  // Create team
-  app.post('/api/teams', tenantMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
-      const validatedData = insertTeamSchema.parse({
-        ...req.body,
-        tenantId,
-        createdBy: userId
-      });
-
-      await setTenantContext(tenantId);
-      const result = await db.insert(teams).values(validatedData).returning();
-      
-      res.status(201).json(result[0]);
-    } catch (error) {
-      handleApiError(error, res, 'creazione team');
-    }
-  });
-
-  // Update team
-  app.put('/api/teams/:id', tenantMiddleware, async (req: any, res) => {
-    try {
-      const teamId = validateUUIDParam(req.params.id, 'Team ID');
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
       
