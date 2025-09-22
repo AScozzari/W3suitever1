@@ -3108,10 +3108,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conditions.push(eq(hrDocuments.month, parseInt(req.query.month)));
       }
       
-      // Filter by source (employee/hr/system)
-      if (req.query.source) {
-        conditions.push(eq(hrDocuments.source, req.query.source));
-      }
+      // Filter by source (employee/hr/system) - TODO: Re-enable after DB migration
+      // if (req.query.source) {
+      //   conditions.push(eq(hrDocuments.source, req.query.source));
+      // }
       
       const documents = await db.select()
         .from(hrDocuments)

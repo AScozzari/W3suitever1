@@ -1,4 +1,4 @@
-import { FileText, FolderOpen, Clock, Shield, Archive, Trash2, Star, Share2, Calendar } from 'lucide-react';
+import { FileText, FolderOpen, Clock, Shield, Archive, Trash2, Star, Share2, Calendar, User, Users, Settings } from 'lucide-react';
 
 interface Category {
   id: string;
@@ -15,13 +15,15 @@ interface DocumentCategoriesProps {
   onSelectCategory: (categoryId: string | null) => void;
   onCategorySelect?: (category: any) => void; // Added missing prop
   documentCounts: Record<string, number>;
+  sourceStats?: Record<string, number>; // New prop for source statistics
 }
 
 export default function DocumentCategories({
   categories,
   selectedCategory,
   onSelectCategory,
-  documentCounts
+  documentCounts,
+  sourceStats = {}
 }: DocumentCategoriesProps) {
   const defaultCategories: Category[] = [
     {
@@ -137,6 +139,37 @@ export default function DocumentCategories({
     }
   ];
 
+  // Source filters for document origin tracking
+  const sourceFilters = [
+    {
+      id: 'source:employee',
+      name: 'I Miei Documenti',
+      icon: User,
+      color: 'text-blue-600',
+      gradient: 'from-blue-400 to-blue-600',
+      count: sourceStats['employee'] || 0,
+      description: 'Documenti caricati da te'
+    },
+    {
+      id: 'source:hr',
+      name: 'Da HR',
+      icon: Users,
+      color: 'text-orange-600',
+      gradient: 'from-orange-400 to-orange-600',
+      count: sourceStats['hr'] || 0,
+      description: 'Documenti assegnati da HR'
+    },
+    {
+      id: 'source:system',
+      name: 'Di Sistema',
+      icon: Settings,
+      color: 'text-purple-600',
+      gradient: 'from-purple-400 to-purple-600',
+      count: sourceStats['system'] || 0,
+      description: 'Documenti generati automaticamente'
+    }
+  ];
+
   const getTotalCount = () => {
     return Object.values(documentCounts).reduce((sum, count) => sum + count, 0);
   };
@@ -175,6 +208,47 @@ export default function DocumentCategories({
                 {count > 0 && (
                   <span className={`text-sm ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
                     {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Source Filters - Document Origin */}
+      <div className="bg-white/80 backdrop-blur-lg rounded-xl p-4">
+        <h3 className="font-medium text-gray-700 mb-3">Origine Documenti</h3>
+        <div className="space-y-1">
+          {sourceFilters.map((source) => {
+            const isSelected = selectedCategory === source.id;
+            
+            return (
+              <button
+                key={source.id}
+                onClick={() => onSelectCategory(source.id)}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
+                  isSelected 
+                    ? 'bg-gradient-to-r ' + source.gradient + ' text-white shadow-md'
+                    : 'hover:bg-gray-50'
+                }`}
+                data-testid={`button-source-${source.id}`}
+                title={source.description}
+              >
+                <div className="flex items-center gap-3">
+                  <source.icon className={`h-5 w-5 ${isSelected ? 'text-white' : source.color}`} />
+                  <div className="text-left">
+                    <span className={`font-medium ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                      {source.name}
+                    </span>
+                    <div className={`text-xs ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                      {source.description}
+                    </div>
+                  </div>
+                </div>
+                {source.count > 0 && (
+                  <span className={`text-sm ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                    {source.count}
                   </span>
                 )}
               </button>
