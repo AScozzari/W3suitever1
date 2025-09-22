@@ -297,78 +297,29 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     }
   ]);
   
-  // Eventi calendario dal repository GitHub
-  const [eventiCalendario, setEventiCalendario] = useState(() => {
-    const oggi = new Date();
-    return [
-      {
-        id: 1,
-        titolo: 'Riunione Team Vendite Q1',
-        ora: '14:30',
-        dataCompleta: new Date(oggi.getTime() + 1 * 24 * 60 * 60 * 1000),
-        tipo: 'meeting',
-        partecipanti: 8,
-        location: 'Sala Conferenze A',
-        colore: 'blue',
-        descrizione: 'Revisione obiettivi Q1 e pianificazione strategie commerciali'
-      },
-      {
-        id: 2,
-        titolo: 'Presentazione Risultati Trimestrali',
-        ora: '16:00',
-        dataCompleta: new Date(oggi.getTime() + 1 * 24 * 60 * 60 * 1000),
-        tipo: 'presentation',
-        partecipanti: 15,
-        location: 'Auditorium Principale',
-        colore: 'purple',
-        descrizione: 'Presentazione KPI e risultati del trimestre agli stakeholder'
-      },
-      {
-        id: 3,
-        titolo: 'Training Nuovo Personale Vendite',
-        ora: '09:00',
-        dataCompleta: new Date(oggi.getTime() + 2 * 24 * 60 * 60 * 1000),
-        tipo: 'training',
-        partecipanti: 6,
-        location: 'Aula Formazione B',
-        colore: 'green',
-        descrizione: 'Formazione su prodotti WindTre Business e tecniche di vendita'
-      },
-      {
-        id: 4,
-        titolo: 'Demo Enterprise per Fortune 500',
-        ora: '11:30',
-        dataCompleta: new Date(oggi.getTime() + 2 * 24 * 60 * 60 * 1000),
-        tipo: 'client',
-        partecipanti: 5,
-        location: 'Ufficio Direzione',
-        colore: 'orange',
-        descrizione: 'Presentazione soluzioni enterprise per cliente multinazionale'
-      },
-      {
-        id: 5,
-        titolo: 'Revisione Budget Marketing',
-        ora: '15:00',
-        dataCompleta: new Date(oggi.getTime() + 3 * 24 * 60 * 60 * 1000),
-        tipo: 'meeting',
-        partecipanti: 4,
-        location: 'Sala Riunioni C',
-        colore: 'red',
-        descrizione: 'Analisi ROI campagne pubblicitarie e allocazione budget 2025'
-      },
-      {
-        id: 6,
-        titolo: 'Call con Cliente Premium',
-        ora: '10:00',
-        dataCompleta: new Date(oggi.getTime() + 4 * 24 * 60 * 60 * 1000),
-        tipo: 'client',
-        partecipanti: 3,
-        location: 'Online - Teams',
-        colore: 'blue',
-        descrizione: 'Follow-up contratto renewal e upselling servizi aggiuntivi'
-      }
-    ];
+  // ✅ EVENTI CALENDARIO REALI DAL BACKEND HR
+  const { data: eventiCalendarioRaw = [], isLoading: calendarLoading, error: calendarError } = useQuery({
+    queryKey: ['/api/hr/calendar/events'],
+    staleTime: 5 * 60 * 1000, // 5 minuti cache
+    refetchInterval: 30 * 1000, // Refresh ogni 30 secondi per real-time
   });
+
+  // 🔄 MAPPING: Database → Placeholder Structure 
+  const eventiCalendario = React.useMemo(() => {
+    if (!eventiCalendarioRaw.length) return [];
+    
+    return eventiCalendarioRaw.map((event: any) => ({
+      id: event.id,
+      titolo: event.title,
+      ora: new Date(event.startDate).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+      dataCompleta: new Date(event.startDate),
+      tipo: event.type,
+      partecipanti: Array.isArray(event.attendees) ? event.attendees.length : 0,
+      location: event.location || 'Sede Principale',
+      colore: event.color || (event.type === 'meeting' ? 'blue' : event.type === 'training' ? 'green' : 'purple'),
+      descrizione: event.description || 'Nessuna descrizione disponibile'
+    }));
+  }, [eventiCalendarioRaw]);
   
   // Funzioni per gestire tasks
   const toggleTaskComplete = (taskId: number) => {
@@ -380,7 +331,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   // Contatori per stats
   const tasksOggi = tasks.filter(task => task.scadenza.includes('Oggi')).length;
   const tasksCompletate = tasks.filter(task => task.completato).length;
-  const eventiTotali = eventiCalendario.length;
+  // ✅ EVENTI TOTALI DINAMICI DAL BACKEND (invece di .length statico)
+  const eventiTotali = calendarLoading ? 0 : eventiCalendario.length;
 
   useEffect(() => {
     const checkDevice = () => {
@@ -1857,13 +1809,27 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         margin: 0
                       }}>Calendario</h4>
                       <span style={{
-                        background: '#7B2CBF',
+                        background: calendarLoading ? '#9ca3af' : (calendarError ? '#ef4444' : '#7B2CBF'),
                         color: 'white',
                         fontSize: '10px',
                         fontWeight: 600,
                         padding: '2px 8px',
-                        borderRadius: '10px'
-                      }}>{eventiTotali} eventi</span>
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {calendarLoading ? (
+                          <>
+                            <Clock size={10} style={{ animation: 'spin 1s linear infinite' }} />
+                            Caricamento...
+                          </>
+                        ) : calendarError ? (
+                          <>⚠️ Errore</>
+                        ) : (
+                          <>{eventiTotali} eventi</>
+                        )}
+                      </span>
                     </div>
 
                     {/* Mini calendario con giorni selezionabili */}
@@ -1971,7 +1937,48 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         flexDirection: 'column',
                         gap: '6px'
                       }}>
-                        {eventiCalendario.slice(0, 3).map((evento) => (
+                        {/* ✅ LOADING STATE */}
+                        {calendarLoading ? (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '20px',
+                            color: '#6b7280',
+                            fontSize: '11px'
+                          }}>
+                            <Clock size={14} style={{ marginRight: '6px', animation: 'spin 1s linear infinite' }} />
+                            Caricamento eventi...
+                          </div>
+                        ) : calendarError ? (
+                          /* ❌ ERROR STATE */
+                          <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            color: '#ef4444',
+                            fontSize: '11px',
+                            textAlign: 'center'
+                          }}>
+                            ⚠️ Errore nel caricamento eventi
+                          </div>
+                        ) : eventiCalendario.length === 0 ? (
+                          /* 📭 EMPTY STATE */
+                          <div style={{
+                            background: 'rgba(156, 163, 175, 0.1)',
+                            border: '1px solid rgba(156, 163, 175, 0.2)',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            color: '#6b7280',
+                            fontSize: '11px',
+                            textAlign: 'center'
+                          }}>
+                            📅 Nessun evento programmato
+                          </div>
+                        ) : (
+                          /* ✅ EVENTI REALI DAL BACKEND */
+                          eventiCalendario.slice(0, 3).map((evento) => (
                           <div key={evento.id} style={{
                             background: 'rgba(255, 255, 255, 0.03)',
                             borderRadius: '8px',
