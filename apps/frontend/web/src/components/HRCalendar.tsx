@@ -137,8 +137,11 @@ export default function HRCalendar({ className }: HRCalendarProps) {
   });
 
   // ✅ FASE 1.2: Trasforma eventi unificati dal backend in formato FullCalendar
-  const calendarEvents = useMemo(() => 
-    (backendEvents as any[]).map((event: any) => ({
+  const calendarEvents = useMemo(() => {
+    console.log('🔍 [CALENDAR-DEBUG] backendEvents received:', backendEvents?.length || 0, 'events');
+    console.log('🔍 [CALENDAR-DEBUG] Sample event:', backendEvents?.[0]);
+    
+    const mapped = (backendEvents as any[]).map((event: any) => ({
       id: event.id,
       title: event.title,
       start: event.startDate,
@@ -153,8 +156,12 @@ export default function HRCalendar({ className }: HRCalendarProps) {
         location: event.location,
         metadata: event.metadata,
       },
-    })),
-  [backendEvents]);
+    }));
+    
+    console.log('🔍 [CALENDAR-DEBUG] Mapped calendar events:', mapped.length);
+    console.log('🔍 [CALENDAR-DEBUG] Sample mapped event:', mapped[0]);
+    return mapped;
+  }, [backendEvents]);
 
   // Risorse per le viste resource (memoizzato per performance)
   const calendarResources = useMemo(() => (employees as any[]).map((emp: any) => ({

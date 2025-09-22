@@ -309,9 +309,12 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
   // 🔄 MAPPING: Database → Placeholder Structure 
   const eventiCalendario = React.useMemo(() => {
+    console.log('🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received:', eventiCalendarioRaw?.length || 0, 'events');
+    console.log('🔍 [WORKSPACE-CALENDAR] Sample raw event:', eventiCalendarioRaw?.[0]);
+    
     if (!eventiCalendarioRaw.length) return [];
     
-    return eventiCalendarioRaw.map((event: any) => ({
+    const mapped = eventiCalendarioRaw.map((event: any) => ({
       id: event.id,
       titolo: event.title,
       ora: new Date(event.startDate).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
@@ -322,6 +325,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       colore: event.color || (event.type === 'meeting' ? 'blue' : event.type === 'training' ? 'green' : 'purple'),
       descrizione: event.description || 'Nessuna descrizione disponibile'
     }));
+    
+    console.log('🔍 [WORKSPACE-CALENDAR] Mapped events:', mapped.length);
+    console.log('🔍 [WORKSPACE-CALENDAR] Sample mapped event:', mapped[0]);
+    return mapped;
   }, [eventiCalendarioRaw]);
   
   // Funzioni per gestire tasks
