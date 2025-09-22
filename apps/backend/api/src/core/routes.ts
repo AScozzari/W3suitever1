@@ -3259,6 +3259,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uploadedBy: currentUserId // Track who actually uploaded
       }).returning();
       
+      // Send notification to target user about the new document
+      try {
+        await HRNotificationHelper.notifyDocumentPushed(
+          tenantId,
+          document[0].id,
+          document[0].title,
+          targetUserId,
+          currentUserId,
+          req.body.message // Optional message from HR
+        );
+      } catch (notificationError) {
+        // Log notification error but don't fail the document push
+        console.error('❌ Failed to send document push notification:', notificationError);
+      }
+
       res.status(201).json({
         document: document[0],
         message: 'Documento assegnato con successo all\'utente'

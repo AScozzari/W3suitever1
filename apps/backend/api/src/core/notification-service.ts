@@ -1777,4 +1777,78 @@ export class HRNotificationHelper {
       });
     }
   }
+
+  /**
+   * Send notification when HR pushes a document to a user
+   */
+  static async notifyDocumentPushed(
+    tenantId: string,
+    documentId: string,
+    documentTitle: string,
+    targetUserId: string,
+    pushedBy: string,
+    message?: string
+  ): Promise<void> {
+    try {
+      await setTenantContext(tenantId);
+      
+      // Get pusher details for notification context
+      const pusher = await db
+        .select({
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email
+        })
+        .from(users)
+        .where(eq(users.id, pushedBy))
+        .limit(1);
+
+      const pusherName = pusher.length > 0 
+        ? `${pusher[0].firstName} ${pusher[0].lastName}`.trim()
+        : 'HR';
+
+      const variables: NotificationVariables = {
+        requestId: documentId,
+        requestTitle: documentTitle,
+        requestType: 'document_push',
+        requestCategory: 'document',
+        requesterName: pusherName,
+        status: 'new',
+        priority: 'medium',
+        comments: message || undefined,
+        url: `/staging/documents?highlight=${documentId}` // Deep link to documents with highlight
+      };
+
+      await notificationService.sendTemplatedNotification(
+        'hr_document_pushed',
+        variables,
+        {
+          tenantId,
+          userIds: [targetUserId]
+        },
+        {
+          priority: 'medium',
+          inApp: true,
+          email: true
+        }
+      );
+
+      logger.info('📄 HR document push notification sent', {
+        documentId,
+        documentTitle,
+        targetUserId,
+        pushedBy: pusherName,
+        tenantId
+      });
+
+    } catch (error) {
+      logger.error('❌ Failed to send HR document push notification', {
+        error: error instanceof Error ? error.message : String(error),
+        tenantId,
+        documentId,
+        targetUserId,
+        pushedBy
+      });
+    }
+  }
 }
