@@ -180,22 +180,28 @@ export default function UnifiedClockingPanel({
   // Transform stores data into expected format
   const nearbyStores: NearbyStore[] = React.useMemo(() => {
     if (!storesData || !Array.isArray(storesData)) return [];
-    return storesData.map((store: any) => ({
-      id: store.id,
-      name: store.name || store.nomeNegozio || `Store ${store.id}`,
-      address: store.address || store.indirizzo || 'Indirizzo non disponibile',
-      latitude: store.latitude || 45.4642,
-      longitude: store.longitude || 9.1900,
-      distance: 100, // Default distance
-      inGeofence: true,
-      confidence: 95,
-      city: store.city || store.citta || 'N/A',
-      province: store.province || store.provincia || 'N/A',
-      radius: 200,
-      rank: 1,
-      isNearest: true,
-      wifiNetworks: []
-    }));
+    return storesData.map((store: any) => {
+      // Smart name resolution: usa address come nome se name/nomeNegozio sono null
+      const address = store.address || store.indirizzo || 'Indirizzo non disponibile';
+      const storeName = store.name || store.nomeNegozio || address || `Store ${store.id}`;
+      
+      return {
+        id: store.id,
+        name: storeName,
+        address: address,
+        latitude: store.latitude || 45.4642,
+        longitude: store.longitude || 9.1900,
+        distance: 100, // Default distance
+        inGeofence: true,
+        confidence: 95,
+        city: store.city || store.citta || 'N/A',
+        province: store.province || store.provincia || 'N/A',
+        radius: 200,
+        rank: 1,
+        isNearest: true,
+        wifiNetworks: []
+      };
+    });
   }, [storesData]);
 
   // Store selection state
@@ -433,16 +439,16 @@ export default function UnifiedClockingPanel({
                   <SelectTrigger className="w-full" data-testid="select-store">
                     <SelectValue placeholder="Seleziona punto vendita..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px]" side="bottom" align="start">
                     {nearbyStores.map((store) => (
                       <SelectItem key={store.id} value={store.id} data-testid={`option-store-${store.id}`}>
                         <div className="flex items-center justify-between w-full">
-                          <div>
-                            <div className="font-medium">{store.name}</div>
-                            <div className="text-xs text-gray-500">{store.address}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-gray-900 truncate">{store.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{store.address}</div>
                           </div>
                           {store.distance && store.distance <= 200 && (
-                            <Badge variant="default" className="ml-2 text-xs bg-green-600">GPS</Badge>
+                            <Badge variant="default" className="ml-2 text-xs bg-green-600 flex-shrink-0">GPS</Badge>
                           )}
                         </div>
                       </SelectItem>
