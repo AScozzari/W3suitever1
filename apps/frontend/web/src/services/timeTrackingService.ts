@@ -11,7 +11,7 @@ export interface TimeTrackingEntry extends TimeTracking {
 
 export interface ClockInData {
   storeId: string;
-  trackingMethod: 'badge' | 'nfc' | 'app' | 'gps' | 'manual' | 'biometric';
+  trackingMethod: 'badge' | 'nfc' | 'app' | 'gps' | 'manual' | 'biometric' | 'qr' | 'smart' | 'web';
   geoLocation?: {
     lat: number;
     lng: number;
@@ -34,7 +34,7 @@ export interface ClockInData {
 // Encrypted data interface for API communication
 export interface EncryptedClockInData {
   storeId: string;
-  trackingMethod: 'badge' | 'nfc' | 'app' | 'gps' | 'manual' | 'biometric';
+  trackingMethod: 'badge' | 'nfc' | 'app' | 'gps' | 'manual' | 'biometric' | 'qr' | 'smart' | 'web';
   shiftId?: string;
   wasOverride?: boolean;
   overrideReason?: string;
