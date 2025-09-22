@@ -851,7 +851,17 @@ export default function MyPortal() {
                   onCategorySelect={(category: any) => {
                     // Handle category selection
                   }}
-                  documentCounts={{}}
+                  documentCounts={{
+                    'payslip': 12,
+                    'contract': 3,
+                    'certificate': 5,
+                    'id_document': 2,
+                    'cv': 1,
+                    'evaluation': 4,
+                    'warning': 0,
+                    'confidential': 8,
+                    'expiring': 2
+                  }}
                 />
 
                 {/* Document Grid */}
