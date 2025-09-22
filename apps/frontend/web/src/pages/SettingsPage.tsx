@@ -503,6 +503,8 @@ export default function SettingsPage() {
   const [selectedEntity, setSelectedEntity] = useState('ragione-sociale');
   
   // Workflow Management State
+  const [workflowSubTab, setWorkflowSubTab] = useState('hierarchy');
+  const [selectedWorkflowService, setSelectedWorkflowService] = useState('hr');
 
   // Hierarchy Management State (moved from renderHierarchyManagement function)
   const [hierarchyView, setHierarchyView] = useState<'tree' | 'workflows' | 'permissions'>('tree');
@@ -1402,6 +1404,7 @@ export default function SettingsPage() {
             { id: 'punti-vendita', icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
             { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
+            { id: 'gestione-workflow', icon: Settings, label: 'Gestione Workflow', color: '#059669' },
             { id: 'fornitori', icon: Truck, label: 'Fornitori', color: '#10b981' }
           ].map((item, index) => {
             const Icon = item.icon;
@@ -1924,6 +1927,267 @@ export default function SettingsPage() {
       </div>
       )}
 
+      {/* Gestione Workflow Section */}
+      {selectedEntity === 'gestione-workflow' && (
+        <div style={{ marginBottom: '48px' }}>
+          {/* Header sezione */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '12px',
+            padding: '24px',
+            marginBottom: '32px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #059669, #047857)',
+                  borderRadius: '12px',
+                  padding: '10px',
+                  boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)'
+                }}>
+                  <Settings size={20} style={{ color: 'white' }} />
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: 0
+                  }}>
+                    Gestione Workflow Universali
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: '4px 0 0 0'
+                  }}>
+                    Configura gerarchie di approvazione per servizio e team collaborativi
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Selettore Servizio per Workflow */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              marginBottom: '24px'
+            }}>
+              {[
+                { id: 'hr', name: 'HR Management', icon: Users, color: '#ec4899' },
+                { id: 'finance', name: 'Finance', icon: DollarSign, color: '#8b5cf6' },
+                { id: 'operations', name: 'Operations', icon: Settings, color: '#f59e0b' },
+                { id: 'it', name: 'IT Support', icon: Server, color: '#3b82f6' },
+                { id: 'sales', name: 'Sales', icon: Target, color: '#10b981' }
+              ].map(service => {
+                const Icon = service.icon;
+                return (
+                  <button
+                    key={service.id}
+                    onClick={() => setSelectedWorkflowService(service.id)}
+                    style={{
+                      padding: '16px',
+                      background: selectedWorkflowService === service.id 
+                        ? `linear-gradient(135deg, ${service.color}20, ${service.color}10)`
+                        : 'rgba(255, 255, 255, 0.05)',
+                      border: selectedWorkflowService === service.id 
+                        ? `2px solid ${service.color}`
+                        : '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: selectedWorkflowService === service.id ? '#111827' : '#374151',
+                      fontSize: '14px',
+                      fontWeight: selectedWorkflowService === service.id ? '600' : '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseOver={(e) => {
+                      if (selectedWorkflowService !== service.id) {
+                        e.currentTarget.style.background = `${service.color}15`;
+                        e.currentTarget.style.borderColor = `${service.color}30`;
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (selectedWorkflowService !== service.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
+                    }}
+                    data-testid={`workflow-service-${service.id}`}
+                  >
+                    <Icon size={20} style={{ color: service.color }} />
+                    {service.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tab per Hierarchy e Workflow */}
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginBottom: '24px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '12px',
+              padding: '6px'
+            }}>
+              {[
+                { id: 'hierarchy', label: 'Team Structure', icon: Users },
+                { id: 'workflows', label: 'Configurazione Workflow', icon: Settings },
+                { id: 'teams', label: 'Team & Gruppi', icon: Shield }
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setWorkflowSubTab(tab.id)}
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      background: workflowSubTab === tab.id 
+                        ? 'rgba(255, 255, 255, 0.15)' 
+                        : 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: workflowSubTab === tab.id ? '#111827' : '#6b7280',
+                      fontSize: '14px',
+                      fontWeight: workflowSubTab === tab.id ? '600' : '500',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => {
+                      if (workflowSubTab !== tab.id) {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.color = '#111827';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (workflowSubTab !== tab.id) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#6b7280';
+                      }
+                    }}
+                    data-testid={`workflow-tab-${tab.id}`}
+                  >
+                    <Icon size={16} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Rendering Condizionale per Sotto-Tab */}
+            {workflowSubTab === 'hierarchy' && (
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#6b7280'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #059669, #047857)',
+                  borderRadius: '12px',
+                  width: '60px',
+                  height: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <span style={{ fontSize: '24px', color: 'white' }}>🏗️</span>
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                  Team Management in Costruzione
+                </h3>
+                <p style={{ fontSize: '14px' }}>
+                  Il nuovo sistema di gestione team e gerarchie sarà disponibile nel sistema unificato.
+                </p>
+              </div>
+            )}
+
+            {workflowSubTab === 'workflows' && (
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#6b7280'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #FF6900, #FF6900cc)',
+                  borderRadius: '12px',
+                  width: '60px',
+                  height: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <span style={{ fontSize: '24px', color: 'white' }}>⚙️</span>
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                  Visual Workflow Builder in Costruzione
+                </h3>
+                <p style={{ fontSize: '14px' }}>
+                  Il nuovo builder visuale per workflow sarà disponibile nella pagina dedicata.
+                </p>
+              </div>
+            )}
+
+            {workflowSubTab === 'teams' && (
+              <div style={{
+                textAlign: 'center',
+                padding: '40px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#6b7280'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                  borderRadius: '12px',
+                  width: '60px',
+                  height: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <span style={{ fontSize: '24px', color: 'white' }}>👥</span>
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                  Team & Groups in Costruzione
+                </h3>
+                <p style={{ fontSize: '14px' }}>
+                  La nuova gestione team ibridi (utenti + ruoli) sarà disponibile nel sistema unificato.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Fornitori Section */}
       {selectedEntity === 'fornitori' && (
         <div style={{ marginBottom: '48px' }}>
@@ -1957,82 +2221,186 @@ export default function SettingsPage() {
               transition: 'all 0.2s ease'
             }}
             onClick={() => setSupplierModal({ open: true, data: null })}
-            data-testid="button-create-supplier"
-            >
+            data-testid="button-create-supplier">
               <Plus size={16} />
               Nuovo Fornitore
             </button>
           </div>
 
-          {suppliersLoading ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: '#6b7280'
-            }}>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                border: '3px solid rgba(16, 185, 129, 0.2)',
-                borderTop: '3px solid #10b981',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }}></div>
-              <p style={{ marginLeft: '12px', fontSize: '14px' }}>Caricamento fornitori...</p>
-            </div>
-          ) : (
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid #e5e7eb'
+          }}>
+            {suppliersLoading ? (
+              <div style={{ 
+                padding: '48px 16px', 
+                textAlign: 'center', 
+                color: '#6b7280',
+                fontSize: '14px'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <RefreshCw size={32} style={{ color: '#d1d5db', animation: 'spin 1s linear infinite' }} />
+                  <div>Caricamento fornitori...</div>
+                </div>
+                <style>{`
+                  @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                `}</style>
+              </div>
+            ) : suppliersIsError ? (
+              <div style={{ 
+                padding: '48px 16px', 
+                textAlign: 'center', 
+                color: '#ef4444',
+                fontSize: '14px'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <AlertCircle size={32} style={{ color: '#ef4444' }} />
+                  <div>Errore nel caricamento dei fornitori</div>
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                    {suppliersError?.message || 'Si è verificato un errore imprevisto'}
+                  </div>
+                  <button
+                    onClick={() => refetchSuppliersQuery()}
+                    style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      marginTop: '8px'
+                    }}
+                  >
+                    Riprova
+                  </button>
+                </div>
+              </div>
+            ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nome</th>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P.IVA</th>
-                    <th style={{ textAlign: 'left', padding: '16px', fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</th>
-                    <th style={{ textAlign: 'right', padding: '16px', fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Azioni</th>
+                  <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>P.IVA / C.F.</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Città</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                    <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {safeSuppliersList.map((item, index) => (
-                    <tr key={item.id || index} style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>
-                          {item.companyName || 'Nome non disponibile'}
-                        </div>
-                      </td>
-                      <td style={{ padding: '16px', color: '#9ca3af', fontSize: '14px' }}>
-                        {item.vatNumber || 'N/A'}
-                      </td>
-                      <td style={{ padding: '16px', color: '#9ca3af', fontSize: '14px' }}>
-                        {item.email || 'N/A'}
-                      </td>
-                      <td style={{ padding: '16px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                  {safeSuppliersList.map((supplier: any, index: number) => (
+                  <tr
+                    key={supplier.id}
+                    data-testid={`row-supplier-${supplier.id}`}
+                    style={{
+                      background: index % 2 === 0 ? '#ffffff' : '#fafafa',
+                      borderBottom: '1px solid #f3f4f6',
+                      transition: 'background-color 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = '#f0fdf4';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = index % 2 === 0 ? '#ffffff' : '#fafafa';
+                    }}>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
+                      {supplier.code}
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{supplier.name}</div>
+                        {supplier.legal_name && (
+                          <div style={{ fontSize: '12px', color: '#6b7280' }}>{supplier.legal_name}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                      <div>
+                        <div>P.IVA: {supplier.vat_number || 'N/A'}</div>
+                        <div>C.F.: {supplier.tax_code || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                      {supplier.city || '-'} ({supplier.province || '-'})
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        background: supplier.status === 'active' || supplier.status === 'Attivo'
+                          ? '#dcfce7'
+                          : supplier.status === 'suspended' || supplier.status === 'Sospeso'
+                          ? '#fef3c7'
+                          : supplier.status === 'archived' || supplier.status === 'Archiviato'
+                          ? '#fecaca'
+                          : '#f1f5f9',
+                        color: supplier.status === 'active' || supplier.status === 'Attivo'
+                          ? '#15803d' 
+                          : supplier.status === 'suspended' || supplier.status === 'Sospeso'
+                          ? '#d97706'
+                          : supplier.status === 'archived' || supplier.status === 'Archiviato'
+                          ? '#dc2626'
+                          : '#475569',
+                        border: `1px solid ${supplier.status === 'active' || supplier.status === 'Attivo'
+                          ? '#bbf7d0' 
+                          : supplier.status === 'suspended' || supplier.status === 'Sospeso'
+                          ? '#fcd34d'
+                          : supplier.status === 'archived' || supplier.status === 'Archiviato'
+                          ? '#fca5a5'
+                          : '#e2e8f0'}`,
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      }}>
+                        <div style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: 'white'
+                        }} />
+                        {supplier.status === 'active' ? 'Attivo' : supplier.status === 'suspended' ? 'Sospeso' : supplier.status === 'archived' ? 'Archiviato' : supplier.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          data-testid={`button-view-supplier-${supplier.id}`}
+                          onClick={() => setSupplierModal({ open: true, data: supplier })}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            padding: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = '#f0fdf4';
+                            e.currentTarget.style.borderColor = '#bbf7d0';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.borderColor = '#e5e7eb';
+                          }}>
+                          <Eye size={14} style={{ color: '#10b981' }} />
+                        </button>
+                        {supplier.origin === 'tenant' && (
                           <button
-                            onClick={() => setSupplierModal({ open: true, data: item })}
-                            style={{
-                              background: 'transparent',
-                              border: '1px solid #6b7280',
-                              borderRadius: '6px',
-                              padding: '6px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = '#6b7280';
-                              e.currentTarget.style.borderColor = '#9ca3af';
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                              e.currentTarget.style.borderColor = '#6b7280';
-                            }}>
-                            <Edit size={14} style={{ color: '#9ca3af' }} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteFornitore(item.id)}
+                            data-testid={`button-delete-supplier-${supplier.id}`}
+                            onClick={() => handleDeleteSupplier(supplier.id)}
                             style={{
                               background: 'transparent',
                               border: '1px solid #e5e7eb',
@@ -2054,166 +2422,9043 @@ export default function SettingsPage() {
                             }}>
                             <Trash2 size={14} style={{ color: '#ef4444' }} />
                           </button>
+                        )}
+                        {supplier.origin === 'brand' && (
+                          <div style={{
+                            padding: '6px 8px',
+                            fontSize: '11px',
+                            color: '#6b7280',
+                            background: '#f9fafb',
+                            borderRadius: '4px'
+                          }}>
+                            View Only
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                  {safeSuppliersList.length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ 
+                        padding: '48px 16px', 
+                        textAlign: 'center', 
+                        color: '#6b7280',
+                        fontSize: '14px'
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                          <Truck size={32} style={{ color: '#d1d5db' }} />
+                          <div>Nessun fornitore configurato</div>
+                          <div style={{ fontSize: '12px' }}>Crea il primo fornitore per iniziare</div>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Placeholder per altre sezioni */}
+      {selectedEntity === 'utenti' && (
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Utenti e Risorse
+            </h3>
+            <button style={{
+              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onClick={() => {
+              setNewUser({
+                username: '',
+                password: '',
+                confirmPassword: '',
+                ruolo: '',
+                cambioPasswordObbligatorio: true,
+                ragioneSociale_id: null,
+                puntiVendita_ids: [] as number[],
+                puntoVenditaPreferito_id: null,
+                nome: '',
+                cognome: '',
+                avatar: {
+                  url: null,
+                  blob: null,
+                  type: 'upload' as 'upload' | 'generated'
+                },
+                codiceFiscale: '',
+                dataNascita: '',
+                luogoNascita: '',
+                sesso: 'M',
+                email: '',
+                emailPersonale: '',
+                telefono: '',
+                telefonoAziendale: '',
+                via: '',
+                civico: '',
+                citta: '',
+                cap: '',
+                provincia: '',
+                paese: 'Italia',
+                scopeLevel: 'organizzazione',
+                selectAllLegalEntities: false,
+                selectedLegalEntities: [] as number[],
+                selectedStores: [] as number[],
+                tipoDocumento: 'Carta Identità',
+                numeroDocumento: '',
+                dataScadenzaDocumento: '',
+                stato: 'Attivo',
+                dataInizioValidita: '',
+                dataFineValidita: '',
+                notificheEmail: true,
+                notificheSMS: false,
+                lingua: 'it',
+                fuso: 'Europe/Rome',
+                tipoContratto: 'Indeterminato',
+                dataAssunzione: '',
+                livello: '',
+                ccnl: 'Commercio',
+                oreLavoro: '40',
+                note: ''
+              });
+              setUserModal({ open: true, data: null });
+            }}>
+              <Plus size={16} />
+              Nuovo Utente
+            </button>
+          </div>
+
+          {/* Tabella Utenti */}
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid #e5e7eb'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Completo</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Email</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Ruolo</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Posizione</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Dipartimento</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Punto Vendita</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Telefono</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Contratto</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {utentiList.map((user, index) => (
+                  <tr key={user.id} style={{ 
+                    borderBottom: '1px solid #f3f4f6',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
+                      {user.firstName || user.first_name || ''} {user.lastName || user.last_name || ''}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '14px', color: '#6b7280' }}>
+                      {user.email || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '14px' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        backgroundColor: getRoleColor(user.role_name || user.role) + '20',
+                        color: getRoleColor(user.role_name || user.role),
+                        border: `1px solid ${getRoleColor(user.role_name || user.role)}40`
+                      }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: getRoleColor(user.role_name || user.role)
+                        }}></div>
+                        {user.role_name || user.role || 'Operatore'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                      {user.position || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                      {user.department || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                      {user.store_name || 'Sede Centrale'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }}>
+                      {user.phone || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px', fontSize: '13px', color: '#374151' }}>
+                      {user.contract_type || 'N/A'}
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        backgroundColor: getStatusColor(user.status).bg,
+                        color: getStatusColor(user.status).color,
+                        border: `1px solid ${getStatusColor(user.status).border}`
+                      }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: getStatusColor(user.status).color
+                        }}></div>
+                        {user.status === 'Active' ? 'Attivo' : (user.status === 'Suspended' ? 'Sospeso' : user.status || 'Inattivo')}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => setUserModal({ open: true, data: user })}
+                          style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#f3f4f6';
+                          e.currentTarget.style.borderColor = '#9ca3af';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}
+                        title="Modifica utente">
+                          <Edit3 size={14} style={{ color: '#6b7280' }} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          style={{
+                          background: 'transparent',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fee2e2';
+                          e.currentTarget.style.borderColor = '#fca5a5';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}
+                        title="Elimina utente">
+                          <Trash2 size={14} style={{ color: '#ef4444' }} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      
+      {/* Gestione Ruoli */}
+      {selectedEntity === 'gestione-ruoli' && (
+        <div>
+          {/* Header sezione */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '12px',
+            padding: '24px',
+            marginBottom: '32px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #8339ff, #6b2cbf)',
+                  borderRadius: '12px',
+                  padding: '10px',
+                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)'
+                }}>
+                  <UserCog size={20} style={{ color: 'white' }} />
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    margin: 0
+                  }}>
+                    Gestione Ruoli e Permessi
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: '4px 0 0 0'
+                  }}>
+                    Configura template di ruoli e gestisci capability per tenant
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCreateRoleModalOpen(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #8339ff, #6b2cbf)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(131, 57, 255, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(131, 57, 255, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(131, 57, 255, 0.3)';
+                }}
+              >
+                <Plus size={16} />
+                Crea Ruolo Custom
+              </button>
+            </div>
+            
+            {/* Template di Ruoli */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: '16px'
+            }}>
+              {rolesLoading ? (
+                // Loading skeleton for roles
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} style={{
+                    background: 'hsla(255, 255, 255, 0.05)',
+                    border: '1px solid hsla(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    animation: 'pulse 2s infinite'
+                  }}>
+                    <div style={{ height: '3px', background: '#e5e7eb', borderRadius: '2px', marginBottom: '12px' }} />
+                    <div style={{ height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '4px', width: '60%' }} />
+                    <div style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '12px', width: '80%' }} />
+                    <div style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', width: '40%' }} />
+                  </div>
+                ))
+              ) : rolesError ? (
+                <div style={{
+                  gridColumn: '1 / -1',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#dc2626'
+                }}>
+                  <AlertTriangle size={20} style={{ marginBottom: '8px' }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    Errore nel caricamento dei ruoli. <button onClick={() => refetchRoles()} style={{ color: '#dc2626', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Riprova</button>
+                  </p>
+                </div>
+              ) : (
+                (rbacRolesData.roles || []).map((role: any) => {
+                  // Add default colors and fallback data
+                  const roleWithDefaults = {
+                    ...role,
+                    color: role.color || getDefaultRoleColor(role.code),
+                    users: role.userCount || 0,
+                    description: role.description || getDefaultRoleDescription(role.code)
+                  };
+                  return roleWithDefaults;
+                })
+              ).map((role: any) => (
+                <div
+                  key={role.code}
+                  onClick={() => setSelectedRole(role.code)}
+                  style={{
+                    background: selectedRole === role.code 
+                      ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
+                      : 'hsla(255, 255, 255, 0.05)',
+                    border: selectedRole === role.code
+                      ? `2px solid ${role.color}40`
+                      : '1px solid hsla(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transform: 'translateY(0) scale(1) rotateX(0deg)',
+                    transformStyle: 'preserve-3d',
+                    perspective: '1000px',
+                    boxShadow: selectedRole === role.code
+                      ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
+                      : '0 2px 8px rgba(0, 0, 0, 0.05)'
+                  }}
+                  onMouseEnter={(e) => {
+                    const card = e.currentTarget;
+                    const colorBar = card.querySelector('.color-bar') as HTMLElement;
+                    const icon = card.querySelector('.role-icon') as HTMLElement;
+                    const users = card.querySelector('.users-count') as HTMLElement;
+                    
+                    // Card animations
+                    card.style.background = `linear-gradient(135deg, ${role.color}18, ${role.color}10)`;
+                    card.style.borderColor = `${role.color}40`;
+                    card.style.transform = 'translateY(-8px) scale(1.03) rotateX(-2deg)';
+                    card.style.boxShadow = `0 16px 32px ${role.color}25, 0 8px 16px rgba(0, 0, 0, 0.15)`;
+                    
+                    // Color bar animation
+                    if (colorBar) {
+                      colorBar.style.height = '5px';
+                      colorBar.style.background = `linear-gradient(90deg, ${role.color}, ${role.color}dd, ${role.color})`;
+                      colorBar.style.boxShadow = `0 2px 8px ${role.color}60`;
+                    }
+                    
+                    // Icon animation
+                    if (icon) {
+                      icon.style.transform = 'rotate(360deg) scale(1.2)';
+                      icon.style.color = role.color;
+                    }
+                    
+                    // Users count animation
+                    if (users) {
+                      users.style.transform = 'translateX(4px)';
+                      users.style.color = role.color;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    const card = e.currentTarget;
+                    const colorBar = card.querySelector('.color-bar') as HTMLElement;
+                    const icon = card.querySelector('.role-icon') as HTMLElement;
+                    const users = card.querySelector('.users-count') as HTMLElement;
+                    
+                    // Reset card
+                    card.style.background = selectedRole === role.code 
+                      ? `linear-gradient(135deg, ${role.color}15, ${role.color}08)`
+                      : 'hsla(255, 255, 255, 0.05)';
+                    card.style.borderColor = selectedRole === role.code
+                      ? `${role.color}40`
+                      : 'hsla(255, 255, 255, 0.08)';
+                    card.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+                    card.style.boxShadow = selectedRole === role.code
+                      ? `0 8px 24px ${role.color}20, 0 4px 12px rgba(0, 0, 0, 0.1)`
+                      : '0 2px 8px rgba(0, 0, 0, 0.05)';
+                    
+                    // Reset color bar
+                    if (colorBar) {
+                      colorBar.style.height = '3px';
+                      colorBar.style.background = role.color;
+                      colorBar.style.boxShadow = 'none';
+                    }
+                    
+                    // Reset icon
+                    if (icon) {
+                      icon.style.transform = 'rotate(0deg) scale(1)';
+                      icon.style.color = role.color;
+                    }
+                    
+                    // Reset users count
+                    if (users) {
+                      users.style.transform = 'translateX(0)';
+                      users.style.color = '#6b7280';
+                    }
+                  }}
+                >
+                  {/* Animated background gradient */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-100%',
+                    left: '-100%',
+                    width: '300%',
+                    height: '300%',
+                    background: `radial-gradient(circle at center, ${role.color}10 0%, transparent 70%)`,
+                    opacity: 0,
+                    transition: 'opacity 0.5s ease',
+                    pointerEvents: 'none',
+                    animation: 'pulse 3s ease-in-out infinite'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '1';
+                  }}
+                  />
+                  
+                  <div 
+                    className="color-bar"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '3px',
+                      background: role.color,
+                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }} />
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    marginBottom: '12px',
+                    position: 'relative',
+                    zIndex: 1
+                  }}>
+                    <div>
+                      <h4 style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#111827',
+                        margin: '0 0 4px 0'
+                      }}>
+                        {role.name}
+                      </h4>
+                      <p style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        margin: 0
+                      }}>
+                        {role.description}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {role.code === 'admin' && (
+                        <Star 
+                          size={16} 
+                          className="role-icon"
+                          style={{ 
+                            color: role.color,
+                            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transform: 'rotate(0deg) scale(1)'
+                          }} 
+                        />
+                      )}
+                      {!role.isSystemRole && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteRole(role.id || role.code, role.name, role.isSystemRole || false);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#dc2626',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            transition: 'all 0.2s ease',
+                            opacity: 0.6
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                            e.currentTarget.style.background = '#fef2f2';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.opacity = '0.6';
+                            e.currentTarget.style.background = 'none';
+                          }}
+                          title="Elimina ruolo personalizzato"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    zIndex: 1
+                  }}>
+                    <span 
+                      className="users-count"
+                      style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.3s ease',
+                        transform: 'translateX(0)'
+                      }}
+                    >
+                      <Users size={12} />
+                      {role.users} utenti
+                    </span>
+                    <ChevronRight 
+                      size={14} 
+                      style={{ 
+                        color: '#6b7280',
+                        transition: 'all 0.3s ease'
+                      }} 
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Dettaglio Ruolo Selezionato */}
+          {selectedRole && (
+            <div style={{
+              background: 'hsla(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(24px) saturate(140%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px'
+              }}>
+                <h4 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: 0
+                }}>
+                  Permessi del Ruolo: {selectedRole ? selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1).replace('_', ' ') : 'Nessun ruolo selezionato'}
+                </h4>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    style={{
+                      padding: '8px 16px',
+                      background: 'transparent',
+                      color: '#6b7280',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Duplica
+                  </button>
+                  <button
+                    onClick={saveRolePermissions}
+                    disabled={!isPermissionsDirty || rolePermissionsLoading}
+                    style={{
+                      padding: '8px 16px',
+                      background: isPermissionsDirty 
+                        ? 'linear-gradient(135deg, #FF6900, #ff8533)' 
+                        : '#e5e7eb',
+                      color: isPermissionsDirty ? 'white' : '#6b7280',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: isPermissionsDirty ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s ease',
+                      opacity: rolePermissionsLoading ? 0.7 : 1
+                    }}
+                  >
+                    {rolePermissionsLoading ? 'Salvando...' : 'Salva Modifiche'}
+                    {isPermissionsDirty && <span style={{ marginLeft: '4px' }}>•</span>}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Categorie di Permessi */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '20px'
+              }}>
+                {permissionsLoading ? (
+                  // Loading skeleton for permissions
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} style={{
+                      background: 'hsla(255, 255, 255, 0.05)',
+                      border: '1px solid hsla(255, 255, 255, 0.08)',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      animation: 'pulse 2s infinite'
+                    }}>
+                      <div style={{ height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '12px', width: '60%' }} />
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} style={{ height: '12px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px', width: `${60 + Math.random() * 30}%` }} />
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  organizePermissionsByCategory(rbacPermissionsData?.permissions || []).map((cat) => (
+                    <div
+                    key={cat.category}
+                    style={{
+                      background: 'hsla(255, 255, 255, 0.05)',
+                      border: '1px solid hsla(255, 255, 255, 0.08)',
+                      borderRadius: '8px',
+                      padding: '16px'
+                    }}
+                  >
+                    <h5 style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      {cat.category}
+                      {/* Switch Toggle */}
+                      <label style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        width: '44px',
+                        height: '24px',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={isCategoryEnabled(cat.category)}
+                          style={{
+                            opacity: 0,
+                            width: 0,
+                            height: 0
+                          }}
+                          onChange={(e) => toggleCategoryPermissions(cat.category, e.target.checked)}
+                        />
+                        <span style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: selectedRole === 'admin' ? 'linear-gradient(135deg, #FF6900, #ff8533)' : '#e5e7eb',
+                          borderRadius: '24px',
+                          transition: 'all 0.3s ease',
+                          boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.12)'
+                        }}>
+                          <span style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '18px',
+                            width: '18px',
+                            left: '3px',
+                            bottom: '3px',
+                            backgroundColor: 'white',
+                            borderRadius: '50%',
+                            transition: 'all 0.3s ease',
+                            transform: selectedRole === 'admin' ? 'translateX(20px)' : 'translateX(0)',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                          }} />
+                        </span>
+                      </label>
+                    </h5>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {cat.permissions.map((perm) => (
+                        <label
+                          key={perm}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '6px 8px',
+                            fontSize: '13px',
+                            color: '#6b7280',
+                            cursor: 'pointer',
+                            borderRadius: '4px',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'hsla(255, 255, 255, 0.05)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isPermissionEnabled(perm)}
+                            onChange={() => togglePermission(perm)}
+                            style={{ 
+                              cursor: 'pointer',
+                              width: '16px',
+                              height: '16px',
+                              accentColor: '#FF6900'
+                            }}
+                          />
+                          {perm}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))
+                )}
+              </div>
             </div>
           )}
         </div>
       )}
-
-      {/* Risorse Umane Section */}
-      {selectedEntity === 'risorse-umane' && (
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px'
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#111827',
-              margin: 0
-            }}>
-              Risorse Umane - Gestione Avanzata
-            </h3>
-          </div>
-
-          <div style={{
-            textAlign: 'center',
-            padding: '40px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            color: '#6b7280'
-          }}>
-            <div style={{ 
-              background: 'linear-gradient(135deg, #059669, #047857)',
-              borderRadius: '12px',
-              width: '60px',
-              height: '60px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px'
-            }}>
-              <span style={{ fontSize: '24px', color: 'white' }}>👥</span>
-            </div>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
-              HR Management in Costruzione
-            </h3>
-            <p style={{ fontSize: '14px' }}>
-              Il sistema completo di gestione risorse umane sarà disponibile nel nuovo sistema unificato.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* CMS Section */}
-      {selectedEntity === 'cms' && (
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px'
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#111827',
-              margin: 0
-            }}>
-              Content Management System
-            </h3>
-          </div>
-
-          <div style={{
-            textAlign: 'center',
-            padding: '40px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            color: '#6b7280'
-          }}>
-            <div style={{ 
-              background: 'linear-gradient(135deg, #059669, #047857)',
-              borderRadius: '12px',
-              width: '60px',
-              height: '60px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px'
-            }}>
-              <span style={{ fontSize: '24px', color: 'white' }}>📄</span>
-            </div>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
-              CMS in Costruzione
-            </h3>
-            <p style={{ fontSize: '14px' }}>
-              Il sistema di gestione contenuti sarà disponibile nel nuovo sistema unificato.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Magazzino Section */}
-      {selectedEntity === 'magazzino' && (
-        <div style={{ marginBottom: '48px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px'
-          }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#111827',
-              margin: 0
-            }}>
-              Gestione Magazzino
-            </h3>
-          </div>
-
-          <div style={{
-            textAlign: 'center',
-            padding: '40px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            color: '#6b7280'
-          }}>
-            <div style={{ 
-              background: 'linear-gradient(135deg, #059669, #047857)',
-              borderRadius: '12px',
-              width: '60px',
-              height: '60px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px'
-            }}>
-              <span style={{ fontSize: '24px', color: 'white' }}>📦</span>
-            </div>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
-              Magazzino in Costruzione
-            </h3>
-            <p style={{ fontSize: '14px' }}>
-              Il sistema di gestione magazzino sarà disponibile nel nuovo sistema unificato.
-            </p>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
-};
 
-            {/* Rendering Condizionale per Sotto-Tab */}
-            {workflowSubTab === 'hierarchy' && (
+  const renderAIAssistant = () => (
+    <div>
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: '#111827',
+          margin: '0 0 4px 0'
+        }}>
+          Configurazione AI Assistant
+        </h2>
+        <p style={{
+          fontSize: '14px',
+          color: '#6b7280',
+          margin: 0
+        }}>
+          Gestisci le impostazioni dell'assistente AI e automazioni
+        </p>
+      </div>
+
+      {/* AI Configuration Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '24px',
+        marginBottom: '32px'
+      }}>
+        {/* OpenAI Configuration */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              borderRadius: '12px',
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+            }}>
+              <Cpu size={20} style={{ color: 'white' }} />
+            </div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              OpenAI Integration
+            </h3>
+          </div>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '16px'
+          }}>
+            Configura l'integrazione con OpenAI per funzionalità AI avanzate
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{
+              background: '#10b981',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}>
+              Configurato
+            </span>
+            <button style={{
+              background: 'transparent',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '8px',
+              color: '#6b7280',
+              padding: '8px 16px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}>
+              Modifica
+            </button>
+          </div>
+        </div>
+
+        {/* Automations */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              borderRadius: '12px',
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+            }}>
+              <Zap size={20} style={{ color: 'white' }} />
+            </div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Automazioni
+            </h3>
+          </div>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '16px'
+          }}>
+            Gestisci automazioni e workflow intelligenti
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{
+              background: '#f59e0b',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}>
+              In Configurazione
+            </span>
+            <button style={{
+              background: 'transparent',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '8px',
+              color: '#6b7280',
+              padding: '8px 16px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}>
+              Configura
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderChannelSettings = () => (
+    <div>
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: '#111827',
+          margin: '0 0 4px 0'
+        }}>
+          Configurazione Canali
+        </h2>
+        <p style={{
+          fontSize: '14px',
+          color: '#6b7280',
+          margin: 0
+        }}>
+          Gestisci canali di comunicazione e integrazione
+        </p>
+      </div>
+
+      {/* Channel Configuration */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '24px'
+      }}>
+        {/* Email Channel */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              borderRadius: '12px',
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+            }}>
+              <Mail size={20} style={{ color: 'white' }} />
+            </div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Email Integration
+            </h3>
+          </div>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '16px'
+          }}>
+            Configura server SMTP e template email
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{
+              background: '#10b981',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}>
+              Attivo
+            </span>
+            <button style={{
+              background: 'transparent',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '8px',
+              color: '#6b7280',
+              padding: '8px 16px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}>
+              Gestisci
+            </button>
+          </div>
+        </div>
+
+        {/* Webhook Channel */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
+              borderRadius: '12px',
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(123, 44, 191, 0.3)'
+            }}>
+              <Globe size={20} style={{ color: 'white' }} />
+            </div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Webhook Integration
+            </h3>
+          </div>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '16px'
+          }}>
+            Gestisci webhook per integrazioni esterne
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{
+              background: '#f59e0b',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}>
+              Da Configurare
+            </span>
+            <button style={{
+              background: 'transparent',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '8px',
+              color: '#6b7280',
+              padding: '8px 16px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}>
+              Configura
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSystemSettings = () => (
+    <div>
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: '600',
+          color: '#111827',
+          margin: '0 0 4px 0'
+        }}>
+          Configurazioni Sistema
+        </h2>
+        <p style={{
+          fontSize: '14px',
+          color: '#6b7280',
+          margin: 0
+        }}>
+          Gestisci impostazioni generali del sistema e sicurezza
+        </p>
+      </div>
+
+      {/* System Configuration */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '24px'
+      }}>
+        {/* Security Settings */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+              borderRadius: '12px',
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+            }}>
+              <Shield size={20} style={{ color: 'white' }} />
+            </div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Sicurezza
+            </h3>
+          </div>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '16px'
+          }}>
+            Gestisci autenticazione, GDPR e politiche sicurezza
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{
+              background: '#10b981',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}>
+              Protetto
+            </span>
+            <button style={{
+              background: 'transparent',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '8px',
+              color: '#6b7280',
+              padding: '8px 16px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}>
+              Visualizza
+            </button>
+          </div>
+        </div>
+
+        {/* Backup Settings */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #06b6d4, #0891b2)',
+              borderRadius: '12px',
+              padding: '10px',
+              boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)'
+            }}>
+              <Database size={20} style={{ color: 'white' }} />
+            </div>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              Backup e Ripristino
+            </h3>
+          </div>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '16px'
+          }}>
+            Configura backup automatici e procedure di ripristino
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{
+              background: '#10b981',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}>
+              Attivo
+            </span>
+            <button style={{
+              background: 'transparent',
+              border: '1px solid hsla(255, 255, 255, 0.12)',
+              borderRadius: '8px',
+              color: '#6b7280',
+              padding: '8px 16px',
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}>
+              Gestisci
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // LOGS RENDERING FUNCTION - Complete implementation with robust error/loading states
+  const renderLogs = () => {
+    const logs = logsData?.logs || [];
+    const metadata = logsData?.metadata || { total: 0, page: 1, limit: 20, totalPages: 0 };
+
+    // FIXED: Robust error state with retry
+    if (logsError) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '40px'
+        }}>
+          <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: '16px' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+            Error Loading Logs
+          </h3>
+          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', textAlign: 'center' }}>
+            {logsError.message || 'Failed to load system logs. Please try again.'}
+          </p>
+          <button
+            onClick={() => refetchLogs()}
+            aria-label="Retry loading logs"
+            style={{
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            data-testid="button-retry-logs"
+          >
+            <RefreshCw size={16} />
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    // FIXED: Loading skeleton state
+    if (logsLoading) {
+      return (
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '24px'
+        }}>
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{
+              height: '20px',
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+              borderRadius: '4px',
+              animation: 'shimmer 2s infinite',
+              marginBottom: '8px'
+            }} />
+            <div style={{
+              height: '14px',
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+              borderRadius: '4px',
+              width: '60%',
+              animation: 'shimmer 2s infinite'
+            }} />
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} style={{
+              padding: '16px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              marginBottom: '8px'
+            }}>
+              <div style={{
+                height: '16px',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+                borderRadius: '4px',
+                marginBottom: '8px',
+                animation: 'shimmer 2s infinite'
+              }} />
+              <div style={{
+                height: '12px',
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+                borderRadius: '4px',
+                width: '80%',
+                animation: 'shimmer 2s infinite'
+              }} />
+            </div>
+          ))}
+          <style>{`
+            @keyframes shimmer {
+              0% { background-position: -200px 0; }
+              100% { background-position: calc(200px + 100%) 0; }
+            }
+          `}</style>
+        </div>
+      );
+    }
+
+    // FIXED: Empty state when no logs found
+    if (!logs.length) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '40px'
+        }}>
+          <FileText size={48} style={{ color: '#6b7280', marginBottom: '16px' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+            No Logs Found
+          </h3>
+          <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', textAlign: 'center' }}>
+            No logs match your current filters. Try adjusting your search criteria or check back later.
+          </p>
+          <button
+            onClick={resetLogsFilters}
+            aria-label="Clear all filters to show all logs"
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              color: '#6b7280',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            data-testid="button-clear-filters-empty"
+          >
+            <RotateCcw size={16} />
+            Clear Filters
+          </button>
+        </div>
+      );
+    }
+
+    // Get unique components for filter dropdown
+    const availableComponents = ['ALL', ...Array.from(new Set(logs.map(log => log.component)))];
+
+    return (
+      <div>
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px'
+          }}>
+            <div>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: '0 0 4px 0'
+              }}>
+                Logs Sistema
+              </h2>
+              <p style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                margin: 0
+              }}>
+                Visualizza e monitora i log strutturati del sistema
+              </p>
+            </div>
+            
+            {/* Auto-refresh and manual refresh controls */}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {newLogsAvailable && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  animation: 'pulse 2s infinite'
+                }}>
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    background: 'white',
+                    borderRadius: '50%'
+                  }} />
+                  Nuovi log disponibili
+                </div>
+              )}
+              
+              <button
+                onClick={toggleAutoRefresh}
+                style={{
+                  background: autoRefreshEnabled 
+                    ? 'linear-gradient(135deg, #10b981, #059669)' 
+                    : 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: `1px solid ${autoRefreshEnabled ? '#10b981' : 'rgba(255, 255, 255, 0.2)'}`,
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  color: autoRefreshEnabled ? 'white' : '#6b7280',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s ease'
+                }}
+                data-testid="button-toggle-auto-refresh"
+              >
+                {autoRefreshEnabled ? <Pause size={12} /> : <Play size={12} />}
+                Auto-refresh
+              </button>
+              
+              <button
+                onClick={() => {
+                  refetchLogs();
+                  setNewLogsAvailable(false);
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                data-testid="button-refresh-logs"
+              >
+                <RefreshCw size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* SEARCH & FILTERING UI - Glassmorphism Design */}
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '24px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '16px',
+              marginBottom: '16px'
+            }}>
+              {/* Search Bar */}
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#6b7280'
+                }} />
+                <input
+                  type="text"
+                  placeholder="Search logs..."
+                  value={logsSearchTerm}
+                  onChange={(e) => setLogsSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px 10px 36px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#111827',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  data-testid="input-search-logs"
+                />
+              </div>
+
+              {/* Level Filter */}
+              <select
+                value={logsLevelFilter}
+                onChange={(e) => setLogsLevelFilter(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+                data-testid="select-level-filter"
+              >
+                <option value="ALL">All Levels</option>
+                <option value="ERROR">ERROR</option>
+                <option value="WARN">WARN</option>
+                <option value="INFO">INFO</option>
+                <option value="DEBUG">DEBUG</option>
+              </select>
+
+              {/* Component Filter */}
+              <select
+                value={logsComponentFilter}
+                onChange={(e) => setLogsComponentFilter(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+                data-testid="select-component-filter"
+              >
+                {availableComponents.map(component => (
+                  <option key={component} value={component}>
+                    {component === 'ALL' ? 'All Components' : component}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Range and Additional Filters */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+              marginBottom: '16px'
+            }}>
+              {/* From Date */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: '#6b7280',
+                  marginBottom: '4px'
+                }}>
+                  From Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={logsFromDate}
+                  onChange={(e) => setLogsFromDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#111827',
+                    fontSize: '14px',
+                    outline: 'none'
+                  }}
+                  data-testid="input-from-date"
+                />
+              </div>
+
+              {/* To Date */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: '#6b7280',
+                  marginBottom: '4px'
+                }}>
+                  To Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={logsToDate}
+                  onChange={(e) => setLogsToDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#111827',
+                    fontSize: '14px',
+                    outline: 'none'
+                  }}
+                  data-testid="input-to-date"
+                />
+              </div>
+
+              {/* User Filter */}
+              <input
+                type="text"
+                placeholder="Filter by user..."
+                value={logsUserFilter}
+                onChange={(e) => setLogsUserFilter(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+                data-testid="input-user-filter"
+              />
+
+              {/* Correlation ID Filter */}
+              <input
+                type="text"
+                placeholder="Filter by correlation ID..."
+                value={logsCorrelationIdFilter}
+                onChange={(e) => setLogsCorrelationIdFilter(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+                data-testid="input-correlation-filter"
+              />
+            </div>
+
+            {/* Reset Filters Button */}
+            <button
+              onClick={resetLogsFilters}
+              aria-label="Reset all log filters to default values"
+              style={{
+                background: 'rgba(255, 105, 0, 0.1)',
+                border: '1px solid rgba(255, 105, 0, 0.3)',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                color: '#FF6900',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              data-testid="button-reset-filters"
+            >
+              <RotateCcw size={14} />
+              Reset Filters
+            </button>
+          </div>
+
+          {/* LOGS TABLE/LIST VIEW */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            {logsLoading ? (
+              // Loading skeleton
+              <div style={{ padding: '24px' }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} style={{
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    height: '60px',
+                    borderRadius: '8px',
+                    marginBottom: '12px',
+                    animation: 'pulse 1.5s ease-in-out infinite'
+                  }} />
+                ))}
+              </div>
+            ) : logsError ? (
+              // Error state
+              <div style={{
+                padding: '48px 24px',
+                textAlign: 'center',
+                color: '#ef4444'
+              }}>
+                <XCircle size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+                <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px' }}>
+                  Error loading logs
+                </h3>
+                <p style={{ fontSize: '14px', margin: '0 0 16px', opacity: 0.7 }}>
+                  {(logsError as any)?.message || 'Failed to fetch logs data'}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                  data-testid="button-retry-logs"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : (logsData?.logs?.length || 0) === 0 ? (
+              // Empty state
+              <div style={{
+                padding: '48px 24px',
+                textAlign: 'center',
+                color: '#6b7280'
+              }}>
+                <FileText size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+                <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px' }}>
+                  No logs found
+                </h3>
+                <p style={{ fontSize: '14px', margin: 0, opacity: 0.7 }}>
+                  Try adjusting your filters or check back later
+                </p>
+              </div>
+            ) : (
+              // Logs table
+              <div style={{ overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '140px' }}>Timestamp</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '80px' }}>Level</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '120px' }}>Component</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Message</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '100px' }}>User</th>
+                      <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb', minWidth: '120px' }}>Correlation ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(logsData?.logs || []).map((log: StructuredLog, index: number) => (
+                      <tr
+                        key={log.id}
+                        onClick={() => setLogDetailsModal({ open: true, data: log })}
+                        style={{
+                          borderBottom: '1px solid #f3f4f6',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 105, 0, 0.05)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                        data-testid={`row-log-${log.id}`}
+                      >
+                        <td style={{ padding: '12px 16px', fontSize: '12px', color: '#6b7280' }}>
+                          {formatLogTimestamp(log.timestamp)}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{
+                            background: `${getLevelColor(log.level)}15`,
+                            color: getLevelColor(log.level),
+                            border: `1px solid ${getLevelColor(log.level)}30`,
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            display: 'inline-block',
+                            minWidth: '50px',
+                            textAlign: 'center'
+                          }}>
+                            {log.level}
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#111827', fontWeight: '500' }}>
+                          {log.component}
+                        </td>
+                        <td style={{
+                          padding: '12px 16px',
+                          fontSize: '14px',
+                          color: '#111827',
+                          maxWidth: '300px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {log.message}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: '13px', color: '#6b7280' }}>
+                          {log.user || '-'}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {log.correlationId ? (
+                            <div style={{
+                              background: 'rgba(59, 130, 246, 0.1)',
+                              color: '#3b82f6',
+                              border: '1px solid rgba(59, 130, 246, 0.2)',
+                              borderRadius: '6px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyToClipboard(log.correlationId!);
+                            }}
+                          >
+                            {log.correlationId.slice(0, 8)}...
+                            <Copy size={10} />
+                          </div>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* PAGINATION CONTROLS */}
+            {logs.length > 0 && (
+              <div style={{
+                background: 'rgba(249, 250, 251, 0.8)',
+                backdropFilter: 'blur(8px)',
+                borderTop: '1px solid #e5e7eb',
+                padding: '16px 24px',
+                display: 'flex',
+                justifyContent: 'between',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                  Showing {((metadata.page - 1) * metadata.limit) + 1} to {Math.min(metadata.page * metadata.limit, metadata.total)} of {metadata.total} logs
+                </div>
+                
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    onClick={() => setLogsCurrentPage(Math.max(1, logsCurrentPage - 1))}
+                    disabled={logsCurrentPage <= 1}
+                    style={{
+                      background: logsCurrentPage <= 1 ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      color: logsCurrentPage <= 1 ? '#9ca3af' : '#374151',
+                      cursor: logsCurrentPage <= 1 ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    data-testid="button-previous-page"
+                  >
+                    <ChevronLeft size={14} />
+                    Previous
+                  </button>
+                  
+                  <div style={{
+                    padding: '6px 12px',
+                    background: 'rgba(255, 105, 0, 0.1)',
+                    border: '1px solid rgba(255, 105, 0, 0.2)',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#FF6900'
+                  }}>
+                    Page {metadata.page} of {metadata.totalPages}
+                  </div>
+                  
+                  <button
+                    onClick={() => setLogsCurrentPage(Math.min(metadata.totalPages, logsCurrentPage + 1))}
+                    disabled={logsCurrentPage >= metadata.totalPages}
+                    style={{
+                      background: logsCurrentPage >= metadata.totalPages ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      color: logsCurrentPage >= metadata.totalPages ? '#9ca3af' : '#374151',
+                      cursor: logsCurrentPage >= metadata.totalPages ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    data-testid="button-next-page"
+                  >
+                    Next
+                    <ChevronRightIcon size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* LOG DETAILS MODAL */}
+        {logDetailsModal.open && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '800px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            data-testid="modal-log-details"
+            >
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '24px'
+              }}>
+                <div>
+                  <h3 style={{
+                    fontSize: '20px',
+                    fontWeight: '700',
+                    color: '#111827',
+                    margin: '0 0 8px 0'
+                  }}>
+                    Log Details
+                  </h3>
+                  <div style={{
+                    background: `${getLevelColor(logDetailsModal.data.level)}15`,
+                    color: getLevelColor(logDetailsModal.data.level),
+                    border: `1px solid ${getLevelColor(logDetailsModal.data.level)}30`,
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    display: 'inline-block'
+                  }}>
+                    {logDetailsModal.data.level}
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => setLogDetailsModal({ open: false, data: null })}
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                    color: '#6b7280'
+                  }}
+                  data-testid="button-close-modal"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gap: '20px' }}>
+                {/* Basic Information */}
+                <div style={{
+                  background: 'rgba(249, 250, 251, 0.5)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                    Basic Information
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                        Timestamp
+                      </label>
+                      <div style={{ fontSize: '14px', color: '#111827', fontFamily: 'monospace' }}>
+                        {formatLogTimestamp(logDetailsModal.data.timestamp)}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                        Component
+                      </label>
+                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '500' }}>
+                        {logDetailsModal.data.component}
+                      </div>
+                    </div>
+                    {logDetailsModal.data.user && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                          User
+                        </label>
+                        <div style={{ fontSize: '14px', color: '#111827' }}>
+                          {logDetailsModal.data.user}
+                        </div>
+                      </div>
+                    )}
+                    {logDetailsModal.data.correlationId && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                          Correlation ID
+                        </label>
+                        <div style={{
+                          fontSize: '12px',
+                          color: '#3b82f6',
+                          fontFamily: 'monospace',
+                          background: 'rgba(59, 130, 246, 0.1)',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => copyToClipboard(logDetailsModal.data.correlationId)}
+                        >
+                          {logDetailsModal.data.correlationId}
+                          <Copy size={12} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Message */}
+                <div style={{
+                  background: 'rgba(249, 250, 251, 0.5)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                    Message
+                  </h4>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#111827',
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}>
+                    {logDetailsModal.data.message}
+                  </div>
+                </div>
+
+                {/* Metadata */}
+                {logDetailsModal.data.metadata && (
+                  <div style={{
+                    background: 'rgba(249, 250, 251, 0.5)',
+                    borderRadius: '12px',
+                    padding: '16px'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                      Metadata
+                    </h4>
+                    <pre style={{
+                      fontSize: '12px',
+                      color: '#111827',
+                      fontFamily: 'monospace',
+                      background: 'white',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      overflow: 'auto',
+                      maxHeight: '200px',
+                      margin: 0
+                    }}>
+                      {JSON.stringify(logDetailsModal.data.metadata, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Stack Trace */}
+                {logDetailsModal.data.stackTrace && (
+                  <div style={{
+                    background: 'rgba(239, 68, 68, 0.05)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#ef4444', margin: '0 0 12px 0' }}>
+                      Stack Trace
+                    </h4>
+                    <pre style={{
+                      fontSize: '11px',
+                      color: '#374151',
+                      fontFamily: 'monospace',
+                      background: 'white',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #fecaca',
+                      overflow: 'auto',
+                      maxHeight: '300px',
+                      margin: 0,
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {logDetailsModal.data.stackTrace}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Request Context */}
+                {logDetailsModal.data.requestContext && (
+                  <div style={{
+                    background: 'rgba(249, 250, 251, 0.5)',
+                    borderRadius: '12px',
+                    padding: '16px'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>
+                      Request Context
+                    </h4>
+                    <pre style={{
+                      fontSize: '12px',
+                      color: '#111827',
+                      fontFamily: 'monospace',
+                      background: 'white',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      overflow: 'auto',
+                      maxHeight: '200px',
+                      margin: 0
+                    }}>
+                      {JSON.stringify(logDetailsModal.data.requestContext, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div style={{
+                marginTop: '24px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px'
+              }}>
+                <button
+                  onClick={() => copyToClipboard(JSON.stringify(logDetailsModal.data, null, 2))}
+                  style={{
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    color: '#3b82f6',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  data-testid="button-copy-log"
+                >
+                  <Copy size={14} />
+                  Copy JSON
+                </button>
+                
+                <button
+                  onClick={() => setLogDetailsModal({ open: false, data: null })}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                  data-testid="button-close-log-modal"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Custom Role Modal */}
+        {createRoleModalOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px'
+              }}>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: 0
+                }}>
+                  Crea Ruolo Personalizzato
+                </h3>
+                <button
+                  onClick={() => setCreateRoleModalOpen(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '20px',
+                    cursor: 'pointer',
+                    color: '#6b7280'
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                  Codice Ruolo
+                </label>
+                <input
+                  type="text"
+                  value={newRoleData.code}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, code: e.target.value })}
+                  placeholder="es. custom_role"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                  Nome Ruolo
+                </label>
+                <input
+                  type="text"
+                  value={newRoleData.name}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, name: e.target.value })}
+                  placeholder="es. Custom Role"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                  Descrizione
+                </label>
+                <textarea
+                  value={newRoleData.description}
+                  onChange={(e) => setNewRoleData({ ...newRoleData, description: e.target.value })}
+                  placeholder="Descrizione del ruolo personalizzato..."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={() => setCreateRoleModalOpen(false)}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={createCustomRole}
+                  disabled={!newRoleData.code || !newRoleData.name}
+                  style={{
+                    padding: '10px 20px',
+                    background: newRoleData.code && newRoleData.name 
+                      ? 'linear-gradient(135deg, #8339ff, #6b2cbf)' 
+                      : '#e5e7eb',
+                    color: newRoleData.code && newRoleData.name ? 'white' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: newRoleData.code && newRoleData.name ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Crea Ruolo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Notification Toast */}
+        {notification && (
+          <div style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            background: notification.type === 'success' ? '#10b981' : '#dc2626',
+            color: 'white',
+            padding: '16px 20px',
+            borderRadius: '8px',
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            maxWidth: '400px',
+            animation: 'slideIn 0.3s ease'
+          }}>
+            {notification.type === 'success' ? (
+              <CheckCircle size={20} />
+            ) : (
+              <AlertCircle size={20} />
+            )}
+            <span style={{ fontSize: '14px', fontWeight: '600' }}>
+              {notification.message}
+            </span>
+            <button
+              onClick={() => setNotification(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                marginLeft: 'auto',
+                padding: '4px'
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ==================== UNIVERSAL HIERARCHY MANAGEMENT ====================
+  const renderHierarchyManagement = () => {
+
+    // Services disponibili per i workflow
+    const availableServices = [
+      { id: 'hr', name: 'HR - Risorse Umane', icon: UserCog, color: '#ec4899' },
+      { id: 'finance', name: 'Finance - Contabilità', icon: DollarSign, color: '#8b5cf6' },
+      { id: 'operations', name: 'Operations - Operazioni', icon: Settings, color: '#3b82f6' },
+      { id: 'it', name: 'IT - Tecnologia', icon: Cpu, color: '#06b6d4' },
+      { id: 'sales', name: 'Sales - Vendite', icon: TrendingUp, color: '#10b981' }
+    ];
+
+    return (
+      <div>
+        {/* Header del tab */}
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: '0 0 4px 0'
+          }}>
+            Sistema Workflow & Teams
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Gestione organigramma aziendale e workflow di approvazione multi-servizio
+          </p>
+        </div>
+
+        {/* Barra di navigazione sottosezioni */}
+        <div style={{
+          background: 'hsla(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(24px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+          border: '1px solid hsla(255, 255, 255, 0.12)',
+          borderRadius: '16px',
+          padding: '8px',
+          marginBottom: '24px',
+          display: 'flex',
+          gap: '8px'
+        }}>
+          <button
+            onClick={() => setHierarchyView('tree')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: hierarchyView === 'tree' ? 
+                'linear-gradient(135deg, #FF6900, #7B2CBF)' : 
+                'transparent',
+              color: hierarchyView === 'tree' ? 'white' : '#6b7280',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            data-testid="hierarchy-tab-tree"
+          >
+            <Users size={16} />
+            Organigramma
+          </button>
+          
+          <button
+            onClick={() => setHierarchyView('workflows')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: hierarchyView === 'workflows' ? 
+                'linear-gradient(135deg, #FF6900, #7B2CBF)' : 
+                'transparent',
+              color: hierarchyView === 'workflows' ? 'white' : '#6b7280',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            data-testid="hierarchy-tab-workflows"
+          >
+            <Zap size={16} />
+            Workflow Approvazione
+          </button>
+
+          <button
+            onClick={() => setHierarchyView('permissions')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: hierarchyView === 'permissions' ? 
+                'linear-gradient(135deg, #FF6900, #7B2CBF)' : 
+                'transparent',
+              color: hierarchyView === 'permissions' ? 'white' : '#6b7280',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            data-testid="hierarchy-tab-permissions"
+          >
+            <Shield size={16} />
+            Permessi Servizi
+          </button>
+        </div>
+
+        {/* Contenuto basato sulla vista selezionata */}
+        {hierarchyView === 'tree' && (
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0 }}>
+                Struttura Organizzativa
+              </h3>
+              <button
+                onClick={() => setNodeDialogOpen(true)}
+                style={{
+                  padding: '8px 16px',
+                  background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                data-testid="hierarchy-add-node"
+              >
+                <Plus size={16} />
+                Aggiungi Posizione
+              </button>
+            </div>
+
+            {loadingHierarchy ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                <p style={{ marginTop: '12px' }}>Caricamento struttura...</p>
+              </div>
+            ) : (
+              <div style={{ 
+                minHeight: '400px',
+                border: '1px dashed rgba(255, 105, 0, 0.3)',
+                borderRadius: '12px',
+                padding: '20px'
+              }}>
+                <HierarchyTreeView
+                  data={hierarchyData || []}
+                  selectedNodeId={selectedNode?.id}
+                  onNodeSelect={(node) => setSelectedNode(node)}
+                  onNodeAdd={(parentId) => {
+                    setEditingNode(null);
+                    setParentIdForNewNode(parentId);
+                    setNodeDialogOpen(true);
+                  }}
+                  onNodeEdit={(node) => {
+                    setEditingNode(node);
+                    setParentIdForNewNode(null);
+                    setNodeDialogOpen(true);
+                  }}
+                  onNodeDelete={async (nodeId) => {
+                    if (confirm('Sei sicuro di voler eliminare questo nodo e tutti i suoi sotto-nodi?')) {
+                      try {
+                        await apiRequest('/api/organizational-structure/' + nodeId, {
+                          method: 'DELETE'
+                        });
+                        await refetchHierarchy();
+                      } catch (error) {
+                        console.error('Errore eliminazione nodo:', error);
+                      }
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {hierarchyView === 'workflows' && (
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 20px' }}>
+              Configurazione Workflow di Approvazione
+            </h3>
+            
+            {/* Selettore servizio */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                Seleziona Servizio
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                {availableServices.map(service => (
+                  <button
+                    key={service.id}
+                    onClick={() => setSelectedService(service.id)}
+                    style={{
+                      padding: '16px',
+                      background: selectedService === service.id ?
+                        `linear-gradient(135deg, ${service.color}88, ${service.color}44)` :
+                        'rgba(255, 255, 255, 0.05)',
+                      border: selectedService === service.id ?
+                        `2px solid ${service.color}` :
+                        '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: selectedService === service.id ? '#111827' : '#6b7280',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    data-testid={`hierarchy-service-${service.id}`}
+                  >
+                    <service.icon size={20} style={{ color: service.color }} />
+                    {service.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {selectedService && (
+              <div style={{
+                marginTop: '24px',
+                padding: '20px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.08)'
+              }}>
+                {loadingWorkflows ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
+                    Caricamento workflow...
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    <div style={{ 
+                      background: 'linear-gradient(135deg, #FF6900, #FF6900cc)',
+                      borderRadius: '12px',
+                      width: '60px',
+                      height: '60px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 16px'
+                    }}>
+                      <span style={{ fontSize: '24px', color: 'white' }}>🔄</span>
+                    </div>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px' }}>
+                      Nuovo Sistema Workflow in Costruzione
+                    </h3>
+                    <p style={{ fontSize: '14px', margin: '0 0 16px' }}>
+                      Il sistema di gestione workflow è in fase di aggiornamento con una nuova architettura enterprise.
+                    </p>
+                    <div style={{ 
+                      background: 'rgba(255, 105, 0, 0.1)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '12px',
+                      border: '1px solid rgba(255, 105, 0, 0.2)'
+                    }}>
+                      <strong>Nuove Features:</strong><br/>
+                      • Visual Workflow Builder<br/>
+                      • Team-based Management<br/>
+                      • RBAC Integration<br/>
+                      • Event-driven Architecture
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {hierarchyView === 'permissions' && (
+          <div style={{
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: 0 }}>
+                Workflow Permissions Management
+              </h3>
+              {isPermissionsDirty && selectedRole && (
+                <button
+                  onClick={saveRolePermissions}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                  data-testid="save-permissions"
+                >
+                  <Save size={16} />
+                  Salva Permessi
+                </button>
+              )}
+            </div>
+
+            {/* Role Selector */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                Seleziona Ruolo
+              </label>
+              <select
+                value={selectedRole || ''}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#111827',
+                  fontSize: '14px'
+                }}
+                data-testid="role-selector"
+              >
+                <option value="">Seleziona un ruolo...</option>
+                {allRoles.map(role => (
+                  <option key={role.code} value={role.code}>
+                    {role.name} {role.isSystemRole && '(Sistema)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Permissions by Category */}
+            {selectedRole && (
+              <div>
+                {rolePermissionsLoading || loadingWorkflowActions || loadingWorkflowTriggers ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                    <p style={{ marginTop: '12px' }}>Caricamento permessi...</p>
+                  </div>
+                ) : (
+                  <div style={{ maxHeight: '500px', overflow: 'auto' }}>
+                    {organizePermissionsByCategory(rbacPermissionsData?.permissions || []).map(category => (
+                      <div key={category.category} style={{
+                        marginBottom: '20px',
+                        padding: '16px',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '12px'
+                        }}>
+                          <h4 style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: category.category.includes('Workflow') ? '#FF6900' : '#374151',
+                            margin: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            {category.category.includes('Workflow Actions') && <Zap size={16} />}
+                            {category.category.includes('Workflow Triggers') && <Play size={16} />}
+                            {category.category}
+                          </h4>
+                          <label style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer'
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={isCategoryEnabled(category.category)}
+                              onChange={(e) => toggleCategoryPermissions(category.category, e.target.checked)}
+                              style={{
+                                width: '16px',
+                                height: '16px',
+                                cursor: 'pointer'
+                              }}
+                              data-testid={`category-toggle-${category.category}`}
+                            />
+                            <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                              Seleziona tutto
+                            </span>
+                          </label>
+                        </div>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                          gap: '8px'
+                        }}>
+                          {category.permissions.map(permission => (
+                            <label key={permission} style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '8px',
+                              background: isPermissionEnabled(permission) ? 'rgba(255, 105, 0, 0.1)' : 'transparent',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              transition: 'background 0.2s'
+                            }}>
+                              <input
+                                type="checkbox"
+                                checked={isPermissionEnabled(permission)}
+                                onChange={() => togglePermission(permission)}
+                                style={{
+                                  width: '14px',
+                                  height: '14px',
+                                  cursor: 'pointer'
+                                }}
+                                data-testid={`permission-${permission}`}
+                              />
+                              <span style={{
+                                fontSize: '12px',
+                                color: isPermissionEnabled(permission) ? '#111827' : '#6b7280'
+                              }}>
+                                {permission}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Dialog per aggiungere/modificare nodi */}
+        <HierarchyNodeDialog
+          open={nodeDialogOpen}
+          onOpenChange={setNodeDialogOpen}
+          node={editingNode}
+          parentId={parentIdForNewNode}
+          availableRoles={rolesData || []}
+          onSave={async (nodeData) => {
+            try {
+              if (editingNode) {
+                // Modifica nodo esistente
+                await apiRequest(`/api/organizational-structure/${editingNode.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(nodeData)
+                });
+              } else {
+                // Crea nuovo nodo
+                await apiRequest('/api/organizational-structure', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(nodeData)
+                });
+              }
+              await refetchHierarchy();
+              setNodeDialogOpen(false);
+              setEditingNode(null);
+              setParentIdForNewNode(null);
+            } catch (error) {
+              console.error('Errore salvataggio nodo:', error);
+              throw error;
+            }
+          }}
+        />
+      </div>
+    );
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'Entity Management':
+        return renderEntityManagement();
+      case 'Hierarchy Management':
+        // Redirect to new WorkflowManagementPage instead of showing old inline content
+        const currentTenant = localStorage.getItem('currentTenant') || 'staging';
+        setLocation(`/${currentTenant}/workflow-management`);
+        return (
+          <div style={{
+            textAlign: 'center',
+            padding: '40px',
+            background: 'hsla(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(24px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
+            border: '1px solid hsla(255, 255, 255, 0.12)',
+            borderRadius: '16px'
+          }}>
+            <Users size={48} style={{ color: '#6b7280', marginBottom: '16px' }} />
+            <h3 style={{ color: '#111827', marginBottom: '8px' }}>Reindirizzamento...</h3>
+            <p style={{ color: '#6b7280' }}>Stai per essere reindirizzato alla nuova pagina Workflow Management.</p>
+          </div>
+        );
+      case 'AI Assistant':
+        return renderAIAssistant();
+      case 'Channel Settings':
+        return renderChannelSettings();
+      case 'System Settings':
+        return renderSystemSettings();
+      case 'Logs':
+        return renderLogs();
+      default:
+        return renderEntityManagement();
+    }
+  };
+
+  // State per il nuovo modal punto vendita
+  const [newStore, setNewStore] = useState({
+    // ⭐ CAMPI ALLINEATI AL DATABASE SCHEMA
+    code: '',                              // Database: code
+    nome: '',                              // Database: nome  
+    address: '',                           // Database: address
+    citta: '',                             // Database: citta
+    provincia: '',                         // Database: provincia
+    cap: '',                               // Database: cap
+    region: '',                            // Database: region
+    geo: { lat: null, lng: null } as { lat: number | null, lng: number | null }, // Database: geo (jsonb)
+    phone: '',                             // Database: phone
+    email: '',                             // Database: email
+    whatsapp1: '',                         // Database: whatsapp1
+    whatsapp2: '',                         // Database: whatsapp2
+    facebook: '',                          // Database: facebook
+    instagram: '',                         // Database: instagram
+    tiktok: '',                            // Database: tiktok
+    google_maps_url: '',                   // Database: google_maps_url
+    telegram: '',                          // Database: telegram
+    legal_entity_id: null as string | null,  // Database: legal_entity_id (UUID)
+    commercial_area_id: null as string | null, // Database: commercial_area_id (UUID)
+    channel_id: null as string | null,     // Database: channel_id (UUID)
+    status: 'active',                      // Database: status (default 'active')
+    // 🔧 CAMPI BUSINESS
+    brands: [] as string[],                // Relazione M:N con store_brands
+    // 🗓️ CAMPI DATE (opzionali per UI)
+    opened_at: null as string | null,      // Database: opened_at
+    closed_at: null as string | null       // Database: closed_at
+  });
+
+  // 📋 VALIDATION STATE FOR STORE MODAL
+  const [storeValidationErrors, setStoreValidationErrors] = useState<Record<string, string>>({});
+  const [storeValidationState, setStoreValidationState] = useState<Record<string, 'valid' | 'invalid' | 'untouched'>>({
+    phone: 'untouched',
+    email: 'untouched',
+    whatsapp1: 'untouched',
+    whatsapp2: 'untouched',
+    facebook: 'untouched',
+    instagram: 'untouched',
+    tiktok: 'untouched',
+    google_maps_url: 'untouched',
+    telegram: 'untouched'
+  });
+
+  // 🔍 VALIDATION FUNCTIONS FOR STORE MODAL
+  const validateStoreField = (fieldName: string, value: string): { isValid: boolean; error?: string } => {
+    try {
+      switch (fieldName) {
+        case 'email':
+          if (!value) return { isValid: true }; // Optional field
+          z.string().email("Email non valida").parse(value);
+          return { isValid: true };
+
+        case 'phone':
+          if (!value) return { isValid: true }; // Optional field
+          italianPhoneSchema.parse(value);
+          return { isValid: true };
+
+        case 'whatsapp1':
+        case 'whatsapp2':
+          if (!value) return { isValid: true }; // Optional field
+          italianPhoneSchema.parse(value);
+          return { isValid: true };
+
+        case 'facebook':
+        case 'instagram':
+        case 'tiktok':
+        case 'google_maps_url':
+        case 'telegram':
+          if (!value) return { isValid: true }; // Optional field
+          websiteUrlSchema.parse(value);
+          return { isValid: true };
+
+        default:
+          return { isValid: true };
+      }
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || error.message || 'Valore non valido';
+      return { isValid: false, error: errorMessage };
+    }
+  };
+
+  // 🎯 HANDLE STORE FIELD VALIDATION ON BLUR
+  const handleStoreFieldValidation = (fieldName: string, value: string) => {
+    const validation = validateStoreField(fieldName, value);
+    
+    setStoreValidationState(prev => ({
+      ...prev,
+      [fieldName]: validation.isValid ? 'valid' : 'invalid'
+    }));
+
+    setStoreValidationErrors(prev => ({
+      ...prev,
+      [fieldName]: validation.error || ''
+    }));
+
+    // Auto-format phone numbers
+    if ((fieldName === 'phone' || fieldName === 'whatsapp1' || fieldName === 'whatsapp2') && validation.isValid && value) {
+      try {
+        const formatted = italianPhoneSchema.parse(value);
+        setNewStore(prev => ({ ...prev, [fieldName]: formatted }));
+      } catch {
+        // If formatting fails, keep original value
+      }
+    }
+
+    // Auto-format URLs  
+    if (['facebook', 'instagram', 'tiktok', 'google_maps_url', 'telegram'].includes(fieldName) && validation.isValid && value) {
+      try {
+        const formatted = websiteUrlSchema.parse(value);
+        setNewStore(prev => ({ ...prev, [fieldName]: formatted }));
+      } catch {
+        // If formatting fails, keep original value
+      }
+    }
+  };
+
+  // 🎨 GET FIELD BORDER STYLE BASED ON VALIDATION STATE
+  const getStoreFieldStyle = (fieldName: string, baseStyle: React.CSSProperties): React.CSSProperties => {
+    const state = storeValidationState[fieldName];
+    let borderColor = baseStyle.borderColor || '#d1d5db';
+    let boxShadow = 'none';
+
+    if (state === 'valid') {
+      borderColor = '#10b981'; // Green for valid
+      boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+    } else if (state === 'invalid') {
+      borderColor = '#ef4444'; // Red for invalid
+      boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+    }
+
+    return {
+      ...baseStyle,
+      borderColor,
+      boxShadow: storeValidationState[fieldName] !== 'untouched' ? boxShadow : baseStyle.boxShadow || 'none'
+    };
+  };
+
+  // 🔄 RESET STORE VALIDATION ON MODAL OPEN/CLOSE
+  useEffect(() => {
+    if (storeModal.open) {
+      // Reset validation state when modal opens
+      setStoreValidationErrors({});
+      setStoreValidationState({
+        phone: 'untouched',
+        email: 'untouched', 
+        whatsapp1: 'untouched',
+        whatsapp2: 'untouched',
+        facebook: 'untouched',
+        instagram: 'untouched',
+        tiktok: 'untouched',
+        google_maps_url: 'untouched',
+        telegram: 'untouched'
+      });
+    }
+  }, [storeModal.open]);
+
+  // 🆔 USER MODAL VALIDATION STATE MANAGEMENT
+  const [userValidationErrors, setUserValidationErrors] = useState<Record<string, string>>({});
+  const [userValidationState, setUserValidationState] = useState<Record<string, 'valid' | 'invalid' | 'untouched'>>({
+    email: 'untouched',
+    telefono: 'untouched'
+  });
+
+  // 🔍 VALIDATION FUNCTIONS FOR USER MODAL
+  const validateUserField = (fieldName: string, value: string): { isValid: boolean; error?: string } => {
+    try {
+      switch (fieldName) {
+        case 'email':
+          if (!value) return { isValid: false, error: 'Email richiesta' }; // Required field
+          z.string().email("Email non valida").parse(value);
+          return { isValid: true };
+
+        case 'telefono':
+          if (!value) return { isValid: false, error: 'Telefono richiesto' }; // Required field
+          italianPhoneSchema.parse(value);
+          return { isValid: true };
+
+        default:
+          return { isValid: true };
+      }
+    } catch (error: any) {
+      const errorMessage = error.errors?.[0]?.message || error.message || 'Valore non valido';
+      return { isValid: false, error: errorMessage };
+    }
+  };
+
+  // 🎯 HANDLE USER FIELD VALIDATION ON BLUR
+  const handleUserFieldValidation = (fieldName: string, value: string) => {
+    const validation = validateUserField(fieldName, value);
+    
+    setUserValidationState(prev => ({
+      ...prev,
+      [fieldName]: validation.isValid ? 'valid' : 'invalid'
+    }));
+
+    setUserValidationErrors(prev => ({
+      ...prev,
+      [fieldName]: validation.error || ''
+    }));
+
+    // Auto-format phone numbers
+    if (fieldName === 'telefono' && validation.isValid && value) {
+      try {
+        const formatted = italianPhoneSchema.parse(value);
+        setNewUser(prev => ({ ...prev, [fieldName]: formatted }));
+      } catch {
+        // If formatting fails, keep original value
+      }
+    }
+  };
+
+  // 🎨 GET USER FIELD BORDER STYLE BASED ON VALIDATION STATE
+  const getUserFieldStyle = (fieldName: string, baseStyle: React.CSSProperties): React.CSSProperties => {
+    const state = userValidationState[fieldName];
+    let borderColor = baseStyle.borderColor || '#d1d5db';
+    let boxShadow = 'none';
+
+    if (state === 'valid') {
+      borderColor = '#10b981'; // Green for valid
+      boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+    } else if (state === 'invalid') {
+      borderColor = '#ef4444'; // Red for invalid
+      boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+    }
+
+    return {
+      ...baseStyle,
+      borderColor,
+      boxShadow: userValidationState[fieldName] !== 'untouched' ? boxShadow : baseStyle.boxShadow || 'none'
+    };
+  };
+
+  // 🔄 RESET USER VALIDATION ON MODAL OPEN/CLOSE
+  useEffect(() => {
+    if (userModal.open) {
+      // Reset validation state when modal opens
+      setUserValidationErrors({});
+      setUserValidationState({
+        email: 'untouched',
+        telefono: 'untouched'
+      });
+    }
+  }, [userModal.open]);
+
+  // Precompila i campi del modal quando è in modalità edit
+  useEffect(() => {
+    if (storeModal.open && storeModal.data) {
+      // Modalità EDIT - precompila i campi con i dati esistenti
+      const item = storeModal.data;
+      setNewStore({
+        code: item.code || '',
+        nome: item.nome || '',
+        address: item.address || '',
+        citta: item.citta || '',
+        provincia: item.provincia || '',
+        cap: item.cap || '',
+        region: item.region || '',
+        geo: item.geo || { lat: null, lng: null },
+        phone: item.phone || '',
+        email: item.email || '',
+        whatsapp1: item.whatsapp1 || '',
+        whatsapp2: item.whatsapp2 || '',
+        facebook: item.facebook || '',
+        instagram: item.instagram || '',
+        tiktok: item.tiktok || '',
+        google_maps_url: item.googleMapsUrl || item.google_maps_url || '',
+        telegram: item.telegram || '',
+        legal_entity_id: item.legalEntityId || item.legal_entity_id || null,
+        commercial_area_id: item.commercialAreaId || item.commercial_area_id || null,
+        channel_id: item.channelId || item.channel_id || null,
+        status: item.status || 'active',
+        brands: item.brands || [],
+        opened_at: item.openedAt || item.opened_at || null,
+        closed_at: item.closedAt || item.closed_at || null
+      });
+    } else if (storeModal.open && !storeModal.data) {
+      // Modalità CREATE - resetta i campi
+      setNewStore({
+        code: '',
+        nome: '',
+        address: '',
+        citta: '',
+        provincia: '',
+        cap: '',
+        region: '',
+        geo: { lat: null, lng: null },
+        phone: '',
+        email: '',
+        whatsapp1: '',
+        whatsapp2: '',
+        facebook: '',
+        instagram: '',
+        tiktok: '',
+        google_maps_url: '',
+        telegram: '',
+        legal_entity_id: null,
+        commercial_area_id: null,
+        channel_id: null,
+        status: 'active',
+        brands: [],
+        opened_at: null,
+        closed_at: null
+      });
+    }
+  }, [storeModal.open, storeModal.data]);
+
+  // State per il nuovo utente
+  const [newUser, setNewUser] = useState({
+    // Dati di accesso
+    username: '',
+    password: '',
+    confirmPassword: '',
+    ruolo: '',
+    cambioPasswordObbligatorio: true,
+    
+    // Relazioni obbligatorie
+    ragioneSociale_id: null as number | null,  // Obbligatorio
+    puntiVendita_ids: [] as number[],  // Almeno uno obbligatorio
+    puntoVenditaPreferito_id: null as number | null,  // Obbligatorio se più PdV
+    
+    // ✅ SCOPE PIRAMIDALE NUOVO SISTEMA  
+    scopeLevel: 'organizzazione',          // Mantento per compatibilità
+    selectAllLegalEntities: false,         // "Seleziona tutto" ragioni sociali = accesso completo organizzazione
+    selectedLegalEntities: [] as number[], // Ragioni sociali selezionate (primo livello)
+    selectedStores: [] as number[],        // Punti vendita filtrati (secondo livello)
+    
+    // Informazioni personali
+    nome: '',
+    cognome: '',
+    avatar: {
+      url: null as string | null,
+      blob: null as Blob | null,
+      type: 'upload' as 'upload' | 'generated'
+    },
+    codiceFiscale: '',
+    dataNascita: '',
+    luogoNascita: '',
+    sesso: 'M',
+    
+    // Contatti
+    email: '',
+    emailPersonale: '',
+    telefono: '',
+    telefonoAziendale: '',
+    
+    // Indirizzo residenza
+    via: '',
+    civico: '',
+    citta: '',
+    cap: '',
+    provincia: '',
+    paese: 'Italia',
+    
+    // Documenti
+    tipoDocumento: 'Carta Identità',
+    numeroDocumento: '',
+    dataScadenzaDocumento: '',
+    
+    // Impostazioni account
+    stato: 'attivo',
+    dataInizioValidita: '',
+    dataFineValidita: '',
+    notificheEmail: true,
+    notificheSMS: false,
+    lingua: 'it',
+    fuso: 'Europe/Rome',
+    
+    // Informazioni contrattuali
+    tipoContratto: 'Indeterminato',
+    dataAssunzione: '',
+    livello: '',
+    ccnl: 'Commercio',
+    oreLavoro: '40',
+    
+    // Note
+    note: ''
+  });
+
+  // State per il modal ragione sociale
+  const [newRagioneSociale, setNewRagioneSociale] = useState({
+    codice: '',
+    nome: '',
+    formaGiuridica: 'Srl',
+    pIva: '',
+    codiceFiscale: '',
+    indirizzo: '',
+    citta: '',
+    cap: '',
+    provincia: '',
+    telefono: '',
+    email: '',
+    pec: '',
+    stato: 'Attiva',
+    // Missing enterprise fields for 1:1 integrity
+    capitaleSociale: '',
+    dataCostituzione: '',
+    rea: '',
+    registroImprese: '',
+    // New enterprise fields
+    logo: '',
+    codiceSDI: '',
+    // Administrative contact section
+    refAmminNome: '',
+    refAmminCognome: '',
+    refAmminEmail: '',
+    refAmminCodiceFiscale: '',
+    refAmminIndirizzo: '',
+    refAmminCitta: '',
+    refAmminCap: '',
+    refAmminPaese: '',
+    // Notes field
+    note: ''
+  });
+
+  // State per il modal fornitore - updated with separate payment fields
+  const [newSupplier, setNewSupplier] = useState<SupplierValidation>({
+    // ANAGRAFICI
+    code: '',
+    name: '',
+    legalName: '',
+    legalForm: '',
+    vatNumber: '',
+    taxCode: '',
+    status: 'active',
+    // GEOGRAFICI
+    address: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    // CONTATTI
+    email: '',
+    phone: '',
+    website: '',
+    pecEmail: '',
+    // AMMINISTRATIVI
+    sdiCode: '',
+    iban: '',
+    bic: '',
+    splitPayment: false,
+    withholdingTax: false,
+    // SEPARATE PAYMENT FIELDS
+    preferredPaymentMethodId: '',
+    paymentConditionId: '',
+    // NOTE
+    notes: ''
+  });
+
+  // Ottieni il tenant ID dal localStorage o usa il demo tenant
+  const getCurrentTenantId = () => {
+    const tenantId = localStorage.getItem('currentTenantId');
+    return tenantId || '00000000-0000-0000-0000-000000000001';
+  };
+
+  // Handler per salvare la nuova ragione sociale - USA API REALE
+  const handleSaveRagioneSociale = async () => {
+    try {
+      const currentTenantId = DEMO_TENANT_ID;
+      // Genera codice RS: inizia con 8, almeno 7 cifre totali  
+      const newCode = newRagioneSociale.codice || `8${String(Date.now()).slice(-6)}`;
+      
+      // Prepara i dati per l'API con tutti i nuovi campi enterprise
+      const legalEntityData = {
+        tenantId: currentTenantId,
+        codice: newCode,
+        nome: newRagioneSociale.nome || 'Nuova Ragione Sociale',
+        formaGiuridica: newRagioneSociale.formaGiuridica,
+        pIva: newRagioneSociale.pIva || `IT${String(Math.floor(Math.random() * 99999999999) + 10000000000).padStart(11, '0')}`,
+        codiceFiscale: newRagioneSociale.codiceFiscale,
+        stato: newRagioneSociale.stato,
+        indirizzo: newRagioneSociale.indirizzo,
+        citta: newRagioneSociale.citta || 'Milano',
+        cap: newRagioneSociale.cap,
+        provincia: newRagioneSociale.provincia,
+        telefono: newRagioneSociale.telefono,
+        email: newRagioneSociale.email,
+        pec: newRagioneSociale.pec,
+        // Missing enterprise fields for 1:1 integrity
+        capitaleSociale: newRagioneSociale.capitaleSociale,
+        dataCostituzione: newRagioneSociale.dataCostituzione,
+        rea: newRagioneSociale.rea,
+        registroImprese: newRagioneSociale.registroImprese,
+        // New enterprise fields - using camelCase
+        logo: newRagioneSociale.logo,
+        codiceSDI: newRagioneSociale.codiceSDI,
+        // Administrative contact section
+        refAmminNome: newRagioneSociale.refAmminNome,
+        refAmminCognome: newRagioneSociale.refAmminCognome,
+        refAmminEmail: newRagioneSociale.refAmminEmail,
+        refAmminCodiceFiscale: newRagioneSociale.refAmminCodiceFiscale,
+        refAmminIndirizzo: newRagioneSociale.refAmminIndirizzo,
+        refAmminCitta: newRagioneSociale.refAmminCitta,
+        refAmminCap: newRagioneSociale.refAmminCap,
+        refAmminPaese: newRagioneSociale.refAmminPaese,
+        // Notes field
+        note: newRagioneSociale.note
+      };
+
+      // Chiamata API per creare la ragione sociale
+      const response = await fetch('/api/legal-entities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant-ID': currentTenantId
+        },
+        body: JSON.stringify(legalEntityData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create legal entity: ${response.statusText}`);
+      }
+
+      const newLegalEntity = await response.json();
+      console.log('✅ Legal entity created:', newLegalEntity);
+
+      // Refresh the list dopo la creazione
+      await refetchLegalEntities();
+      
+      setLegalEntityModal({ open: false, data: null });
+      
+      // Reset form
+      setNewRagioneSociale({
+        codice: '',
+        nome: '',
+        formaGiuridica: 'Srl',
+        pIva: '',
+        codiceFiscale: '',
+        indirizzo: '',
+        citta: '',
+        cap: '',
+        provincia: '',
+        telefono: '',
+        email: '',
+        pec: '',
+        stato: 'Attiva',
+        // Enterprise fields
+        capitaleSociale: '',
+        dataCostituzione: '',
+        rea: '',
+        registroImprese: '',
+        logo: '',
+        codiceSDI: '',
+        // Administrative contact section
+        refAmminNome: '',
+        refAmminCognome: '',
+        refAmminEmail: '',
+        refAmminCodiceFiscale: '',
+        refAmminIndirizzo: '',
+        refAmminCitta: '',
+        refAmminCap: '',
+        refAmminPaese: '',
+        // Notes field
+        note: ''
+      });
+    } catch (error) {
+      console.error('❌ Error creating legal entity:', error);
+      alert('Errore nella creazione della ragione sociale. Riprova.');
+    }
+  };
+
+  // Handler per salvare il fornitore - USA API REALE
+  const handleSaveSupplier = async () => {
+    try {
+      const currentTenantId = DEMO_TENANT_ID;
+      
+      // Comprehensive validation using Zod schema
+      const validationResult = supplierValidationSchema.safeParse(newSupplier);
+      
+      if (!validationResult.success) {
+        // Show validation errors
+        const errors = validationResult.error.errors.map(err => 
+          `${err.path.join('.')}: ${err.message}`
+        ).join('\n');
+        alert(`Errori di validazione:\n${errors}`);
+        return;
+      }
+
+      const validatedData = validationResult.data;
+      const isEdit = Boolean(supplierModal.data);
+      
+      // Genera codice fornitore: inizia con FOR, almeno 6 cifre totali (solo per creazione)
+      const newCode = validatedData.code || (isEdit ? supplierModal.data.code : `FOR${String(Date.now()).slice(-3)}`);
+      
+      const supplierData = {
+        tenantId: currentTenantId,
+        origin: 'tenant',
+        code: newCode,
+        name: validatedData.name,
+        legalName: validatedData.legalName,
+        legalForm: validatedData.legalForm,
+        supplierType: 'distributore', // Default type, can be made dynamic later
+        vatNumber: validatedData.vatNumber,
+        taxCode: validatedData.taxCode,
+        status: validatedData.status,
+        // Address structure - JSONB + FK pattern
+        registeredAddress: {
+          via: validatedData.address,
+          citta: validatedData.city,
+          provincia: validatedData.province,
+          cap: validatedData.postalCode
+        },
+        countryId: '00000000-0000-0000-0000-000000000001', // Default Italy UUID - should be dynamic
+        email: validatedData.email,
+        phone: validatedData.phone,
+        website: validatedData.website,
+        pecEmail: validatedData.pecEmail,
+        sdiCode: validatedData.sdiCode,
+        iban: validatedData.iban,
+        bic: validatedData.bic,
+        splitPayment: validatedData.splitPayment,
+        withholdingTax: validatedData.withholdingTax,
+        // SEPARATE PAYMENT FIELDS
+        preferredPaymentMethodId: validatedData.preferredPaymentMethodId || null,
+        paymentConditionId: validatedData.paymentConditionId || null,
+        notes: validatedData.notes,
+        createdBy: 'system' // Should be current user ID
+      };
+
+      let result;
+      if (isEdit) {
+        // Modalità UPDATE
+        result = await apiService.updateSupplier(supplierModal.data.id, supplierData);
+      } else {
+        // Modalità CREATE
+        result = await apiService.createSupplier(supplierData);
+      }
+      
+      if (result.success) {
+        // Chiudi modal e reset form
+        setSupplierModal({ open: false, data: null });
+        
+        // Reset form
+        setNewSupplier({
+          code: '',
+          name: '',
+          legalName: '',
+          legalForm: '',
+          vatNumber: '',
+          taxCode: '',
+          status: 'active',
+          address: '',
+          city: '',
+          province: '',
+          postalCode: '',
+          country: 'Italia',
+          email: '',
+          phone: '',
+          website: '',
+          pecEmail: '',
+          sdiCode: '',
+          iban: '',
+          bic: '',
+          splitPayment: false,
+          withholdingTax: false,
+          preferredPaymentMethodId: '',
+          notes: ''
+        });
+
+        // Ricarica i dati per mostrare le modifiche
+        await refetchSuppliersQuery();
+        
+      } else {
+        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} supplier:`, result.error);
+        alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} del fornitore. Riprova.`);
+      }
+    } catch (error) {
+      console.error(`❌ Error ${supplierModal.data ? 'updating' : 'creating'} supplier:`, error);
+      alert(`Errore nella ${supplierModal.data ? 'modifica' : 'creazione'} del fornitore. Riprova.`);
+    }
+  };
+
+  // Handler per salvare/aggiornare punto vendita - USA API REALE
+  const handleSaveStore = async () => {
+    try {
+      const currentTenantId = DEMO_TENANT_ID;
+      
+      // ✅ VALIDAZIONE RELAZIONI 1:1 OBBLIGATORIE
+      if (!newStore.legal_entity_id) {
+        alert('Errore: Ragione Sociale è obbligatoria per creare un punto vendita.');
+        return;
+      }
+      
+      if (!newStore.channel_id) {
+        alert('Errore: Canale di vendita è obbligatorio per creare un punto vendita.');
+        return;
+      }
+      
+      if (!newStore.commercial_area_id) {
+        alert('Errore: Area commerciale è obbligatoria per creare un punto vendita.');
+        return;
+      }
+      
+      const isEdit = Boolean(storeModal.data);
+      
+      // Genera codice PDV: inizia con 9, almeno 7 cifre totali (solo per creazione)
+      const newCode = newStore.code || (isEdit ? storeModal.data.code : `9${String(Date.now()).slice(-6)}`);
+      
+      const storeData = {
+        tenantId: currentTenantId,
+        legalEntityId: newStore.legal_entity_id,
+        code: newCode,                        
+        nome: newStore.nome || 'Nuovo Punto Vendita',
+        address: newStore.address || 'Via Nuova 1',
+        citta: newStore.citta || 'Milano',
+        provincia: newStore.provincia,
+        cap: newStore.cap,
+        region: newStore.region,
+        geo: newStore.geo,                    
+        phone: newStore.phone,                
+        email: newStore.email,
+        whatsapp1: newStore.whatsapp1,
+        whatsapp2: newStore.whatsapp2,
+        facebook: newStore.facebook,
+        instagram: newStore.instagram,
+        tiktok: newStore.tiktok,
+        googleMapsUrl: newStore.google_maps_url,
+        telegram: newStore.telegram,
+        commercialAreaId: newStore.commercial_area_id,
+        channelId: newStore.channel_id,
+        status: newStore.status,              
+        openedAt: newStore.opened_at,
+        closedAt: newStore.closed_at
+      };
+
+      let result;
+      if (isEdit) {
+        // Modalità UPDATE
+        result = await apiService.updateStore(storeModal.data.id, storeData);
+      } else {
+        // Modalità CREATE
+        result = await apiService.createStore(storeData);
+      }
+      
+      if (result.success) {
+        // Chiudi modal e reset form
+        setStoreModal({ open: false, data: null });
+        setNewStore({
+          code: '',
+          nome: '',
+          address: '',
+          citta: '',
+          provincia: '',
+          cap: '',
+          region: '',
+          geo: { lat: null, lng: null },
+          phone: '',
+          email: '',
+          whatsapp1: '',
+          whatsapp2: '',
+          facebook: '',
+          instagram: '',
+          tiktok: '',
+          google_maps_url: '',
+          telegram: '',
+          legal_entity_id: null,
+          commercial_area_id: null,
+          channel_id: null,
+          status: 'active',
+          brands: [],
+          opened_at: null,
+          closed_at: null
+        });
+
+        // Ricarica i dati per mostrare le modifiche
+        await reloadStoreData();
+        
+      } else {
+        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} store:`, result.error);
+        alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
+      }
+    } catch (error) {
+      console.error(`❌ Error ${storeModal.data ? 'updating' : 'creating'} store:`, error);
+      alert(`Errore nella ${storeModal.data ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
+    }
+  };
+
+  return (
+    <>
+      {/* Modal Ragione Sociale */}
+      {legalEntityModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            {/* Header Modal - Clean Design */}
+            <div style={{
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'none'
+                    }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h2 style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: 'none'
+                    }}>
+                      {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500
+                  }}>
+                    {legalEntityModal.data ? 'Modifica i dati dell\'entità giuridica' : 'Inserisci i dati della nuova entità giuridica'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setLegalEntityModal({ open: false, data: null })}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: '#64748b',
+                    backdropFilter: 'blur(8px)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
+                    e.currentTarget.style.color = '#374151';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Body Modal */}
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {/* Codice */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Codice Ragione Sociale
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="8xxxxxxx (auto-generato, min. 7 cifre)"
+                    value={newRagioneSociale.codice}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codice: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Nome */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Franchising Ltd"
+                    value={newRagioneSociale.nome}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, nome: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Forma Giuridica */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newRagioneSociale.formaGiuridica}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, formaGiuridica: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <option value="">Seleziona...</option>
+                    {legalForms.length > 0 ? (
+                      (legalForms as any[]).map((form: any) => (
+                        <option key={form.code} value={form.code}>
+                          {form.code} - {form.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="SRL">SRL - Società a Responsabilità Limitata</option>
+                        <option value="SPA">SPA - Società per Azioni</option>
+                        <option value="SNC">SNC - Società in Nome Collettivo</option>
+                        <option value="SAS">SAS - Società in Accomandita Semplice</option>
+                        <option value="SAPA">SAPA - Società in Accomandita per Azioni</option>
+                        <option value="SRLS">SRLS - Società a Responsabilità Limitata Semplificata</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {/* Partita IVA */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Partita IVA <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="IT12345678901"
+                    value={newRagioneSociale.pIva}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      setNewRagioneSociale({ ...newRagioneSociale, pIva: value });
+                    }}
+                    onBlur={composeEventHandlers(
+                      (e) => {
+                        // Real-time P.IVA validation for legal entities
+                        if (e.target.value) {
+                          const vatValidation = legalEntityValidationSchema.shape.pIva?.safeParse(e.target.value);
+                          if (!vatValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'P.IVA non valida (formato: IT + 11 cifre)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      },
+                      (e) => {
+                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                        e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                        e.target.style.boxShadow = 'none';
+                        e.target.style.transform = 'translateY(0)';
+                      }
+                    )}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                  />
+                </div>
+
+                {/* Codice Fiscale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Codice Fiscale
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="RSSMRA80A01H501U"
+                    value={newRagioneSociale.codiceFiscale}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceFiscale: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      textTransform: 'uppercase',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  />
+                </div>
+
+                {/* Capitale Sociale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Capitale Sociale
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. €10.000"
+                    value={newRagioneSociale.capitaleSociale}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, capitaleSociale: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Data Costituzione */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Data Costituzione
+                  </label>
+                  <input
+                    type="date"
+                    value={newRagioneSociale.dataCostituzione}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, dataCostituzione: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* REA */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    R.E.A.
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. MI-1234567"
+                    value={newRagioneSociale.rea}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, rea: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Registro Imprese */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Registro Imprese
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. 123456789012"
+                    value={newRagioneSociale.registroImprese}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, registroImprese: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Logo Aziendale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Logo Aziendale 
+                    <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px', cursor: 'help' }} 
+                          title="File PNG, dimensioni consigliate: 300x150px, max 2MB">
+                      ⓘ
+                    </span>
+                  </label>
+                  <input
+                    type="file"
+                    accept=".png"
+                    data-testid="input-logo"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Convert to base64 or handle file upload
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setNewRagioneSociale({ ...newRagioneSociale, logo: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Codice SDI */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Codice SDI
+                    <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px' }}>
+                      (Sistema di Interscambio)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="A4707H7"
+                    data-testid="input-codice-sdi"
+                    value={newRagioneSociale.codiceSDI}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, codiceSDI: e.target.value.toUpperCase() })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'monospace',
+                      textTransform: 'uppercase',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  />
+                </div>
+
+                {/* Indirizzo - full width */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Via Roma 123"
+                    value={newRagioneSociale.indirizzo}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, indirizzo: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Città */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Città <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <StandardCityField
+                    value={newRagioneSociale.citta}
+                    onChange={(cityName) => setNewRagioneSociale({ ...newRagioneSociale, citta: cityName })}
+                    onCapChange={(cap) => setNewRagioneSociale(prev => ({ ...prev, cap }))}
+                    onProvinciaChange={(provincia) => setNewRagioneSociale(prev => ({ ...prev, provincia }))}
+                    required={true}
+                  />
+                </div>
+
+                {/* CAP */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="20121"
+                    value={newRagioneSociale.cap}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, cap: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                    }}
+                    onFocus={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.background = 'white';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Provincia */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MI"
+                    maxLength={2}
+                    value={newRagioneSociale.provincia}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, provincia: e.target.value.toUpperCase() })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      textTransform: 'uppercase',
+                      outline: 'none',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                    }}
+                    onFocus={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.background = 'white';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Telefono */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Telefono
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 02 1234567"
+                    value={newRagioneSociale.telefono}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, telefono: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="info@azienda.it"
+                    value={newRagioneSociale.email}
+                    onChange={(e) => {
+                      const value = e.target.value.toLowerCase();
+                      setNewRagioneSociale({ ...newRagioneSociale, email: value });
+                    }}
+                    onBlur={(e) => {
+                      // Real-time email validation for legal entities
+                      if (e.target.value) {
+                        const emailValidation = legalEntityValidationSchema.shape.email?.safeParse(e.target.value);
+                        if (!emailValidation?.success) {
+                          e.target.style.borderColor = '#ef4444';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          if (!errorDiv) {
+                            errorDiv = document.createElement('div');
+                            errorDiv.className = 'validation-error';
+                            e.target.parentElement?.appendChild(errorDiv);
+                          }
+                          errorDiv.textContent = 'Formato email non valido';
+                          errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                        } else {
+                          e.target.style.borderColor = '#10b981';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      } else {
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.boxShadow = 'none';
+                        const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                        errorDiv?.remove();
+                      }
+                    }}
+                    data-testid="input-legal-entity-email"
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                  />
+                </div>
+
+                {/* PEC */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    PEC <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="azienda@pec.it"
+                    value={newRagioneSociale.pec}
+                    onChange={(e) => {
+                      const value = e.target.value.toLowerCase();
+                      setNewRagioneSociale({ ...newRagioneSociale, pec: value });
+                    }}
+                    onBlur={composeEventHandlers(
+                      (e) => {
+                        // Real-time PEC email validation for legal entities
+                        if (e.target.value) {
+                          const pecValidation = legalEntityValidationSchema.shape.pec?.safeParse(e.target.value);
+                          if (!pecValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'PEC non valida - deve terminare con domini certificati PEC';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      },
+                      (e) => {
+                        // Styling reset handler
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.background = '#fafbfc';
+                        e.target.style.boxShadow = 'none';
+                      }
+                    )}
+                    data-testid="input-legal-entity-pec"
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                  />
+                </div>
+
+                {/* Stato */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Stato
+                  </label>
+                  <select
+                    value={newRagioneSociale.stato}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, stato: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#FF6900';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+                      e.target.style.background = 'rgba(255, 255, 255, 0.7)';
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <option value="Attiva">Attiva</option>
+                    <option value="Sospesa">Sospesa</option>
+                    <option value="Bozza">Bozza</option>
+                    <option value="Cessata">Cessata</option>
+                  </select>
+                </div>
+
+
+                {/* Sezione Referente Amministrativo */}
+                <div style={{ gridColumn: 'span 2', marginTop: '24px' }}>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#111827',
+                    marginBottom: '16px',
+                    paddingBottom: '8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Referente Amministrativo
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {/* Nome Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Nome <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="es. Mario"
+                        data-testid="input-ref-nome"
+                        value={newRagioneSociale.refAmminNome}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminNome: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    {/* Cognome Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Cognome <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="es. Rossi"
+                        data-testid="input-ref-cognome"
+                        value={newRagioneSociale.refAmminCognome}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCognome: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    {/* Email Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Email <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="mario.rossi@azienda.it"
+                        data-testid="input-ref-email"
+                        value={newRagioneSociale.refAmminEmail}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminEmail: e.target.value })}
+                        onBlur={(e) => {
+                          const isValid = validateEmail(e.target.value);
+                          if (e.target.value && !isValid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                      />
+                    </div>
+
+                    {/* Codice Fiscale Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Codice Fiscale <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="RSSMRA80A01H501U"
+                        data-testid="input-ref-codicefiscale"
+                        value={newRagioneSociale.refAmminCodiceFiscale}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCodiceFiscale: e.target.value.toUpperCase() })}
+                        onBlur={(e) => {
+                          const isValid = validateCodiceFiscale(e.target.value);
+                          if (e.target.value && !isValid) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          fontFamily: 'monospace',
+                          textTransform: 'uppercase',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#FF6900';
+                          e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                          e.target.style.boxShadow = '0 4px 20px rgba(255, 105, 0, 0.2)';
+                        }}
+                      />
+                    </div>
+
+                    {/* Indirizzo Referente - full width */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Indirizzo
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="es. Via Verdi 456"
+                        data-testid="input-ref-indirizzo"
+                        value={newRagioneSociale.refAmminIndirizzo}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminIndirizzo: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+
+                    {/* Città Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Città
+                      </label>
+                      <StandardCityField
+                        value={newRagioneSociale.refAmminCitta}
+                        onChange={(cityName) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCitta: cityName })}
+                        onCapChange={(cap) => setNewRagioneSociale(prev => ({ ...prev, refAmminCap: cap }))}
+                        onProvinciaChange={() => {}} // Il referente non ha campo provincia
+                        required={false}
+                      />
+                    </div>
+
+                    {/* CAP Referente */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        CAP
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="20121"
+                        data-testid="input-ref-cap"
+                        value={newRagioneSociale.refAmminCap}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminCap: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          fontFamily: 'monospace'
+                        }}
+                      />
+                    </div>
+
+                    {/* Paese Referente */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        Paese
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Italia"
+                        data-testid="input-ref-paese"
+                        value={newRagioneSociale.refAmminPaese}
+                        onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, refAmminPaese: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          transition: 'all 0.2s ease',
+                          outline: 'none',
+                          color: '#374151',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                          fontWeight: '400',
+                          lineHeight: '1.5'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#3b82f6';
+                          e.target.style.background = '#ffffff';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = '#e5e7eb';
+                          e.target.style.background = '#fafbfc';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Campo Note - full width */}
+                <div style={{ gridColumn: 'span 2', marginTop: '16px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Note
+                  </label>
+                  <textarea
+                    placeholder="Inserisci eventuali note..."
+                    data-testid="textarea-note"
+                    value={newRagioneSociale.note}
+                    onChange={(e) => setNewRagioneSociale({ ...newRagioneSociale, note: e.target.value })}
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5',
+                      resize: 'vertical'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Footer Modal */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '32px',
+                paddingTop: '20px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={() => setLegalEntityModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#9ca3af';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#ffffff';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleSaveRagioneSociale}
+                  style={{
+                    padding: '10px 24px',
+                    background: '#FF6900',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 1px 3px 0 rgba(255, 105, 0, 0.3)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#e55a00';
+                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#FF6900';
+                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(255, 105, 0, 0.3)';
+                  }}
+                >
+                  Salva
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Punto Vendita */}
+      {storeModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            {/* Header Modal - Clean Design */}
+            <div style={{
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                    }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 22V12h6v10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h2 style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: 'none'
+                    }}>
+                      {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500
+                  }}>
+                    {storeModal.data ? 'Modifica i dati del punto vendita' : 'Configura i dettagli del nuovo punto vendita'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setStoreModal({ open: false, data: null })}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: '#64748b',
+                    backdropFilter: 'blur(8px)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(248, 250, 252, 0.95)';
+                    e.currentTarget.style.color = '#374151';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+                    e.currentTarget.style.color = '#64748b';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Body Modal */}
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {/* Codice */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Codice Punto Vendita
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="9xxxxxxx (auto-generato, min. 7 cifre)"
+                    value={newStore.code}
+                    onChange={(e) => setNewStore({ ...newStore, code: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                      color: '#374151',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      lineHeight: '1.5'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.background = '#ffffff';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.background = '#fafbfc';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Nome */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. WindTre Milano Centro"
+                    value={newStore.nome}
+                    onChange={(e) => setNewStore({ ...newStore, nome: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Ragione Sociale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newStore.legal_entity_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, legal_entity_id: e.target.value || null })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="">Seleziona ragione sociale...</option>
+                    {ragioneSocialiList.filter(rs => rs.stato === 'Attiva').map(rs => (
+                      <option key={rs.id} value={rs.id}>
+                        {rs.nome} ({rs.codice})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Canale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Canale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newStore.channel_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, channel_id: e.target.value || null })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="Franchising">Franchising</option>
+                    <option value="Top Dealer">Top Dealer</option>
+                    <option value="Dealer">Dealer</option>
+                  </select>
+                </div>
+
+                {/* Area Commerciale */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newStore.commercial_area_id || ''}
+                    onChange={(e) => setNewStore({ ...newStore, commercial_area_id: e.target.value || null })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="">Seleziona area...</option>
+                    {(commercialAreas as any[]).map((area: any) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name} - {area.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Stato */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Stato <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newStore.status}
+                    onChange={(e) => setNewStore({ ...newStore, status: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="Attivo">Attivo</option>
+                    <option value="Sospeso">Sospeso</option>
+                    <option value="Chiuso">Chiuso</option>
+                  </select>
+                </div>
+
+                {/* Brand - Multi-select */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '20px' }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      cursor: 'pointer',
+                      padding: '6px 10px',
+                      background: newStore.brands.includes('WindTre') ? 'rgba(255, 105, 0, 0.1)' : '#f8fafc',
+                      borderRadius: '8px',
+                      border: `2px solid ${newStore.brands.includes('WindTre') ? '#FF6900' : 'transparent'}`,
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={newStore.brands.includes('WindTre')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStore({ ...newStore, brands: [...newStore.brands, 'WindTre'] });
+                          } else {
+                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'WindTre') });
+                          }
+                        }}
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          cursor: 'pointer',
+                          accentColor: '#FF6900'
+                        }}
+                      />
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newStore.brands.includes('WindTre') ? '#FF6900' : '#374151',
+                        fontWeight: '600'
+                      }}>
+                        WindTre
+                      </span>
+                    </label>
+                    
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      cursor: 'pointer',
+                      padding: '6px 10px',
+                      background: newStore.brands.includes('Very Mobile') ? 'rgba(16, 185, 129, 0.1)' : '#f8fafc',
+                      borderRadius: '8px',
+                      border: `2px solid ${newStore.brands.includes('Very Mobile') ? '#10b981' : 'transparent'}`,
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={newStore.brands.includes('Very Mobile')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewStore({ ...newStore, brands: [...newStore.brands, 'Very Mobile'] });
+                          } else {
+                            setNewStore({ ...newStore, brands: newStore.brands.filter(b => b !== 'Very Mobile') });
+                          }
+                        }}
+                        style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          cursor: 'pointer',
+                          accentColor: '#10b981'
+                        }}
+                      />
+                      <span style={{ 
+                        fontSize: '14px', 
+                        color: newStore.brands.includes('Very Mobile') ? '#10b981' : '#374151',
+                        fontWeight: '600'
+                      }}>
+                        Very Mobile
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Indirizzo - full width */}
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Indirizzo <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="es. Via Roma 123"
+                    value={newStore.address}
+                    onChange={(e) => setNewStore({ ...newStore, address: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Città */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Città <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <StandardCityField
+                    value={newStore.citta}
+                    onChange={(cityName) => setNewStore({ ...newStore, citta: cityName })}
+                    onCapChange={(cap) => setNewStore(prev => ({ ...prev, cap }))}
+                    onProvinciaChange={(provincia) => setNewStore(prev => ({ ...prev, provincia }))}
+                    required={true}
+                  />
+                </div>
+
+                {/* CAP */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="20121"
+                    value={newStore.cap}
+                    onChange={(e) => setNewStore({ ...newStore, cap: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                    }}
+                    onFocus={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Provincia */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MI"
+                    value={newStore.provincia}
+                    onChange={(e) => setNewStore({ ...newStore, provincia: e.target.value })}
+                    readOnly={italianCities.length > 0} // Auto-popolato dalla città
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937',
+                      cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                    }}
+                    onFocus={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (italianCities.length === 0) {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* 🗺️ Coordinate Geografiche */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1fr 1fr', 
+                  gap: '16px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                  marginBottom: '24px'
+                }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      🌐 Latitudine
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      placeholder="45.464211"
+                      data-testid="input-latitude"
+                      value={newStore.geo.lat || ''}
+                      onChange={(e) => setNewStore({ ...newStore, geo: { ...newStore.geo, lat: e.target.value ? parseFloat(e.target.value) : null } })}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        background: '#ffffff',
+                        color: '#374151',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      🌐 Longitudine
+                    </label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      placeholder="9.190347"
+                      data-testid="input-longitude"
+                      value={newStore.geo.lng || ''}
+                      onChange={(e) => setNewStore({ ...newStore, geo: { ...newStore.geo, lng: e.target.value ? parseFloat(e.target.value) : null } })}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        background: '#ffffff',
+                        color: '#374151',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#FF6900';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 105, 0, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                  <div style={{ 
+                    gridColumn: '1 / -1',
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginTop: '8px'
+                  }}>
+                    <span>💡</span>
+                    <span>Puoi trovare le coordinate su <a href="https://www.google.com/maps" target="_blank" style={{ color: '#FF6900', textDecoration: 'underline' }}>Google Maps</a> cliccando destro sul punto vendita</span>
+                  </div>
+                </div>
+
+                {/* 📱 Sezione Contatti/Social */}
+                <div style={{ gridColumn: 'span 2', marginTop: '24px', marginBottom: '16px' }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    color: '#374151',
+                    padding: '12px 16px',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    textAlign: 'center',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    📱 Contatti/Social
+                  </div>
+                </div>
+
+                {/* Telefono */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Telefono
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 02 1234567"
+                    value={newStore.phone}
+                    onChange={(e) => setNewStore({ ...newStore, phone: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('phone', e.target.value)}
+                    style={getStoreFieldStyle('phone', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.phone === 'untouched') {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.phone && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.phone}
+                    </div>
+                  )}
+                  {storeValidationState.phone === 'valid' && newStore.phone && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#10b981',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ Numero di telefono valido
+                    </div>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="punto.vendita@windtre.it"
+                    value={newStore.email}
+                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('email', e.target.value)}
+                    style={getStoreFieldStyle('email', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.email === 'untouched') {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.email && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.email}
+                    </div>
+                  )}
+                  {storeValidationState.email === 'valid' && newStore.email && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#10b981',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ Email valida
+                    </div>
+                  )}
+                </div>
+
+                {/* WhatsApp 1 */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
+                    WhatsApp 1
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 333 1234567"
+                    value={newStore.whatsapp1}
+                    onChange={(e) => setNewStore({ ...newStore, whatsapp1: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('whatsapp1', e.target.value)}
+                    style={getStoreFieldStyle('whatsapp1', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.whatsapp1 === 'untouched') {
+                        e.target.style.borderColor = '#25D366';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.whatsapp1 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.whatsapp1}
+                    </div>
+                  )}
+                  {storeValidationState.whatsapp1 === 'valid' && newStore.whatsapp1 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#25D366',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ WhatsApp valido
+                    </div>
+                  )}
+                </div>
+
+                {/* WhatsApp 2 */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#25D366', fontSize: '16px' }}>📱</span>
+                    WhatsApp 2
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+39 333 7654321"
+                    value={newStore.whatsapp2}
+                    onChange={(e) => setNewStore({ ...newStore, whatsapp2: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('whatsapp2', e.target.value)}
+                    style={getStoreFieldStyle('whatsapp2', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.whatsapp2 === 'untouched') {
+                        e.target.style.borderColor = '#25D366';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(37, 211, 102, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.whatsapp2 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.whatsapp2}
+                    </div>
+                  )}
+                  {storeValidationState.whatsapp2 === 'valid' && newStore.whatsapp2 && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#25D366',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ WhatsApp valido
+                    </div>
+                  )}
+                </div>
+
+                {/* Facebook */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#1877F2', fontSize: '16px' }}>👤</span>
+                    Facebook
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="facebook.com/windtrestore"
+                    value={newStore.facebook}
+                    onChange={(e) => setNewStore({ ...newStore, facebook: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('facebook', e.target.value)}
+                    style={getStoreFieldStyle('facebook', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.facebook === 'untouched') {
+                        e.target.style.borderColor = '#1877F2';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(24, 119, 242, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.facebook && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.facebook}
+                    </div>
+                  )}
+                  {storeValidationState.facebook === 'valid' && newStore.facebook && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#1877F2',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Facebook valido
+                    </div>
+                  )}
+                </div>
+
+                {/* Instagram */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#E4405F', fontSize: '16px' }}>📷</span>
+                    Instagram
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="instagram.com/windtrestore"
+                    value={newStore.instagram}
+                    onChange={(e) => setNewStore({ ...newStore, instagram: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('instagram', e.target.value)}
+                    style={getStoreFieldStyle('instagram', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.instagram === 'untouched') {
+                        e.target.style.borderColor = '#E4405F';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(228, 64, 95, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.instagram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.instagram}
+                    </div>
+                  )}
+                  {storeValidationState.instagram === 'valid' && newStore.instagram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#E4405F',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Instagram valido
+                    </div>
+                  )}
+                </div>
+
+                {/* TikTok */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#FF0050', fontSize: '16px' }}>🎵</span>
+                    TikTok
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="tiktok.com/@windtrestore"
+                    value={newStore.tiktok}
+                    onChange={(e) => setNewStore({ ...newStore, tiktok: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('tiktok', e.target.value)}
+                    style={getStoreFieldStyle('tiktok', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.tiktok === 'untouched') {
+                        e.target.style.borderColor = '#FF0050';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 0, 80, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.tiktok && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.tiktok}
+                    </div>
+                  )}
+                  {storeValidationState.tiktok === 'valid' && newStore.tiktok && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#FF0050',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL TikTok valido
+                    </div>
+                  )}
+                </div>
+
+                {/* Google Maps URL */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#4285F4', fontSize: '16px' }}>🗺️</span>
+                    Google Maps
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://maps.google.com/..."
+                    value={newStore.google_maps_url}
+                    onChange={(e) => setNewStore({ ...newStore, google_maps_url: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('google_maps_url', e.target.value)}
+                    style={getStoreFieldStyle('google_maps_url', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.google_maps_url === 'untouched') {
+                        e.target.style.borderColor = '#4285F4';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.google_maps_url && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.google_maps_url}
+                    </div>
+                  )}
+                  {storeValidationState.google_maps_url === 'valid' && newStore.google_maps_url && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#4285F4',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Google Maps valido
+                    </div>
+                  )}
+                </div>
+
+                {/* Telegram */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    <span style={{ color: '#0088CC', fontSize: '16px' }}>✈️</span>
+                    Telegram
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="t.me/windtrestore"
+                    value={newStore.telegram}
+                    onChange={(e) => setNewStore({ ...newStore, telegram: e.target.value })}
+                    onBlur={(e) => handleStoreFieldValidation('telegram', e.target.value)}
+                    style={getStoreFieldStyle('telegram', {
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      outline: 'none',
+                      color: '#1f2937'
+                    })}
+                    onFocus={(e) => {
+                      if (storeValidationState.telegram === 'untouched') {
+                        e.target.style.borderColor = '#0088CC';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 136, 204, 0.1)';
+                      }
+                    }}
+                  />
+                  {storeValidationErrors.telegram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#ef4444',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {storeValidationErrors.telegram}
+                    </div>
+                  )}
+                  {storeValidationState.telegram === 'valid' && newStore.telegram && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#0088CC',
+                      marginTop: '4px',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      ✓ URL Telegram valido
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer Modal */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '32px',
+                paddingTop: '20px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={() => setStoreModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#9ca3af';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#ffffff';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleSaveStore}
+                  style={{
+                    padding: '10px 24px',
+                    background: '#FF6900',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 1px 3px 0 rgba(255, 105, 0, 0.3)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#e55a00';
+                    e.currentTarget.style.boxShadow = '0 2px 6px 0 rgba(255, 105, 0, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#FF6900';
+                    e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(255, 105, 0, 0.3)';
+                  }}
+                >
+                  Salva
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuovo Utente con Selezione Team */}
+      {userModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div 
+            data-testid="modal-nuovo-utente"
+            style={{
+            background: 'white',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            zIndex: 10001
+          }}>
+            {/* Header Modal - Clean Design */}
+            <div style={{
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'none'
+                    }}>
+                      <User size={20} style={{ color: 'white' }} />
+                    </div>
+                    <h2 style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      position: 'relative',
+                      zIndex: 1,
+                      textShadow: 'none'
+                    }}>
+                      {userModal.data ? 'Modifica Utente' : 'Nuovo Utente'}
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500
+                  }}>
+                    {userModal.data ? 'Modifica i dati dell\'utente' : 'Completa tutte le informazioni per creare un nuovo utente'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setUserModal({ open: false, data: null })}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    color: '#6b7280'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f3f4f6';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Body Modal con sezioni */}
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+
+              {/* SEZIONE DATI DI ACCESSO */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Dati di Accesso
+                </h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Username e Ruolo */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Username <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="mario.rossi"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafafa',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Ruolo <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newUser.ruolo}
+                      onChange={(e) => setNewUser({ ...newUser, ruolo: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">Seleziona ruolo...</option>
+                      {availableRoles.map(role => (
+                        <option key={role} value={role}>{role}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Status field */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Status <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={newUser.stato}
+                      onChange={(e) => setNewUser({ ...newUser, stato: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#ffffff',
+                        transition: 'all 0.2s ease',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                      data-testid="select-user-status"
+                    >
+                      <option value="attivo">Attivo</option>
+                      <option value="sospeso">Sospeso</option>
+                      <option value="off-boarding">Off-boarding</option>
+                    </select>
+                  </div>
+
+                  {/* Password fields */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Password <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Minimo 8 caratteri"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafafa',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Conferma Password <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Ripeti password"
+                      value={newUser.confirmPassword}
+                      onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafafa',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE INFORMAZIONI PERSONALI */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Informazioni Personali
+                </h3>
+
+                {/* Avatar Selector */}
+                <div style={{ 
+                  marginBottom: '24px', 
+                  display: 'flex', 
+                  justifyContent: 'center'
+                }}>
+                  <AvatarSelector
+                    currentAvatarUrl={newUser.avatar?.url || undefined}
+                    firstName={newUser.nome}
+                    lastName={newUser.cognome}
+                    username={newUser.username}
+                    onAvatarChange={handleAvatarChange}
+                    loading={false}
+                    size={120}
+                  />
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Nome <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Mario"
+                      value={newUser.nome}
+                      onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafafa',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Cognome <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Rossi"
+                      value={newUser.cognome}
+                      onChange={(e) => setNewUser({ ...newUser, cognome: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafafa',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Email <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="mario.rossi@windtre.it"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      onBlur={(e) => handleUserFieldValidation('email', e.target.value)}
+                      style={getUserFieldStyle('email', {
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafafa',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      })}
+                    />
+                    {userValidationErrors.email && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#ef4444',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        {userValidationErrors.email}
+                      </div>
+                    )}
+                    {userValidationState.email === 'valid' && newUser.email && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#10b981',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        ✓ Email valida
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Telefono <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+39 333 1234567"
+                      value={newUser.telefono}
+                      onChange={(e) => setNewUser({ ...newUser, telefono: e.target.value })}
+                      onBlur={(e) => handleUserFieldValidation('telefono', e.target.value)}
+                      style={getUserFieldStyle('telefono', {
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        background: '#fafafa',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      })}
+                    />
+                    {userValidationErrors.telefono && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#ef4444',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        {userValidationErrors.telefono}
+                      </div>
+                    )}
+                    {userValidationState.telefono === 'valid' && newUser.telefono && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#10b981',
+                        marginTop: '4px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        ✓ Telefono valido
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ✅ NUOVO SISTEMA SCOPE PIRAMIDALE - ALLA FINE */}
+              <div style={{ marginBottom: '28px' }}>
+                <h3 style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  marginBottom: '16px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  🎯 Scope di Accesso Piramidale
+                </h3>
+                
+                {/* 📋 PRIMO LIVELLO: Checkbox "Seleziona tutto ragioni sociali" */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '16px',
+                    background: newUser.selectAllLegalEntities ? '#ecfdf5' : '#f9fafb',
+                    border: `2px solid ${newUser.selectAllLegalEntities ? '#10b981' : '#e5e7eb'}`,
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={newUser.selectAllLegalEntities}
+                      onChange={(e) => {
+                        const selectAll = e.target.checked;
+                        setNewUser({
+                          ...newUser,
+                          selectAllLegalEntities: selectAll,
+                          selectedLegalEntities: selectAll ? [] : newUser.selectedLegalEntities,
+                          selectedStores: selectAll ? [] : newUser.selectedStores
+                        });
+                      }}
+                      style={{ 
+                        transform: 'scale(1.2)',
+                        accentColor: '#10b981'
+                      }}
+                    />
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: newUser.selectAllLegalEntities ? 'linear-gradient(135deg, #10b981, #047857)' : 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white'
+                    }}>
+                      {newUser.selectAllLegalEntities ? <Shield size={20} /> : <Building2 size={20} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#111827',
+                        marginBottom: '4px'
+                      }}>
+                        {newUser.selectAllLegalEntities ? '🌟 Accesso Completo Organizzazione' : 'Accesso Completo'}
+                      </div>
+                      <div style={{
+                        fontSize: '13px',
+                        color: '#6b7280'
+                      }}>
+                        {newUser.selectAllLegalEntities 
+                          ? 'L\'utente ha accesso a tutte le ragioni sociali e punti vendita dell\'organizzazione'
+                          : 'Seleziona per dare accesso a tutte le ragioni sociali (disabilita selezione specifica)'}
+                      </div>
+                    </div>
+                    {newUser.selectAllLegalEntities && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#059669',
+                        background: '#d1fae5',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontWeight: '600'
+                      }}>
+                        COMPLETO
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {/* 🏭 SECONDO LIVELLO: Multi-select ragioni sociali specifiche */}
+                {!newUser.selectAllLegalEntities && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px'
+                    }}>
+                      📋 Seleziona Ragioni Sociali Specifiche <span style={{ color: '#ef4444' }}>*</span>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '400', 
+                        color: '#6b7280',
+                        marginLeft: '8px'
+                      }}>
+                        (Primo livello - filtra i punti vendita)
+                      </span>
+                    </label>
+                    <div style={{
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      background: '#ffffff'
+                    }}>
+                      {ragioneSocialiList.filter(rs => rs.stato === 'Attiva').map(rs => (
+                        <label key={rs.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          transition: 'all 0.2s ease',
+                          background: newUser.selectedLegalEntities.includes(rs.id) ? '#e0f2fe' : 'transparent',
+                          border: `1px solid ${newUser.selectedLegalEntities.includes(rs.id) ? '#0ea5e9' : 'transparent'}`,
+                          marginBottom: '4px'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={newUser.selectedLegalEntities.includes(rs.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedLegalEntities: [...newUser.selectedLegalEntities, rs.id],
+                                  selectedStores: [] // Reset punti vendita quando cambiano ragioni sociali
+                                });
+                              } else {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedLegalEntities: newUser.selectedLegalEntities.filter(id => id !== rs.id),
+                                  selectedStores: newUser.selectedStores.filter(storeId => {
+                                    const store = puntiVenditaList.find(pv => pv.id === storeId);
+                                    return store && store.ragioneSociale_id !== rs.id;
+                                  })
+                                });
+                              }
+                            }}
+                            style={{ 
+                              transform: 'scale(1.1)',
+                              accentColor: '#0ea5e9'
+                            }}
+                          />
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {rs.nome ? rs.nome.charAt(0) : '?'}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#111827',
+                              marginBottom: '2px'
+                            }}>
+                              {rs.nome || 'Denominazione non disponibile'}
+                            </div>
+                            <div style={{
+                              fontSize: '12px',
+                              color: '#6b7280'
+                            }}>
+                              P.IVA: {rs.pIva || 'N/A'}
+                            </div>
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: '#0369a1',
+                            background: '#e0f2fe',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontWeight: '500'
+                          }}>
+                            {puntiVenditaList.filter(pv => pv.ragioneSociale_id === rs.id && (pv.status === 'active' || pv.status === 'Attivo')).length} negozi
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 🏪 TERZO LIVELLO: Multi-select punti vendita filtrati */}
+                {!newUser.selectAllLegalEntities && newUser.selectedLegalEntities.length > 0 && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px'
+                    }}>
+                      🏪 Seleziona Punti Vendita Specifici 
+                      <span style={{ 
+                        fontSize: '12px', 
+                        fontWeight: '400', 
+                        color: '#6b7280',
+                        marginLeft: '8px'
+                      }}>
+                        ({puntiVenditaList.filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id) && (pv.status === 'active' || pv.status === 'Attivo')).length} disponibili dalle ragioni sociali selezionate)
+                      </span>
+                    </label>
+                    <div style={{
+                      maxHeight: '300px',
+                      overflowY: 'auto',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      background: '#ffffff'
+                    }}>
+                      {puntiVenditaList
+                        .filter(pv => newUser.selectedLegalEntities.includes(pv.ragioneSociale_id) && (pv.status === 'active' || pv.status === 'Attivo'))
+                        .map(pv => (
+                        <label key={pv.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          transition: 'all 0.2s ease',
+                          background: newUser.selectedStores.includes(pv.id) ? '#fef3c7' : 'transparent',
+                          border: `1px solid ${newUser.selectedStores.includes(pv.id) ? '#f59e0b' : 'transparent'}`,
+                          marginBottom: '4px'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={newUser.selectedStores.includes(pv.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedStores: [...newUser.selectedStores, pv.id]
+                                });
+                              } else {
+                                setNewUser({
+                                  ...newUser,
+                                  selectedStores: newUser.selectedStores.filter(id => id !== pv.id)
+                                });
+                              }
+                            }}
+                            style={{ 
+                              transform: 'scale(1.1)',
+                              accentColor: '#f59e0b'
+                            }}
+                          />
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #FF6900, #7B2CBF)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '11px',
+                            fontWeight: '600'
+                          }}>
+                            {pv.code}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#111827',
+                              marginBottom: '2px'
+                            }}>
+                              {pv.nome}
+                            </div>
+                            <div style={{
+                              fontSize: '12px',
+                              color: '#6b7280'
+                            }}>
+                              {pv.citta} • {ragioneSocialiList.find(rs => rs.id === pv.ragioneSociale_id)?.denominazione}
+                            </div>
+                          </div>
+                          <div style={{
+                            fontSize: '11px',
+                            color: pv.status === 'active' ? '#059669' : '#dc2626',
+                            background: pv.status === 'active' ? '#d1fae5' : '#fee2e2',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontWeight: '500'
+                          }}>
+                            {pv.status === 'active' ? 'Attivo' : 'Inattivo'}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ⚠️ MESSAGGI DI VALIDAZIONE */}
+                {!newUser.selectAllLegalEntities && newUser.selectedLegalEntities.length === 0 && (
+                  <div style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginTop: '16px'
+                  }}>
+                    <p style={{
+                      fontSize: '13px',
+                      color: '#991b1b',
+                      margin: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <AlertCircle size={16} />
+                      ⚠️ Seleziona almeno una ragione sociale o attiva "Seleziona tutto"
+                    </p>
+                  </div>
+                )}
+
+                {/* ✅ RIEPILOGO SELEZIONE */}
+                {(newUser.selectAllLegalEntities || newUser.selectedLegalEntities.length > 0) && (
+                  <div style={{
+                    background: '#f0f9ff',
+                    border: '1px solid #0ea5e9',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginTop: '16px'
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#0369a1',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <CheckCircle size={16} />
+                      ✅ Riepilogo Accesso
+                    </div>
+                    {newUser.selectAllLegalEntities ? (
+                      <p style={{
+                        fontSize: '13px',
+                        color: '#0369a1',
+                        margin: 0
+                      }}>
+                        🌟 <strong>Accesso Completo:</strong> Tutte le ragioni sociali e punti vendita dell'organizzazione
+                      </p>
+                    ) : (
+                      <div style={{
+                        fontSize: '13px',
+                        color: '#0369a1',
+                        margin: 0
+                      }}>
+                        <p style={{ margin: '0 0 4px 0' }}>
+                          📋 <strong>Ragioni Sociali:</strong> {newUser.selectedLegalEntities.length} selezionate
+                        </p>
+                        <p style={{ margin: 0 }}>
+                          🏪 <strong>Punti Vendita:</strong> {newUser.selectedStores.length} selezionati {newUser.selectedStores.length === 0 ? '(tutti disponibili dalle ragioni sociali)' : '(specifici)'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer con pulsanti */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                marginTop: '24px',
+                paddingTop: '20px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={() => setUserModal({ open: false, data: null })}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#9ca3af';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#ffffff';
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                  }}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={() => {
+                    // 🔍 COMPREHENSIVE ITALIAN BUSINESS VALIDATION
+                    let hasValidationErrors = false;
+
+                    // Validate email field
+                    const emailValidation = validateUserField('email', newUser.email);
+                    if (!emailValidation.isValid) {
+                      handleUserFieldValidation('email', newUser.email);
+                      hasValidationErrors = true;
+                    }
+
+                    // Validate telefono field
+                    const telefonoValidation = validateUserField('telefono', newUser.telefono);
+                    if (!telefonoValidation.isValid) {
+                      handleUserFieldValidation('telefono', newUser.telefono);
+                      hasValidationErrors = true;
+                    }
+
+                    // Basic required field validation
+                    if (!newUser.username || !newUser.password || !newUser.nome || !newUser.cognome || !newUser.ruolo) {
+                      alert('Compila tutti i campi obbligatori');
+                      return;
+                    }
+                    
+                    if (newUser.password !== newUser.confirmPassword) {
+                      alert('Le password non corrispondono');
+                      return;
+                    }
+
+                    // Stop submission if validation errors exist
+                    if (hasValidationErrors) {
+                      alert('Correggi gli errori di validazione prima di procedere');
+                      return;
+                    }
+
+                    // Validazione scope
+                    if (newUser.scopeLevel === 'punti_vendita' && newUser.selectedLegalEntities.length === 0) {
+                      alert('Seleziona almeno una ragione sociale');
+                      return;
+                    }
+                    
+                    // 🔥 SAVE USER TO DATABASE WITH AVATAR
+                    console.log('💾 Creating new user with avatar:', newUser.avatar);
+                    
+                    const createUser = async () => {
+                      try {
+                        const userData = {
+                          username: newUser.username,
+                          nome: newUser.nome,
+                          cognome: newUser.cognome,
+                          email: newUser.email,
+                          telefono: newUser.telefono,
+                          ruolo: newUser.ruolo,
+                          stato: newUser.stato,
+                          foto: newUser.avatar?.url || null, // ✅ INCLUDE AVATAR URL
+                          password: newUser.password,
+                          tenant_id: getCurrentTenantId()
+                        };
+
+                        console.log('📤 Sending user data to API:', userData);
+                        
+                        const response = await fetch('/api/users', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'X-Tenant-ID': getCurrentTenantId()
+                          },
+                          body: JSON.stringify(userData)
+                        });
+
+                        if (!response.ok) {
+                          throw new Error(`Failed to create user: ${response.statusText}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('✅ User created successfully:', result);
+
+                        // Refresh user list from API
+                        await refetchUserData();
+                        setUserModal({ open: false, data: null });
+
+                        // Reset form
+                        setNewUser({
+                          username: '',
+                          password: '',
+                          confirmPassword: '',
+                          nome: '',
+                          cognome: '',
+                          email: '',
+                          telefono: '',
+                          ruolo: '',
+                          stato: 'attivo',
+                          scopeLevel: 'organizzazione',
+                          selectAllLegalEntities: true,
+                          selectedLegalEntities: [],
+                          selectedStores: [],
+                          avatar: null
+                        });
+
+                      } catch (error) {
+                        console.error('❌ Error creating user:', error);
+                        alert('Errore durante la creazione dell\'utente. Riprova.');
+                      }
+                    };
+
+                    createUser();
+                  }}
+                  style={{
+                    padding: '10px 24px',
+                    background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: '0 4px 15px -3px rgba(255, 105, 0, 0.3)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #ff7a1f, #ff9547)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(255, 105, 0, 0.4)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px -3px rgba(255, 105, 0, 0.3)';
+                  }}
+                >
+                  Salva Utente
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuovo Fornitore Completo */}
+      {supplierModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '32px',
+            width: '95%',
+            maxWidth: '1200px',
+            maxHeight: '95vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '32px'
+            }}>
+              <div>
+                <h2 style={{
+                  fontSize: '28px',
+                  fontWeight: '700',
+                  color: '#111827',
+                  margin: '0 0 8px 0'
+                }}>
+                  {supplierModal.data ? 'Modifica Fornitore' : 'Nuovo Fornitore'}
+                </h2>
+                <p style={{
+                  fontSize: '15px',
+                  color: '#6b7280',
+                  margin: 0
+                }}>
+                  {supplierModal.data ? 'Modifica i dati del fornitore' : 'Compila tutti i dettagli per configurare il nuovo fornitore'}
+                </p>
+              </div>
+              <button
+                onClick={() => setSupplierModal({ open: false, data: null })}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f3f4f6';
+                  e.currentTarget.style.color = '#111827';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#6b7280';
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Sezioni Organizzate */}
+            <div style={{ display: 'grid', gap: '32px' }}>
+              
+              {/* SEZIONE 1: Anagrafica & Identificativi */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Building2 size={20} />
+                  Anagrafica & Identificativi
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px'
+                }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice Fornitore *
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="es. FOR001"
+                      value={newSupplier.code}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, code: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Nome/Ragione Sociale *
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="es. Acme Suppliers SpA"
+                      value={newSupplier.name}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Forma Giuridica
+                    </label>
+                    <select 
+                      value={newSupplier.legalForm}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, legalForm: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                    >
+                      <option value="">Seleziona...</option>
+                      {legalForms.map((form: any) => (
+                        <option key={form.id} value={form.code}>
+                          {form.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {/* P.IVA with Italian VAT validation */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Partita IVA <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="es. IT12345678901"
+                      value={newSupplier.vatNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setNewSupplier({ ...newSupplier, vatNumber: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time P.IVA validation
+                        if (e.target.value) {
+                          const vatValidation = supplierValidationSchema.shape.vatNumber?.safeParse(e.target.value);
+                          if (!vatValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            // Add error message below field
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'P.IVA non valida (formato: IT + 11 cifre)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-vat-number"
+                    />
+                  </div>
+                  {/* Codice Fiscale with Italian tax code validation */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice Fiscale <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="es. RSSMRA85M01H501Z"
+                      value={newSupplier.taxCode}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setNewSupplier({ ...newSupplier, taxCode: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time Codice Fiscale validation
+                        if (e.target.value) {
+                          const taxCodeValidation = supplierValidationSchema.shape.taxCode?.safeParse(e.target.value);
+                          if (!taxCodeValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'Codice fiscale non valido (16 caratteri)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-tax-code"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Categoria Merceologica
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="ELETTRONICA">Elettronica</option>
+                      <option value="ABBIGLIAMENTO">Abbigliamento</option>
+                      <option value="ALIMENTARE">Alimentare</option>
+                      <option value="SERVIZI">Servizi</option>
+                      <option value="LOGISTICA">Logistica</option>
+                      <option value="CONSULENZA">Consulenza</option>
+                      <option value="ALTRO">Altro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice ERP/Esterno
+                    </label>
+                    <input type="text" placeholder="Codice nel sistema ERP"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Stato *
+                    </label>
+                    <select 
+                      value={newSupplier.status}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, status: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                    >
+                      <option value="active">Attivo</option>
+                      <option value="suspended">Sospeso</option>
+                      <option value="archived">Archiviato</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE 2: Indirizzi */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <MapPin size={20} />
+                  Indirizzi
+                </h3>
+                
+                {/* Sede Legale */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Sede Legale</h4>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Via e Civico *
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="es. Via Roma, 123"
+                        value={newSupplier.address}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, address: e.target.value })}
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        CAP *
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="20100"
+                        value={newSupplier.postalCode}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, postalCode: e.target.value })}
+                        readOnly={italianCities.length > 0}
+                        style={{ 
+                          width: '100%', 
+                          padding: '12px', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '8px', 
+                          fontSize: '14px',
+                          background: italianCities.length > 0 ? '#f9fafb' : 'white',
+                          cursor: italianCities.length > 0 ? 'not-allowed' : 'text'
+                        }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Città *
+                      </label>
+                      <StandardCityField
+                        value={newSupplier.city}
+                        onChange={(cityName) => setNewSupplier({ ...newSupplier, city: cityName })}
+                        onCapChange={(cap) => setNewSupplier(prev => ({ ...prev, postalCode: cap }))}
+                        onProvinciaChange={(provincia) => setNewSupplier(prev => ({ ...prev, province: provincia }))}
+                        required={true}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Provincia *
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="MI"
+                        value={newSupplier.province}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, province: e.target.value.toUpperCase() })}
+                        readOnly={italianCities.length > 0}
+                        style={{ 
+                          width: '100%', 
+                          padding: '12px', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '8px', 
+                          fontSize: '14px',
+                          background: italianCities.length > 0 ? '#f9fafb' : 'white',
+                          cursor: italianCities.length > 0 ? 'not-allowed' : 'text',
+                          textTransform: 'uppercase'
+                        }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Nazione *
+                      </label>
+                      <select 
+                        value={newSupplier.country}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, country: e.target.value })}
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}
+                      >
+                        <option value="">Seleziona paese...</option>
+                        {(countries as any[])?.map((country: any) => (
+                          <option key={country.id} value={country.code}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sede Operativa */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', margin: 0 }}>Sede Operativa/Spedizioni</h4>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
+                      <input type="checkbox" style={{ margin: 0 }} />
+                      Uguale alla sede legale
+                    </label>
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Via e Civico
+                      </label>
+                      <input type="text" placeholder="es. Via Industria, 45"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        CAP
+                      </label>
+                      <input type="text" placeholder="20151"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Città
+                      </label>
+                      <input type="text" placeholder="Milano"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Note Consegna
+                      </label>
+                      <input type="text" placeholder="Specificare reparto/piano"
+                        style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE 3: Contatti */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Phone size={20} />
+                  Contatti & Comunicazione
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px',
+                  marginBottom: '24px'
+                }}>
+                  {/* Email with validation */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Email Principale *
+                    </label>
+                    <input 
+                      type="email" 
+                      placeholder="info@fornitore.it"
+                      value={newSupplier.email}
+                      onChange={(e) => {
+                        const value = e.target.value.toLowerCase();
+                        setNewSupplier({ ...newSupplier, email: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time email validation
+                        if (e.target.value) {
+                          const emailValidation = supplierValidationSchema.shape.email?.safeParse(e.target.value);
+                          if (!emailValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'Formato email non valido';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-email"
+                    />
+                  </div>
+                  {/* PEC Email with specialized Italian PEC validation */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      PEC (Fatturazione Elettronica) *
+                      <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '400', marginTop: '2px' }}>
+                        Deve terminare con domini PEC certificati (es. @pec.it, @legalmail.it)
+                      </div>
+                    </label>
+                    <input 
+                      type="email" 
+                      placeholder="fatture@pec.fornitore.it"
+                      value={newSupplier.pecEmail}
+                      onChange={(e) => {
+                        const value = e.target.value.toLowerCase();
+                        setNewSupplier({ ...newSupplier, pecEmail: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time PEC email validation
+                        if (e.target.value) {
+                          const pecValidation = supplierValidationSchema.shape.pecEmail?.safeParse(e.target.value);
+                          if (!pecValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'PEC non valida - deve terminare con domini certificati PEC';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-pec-email"
+                    />
+                  </div>
+                  {/* Phone with Italian phone number validation */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Telefono Fisso *
+                      <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '400', marginTop: '2px' }}>
+                        Formato: +39 02 12345678 o +39 334 1234567
+                      </div>
+                    </label>
+                    <input 
+                      type="tel" 
+                      placeholder="+39 02 12345678"
+                      value={newSupplier.phone}
+                      onChange={(e) => {
+                        // Automatic formatting for Italian phone numbers
+                        let value = e.target.value.replace(/[^0-9+\s]/g, '');
+                        if (value && !value.startsWith('+39')) {
+                          value = value.startsWith('0') ? `+39 ${value}` : value.startsWith('3') ? `+39 ${value}` : value;
+                        }
+                        setNewSupplier({ ...newSupplier, phone: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time Italian phone validation
+                        if (e.target.value) {
+                          const phoneValidation = supplierValidationSchema.shape.phone?.safeParse(e.target.value);
+                          if (!phoneValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                            let errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            if (!errorDiv) {
+                              errorDiv = document.createElement('div');
+                              errorDiv.className = 'validation-error';
+                              e.target.parentElement?.appendChild(errorDiv);
+                            }
+                            errorDiv.textContent = 'Numero di telefono non valido (formato: +39 seguito da numero valido)';
+                            errorDiv.style.cssText = 'color: #ef4444; font-size: 12px; margin-top: 4px;';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                            const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                            errorDiv?.remove();
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                          const errorDiv = e.target.parentElement?.querySelector('.validation-error');
+                          errorDiv?.remove();
+                        }
+                      }}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-phone"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Cellulare
+                    </label>
+                    <input type="tel" placeholder="+39 334 1234567"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Sito Web
+                    </label>
+                    <input 
+                      type="url" 
+                      placeholder="https://www.fornitore.it"
+                      value={newSupplier.website}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, website: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                    />
+                  </div>
+                </div>
+
+                {/* Referenti */}
+                <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Referenti</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#FF6900', marginBottom: '12px' }}>Referente Commerciale</h5>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <input type="text" placeholder="Nome e Cognome"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="email" placeholder="Email"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="tel" placeholder="Telefono"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                    </div>
+                  </div>
+                  <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#7B2CBF', marginBottom: '12px' }}>Referente Amministrativo</h5>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <input type="text" placeholder="Nome e Cognome"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="email" placeholder="Email"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="tel" placeholder="Telefono"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                    </div>
+                  </div>
+                  <div style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                    <h5 style={{ fontSize: '14px', fontWeight: '600', color: '#10b981', marginBottom: '12px' }}>Referente Logistico</h5>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <input type="text" placeholder="Nome e Cognome"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="email" placeholder="Email"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                      <input type="tel" placeholder="Telefono"
+                        style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE 4: Fatturazione & Pagamenti */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <CreditCard size={20} />
+                  Fatturazione & Pagamenti
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px'
+                }}>
+                  {/* Payment Method Dropdown - Connected to Database */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Metodo di Pagamento
+                    </label>
+                    <select 
+                      value={newSupplier.preferredPaymentMethodId}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, preferredPaymentMethodId: e.target.value })}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px', 
+                        fontSize: '14px', 
+                        background: paymentMethodsLoading ? '#f9fafb' : 'white',
+                        cursor: paymentMethodsLoading ? 'wait' : 'pointer'
+                      }}
+                      disabled={paymentMethodsLoading}
+                      data-testid="select-payment-method"
+                    >
+                      <option value="">{paymentMethodsLoading ? 'Caricamento...' : 'Seleziona metodo...'}</option>
+                      {paymentMethodsList?.map((method: any) => (
+                        <option key={method.id} value={method.id} title={method.description}>
+                          {method.name} {method.requiresIban ? '(IBAN richiesto)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {paymentMethodsLoading && (
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                        Caricamento metodi di pagamento...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment Conditions Dropdown - Connected to Database */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Condizioni di Pagamento
+                    </label>
+                    <select 
+                      value={newSupplier.paymentConditionId}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, paymentConditionId: e.target.value })}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px', 
+                        fontSize: '14px', 
+                        background: paymentConditionsLoading ? '#f9fafb' : 'white',
+                        cursor: paymentConditionsLoading ? 'wait' : 'pointer'
+                      }}
+                      disabled={paymentConditionsLoading}
+                      data-testid="select-payment-condition"
+                    >
+                      <option value="">{paymentConditionsLoading ? 'Caricamento...' : 'Seleziona condizioni...'}</option>
+                      {paymentConditionsList?.map((condition: any) => (
+                        <option key={condition.id} value={condition.id} title={condition.description}>
+                          {condition.name} {condition.days ? `(${condition.days} giorni)` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {paymentConditionsLoading && (
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                        Caricamento condizioni di pagamento...
+                      </div>
+                    )}
+                  </div>
+                  {/* IBAN with Validation */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      IBAN
+                      {newSupplier.preferredPaymentMethodId && paymentMethodsList?.find(m => m.id === newSupplier.preferredPaymentMethodId)?.requiresIban && (
+                        <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>
+                      )}
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="IT60 X054 2811 1010 0000 0123 456"
+                      value={newSupplier.iban}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase().replace(/\s/g, '');
+                        setNewSupplier({ ...newSupplier, iban: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time IBAN validation
+                        if (e.target.value) {
+                          const ibanValidation = supplierValidationSchema.shape.iban?.safeParse(e.target.value);
+                          if (!ibanValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }
+                      }}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-iban"
+                    />
+                  </div>
+
+                  {/* Codice SDI */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Codice SDI
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="es. ABCDEFG"
+                      value={newSupplier.sdiCode}
+                      onChange={(e) => setNewSupplier({ ...newSupplier, sdiCode: e.target.value })}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-codice-sdi"
+                    />
+                  </div>
+
+                  {/* BIC/SWIFT with Validation */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      BIC/SWIFT
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="BCITITMM"
+                      value={newSupplier.bic}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setNewSupplier({ ...newSupplier, bic: value });
+                      }}
+                      onBlur={(e) => {
+                        // Real-time BIC validation
+                        if (e.target.value) {
+                          const bicValidation = supplierValidationSchema.shape.bic?.safeParse(e.target.value);
+                          if (!bicValidation?.success) {
+                            e.target.style.borderColor = '#ef4444';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                          } else {
+                            e.target.style.borderColor = '#10b981';
+                            e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                          }
+                        } else {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.boxShadow = 'none';
+                        }
+                      }}
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                      data-testid="input-bic"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Listino Associato
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="STANDARD">Listino Standard</option>
+                      <option value="PREMIUM">Listino Premium</option>
+                      <option value="VOLUME">Listino Volume</option>
+                      <option value="PERSONALIZZATO">Personalizzato</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Sconto Base (%)
+                    </label>
+                    <input type="number" placeholder="0" min="0" max="100" step="0.01"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                </div>
+
+                {/* Flags fiscali */}
+                <div style={{ marginTop: '20px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', marginBottom: '12px' }}>Regime Fiscale</h4>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={newSupplier.splitPayment}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, splitPayment: e.target.checked })}
+                      />
+                      Split Payment
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={newSupplier.withholdingTax}
+                        onChange={(e) => setNewSupplier({ ...newSupplier, withholdingTax: e.target.checked })}
+                      />
+                      Ritenuta d'Acconto
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input type="checkbox" />
+                      Cassa Previdenziale
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <input type="checkbox" />
+                      Reverse Charge
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE 5: Logistica */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Truck size={20} />
+                  Logistica & Consegne
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '16px'
+                }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Corriere Preferito
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="DHL">DHL</option>
+                      <option value="UPS">UPS</option>
+                      <option value="FEDEX">FedEx</option>
+                      <option value="BRT">BRT</option>
+                      <option value="SDA">SDA</option>
+                      <option value="TNT">TNT</option>
+                      <option value="ALTRO">Altro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Incoterm
+                    </label>
+                    <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                      <option value="">Seleziona...</option>
+                      <option value="EXW">EXW - Ex Works</option>
+                      <option value="FCA">FCA - Free Carrier</option>
+                      <option value="CPT">CPT - Carriage Paid To</option>
+                      <option value="CIP">CIP - Carriage Insurance Paid</option>
+                      <option value="DDP">DDP - Delivered Duty Paid</option>
+                      <option value="DDU">DDU - Delivered Duty Unpaid</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Lead Time (giorni)
+                    </label>
+                    <input type="number" placeholder="7" min="0"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Orari Consegna
+                    </label>
+                    <input type="text" placeholder="Lun-Ven 9:00-17:00"
+                      style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* SEZIONE 6: Note & Valutazione */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <FileText size={20} />
+                  Note & Valutazione
+                </h3>
+                <div style={{ display: 'grid', gap: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Rating Qualità (1-5)
+                      </label>
+                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                        <option value="">Non valutato</option>
+                        <option value="5">⭐⭐⭐⭐⭐ Eccellente</option>
+                        <option value="4">⭐⭐⭐⭐ Buono</option>
+                        <option value="3">⭐⭐⭐ Sufficiente</option>
+                        <option value="2">⭐⭐ Scarso</option>
+                        <option value="1">⭐ Pessimo</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Livello Rischio
+                      </label>
+                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                        <option value="BASSO">🟢 Basso</option>
+                        <option value="MEDIO">🟡 Medio</option>
+                        <option value="ALTO">🔴 Alto</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                        Owner/Assegnatario
+                      </label>
+                      <select style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: 'white' }}>
+                        <option value="">Seleziona...</option>
+                        <option value="mario.rossi">Mario Rossi</option>
+                        <option value="anna.verdi">Anna Verdi</option>
+                        <option value="luca.bianchi">Luca Bianchi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                      Note Interne
+                    </label>
+                    <textarea 
+                      placeholder="Note riservate per uso interno..."
+                      rows={4}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        border: '1px solid #d1d5db', 
+                        borderRadius: '8px', 
+                        fontSize: '14px',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        resize: 'vertical'
+                      }} 
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              marginTop: '32px',
+              paddingTop: '24px',
+              borderTop: '2px solid #e5e7eb'
+            }}>
+              <button
+                onClick={() => setSupplierModal({ open: false, data: null })}
+                style={{
+                  padding: '12px 24px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  background: '#ffffff',
+                  color: '#6b7280',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f9fafb';
+                  e.currentTarget.style.borderColor = '#9ca3af';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = '#ffffff';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implementare salvataggio fornitore completo
+                  console.log('Salvando fornitore completo...');
+                  alert('Salvataggio fornitore completo - Funzionalità in fase di implementazione');
+                  setSupplierModal({ open: false, data: null });
+                }}
+                style={{
+                  padding: '12px 32px',
+                  background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  boxShadow: '0 4px 15px -3px rgba(255, 105, 0, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #ff7a1f, #ff9547)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(255, 105, 0, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px -3px rgba(255, 105, 0, 0.3)';
+                }}
+              >
+                Salva Fornitore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        {/* Header - Direttamente sullo sfondo */}
+        <div style={{
+          marginBottom: '24px'
+        }}>
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#111827',
+            margin: '0 0 8px 0'
+          }}>
+            Configurazioni Sistema
+          </h1>
+          <p style={{
+            fontSize: '15px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Gestisci AI, canali di comunicazione, backup e configurazioni sistema
+          </p>
+        </div>
+
+        {/* Tabs Container */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+          <div style={{
+            display: 'flex',
+            background: 'rgba(243, 244, 246, 0.5)',
+            borderRadius: '12px',
+            padding: '4px',
+            gap: '4px'
+          }}>
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    flex: 1,
+                    background: isActive 
+                      ? 'linear-gradient(135deg, #FF6900, #ff8533)'
+                      : 'transparent',
+                    color: isActive ? 'white' : '#6b7280',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px 20px',
+                    fontSize: '14px',
+                    fontWeight: isActive ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: isActive 
+                      ? '0 4px 16px rgba(255, 105, 0, 0.3)' 
+                      : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    textAlign: 'center',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)'
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'hsla(255, 255, 255, 0.08)';
+                      e.currentTarget.style.color = '#374151';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#6b7280';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
+                  }}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content Area - Direttamente sullo sfondo */}
+        <div>
+          {renderContent()}
+        </div>
+      </Layout>
+    </>
+  );
+}
