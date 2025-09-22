@@ -1640,7 +1640,9 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona categoria" />
+                  <SelectValue placeholder="Seleziona categoria">
+                    {formData.category && ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES]?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-w-md">
                   {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
@@ -1668,7 +1670,9 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                 onValueChange={(value: typeof formData.type) => setFormData({ ...formData, type: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona tipo" />
+                  <SelectValue placeholder="Seleziona tipo">
+                    {formData.type && formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as keyof any]?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-w-lg max-h-80">
                   {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
@@ -1725,46 +1729,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
           </div>
 
-          {/* Legal Information Panel */}
-          {(() => {
-            const categoryData = formData.category ? ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES] : null;
-            const typeData = formData.category && formData.type ? ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as keyof any] : null;
-            
-            if (!categoryData || !typeData) return null;
-            
-            return (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-xl p-5 shadow-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-blue-600 text-white p-2 rounded-lg">
-                    <span className="text-lg">⚖️</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-blue-900 text-lg">Informazioni Legali</h4>
-                    <p className="text-sm text-blue-700">{categoryData.name}</p>
-                  </div>
-                </div>
-                
-                <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 space-y-3">
-                  <div>
-                    <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Tipologia</div>
-                    <div className="font-semibold text-gray-900">{typeData.name}</div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Descrizione</div>
-                    <div className="text-sm text-gray-700 leading-relaxed">{typeData.desc}</div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Riferimento Normativo</div>
-                    <div className="text-sm font-mono bg-blue-100 text-blue-800 px-3 py-2 rounded-md">
-                      {typeData.legal}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+          {/* Removed Legal Information Panel */}
 
           {/* Reason */}
           <div className="space-y-2">
