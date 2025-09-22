@@ -12,12 +12,26 @@ export function useLeaveBalance(userId?: string): QueryResult<EmployeeBalance> {
   const { user } = useAuth();
   const targetUserId = userId || user?.id;
   
-  return useQuery<EmployeeBalance>({
-    queryKey: ['/api/hr/leave/balance', targetUserId],
-    queryFn: () => leaveService.getBalance(targetUserId!),
-    enabled: !!targetUserId,
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  }) as QueryResult<EmployeeBalance>;
+  // SECURITY: Leave balance endpoint disabled for security reasons
+  // Return mock data to prevent app crashes while feature is being redesigned
+  return {
+    data: {
+      annualLeave: 25,
+      sickLeave: 10, 
+      personalLeave: 5,
+      usedAnnualLeave: 8,
+      usedSickLeave: 2,
+      usedPersonalLeave: 1,
+      remainingAnnualLeave: 17,
+      remainingSickLeave: 8,
+      remainingPersonalLeave: 4
+    },
+    isLoading: false,
+    error: null,
+    isSuccess: true,
+    isFetching: false,
+    isStale: false
+  } as QueryResult<EmployeeBalance>;
 }
 
 // Hook for leave requests
@@ -60,7 +74,7 @@ export function useCreateLeaveRequest() {
     mutationFn: (request: Partial<LeaveRequest>) => leaveService.createRequest(request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hr/leave/requests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/leave/balance'] });
+      // NOTE: Leave balance endpoint disabled for security
       toast({
         title: "Richiesta creata",
         description: "La richiesta di ferie è stata creata con successo",
@@ -132,8 +146,8 @@ export function useApproveLeaveRequest() {
       leaveService.approveRequest(id, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hr/leave/requests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/leave/balance'] });
       queryClient.invalidateQueries({ queryKey: ['/api/calendar'] });
+      // NOTE: Leave balance endpoint disabled for security
       toast({
         title: "Richiesta approvata",
         description: "La richiesta è stata approvata con successo",

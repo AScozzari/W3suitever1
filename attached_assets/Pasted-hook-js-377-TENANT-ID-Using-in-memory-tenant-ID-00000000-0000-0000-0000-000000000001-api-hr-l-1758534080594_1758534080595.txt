@@ -1,0 +1,34 @@
+hook.js:377 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+/api/hr/leave/balance/demo-user:1 
+ Failed to load resource: the server responded with a status of 403 (Forbidden)
+2
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+date-fns.js?v=9b35b141:1760 Uncaught RangeError: Invalid time value
+    at MyPortal.tsx:819:48
+    at Array.map (<anonymous>)
+    at MyPortal (MyPortal.tsx:798:36)
+2
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+date-fns.js?v=9b35b141:1760 Uncaught RangeError: Invalid time value
+    at MyPortal.tsx:819:48
+    at Array.map (<anonymous>)
+    at MyPortal (MyPortal.tsx:798:36)
+hook.js:608 The above error occurred in the <MyPortal> component:
+
+    at MyPortal (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/MyPortal.tsx:136:44)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=9b35b141:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=9b35b141:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=9b35b141:9129 Uncaught RangeError: Invalid time value
+    at MyPortal.tsx:819:48
+    at Array.map (<anonymous>)
+    at MyPortal (MyPortal.tsx:798:36)

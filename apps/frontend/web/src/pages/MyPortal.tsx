@@ -816,7 +816,7 @@ export default function MyPortal() {
                                   </p>
                                   <div className="flex items-center gap-4 text-sm text-gray-500">
                                     <span data-testid={`text-request-date-${request.id}`}>
-                                      Creata: {format(new Date(request.dataCreazione), 'dd/MM/yyyy')}
+                                      Creata: {request.dataCreazione ? format(new Date(request.dataCreazione), 'dd/MM/yyyy') : 'N/A'}
                                     </span>
                                     {request.dataInizio && (
                                       <span data-testid={`text-request-start-${request.id}`}>
