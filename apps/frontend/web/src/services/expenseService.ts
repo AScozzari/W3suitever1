@@ -1,5 +1,6 @@
 // Expense Management Service
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
+import { getStatusColor as getCentralizedStatusColor, getStatusLabel } from '@/utils/request-status';
 
 export interface ExpenseReport {
   id: string;
@@ -14,7 +15,7 @@ export interface ExpenseReport {
   periodEnd: Date | string;
   startDate?: Date | string;
   endDate?: Date | string;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'reimbursed';
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled';
   totalAmount: number;
   currency: string;
   submittedAt?: Date | string;
@@ -203,21 +204,32 @@ class ExpenseService {
     }).format(amount);
   }
 
-  // Helper: Get status color
+  // Helper: Get status color (using centralized system)
   getStatusColor(status: ExpenseReport['status']): string {
-    const colors = {
-      draft: 'gray',
-      submitted: 'orange',
-      approved: 'green',
-      rejected: 'red',
-      reimbursed: 'blue'
+    // Map expense-specific statuses to standard ones if needed
+    const statusMapping: Record<string, string> = {
+      'submitted': 'pending', // Map old 'submitted' to 'pending'
+      'reimbursed': 'approved' // Map old 'reimbursed' to 'approved'
     };
-    return colors[status] || 'gray';
+    
+    const mappedStatus = statusMapping[status] || status;
+    return getCentralizedStatusColor(mappedStatus);
+  }
+
+  // Helper: Get status label (using centralized system)
+  getStatusLabel(status: ExpenseReport['status']): string {
+    const statusMapping: Record<string, string> = {
+      'submitted': 'pending',
+      'reimbursed': 'approved'
+    };
+    
+    const mappedStatus = statusMapping[status] || status;
+    return getStatusLabel(mappedStatus);
   }
 
   // Helper: Get category icon
   getCategoryIcon(category: string): string {
-    const icons = {
+    const icons: Record<string, string> = {
       travel: '✈️',
       meal: '🍽️',
       accommodation: '🏨',
