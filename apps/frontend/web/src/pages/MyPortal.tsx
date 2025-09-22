@@ -44,8 +44,11 @@ import { Link } from 'wouter';
 import { z } from 'zod';
 import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
 import ClockWidget from '@/components/TimeTracking/ClockWidget';
-// Lazy load TimeAttendancePage to improve initial load time
-const TimeAttendancePage = React.lazy(() => import('@/components/TimeTracking/TimeAttendancePage'));
+// NEW: Import componenti unificati
+import UnifiedClockingPanel from '@/components/TimeTracking/UnifiedClockingPanel';
+import ShiftsCalendar from '@/components/Shifts/ShiftsCalendar';
+// OLD: Lazy load TimeAttendancePage to improve initial load time (SOSTITUITO)
+// const TimeAttendancePage = React.lazy(() => import('@/components/TimeTracking/TimeAttendancePage'));
 // HR components removed - now handled in dedicated HRManagementPage
 import PayslipManager from '@/components/Documents/PayslipManager';
 import DocumentGrid from '@/components/Documents/DocumentGrid';
@@ -568,62 +571,8 @@ export default function MyPortal() {
 
             {activeTab === 'time-attendance' && (
               <div className="space-y-6" data-testid="section-time-attendance">
-                {/* COMPLETELY REDESIGNED HORIZONTAL TIME ATTENDANCE INTERFACE */}
                 
-                {/* HEADER - COMPACT */}
-                <Card className="glass-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-windtre-orange" />
-                        Sistema Timbratura Avanzato
-                      </div>
-                      <Badge variant="outline" className="glass-button">
-                        Multi-metodo: GPS, NFC, QR, Smart
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
-
-                {/* RESPONSIVE FLEXBOX LAYOUT - FULL HORIZONTAL UTILIZATION */}
-                <div className="flex flex-col xl:flex-row gap-6 w-full">
-                  {/* LEFT: ClockWidget (Mobile: Full Width, Desktop: 40%) */}
-                  <div className="w-full xl:w-[40%] xl:flex-none">
-                    <ClockWidget
-                      userId={displayUser.matricola}
-                      userName={`${displayUser.nome} ${displayUser.cognome}`.trim()}
-                      storeId="store-001" 
-                      storeName={displayUser.store}
-                      className="h-full"
-                      onClockIn={() => {
-                        // Refresh data after clock in
-                      }}
-                      onClockOut={() => {
-                        // Refresh data after clock out  
-                      }}
-                    />
-                  </div>
-                  
-                  {/* RIGHT: TimeAttendancePage (Mobile: Full Width, Desktop: 60%) - Lazy loaded */}
-                  <div className="w-full xl:w-[60%] xl:flex-1">
-                    <React.Suspense fallback={
-                      <Card className="glass-card h-full flex items-center justify-center">
-                        <CardContent>
-                          <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-                            <p className="text-gray-500">Caricamento Time & Attendance...</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    }>
-                      <TimeAttendancePage
-                        userId={displayUser.matricola}
-                      />
-                    </React.Suspense>
-                  </div>
-                </div>
-
-                {/* ALTERNATIVE VIEWS - HORIZONTAL TABS */}
+                {/* =============== BARRA TABS PRINCIPALE - SPOSTATA ALL'INIZIO =============== */}
                 <Card className="glass-card">
                   <CardContent className="p-4">
                     <Tabs defaultValue="riepilogo" className="w-full">
@@ -642,7 +591,24 @@ export default function MyPortal() {
                         </TabsTrigger>
                       </TabsList>
                       
+                      {/* ========== TAB RIEPILOGO - UNIFIED CLOCKING PANEL + STATS ========== */}
                       <TabsContent value="riepilogo" className="space-y-6">
+                        {/* Sistema Timbratura Unificato */}
+                        <UnifiedClockingPanel
+                          userId={displayUser.matricola}
+                          enabledStrategies={['gps', 'nfc', 'qr', 'smart', 'web', 'badge']}
+                          defaultStrategy="gps"
+                          onClockIn={() => {
+                            // Refresh data after clock in
+                            // TODO: Invalidate queries for time tracking
+                          }}
+                          onClockOut={() => {
+                            // Refresh data after clock out  
+                            // TODO: Invalidate queries for time tracking
+                          }}
+                        />
+                        
+                        {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <Card className="glass-card">
                             <CardContent className="p-4 text-center">
@@ -686,6 +652,7 @@ export default function MyPortal() {
                         </div>
                       </TabsContent>
                       
+                      {/* ========== TAB PRESENZE - REGISTRO CRONOLOGICO ========== */}
                       <TabsContent value="presenze" className="space-y-4">
                         <Card className="glass-card">
                           <CardHeader>
@@ -710,28 +677,11 @@ export default function MyPortal() {
                         </Card>
                       </TabsContent>
                       
+                      {/* ========== TAB TURNI - CALENDARIO INTERATTIVO ========== */}
                       <TabsContent value="turni" className="space-y-4">
-                        <Card className="glass-card">
-                          <CardHeader>
-                            <CardTitle>Turni Programmati</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                                <span className="font-medium">Oggi</span>
-                                <span className="text-blue-600 font-semibold">8:30 - 17:30</span>
-                              </div>
-                              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="font-medium">Domani</span>
-                                <span className="text-gray-600">8:30 - 17:30</span>
-                              </div>
-                              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <span className="font-medium">Sabato</span>
-                                <span className="text-gray-600">Riposo</span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <ShiftsCalendar
+                          userId={displayUser.matricola}
+                        />
                       </TabsContent>
                     </Tabs>
                   </CardContent>
