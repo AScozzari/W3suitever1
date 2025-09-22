@@ -139,7 +139,8 @@ export default function MyPortal() {
   
   // ✅ RESTORED: HR Requests data for employee portal (scoped to current user)
   const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
-    queryKey: ['/api/hr/requests/mine'],
+    queryKey: ['/api/hr/requests', 'mine'],
+    queryFn: () => apiRequest('/api/hr/requests/mine'),
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
@@ -185,11 +186,17 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/requests/mine'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/requests', 'mine'] });
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
       });
+      // Clear draft after successful submission
+      try {
+        localStorage.removeItem('hr_request_draft');
+      } catch (error) {
+        // Silent fail for localStorage issues
+      }
       setHrRequestModal({ open: false, data: null });
     },
     onError: (error: any) => {
@@ -1533,6 +1540,62 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
     setValidationErrors({});
   };
 
+  // Draft functionality
+  const DRAFT_KEY = 'hr_request_draft';
+  
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+      toast({
+        title: "Bozza salvata",
+        description: "La tua richiesta è stata salvata come bozza e può essere ripresa in qualsiasi momento.",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile salvare la bozza.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadDraft = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draftData = JSON.parse(saved);
+        setFormData(draftData);
+        toast({
+          title: "Bozza caricata",
+          description: "La tua bozza precedente è stata ripristinata.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile caricare la bozza.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (error) {
+      // Silent fail for localStorage issues
+    }
+  };
+
+  const hasDraft = (): boolean => {
+    try {
+      return localStorage.getItem(DRAFT_KEY) !== null;
+    } catch (error) {
+      return false;
+    }
+  };
+
   return (
     <Dialog 
       open={open} 
@@ -1719,33 +1782,66 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 pt-6 border-t border-gray-200/50">
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-              className="flex-1"
-            >
-              Annulla
-            </Button>
-            <Button 
-              type="submit"
-              disabled={isSubmitting || Object.keys(validationErrors).length > 0}
-              className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 flex-1"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Invio in corso...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Invia Richiesta
-                </>
+          <div className="space-y-4 pt-6 border-t border-gray-200/50">
+            {/* Draft Actions Row */}
+            <div className="flex gap-3">
+              {hasDraft() && (
+                <Button 
+                  type="button"
+                  variant="outline"
+                  onClick={loadDraft}
+                  disabled={isSubmitting}
+                  className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50"
+                  data-testid="button-load-draft"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Carica Bozza
+                </Button>
               )}
-            </Button>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={saveDraft}
+                disabled={isSubmitting}
+                className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
+                data-testid="button-save-draft"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Salva Bozza
+              </Button>
+            </div>
+            
+            {/* Main Actions Row */}
+            <div className="flex gap-4">
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+                className="flex-1"
+                data-testid="button-cancel"
+              >
+                Annulla
+              </Button>
+              <Button 
+                type="submit"
+                disabled={isSubmitting || Object.keys(validationErrors).length > 0}
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 flex-1"
+                data-testid="button-submit"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Invio in corso...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Invia Richiesta
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

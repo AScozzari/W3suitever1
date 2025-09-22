@@ -7428,6 +7428,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleApiError(error, res);
     }
   });
+
+  // Get user's own requests
+  app.get('/api/hr/requests/mine', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Use the dedicated getMyRequests method for user-specific requests
+      const options = { page: 1, limit: 100 }; // Default pagination  
+      const result = await storage.getMyRequests(tenantId, userId, {}, options);
+      res.json(result?.requests || []);
+    } catch (error) {
+      console.error('Get user requests error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
   
   // Get specific request details
   app.get('/api/hr/requests/:id', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {

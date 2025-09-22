@@ -529,6 +529,23 @@ button:focus-visible,
     inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
 }
 
+/* Dialog Overlay Fix */
+[data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.5) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 50 !important;
+}
+
+/* Dialog Content Positioning - Scoped to dialog content only */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 51 !important;
+}
+
 /* HR Information Panel with Animation */
 .hr-info-panel {
   animation: slideInUp 0.3s ease-out;
