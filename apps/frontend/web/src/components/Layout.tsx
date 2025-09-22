@@ -2025,7 +2025,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             ⚠️ Errore nel caricamento eventi
                           </div>
                         ) : eventiCalendario.length === 0 ? (
-                          /* 📭 EMPTY STATE */
+                          /* 🔍 DEBUG STATE */
                           <div style={{
                             background: 'rgba(156, 163, 175, 0.1)',
                             border: '1px solid rgba(156, 163, 175, 0.2)',
@@ -2035,7 +2035,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             fontSize: '11px',
                             textAlign: 'center'
                           }}>
-                            📅 Nessun evento programmato
+                            🔍 DEBUG: Raw={eventiCalendarioRaw?.length || 0}, Mapped={eventiCalendario.length}, Loading={calendarLoading ? 'YES' : 'NO'}
                           </div>
                         ) : (
                           /* ✅ EVENTI REALI DAL BACKEND */
