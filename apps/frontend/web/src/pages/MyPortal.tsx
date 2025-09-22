@@ -1313,9 +1313,126 @@ interface HRRequestFormProps {
   isSubmitting: boolean;
 }
 
+// 🇮🇹 Complete Italian HR Request Categories based on Labor Law and Web Research
+const ITALIAN_HR_CATEGORIES = {
+  // Primary Categories from Database Enum + Web Research
+  leave: {
+    name: 'Ferie e Permessi',
+    description: 'Vacanze retribuite, ROL, ex festività, permessi brevi',
+    icon: '🏖️'
+  },
+  italian_legal: {
+    name: 'Congedi Legali',
+    description: 'Matrimonio, maternità, paternità, lutto, Legge 104',
+    icon: '⚖️'
+  },
+  family: {
+    name: 'Famiglia e Assistenza',
+    description: 'Congedo parentale, allattamento, assistenza familiare',
+    icon: '👨‍👩‍👧‍👦'
+  },
+  professional_development: {
+    name: 'Formazione e Carriera', 
+    description: 'Corsi, conferenze, sviluppo professionale, certificazioni',
+    icon: '📚'
+  },
+  wellness_health: {
+    name: 'Salute e Benessere',
+    description: 'Malattia, visite mediche, wellness program, salute mentale',
+    icon: '🏥'
+  },
+  remote_work: {
+    name: 'Lavoro Agile',
+    description: 'Smart working, lavoro remoto, VPN, equipaggiamento',
+    icon: '💻'
+  },
+  schedule: {
+    name: 'Orari e Turni',
+    description: 'Straordinari, cambio turni, orario flessibile',
+    icon: '⏰'
+  },
+  other: {
+    name: 'Altre Richieste',
+    description: 'Richieste particolari e personalizzate',
+    icon: '📋'
+  }
+} as const;
+
+// 🇮🇹 Complete Italian HR Request Types mapped to Database Enum
+const ITALIAN_HR_TYPES = {
+  // 🏖️ FERIE E PERMESSI (Leave Category)
+  leave: {
+    vacation: { name: 'Ferie Annuali', desc: 'Vacanze retribuite (min. 26gg/anno)', legal: 'Art. 36 Costituzione' },
+    rol_leave: { name: 'Permessi ROL', desc: 'Riduzione Orario Lavoro', legal: 'CCNL' },
+    personal: { name: 'Permessi Personali', desc: 'Ex festività e permessi brevi', legal: 'CCNL' },
+    study_leave: { name: 'Permessi Studio', desc: 'Diritto allo studio (150h/3anni)', legal: 'L. 300/70 art. 10' },
+    electoral_leave: { name: 'Permesso Elettorale', desc: 'Seggio elettorale, referendum', legal: 'DPR 570/60' }
+  },
+  
+  // ⚖️ CONGEDI LEGALI (Italian Legal Category) 
+  italian_legal: {
+    marriage_leave: { name: 'Congedo Matrimoniale', desc: '15 giorni calendari', legal: 'Art. 1 L. 53/00' },
+    bereavement_extended: { name: 'Permesso Lutto', desc: '3 giorni/anno (parenti 2° grado)', legal: 'Art. 4 L. 53/00' },
+    law_104_leave: { name: 'Permessi Legge 104', desc: '3 giorni/mese o 2h/giorno', legal: 'L. 104/92' },
+    jury_duty: { name: 'Servizio Giuria', desc: 'Tribunale popolare, corte assise', legal: 'CPP' },
+    military: { name: 'Servizio Militare', desc: 'Richiami, ferma volontaria', legal: 'L. 331/00' }
+  },
+  
+  // 👨‍👩‍👧‍👦 FAMIGLIA E ASSISTENZA (Family Category)
+  family: {
+    maternity_leave: { name: 'Congedo Maternità', desc: '5 mesi retribuiti (2+3)', legal: 'D.Lgs 151/01' },
+    paternity_leave: { name: 'Congedo Paternità', desc: '10 giorni obbligatori', legal: 'D.Lgs 151/01' },
+    parental_leave: { name: 'Congedo Parentale', desc: '10-11 mesi totali genitori', legal: 'D.Lgs 151/01' },
+    breastfeeding_leave: { name: 'Permessi Allattamento', desc: '2h/giorno o riposi giornalieri', legal: 'D.Lgs 151/01' }
+  },
+  
+  // 📚 FORMAZIONE E CARRIERA (Professional Development Category)
+  professional_development: {
+    training_request: { name: 'Richiesta Corso', desc: 'Formazione professionale aziendale', legal: 'CCNL' },
+    certification_request: { name: 'Certificazioni', desc: 'Qualifiche e abilitazioni', legal: 'CCNL' },
+    conference_attendance: { name: 'Convegni', desc: 'Partecipazione eventi formativi', legal: 'CCNL' },
+    mentorship_request: { name: 'Mentorship', desc: 'Programma di tutoraggio', legal: 'Piano formativo' },
+    career_development: { name: 'Sviluppo Carriera', desc: 'Pianificazione crescita professionale', legal: 'Valutazione' }
+  },
+  
+  // 🏥 SALUTE E BENESSERE (Wellness Health Category)
+  wellness_health: {
+    sick: { name: 'Malattia', desc: 'Congedo per malattia (certificato)', legal: 'INPS/CCNL' },
+    medical_appt: { name: 'Visita Medica', desc: 'Visite specialistiche, controlli', legal: 'CCNL' },
+    wellness_program: { name: 'Wellness Program', desc: 'Programmi benessere aziendale', legal: 'Piano welfare' },
+    mental_health_support: { name: 'Supporto Psicologico', desc: 'Assistenza salute mentale', legal: 'Piano welfare' },
+    gym_membership: { name: 'Palestra Aziendale', desc: 'Abbonamento fitness', legal: 'Benefit' }
+  },
+  
+  // 💻 LAVORO AGILE (Remote Work Category) 
+  remote_work: {
+    wfh: { name: 'Smart Working', desc: 'Lavoro agile da remoto', legal: 'L. 81/17' },
+    remote_work_request: { name: 'Lavoro Remoto', desc: 'Telelavoro strutturato', legal: 'CCNL' },
+    equipment_request: { name: 'Attrezzature', desc: 'PC, monitor, periferiche', legal: 'Sicurezza lavoro' },
+    vpn_access: { name: 'Accesso VPN', desc: 'Connessione aziendale remota', legal: 'GDPR' },
+    internet_stipend: { name: 'Rimborso Internet', desc: 'Connettività domestica', legal: 'Benefit' }
+  },
+  
+  // ⏰ ORARI E TURNI (Schedule Category)
+  schedule: {
+    overtime: { name: 'Lavoro Straordinario', desc: 'Ore supplementari', legal: 'CCNL' },
+    shift_swap: { name: 'Cambio Turno', desc: 'Scambio con colleghi', legal: 'Organizzazione' },
+    flex_hours: { name: 'Orario Flessibile', desc: 'Flessibilità entrata/uscita', legal: 'CCNL' },
+    time_change: { name: 'Modifica Orario', desc: 'Cambio orario di lavoro', legal: 'Accordo' }
+  },
+  
+  // 📋 ALTRE RICHIESTE (Other Category)
+  other: {
+    sabbatical_request: { name: 'Anno Sabbatico', desc: 'Aspettativa lunga retribuita', legal: 'CCNL' },
+    sabbatical_unpaid: { name: 'Aspettativa', desc: 'Congedo non retribuito', legal: 'CCNL' },
+    volunteer_leave: { name: 'Volontariato', desc: 'Attività di volontariato', legal: 'L. 266/91' },
+    donation_leave: { name: 'Donazione', desc: 'Sangue, midollo, organi', legal: 'L. 107/90' }
+  }
+} as const;
+
 // HR Request validation schema aligned with backend
 const hrRequestSchema = z.object({
-  category: z.enum(['leave', 'schedule', 'other', 'italian_legal', 'family', 'professional_development', 'wellness_health', 'remote_work', 'technology_support', 'overtime', 'expense', 'training', 'remote']),
+  category: z.enum(['leave', 'schedule', 'other', 'italian_legal', 'family', 'professional_development', 'wellness_health', 'remote_work', 'technology_support']),
   type: z.enum([
     // Leave types
     'vacation', 'sick', 'fmla', 'parental', 'bereavement', 'personal', 'religious', 'military',
@@ -1442,17 +1559,26 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
               <Label htmlFor="category">Categoria</Label>
               <Select 
                 value={formData.category} 
-                onValueChange={(value: typeof formData.category) => setFormData({ ...formData, category: value })}
+                onValueChange={(value: typeof formData.category) => {
+                  // Reset type when category changes
+                  setFormData({ ...formData, category: value, type: 'vacation' });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="leave">Ferie e Permessi</SelectItem>
-                  <SelectItem value="overtime">Straordinario</SelectItem>
-                  <SelectItem value="expense">Rimborso Spese</SelectItem>
-                  <SelectItem value="training">Formazione</SelectItem>
-                  <SelectItem value="remote">Smart Working</SelectItem>
+                  {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-3 py-1">
+                        <span className="text-lg">{category.icon}</span>
+                        <div>
+                          <div className="font-medium">{category.name}</div>
+                          <div className="text-xs text-gray-500">{category.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1468,37 +1594,21 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                   <SelectValue placeholder="Seleziona tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {formData.category === 'leave' && (
-                    <>
-                      <SelectItem value="vacation">Ferie Annuali</SelectItem>
-                      <SelectItem value="sick">Congedo per Malattia</SelectItem>
-                      <SelectItem value="personal">Permesso Personale</SelectItem>
-                      <SelectItem value="maternity_leave">Congedo Maternità</SelectItem>
-                    </>
-                  )}
-                  {formData.category === 'overtime' && (
-                    <>
-                      <SelectItem value="overtime">Richiesta Straordinario</SelectItem>
-                      <SelectItem value="flex_hours">Recupero Ore</SelectItem>
-                    </>
-                  )}
-                  {formData.category === 'expense' && (
-                    <>
-                      <SelectItem value="equipment_request">Richiesta Attrezzature</SelectItem>
-                      <SelectItem value="training_request">Formazione</SelectItem>
-                    </>
-                  )}
-                  {formData.category === 'training' && (
-                    <>
-                      <SelectItem value="training_request">Richiesta Corso</SelectItem>
-                      <SelectItem value="conference_attendance">Partecipazione Convegno</SelectItem>
-                    </>
-                  )}
-                  {formData.category === 'remote' && (
-                    <>
-                      <SelectItem value="wfh">Smart Working</SelectItem>
-                      <SelectItem value="remote_work_request">Lavoro Remoto</SelectItem>
-                    </>
+                  {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
+                    Object.entries(ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]).map(([key, type]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="py-1">
+                          <div className="font-medium">{type.name}</div>
+                          <div className="text-xs text-gray-500">{type.desc}</div>
+                          <div className="text-xs text-blue-600 font-mono">{type.legal}</div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  }
+                  {!formData.category && (
+                    <SelectItem value="" disabled>
+                      <span className="text-gray-400">Seleziona prima una categoria</span>
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -1531,12 +1641,31 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
           </div>
 
+          {/* Legal Information Panel */}
+          {formData.category && formData.type && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any] && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">⚖️</span>
+                <h4 className="font-semibold text-blue-900">Informazioni Legali</h4>
+              </div>
+              <p className="text-sm text-blue-700">
+                <strong>Tipo:</strong> {ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any]?.name}
+              </p>
+              <p className="text-sm text-blue-700">
+                <strong>Descrizione:</strong> {ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any]?.desc}
+              </p>
+              <p className="text-xs text-blue-600 font-mono bg-white/50 px-2 py-1 rounded">
+                <strong>Riferimento Legale:</strong> {ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any]?.legal}
+              </p>
+            </div>
+          )}
+
           {/* Reason */}
           <div>
             <Label htmlFor="reason">Motivazione *</Label>
             <Textarea 
               id="reason"
-              placeholder="Descrivi la tua richiesta..."
+              placeholder={`Descrivi la tua richiesta per ${formData.category && ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES] ? ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES].name : 'questa tipologia'}...`}
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               required
