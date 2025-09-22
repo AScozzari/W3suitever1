@@ -1935,7 +1935,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                                          currentCalendarMonth.getMonth() === today.getMonth() && 
                                          currentCalendarMonth.getFullYear() === today.getFullYear();
                           const hasEvent = isCurrentMonth && eventiCalendario.some(evento => {
-                            const eventDate = new Date(evento.dataCompleta);
+                            // ✅ FIX: evento.dataCompleta è già un Date object
+                            const eventDate = evento.dataCompleta instanceof Date ? evento.dataCompleta : new Date(evento.dataCompleta);
                             return eventDate.getDate() === day && 
                                    eventDate.getMonth() === currentCalendarMonth.getMonth() && 
                                    eventDate.getFullYear() === currentCalendarMonth.getFullYear();
