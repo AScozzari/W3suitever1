@@ -36,9 +36,9 @@ export enum CalendarScope {
 
 // Calendar permissions based on roles
 export const CALENDAR_PERMISSIONS = {
-  // Basic permissions for all authenticated users
+  // Basic permissions for all authenticated users - ✅ TEMP FIX: Allow USER to see tenant events
   USER: {
-    view: [CalendarScope.OWN],
+    view: [CalendarScope.OWN, CalendarScope.TENANT],
     create: [CalendarScope.OWN],
     update: [CalendarScope.OWN],
     delete: [CalendarScope.OWN]
