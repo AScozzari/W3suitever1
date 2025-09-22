@@ -447,9 +447,6 @@ export default function UnifiedClockingPanel({
                             <div className="font-medium text-gray-900 truncate">{store.name}</div>
                             <div className="text-xs text-gray-500 truncate">{store.address}</div>
                           </div>
-                          {store.distance && store.distance <= 200 && (
-                            <Badge variant="default" className="ml-2 text-xs bg-green-600 flex-shrink-0">GPS</Badge>
-                          )}
                         </div>
                       </SelectItem>
                     ))}
