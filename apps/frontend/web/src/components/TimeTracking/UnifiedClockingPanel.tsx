@@ -179,8 +179,8 @@ export default function UnifiedClockingPanel({
 
   // Transform stores data into expected format
   const nearbyStores: NearbyStore[] = React.useMemo(() => {
-    if (!storesData?.stores) return [];
-    return storesData.stores.map((store: any) => ({
+    if (!storesData || !Array.isArray(storesData)) return [];
+    return storesData.map((store: any) => ({
       id: store.id,
       name: store.name || store.nomeNegozio || `Store ${store.id}`,
       address: store.address || store.indirizzo || 'Indirizzo non disponibile',
