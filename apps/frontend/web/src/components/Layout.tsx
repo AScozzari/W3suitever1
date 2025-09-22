@@ -2103,7 +2103,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                               }}>{evento.location}</span>
                             </div>
                           </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </div>
 
