@@ -69,6 +69,7 @@ export default function LeftSidebar({
   autoCollapse = false,
   autoCollapseDelay = 3000
 }: LeftSidebarProps) {
+  console.log('🔧 [LEFT-SIDEBAR] Component mounting! collapsed:', collapsed);
   const [location, navigate] = useLocation();
   const [collapseTimer, setCollapseTimer] = useState<NodeJS.Timeout | null>(null);
   const [expandedSubmenus, setExpandedSubmenus] = useState<Set<string>>(new Set());

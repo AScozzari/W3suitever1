@@ -5,43 +5,61 @@ import { logger } from './logger';
 
 export class RedisService {
   private static instance: RedisService;
-  private redis: Redis;
-  private publisher: Redis;
-  private subscriber: Redis;
+  private redis: Redis | null = null;
+  private publisher: Redis | null = null;
+  private subscriber: Redis | null = null;
+  private isRedisAvailable: boolean = false;
 
   private constructor() {
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = process.env.REDIS_URL;
     
-    // Main Redis connection with limited retries
-    this.redis = new Redis(redisUrl, {
-      retryDelayOnFailover: 100,
-      enableReadyCheck: false,
-      maxRetriesPerRequest: 3, // Limit retries instead of null
-      lazyConnect: true, // Don't connect immediately
-      connectTimeout: 5000, // 5 second timeout
-      maxRetriesPerRequest: 1, // Fail fast
-    });
+    // Only initialize Redis if URL is provided (optional in development)
+    if (redisUrl) {
+      try {
+        // Main Redis connection with limited retries
+        this.redis = new Redis(redisUrl, {
+          retryDelayOnFailover: 100,
+          enableReadyCheck: false,
+          maxRetriesPerRequest: 1, // Fail fast
+          lazyConnect: true, // Don't connect immediately
+          connectTimeout: 5000, // 5 second timeout
+          enableOfflineQueue: false, // Disable queue when offline
+          retryStrategy: () => null, // Don't retry indefinitely
+        });
 
-    // Publisher for notifications
-    this.publisher = new Redis(redisUrl, {
-      lazyConnect: true,
-      connectTimeout: 5000,
-      maxRetriesPerRequest: 1,
-    });
-    
-    // Subscriber for real-time events
-    this.subscriber = new Redis(redisUrl, {
-      lazyConnect: true,
-      connectTimeout: 5000,
-      maxRetriesPerRequest: 1,
-    });
+        // Publisher for notifications
+        this.publisher = new Redis(redisUrl, {
+          lazyConnect: true,
+          connectTimeout: 5000,
+          maxRetriesPerRequest: 1,
+          enableOfflineQueue: false,
+          retryStrategy: () => null,
+        });
+        
+        // Subscriber for real-time events
+        this.subscriber = new Redis(redisUrl, {
+          lazyConnect: true,
+          connectTimeout: 5000,
+          maxRetriesPerRequest: 1,
+          enableOfflineQueue: false,
+          retryStrategy: () => null,
+        });
 
-    this.setupEventHandlers();
-    
-    logger.info('🔴 Redis Service initialized', {
-      environment: config.NODE_ENV,
-      redisUrl: redisUrl.replace(/\/\/.*@/, '//***@') // Hide credentials in logs
-    });
+        this.setupEventHandlers();
+        this.isRedisAvailable = true;
+        
+        logger.info('🔴 Redis Service initialized', {
+          environment: config.NODE_ENV,
+          redisUrl: redisUrl.replace(/\/\/.*@/, '//***@') // Hide credentials in logs
+        });
+      } catch (error) {
+        logger.warn('🔴 Redis initialization failed, continuing without Redis', { error });
+        this.isRedisAvailable = false;
+      }
+    } else {
+      logger.info('🔴 Redis Service disabled (no REDIS_URL configured)');
+      this.isRedisAvailable = false;
+    }
   }
 
   static getInstance(): RedisService {
@@ -52,16 +70,30 @@ export class RedisService {
   }
 
   private setupEventHandlers() {
+    if (!this.redis || !this.publisher || !this.subscriber) return;
+
+    // Main Redis connection handlers
     this.redis.on('connect', () => {
       logger.info('🔴 Redis connected');
     });
 
     this.redis.on('error', (error) => {
-      logger.error('🔴 Redis connection error', { error: error.message });
+      logger.warn('🔴 Redis connection error (non-blocking)', { error: error.message });
+      // Don't throw, just log warning to prevent unhandled errors
     });
 
     this.redis.on('close', () => {
       logger.warn('🔴 Redis connection closed');
+    });
+
+    // Publisher handlers
+    this.publisher.on('error', (error) => {
+      logger.warn('🔴 Redis Publisher error (non-blocking)', { error: error.message });
+    });
+
+    // Subscriber handlers  
+    this.subscriber.on('error', (error) => {
+      logger.warn('🔴 Redis Subscriber error (non-blocking)', { error: error.message });
     });
   }
 
@@ -71,8 +103,13 @@ export class RedisService {
    * Cache unread notification count for fast access
    */
   async cacheUnreadCount(userId: string, tenantId: string, count: number): Promise<void> {
-    const key = `unread_count:${tenantId}:${userId}`;
-    await this.redis.setex(key, 300, count); // Cache for 5 minutes
+    if (!this.isRedisAvailable || !this.redis) return; // Skip if Redis not available
+    try {
+      const key = `unread_count:${tenantId}:${userId}`;
+      await this.redis.setex(key, 300, count); // Cache for 5 minutes
+    } catch (error) {
+      logger.warn('🔴 Failed to cache unread count', { error, userId, tenantId });
+    }
   }
 
   /**
