@@ -57,7 +57,7 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Fetch events for current month
+  // CRITICAL FIX: Fetch events for current month - ALWAYS execute regardless of collapsed state
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['/api/hr/calendar/events', format(currentDate, 'yyyy-MM')],
     queryFn: async () => {
@@ -70,27 +70,27 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
       const startDate = start.toISOString();
       const endDate = end.toISOString();
       
-      console.log('🗓️ [COMPACT-CALENDAR] Fetching events:', { startDate, endDate });
+      console.log('🗓️ [COMPACT-CALENDAR] Fetching events:', { startDate, endDate, collapsed });
       
       const response = await fetch(`/api/hr/calendar/events?startDate=${startDate}&endDate=${endDate}`, {
         headers: {
           'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
-          'X-Auth-Session': 'authenticated',
-          'X-Demo-User': 'demo-user'
+          'X-Auth-Session': 'authenticated'
         }
       });
       
       if (!response.ok) {
         const errorText = await response.text();
         console.warn('🗓️ [COMPACT-CALENDAR] API Error:', response.status, errorText);
-        return [];
+        throw new Error(`API Error: ${response.status}`);
       }
       
       const result = await response.json();
-      console.log('🗓️ [COMPACT-CALENDAR] Events received:', result.data?.length || 0);
+      console.log('🗓️ [COMPACT-CALENDAR] Events received:', result.data?.length || 0, 'collapsed:', collapsed);
       return result.data || [];  // HR API returns { success: true, data: [...] }
     },
     staleTime: 30000, // 30 seconds
+    retry: 2, // Retry failed requests
   });
 
   // Generate calendar days
@@ -105,20 +105,49 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentDate]);
 
-  // Get events for a specific day
+  // FIXED: Get events for a specific day using proper date comparisons
   const getEventsForDay = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    if (!events || events.length === 0) return [];
+    
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0); // Normalize to start of day
+    
     return events.filter((event: CalendarEvent) => {
-      const eventStart = format(new Date(event.startDate), 'yyyy-MM-dd');
-      const eventEnd = format(new Date(event.endDate), 'yyyy-MM-dd');
-      return dateStr >= eventStart && dateStr <= eventEnd;
+      try {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        
+        // Normalize event dates to avoid timezone issues
+        eventStart.setHours(0, 0, 0, 0);
+        eventEnd.setHours(23, 59, 59, 999);
+        
+        // Check if target date is within event date range
+        return targetDate >= eventStart && targetDate <= eventEnd;
+      } catch (error) {
+        console.warn('🗓️ [COMPACT-CALENDAR] Invalid event date:', event);
+        return false;
+      }
     });
   };
 
-  // Handle navigation
-  const goToPreviousMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const goToToday = () => setCurrentDate(new Date());
+  // FIXED: Handle navigation with proper callbacks and logging
+  const goToPreviousMonth = () => {
+    const newDate = subMonths(currentDate, 1);
+    console.log('🗓️ [COMPACT-CALENDAR] Navigation: Previous month', format(newDate, 'yyyy-MM'));
+    setCurrentDate(newDate);
+  };
+  
+  const goToNextMonth = () => {
+    const newDate = addMonths(currentDate, 1);
+    console.log('🗓️ [COMPACT-CALENDAR] Navigation: Next month', format(newDate, 'yyyy-MM'));
+    setCurrentDate(newDate);
+  };
+  
+  const goToToday = () => {
+    const newDate = new Date();
+    console.log('🗓️ [COMPACT-CALENDAR] Navigation: Go to today', format(newDate, 'yyyy-MM-dd'));
+    setCurrentDate(newDate);
+  };
 
   if (collapsed) {
     // Ultra-compact view when sidebar is collapsed
