@@ -151,6 +151,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   
   // Tab attiva per workspace
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('Tasks');
+  
+  // ✅ NAVIGAZIONE MESI PER CALENDARIO WORKSPACE
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date());
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -1840,14 +1843,61 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       marginBottom: '12px',
                       border: '1px solid rgba(255, 255, 255, 0.08)'
                     }}>
+                      {/* ✅ HEADER CON NAVIGAZIONE MESI */}
                       <div style={{
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        color: '#1f2937',
-                        marginBottom: '8px',
-                        textAlign: 'center'
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '8px'
                       }}>
-                        {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                        <button 
+                          onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1))}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#6b7280',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(123, 44, 191, 0.1)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        
+                        <div style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: '#1f2937',
+                          textAlign: 'center'
+                        }}>
+                          {currentCalendarMonth.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                        </div>
+                        
+                        <button 
+                          onClick={() => setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1))}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#6b7280',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(123, 44, 191, 0.1)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <ChevronRight size={14} />
+                        </button>
                       </div>
                       
                       {/* Giorni della settimana */}
@@ -1876,16 +1926,19 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       }}>
                         {Array.from({length: 35}, (_, i) => {
                           const today = new Date();
-                          const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                          const firstDay = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth(), 1);
                           const dayOfWeek = (firstDay.getDay() + 6) % 7;
                           const day = i - dayOfWeek + 1;
-                          const isCurrentMonth = day > 0 && day <= new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-                          const isToday = isCurrentMonth && day === today.getDate();
+                          const daysInMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 0).getDate();
+                          const isCurrentMonth = day > 0 && day <= daysInMonth;
+                          const isToday = isCurrentMonth && day === today.getDate() && 
+                                         currentCalendarMonth.getMonth() === today.getMonth() && 
+                                         currentCalendarMonth.getFullYear() === today.getFullYear();
                           const hasEvent = isCurrentMonth && eventiCalendario.some(evento => {
                             const eventDate = new Date(evento.dataCompleta);
                             return eventDate.getDate() === day && 
-                                   eventDate.getMonth() === today.getMonth() && 
-                                   eventDate.getFullYear() === today.getFullYear();
+                                   eventDate.getMonth() === currentCalendarMonth.getMonth() && 
+                                   eventDate.getFullYear() === currentCalendarMonth.getFullYear();
                           });
                           
                           return (
