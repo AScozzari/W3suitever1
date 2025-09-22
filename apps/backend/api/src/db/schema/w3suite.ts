@@ -81,6 +81,11 @@ export const hrAnnouncementTypeEnum = pgEnum('hr_announcement_type', ['policy', 
 export const hrAnnouncementPriorityEnum = pgEnum('hr_announcement_priority', ['low', 'medium', 'high', 'urgent']);
 export const hrAnnouncementAudienceEnum = pgEnum('hr_announcement_audience', ['all', 'store', 'area', 'role', 'specific']);
 
+// ✅ CRITICAL ENUM FIX: Add missing calendar_event_category enum
+export const calendarEventCategoryEnum = pgEnum('calendar_event_category', [
+  'sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing'
+]);
+
 // HR Request System Enums
 export const hrRequestCategoryEnum = pgEnum('hr_request_category', [
   'leave', 'schedule', 'other', 'italian_legal', 'family', 'professional_development', 
@@ -860,6 +865,9 @@ export const calendarEvents = w3suiteSchema.table("calendar_events", {
   status: calendarEventStatusEnum("status").notNull().default("tentative"),
   hrSensitive: boolean("hr_sensitive").default(false),
   
+  // ✅ BUSINESS CATEGORY (was missing from Drizzle)
+  category: calendarEventCategoryEnum("category").notNull().default("hr"),
+  
   // RBAC scoping
   teamId: uuid("team_id"),
   storeId: uuid("store_id").references(() => stores.id),
@@ -876,9 +884,9 @@ export const calendarEvents = w3suiteSchema.table("calendar_events", {
   color: varchar("color", { length: 7 }), // Hex color for UI
   
   // Audit fields
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  createdBy: varchar("created_by").notNull().references(() => users.id),
   updatedBy: varchar("updated_by").references(() => users.id),
 }, (table) => [
   index("calendar_events_tenant_owner_idx").on(table.tenantId, table.ownerId),
@@ -1958,8 +1966,8 @@ export const universalRequests = w3suiteSchema.table("universal_requests", {
   
   // ✅ CATEGORIZZAZIONE ENTERPRISE: Modulo + Tipo + Sottotipo
   category: requestCategoryEnum("category").notNull(),
-  type: varchar("request_type", { length: 100 }).notNull(), // 'leave', 'expense', 'access', 'discount'
-  subtype: varchar("request_subtype", { length: 100 }), // 'vacation', 'sick', 'maternity', etc.
+  requestType: varchar("request_type", { length: 100 }).notNull(), // 'leave', 'expense', 'access', 'discount'
+  requestSubtype: varchar("request_subtype", { length: 100 }), // 'vacation', 'sick', 'maternity', etc.
   
   // ✅ CONTENUTO RICHIESTA
   title: varchar("title", { length: 255 }).notNull(),
