@@ -1,6 +1,6 @@
 # Overview
 
-W3 Suite is a multi-tenant enterprise platform designed as a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. Key features include a WindTre glassmorphism design, OAuth2/OIDC with MFA, PostgreSQL with Row Level Security for tenant isolation, and a feature-first architecture. A complementary Brand Interface HQ system provides centralized control and cross-tenant management. The project's ambition is to deliver a scalable, secure, and robust platform for diverse business needs.
+W3 Suite is a multi-tenant enterprise platform offering a comprehensive business management solution. It integrates CRM, POS, Warehouse, Analytics, HR, CMS, and Bidding modules within a structured monorepo. The platform features a WindTre glassmorphism design, OAuth2/OIDC with MFA, and PostgreSQL with Row Level Security for tenant isolation. A complementary Brand Interface HQ system provides centralized control and cross-tenant management. The project's ambition is to deliver a scalable, secure, and robust platform catering to diverse business needs.
 
 # User Preferences
 
@@ -144,46 +144,31 @@ accordion, alert-dialog, alert, avatar, badge, button, calendar, card, checkbox,
 
 # System Architecture
 
-The project utilizes an enterprise monorepo structure, segmenting `W3 Suite` (tenant-facing applications) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, orchestrated by a Node.js master process, routes traffic to internal services, including both frontend and backend applications for W3 Suite and Brand Interface.
+The project employs an enterprise monorepo structure, separating `W3 Suite` (tenant-facing applications) from a centralized `Brand Interface HQ system`. An embedded Nginx reverse proxy, managed by a Node.js master process, directs traffic to internal services, including frontend and backend applications for both W3 Suite and Brand Interface.
 
 ## Monorepo Structure:
-- **`apps/`**: Contains frontend and backend services for W3 Suite and Brand Interface, along with specialized workers (e.g., `brand-propagation`) and edge renderers (`cms-render`).
-- **`packages/`**: Hosts shared libraries such as `ui/`, `tokens/`, `sdk/`, `dwh/`, `cms-core/`, `cms-render/`, and `agents/`.
+- **`apps/`**: Contains frontend/backend services, workers, and edge renderers.
+- **`packages/`**: Hosts shared libraries (UI, tokens, SDK, DWH, CMS).
 - **`db/`**: Dedicated to database migration scripts.
 
 ## UI/UX Design:
-- **Glassmorphism WindTre Design System**: Adopts WindTre brand colors and glassmorphism effects.
-- **Component-First Approach**: Leverages `shadcn/ui` components for consistency and accessibility, enhanced by CSS variables and Tailwind CSS.
-- **Typography**: Employs Inter (primary) and JetBrains Mono (monospaced) for clear and readable interfaces.
-- **Branding**: Allows for tenant-customizable logos and color schemes.
+- **Glassmorphism WindTre Design System**: Utilizes WindTre branding, colors, and glassmorphism effects.
+- **Component-First Approach**: Leverages `shadcn/ui` for consistency and accessibility, extended with CSS variables and Tailwind CSS.
+- **Typography**: Uses Inter (primary) and JetBrains Mono (monospaced).
+- **Branding**: Supports tenant-customizable logos and color schemes.
 
 ## Technical Implementations:
-- **Database Architecture**: Implements a 3-schema structure (`w3suite`, `public`, `brand_interface`) to ensure data isolation and efficient management.
-- **Security**: Features robust authentication via OAuth2/OIDC with MFA, JWTs, PostgreSQL Row Level Security (RLS) for multitenancy, and granular Role-Based Access Control (RBAC).
-- **Multitenancy**: Achieved through RLS at the database level, a `TenantProvider` for contextual data, and global unique constraints.
-- **Organizational Hierarchy**: Structures relationships among TENANTs, RAGIONI SOCIALI (Legal Entities), PUNTI VENDITA (Sales Points), and RISORSE (Users).
-- **Brand Interface Features**: Provides centralized Super Admin capabilities, cross-tenant campaign and pricing management, and event propagation via BullMQ.
+- **Database Architecture**: 3-schema structure (`w3suite`, `public`, `brand_interface`) for data isolation and management.
+- **Security**: OAuth2/OIDC with MFA, JWTs, PostgreSQL Row Level Security (RLS) for multitenancy, and granular Role-Based Access Control (RBAC).
+- **Multitenancy**: Achieved via RLS, a `TenantProvider`, and global unique constraints.
+- **Organizational Hierarchy**: Manages relationships among TENANTs, Legal Entities, Sales Points, and Users.
+- **Brand Interface Features**: Centralized Super Admin, cross-tenant campaign/pricing management, and event propagation via BullMQ.
 - **Data Architecture Patterns**:
-    - **Brand Base + Tenant Override**: For entities collaboratively managed by Brand and Tenants (e.g., Suppliers, Products).
-    - **Brand-Only**: For entities exclusively controlled by Brand (e.g., Stores, Legal Entities), with tenant read-only access managed by `assigned_tenants`.
-- **Universal Workflow System**: A comprehensive approval hierarchy system with 6 core database tables supporting workflow-team separation (N:M), RBAC-integrated supervision, and event-driven state machines. Architecture includes:
-  
-  **Core Tables:**
-  - `workflowActions` - RBAC actions by category (hr, finance, operations, crm, support, sales)  
-  - `workflowTemplates` - React Flow visual templates (nodes, edges, viewport persistence)
-  - `workflowSteps` - Individual steps with approver logic, escalation, conditions
-  - `teams` - Hybrid teams (users+roles) with RBAC-validated supervisors  
-  - `teamWorkflowAssignments` - N:M mapping teams→templates with conditions
-  - `workflowInstances` - Runtime execution with state machine tracking
-  
-  **Key Features:**
-  - Visual workflow builder (React Flow) with backend persistence
-  - Team-based supervision with scope-aware assignments (tenant/legal_entity/store)
-  - Progressive approval chains with escalation timeouts
-  - Dynamic runtime resolution through team/supervisor assignments
-  - Event-driven automation with comprehensive audit trails
-  - Template reusability across teams with conditional overrides
-- **Frontend Package Structure**: The `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library for rapid and consistent development.
+    - **Brand Base + Tenant Override**: For collaboratively managed entities (e.g., Suppliers, Products).
+    - **Brand-Only**: For Brand-controlled entities (e.g., Stores, Legal Entities) with tenant read-only access.
+- **Universal Workflow System**: A comprehensive approval hierarchy with 6 core database tables, supporting workflow-team separation, RBAC-integrated supervision, and event-driven state machines. Key features include a visual workflow builder, team-based supervision, progressive approval chains with escalation, dynamic runtime resolution, and audit trails.
+- **Frontend Package Structure**: `@w3suite/frontend-kit` centralizes the design system, page templates, reusable component blocks, UI patterns, custom React hooks, and the `shadcn/ui` component library.
+- **Unified Notification System**: Real-time notifications across 7 business categories (CRM, Finance, HR, Sales, Support, Operations, Marketing) with stable color-coded badges. It uses a hybrid Redis + WebSocket architecture with automatic PostgreSQL fallback for graceful degradation. `w3suite.notifications` table is extended for comprehensive management.
 
 # External Dependencies
 
