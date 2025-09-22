@@ -183,28 +183,50 @@ export default function DocumentCategories({
         </div>
       </div>
 
-      {/* Quick Filters */}
+      {/* Quick Filters - Horizontal Layout */}
       <div className="bg-white/80 backdrop-blur-lg rounded-xl p-4">
-        <h3 className="font-medium text-gray-700 mb-3">Filtri Rapidi</h3>
-        <div className="space-y-1">
+        <h3 className="font-medium text-gray-700 mb-4">Filtri Rapidi</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {quickFilters.map((filter) => (
             <button
               key={filter.id}
               onClick={() => onSelectCategory(filter.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
+              className={`group relative flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-300 ${
                 selectedCategory === filter.id
-                  ? 'bg-gray-100'
-                  : 'hover:bg-gray-50'
+                  ? 'bg-gradient-to-br from-orange-500 to-purple-600 text-white shadow-lg scale-105'
+                  : 'bg-gray-50/50 hover:bg-gray-100/70 hover:shadow-md hover:scale-102 text-gray-700'
               }`}
               data-testid={`button-filter-${filter.id}`}
             >
-              <div className="flex items-center gap-3">
-                <filter.icon className={`h-4 w-4 ${filter.color}`} />
-                <span className="text-gray-700">{filter.name}</span>
+              <div className="flex flex-col items-center gap-2">
+                <div className={`p-2 rounded-lg ${
+                  selectedCategory === filter.id 
+                    ? 'bg-white/20' 
+                    : 'bg-white group-hover:bg-white'
+                } transition-all duration-300`}>
+                  <filter.icon className={`h-5 w-5 ${
+                    selectedCategory === filter.id 
+                      ? 'text-white' 
+                      : filter.color
+                  }`} />
+                </div>
+                <span className={`text-sm font-medium text-center leading-tight ${
+                  selectedCategory === filter.id 
+                    ? 'text-white' 
+                    : 'text-gray-700 group-hover:text-gray-900'
+                }`}>
+                  {filter.name}
+                </span>
+                {filter.count > 0 && (
+                  <span className={`absolute -top-1 -right-1 h-6 w-6 text-xs font-bold rounded-full flex items-center justify-center ${
+                    selectedCategory === filter.id
+                      ? 'bg-white text-orange-500'
+                      : 'bg-orange-500 text-white'
+                  } shadow-sm`}>
+                    {filter.count}
+                  </span>
+                )}
               </div>
-              {filter.count > 0 && (
-                <span className="text-sm text-gray-500">{filter.count}</span>
-              )}
             </button>
           ))}
         </div>
