@@ -6,6 +6,7 @@ import { Route, Switch, useParams, Redirect } from "wouter";
 import DashboardPage from "./pages/DashboardPage";
 import Login from "./pages/Login";
 import SettingsPage from "./pages/SettingsPage";
+import WorkflowManagementPage from "./pages/WorkflowManagementPage";
 import StandardFieldsDemo from "./pages/StandardFieldsDemo";
 // Legacy imports removed - consolidated into HR and Employee dashboards
 import MyPortal from "./pages/MyPortal";
@@ -60,6 +61,10 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
+      {/* Workflow Management Page Route */}
+      <Route path="/:tenant/workflow-management">
+        {(params) => <TenantWrapper params={params}><AuthenticatedApp><WorkflowManagementPage /></AuthenticatedApp></TenantWrapper>}
+      </Route>
       <Route path="/:tenant/calendar">
         {(params) => <Redirect to={`/${params.tenant}/portale`} replace />}
       </Route>
