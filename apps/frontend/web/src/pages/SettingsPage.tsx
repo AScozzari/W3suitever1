@@ -503,8 +503,6 @@ export default function SettingsPage() {
   const [selectedEntity, setSelectedEntity] = useState('ragione-sociale');
   
   // Workflow Management State
-  const [workflowSubTab, setWorkflowSubTab] = useState('hierarchy');
-  const [selectedWorkflowService, setSelectedWorkflowService] = useState('hr');
 
   // Hierarchy Management State (moved from renderHierarchyManagement function)
   const [hierarchyView, setHierarchyView] = useState<'tree' | 'workflows' | 'permissions'>('tree');
@@ -1404,7 +1402,6 @@ export default function SettingsPage() {
             { id: 'punti-vendita', icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
             { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
-            { id: 'gestione-workflow', icon: Settings, label: 'Gestione Workflow', color: '#059669' },
             { id: 'fornitori', icon: Truck, label: 'Fornitori', color: '#10b981' }
           ].map((item, index) => {
             const Icon = item.icon;
@@ -1927,68 +1924,6 @@ export default function SettingsPage() {
       </div>
       )}
 
-      {/* Gestione Workflow Section */}
-      {selectedEntity === 'gestione-workflow' && (
-        <div style={{ marginBottom: '48px' }}>
-          {/* Header sezione */}
-          <div style={{
-            background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            border: '1px solid hsla(255, 255, 255, 0.12)',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '32px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '20px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #059669, #047857)',
-                  borderRadius: '12px',
-                  padding: '10px',
-                  boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)'
-                }}>
-                  <Settings size={20} style={{ color: 'white' }} />
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#111827',
-                    margin: 0
-                  }}>
-                    Gestione Workflow Universali
-                  </h3>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#6b7280',
-                    margin: '4px 0 0 0'
-                  }}>
-                    Configura gerarchie di approvazione per servizio e team collaborativi
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Selettore Servizio per Workflow */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
-              marginBottom: '24px'
-            }}>
-              {[
-                { id: 'hr', name: 'HR Management', icon: Users, color: '#ec4899' },
-                { id: 'finance', name: 'Finance', icon: DollarSign, color: '#8b5cf6' },
-                { id: 'operations', name: 'Operations', icon: Settings, color: '#f59e0b' },
-                { id: 'it', name: 'IT Support', icon: Server, color: '#3b82f6' },
-                { id: 'sales', name: 'Sales', icon: Target, color: '#10b981' }
               ].map(service => {
                 const Icon = service.icon;
                 return (
