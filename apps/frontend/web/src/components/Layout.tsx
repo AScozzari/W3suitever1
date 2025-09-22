@@ -491,18 +491,37 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     }
   };
 
-  // Menu items dalla sidebar mostrata negli screenshots
+  // Menu items con path normalizzati - SOLUZIONE CLEAN
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'crm', label: 'CRM', icon: Users },
-    { id: 'ai', label: 'AI Tools', icon: Zap },
-    { id: 'magazzino', label: 'Magazzino', icon: Briefcase },
-    { id: 'amministrazione', label: 'Amministrazione', icon: Building },
-    { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' }, // Solo per utenti con permessi RBAC
-    { id: 'listini', label: 'Listini', icon: FileText },
-    { id: 'cassa', label: 'Cassa', icon: ShoppingBag },
-    { id: 'impostazioni', label: 'Impostazioni', icon: Settings }
+    { id: 'dashboard', label: 'Dashboard', icon: Home, path: '' },
+    { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
+    { id: 'ai', label: 'AI Tools', icon: Zap, path: '/ai' },
+    { id: 'magazzino', label: 'Magazzino', icon: Briefcase, path: '/magazzino' },
+    { id: 'amministrazione', label: 'Amministrazione', icon: Building, path: '/amministrazione' },
+    { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' },
+    { id: 'listini', label: 'Listini', icon: FileText, path: '/listini' },
+    { id: 'cassa', label: 'Cassa', icon: ShoppingBag, path: '/cassa' },
+    { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
   ];
+
+  // Helper unificato per active state - FIX DASHBOARD ORANGE
+  const getActiveItemId = (location: string) => {
+    const segments = location.split('/').filter(Boolean);
+    const section = segments[1]; // secondo segmento dopo tenant
+    
+    // Se non c'è secondo segmento, è dashboard
+    if (!section) return 'dashboard';
+    
+    // Per settings, può essere sia /settings che /impostazioni  
+    if (section === 'settings') return 'impostazioni';
+    
+    // Trova item corrispondente al path
+    const matchedItem = menuItems.find(item => 
+      item.path === `/${section}` || item.id === section
+    );
+    
+    return matchedItem?.id || 'dashboard';
+  };
 
   return (
     <div style={{
@@ -1019,115 +1038,36 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
           }}>
             {menuItems.map((item) => {
               const Icon = item.icon;
-              // Controlla se il menu è attivo considerando il tenant nel path
-              const currentPath = window.location.pathname;
-              const pathSegments = currentPath.split('/').filter(Boolean);
-              const isSettingsPath = pathSegments[1] === 'settings';
-              const isDashboardPath = pathSegments.length === 1; // Solo /:tenant
-              
-              const isEmployeePath = pathSegments[1] === 'employee';
-              const isHRManagementPath = pathSegments[1] === 'hr-management';
-              
-              const isActive = item.id === 'impostazioni' 
-                ? isSettingsPath
-                : item.id === 'dashboard'
-                ? isDashboardPath
-                : item.id === 'employee'
-                ? isEmployeePath
-                : item.id === 'hr-management'
-                ? isHRManagementPath
-                : currentModule === item.id;
+              const activeItemId = getActiveItemId(location);
+              const isActive = item.id === activeItemId;
               
               return (
                 <button
                   key={item.id}
                   onClick={() => {
-                    // Ottieni il tenant corrente dal path
-                    const currentPath = window.location.pathname;
-                    const tenant = currentPath.split('/')[1] || 'staging';
-                    
-                    if (item.id === 'impostazioni') {
-                      navigate(`/${tenant}/settings`);
-                    } else if (item.id === 'dashboard') {
-                      navigate(`/${tenant}`);
-                    } else if (item.id === 'employee') {
-                      navigate(`/${tenant}/portale`);
-                    } else if (item.id === 'hr-management') {
-                      navigate(`/${tenant}/hr-management`);
-                    } else {
-                      setCurrentModule(item.id);
+                    // Navigation pulita usando path unificati
+                    const segments = location.split('/').filter(Boolean);
+                    const tenant = segments[0] || 'staging';
+                    navigate(`/${tenant}${item.path}`);
+                  }}
+                  className={`
+                    w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold shadow-lg' 
+                      : 'text-gray-600 hover:text-gray-700 hover:bg-white/10'
                     }
-                  }}
-                  style={{
-                    width: isMobile ? 'auto' : (leftSidebarCollapsed ? '40px' : '100%'),
-                    height: leftSidebarCollapsed && !isMobile ? '40px' : 'auto',
-                    minWidth: isMobile ? '80px' : 'auto',
-                    padding: isMobile ? '12px' : (leftSidebarCollapsed ? '12px' : '12px 16px'),
-                    marginBottom: isMobile ? '0' : (leftSidebarCollapsed ? '0' : '8px'),
-                    background: isActive 
-                      ? `linear-gradient(135deg, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})` 
-                      : 'transparent',
-                    backdropFilter: 'none',
-                    WebkitBackdropFilter: 'none',
-                    border: 'none',
-                    borderRadius: leftSidebarCollapsed ? '12px' : '8px',
-                    color: isActive ? 'white' : '#374151',
-                    fontSize: isMobile ? '12px' : '14px',
-                    fontWeight: isActive ? 600 : 500,
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexDirection: isMobile ? 'column' : 'row',
-                    gap: isMobile ? '4px' : (leftSidebarCollapsed ? '0' : '12px'),
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    textAlign: leftSidebarCollapsed ? 'center' : 'left',
-                    justifyContent: leftSidebarCollapsed ? 'center' : 'flex-start',
-                    boxShadow: 'none'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.color = '#6b7280';
-                      e.currentTarget.style.transform = leftSidebarCollapsed ? 'scale(1.1)' : 'translateX(4px)';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.color = '#374151';
-                      e.currentTarget.style.transform = 'scale(1) translateX(0)';
-                    }
-                  }}
+                    ${leftSidebarCollapsed && !isMobile ? 'justify-center w-10 h-10 p-2' : ''}
+                    ${isMobile ? 'flex-col text-xs min-w-20' : ''}
+                  `}
                 >
-                  {/* Icon con effetti speciali per dashboard */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative'
-                  }}>
+                  {/* Icon con glow effect solo per dashboard attiva */}
+                  <div className="relative flex items-center justify-center">
                     <Icon size={leftSidebarCollapsed && !isMobile ? 18 : (isMobile ? 16 : 20)} />
-                    {isActive && (
+                    {isActive && item.id === 'dashboard' && (
                       <>
-                        {/* Glow effect base */}
-                        <div style={{
-                          position: 'absolute',
-                          inset: '-6px',
-                          background: 'rgba(255, 105, 0, 0.4)',
-                          borderRadius: '50%',
-                          filter: 'blur(12px)',
-                          zIndex: -1,
-                          animation: leftSidebarCollapsed ? 'none' : 'dashboardPulse 2s ease-in-out infinite'
-                        }} />
-                        {/* Enhanced glow quando aperta */}
+                        <div className="absolute inset-[-6px] bg-orange-400/40 rounded-full filter blur-xl -z-10" />
                         {!leftSidebarCollapsed && (
-                          <div style={{
-                            position: 'absolute',
-                            inset: '-10px',
-                            background: 'rgba(255, 105, 0, 0.2)',
-                            borderRadius: '50%',
-                            filter: 'blur(20px)',
-                            zIndex: -2,
-                            animation: 'dashboardGlow 3s ease-in-out infinite alternate'
-                          }} />
+                          <div className="absolute inset-[-10px] bg-orange-400/20 rounded-full filter blur-2xl -z-20 animate-pulse" />
                         )}
                       </>
                     )}
