@@ -762,26 +762,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             </div>
           )}
 
-          {/* Notifiche */}
-          <button style={{
-            position: 'relative',
-            background: 'transparent',
-            border: 'none',
-            padding: '8px',
-            cursor: 'pointer',
-            borderRadius: '8px'
-          }}>
-            <Bell size={20} />
-            <div style={{
-              position: 'absolute',
-              top: '6px',
-              right: '6px',
-              width: '8px',
-              height: '8px',
-              background: '#ef4444',
-              borderRadius: '50%'
-            }}></div>
-          </button>
 
           {/* Avatar utente con dropdown menu */}
           <div style={{ position: 'relative' }} data-user-menu>

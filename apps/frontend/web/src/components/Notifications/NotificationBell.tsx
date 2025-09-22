@@ -6,7 +6,7 @@ import { useLocation, useParams } from 'wouter';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
-// WindTre color palette
+// WindTre color palette + Business Categories
 const COLORS = {
   primary: {
     orange: '#FF6900',
@@ -23,6 +23,16 @@ const COLORS = {
   glass: {
     white: 'rgba(255, 255, 255, 0.08)',
     whiteMedium: 'rgba(255, 255, 255, 0.12)',
+  },
+  // ==================== BUSINESS CATEGORY COLORS (STABLE) ====================
+  categories: {
+    'crm': '#3B82F6',        // Blue - Customer focus
+    'finance': '#10B981',    // Green - Money/growth  
+    'hr': '#8B5CF6',         // Purple - People/admin
+    'sales': '#F59E0B',      // Orange - Energy/conversion
+    'support': '#EF4444',    // Red - Urgency/help
+    'operations': '#6B7280', // Gray - Infrastructure
+    'marketing': '#EC4899'   // Pink - Creative/outreach
   }
 };
 
@@ -61,18 +71,68 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Get notification icon based on type and priority
+  // Get notification icon and color based on business category and priority
   const getNotificationIcon = (notification: Notification) => {
+    // Get category color (fallback to HR if category not set)
+    const category = (notification as any).category || 'hr';
+    const categoryColor = COLORS.categories[category as keyof typeof COLORS.categories] || COLORS.categories.hr;
+    
+    // Priority overrides for critical/high
     if (notification.priority === 'critical') {
       return <AlertTriangle size={16} style={{ color: COLORS.semantic.error }} />;
-    }
-    if (notification.type === 'hr_request') {
-      return <Clock size={16} style={{ color: COLORS.primary.orange }} />;
     }
     if (notification.priority === 'high') {
       return <AlertTriangle size={16} style={{ color: COLORS.semantic.warning }} />;
     }
-    return <Info size={16} style={{ color: COLORS.semantic.info }} />;
+    
+    // Category-specific icons with stable colors
+    switch (category) {
+      case 'crm':
+        return <Info size={16} style={{ color: categoryColor }} />;
+      case 'finance':
+        return <CheckCircle size={16} style={{ color: categoryColor }} />;
+      case 'hr':
+        return <Clock size={16} style={{ color: categoryColor }} />;
+      case 'sales':
+        return <AlertTriangle size={16} style={{ color: categoryColor }} />;
+      case 'support':
+        return <ExternalLink size={16} style={{ color: categoryColor }} />;
+      case 'operations':
+        return <Info size={16} style={{ color: categoryColor }} />;
+      case 'marketing':
+        return <Bell size={16} style={{ color: categoryColor }} />;
+      default:
+        return <Info size={16} style={{ color: categoryColor }} />;
+    }
+  };
+
+  // Get category badge with color
+  const getCategoryBadge = (category: string) => {
+    const categoryColor = COLORS.categories[category as keyof typeof COLORS.categories] || COLORS.categories.hr;
+    const categoryLabels = {
+      'crm': 'CRM',
+      'finance': 'Finance',
+      'hr': 'HR',
+      'sales': 'Sales', 
+      'support': 'Support',
+      'operations': 'Ops',
+      'marketing': 'Marketing'
+    };
+    
+    return (
+      <span style={{
+        display: 'inline-block',
+        backgroundColor: categoryColor,
+        color: 'white',
+        fontSize: '10px',
+        fontWeight: 600,
+        padding: '2px 6px',
+        borderRadius: '4px',
+        marginRight: '8px'
+      }}>
+        {categoryLabels[category as keyof typeof categoryLabels] || 'HR'}
+      </span>
+    );
   };
 
   // Get notification color based on priority
@@ -309,14 +369,22 @@ export default function NotificationBell({ isMobile = false }: NotificationBellP
 
                   {/* Content */}
                   <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Category Badge + Title */}
                     <div style={{
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      color: '#1f2937',
-                      marginBottom: '4px',
-                      lineHeight: 1.4
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginBottom: '4px'
                     }}>
-                      {notification.title}
+                      {getCategoryBadge((notification as any).category || 'hr')}
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#1f2937',
+                        lineHeight: 1.4,
+                        flex: 1
+                      }}>
+                        {notification.title}
+                      </div>
                     </div>
                     
                     <div style={{

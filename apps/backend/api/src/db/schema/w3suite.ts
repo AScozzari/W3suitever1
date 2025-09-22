@@ -37,6 +37,7 @@ export const userStatusEnum = pgEnum('user_status', ['attivo', 'sospeso', 'off-b
 export const notificationTypeEnum = pgEnum('notification_type', ['system', 'security', 'data', 'custom']);
 export const notificationPriorityEnum = pgEnum('notification_priority', ['low', 'medium', 'high', 'critical']);
 export const notificationStatusEnum = pgEnum('notification_status', ['unread', 'read']);
+export const notificationCategoryEnum = pgEnum('notification_category', ['crm', 'finance', 'hr', 'sales', 'support', 'operations', 'marketing']);
 
 // Object Storage Enums
 export const objectVisibilityEnum = pgEnum('object_visibility', ['public', 'private']);
@@ -549,16 +550,27 @@ export const notifications = w3suiteSchema.table("notifications", {
   priority: notificationPriorityEnum("priority").notNull().default("medium"),
   status: notificationStatusEnum("status").notNull().default("unread"),
   
+  // ==================== BUSINESS CATEGORY EXTENSION ====================
+  category: notificationCategoryEnum("category").default("hr"), // Business category
+  sourceModule: varchar("source_module", { length: 50 }), // Module that generated notification
+  
   // Content
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   data: jsonb("data").default({}), // Extra structured data
   url: varchar("url", { length: 500 }), // Deep link URL
   
-  // Targeting
+  // ==================== ENHANCED TARGETING ====================
   targetUserId: varchar("target_user_id").references(() => users.id), // Specific user (null = broadcast)
   targetRoles: text("target_roles").array(), // Role-based targeting
   broadcast: boolean("broadcast").default(false), // Send to all tenant users
+  
+  // Store/Area specific targeting
+  storeId: uuid("store_id").references(() => stores.id), // Store-specific notifications
+  areaId: uuid("area_id").references(() => legalEntities.id), // Area-specific (via legal entities)
+  
+  // ==================== REAL-TIME TRACKING ====================
+  websocketSent: boolean("websocket_sent").default(false), // Track real-time delivery
   
   // Metadata
   createdAt: timestamp("created_at").defaultNow(),
@@ -570,6 +582,12 @@ export const notifications = w3suiteSchema.table("notifications", {
   index("notifications_target_roles_gin_idx").using("gin", table.targetRoles),
   index("notifications_expires_at_idx").on(table.expiresAt),
   index("notifications_tenant_priority_created_idx").on(table.tenantId, table.priority, table.createdAt.desc()),
+  
+  // ==================== NEW INDEXES FOR BUSINESS CATEGORIES ====================
+  index("notifications_category_created_idx").on(table.category, table.createdAt.desc()),
+  index("notifications_store_category_idx").on(table.storeId, table.category, table.status),
+  index("notifications_area_category_idx").on(table.areaId, table.category, table.status),
+  index("notifications_websocket_pending_idx").on(table.websocketSent, table.status, table.createdAt),
 ]);
 
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ 

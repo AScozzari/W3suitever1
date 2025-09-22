@@ -386,6 +386,16 @@ async function startBackend() {
   // Crea il server HTTP
   const httpServer = await registerRoutes(app);
 
+  // ==================== WEBSOCKET REAL-TIME NOTIFICATIONS ====================
+  try {
+    const { webSocketService } = await import('./core/websocket-service.js');
+    await webSocketService.initialize(httpServer);
+    console.log('🌐 WebSocket Service initialized for real-time notifications');
+  } catch (error) {
+    console.warn('⚠️  WebSocket Service failed to initialize (Redis may not be available):', error);
+    console.warn('🔄 Notifications will use database polling fallback');
+  }
+
   // API-only backend - frontend apps handle their own routing
   // Only serve API, OAuth2, and well-known endpoints
 
