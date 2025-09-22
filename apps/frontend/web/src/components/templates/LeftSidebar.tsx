@@ -8,6 +8,7 @@ import {
   FileBarChart, Receipt, ChevronDown, ChevronUp,
   Target, Clipboard, TrendingUp, Shield
 } from 'lucide-react';
+import CompactCalendar from '../Sidebar/CompactCalendar';
 
 // Palette colori W3 Suite - Consistent con Header
 const COLORS = {
@@ -460,10 +461,16 @@ export default function LeftSidebar({
           })}
         </nav>
 
+        {/* Compact Calendar Widget */}
+        {!isMobile && (
+          <div style={{ marginTop: 'auto', marginBottom: '8px' }}>
+            <CompactCalendar collapsed={collapsed} />
+          </div>
+        )}
+
         {/* Footer info quando expanded */}
         {!collapsed && !isMobile && (
           <div style={{
-            marginTop: 'auto',
             padding: '16px',
             borderTop: '1px solid hsla(255, 255, 255, 0.1)',
             textAlign: 'center'

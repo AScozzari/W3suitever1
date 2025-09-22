@@ -39,10 +39,11 @@ interface CalendarEvent {
   title: string;
   startDate: string;
   endDate: string;
-  type: 'meeting' | 'shift' | 'time_off' | 'training' | 'deadline' | 'other';
+  type: 'meeting' | 'shift' | 'time_off' | 'training' | 'deadline' | 'other' | 'overtime';
   allDay: boolean;
   color?: string;
   location?: string;
+  visibility?: 'private' | 'team' | 'store' | 'area' | 'tenant';
 }
 
 interface CompactCalendarProps {
@@ -56,12 +57,12 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
 
   // Fetch events for current month
   const { data: events = [], isLoading } = useQuery({
-    queryKey: ['/api/calendar/events', format(currentDate, 'yyyy-MM')],
+    queryKey: ['/api/hr/calendar/events', format(currentDate, 'yyyy-MM')],
     queryFn: async () => {
       const startDate = format(startOfMonth(currentDate), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(currentDate), 'yyyy-MM-dd');
       
-      const response = await fetch(`/api/calendar/events?start=${startDate}&end=${endDate}`, {
+      const response = await fetch(`/api/hr/calendar/events?startDate=${startDate}&endDate=${endDate}`, {
         headers: {
           'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
           'X-Auth-Session': 'authenticated',
@@ -74,7 +75,8 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
         return [];
       }
       
-      return response.json();
+      const result = await response.json();
+      return result.data || [];  // HR API returns { success: true, data: [...] }
     },
     staleTime: 30000, // 30 seconds
   });
