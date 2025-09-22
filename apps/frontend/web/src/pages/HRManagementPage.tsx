@@ -31,6 +31,7 @@ import {
   MapPin, Phone, Mail, Shield, Award, Briefcase,
   Coffee, Home, Plane, Car, DollarSign, AlertTriangle
 } from 'lucide-react';
+import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
 
 // ==================== TYPES ====================
 
@@ -253,16 +254,7 @@ const HRManagementPage: React.FC = () => {
     return mapping[type || ''] || 'Richiesta HR';
   };
 
-  const getStatusColor = (status: string): string => {
-    const colors: { [key: string]: string } = {
-      'pending': 'bg-yellow-500',
-      'approved': 'bg-green-500',
-      'rejected': 'bg-red-500',
-      'cancelled': 'bg-gray-500',
-      'draft': 'bg-blue-500'
-    };
-    return colors[status] || 'bg-gray-500';
-  };
+  // ✅ Removed: Using centralized request status system
 
   const calculateKPIs = () => {
     const totalEmployees = employees.length;
@@ -590,10 +582,10 @@ const HRManagementPage: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <Badge 
-                          className={`${getStatusColor(request.status)} text-white`}
+                          className={getStatusBadgeClass(request.status)}
                           data-testid={`status-${request.id}`}
                         >
-                          {request.status}
+                          {getStatusLabel(request.status)}
                         </Badge>
                       </td>
                       <td className="p-4">
