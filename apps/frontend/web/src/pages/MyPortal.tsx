@@ -1541,22 +1541,34 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
         onOpenChange(open);
       }}
     >
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-orange-600" />
-            Nuova Richiesta HR
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-modal">
+        <DialogHeader className="pb-6 border-b border-gray-200/50">
+          <DialogTitle className="flex items-center gap-3 text-xl">
+            <div className="bg-gradient-to-r from-orange-500 to-purple-600 text-white p-2.5 rounded-xl">
+              <ClipboardList className="h-6 w-6" />
+            </div>
+            <div>
+              <span className="bg-gradient-to-r from-orange-600 to-purple-700 bg-clip-text text-transparent font-bold">
+                Nuova Richiesta HR
+              </span>
+              <div className="text-sm text-gray-600 font-normal mt-1">
+                Sistema di richieste integrate WindTre
+              </div>
+            </div>
           </DialogTitle>
-          <DialogDescription>
-            Compila il modulo per inviare una nuova richiesta. Sarà processata tramite il workflow automatico.
+          <DialogDescription className="text-gray-600 leading-relaxed mt-4">
+            Compila il modulo per inviare una nuova richiesta HR. Il sistema seguirà automaticamente 
+            i workflow di approvazione aziendali secondo la normativa italiana del lavoro.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Category */}
-            <div>
-              <Label htmlFor="category">Categoria</Label>
+            <div className="space-y-2">
+              <Label htmlFor="category" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>📂</span> Categoria Richiesta
+              </Label>
               <Select 
                 value={formData.category} 
                 onValueChange={(value: typeof formData.category) => {
@@ -1567,14 +1579,14 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona categoria" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-md">
                   {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
-                    <SelectItem key={key} value={key}>
-                      <div className="flex items-center gap-3 py-1">
-                        <span className="text-lg">{category.icon}</span>
-                        <div>
-                          <div className="font-medium">{category.name}</div>
-                          <div className="text-xs text-gray-500">{category.description}</div>
+                    <SelectItem key={key} value={key} className="py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl flex-shrink-0">{category.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-gray-900 text-sm">{category.name}</div>
+                          <div className="text-xs text-gray-600 leading-tight mt-0.5">{category.description}</div>
                         </div>
                       </div>
                     </SelectItem>
@@ -1584,8 +1596,10 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
 
             {/* Type */}
-            <div>
-              <Label htmlFor="type">Tipo Richiesta</Label>
+            <div className="space-y-2">
+              <Label htmlFor="type" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>🎯</span> Tipologia Specifica
+              </Label>
               <Select 
                 value={formData.type} 
                 onValueChange={(value: typeof formData.type) => setFormData({ ...formData, type: value })}
@@ -1593,21 +1607,24 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona tipo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-w-lg max-h-80">
                   {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
                     Object.entries(ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]).map(([key, type]) => (
-                      <SelectItem key={key} value={key}>
-                        <div className="py-1">
-                          <div className="font-medium">{type.name}</div>
-                          <div className="text-xs text-gray-500">{type.desc}</div>
-                          <div className="text-xs text-blue-600 font-mono">{type.legal}</div>
+                      <SelectItem key={key} value={key} className="py-3">
+                        <div className="space-y-1">
+                          <div className="font-semibold text-gray-900 text-sm">{type.name}</div>
+                          <div className="text-xs text-gray-600 leading-tight">{type.desc}</div>
+                          <div className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded font-medium">{type.legal}</div>
                         </div>
                       </SelectItem>
                     ))
                   }
                   {!formData.category && (
-                    <SelectItem value="" disabled>
-                      <span className="text-gray-400">Seleziona prima una categoria</span>
+                    <SelectItem value="" disabled className="py-3">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <span>💡</span>
+                        <span>Seleziona prima una categoria</span>
+                      </div>
                     </SelectItem>
                   )}
                 </SelectContent>
@@ -1615,10 +1632,12 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Start Date */}
-            <div>
-              <Label htmlFor="startDate">Data Inizio *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>📅</span> Data Inizio *
+              </Label>
               <Input 
                 id="startDate"
                 type="date"
@@ -1629,8 +1648,10 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
 
             {/* End Date */}
-            <div>
-              <Label htmlFor="endDate">Data Fine</Label>
+            <div className="space-y-2">
+              <Label htmlFor="endDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span>🏁</span> Data Fine (opzionale)
+              </Label>
               <Input 
                 id="endDate"
                 type="date"
@@ -1642,27 +1663,51 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
           </div>
 
           {/* Legal Information Panel */}
-          {formData.category && formData.type && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any] && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">⚖️</span>
-                <h4 className="font-semibold text-blue-900">Informazioni Legali</h4>
+          {(() => {
+            const categoryData = formData.category ? ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES] : null;
+            const typeData = formData.category && formData.type ? ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as keyof any] : null;
+            
+            if (!categoryData || !typeData) return null;
+            
+            return (
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-xl p-5 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-blue-600 text-white p-2 rounded-lg">
+                    <span className="text-lg">⚖️</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-blue-900 text-lg">Informazioni Legali</h4>
+                    <p className="text-sm text-blue-700">{categoryData.name}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 space-y-3">
+                  <div>
+                    <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Tipologia</div>
+                    <div className="font-semibold text-gray-900">{typeData.name}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Descrizione</div>
+                    <div className="text-sm text-gray-700 leading-relaxed">{typeData.desc}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Riferimento Normativo</div>
+                    <div className="text-sm font-mono bg-blue-100 text-blue-800 px-3 py-2 rounded-md">
+                      {typeData.legal}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-blue-700">
-                <strong>Tipo:</strong> {ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any]?.name}
-              </p>
-              <p className="text-sm text-blue-700">
-                <strong>Descrizione:</strong> {ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any]?.desc}
-              </p>
-              <p className="text-xs text-blue-600 font-mono bg-white/50 px-2 py-1 rounded">
-                <strong>Riferimento Legale:</strong> {ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as any]?.legal}
-              </p>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Reason */}
-          <div>
-            <Label htmlFor="reason">Motivazione *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="reason" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span>✍️</span> Motivazione *
+            </Label>
             <Textarea 
               id="reason"
               placeholder={`Descrivi la tua richiesta per ${formData.category && ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES] ? ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES].name : 'questa tipologia'}...`}
@@ -1674,7 +1719,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-4 pt-6 border-t border-gray-200/50">
             <Button 
               type="button"
               variant="outline"
