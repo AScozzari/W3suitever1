@@ -2108,26 +2108,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                       </div>
                     </div>
 
-                    <button style={{
-                      width: '100%',
-                      padding: '8px',
-                      background: 'rgba(123, 44, 191, 0.08)',
-                      border: '1px solid rgba(123, 44, 191, 0.15)',
-                      borderRadius: '8px',
-                      color: '#7B2CBF',
-                      fontSize: '10px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'rgba(123, 44, 191, 0.15)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'rgba(123, 44, 191, 0.08)';
-                    }}>
-                      Visualizza calendario completo
-                    </button>
                   </div>
                   )}
 
