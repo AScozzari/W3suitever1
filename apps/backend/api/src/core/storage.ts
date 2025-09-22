@@ -90,7 +90,7 @@ import {
   type Country,
 } from "../db/schema/public";
 import { db, setTenantContext, withTenantContext } from "./db";
-import { eq, and, or, gte, lte, desc, asc, sql, isNull, isNotNull } from "drizzle-orm";
+import { eq, and, or, gte, lte, desc, asc, sql, isNull, isNotNull, inArray } from "drizzle-orm";
 import { CalendarScope, CALENDAR_PERMISSIONS } from "./hr-storage";
 
 // Types for structured logs filtering and pagination
@@ -1698,7 +1698,8 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     // Log status history - temporarily disabled due to schema mismatch
-    // await this.logStatusHistory(request.id, data.tenantId, data.requesterId, null, 'draft', 'Request created');
+    // ✅ FASE 2.1 FIX: Re-enable status history logging
+    await this.logStatusHistory(request.id, data.tenantId, data.requesterId, null, 'draft', 'Request created');
     
     // Integration Hook: Notify user of request creation with error handling
     try {
@@ -1843,15 +1844,12 @@ export class DatabaseStorage implements IStorage {
     
     if (!request) return null;
     
-    // Get comments, approvals, and status history - ALL temporarily disabled due to schema mismatches
-    // const [statusHistory] = await Promise.all([
-      // this.getRequestComments(tenantId, requestId),  // Temporarily disabled - mentioned_users column missing
-      // this.getRequestApprovals(tenantId, requestId),  // Temporarily disabled - level column missing
-      // this.getRequestStatusHistory(tenantId, requestId)  // Temporarily disabled - automatic_change column missing
-    // ]);
-    const comments: any[] = [];  // Empty array for now
-    const approvals: any[] = [];  // Empty array for now
-    const statusHistory: any[] = [];  // Empty array for now
+    // ✅ FASE 2.1 FIX: Re-enable comments and history tracking
+    const [comments, statusHistory] = await Promise.all([
+      this.getRequestComments(tenantId, requestId),
+      this.getRequestHistory(tenantId, requestId),
+    ]);
+    const approvals: any[] = [];  // Keep disabled - level column issues
     
     return {
       ...request,
@@ -2028,8 +2026,35 @@ export class DatabaseStorage implements IStorage {
         comment
       });
     
+    // ✅ FASE 2.1 FIX: Update approval chain using COALESCE to handle NULL + tenant scoping
+    await db
+      .update(hrRequests)
+      .set({
+        approvalChain: sql`COALESCE(${hrRequests.approvalChain}, '[]'::jsonb) || jsonb_build_array(jsonb_build_object('approverId', ${approverId}, 'status', 'approved', 'timestamp', ${new Date().toISOString()}, 'comments', ${comment || ''}))`,
+        updatedAt: new Date()
+      })
+      .where(and(eq(hrRequests.id, requestId), eq(hrRequests.tenantId, tenantId)));
+    
     // Update request status
     const updatedRequest = await this.transitionStatus(requestId, 'approved', approverId, comment);
+    
+    // ✅ FASE 2.1 FIX: Workflow Engine Integration - advance workflow if exists
+    if (updatedRequest.workflowInstanceId) {
+      try {
+        const { WorkflowEngine } = await import('../services/workflow-engine');
+        const workflowEngine = new WorkflowEngine();
+        
+        await workflowEngine.processApproval({
+          instanceId: updatedRequest.workflowInstanceId,
+          approverId,
+          decision: 'approve',
+          comment
+        });
+      } catch (workflowError) {
+        console.error('Workflow processing failed, but request was approved:', workflowError);
+        // Don't fail the entire approval - log and continue
+      }
+    }
     
     // Create notification for requester
     const [request] = await db
@@ -2071,8 +2096,35 @@ export class DatabaseStorage implements IStorage {
         comment: reason
       });
     
+    // ✅ FASE 2.1 FIX: Update approval chain using COALESCE to handle NULL + tenant scoping
+    await db
+      .update(hrRequests)
+      .set({
+        approvalChain: sql`COALESCE(${hrRequests.approvalChain}, '[]'::jsonb) || jsonb_build_array(jsonb_build_object('approverId', ${approverId}, 'status', 'rejected', 'timestamp', ${new Date().toISOString()}, 'comments', ${reason || ''}))`,
+        updatedAt: new Date()
+      })
+      .where(and(eq(hrRequests.id, requestId), eq(hrRequests.tenantId, tenantId)));
+    
     // Update request status
     const updatedRequest = await this.transitionStatus(requestId, 'rejected', approverId, reason);
+    
+    // ✅ FASE 2.1 FIX: Workflow Engine Integration - reject workflow if exists
+    if (updatedRequest.workflowInstanceId) {
+      try {
+        const { WorkflowEngine } = await import('../services/workflow-engine');
+        const workflowEngine = new WorkflowEngine();
+        
+        await workflowEngine.processApproval({
+          instanceId: updatedRequest.workflowInstanceId,
+          approverId,
+          decision: 'reject',
+          comment: reason
+        });
+      } catch (workflowError) {
+        console.error('Workflow processing failed, but request was rejected:', workflowError);
+        // Don't fail the entire rejection - log and continue
+      }
+    }
     
     // Create notification for requester
     const [request] = await db
@@ -2135,17 +2187,7 @@ export class DatabaseStorage implements IStorage {
     return updatedRequest;
   }
   
-  // Helper methods
-  private async getRequestComments(tenantId: string, requestId: string): Promise<HrRequestComment[]> {
-    return await db
-      .select()
-      .from(hrRequestComments)
-      .where(and(
-        eq(hrRequestComments.tenantId, tenantId),
-        eq(hrRequestComments.requestId, requestId)
-      ))
-      .orderBy(hrRequestComments.createdAt);
-  }
+  // Helper methods - getRequestComments moved to public section to avoid duplication
   
   private async getRequestApprovals(tenantId: string, requestId: string): Promise<HrRequestApproval[]> {
     return await db
