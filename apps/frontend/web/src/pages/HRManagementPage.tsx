@@ -97,8 +97,14 @@ const HRManagementPage: React.FC = () => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [pushDocumentData, setPushDocumentData] = useState<{
+    documentId: string;
+    userIds: string[];
+    message?: string;
+  }>({ documentId: '', userIds: [] });
 
   // ==================== DATA QUERIES ====================
   
@@ -136,6 +142,40 @@ const HRManagementPage: React.FC = () => {
   });
 
   // ==================== MUTATIONS ====================
+
+  // ✅ NEW: Push Document to Users mutation
+  const pushDocumentMutation = useMutation({
+    mutationFn: async (pushData: { documentId: string; userIds: string[]; message?: string }) => {
+      if (!hrQueriesEnabled) {
+        throw new Error('HR_AUTH_NOT_READY: Authentication not initialized. Please wait.');
+      }
+      
+      console.log('🔄 [HR-PUSH] Pushing document to users:', pushData);
+      
+      return await apiRequest('/api/hr/documents/push-to-user', {
+        method: 'POST',
+        body: JSON.stringify(pushData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      toast({
+        title: "Documento Inviato",
+        description: "Il documento è stato inviato agli utenti selezionati",
+      });
+      setShowPushDocumentModal(false);
+      setPushDocumentData({ documentId: '', userIds: [] });
+    },
+    onError: (error: any) => {
+      console.error('🚨 [HR-PUSH] Error pushing document:', error);
+      toast({
+        title: "Errore",
+        description: error.message || "Errore nell'invio del documento",
+        variant: "destructive",
+      });
+    },
+  });
 
   // ✅ UPDATED: HR Request mutation with retry logic for authentication timing issues
   const createHRRequestMutation = useMutation({
@@ -279,6 +319,19 @@ const HRManagementPage: React.FC = () => {
     }
 
     createHRRequestMutation.mutate(requestFormData);
+  };
+
+  const handlePushDocument = () => {
+    if (!pushDocumentData.documentId || pushDocumentData.userIds.length === 0) {
+      toast({
+        title: "Campi Obbligatori",
+        description: "Seleziona un documento e almeno un utente",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    pushDocumentMutation.mutate(pushDocumentData);
   };
 
   // ==================== DASHBOARD SECTION ====================
@@ -740,6 +793,146 @@ const HRManagementPage: React.FC = () => {
     </Dialog>
   );
 
+  // ==================== PUSH DOCUMENT MODAL ====================
+
+  const PushDocumentModal = () => (
+    <Dialog open={showPushDocumentModal} onOpenChange={setShowPushDocumentModal}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ArrowRight className="w-5 h-5 text-purple-500" />
+            Invia Documento a Utenti
+          </DialogTitle>
+          <DialogDescription>
+            Seleziona un documento e gli utenti a cui vuoi inviarlo. Gli utenti riceveranno una notifica.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Document Selection */}
+          <div>
+            <Label>Documento *</Label>
+            <Select 
+              value={pushDocumentData.documentId} 
+              onValueChange={(value) => setPushDocumentData(prev => ({ ...prev, documentId: value }))}
+            >
+              <SelectTrigger data-testid="select-document">
+                <SelectValue placeholder="Seleziona documento da inviare..." />
+              </SelectTrigger>
+              <SelectContent>
+                {documents.map((doc) => (
+                  <SelectItem key={doc.id} value={doc.id}>
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      <span>{doc.name}</span>
+                      <Badge variant="outline" className="ml-2">{doc.type}</Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Users Selection */}
+          <div>
+            <Label>Utenti Destinatari *</Label>
+            <div className="mt-2 max-h-48 overflow-y-auto border rounded-lg p-3 bg-slate-50 dark:bg-slate-900">
+              <div className="space-y-2">
+                {employees.map((employee) => (
+                  <div key={employee.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`user-${employee.id}`}
+                      checked={pushDocumentData.userIds.includes(employee.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setPushDocumentData(prev => ({
+                            ...prev,
+                            userIds: [...prev.userIds, employee.id]
+                          }));
+                        } else {
+                          setPushDocumentData(prev => ({
+                            ...prev,
+                            userIds: prev.userIds.filter(id => id !== employee.id)
+                          }));
+                        }
+                      }}
+                      data-testid={`checkbox-user-${employee.id.slice(0, 8)}`}
+                    />
+                    <Label 
+                      htmlFor={`user-${employee.id}`}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        {employee.firstName[0]}{employee.lastName[0]}
+                      </div>
+                      <span>{employee.firstName} {employee.lastName}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {employee.position}
+                      </Badge>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="text-sm text-slate-500 mt-1">
+              Selezionati: {pushDocumentData.userIds.length} utenti
+            </p>
+          </div>
+
+          {/* Optional Message */}
+          <div>
+            <Label>Messaggio (opzionale)</Label>
+            <Textarea 
+              value={pushDocumentData.message || ''}
+              onChange={(e) => setPushDocumentData(prev => ({ ...prev, message: e.target.value }))}
+              placeholder="Aggiungi un messaggio personalizzato per i destinatari..."
+              rows={3}
+              data-testid="textarea-push-message"
+            />
+          </div>
+
+          {/* Warning */}
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Gli utenti selezionati riceveranno una notifica e potranno visualizzare il documento nell'area "I Miei Documenti".
+            </AlertDescription>
+          </Alert>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setShowPushDocumentModal(false);
+              setPushDocumentData({ documentId: '', userIds: [] });
+            }}
+          >
+            Annulla
+          </Button>
+          <Button 
+            onClick={handlePushDocument} 
+            disabled={pushDocumentMutation.isPending}
+            className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white"
+            data-testid="button-confirm-push"
+          >
+            {pushDocumentMutation.isPending ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                Invio...
+              </>
+            ) : (
+              <>
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Invia Documento
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   // ==================== SHIFTS SECTION ====================
 
   const ShiftsSection = () => (
@@ -789,13 +982,23 @@ const HRManagementPage: React.FC = () => {
           <h2 className="text-2xl font-bold">Centro Documenti</h2>
           <p className="text-slate-600 dark:text-slate-400">Gestione payslip, contratti e certificati</p>
         </div>
-        <Button 
-          className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
-          data-testid="button-upload-document"
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Carica Documento
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={() => setShowPushDocumentModal(true)}
+            className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white"
+            data-testid="button-push-document"
+          >
+            <ArrowRight className="w-4 h-4 mr-2" />
+            Push a Utenti
+          </Button>
+          <Button 
+            className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+            data-testid="button-upload-document"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Carica Documento
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -1132,6 +1335,7 @@ const HRManagementPage: React.FC = () => {
     <>
       {/* Modals */}
       <RequestModal />
+      <PushDocumentModal />
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header */}
