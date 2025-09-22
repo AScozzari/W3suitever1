@@ -3108,6 +3108,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conditions.push(eq(hrDocuments.month, parseInt(req.query.month)));
       }
       
+      // Filter by source (employee/hr/system)
+      if (req.query.source) {
+        conditions.push(eq(hrDocuments.source, req.query.source));
+      }
+      
       const documents = await db.select()
         .from(hrDocuments)
         .where(and(...conditions))
@@ -3174,6 +3179,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(document[0]);
     } catch (error) {
       handleApiError(error, res, 'caricamento documento HR');
+    }
+  });
+
+  // HR Push Document to User - Assign existing or new document to specific user
+  app.post('/api/hr/documents/push-to-user', enterpriseAuth, documentUpload.single('file'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const currentUserId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      // Only HR managers and admins can push documents to users
+      if (userRole !== 'HR_MANAGER' && userRole !== 'ADMIN') {
+        return res.status(403).json({
+          error: 'forbidden',
+          message: 'Solo HR Manager e Amministratori possono assegnare documenti agli utenti'
+        });
+      }
+      
+      const { targetUserId, documentType, title, description, year, month, isConfidential, expiryDate } = req.body;
+      
+      if (!targetUserId) {
+        return res.status(400).json({
+          error: 'missing_target_user',
+          message: 'ID utente destinatario richiesto'
+        });
+      }
+      
+      const { hrDocuments } = await import('../db/schema/w3suite.js');
+      
+      if (!req.file) {
+        return res.status(400).json({
+          error: 'no_file',
+          message: 'File richiesto per push documento'
+        });
+      }
+      
+      // Generate storage path for HR-pushed document
+      const documentId = uuidv4();
+      const docYear = year || new Date().getFullYear();
+      const storagePath = `.private/hr-documents/${tenantId}/${targetUserId}/hr-pushed/${docYear}/${documentId}`;
+      
+      // Upload to object storage
+      const uploadResult = await objectStorageService.uploadDocument({
+        buffer: req.file.buffer,
+        path: storagePath,
+        contentType: req.file.mimetype,
+        metadata: {
+          userId: targetUserId,
+          tenantId,
+          documentType: documentType || 'other',
+          originalName: req.file.originalname,
+          pushedByHR: true,
+          pushedBy: currentUserId
+        }
+      });
+      
+      // Save document metadata with HR source
+      const document = await db.insert(hrDocuments).values({
+        tenantId,
+        userId: targetUserId, // Document assigned to target user
+        documentType: documentType || 'other',
+        title: title || req.file.originalname,
+        description: description || `Documento assegnato da HR`,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        storagePath,
+        year: year ? parseInt(year) : null,
+        month: month ? parseInt(month) : null,
+        isConfidential: isConfidential === 'true',
+        expiryDate: expiryDate || null,
+        metadata: {
+          pushedByHR: true,
+          pushedBy: currentUserId,
+          pushedAt: new Date().toISOString()
+        },
+        source: 'hr', // Mark as HR-sourced document
+        uploadedBy: currentUserId // Track who actually uploaded
+      }).returning();
+      
+      res.status(201).json({
+        document: document[0],
+        message: 'Documento assegnato con successo all\'utente'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'assegnazione documento HR');
     }
   });
 
