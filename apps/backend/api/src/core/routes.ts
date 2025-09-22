@@ -7253,18 +7253,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
       
+      // RESTORED: Proper validation and universal schema
       const validatedData = createUniversalRequestBodySchema.parse(req.body);
       
       const requestData = {
         tenantId,
-        requesterId: userId,
+        requesterId: userId, // SECURITY: Derived from auth, not body
         category: validatedData.category,
         requestType: validatedData.requestType,
         requestSubtype: validatedData.requestSubtype,
         title: validatedData.title,
         description: validatedData.description,
         requestData: validatedData.requestData,
-        priority: validatedData.priority,
+        priority: validatedData.priority || 'medium',
         startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
         attachments: validatedData.attachments,
@@ -7273,6 +7274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         legalEntityId: validatedData.legalEntityId,
         storeId: validatedData.storeId,
         onBehalfOf: validatedData.onBehalfOf,
+        status: 'pending',
         createdBy: userId,
         updatedBy: userId
       };
@@ -7296,8 +7298,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const filters = universalRequestFiltersSchema.parse(req.query);
       
-      // REMOVED COMPLEX CONDITIONS - Using simple HR-only filter for testing
-      // All condition logic moved to direct query
+      // Build dynamic WHERE conditions for unified filtering
+      const conditions = [eq(hrRequests.tenantId, tenantId)];
+      
+      // Category filter (temporary: use hrRequests until schema sync)
+      if (filters.category === 'hr') {
+        // Only show HR requests for now
+      } else {
+        conditions.push(sql`false`); // Block non-HR for schema safety
+      }
+      
+      // Status filter
+      if (filters.status) {
+        conditions.push(eq(hrRequests.status, filters.status));
+      }
+      
+      // Full-text search
+      if (filters.search) {
+        conditions.push(
+          or(
+            sql`${hrRequests.title} ILIKE ${`%${filters.search}%`}`,
+            sql`${hrRequests.description} ILIKE ${`%${filters.search}%`}`
+          )
+        );
+      }
       
       // Calculate offset for pagination
       const offset = (filters.page - 1) * filters.limit;
