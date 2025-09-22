@@ -1315,7 +1315,7 @@ interface HRRequestFormProps {
 
 // HR Request validation schema aligned with backend
 const hrRequestSchema = z.object({
-  category: z.enum(['leave', 'schedule', 'other', 'italian_legal', 'family', 'professional_development', 'wellness_health', 'remote_work', 'technology_support']),
+  category: z.enum(['leave', 'schedule', 'other', 'italian_legal', 'family', 'professional_development', 'wellness_health', 'remote_work', 'technology_support', 'overtime', 'expense', 'training', 'remote']),
   type: z.enum([
     // Leave types
     'vacation', 'sick', 'fmla', 'parental', 'bereavement', 'personal', 'religious', 'military',
@@ -1442,7 +1442,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
               <Label htmlFor="category">Categoria</Label>
               <Select 
                 value={formData.category} 
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                onValueChange={(value: typeof formData.category) => setFormData({ ...formData, category: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona categoria" />
@@ -1462,7 +1462,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
               <Label htmlFor="type">Tipo Richiesta</Label>
               <Select 
                 value={formData.type} 
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                onValueChange={(value: typeof formData.type) => setFormData({ ...formData, type: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona tipo" />
