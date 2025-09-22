@@ -23,6 +23,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Clock, FileText, GraduationCap,
@@ -761,6 +763,7 @@ export default function MyPortal() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le richieste</SelectItem>
+                      <SelectItem value="draft">Bozze</SelectItem>
                       <SelectItem value="pending">In attesa</SelectItem>
                       <SelectItem value="approved">Approvate</SelectItem>
                       <SelectItem value="rejected">Rifiutate</SelectItem>
@@ -768,77 +771,109 @@ export default function MyPortal() {
                   </Select>
                 </div>
 
-                {/* Requests Grid */}
-                <div className="grid gap-4">
-                  {requestsLoading ? (
-                    <>
-                      <Skeleton className="h-24 w-full" />
-                      <Skeleton className="h-24 w-full" />
-                      <Skeleton className="h-24 w-full" />
-                    </>
-                  ) : (
-                    <>
-                      {myRequests.length === 0 ? (
-                        <Card className="glass-card">
-                          <CardContent className="p-8 text-center">
-                            <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500">Nessuna richiesta presente</p>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        myRequests.map((request) => (
-                          <Card key={request.id} className="glass-card hover:shadow-lg transition-all duration-200" data-testid={`card-request-${request.id}`}>
-                            <CardContent className="p-6">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    <h3 className="font-semibold text-lg" data-testid={`text-request-title-${request.id}`}>
-                                      {request.tipo}
-                                    </h3>
-                                    <Badge 
-                                      className={getStatusBadgeClass(request.stato)}
-                                      data-testid={`badge-request-status-${request.id}`}
-                                    >
-                                      {getStatusLabel(request.stato)}
-                                    </Badge>
+                {/* ✅ Requests Data Table con colonne: Nome richiesta, Data, Stato, Azioni */}
+                <Card className="glass-card">
+                  <CardContent className="p-0">
+                    {requestsLoading ? (
+                      <div className="p-6">
+                        <Skeleton className="h-8 w-full mb-4" />
+                        <Skeleton className="h-6 w-full mb-2" />
+                        <Skeleton className="h-6 w-full mb-2" />
+                        <Skeleton className="h-6 w-full" />
+                      </div>
+                    ) : myRequests.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">Nessuna richiesta presente</p>
+                        <p className="text-sm text-gray-400 mt-2">Crea la tua prima richiesta HR per iniziare</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome Richiesta</TableHead>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Stato</TableHead>
+                            <TableHead className="text-right">Azioni</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {myRequests.map((request) => (
+                            <TableRow key={request.id} data-testid={`row-request-${request.id}`}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-gradient-to-r from-orange-500 to-purple-600 text-white p-2 rounded-lg">
+                                    <FileText className="h-4 w-4" />
                                   </div>
-                                  <p className="text-gray-600 mb-3" data-testid={`text-request-description-${request.id}`}>
-                                    {request.descrizione}
-                                  </p>
-                                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                                    <span data-testid={`text-request-date-${request.id}`}>
-                                      Creata: {request.dataCreazione ? format(new Date(request.dataCreazione), 'dd/MM/yyyy') : 'N/A'}
-                                    </span>
-                                    {request.dataInizio && (
-                                      <span data-testid={`text-request-start-${request.id}`}>
-                                        Dal: {format(new Date(request.dataInizio), 'dd/MM/yyyy')}
-                                      </span>
-                                    )}
-                                    {request.dataFine && (
-                                      <span data-testid={`text-request-end-${request.id}`}>
-                                        Al: {format(new Date(request.dataFine), 'dd/MM/yyyy')}
-                                      </span>
+                                  <div>
+                                    <p className="font-semibold" data-testid={`text-request-name-${request.id}`}>
+                                      {request.tipo || 'Richiesta HR'}
+                                    </p>
+                                    {request.descrizione && (
+                                      <p className="text-sm text-gray-500 max-w-xs truncate" data-testid={`text-request-desc-${request.id}`}>
+                                        {request.descrizione}
+                                      </p>
                                     )}
                                   </div>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    // Open request details
-                                  }}
-                                  data-testid={`button-view-request-${request.id}`}
+                              </TableCell>
+                              <TableCell data-testid={`text-request-date-${request.id}`}>
+                                {request.dataCreazione ? format(new Date(request.dataCreazione), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  className={getStatusBadgeClass(request.stato)}
+                                  data-testid={`badge-request-status-${request.id}`}
                                 >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      )}
-                    </>
-                  )}
-                </div>
+                                  {getStatusLabel(request.stato)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      // ✅ View/Edit request - per bozze si può modificare
+                                      if (request.stato === 'draft') {
+                                        // TODO: Open in edit mode
+                                        setHrRequestModal({ open: true, data: request });
+                                      } else {
+                                        // TODO: Open in view-only mode
+                                        setHrRequestModal({ open: true, data: request });
+                                      }
+                                    }}
+                                    data-testid={`button-view-request-${request.id}`}
+                                    title={request.stato === 'draft' ? 'Modifica richiesta' : 'Visualizza richiesta'}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  {request.stato === 'draft' && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        // TODO: Elimina bozza
+                                        if (confirm('Sei sicuro di voler eliminare questa bozza?')) {
+                                          // Delete request
+                                        }
+                                      }}
+                                      data-testid={`button-delete-request-${request.id}`}
+                                      title="Elimina bozza"
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <AlertCircle className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* ✅ Modal handled globally outside tabs to prevent conflicts */}
               </div>
