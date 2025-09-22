@@ -10,8 +10,8 @@ import { db } from './db';
 import { eq, and, desc, asc, sql, inArray } from 'drizzle-orm';
 import { 
   universalRequests, 
-  hrRequests, 
-  leaveRequests,
+  // ❌ hrRequests - DEPRECATED: All data now in universal_requests
+  // ❌ leaveRequests - DEPRECATED: All data now in universal_requests
   hrRequestApprovals,
   hrRequestComments,
   hrRequestStatusHistory 
@@ -80,7 +80,7 @@ export class CompatibilityLayerService {
     // Build where conditions
     const whereConditions = [
       eq(universalRequests.tenantId, tenantId),
-      eq(universalRequests.category, 'HR' as any) // HR requests only
+      eq(universalRequests.category, 'hr') // ✅ FIXED: Use lowercase enum value
     ];
     
     if (requesterId) {
@@ -124,7 +124,7 @@ export class CompatibilityLayerService {
     // Build where conditions
     const whereConditions = [
       eq(universalRequests.tenantId, tenantId),
-      eq(universalRequests.category, 'HR' as any),
+      eq(universalRequests.category, 'hr'), // ✅ FIXED: Use lowercase enum value
       eq(universalRequests.requestType, 'leave')
     ];
     
@@ -169,7 +169,7 @@ export class CompatibilityLayerService {
       .values({
         tenantId,
         requesterId: requestData.requesterId!,
-        category: (requestData.category as any) || 'HR',
+        category: 'hr', // ✅ FIXED: Use lowercase to match enum
         requestType: requestData.type || 'general',
         title: `HR Request - ${requestData.category} - ${requestData.type}`,
         description: requestData.description,
@@ -211,7 +211,7 @@ export class CompatibilityLayerService {
         tenantId,
         requesterId: requestData.userId!,
         storeId: requestData.storeId,
-        category: 'HR' as any,
+        category: 'hr', // ✅ FIXED: Use lowercase to match enum
         requestType: 'leave',
         requestSubtype: requestData.leaveType,
         title: `Leave Request - ${requestData.leaveType}`,

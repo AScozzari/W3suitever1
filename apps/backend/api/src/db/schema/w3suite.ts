@@ -1010,7 +1010,10 @@ export const insertTimeTrackingSchema = createInsertSchema(timeTracking).omit({
 export type InsertTimeTracking = z.infer<typeof insertTimeTrackingSchema>;
 export type TimeTracking = typeof timeTracking.$inferSelect;
 
-// ==================== LEAVE REQUESTS ====================
+// ==================== LEAVE REQUESTS (LEGACY - Being Deprecated) ====================
+// ⚠️ DEPRECATION WARNING: This table is being phased out in favor of universal_requests
+// New leave requests should use universal_requests with category='hr', request_type='leave'
+// Existing data has been migrated, but keeping schema for compatibility during transition
 export const leaveRequests = w3suiteSchema.table("leave_requests", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
@@ -2010,7 +2013,7 @@ export const universalRequests = w3suiteSchema.table("universal_requests", {
   index("universal_requests_dates_idx").on(table.startDate, table.endDate),
   index("universal_requests_tenant_created_idx").on(table.tenantId, table.createdAt.desc()),
   index("universal_requests_workflow_idx").on(table.workflowInstanceId),
-  index("universal_requests_category_type_idx").on(table.category, table.type, table.subtype),
+  index("universal_requests_category_type_idx").on(table.category, table.requestType, table.requestSubtype),
 ]);
 
 export const insertUniversalRequestSchema = createInsertSchema(universalRequests).omit({ 
