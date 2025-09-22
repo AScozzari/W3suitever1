@@ -32,17 +32,10 @@ import {
   // Universal Request System (PHASE 2)
   universalRequests,
   insertUniversalRequestSchema,
-  // Workflow System
-  workflowActions,
-  workflowTriggers,
-  workflowTemplates,
-  workflowSteps,
-  teams,
-  teamWorkflowAssignments,
-  workflowInstances,
-  workflowExecutions
+  // Teams for RBAC only
+  teams
 } from "../db/schema/w3suite";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertTeamSchema, InsertTeam } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -2167,124 +2160,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ==================== WORKFLOW SYSTEM ENDPOINTS ====================
 
-  // Get workflow actions by category
-  app.get('/api/workflow-actions', tenantMiddleware, async (req: any, res) => {
-    try {
-      const { category } = req.query;
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Tenant context required' });
-      }
-
-      await setTenantContext(tenantId);
-      
-      let whereConditions = [eq(workflowActions.tenantId, tenantId)];
-      
-      if (category) {
-        whereConditions.push(eq(workflowActions.category, category));
-      }
-      
-      const query = db.select().from(workflowActions).where(and(...whereConditions));
-      
-      const actions = await query;
-      res.json(actions);
-    } catch (error) {
-      handleApiError(error, res, 'recupero azioni workflow');
-    }
-  });
-
-  // Create workflow action
-  app.post('/api/workflow-actions', tenantMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Tenant context required' });
-      }
-
-      const validatedData = insertWorkflowActionSchema.parse({
-        ...req.body,
-        tenantId
-      });
-
-      await setTenantContext(tenantId);
-      const result = await db.insert(workflowActions).values(validatedData).returning();
-      
-      res.status(201).json(result[0]);
-    } catch (error) {
-      handleApiError(error, res, 'creazione azione workflow');
-    }
-  });
 
   // Get workflow templates by category
   app.get('/api/workflow-templates', tenantMiddleware, async (req: any, res) => {
     try {
-      const { category, templateType } = req.query;
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Tenant context required' });
-      }
-
-      await setTenantContext(tenantId);
-      
-      let whereConditions = [
-        eq(workflowTemplates.tenantId, tenantId),
-        eq(workflowTemplates.isActive, true)
-      ];
-      
-      if (category) {
-        whereConditions.push(eq(workflowTemplates.category, category));
-      }
-      
-      if (templateType) {
-        whereConditions.push(eq(workflowTemplates.templateType, templateType));
-      }
-      
-      const query = db.select().from(workflowTemplates).where(and(...whereConditions));
-      
-      const templates = await query;
-      res.json(templates);
-    } catch (error) {
-      handleApiError(error, res, 'recupero template workflow');
-    }
-  });
-
-  // Create workflow template
-  app.post('/api/workflow-templates', tenantMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Tenant context required' });
-      }
-
-      const validatedData = insertWorkflowTemplateSchema.parse({
-        ...req.body,
-        tenantId
-      });
-
-      await setTenantContext(tenantId);
-      const result = await db.insert(workflowTemplates).values(validatedData).returning();
-      
-      res.status(201).json(result[0]);
-    } catch (error) {
-      handleApiError(error, res, 'creazione template workflow');
-    }
-  });
-
-  // Get teams (with hybrid composition support)
-  app.get('/api/teams', tenantMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Tenant context required' });
-      }
-
       await setTenantContext(tenantId);
       
       const teamsData = await db.select().from(teams)
@@ -2416,98 +2296,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get workflow instances (active executions)
-  app.get('/api/workflow-instances', tenantMiddleware, async (req: any, res) => {
-    try {
-      const { status, templateId } = req.query;
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Tenant context required' });
-      }
-
-      await setTenantContext(tenantId);
-      
-      let whereConditions = [eq(workflowInstances.tenantId, tenantId)];
-      
-      if (status) {
-        whereConditions.push(eq(workflowInstances.currentStatus, status));
-      }
-      
-      if (templateId) {
-        whereConditions.push(eq(workflowInstances.templateId, templateId));
-      }
-      
-      const query = db.select().from(workflowInstances).where(and(...whereConditions));
-      
-      const instances = await query.orderBy(desc(workflowInstances.startedAt));
-      res.json(instances);
-    } catch (error) {
-      handleApiError(error, res, 'recupero istanze workflow');
-    }
-  });
-
-  // Create workflow instance
-  app.post('/api/workflow-instances', tenantMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-
-      const validatedData = insertWorkflowInstanceSchema.parse({
-        ...req.body,
-        tenantId,
-        requesterId: userId
-      });
-
-      await setTenantContext(tenantId);
-      const result = await db.insert(workflowInstances).values(validatedData).returning();
-      
-      res.status(201).json(result[0]);
-    } catch (error) {
-      handleApiError(error, res, 'creazione istanza workflow');
-    }
-  });
-
-  // Get workflow executions (monitoring data)
-  app.get('/api/workflow-executions', tenantMiddleware, async (req: any, res) => {
-    try {
-      const { instanceId, status, executorId } = req.query;
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Tenant context required' });
-      }
-
-      await setTenantContext(tenantId);
-      
-      let whereConditions = [eq(workflowExecutions.tenantId, tenantId)];
-      
-      if (instanceId) {
-        whereConditions.push(eq(workflowExecutions.instanceId, instanceId));
-      }
-      
-      if (status) {
-        whereConditions.push(eq(workflowExecutions.status, status));
-      }
-      
-      if (executorId) {
-        whereConditions.push(eq(workflowExecutions.executorId, executorId));
-      }
-      
-      const query = db.select().from(workflowExecutions).where(and(...whereConditions));
-      
-      const executions = await query.orderBy(desc(workflowExecutions.startedAt));
-      res.json(executions);
-    } catch (error) {
-      handleApiError(error, res, 'recupero esecuzioni workflow');
-    }
-  });
-
-  // ==================== FRONTEND API ENDPOINTS ====================
   // These endpoints match what the frontend modules expect
 
   // Customers API - matches CRMModule expectations
@@ -8739,107 +8527,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get/Manage Approval Workflows
-  app.get('/api/approval-workflows', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      // Mock approval workflows
-      const workflows = [
-        {
-          id: '1',
-          serviceType: 'hr',
-          requestType: 'vacation',
-          name: 'Workflow Approvazione Ferie',
-          levels: [
-            { level: 1, role: 'TEAM_LEADER', escalationTime: 24 },
-            { level: 2, role: 'HR_MANAGER', escalationTime: 48 }
-          ],
-          isActive: true
-        },
-        {
-          id: '2',
-          serviceType: 'finance',
-          requestType: 'expense',
-          name: 'Workflow Rimborsi Spese',
-          levels: [
-            { level: 1, role: 'STORE_MANAGER', conditions: { maxAmount: 500 } },
-            { level: 2, role: 'AREA_MANAGER', conditions: { maxAmount: 2000 } },
-            { level: 3, role: 'ADMIN', escalationTime: 72 }
-          ],
-          isActive: true
-        },
-        {
-          id: '3',
-          serviceType: 'it',
-          requestType: 'equipment',
-          name: 'Workflow Richiesta Attrezzature',
-          levels: [
-            { level: 1, role: 'IT_MANAGER', escalationTime: 24 }
-          ],
-          isActive: true
-        }
-      ];
-      
-      const { serviceType } = req.query;
-      if (serviceType) {
-        res.json(workflows.filter(w => w.serviceType === serviceType));
-      } else {
-        res.json(workflows);
-      }
-    } catch (error) {
-      console.error('Get workflows error:', error);
-      res.status(500).json({ error: 'Failed to get workflows' });
-    }
-  });
-  
-  // Create/Update Approval Workflow
-  app.post('/api/approval-workflows', tenantMiddleware, rbacMiddleware, requirePermission('hr.admin.workflows'), async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      const workflow = req.body;
-      
-      // Mock create/update response
-      res.json({
-        ...workflow,
-        id: workflow.id || `workflow-${Date.now()}`,
-        createdBy: userId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    } catch (error) {
-      console.error('Save workflow error:', error);
-      res.status(500).json({ error: 'Failed to save workflow' });
-    }
-  });
-  
-  // HR Metrics Real-time API
-  app.get('/api/hr/metrics/realtime', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      
-      if (!tenantId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      // Get real metrics from users table
-      const [userStats] = await db
-        .select({
-          totalEmployees: sql<number>`count(*)`,
-          activeEmployees: sql<number>`count(case when status = 'active' then 1 end)`,
-          avgTenure: sql<number>`avg(extract(day from now() - created_at) / 365.0)`
-        })
-        .from(users)
-        .where(eq(users.tenantId, tenantId));
 
       // Get real HR request metrics
       const [requestStats] = await db
