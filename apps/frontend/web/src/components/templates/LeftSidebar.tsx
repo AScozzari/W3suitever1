@@ -462,11 +462,9 @@ export default function LeftSidebar({
         </nav>
 
         {/* Compact Calendar Widget */}
-        {!isMobile && (
-          <div style={{ marginTop: 'auto', marginBottom: '8px' }}>
-            <CompactCalendar collapsed={collapsed} />
-          </div>
-        )}
+        <div style={{ marginTop: 'auto', marginBottom: '8px' }}>
+          <CompactCalendar collapsed={collapsed} />
+        </div>
 
         {/* Footer info quando expanded */}
         {!collapsed && !isMobile && (

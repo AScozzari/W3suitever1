@@ -62,6 +62,8 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
       const startDate = format(startOfMonth(currentDate), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(currentDate), 'yyyy-MM-dd');
       
+      console.log('🗓️ [COMPACT-CALENDAR] Fetching events:', { startDate, endDate });
+      
       const response = await fetch(`/api/hr/calendar/events?startDate=${startDate}&endDate=${endDate}`, {
         headers: {
           'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
@@ -71,11 +73,12 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
       });
       
       if (!response.ok) {
-        console.warn('Calendar events not available:', response.status);
+        console.warn('🗓️ [COMPACT-CALENDAR] API Error:', response.status);
         return [];
       }
       
       const result = await response.json();
+      console.log('🗓️ [COMPACT-CALENDAR] Events received:', result.data?.length || 0);
       return result.data || [];  // HR API returns { success: true, data: [...] }
     },
     staleTime: 30000, // 30 seconds
