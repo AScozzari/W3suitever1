@@ -1899,47 +1899,86 @@ export const insertApprovalWorkflowSchema = createInsertSchema(approvalWorkflows
 export type InsertApprovalWorkflow = z.infer<typeof insertApprovalWorkflowSchema>;
 export type ApprovalWorkflow = typeof approvalWorkflows.$inferSelect;
 
-// Universal Requests - Richieste universali per tutti i servizi
+// ==================== UNIFIED REQUESTS SYSTEM ====================
+// ✅ ENTERPRISE CENTRALIZZAZIONE: Tabella unica per tutte le richieste aziendali
+
+// Request Category Enum - Categorizzazione per moduli aziendali
+export const requestCategoryEnum = pgEnum('request_category', [
+  'hr',           // Human Resources (ferie, permessi, congedi)
+  'operations',   // Operazioni (manutenzione, logistics, inventory)
+  'support',      // Support IT (accessi, hardware, software)
+  'crm',          // Customer Relations (complaints, escalations)
+  'sales',        // Vendite (discount approvals, contract changes)
+  'finance'       // Finanza (expenses, budgets, payments)
+]);
+
+// Universal Request Status - Stati unificati per tutte le categorie
+export const requestStatusEnum = pgEnum('request_status', [
+  'draft',        // Bozza - non ancora inviata
+  'pending',      // In attesa di approvazione
+  'approved',     // Approvata
+  'rejected',     // Rifiutata
+  'cancelled'     // Annullata dal richiedente
+]);
+
+// Universal Requests - Tabella centralizzata per TUTTE le richieste aziendali
 export const universalRequests = w3suiteSchema.table("universal_requests", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   
-  // Service identification
-  serviceName: varchar("service_name", { length: 50 }).notNull(), // 'hr', 'finance', 'operations'
-  requestType: varchar("request_type", { length: 100 }).notNull(), // 'leave', 'purchase', 'access'
-  
-  // Requester information
+  // ✅ SICUREZZA MULTI-LIVELLO: Tenant + User + Store + Legal Entity
   requesterId: varchar("requester_id").notNull().references(() => users.id),
-  onBehalfOf: varchar("on_behalf_of").references(() => users.id), // For delegated requests
+  legalEntityId: uuid("legal_entity_id").references(() => legalEntities.id),
+  storeId: uuid("store_id").references(() => stores.id),
+  onBehalfOf: varchar("on_behalf_of").references(() => users.id), // Richieste delegate
   
-  // Request data (flexible for each service)
-  requestData: jsonb("request_data").notNull(), // Service-specific data
+  // ✅ CATEGORIZZAZIONE ENTERPRISE: Modulo + Tipo + Sottotipo
+  category: requestCategoryEnum("category").notNull(),
+  type: varchar("request_type", { length: 100 }).notNull(), // 'leave', 'expense', 'access', 'discount'
+  subtype: varchar("request_subtype", { length: 100 }), // 'vacation', 'sick', 'maternity', etc.
   
-  // Approval status
-  status: varchar("status", { length: 50 }).notNull().default("draft"), // draft, pending, approved, rejected, cancelled
-  currentLevel: integer("current_level").default(0),
-  approvalChain: jsonb("approval_chain").default([]), // Approval history
+  // ✅ CONTENUTO RICHIESTA
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  requestData: jsonb("request_data").notNull(), // Dati specifici per categoria
   
-  // SLA tracking
+  // ✅ WORKFLOW E APPROVAZIONE
+  status: requestStatusEnum("status").notNull().default("draft"),
+  currentApproverId: varchar("current_approver_id").references(() => users.id),
+  approvalChain: jsonb("approval_chain").default([]), // Storia delle approvazioni
+  workflowInstanceId: uuid("workflow_instance_id"), // Link al workflow engine
+  
+  // ✅ SLA E PRIORITÀ
   priority: varchar("priority", { length: 20 }).default("normal"), // low, normal, high, urgent
   dueDate: timestamp("due_date"),
+  startDate: timestamp("start_date"), // Per richieste con date (ferie, congedi)
+  endDate: timestamp("end_date"),
+  submittedAt: timestamp("submitted_at"),
   completedAt: timestamp("completed_at"),
   
-  // Metadata
+  // ✅ ALLEGATI E METADATI
+  attachments: text("attachments").array().default([]),
   tags: text("tags").array().default([]),
-  attachments: jsonb("attachments").default([]),
+  metadata: jsonb("metadata").default({}), // Metadati aggiuntivi
   notes: text("notes"),
   
-  // Audit
+  // ✅ AUDIT COMPLETO
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by").references(() => users.id),
   updatedBy: varchar("updated_by").references(() => users.id),
 }, (table) => [
-  index("universal_requests_service_idx").on(table.serviceName, table.requestType),
-  index("universal_requests_status_idx").on(table.status, table.currentLevel),
+  // ✅ INDICI OTTIMIZZATI per performance enterprise
+  index("universal_requests_tenant_category_idx").on(table.tenantId, table.category),
+  index("universal_requests_tenant_status_idx").on(table.tenantId, table.status),
   index("universal_requests_requester_idx").on(table.requesterId),
-  index("universal_requests_tenant_created_idx").on(table.tenantId, table.createdAt),
+  index("universal_requests_approver_idx").on(table.currentApproverId),
+  index("universal_requests_store_idx").on(table.storeId),
+  index("universal_requests_legal_entity_idx").on(table.legalEntityId),
+  index("universal_requests_dates_idx").on(table.startDate, table.endDate),
+  index("universal_requests_tenant_created_idx").on(table.tenantId, table.createdAt.desc()),
+  index("universal_requests_workflow_idx").on(table.workflowInstanceId),
+  index("universal_requests_category_type_idx").on(table.category, table.type, table.subtype),
 ]);
 
 export const insertUniversalRequestSchema = createInsertSchema(universalRequests).omit({ 
@@ -1949,6 +1988,18 @@ export const insertUniversalRequestSchema = createInsertSchema(universalRequests
 });
 export type InsertUniversalRequest = z.infer<typeof insertUniversalRequestSchema>;
 export type UniversalRequest = typeof universalRequests.$inferSelect;
+
+// ✅ RELAZIONI ENTERPRISE per Universal Requests
+export const universalRequestsRelations = relations(universalRequests, ({ one }) => ({
+  tenant: one(tenants, { fields: [universalRequests.tenantId], references: [tenants.id] }),
+  requester: one(users, { fields: [universalRequests.requesterId], references: [users.id] }),
+  currentApprover: one(users, { fields: [universalRequests.currentApproverId], references: [users.id] }),
+  onBehalfOfUser: one(users, { fields: [universalRequests.onBehalfOf], references: [users.id] }),
+  legalEntity: one(legalEntities, { fields: [universalRequests.legalEntityId], references: [legalEntities.id] }),
+  store: one(stores, { fields: [universalRequests.storeId], references: [stores.id] }),
+  createdByUser: one(users, { fields: [universalRequests.createdBy], references: [users.id] }),
+  updatedByUser: one(users, { fields: [universalRequests.updatedBy], references: [users.id] }),
+}));
 
 // Service Permissions - Definizione permessi per ogni servizio
 export const servicePermissions = w3suiteSchema.table("service_permissions", {
