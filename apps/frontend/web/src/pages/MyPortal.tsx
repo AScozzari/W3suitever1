@@ -41,6 +41,7 @@ import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Link } from 'wouter';
 import { z } from 'zod';
+import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
 import ClockWidget from '@/components/TimeTracking/ClockWidget';
 // Lazy load TimeAttendancePage to improve initial load time
 const TimeAttendancePage = React.lazy(() => import('@/components/TimeTracking/TimeAttendancePage'));
@@ -302,17 +303,7 @@ export default function MyPortal() {
     // Refresh requests data
   };
 
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'bg-green-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'rejected': return 'bg-red-500';
-      case 'in_progress': return 'bg-blue-500';
-      case 'completed': return 'bg-green-500';
-      default: return 'bg-gray-500';
-    }
-  };
+  // ✅ Removed: Using centralized request status system
 
   // Get priority color
   const getPriorityColor = (type: string) => {
@@ -805,10 +796,10 @@ export default function MyPortal() {
                                       {request.tipo}
                                     </h3>
                                     <Badge 
-                                      className={`${getStatusColor(request.stato)} text-white`}
+                                      className={getStatusBadgeClass(request.stato)}
                                       data-testid={`badge-request-status-${request.id}`}
                                     >
-                                      {request.stato}
+                                      {getStatusLabel(request.stato)}
                                     </Badge>
                                   </div>
                                   <p className="text-gray-600 mb-3" data-testid={`text-request-description-${request.id}`}>
