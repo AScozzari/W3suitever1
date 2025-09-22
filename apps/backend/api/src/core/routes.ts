@@ -46,10 +46,44 @@ import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, 
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
+
+// ==================== CALENDAR EVENT VALIDATION SCHEMAS ====================
+const calendarEventFiltersSchema = z.object({
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(), 
+  type: z.enum(['meeting', 'deadline', 'event', 'reminder', 'other']).optional(),
+  visibility: z.enum(['private', 'team', 'store', 'area', 'tenant']).optional(),
+  category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).optional(),
+  storeId: z.string().uuid().optional(),
+  teamId: z.string().uuid().optional()
+});
+
+const createCalendarEventSchema = z.object({
+  title: z.string().min(1).max(255),
+  description: z.string().max(1000).optional(),
+  location: z.string().max(255).optional(),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  allDay: z.boolean().default(false),
+  type: z.enum(['meeting', 'deadline', 'event', 'reminder', 'other']).default('other'),
+  visibility: z.enum(['private', 'team', 'store', 'area', 'tenant']).default('private'),
+  category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).default('hr'),
+  hrSensitive: z.boolean().default(false),
+  teamId: z.string().uuid().optional(),
+  storeId: z.string().uuid().optional(),
+  areaId: z.string().uuid().optional(),
+  recurring: z.record(z.any()).default({}),
+  attendees: z.array(z.string()).default([]),
+  color: z.string().max(7).optional(),
+  metadata: z.record(z.any()).default({})
+});
+
+const updateCalendarEventSchema = createCalendarEventSchema.partial();
+
 import hierarchyRouter from "../routes/hierarchy";
 import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
 import { objectAclService } from "./objectAcl";
-import { HRStorage } from "./hr-storage";
+import { HRStorage, CalendarScope } from "./hr-storage";
 import { encryptionKeyService } from "./encryption-service";
 import { HRNotificationHelper } from "./notification-service";
 import multer from "multer";
@@ -9161,6 +9195,336 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get employee training error:', error);
       res.status(500).json({ error: 'Failed to get training data' });
+    }
+  });
+
+  // ==================== UNIFIED CALENDAR API ====================
+  // API unificato per gestire eventi di tutte le categorie business (sales, finance, hr, crm, support, operations, marketing)
+  
+  // Get unified calendar events with category filtering (SECURED)
+  app.get('/api/calendar/events', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Validate query parameters with Zod
+      const queryValidation = calendarEventFiltersSchema.safeParse(req.query);
+      if (!queryValidation.success) {
+        return res.status(400).json({
+          error: 'validation_error',
+          message: 'Parametri filtri non validi',
+          details: queryValidation.error.errors
+        });
+      }
+      
+      const validatedQuery = queryValidation.data;
+      
+      const filters: CalendarEventFilters = {
+        startDate: validatedQuery.startDate ? new Date(validatedQuery.startDate) : undefined,
+        endDate: validatedQuery.endDate ? new Date(validatedQuery.endDate) : undefined,
+        type: validatedQuery.type,
+        visibility: validatedQuery.visibility,
+        storeId: validatedQuery.storeId,
+        teamId: validatedQuery.teamId,
+        category: validatedQuery.category
+      };
+      
+      const events = await storage.getCalendarEvents(tenantId, userId, userRole, filters);
+      
+      res.json({
+        success: true,
+        data: events,
+        message: 'Eventi calendario recuperati con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero eventi calendario unificato');
+    }
+  });
+  
+  // Create unified calendar event (SECURED)
+  app.post('/api/calendar/events', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(createCalendarEventSchema, req.body, res);
+      if (!validatedData) return; // Response already sent by validation function
+      
+      // Get user calendar permissions
+      const permissions = storage.getUserCalendarPermissions(userId, userRole);
+      
+      // Check if user can create events with requested visibility scope
+      const visibilityScopes = {
+        'private': CalendarScope.OWN,
+        'team': CalendarScope.TEAM, 
+        'store': CalendarScope.STORE,
+        'area': CalendarScope.AREA,
+        'tenant': CalendarScope.TENANT
+      };
+      
+      const requiredScope = visibilityScopes[validatedData.visibility];
+      if (!permissions.canCreateScopes.includes(requiredScope)) {
+        return res.status(403).json({
+          error: 'insufficient_permissions',
+          message: `Non hai i permessi per creare eventi con visibilità '${validatedData.visibility}'`
+        });
+      }
+      
+      // Restrict HR-sensitive events to HR_MANAGER/ADMIN only
+      if (validatedData.hrSensitive && !['HR_MANAGER', 'ADMIN'].includes(userRole)) {
+        return res.status(403).json({
+          error: 'insufficient_permissions',
+          message: 'Solo HR Manager e Admin possono creare eventi HR-sensitive'
+        });
+      }
+      
+      // Server-side enforcement: ensure ownerId is always current user
+      validatedData.ownerId = userId;
+      
+      const eventData = {
+        ...validatedData,
+        tenantId,
+        ownerId: userId,
+        createdBy: userId
+      };
+      
+      const event = await storage.createCalendarEvent(eventData);
+      
+      res.status(201).json({
+        success: true,
+        data: event,
+        message: 'Evento calendario creato con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'creazione evento calendario unificato');
+    }
+  });
+  
+  // Update unified calendar event (SECURED)
+  app.put('/api/calendar/events/:id', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      const eventId = req.params.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Validate UUID parameter
+      if (!validateUUIDParam(eventId, 'Event ID', res)) {
+        return; // Response already sent
+      }
+      
+      // Validate request body with Zod
+      const validatedData = validateRequestBody(updateCalendarEventSchema, req.body, res);
+      if (!validatedData) return; // Response already sent by validation function
+      
+      // Get existing event to check ownership and permissions
+      const existingEvent = await storage.getCalendarEventById(eventId, tenantId);
+      if (!existingEvent) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      // Get user calendar permissions
+      const permissions = storage.getUserCalendarPermissions(userId, userRole);
+      
+      // Check ownership or scope-based update permission
+      const isOwner = existingEvent.ownerId === userId;
+      const eventVisibilityScope = {
+        'private': CalendarScope.OWN,
+        'team': CalendarScope.TEAM,
+        'store': CalendarScope.STORE, 
+        'area': CalendarScope.AREA,
+        'tenant': CalendarScope.TENANT
+      }[existingEvent.visibility] || CalendarScope.OWN;
+      
+      const canUpdateScope = permissions.canUpdateScopes.includes(eventVisibilityScope);
+      
+      if (!isOwner && !canUpdateScope) {
+        return res.status(403).json({
+          error: 'insufficient_permissions',
+          message: 'Non hai i permessi per modificare questo evento'
+        });
+      }
+      
+      // If changing visibility, check if user can create events with new visibility
+      if (validatedData.visibility && validatedData.visibility !== existingEvent.visibility) {
+        const visibilityScopes = {
+          'private': CalendarScope.OWN,
+          'team': CalendarScope.TEAM,
+          'store': CalendarScope.STORE,
+          'area': CalendarScope.AREA,
+          'tenant': CalendarScope.TENANT
+        };
+        
+        const newRequiredScope = visibilityScopes[validatedData.visibility];
+        if (!permissions.canCreateScopes.includes(newRequiredScope)) {
+          return res.status(403).json({
+            error: 'insufficient_permissions',
+            message: `Non hai i permessi per cambiare la visibilità a '${validatedData.visibility}'`
+          });
+        }
+      }
+      
+      // Restrict HR-sensitive changes to HR_MANAGER/ADMIN only
+      if (validatedData.hrSensitive !== undefined && validatedData.hrSensitive !== existingEvent.hrSensitive) {
+        if (!['HR_MANAGER', 'ADMIN'].includes(userRole)) {
+          return res.status(403).json({
+            error: 'insufficient_permissions',
+            message: 'Solo HR Manager e Admin possono modificare la sensibilità HR degli eventi'
+          });
+        }
+      }
+      
+      const event = await storage.updateCalendarEvent(eventId, validatedData, tenantId);
+      
+      res.json({
+        success: true,
+        data: event,
+        message: 'Evento calendario aggiornato con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento evento calendario unificato');
+    }
+  });
+  
+  // Delete unified calendar event (SECURED)
+  app.delete('/api/calendar/events/:id', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      const eventId = req.params.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Validate UUID parameter
+      if (!validateUUIDParam(eventId, 'Event ID', res)) {
+        return; // Response already sent
+      }
+      
+      // Get existing event to check ownership and permissions
+      const existingEvent = await storage.getCalendarEventById(eventId, tenantId);
+      if (!existingEvent) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      // Get user calendar permissions
+      const permissions = storage.getUserCalendarPermissions(userId, userRole);
+      
+      // Check ownership or scope-based delete permission
+      const isOwner = existingEvent.ownerId === userId;
+      const eventVisibilityScope = {
+        'private': CalendarScope.OWN,
+        'team': CalendarScope.TEAM,
+        'store': CalendarScope.STORE,
+        'area': CalendarScope.AREA,
+        'tenant': CalendarScope.TENANT
+      }[existingEvent.visibility] || CalendarScope.OWN;
+      
+      const canDeleteScope = permissions.canDeleteScopes.includes(eventVisibilityScope);
+      
+      if (!isOwner && !canDeleteScope) {
+        return res.status(403).json({
+          error: 'insufficient_permissions',
+          message: 'Non hai i permessi per eliminare questo evento'
+        });
+      }
+      
+      // Restrict HR-sensitive deletion to HR_MANAGER/ADMIN only (unless owner)
+      if (existingEvent.hrSensitive && !isOwner && !['HR_MANAGER', 'ADMIN'].includes(userRole)) {
+        return res.status(403).json({
+          error: 'insufficient_permissions',
+          message: 'Solo il proprietario, HR Manager o Admin possono eliminare eventi HR-sensitive'
+        });
+      }
+      
+      await storage.deleteCalendarEvent(eventId, tenantId);
+      
+      res.json({
+        success: true,
+        message: 'Evento calendario eliminato con successo'
+      });
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione evento calendario unificato');
+    }
+  });
+  
+  // Get unified calendar event by ID (SECURED)
+  app.get('/api/calendar/events/:id', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      const userRole = req.user?.role || 'USER';
+      const eventId = req.params.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+      
+      // Validate UUID parameter
+      if (!validateUUIDParam(eventId, 'Event ID', res)) {
+        return; // Response already sent
+      }
+      
+      const event = await storage.getCalendarEventById(eventId, tenantId);
+      
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      // Check visibility permissions (same logic as getCalendarEvents)
+      const permissions = storage.getUserCalendarPermissions(userId, userRole);
+      const isOwner = event.ownerId === userId;
+      
+      if (!isOwner) {
+        const eventVisibilityScope = {
+          'private': CalendarScope.OWN,
+          'team': CalendarScope.TEAM,
+          'store': CalendarScope.STORE,
+          'area': CalendarScope.AREA,
+          'tenant': CalendarScope.TENANT
+        }[event.visibility] || CalendarScope.OWN;
+        
+        const canViewScope = permissions.canViewScopes.includes(eventVisibilityScope);
+        
+        if (!canViewScope) {
+          return res.status(403).json({
+            error: 'insufficient_permissions',
+            message: 'Non hai i permessi per visualizzare questo evento'
+          });
+        }
+        
+        // Filter out HR-sensitive events if user doesn't have permission
+        if (event.hrSensitive && !permissions.canViewHrSensitive) {
+          return res.status(403).json({
+            error: 'insufficient_permissions',
+            message: 'Non hai i permessi per visualizzare eventi HR-sensitive'
+          });
+        }
+      }
+      
+      res.json({
+        success: true,
+        data: event
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero evento calendario per ID');
     }
   });
 

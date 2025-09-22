@@ -171,6 +171,7 @@ export interface CalendarEventFilters {
   visibility?: string;
   storeId?: string;
   teamId?: string;
+  category?: string; // Nuovo filtro per calendario unificato (sales, finance, hr, crm, support, operations, marketing)
 }
 
 export interface LeaveRequestFilters {
@@ -210,24 +211,60 @@ export class HRStorage implements IHRStorage {
   ): Promise<CalendarEvent[]> {
     const permissions = this.getUserCalendarPermissions(userId, userRole);
     
-    // Build visibility conditions based on permissions
+    // Get user's actual membership assignments to verify scope-based access
+    const userAssignments = await this.getUserScopeAssignments(userId, tenantId);
+    
+    // Build visibility conditions based on permissions AND membership
     const visibilityConditions = [];
     
     // User can always see their own events
     visibilityConditions.push(eq(calendarEvents.ownerId, userId));
     
-    // Add scope-based visibility
+    // Add scope-based visibility with membership checks
     if (permissions.canViewScopes.includes(CalendarScope.TEAM)) {
-      visibilityConditions.push(eq(calendarEvents.visibility, 'team'));
+      // Only see team events for teams user is actually assigned to
+      const userTeamIds = userAssignments.teamIds || [];
+      if (userTeamIds.length > 0) {
+        visibilityConditions.push(
+          and(
+            eq(calendarEvents.visibility, 'team'),
+            inArray(calendarEvents.teamId, userTeamIds)
+          )
+        );
+      }
     }
+    
     if (permissions.canViewScopes.includes(CalendarScope.STORE)) {
-      visibilityConditions.push(eq(calendarEvents.visibility, 'store'));
+      // Only see store events for stores user is actually assigned to
+      const userStoreIds = userAssignments.storeIds || [];
+      if (userStoreIds.length > 0) {
+        visibilityConditions.push(
+          and(
+            eq(calendarEvents.visibility, 'store'),
+            inArray(calendarEvents.storeId, userStoreIds)
+          )
+        );
+      }
     }
+    
     if (permissions.canViewScopes.includes(CalendarScope.AREA)) {
-      visibilityConditions.push(eq(calendarEvents.visibility, 'area'));
+      // Only see area events for areas user is actually assigned to
+      const userAreaIds = userAssignments.areaIds || [];
+      if (userAreaIds.length > 0) {
+        visibilityConditions.push(
+          and(
+            eq(calendarEvents.visibility, 'area'),
+            inArray(calendarEvents.areaId, userAreaIds)
+          )
+        );
+      }
     }
+    
     if (permissions.canViewScopes.includes(CalendarScope.TENANT)) {
-      visibilityConditions.push(eq(calendarEvents.visibility, 'tenant'));
+      // Only HR_MANAGER and ADMIN can see tenant-wide events
+      if (['HR_MANAGER', 'ADMIN'].includes(userRole)) {
+        visibilityConditions.push(eq(calendarEvents.visibility, 'tenant'));
+      }
     }
     
     // Build filter conditions
@@ -253,6 +290,11 @@ export class HRStorage implements IHRStorage {
       filterConditions.push(eq(calendarEvents.storeId, filters.storeId));
     }
     
+    // Filtro per categoria (calendario unificato)
+    if (filters?.category) {
+      filterConditions.push(eq(calendarEvents.category, filters.category as any));
+    }
+    
     // Filter out HR-sensitive events if user doesn't have permission
     if (!permissions.canViewHrSensitive) {
       filterConditions.push(eq(calendarEvents.hrSensitive, false));
@@ -274,6 +316,50 @@ export class HRStorage implements IHRStorage {
       .limit(1);
     
     return result[0] || null;
+  }
+
+  // Helper method to get user's actual scope assignments for membership verification
+  private async getUserScopeAssignments(userId: string, tenantId: string): Promise<{
+    teamIds: string[];
+    storeIds: string[];
+    areaIds: string[];
+  }> {
+    // Get user assignments from RBAC system
+    const assignments = await db.select({
+      scopeType: userAssignments.scopeType,
+      scopeId: userAssignments.scopeId
+    })
+    .from(userAssignments)
+    .innerJoin(users, eq(userAssignments.userId, users.id))
+    .where(
+      and(
+        eq(userAssignments.userId, userId),
+        eq(users.tenantId, tenantId)
+      )
+    );
+
+    // Separate assignments by scope type
+    const teamIds: string[] = [];
+    const storeIds: string[] = [];
+    const areaIds: string[] = [];
+
+    for (const assignment of assignments) {
+      if (assignment.scopeId) {
+        switch (assignment.scopeType) {
+          case 'store':
+            storeIds.push(assignment.scopeId);
+            break;
+          // For now, treat team assignments as related to stores
+          // In a more complex system, you might have a separate teams table
+          case 'legal_entity':
+            // Areas could be mapped to legal entities or have separate table
+            areaIds.push(assignment.scopeId);
+            break;
+        }
+      }
+    }
+
+    return { teamIds, storeIds, areaIds };
   }
   
   async createCalendarEvent(data: InsertCalendarEvent): Promise<CalendarEvent> {
