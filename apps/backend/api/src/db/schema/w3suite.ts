@@ -68,6 +68,7 @@ export const shiftPatternEnum = pgEnum('shift_pattern', ['daily', 'weekly', 'mon
 
 // HR Document Enums
 export const hrDocumentTypeEnum = pgEnum('hr_document_type', ['payslip', 'contract', 'certificate', 'id_document', 'cv', 'evaluation', 'warning', 'other']);
+export const hrDocumentSourceEnum = pgEnum('hr_document_source', ['employee', 'hr', 'system']);
 
 // Expense Report Enums
 export const expenseReportStatusEnum = pgEnum('expense_report_status', ['draft', 'submitted', 'approved', 'rejected', 'reimbursed']);
@@ -1148,6 +1149,10 @@ export const hrDocuments = w3suiteSchema.table("hr_documents", {
   // Metadata
   metadata: jsonb("metadata").default({}),
   
+  // Document source and tracking
+  source: hrDocumentSourceEnum("source").notNull().default("employee"),
+  viewedAt: timestamp("viewed_at"),
+  
   // Audit
   uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
@@ -1157,6 +1162,7 @@ export const hrDocuments = w3suiteSchema.table("hr_documents", {
 }, (table) => [
   index("hr_documents_tenant_user_idx").on(table.tenantId, table.userId),
   index("hr_documents_tenant_type_idx").on(table.tenantId, table.documentType),
+  index("hr_documents_tenant_source_idx").on(table.tenantId, table.source),
   index("hr_documents_year_month_idx").on(table.year, table.month),
   index("hr_documents_expiry_idx").on(table.expiryDate),
 ]);
