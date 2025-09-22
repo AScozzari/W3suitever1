@@ -35,7 +35,7 @@ import {
   Bookmark, PlayCircle, Lock, Settings, Camera, Briefcase,
   ChevronRight, MessageSquare, Users2, PieChart, Calendar1,
   Globe, Palette, Key, History, Smartphone as SmartphoneIcon,
-  Share2, Upload, Receipt
+  Share2, Upload, Receipt, Loader2
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -1290,6 +1290,16 @@ export default function MyPortal() {
                 </Dialog>
               </div>
             )}
+          
+          {/* HR Request Modal - Restored Original Complete Form */}
+          <HRRequestForm
+            open={hrRequestModal.open}
+            onOpenChange={(open) => setHrRequestModal(open ? { open, data: {} } : { open: false, data: null })}
+            onSubmit={(data) => {
+              createRequestMutation.mutate(data);
+            }}
+            isSubmitting={createRequestMutation.isPending}
+          />
       </div>
     </Layout>
   );
