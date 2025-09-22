@@ -40,7 +40,12 @@ import {
   teams,
   teamWorkflowAssignments,
   workflowInstances,
-  workflowExecutions
+  workflowExecutions,
+  // ✅ FASE 1.1: Add enums for calendar consistency
+  calendarEventTypeEnum,
+  calendarEventVisibilityEnum,
+  calendarEventStatusEnum,
+  hrRequestStatusEnum
 } from "../db/schema/w3suite";
 import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
@@ -51,7 +56,9 @@ import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-
 const calendarEventFiltersSchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(), 
-  type: z.enum(['meeting', 'deadline', 'event', 'reminder', 'other']).optional(),
+  // ✅ FASE 1.1: Use correct enum from database schema
+  type: z.enum(['meeting', 'shift', 'time_off', 'overtime', 'training', 'deadline', 'other']).optional(),
+  // ✅ FASE 1.1: Use correct visibility enum from database schema
   visibility: z.enum(['private', 'team', 'store', 'area', 'tenant']).optional(),
   category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).optional(),
   storeId: z.string().uuid().optional(),
@@ -65,7 +72,8 @@ const createCalendarEventSchema = z.object({
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
   allDay: z.boolean().default(false),
-  type: z.enum(['meeting', 'deadline', 'event', 'reminder', 'other']).default('other'),
+  // ✅ FASE 1.1: Use correct calendar event types from database schema
+  type: z.enum(['meeting', 'shift', 'time_off', 'overtime', 'training', 'deadline', 'other']).default('other'),
   visibility: z.enum(['private', 'team', 'store', 'area', 'tenant']).default('private'),
   category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).default('hr'),
   hrSensitive: z.boolean().default(false),
@@ -165,8 +173,9 @@ const cancelRequestBodySchema = z.object({
   reason: z.string().max(1000).optional()
 });
 
+// ✅ FASE 1.3: Use only official database enum values - no Italian states
 const updateStatusBodySchema = z.object({
-  status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled', 'revisione', 'approvata', 'respinta']),
+  status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']),
   reason: z.string().max(1000).optional()
 });
 
@@ -8155,14 +8164,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Request not found' });
       }
       
-      // Map new Italian status names to database enum values
-      const statusMapping: Record<string, string> = {
-        'revisione': 'pending',
-        'approvata': 'approved', 
-        'respinta': 'rejected'
-      };
-      
-      const dbStatus = statusMapping[validatedData.status] || validatedData.status;
+      // ✅ FASE 1.3: No more Italian status mapping needed - using only official enum values
+      const dbStatus = validatedData.status;
       
       // Update request status using storage transitionStatus method
       const updatedRequest = await storage.transitionStatus(

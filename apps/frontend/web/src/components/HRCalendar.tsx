@@ -69,78 +69,92 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     enabled: hrQueryReadiness.enabled,
   });
 
-  // Query per eventi turni
-  const { data: shifts = [], isLoading: shiftsLoading, error: shiftsError } = useQuery({
-    queryKey: ['/api/hr/shifts'],
+  // ✅ FASE 1.2: Unifica queries per usare calendar endpoint come altri calendari
+  const { data: backendEvents = [], isLoading: calendarLoading, error: calendarError } = useQuery({
+    queryKey: ['/api/hr/calendar/events'],
     enabled: hrQueryReadiness.enabled,
   });
 
-  // Query per richieste ferie
-  const { data: requests = [], error: requestsError } = useQuery({
-    queryKey: ['/api/hr/requests'],
-    enabled: hrQueryReadiness.enabled,
-  });
-
-  // Mutation per creare/modificare turni
-  const createShiftMutation = useMutation({
-    mutationFn: (data: ShiftEventForm) => apiRequest('/api/hr/shifts', {
+  // ✅ FASE 1.2: Mutation per creare eventi usando l'API unificata
+  const createEventMutation = useMutation({
+    mutationFn: (data: ShiftEventForm) => apiRequest('/api/hr/calendar/events', {
       method: 'POST',
       body: JSON.stringify({
-        ...data,
-        startTime: data.start,
-        endTime: data.end,
-        assignedTo: data.employeeId,
-        status: 'active',
+        title: data.title,
+        // ✅ FIX: Convert datetime-local to ISO strings for RFC3339 compliance  
+        startDate: new Date(data.start).toISOString(),
+        endDate: new Date(data.end).toISOString(),
+        type: 'shift',
+        visibility: 'team',
+        category: 'hr',
+        description: data.notes || '',
+        metadata: {
+          employeeId: data.employeeId,
+          shiftType: data.shiftType,
+        }
       }),
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
-      toast({ title: 'Turno creato con successo!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+      toast({ title: 'Evento creato con successo!' });
       setShowEventModal(false);
       form.reset();
     },
     onError: () => {
-      toast({ title: 'Errore nella creazione del turno', variant: 'destructive' });
+      toast({ title: 'Errore nella creazione dell\'evento', variant: 'destructive' });
     },
   });
 
-  // Trasforma i dati in formato FullCalendar (memoizzato per performance)
-  const calendarEvents = useMemo(() => [
-    // Eventi turni
-    ...(shifts as any[]).map((shift: any) => ({
-      id: `shift-${shift.id}`,
-      title: `${shift.title} - ${shift.shiftType}`,
-      start: shift.startTime,
-      end: shift.endTime,
-      resourceId: shift.assignedTo, // CRITICO: Necessario per viste resource
-      backgroundColor: getShiftColor(shift.shiftType),
-      borderColor: getShiftColor(shift.shiftType),
+  // ✅ FIX: Implement updateEventMutation for edit mode
+  const updateEventMutation = useMutation({
+    mutationFn: (data: ShiftEventForm) => {
+      if (!selectedEvent) throw new Error('No event selected for update');
+      
+      return apiRequest(`/api/hr/calendar/events/${selectedEvent.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: data.title,
+          // ✅ FIX: Convert datetime-local to ISO strings for RFC3339 compliance
+          startDate: new Date(data.start).toISOString(),
+          endDate: new Date(data.end).toISOString(),
+          description: data.notes || '',
+          metadata: {
+            employeeId: data.employeeId,
+            shiftType: data.shiftType,
+          }
+        }),
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+      toast({ title: 'Evento aggiornato con successo!' });
+      setShowEventModal(false);
+      form.reset();
+    },
+    onError: () => {
+      toast({ title: 'Errore nell\'aggiornamento dell\'evento', variant: 'destructive' });
+    },
+  });
+
+  // ✅ FASE 1.2: Trasforma eventi unificati dal backend in formato FullCalendar
+  const calendarEvents = useMemo(() => 
+    (backendEvents as any[]).map((event: any) => ({
+      id: event.id,
+      title: event.title,
+      start: event.startDate,
+      end: event.endDate,
+      resourceId: event.metadata?.employeeId || event.ownerId,
+      backgroundColor: getEventColor(event.type),
+      borderColor: getEventColor(event.type),
       extendedProps: {
-        type: 'shift',
-        employeeId: shift.assignedTo,
-        shiftType: shift.shiftType,
-        notes: shift.notes,
+        type: event.type,
+        visibility: event.visibility,
+        description: event.description,
+        location: event.location,
+        metadata: event.metadata,
       },
     })),
-    // Eventi richieste ferie
-    ...(requests as any[])
-      .filter((req: any) => req.type === 'ferie' && req.status === 'approved')
-      .map((request: any) => ({
-        id: `leave-${request.id}`,
-        title: `Ferie - ${request.employeeName || 'Dipendente'}`,
-        start: request.startDate,
-        end: request.endDate,
-        resourceId: request.employeeId, // CRITICO: Necessario per viste resource
-        backgroundColor: 'hsl(var(--warning))',
-        borderColor: 'hsl(var(--warning))',
-        display: 'background',
-        extendedProps: {
-          type: 'leave',
-          employeeId: request.employeeId,
-          reason: request.reason,
-        },
-      })),
-  ], [shifts, requests]);
+  [backendEvents]);
 
   // Risorse per le viste resource (memoizzato per performance)
   const calendarResources = useMemo(() => (employees as any[]).map((emp: any) => ({
@@ -149,14 +163,17 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     department: emp.department || 'N/A',
   })), [employees]);
 
-  // Colori per i tipi di turno (usa CSS variables del design system)
-  function getShiftColor(shiftType: string) {
-    switch (shiftType) {
-      case 'mattina': return 'hsl(var(--success))'; // Verde
-      case 'pomeriggio': return 'hsl(var(--warning))'; // Arancione  
-      case 'notte': return 'hsl(var(--primary))'; // Brand primary
-      case 'spezzato': return 'hsl(var(--destructive))'; // Rosso
-      default: return 'hsl(var(--muted))'; // Grigio
+  // ✅ FASE 1.2: Colori per tutti i tipi di evento del calendario unificato
+  function getEventColor(eventType: string) {
+    switch (eventType) {
+      case 'meeting': return 'hsl(var(--primary))'; // Brand primary
+      case 'shift': return 'hsl(var(--success))'; // Verde per turni  
+      case 'time_off': return 'hsl(var(--warning))'; // Arancione per ferie
+      case 'overtime': return 'hsl(var(--destructive))'; // Rosso per straordinari
+      case 'training': return 'hsl(212, 100%, 50%)'; // Blu per formazione
+      case 'deadline': return 'hsl(0, 84%, 60%)'; // Rosso urgente per scadenze
+      case 'other': return 'hsl(var(--muted))'; // Grigio per altro
+      default: return 'hsl(var(--muted))';
     }
   }
 
@@ -183,16 +200,16 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     setShowEventModal(true);
   }, [form]);
 
-  // Gestione click su evento
+  // ✅ FASE 1.2 FIX: Gestione click su evento - legge dalla struttura unificata
   const handleEventClick = useCallback((arg: any) => {
     const event = arg.event;
     if (event.extendedProps.type === 'shift') {
-      form.setValue('title', event.title.split(' - ')[0]);
+      form.setValue('title', event.title);
       form.setValue('start', event.start.toISOString().slice(0, 16));
       form.setValue('end', event.end.toISOString().slice(0, 16));
-      form.setValue('employeeId', event.extendedProps.employeeId);
-      form.setValue('shiftType', event.extendedProps.shiftType);
-      form.setValue('notes', event.extendedProps.notes || '');
+      form.setValue('employeeId', event.extendedProps.metadata?.employeeId || '');
+      form.setValue('shiftType', event.extendedProps.metadata?.shiftType || 'mattina');
+      form.setValue('notes', event.extendedProps.description || '');
       
       setSelectedEvent(event);
       setEventModalMode('edit');
@@ -200,34 +217,37 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     }
   }, [form]);
 
-  // Drag & Drop eventi (gestisce tempo E risorse)
+  // ✅ FASE 1.2 FIX: Drag & Drop eventi - gestisce struttura unificata
   const handleEventDrop = useCallback((arg: any) => {
     const event = arg.event;
     if (event.extendedProps.type === 'shift') {
-      const shiftId = event.id.replace('shift-', '');
+      const eventId = event.id; // No more 'shift-' prefix removal needed
       const newResource = event.getResources()[0]?.id;
-      const oldEmployeeId = event.extendedProps.employeeId;
+      const oldEmployeeId = event.extendedProps.metadata?.employeeId;
       
-      // Costruisci payload di aggiornamento
-      const updatePayload: any = {
-        startTime: event.start.toISOString(),
-        endTime: event.end.toISOString(),
+      // ✅ FIX: Use ISO strings for dates and proper metadata structure  
+      const updatedMetadata = {
+        ...event.extendedProps.metadata,
+        employeeId: newResource || oldEmployeeId
       };
       
-      // Se la risorsa è cambiata, aggiorna anche l'assegnazione
+      // ✅ FIX: Use setExtendedProp instead of direct mutation for better rerender behavior
       if (newResource && newResource !== oldEmployeeId) {
-        updatePayload.assignedTo = newResource;
-        event.setExtendedProp('employeeId', newResource);
+        event.setExtendedProp('metadata', updatedMetadata);
       }
       
-      // Aggiorna il turno nel backend
-      apiRequest(`/api/hr/shifts/${shiftId}`, {
+      // ✅ FASE 1.2 FIX: Aggiorna evento con ISO strings e metadata corretta
+      apiRequest(`/api/hr/calendar/events/${eventId}`, {
         method: 'PATCH',
-        body: JSON.stringify(updatePayload),
+        body: JSON.stringify({
+          startDate: event.start.toISOString(), // ✅ FIX: ISO string, not Date object
+          endDate: event.end.toISOString(),     // ✅ FIX: ISO string, not Date object
+          metadata: updatedMetadata
+        }),
       }).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
-        const changeType = newResource !== oldEmployeeId ? 'assegnato e spostato' : 'spostato';
-        toast({ title: `Turno ${changeType} con successo!` });
+        queryClient.invalidateQueries({ queryKey: ['/api/hr/calendar/events'] });
+        const changeType = newResource && newResource !== oldEmployeeId ? 'assegnato e spostato' : 'spostato';
+        toast({ title: `Evento ${changeType} con successo!` });
       }).catch(() => {
         arg.revert(); // Annulla il movimento
         toast({ title: 'Errore nello spostamento del turno', variant: 'destructive' });
@@ -258,9 +278,13 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     setCurrentView(view);
   };
 
-  // Submit form
+  // ✅ FIX: Submit form - distinguish between create and edit modes
   const onSubmit = (data: ShiftEventForm) => {
-    createShiftMutation.mutate(data);
+    if (eventModalMode === 'edit' && selectedEvent) {
+      updateEventMutation.mutate(data);
+    } else {
+      createEventMutation.mutate(data);
+    }
   };
 
   return (
@@ -365,7 +389,7 @@ export default function HRCalendar({ className }: HRCalendarProps) {
 
           {/* Calendario FullCalendar */}
           <div className="calendar-container bg-white dark:bg-slate-900 rounded-lg p-4 shadow-sm">
-            {shiftsLoading ? (
+            {calendarLoading ? (
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                   <Clock className="w-12 h-12 mx-auto mb-4 text-slate-400 animate-spin" />
@@ -578,12 +602,12 @@ export default function HRCalendar({ className }: HRCalendarProps) {
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={createShiftMutation.isPending}
+                  disabled={createEventMutation.isPending || updateEventMutation.isPending}
                   className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                  data-testid="button-save-shift"
+                  data-testid="button-save-event"
                 >
-                  {createShiftMutation.isPending ? 'Salvando...' : 
-                   eventModalMode === 'create' ? 'Crea Turno' : 'Salva Modifiche'}
+                  {(createEventMutation.isPending || updateEventMutation.isPending) ? 'Salvando...' : 
+                   eventModalMode === 'create' ? 'Crea Evento' : 'Salva Modifiche'}
                 </Button>
               </div>
             </form>
