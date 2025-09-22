@@ -186,15 +186,15 @@ export default function DocumentCategories({
       {/* Quick Filters - Horizontal Layout */}
       <div className="bg-white/80 backdrop-blur-lg rounded-xl p-4">
         <h3 className="font-medium text-gray-700 mb-4">Filtri Rapidi</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
           {quickFilters.map((filter) => (
             <button
               key={filter.id}
               onClick={() => onSelectCategory(filter.id)}
-              className={`group relative flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-300 ${
+              className={`group relative flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl transition-all duration-300 transform hover:translate-y-[-2px] active:scale-95 ${
                 selectedCategory === filter.id
-                  ? 'bg-gradient-to-br from-orange-500 to-purple-600 text-white shadow-lg scale-105'
-                  : 'bg-gray-50/50 hover:bg-gray-100/70 hover:shadow-md hover:scale-102 text-gray-700'
+                  ? 'bg-gradient-to-br from-orange-500 to-purple-600 text-white shadow-lg scale-105 ring-2 ring-orange-200'
+                  : 'bg-gray-50/50 hover:bg-gray-100/70 hover:shadow-md hover:scale-102 text-gray-700 border border-gray-200/50'
               }`}
               data-testid={`button-filter-${filter.id}`}
             >
