@@ -17,7 +17,6 @@ import {
 import { useLocation } from 'wouter';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
-import CompactCalendar from './Sidebar/CompactCalendar';
 
 // Palette colori W3 Suite - Coerente e Professionale
 const COLORS = {
@@ -1139,16 +1138,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
             })}
           </nav>
 
-          {/* Compact Calendar - aggiungo alla fine della sidebar */}
-          {!isMobile && (
-            <div style={{
-              marginTop: 'auto',
-              padding: leftSidebarCollapsed ? '8px' : '16px',
-              borderTop: '1px solid hsla(255, 255, 255, 0.12)'
-            }}>
-              <CompactCalendar />
-            </div>
-          )}
         </aside>
 
         {/* Main Content - IDENTICO margini WindTreDashboard */}
