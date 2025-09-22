@@ -52,6 +52,8 @@ interface CompactCalendarProps {
 }
 
 export default function CompactCalendar({ collapsed = false, className = '' }: CompactCalendarProps) {
+  console.log('🗓️ [COMPACT-CALENDAR] Component mounted! collapsed:', collapsed);
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
