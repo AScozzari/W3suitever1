@@ -95,8 +95,8 @@ export class QRStrategy extends BaseStrategy {
       };
     }
 
-    // Validate code format
-    const codePattern = /^W3-[A-Za-z0-9]+-\d+-[A-Za-z0-9]+$/;
+    // Validate code format (allow hyphens for UUID store IDs)
+    const codePattern = /^W3-[A-Za-z0-9-]+-\d+-[A-Za-z0-9]+$/;
     if (!codePattern.test(this.currentCode)) {
       return this.createError(`Invalid QR code format: ${this.currentCode}`);
     }

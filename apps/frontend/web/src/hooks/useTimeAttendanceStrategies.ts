@@ -99,6 +99,16 @@ export function useTimeAttendanceStrategies(
     }));
   }, []);
 
+  // ✅ FIX: Re-prepare strategy when context.selectedStore changes 
+  useEffect(() => {
+    if (state.selectedStrategy && context?.selectedStore && state.prepareResult) {
+      // Re-prepare the strategy with updated context when store changes
+      prepareStrategy(context).catch(error => {
+        console.warn('[StrategyManager] Auto re-prepare failed:', error);
+      });
+    }
+  }, [context?.selectedStore?.id, state.selectedStrategy, context, prepareStrategy]);
+
   // Helper to update state safely
   const updateState = useCallback((updater: Partial<StrategyManagerState> | ((prev: StrategyManagerState) => Partial<StrategyManagerState>)) => {
     setState(prev => {

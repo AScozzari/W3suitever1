@@ -231,6 +231,13 @@ export default function UnifiedClockingPanel({
     }
   }, [nearbyStores, selectedStoreId, selectStore]);
 
+  // ✅ FIX: Re-prepare QR strategy when store changes or QR is selected
+  useEffect(() => {
+    if (strategiesState.selectedStrategy?.type === 'qr' && context.selectedStore) {
+      strategiesActions.prepareStrategy(context);
+    }
+  }, [strategiesState.selectedStrategy?.type, context.selectedStore?.id, strategiesActions, context]);
+
   // Filtra strategie abilitate da HR Management
   const availableStrategyConfigs = STRATEGY_CONFIGS.filter(config => 
     !enabledStrategies || enabledStrategies.includes(config.type)
