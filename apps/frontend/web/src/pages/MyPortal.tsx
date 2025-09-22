@@ -840,13 +840,7 @@ export default function MyPortal() {
                   )}
                 </div>
 
-                {/* ✅ RESTORED: HR Request Creation Modal with real form */}
-                <HRRequestForm 
-                  open={hrRequestModal.open}
-                  onOpenChange={(open) => setHrRequestModal(open ? { open, data: {} } : { open: false, data: null })}
-                  onSubmit={(requestData) => createRequestMutation.mutate(requestData)}
-                  isSubmitting={createRequestMutation.isPending}
-                />
+                {/* ✅ Modal handled globally outside tabs to prevent conflicts */}
               </div>
             )}
 
