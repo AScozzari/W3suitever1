@@ -61,8 +61,14 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['/api/hr/calendar/events', format(currentDate, 'yyyy-MM')],
     queryFn: async () => {
-      const startDate = format(startOfMonth(currentDate), 'yyyy-MM-dd');
-      const endDate = format(endOfMonth(currentDate), 'yyyy-MM-dd');
+      // Fix: Use ISO datetime format instead of date-only
+      const start = startOfMonth(currentDate);
+      start.setHours(0, 0, 0, 0);
+      const end = endOfMonth(currentDate);
+      end.setHours(23, 59, 59, 999);
+      
+      const startDate = start.toISOString();
+      const endDate = end.toISOString();
       
       console.log('🗓️ [COMPACT-CALENDAR] Fetching events:', { startDate, endDate });
       
@@ -75,7 +81,8 @@ export default function CompactCalendar({ collapsed = false, className = '' }: C
       });
       
       if (!response.ok) {
-        console.warn('🗓️ [COMPACT-CALENDAR] API Error:', response.status);
+        const errorText = await response.text();
+        console.warn('🗓️ [COMPACT-CALENDAR] API Error:', response.status, errorText);
         return [];
       }
       
