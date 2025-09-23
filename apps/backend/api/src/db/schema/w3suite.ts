@@ -2601,11 +2601,22 @@ export const aiConversations = w3suiteSchema.table("ai_conversations", {
 // Vector Embeddings Enums
 export const vectorSourceTypeEnum = pgEnum('vector_source_type', [
   'document', 'knowledge_base', 'chat_history', 'policy', 'training_material', 
-  'product_catalog', 'customer_data', 'financial_report', 'hr_document'
+  'product_catalog', 'customer_data', 'financial_report', 'hr_document',
+  'url_content', 'pdf_document', 'image', 'audio_transcript', 'video_transcript'
 ]);
 export const vectorStatusEnum = pgEnum('vector_status', ['pending', 'processing', 'ready', 'failed', 'archived']);
 export const embeddingModelEnum = pgEnum('embedding_model', [
   'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002'
+]);
+
+// Media Type Enum for multimodal content
+export const mediaTypeEnum = pgEnum('media_type', [
+  'text', 'pdf', 'image', 'audio', 'video', 'url', 'document'
+]);
+
+// Extraction Method Enum for processing
+export const extractionMethodEnum = pgEnum('extraction_method', [
+  'native', 'ocr', 'transcription', 'vision_api', 'pdf_parse', 'web_scrape'
 ]);
 
 // Vector Embeddings - Core table for storing document embeddings with pgvector
@@ -2623,10 +2634,26 @@ export const vectorEmbeddings = w3suiteSchema.table("vector_embeddings", {
   embedding: vector("embedding"), // OpenAI embedding dimension (1536 for text-embedding-3-small)
   embeddingModel: embeddingModelEnum("embedding_model").notNull(),
   
+  // Multimedia Support
+  mediaType: mediaTypeEnum("media_type").default('text').notNull(),
+  extractionMethod: extractionMethodEnum("extraction_method"),
+  originalFileName: varchar("original_file_name", { length: 255 }),
+  mimeType: varchar("mime_type", { length: 100 }),
+  
   // Metadata & Search Optimization
-  metadata: jsonb("metadata").default({}).notNull(), // Searchable metadata
+  metadata: jsonb("metadata").default({}).notNull(), // Searchable metadata with media-specific info
   tags: text("tags").array(), // Search tags array
   language: varchar("language", { length: 10 }).default('it'), // Language code
+  
+  // Temporal Metadata (for audio/video)
+  startTime: real("start_time"), // Start time in seconds for audio/video chunks
+  endTime: real("end_time"), // End time in seconds for audio/video chunks
+  duration: real("duration"), // Duration in seconds
+  
+  // Visual Metadata (for images)
+  imageAnalysis: jsonb("image_analysis"), // GPT-4 Vision analysis results
+  detectedObjects: text("detected_objects").array(), // Objects/entities detected
+  imageResolution: varchar("image_resolution", { length: 50 }), // e.g., "1920x1080"
   
   // Security & Access Control
   accessLevel: varchar("access_level", { length: 50 }).default('private'), // public, private, restricted
@@ -2645,6 +2672,12 @@ export const vectorEmbeddings = w3suiteSchema.table("vector_embeddings", {
   lastAccessedAt: timestamp("last_accessed_at"),
   expiresAt: timestamp("expires_at"), // For retention policies
   processingTimeMs: integer("processing_time_ms"), // Time to generate embedding
+  
+  // Training & Validation
+  isValidated: boolean("is_validated").default(false), // User validated for training
+  validationScore: real("validation_score"), // Quality score from validation
+  validatedBy: varchar("validated_by"), // User who validated
+  validatedAt: timestamp("validated_at") // When validation occurred
 }, (table) => ({
   // Indexes for performance and search
   tenantIndex: index("vector_embeddings_tenant_idx").on(table.tenantId),
@@ -2722,6 +2755,46 @@ export const vectorCollections = w3suiteSchema.table("vector_collections", {
   typeIndex: index("vector_collections_type_idx").on(table.collectionType),
 }));
 
+// AI Training Sessions - Track training and validation activities
+export const aiTrainingSessions = w3suiteSchema.table("ai_training_sessions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Session Info
+  sessionType: varchar("session_type", { length: 50 }).notNull(), // validation, url_import, media_upload
+  sessionStatus: varchar("session_status", { length: 50 }).default('active').notNull(), // active, completed, failed
+  
+  // Training Data
+  sourceUrl: text("source_url"), // For URL imports
+  sourceFile: text("source_file"), // For file uploads
+  contentType: varchar("content_type", { length: 100 }), // MIME type
+  
+  // Processing Details
+  totalChunks: integer("total_chunks").default(0),
+  processedChunks: integer("processed_chunks").default(0),
+  failedChunks: integer("failed_chunks").default(0),
+  
+  // Validation Data (for response validation sessions)
+  originalQuery: text("original_query"),
+  originalResponse: text("original_response"),
+  correctedResponse: text("corrected_response"),
+  validationFeedback: jsonb("validation_feedback"),
+  
+  // Metrics
+  processingTimeMs: integer("processing_time_ms"),
+  tokensProcessed: integer("tokens_processed").default(0),
+  embeddingsCreated: integer("embeddings_created").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (table) => ({
+  tenantUserIndex: index("ai_training_sessions_tenant_user_idx").on(table.tenantId, table.userId),
+  statusIndex: index("ai_training_sessions_status_idx").on(table.sessionStatus),
+  typeIndex: index("ai_training_sessions_type_idx").on(table.sessionType),
+  timestampIndex: index("ai_training_sessions_timestamp_idx").on(table.createdAt),
+}));
+
 // AI System Relations
 export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
   tenant: one(tenants, { fields: [aiSettings.tenantId], references: [tenants.id] }),
@@ -2751,6 +2824,11 @@ export const vectorSearchQueriesRelations = relations(vectorSearchQueries, ({ on
 export const vectorCollectionsRelations = relations(vectorCollections, ({ one }) => ({
   tenant: one(tenants, { fields: [vectorCollections.tenantId], references: [tenants.id] }),
   createdBy: one(users, { fields: [vectorCollections.createdBy], references: [users.id] }),
+}));
+
+export const aiTrainingSessionsRelations = relations(aiTrainingSessions, ({ one }) => ({
+  tenant: one(tenants, { fields: [aiTrainingSessions.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [aiTrainingSessions.userId], references: [users.id] }),
 }));
 
 // AI Insert Schemas and Types
@@ -2801,3 +2879,11 @@ export const insertVectorCollectionSchema = createInsertSchema(vectorCollections
 });
 export type InsertVectorCollection = z.infer<typeof insertVectorCollectionSchema>;
 export type VectorCollection = typeof vectorCollections.$inferSelect;
+
+export const insertAITrainingSessionSchema = createInsertSchema(aiTrainingSessions).omit({ 
+  id: true, 
+  createdAt: true,
+  completedAt: true 
+});
+export type InsertAITrainingSession = z.infer<typeof insertAITrainingSessionSchema>;
+export type AITrainingSession = typeof aiTrainingSessions.$inferSelect;
