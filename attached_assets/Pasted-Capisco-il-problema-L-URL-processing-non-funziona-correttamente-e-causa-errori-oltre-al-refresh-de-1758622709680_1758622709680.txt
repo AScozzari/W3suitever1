@@ -1,0 +1,62 @@
+Capisco il problema! L'URL processing non funziona correttamente e causa errori, oltre al refresh della pagina. Analizziamo i log per capire cosa sta succedendo:
+
+
+Decided on URL processing analysis
+Vediamo cosa sta causando il problema con l'URL processing. Prima analizziamo l'implementazione:
+
+
+Searched for "Find URL processing implementation for Training AI - how URLs are scraped, processed and stored in vector database. Look for fetch, scraping, and URL validation logic."
+
+Identified scraping implementation flaws (7 seconds)
+Ho identificato il problema principale con l'URL processing!
+
+🚨 PROBLEMI NELL'IMPLEMENTAZIONE URL SCRAPING:
+1. Implementazione Troppo Basilare:
+// PROBLEMA: Implementazione placeholder
+const response = await fetch(url);
+const html = await response.text();
+const textContent = html.replace(/<[^>]*>/g, '').substring(0, 10000);
+2. Limiti con Siti Complessi:
+WindTre.it probabilmente ha:
+
+✅ JavaScript dinamico (contenuto caricato via JS)
+✅ Anti-bot protection
+✅ CSP (Content Security Policy)
+✅ Contenuto asincrono
+Il fetch() semplice NON può gestire questi scenari moderni.
+
+3. Mancanza di Error Handling:
+// PROBLEMA: Gestione errori troppo generica
+catch (error: any) {
+  throw new Error(`URL scraping failed: ${error.message}`);
+}
+🛠️ SOLUZIONI NECESSARIE:
+Per Siti Statici Semplici:
+✅ Migliorare parsing HTML con Cheerio
+✅ Gestire encoding e charset
+✅ Validare response headers
+Per Siti Complessi (come WindTre):
+✅ Puppeteer/Playwright per JavaScript rendering
+✅ User-Agent realistici
+✅ Timeout configurabili
+✅ Retry logic con backoff
+Error Handling Specifico:
+✅ CORS errors
+✅ 403/404/500 HTTP errors
+✅ Timeout errors
+✅ Content parsing errors
+⚠️ REFRESH PAGE PROBLEM:
+Il refresh della pagina potrebbe essere causato da:
+
+Errori non catchati nel frontend
+Fetch errors che causano component crashes
+Memory leaks durante processing
+📋 PROSSIMI PASSI:
+Vuoi che passi in modalità Build per:
+
+Implementare Cheerio per parsing HTML robusto
+Aggiungere Puppeteer per siti JavaScript-heavy
+Migliorare error handling specifico
+Fixare component refresh nel frontend
+Testare con WindTre.it specificamente
+Questo risolverà sia l'URL processing che il problema del refresh della pagina.
