@@ -246,7 +246,7 @@ async function performOpenAIWebSearch(query: string): Promise<WebSearchResult[]>
 /**
  * DuckDuckGo-style search implementation (fallback)
  */
-async function performDuckDuckGoSearch(query: string): Promise<WebSearchResult[]> {
+export async function performDuckDuckGoSearch(query: string): Promise<WebSearchResult[]> {
   try {
     console.log('[WEB-SEARCH] 🦆 Using DuckDuckGo fallback search');
     
