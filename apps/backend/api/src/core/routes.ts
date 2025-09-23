@@ -9642,21 +9642,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const updates = req.body;
       
+      // Sanitize timestamp fields - remove them from updates as they should be auto-managed
+      const sanitizedUpdates = { ...updates };
+      delete sanitizedUpdates.createdAt;
+      delete sanitizedUpdates.updatedAt;
+      delete sanitizedUpdates.id;
+      
+      // Handle lastConnectionTest if present
+      if (sanitizedUpdates.lastConnectionTest && typeof sanitizedUpdates.lastConnectionTest === 'string') {
+        sanitizedUpdates.lastConnectionTest = new Date(sanitizedUpdates.lastConnectionTest);
+      }
+      
       // Check if settings exist, create if not
       let settings = await storage.getAISettings(tenantId);
       if (!settings) {
         settings = await storage.createAISettings({
-          ...updates,
-          tenantId,
-          updatedAt: new Date()
+          ...sanitizedUpdates,
+          tenantId
         });
       } else {
-        settings = await storage.updateAISettings(tenantId, updates);
+        settings = await storage.updateAISettings(tenantId, sanitizedUpdates);
       }
       
       res.json({ success: true, data: settings });
     } catch (error) {
       handleApiError(error, res, 'aggiornamento impostazioni AI');
+    }
+  });
+
+  // AI Connection Test
+  app.post('/api/ai/test-connection', ...authWithRBAC, requirePermission('ai.settings.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { apiKey } = req.body;
+      
+      // Use provided API key or get from settings
+      let testApiKey = apiKey;
+      if (!testApiKey) {
+        const settings = await storage.getAISettings(tenantId);
+        testApiKey = settings?.openaiApiKey || process.env.OPENAI_API_KEY;
+      }
+      
+      if (!testApiKey) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'API key mancante',
+          connectionStatus: 'error'
+        });
+      }
+
+      // Test OpenAI connection
+      const { OpenAI } = require('openai');
+      const openai = new OpenAI({ apiKey: testApiKey });
+      
+      const startTime = Date.now();
+      const testResponse = await openai.chat.completions.create({
+        model: 'gpt-4-turbo',
+        messages: [{ role: 'user', content: 'Test connection. Respond with "OK".' }],
+        max_tokens: 10
+      });
+      const responseTime = Date.now() - startTime;
+      
+      // Update connection status in settings
+      const connectionTestResult = {
+        success: true,
+        responseTime,
+        testResponse: testResponse.choices[0]?.message?.content || 'OK',
+        timestamp: new Date().toISOString()
+      };
+      
+      await storage.updateAISettings(tenantId, {
+        apiConnectionStatus: 'connected' as any,
+        lastConnectionTest: new Date(),
+        connectionTestResult
+      });
+      
+      res.json({ 
+        success: true, 
+        connectionStatus: 'connected',
+        responseTime,
+        testResponse: connectionTestResult.testResponse
+      });
+    } catch (error: any) {
+      console.error('AI connection test failed:', error);
+      
+      // Update connection status to error
+      try {
+        await storage.updateAISettings(req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID, {
+          apiConnectionStatus: 'error' as any,
+          lastConnectionTest: new Date(),
+          connectionTestResult: {
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (updateError) {
+        console.error('Failed to update connection status:', updateError);
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Test connessione fallito',
+        connectionStatus: 'error'
+      });
     }
   });
   

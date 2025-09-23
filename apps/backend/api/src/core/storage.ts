@@ -2676,49 +2676,62 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAISettings(tenantId: string): Promise<AISettings | null> {
-    // Metodo temporaneo per evitare errori di colonne - ritorna dati di default
     try {
-      return {
-        id: 'temp-ai-settings',
-        tenantId: tenantId,
-        openaiModel: 'gpt-4' as any,
-        apiConnectionStatus: 'disconnected' as any,
-        lastConnectionTest: null,
-        featuresEnabled: {
-          chat_assistant: true,
-          document_analysis: true,
-          natural_queries: true,
-          financial_forecasting: false,
-          web_search: false,
-          code_interpreter: false,
-          file_search: true,
-          image_generation: false,
-          voice_assistant: false,
-          realtime_streaming: false,
-          background_processing: true
-        },
-        maxTokensPerResponse: 1000,
-        responseCreativity: 7,
-        responseLengthLimit: 4000,
-        monthlyTokenLimit: 100000,
-        currentMonthUsage: 0,
-        usageResetDate: null,
-        privacyMode: 'standard' as any,
-        chatRetentionDays: 30,
-        dataSharingOpenai: false,
-        contextSettings: {
-          hr_context_enabled: true,
-          finance_context_enabled: true,
-          business_rules_integration: false,
-          custom_instructions: ""
-        },
-        createdAt: new Date(),
-        updatedAt: new Date()
-      } as AISettings;
+      await this.setTenantContext(tenantId);
+      const [result] = await db.select().from(aiSettings).where(eq(aiSettings.tenantId, tenantId)).limit(1);
+      
+      if (!result) {
+        // Create default settings for the tenant if none exist
+        return await this.createDefaultAISettings(tenantId);
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error in getAISettings:', error);
       return null;
     }
+  }
+
+  private async createDefaultAISettings(tenantId: string): Promise<AISettings> {
+    const defaultSettings = {
+      tenantId,
+      openaiModel: 'gpt-4-turbo' as any,
+      openaiApiKey: process.env.OPENAI_API_KEY, // Use environment API key for staging tenant
+      apiConnectionStatus: 'disconnected' as any,
+      lastConnectionTest: null,
+      connectionTestResult: null,
+      featuresEnabled: {
+        chat_assistant: true,
+        document_analysis: true,
+        natural_queries: true,
+        financial_forecasting: false,
+        web_search: false,
+        code_interpreter: false,
+        file_search: true,
+        image_generation: false,
+        voice_assistant: false,
+        realtime_streaming: false,
+        background_processing: true
+      },
+      maxTokensPerResponse: 4000,
+      responseCreativity: 7,
+      responseLengthLimit: 4000,
+      monthlyTokenLimit: 100000,
+      currentMonthUsage: 0,
+      usageResetDate: null,
+      privacyMode: 'standard' as any,
+      chatRetentionDays: 30,
+      dataSharingOpenai: false,
+      contextSettings: {
+        hr_context_enabled: true,
+        finance_context_enabled: true,
+        business_rules_integration: false,
+        custom_instructions: ""
+      }
+    };
+
+    const [result] = await db.insert(aiSettings).values(defaultSettings).returning();
+    return result;
   }
   
   async updateAISettings(tenantId: string, updates: Partial<InsertAISettings>): Promise<AISettings> {
