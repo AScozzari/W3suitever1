@@ -219,12 +219,11 @@ export default function AISettingsPage() {
   // Upload media mutation
   const uploadMediaMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch('/api/ai/training/media', {
+      return await apiRequest('/api/ai/training/media', {
         method: 'POST',
         body: formData,
+        headers: {} // Let FormData set its own content-type boundary
       });
-      if (!response.ok) throw new Error('Failed to upload media');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });
@@ -257,18 +256,15 @@ export default function AISettingsPage() {
     setConnectionTestResult(null);
 
     try {
-      const response = await fetch('/api/ai/test-connection', {
+      const result = await apiRequest('/api/ai/test-connection', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: { 
           apiKey: formData.openaiApiKey,
           model: formData.openaiModel || 'gpt-4-turbo'
-        }),
+        },
       });
-
-      const result = await response.json();
       
-      if (response.ok && result.success) {
+      if (result.success) {
         setConnectionTestResult({ success: true, message: 'Connessione riuscita! API key valida.' });
         setFormData(prev => ({ 
           ...prev, 
