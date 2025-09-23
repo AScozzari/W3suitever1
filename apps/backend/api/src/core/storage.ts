@@ -2923,23 +2923,57 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAITrainingSession(
-    sessionId: string, 
+    sessionId: string,
+    tenantId: string,
     updates: Partial<InsertAITrainingSession>
   ): Promise<AITrainingSession | null> {
     try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
       const [session] = await db
         .update(aiTrainingSessions)
         .set({ ...updates, updatedAt: new Date() })
-        .where(eq(aiTrainingSessions.id, sessionId))
+        .where(and(
+          eq(aiTrainingSessions.id, sessionId),
+          eq(aiTrainingSessions.tenantId, tenantId)
+        ))
         .returning();
       
       if (session) {
-        console.log(`[AI-TRAINING] ✅ Updated training session ${sessionId}`);
+        console.log(`[AI-TRAINING] ✅ Updated training session ${sessionId} for tenant ${tenantId}`);
       }
       return session || null;
     } catch (error) {
       console.error('[AI-TRAINING] ❌ Error updating training session:', error);
       return null;
+    }
+  }
+
+  async deleteAITrainingSession(
+    sessionId: string,
+    tenantId: string
+  ): Promise<boolean> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const [deletedSession] = await db
+        .delete(aiTrainingSessions)
+        .where(and(
+          eq(aiTrainingSessions.id, sessionId),
+          eq(aiTrainingSessions.tenantId, tenantId)
+        ))
+        .returning();
+      
+      if (deletedSession) {
+        console.log(`[AI-TRAINING] 🗑️ Deleted training session ${sessionId} for tenant ${tenantId}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('[AI-TRAINING] ❌ Error deleting training session:', error);
+      return false;
     }
   }
 

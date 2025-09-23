@@ -10200,7 +10200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update training session if provided
       if (sessionId) {
-        await storage.updateAITrainingSession(sessionId, {
+        await storage.updateAITrainingSession(sessionId, tenantId, {
           validationFeedback: feedback,
           correctedResponse: correctedResponse,
           sessionStatus: 'completed',
@@ -10434,6 +10434,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
+  
+  // Delete Training Session
+  app.delete('/api/ai/training/sessions/:id', ...authWithRBAC, requirePermission('ai.training.create'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const sessionId = req.params.id;
+      
+      if (!sessionId) {
+        return res.status(400).json({ error: 'Session ID richiesto' });
+      }
+      
+      const deleted = await storage.deleteAITrainingSession(sessionId, tenantId);
+      
+      if (deleted) {
+        res.json({ 
+          success: true, 
+          message: 'Sessione di training eliminata con successo' 
+        });
+      } else {
+        res.status(404).json({ 
+          error: 'Sessione non trovata o non autorizzato' 
+        });
+      }
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione sessione training');
+    }
+  });
   
   // Get Training Statistics
   app.get('/api/ai/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {

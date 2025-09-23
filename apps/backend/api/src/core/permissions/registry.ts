@@ -302,6 +302,13 @@ export const PERMISSIONS = {
       web: 'ai.search.web',
       internal: 'ai.search.internal'
     },
+    training: {
+      view: 'ai.training.view',
+      create: 'ai.training.create',
+      validate: 'ai.training.validate',
+      url: 'ai.training.url',
+      media: 'ai.training.media'
+    },
     admin: {
       keys: 'ai.admin.keys',
       monitor: 'ai.admin.monitor',

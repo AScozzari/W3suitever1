@@ -1,0 +1,35 @@
+{X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=aDyt4M7eyG3Q' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:296 [API-REQUEST] 📡 Making API request to: /api/ai/training/url with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:328  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/ai/training/url 400 (Bad Request)
+apiRequest @ queryClient.ts:328
+mutationFn @ AISettingsPage.tsx:144
+fn @ @tanstack_react-query.js?v=f01df77f:1998
+run @ @tanstack_react-query.js?v=f01df77f:795
+start @ @tanstack_react-query.js?v=f01df77f:838
+execute @ @tanstack_react-query.js?v=f01df77f:2039
+await in execute
+mutate @ @tanstack_react-query.js?v=f01df77f:2378
+handleProcessUrl @ AISettingsPage.tsx:326
+callCallback2 @ chunk-ZHRYBLGQ.js?v=f01df77f:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=f01df77f:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=f01df77f:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=f01df77f:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=f01df77f:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=f01df77f:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=f01df77f:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=f01df77f:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=f01df77f:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=f01df77f:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=f01df77f:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=f01df77f:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=f01df77f:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=f01df77f:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=f01df77f:5449Understand this error
+queryClient.ts:354 Uncaught (in promise) Error: 400: Bad Request
+    at apiRequest (queryClient.ts:354:11)
+    at async Object.mutationFn (AISettingsPage.tsx:144:14)

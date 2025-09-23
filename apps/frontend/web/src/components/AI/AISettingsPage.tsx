@@ -192,6 +192,33 @@ export default function AISettingsPage() {
     },
   });
 
+  // Delete training session mutation
+  const deleteSessionMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      return await apiRequest(`/api/ai/training/sessions/${sessionId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] });
+      
+      toast({
+        title: "🗑️ Sessione Eliminata",
+        description: "La sessione di training è stata eliminata con successo",
+        duration: 3000,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "❌ Errore Eliminazione",
+        description: error.message,
+        variant: "destructive",
+        duration: 5000,
+      });
+    },
+  });
+
   // Upload media mutation
   const uploadMediaMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -915,12 +942,15 @@ export default function AISettingsPage() {
                     </div>
                   </div>
                   
-                  {/* Training Sessions Storyboard */}
+                  {/* Training Sessions Storyboard - URL e Documenti */}
                   <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-2">
                         <Database className="w-5 h-5 text-blue-600" />
-                        <h5 className="font-semibold text-gray-900">Storico Documenti Processati</h5>
+                        <h5 className="font-semibold text-gray-900">Storyboard Training AI</h5>
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                          URL • Documenti • Media
+                        </span>
                       </div>
                       <span className="text-sm text-gray-500">
                         {trainingSessions?.data?.length || 0} sessioni trovate
@@ -933,48 +963,105 @@ export default function AISettingsPage() {
                         <span className="ml-2 text-sm text-gray-600">Caricamento sessioni...</span>
                       </div>
                     ) : trainingSessions?.data?.length > 0 ? (
-                      <div className="max-h-64 overflow-y-auto space-y-3">
-                        {trainingSessions.data.map((session: any, index: number) => (
-                          <div key={session.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-2 h-2 rounded-full ${
-                                session.status === 'completed' ? 'bg-green-500' :
-                                session.status === 'processing' ? 'bg-yellow-500' :
-                                session.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
-                              }`}></div>
-                              <div>
-                                <p className="font-medium text-sm text-gray-900">
-                                  {session.sessionType === 'url_ingestion' ? 'URL' :
-                                   session.sessionType === 'document_upload' ? 'Documento' :
-                                   session.sessionType === 'media_processing' ? 'Media' : 'Altro'}
-                                </p>
-                                <p className="text-xs text-gray-600 truncate max-w-xs">
-                                  {session.sourceUrl || session.fileName || session.content?.slice(0, 50) + '...' || 'N/A'}
-                                </p>
+                      <div className="max-h-80 overflow-y-auto space-y-3">
+                        {trainingSessions.data.map((session: any, index: number) => {
+                          const sessionType = session.sessionType || 'unknown';
+                          const sessionStatus = session.sessionStatus || session.status || 'unknown';
+                          
+                          return (
+                            <div key={session.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                              <div className="flex items-center space-x-3 flex-1">
+                                {/* Status Indicator */}
+                                <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                  sessionStatus === 'completed' ? 'bg-green-500' :
+                                  sessionStatus === 'processing' ? 'bg-yellow-500 animate-pulse' :
+                                  sessionStatus === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                                }`}></div>
+                                
+                                {/* Content Info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <span className="text-lg">
+                                      {sessionType === 'url_ingestion' ? '🌐' :
+                                       sessionType === 'document_upload' ? '📄' :
+                                       sessionType === 'media_processing' ? '🎬' : '📁'}
+                                    </span>
+                                    <p className="font-medium text-sm text-gray-900">
+                                      {sessionType === 'url_ingestion' ? 'URL Processato' :
+                                       sessionType === 'document_upload' ? 'Documento Caricato' :
+                                       sessionType === 'media_processing' ? 'Media Processato' : 'Contenuto Altro'}
+                                    </p>
+                                  </div>
+                                  <p className="text-xs text-gray-600 truncate">
+                                    {sessionType === 'url_ingestion' && session.sourceUrl ? (
+                                      <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                                        {session.sourceUrl.length > 50 ? session.sourceUrl.substring(0, 50) + '...' : session.sourceUrl}
+                                      </span>
+                                    ) : sessionType === 'document_upload' && session.fileName ? (
+                                      <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs">
+                                        📎 {session.fileName}
+                                      </span>
+                                    ) : sessionType === 'media_processing' && session.fileName ? (
+                                      <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs">
+                                        🎥 {session.fileName}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-500">
+                                        {session.content?.slice(0, 50) + '...' || 'Contenuto non disponibile'}
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Status and Actions */}
+                              <div className="flex items-center space-x-3">
+                                <div className="text-right">
+                                  <p className="text-xs text-gray-500">
+                                    {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT', {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }) : 'N/A'}
+                                  </p>
+                                  <p className={`text-xs font-medium ${
+                                    sessionStatus === 'completed' ? 'text-green-600' :
+                                    sessionStatus === 'processing' ? 'text-yellow-600' :
+                                    sessionStatus === 'failed' ? 'text-red-600' : 'text-gray-600'
+                                  }`}>
+                                    {sessionStatus === 'completed' ? '✅ Completato' :
+                                     sessionStatus === 'processing' ? '⏳ In corso...' :
+                                     sessionStatus === 'failed' ? '❌ Fallito' : '❓ Sconosciuto'}
+                                  </p>
+                                </div>
+                                
+                                {/* Delete Button */}
+                                {session.id && (
+                                  <button
+                                    onClick={() => deleteSessionMutation.mutate(session.id)}
+                                    disabled={deleteSessionMutation.isPending}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                    title="Elimina sessione"
+                                    data-testid={`button-delete-session-${session.id}`}
+                                  >
+                                    {deleteSessionMutation.isPending ? (
+                                      <RefreshCw className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                )}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-xs text-gray-500">
-                                {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT') : 'N/A'}
-                              </p>
-                              <p className="text-xs font-medium ${
-                                session.status === 'completed' ? 'text-green-600' :
-                                session.status === 'processing' ? 'text-yellow-600' :
-                                session.status === 'failed' ? 'text-red-600' : 'text-gray-600'
-                              }">
-                                {session.status === 'completed' ? 'Completato' :
-                                 session.status === 'processing' ? 'In corso...' :
-                                 session.status === 'failed' ? 'Fallito' : 'Sconosciuto'}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-8">
                         <Database className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500 text-sm">Nessun documento processato ancora</p>
-                        <p className="text-gray-400 text-xs mt-1">I documenti caricati e le URL processate appariranno qui</p>
+                        <p className="text-gray-500 text-sm">Nessun contenuto processato ancora</p>
+                        <p className="text-gray-400 text-xs mt-1">Le URL processate, documenti caricati e media appariranno qui</p>
                       </div>
                     )}
                   </div>
