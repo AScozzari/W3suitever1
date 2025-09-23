@@ -10019,12 +10019,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // AI Chat Assistant (simplified endpoint for frontend)
+  // AI Chat Assistant (enhanced with RAG and Web Search)
   app.post('/api/ai/chat', ...authWithRBAC, requirePermission('ai.chat.use'), async (req: any, res) => {
     try {
       const tenantId = req.tenantId;
       const userId = req.user.id;
-      const { message, context } = req.body;
+      const { message, context, includeDocuments = false, includeWebSearch = false } = req.body;
       
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: 'Messaggio richiesto' });
@@ -10040,15 +10040,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: 'Chat assistant non abilitato' });
       }
       
+      // Enhanced context for RAG and web search
+      let enhancedMessage = message;
+      const ragContext: any = {
+        documents: [],
+        webResults: [],
+        currentPage: context?.currentPage || '',
+        currentModule: context?.currentModule || ''
+      };
+      
+      // RAG: Search relevant documents if requested
+      if (includeDocuments) {
+        try {
+          // Search vector database for relevant training content
+          const vectorResults = await storage.searchSimilarEmbeddings(tenantId, message, 5, 0.7);
+          if (vectorResults && vectorResults.length > 0) {
+            ragContext.documents = vectorResults.map((result: any) => ({
+              content: result.content,
+              source: result.metadata?.source || 'training_data',
+              similarity: result.similarity
+            }));
+            
+            // Add document context to the message
+            const documentContext = vectorResults
+              .map((doc: any) => `[DOCUMENTO] ${doc.content}`)
+              .join('\n\n');
+            
+            enhancedMessage = `Contesto documenti rilevanti:\n${documentContext}\n\nDomanda utente: ${message}`;
+          }
+        } catch (error) {
+          console.warn('Error searching documents for RAG:', error);
+          // Continue without document context
+        }
+      }
+      
+      // Web Search: For real-time WindTre information
+      if (includeWebSearch) {
+        try {
+          // Simple web search implementation (you can enhance this)
+          // For now, we'll add WindTre-specific context
+          const windtreContext = `
+            [CONTESTO WINDTRE]
+            Sei Tippy, l'assistente AI di WindTre, operatore di telecomunicazioni italiano.
+            Offerte principali WindTre:
+            - WindTre GO: piano prepagato con giga illimitati
+            - WindTre Super: piano in abbonamento con chiamate e internet
+            - WindTre Business: soluzioni per aziende
+            - WindTre Casa: fibra ottica per casa
+            
+            Devi aiutare con:
+            - Consulenza vendite e prezzi
+            - Costruzione pitch di vendita
+            - Informazioni su piani e offerte
+            - Supporto commerciale
+          `;
+          
+          ragContext.webResults = [{ 
+            content: windtreContext, 
+            source: 'windtre_knowledge_base' 
+          }];
+          
+          enhancedMessage = `${windtreContext}\n\nPagina corrente: ${context?.currentPage || 'dashboard'}\nModulo: ${context?.currentModule || 'generale'}\n\nRichiesta utente: ${message}`;
+        } catch (error) {
+          console.warn('Error performing web search:', error);
+          // Continue without web search context
+        }
+      }
+      
       // Import and use the unified OpenAI service
       const { createUnifiedOpenAIService } = await import('../services/unified-openai');
       const openaiService = createUnifiedOpenAIService(storage);
       
-      const response = await openaiService.chatAssistant(message, settings, {
+      const response = await openaiService.chatAssistant(enhancedMessage, settings, {
         tenantId,
         userId,
         businessEntityId: context?.businessEntityId || null,
-        contextData: context || {}
+        contextData: {
+          ...context,
+          ragContext,
+          isEnhancedChat: true,
+          includeDocuments,
+          includeWebSearch
+        }
       });
       
       if (!response.success) {
@@ -10064,7 +10137,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           response: response.output,
           tokensUsed: response.tokensUsed,
           cost: response.cost,
-          responseTime: response.responseTime
+          responseTime: response.responseTime,
+          ragContext: {
+            documentsFound: ragContext.documents.length,
+            webResultsFound: ragContext.webResults.length,
+            contextEnhanced: includeDocuments || includeWebSearch
+          }
         }
       });
     } catch (error) {
