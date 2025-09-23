@@ -138,10 +138,16 @@ export default function HRCalendar({ className }: HRCalendarProps) {
 
   // ✅ FASE 1.2: Trasforma eventi unificati dal backend in formato FullCalendar
   const calendarEvents = useMemo(() => {
-    console.log('🔍 [CALENDAR-DEBUG] backendEvents received:', backendEvents?.length || 0, 'events');
-    console.log('🔍 [CALENDAR-DEBUG] Sample event:', backendEvents?.[0]);
+    console.log('🔍 [CALENDAR-DEBUG] backendEvents received:', backendEvents);
+    console.log('🔍 [CALENDAR-DEBUG] backendEvents type:', typeof backendEvents);
+    console.log('🔍 [CALENDAR-DEBUG] backendEvents isArray:', Array.isArray(backendEvents));
     
-    const mapped = (backendEvents as any[]).map((event: any) => ({
+    // ✅ FIX: Assicurati che backendEvents sia sempre un array
+    const eventsArray = Array.isArray(backendEvents) ? backendEvents : [];
+    console.log('🔍 [CALENDAR-DEBUG] eventsArray length:', eventsArray.length);
+    console.log('🔍 [CALENDAR-DEBUG] Sample event:', eventsArray[0]);
+    
+    const mapped = eventsArray.map((event: any) => ({
       id: event.id,
       title: event.title,
       start: event.startDate,
