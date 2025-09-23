@@ -1,10 +1,71 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Send, X, Minimize2, Bot, User, MessageCircle } from 'lucide-react';
+import { Send, X, Minimize2, Bot, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-// Temporarily using fallback icon - will fix image path later
-// import tippyIcon from '@assets/tippy_1758625115704.png';
+
+// Tippy SVG Icon Component
+const TippyIcon = ({ size = 40, style = {} }: { size?: number; style?: React.CSSProperties }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 100 100" 
+    style={style}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Gradient definitions */}
+    <defs>
+      <radialGradient id="tippyGradient" cx="50%" cy="40%" r="50%">
+        <stop offset="0%" stopColor="#ff8533" />
+        <stop offset="100%" stopColor="#FF6900" />
+      </radialGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    
+    {/* Main head circle */}
+    <circle 
+      cx="50" 
+      cy="50" 
+      r="35" 
+      fill="url(#tippyGradient)"
+      filter="url(#glow)"
+    />
+    
+    {/* White highlight for 3D effect */}
+    <ellipse 
+      cx="45" 
+      cy="35" 
+      rx="15" 
+      ry="12" 
+      fill="rgba(255,255,255,0.3)"
+    />
+    
+    {/* Eyes */}
+    <circle cx="38" cy="45" r="5" fill="white" />
+    <circle cx="62" cy="45" r="5" fill="white" />
+    <circle cx="39" cy="46" r="3" fill="#333" />
+    <circle cx="61" cy="46" r="3" fill="#333" />
+    
+    {/* Smile */}
+    <path 
+      d="M 35 58 Q 50 68 65 58" 
+      stroke="#333" 
+      strokeWidth="2.5" 
+      fill="none" 
+      strokeLinecap="round"
+    />
+    
+    {/* Small antenna/hair on top */}
+    <ellipse cx="50" cy="18" rx="3" ry="5" fill="#FF6900" />
+    <circle cx="50" cy="14" r="2" fill="#ff8533" />
+  </svg>
+);
 
 interface Message {
   id: string;
@@ -184,10 +245,7 @@ Come posso aiutarti oggi?`,
           title="Chiedimi qualsiasi cosa!"
           data-testid="button-open-chat"
         >
-          <MessageCircle 
-            size={24} 
-            color="white"
-          />
+          <TippyIcon size={40} />
         </button>
         
         {/* CSS for pulse animation */}
@@ -259,11 +317,11 @@ Come posso aiutarti oggi?`,
                 justifyContent: 'center'
               }}
             >
-              <MessageCircle size={18} color="white" />
+              <TippyIcon size={28} />
             </div>
             <div>
               <p style={{ color: 'white', fontWeight: 600, fontSize: '14px', margin: 0 }}>
-                Tippy WindTre
+                Tippy
               </p>
               <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', margin: 0 }}>
                 Assistente AI
@@ -345,7 +403,7 @@ Come posso aiutarti oggi?`,
                     {message.sender === 'user' ? (
                       <User size={16} color="white" />
                     ) : (
-                      <MessageCircle size={16} color="white" />
+                      <TippyIcon size={20} />
                     )}
                   </div>
                   
