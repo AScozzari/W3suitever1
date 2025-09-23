@@ -1,0 +1,59 @@
+{X-Tenant-ID: '00000000-0000-0000-0000-000000000001', X-Auth-Session: 'authenticated', X-Demo-User: 'demo-user'}
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:296 [API-REQUEST] 📡 Making API request to: /api/ai/training/url with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:328  POST https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/ai/training/url 400 (Bad Request)
+apiRequest @ queryClient.ts:328
+mutationFn @ AISettingsPage.tsx:144
+fn @ @tanstack_react-query.js?v=11b0b4f3:1998
+run @ @tanstack_react-query.js?v=11b0b4f3:795
+start @ @tanstack_react-query.js?v=11b0b4f3:838
+execute @ @tanstack_react-query.js?v=11b0b4f3:2039
+await in execute
+mutate @ @tanstack_react-query.js?v=11b0b4f3:2378
+handleProcessUrl @ AISettingsPage.tsx:353
+callCallback2 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5449Understand this error
+queryClient.ts:354 Uncaught (in promise) Error: 400: Bad Request
+    at apiRequest (queryClient.ts:354:11)
+    at async Object.mutationFn (AISettingsPage.tsx:144:14)
+apiRequest @ queryClient.ts:354
+await in apiRequest
+mutationFn @ AISettingsPage.tsx:144
+fn @ @tanstack_react-query.js?v=11b0b4f3:1998
+run @ @tanstack_react-query.js?v=11b0b4f3:795
+start @ @tanstack_react-query.js?v=11b0b4f3:838
+execute @ @tanstack_react-query.js?v=11b0b4f3:2039
+await in execute
+mutate @ @tanstack_react-query.js?v=11b0b4f3:2378
+handleProcessUrl @ AISettingsPage.tsx:353
+callCallback2 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3736
+executeDispatch @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7014
+processDispatchQueueItemsInOrder @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7034
+processDispatchQueue @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7043
+dispatchEventsForPlugins @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7051
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7174
+batchedUpdates$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18913
+batchedUpdates @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3579
+dispatchEventForPluginEventSystem @ chunk-ZHRYBLGQ.js?v=11b0b4f3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5478
+dispatchEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5472
+dispatchDiscreteEvent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:5449Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/notifications/unread-count
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-
