@@ -10,26 +10,26 @@ import {
 
 interface AISettings {
   tenantId: string;
-  openaiModel: string;
+  openaiModel?: string;
   openaiApiKey?: string;
-  apiConnectionStatus: 'connected' | 'disconnected' | 'error';
+  apiConnectionStatus?: 'connected' | 'disconnected' | 'error';
   lastConnectionTest?: string;
   connectionTestResult?: any;
-  maxTokensPerResponse: number;
-  temperatureDefault: number;
-  featuresEnabled: {
-    chat_assistant: boolean;
-    document_analysis: boolean;
-    financial_forecasting: boolean;
-    web_search: boolean;
-    code_interpreter: boolean;
+  maxTokensPerResponse?: number;
+  temperatureDefault?: number;
+  featuresEnabled?: {
+    chat_assistant?: boolean;
+    document_analysis?: boolean;
+    financial_forecasting?: boolean;
+    web_search?: boolean;
+    code_interpreter?: boolean;
   };
-  privacySettings: {
-    dataRetentionDays: number;
-    allowDataTraining: boolean;
-    anonymizeConversations: boolean;
+  privacySettings?: {
+    dataRetentionDays?: number;
+    allowDataTraining?: boolean;
+    anonymizeConversations?: boolean;
   };
-  isActive: boolean;
+  isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -61,19 +61,19 @@ export default function AISettingsPage() {
   const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Fetch AI settings
-  const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery({
+  const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery<{success: boolean, data: AISettings}>({
     queryKey: ['/api/ai/settings'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Fetch usage statistics
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<{success: boolean, data: AIUsageStats}>({
     queryKey: ['/api/ai/usage/stats'],
     refetchInterval: 60000, // Refresh every minute
   });
 
   // Fetch usage logs
-  const { data: usageLogs, isLoading: logsLoading } = useQuery({
+  const { data: usageLogs, isLoading: logsLoading } = useQuery<{success: boolean, data: AIUsageLog[]}>({
     queryKey: ['/api/ai/usage/logs'],
     refetchInterval: 30000,
   });
@@ -693,7 +693,7 @@ export default function AISettingsPage() {
   );
 
   // Fetch AI conversations for archive
-  const { data: conversations, isLoading: conversationsLoading } = useQuery({
+  const { data: conversations, isLoading: conversationsLoading } = useQuery<{success: boolean, data: any[]}>({
     queryKey: ['/api/ai/conversations'],
     refetchInterval: 60000,
     enabled: activeTab === 'conversations'
