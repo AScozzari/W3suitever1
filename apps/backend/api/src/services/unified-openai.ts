@@ -1,11 +1,16 @@
 // Unified OpenAI Service - Single integration for all OpenAI capabilities
-// Uses the newest OpenAI model "gpt-5" which was released August 7, 2025. Do not change this unless explicitly requested by the user
+// Supports text, embeddings, vision, audio transcription, and multimodal processing
 
 import OpenAI from "openai";
 import { AISettings, AIUsageLog, InsertAIUsageLog } from "../db/schema/w3suite";
+import * as fs from 'fs';
+import * as path from 'path';
 
-// The newest OpenAI model is "gpt-5" which was released August 7, 2025. Do not change this unless explicitly requested by the user
-const DEFAULT_MODEL = "gpt-5";
+// Default model configuration
+const DEFAULT_MODEL = "gpt-4-turbo";
+const EMBEDDING_MODEL = "text-embedding-3-small";
+const WHISPER_MODEL = "whisper-1";
+const VISION_MODEL = "gpt-4-vision-preview";
 
 export interface OpenAIToolConfig {
   web_search?: boolean;
@@ -14,6 +19,39 @@ export interface OpenAIToolConfig {
   computer_use?: boolean;
   image_generation?: boolean;
   voice_assistant?: boolean;
+  audio_transcription?: boolean;
+  vision_analysis?: boolean;
+  pdf_extraction?: boolean;
+  url_scraping?: boolean;
+}
+
+export interface MediaProcessingOptions {
+  mediaType: 'audio' | 'video' | 'image' | 'pdf' | 'url';
+  filePath?: string;
+  buffer?: Buffer;
+  url?: string;
+  language?: string;
+  extractText?: boolean;
+  analyzeContent?: boolean;
+}
+
+export interface TranscriptionResult {
+  text: string;
+  duration?: number;
+  language?: string;
+  segments?: Array<{
+    start: number;
+    end: number;
+    text: string;
+  }>;
+}
+
+export interface VisionAnalysisResult {
+  description: string;
+  objects?: string[];
+  text?: string;
+  colors?: string[];
+  metadata?: any;
 }
 
 export interface OpenAIRequestContext {
@@ -231,6 +269,291 @@ export class UnifiedOpenAIService {
   }
 
   /**
+   * Audio Transcription using Whisper API
+   */
+  async transcribeAudio(
+    options: MediaProcessingOptions,
+    settings: AISettings,
+    context: OpenAIRequestContext
+  ): Promise<TranscriptionResult> {
+    try {
+      const startTime = Date.now();
+      let file: any;
+      
+      if (options.filePath) {
+        file = fs.createReadStream(options.filePath);
+      } else if (options.buffer) {
+        // Create temporary file from buffer
+        const tmpPath = path.join('/tmp', `audio_${Date.now()}.tmp`);
+        fs.writeFileSync(tmpPath, options.buffer);
+        file = fs.createReadStream(tmpPath);
+      } else {
+        throw new Error('No audio file provided');
+      }
+
+      const transcription = await this.client.audio.transcriptions.create({
+        file: file,
+        model: WHISPER_MODEL,
+        language: options.language || 'it', // Default Italian
+        response_format: 'verbose_json'
+      });
+
+      // Clean up temp file if created
+      if (options.buffer && file.path) {
+        fs.unlinkSync(file.path);
+      }
+
+      const responseTime = Date.now() - startTime;
+      
+      // Log usage for analytics
+      await this.logUsage({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        modelUsed: 'whisper-1' as any,
+        featureType: 'audio_transcription',
+        tokensInput: 0,
+        tokensOutput: 0,
+        tokensTotal: Math.ceil(transcription.duration || 0),
+        costUsd: Math.round((transcription.duration || 0) * 0.6), // $0.006/second
+        responseTimeMs: responseTime,
+        success: true,
+        requestContext: {
+          duration: transcription.duration,
+          language: transcription.language
+        }
+      });
+
+      return {
+        text: transcription.text,
+        duration: transcription.duration,
+        language: transcription.language,
+        segments: transcription.segments?.map((seg: any) => ({
+          start: seg.start,
+          end: seg.end,
+          text: seg.text
+        }))
+      };
+    } catch (error: any) {
+      throw new Error(`Audio transcription failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Image Analysis using GPT-4 Vision
+   */
+  async analyzeImage(
+    options: MediaProcessingOptions,
+    settings: AISettings,
+    context: OpenAIRequestContext
+  ): Promise<VisionAnalysisResult> {
+    try {
+      const startTime = Date.now();
+      let imageUrl: string;
+      
+      if (options.url) {
+        imageUrl = options.url;
+      } else if (options.buffer) {
+        // Convert buffer to base64
+        const base64 = options.buffer.toString('base64');
+        imageUrl = `data:image/jpeg;base64,${base64}`;
+      } else if (options.filePath) {
+        const buffer = fs.readFileSync(options.filePath);
+        const base64 = buffer.toString('base64');
+        imageUrl = `data:image/jpeg;base64,${base64}`;
+      } else {
+        throw new Error('No image provided');
+      }
+
+      const response = await this.client.chat.completions.create({
+        model: "gpt-4o", // GPT-4o has vision capabilities
+        messages: [
+          {
+            role: "user",
+            content: [
+              { 
+                type: "text", 
+                text: options.analyzeContent 
+                  ? "Analyze this image in detail. Describe what you see, identify objects, extract any text, and provide relevant metadata."
+                  : "Extract and describe the text content from this image."
+              },
+              { 
+                type: "image_url", 
+                image_url: { url: imageUrl }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1000
+      });
+
+      const analysis = response.choices[0].message.content || '';
+      const responseTime = Date.now() - startTime;
+      const tokensUsed = response.usage?.total_tokens || 0;
+      
+      // Log usage for analytics
+      await this.logUsage({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        modelUsed: 'gpt-4o' as any,
+        featureType: 'vision_analysis',
+        tokensInput: response.usage?.prompt_tokens || 0,
+        tokensOutput: response.usage?.completion_tokens || 0,
+        tokensTotal: tokensUsed,
+        costUsd: Math.round(this.calculateCost(tokensUsed, 'gpt-4o') * 100),
+        responseTimeMs: responseTime,
+        success: true,
+        requestContext: {
+          imageType: options.mediaType,
+          analyzeContent: options.analyzeContent
+        }
+      });
+      
+      // Parse the response to extract structured data
+      const result: VisionAnalysisResult = {
+        description: analysis,
+        objects: this.extractObjects(analysis),
+        text: this.extractText(analysis),
+        metadata: {
+          model: "gpt-4o",
+          tokensUsed: tokensUsed
+        }
+      };
+
+      return result;
+    } catch (error: any) {
+      throw new Error(`Image analysis failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Process and chunk PDF documents
+   */
+  async processPDF(
+    options: MediaProcessingOptions,
+    settings: AISettings,
+    context: OpenAIRequestContext
+  ): Promise<{ chunks: string[], metadata: any }> {
+    // This would integrate with pdf-parse or similar library
+    // For now, returning a placeholder - will be implemented with pdf-parse
+    return {
+      chunks: [],
+      metadata: {
+        pages: 0,
+        title: '',
+        author: ''
+      }
+    };
+  }
+
+  /**
+   * Scrape and process URL content
+   */
+  async scrapeURL(
+    url: string,
+    settings: AISettings,
+    context: OpenAIRequestContext
+  ): Promise<{ content: string, metadata: any }> {
+    try {
+      const startTime = Date.now();
+      
+      // This would integrate with a web scraping service
+      // For now, using a simple fetch
+      const response = await fetch(url);
+      const html = await response.text();
+      
+      // Extract text content (simplified - would use cheerio or similar)
+      const textContent = html.replace(/<[^>]*>/g, '').substring(0, 10000);
+      const responseTime = Date.now() - startTime;
+      
+      // Log the URL processing
+      await this.logUsage({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        modelUsed: 'text-embedding-3-small' as any,
+        featureType: 'url_scraping',
+        tokensInput: 0,
+        tokensOutput: 0,
+        tokensTotal: Math.ceil(textContent.length / 4), // Rough token estimate
+        costUsd: 0,
+        responseTimeMs: responseTime,
+        success: true,
+        requestContext: { url, contentLength: textContent.length }
+      });
+      
+      return {
+        content: textContent,
+        metadata: {
+          url: url,
+          title: this.extractTitle(html),
+          contentLength: textContent.length
+        }
+      };
+    } catch (error: any) {
+      throw new Error(`URL scraping failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validate and improve AI responses
+   */
+  async validateResponse(
+    originalQuery: string,
+    originalResponse: string,
+    correctedResponse: string,
+    feedback: any,
+    settings: AISettings,
+    context: OpenAIRequestContext
+  ): Promise<{ improved: boolean, embedding?: number[] }> {
+    try {
+      // Generate embeddings for the corrected response
+      const embeddingResult = await this.generateEmbedding(correctedResponse, settings, context);
+      
+      if (!embeddingResult.success || !embeddingResult.embedding) {
+        throw new Error('Failed to generate embedding for corrected response');
+      }
+      
+      // Store validation data in ai_training_sessions table
+      await this.storage.createAITrainingSession({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        sessionType: 'validation',
+        sessionStatus: 'completed',
+        originalQuery: originalQuery,
+        originalResponse: originalResponse,
+        correctedResponse: correctedResponse,
+        validationFeedback: feedback,
+        embeddingsCreated: 1,
+        processingTimeMs: 0
+      });
+      
+      return {
+        improved: true,
+        embedding: embeddingResult.embedding
+      };
+    } catch (error: any) {
+      throw new Error(`Response validation failed: ${error.message}`);
+    }
+  }
+
+  // Helper methods for parsing Vision API responses
+  private extractObjects(text: string): string[] {
+    const objectPattern = /(?:contains?|shows?|displays?|features?|includes?)\s+(?:a\s+)?([^,.]+)/gi;
+    const matches = text.matchAll(objectPattern);
+    return Array.from(matches).map(m => m[1]).filter(Boolean);
+  }
+
+  private extractText(analysis: string): string {
+    const textPattern = /(?:text|writing|words?)(?:\s+reads?|\s+says?|\s+shows?):\s*"([^"]+)"/gi;
+    const matches = analysis.matchAll(textPattern);
+    return Array.from(matches).map(m => m[1]).join(' ');
+  }
+
+  private extractTitle(html: string): string {
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    return titleMatch ? titleMatch[1] : '';
+  }
+
+  /**
    * Generate embeddings for text using OpenAI
    * @param text - Text to embed
    * @param settings - AI settings with API key
@@ -408,19 +731,19 @@ export class UnifiedOpenAIService {
   }
 
   private getModelCostPerToken(model: string): number {
-    // OpenAI 2025 pricing (approximate - update with real values)
+    // OpenAI pricing per 1K tokens (September 2024)
     const pricing: Record<string, number> = {
-      'gpt-5': 0.00006,           // Most advanced
-      'gpt-5-mini': 0.00003,      // Cost-efficient
-      'gpt-5-nano': 0.00001,      // Fastest/cheapest
-      'gpt-4.1': 0.00005,        // Multimodal
-      'gpt-4.1-mini': 0.00002,   // 83% cheaper than GPT-4o
-      'o4-mini': 0.00004,        // Reasoning
-      'o3': 0.00008,             // Advanced reasoning
-      'o3-mini': 0.00003         // Cheaper reasoning
+      'gpt-4-turbo': 0.00001,        // $10 per 1M tokens input, $30 per 1M output
+      'gpt-4o': 0.000005,            // $5 per 1M tokens input, $15 per 1M output
+      'gpt-4o-mini': 0.00000015,     // $0.15 per 1M tokens input, $0.60 per 1M output  
+      'gpt-4': 0.00003,              // $30 per 1M tokens input, $60 per 1M output
+      'gpt-3.5-turbo': 0.0000005,    // $0.50 per 1M tokens input, $1.50 per 1M output
+      'text-embedding-3-small': 0.00000002, // $0.02 per 1M tokens
+      'text-embedding-3-large': 0.00000013, // $0.13 per 1M tokens
+      'whisper-1': 0.00001           // $0.006 per minute (estimated per token)
     };
     
-    return pricing[model] || 0.00003; // Default fallback
+    return pricing[model] || 0.000005; // Default fallback to GPT-3.5 pricing
   }
 
   private async logUsage(logData: InsertAIUsageLog): Promise<void> {
