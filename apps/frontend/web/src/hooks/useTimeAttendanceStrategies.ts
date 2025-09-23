@@ -89,26 +89,6 @@ export function useTimeAttendanceStrategies(
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Update available strategies when component mounts
-  useEffect(() => {
-    const availableStrategies = getAvailableStrategies();
-    setState(prev => ({
-      ...prev,
-      availableStrategies,
-      isInitialized: true
-    }));
-  }, []);
-
-  // ✅ FIX: Re-prepare strategy when context.selectedStore changes 
-  useEffect(() => {
-    if (state.selectedStrategy && context?.selectedStore && state.prepareResult) {
-      // Re-prepare the strategy with updated context when store changes
-      prepareStrategy(context).catch(error => {
-        console.warn('[StrategyManager] Auto re-prepare failed:', error);
-      });
-    }
-  }, [context?.selectedStore?.id, state.selectedStrategy, context, prepareStrategy]);
-
   // Helper to update state safely
   const updateState = useCallback((updater: Partial<StrategyManagerState> | ((prev: StrategyManagerState) => Partial<StrategyManagerState>)) => {
     setState(prev => {
@@ -131,6 +111,64 @@ export function useTimeAttendanceStrategies(
 
     onError?.(error);
   }, [updateState, onError]);
+
+  // Prepare Strategy - Moved before useEffect to fix hoisting issue
+  const prepareStrategy = useCallback(async (context: TimeAttendanceContext): Promise<StrategyPrepareResult> => {
+    const { selectedStrategy } = stateRef.current;
+    
+    if (!selectedStrategy) {
+      const errorResult = { success: false, error: 'No strategy selected' };
+      updateState({ prepareResult: errorResult });
+      return errorResult;
+    }
+
+    try {
+      updateState({ isPreparing: true, error: null });
+      
+      const result = await selectedStrategy.prepare(context);
+      
+      updateState({
+        isPreparing: false,
+        prepareResult: result
+      });
+
+      console.log(`[StrategyManager] Strategy prepared:`, result);
+      return result;
+    } catch (error) {
+      const errorResult = { 
+        success: false, 
+        error: `Preparation failed: ${(error as Error).message}` 
+      };
+      
+      updateState({
+        isPreparing: false,
+        prepareResult: errorResult
+      });
+
+      handleError(error as Error, 'Strategy preparation failed');
+      return errorResult;
+    }
+  }, [updateState, handleError]);
+
+  // Update available strategies when component mounts
+  useEffect(() => {
+    const availableStrategies = getAvailableStrategies();
+    setState(prev => ({
+      ...prev,
+      availableStrategies,
+      isInitialized: true
+    }));
+  }, []);
+
+  // ✅ FIX: Re-prepare strategy when context.selectedStore changes 
+  useEffect(() => {
+    if (state.selectedStrategy && context?.selectedStore && state.prepareResult) {
+      // Re-prepare the strategy with updated context when store changes
+      prepareStrategy(context).catch(error => {
+        console.warn('[StrategyManager] Auto re-prepare failed:', error);
+      });
+    }
+  }, [context?.selectedStore?.id, state.selectedStrategy, context, prepareStrategy]);
 
   // Strategy Selection
   const selectStrategy = useCallback(async (type: StrategyType): Promise<boolean> => {
@@ -189,44 +227,6 @@ export function useTimeAttendanceStrategies(
     onStrategyChange?.(null);
     console.log('[StrategyManager] Strategy cleared');
   }, [updateState, onStrategyChange]);
-
-  // Prepare Strategy
-  const prepareStrategy = useCallback(async (context: TimeAttendanceContext): Promise<StrategyPrepareResult> => {
-    const { selectedStrategy } = stateRef.current;
-    
-    if (!selectedStrategy) {
-      const errorResult = { success: false, error: 'No strategy selected' };
-      updateState({ prepareResult: errorResult });
-      return errorResult;
-    }
-
-    try {
-      updateState({ isPreparing: true, error: null });
-      
-      const result = await selectedStrategy.prepare(context);
-      
-      updateState({
-        isPreparing: false,
-        prepareResult: result
-      });
-
-      console.log(`[StrategyManager] Strategy prepared:`, result);
-      return result;
-    } catch (error) {
-      const errorResult = { 
-        success: false, 
-        error: `Preparation failed: ${(error as Error).message}` 
-      };
-      
-      updateState({
-        isPreparing: false,
-        prepareResult: errorResult
-      });
-
-      handleError(error as Error, 'Strategy preparation failed');
-      return errorResult;
-    }
-  }, [updateState, handleError]);
 
   // Validate Strategy
   const validateStrategy = useCallback(async (context: TimeAttendanceContext): Promise<StrategyValidationResult> => {
