@@ -1287,66 +1287,139 @@ export default function AISettingsPage() {
             </div>
           </div>
           
-          {/* Training Sessions Storyboard */}
+          {/* Training Sessions Storyboard - Enhanced */}
           <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-2">
                 <Database className="w-5 h-5 text-blue-600" />
-                <h5 className="font-semibold text-gray-900">Storico Documenti Processati</h5>
+                <h5 className="font-semibold text-gray-900">Storyboard URL Training</h5>
               </div>
-              <span className="text-sm text-gray-500">
-                {trainingSessions?.data?.length || 0} sessioni trovate
-              </span>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-500">
+                  {trainingSessions?.data?.length || 0} URL salvate
+                </span>
+                <button
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] })}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  data-testid="button-refresh-sessions"
+                  title="Aggiorna lista"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             
             {trainingSessionsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="w-5 h-5 animate-spin text-[#FF6900]" />
-                <span className="ml-2 text-sm text-gray-600">Caricamento sessioni...</span>
+                <span className="ml-2 text-sm text-gray-600">Caricamento storyboard...</span>
               </div>
             ) : trainingSessions?.data?.length > 0 ? (
-              <div className="max-h-64 overflow-y-auto space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                 {trainingSessions.data.map((session: any, index: number) => (
-                  <div key={session.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${
-                        session.status === 'completed' ? 'bg-green-500' :
-                        session.status === 'processing' ? 'bg-yellow-500' :
-                        session.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
-                      }`}></div>
-                      <div>
-                        <p className="font-medium text-sm text-gray-900">
-                          {session.sessionType === 'url_ingestion' ? '🌐 URL' :
-                           session.sessionType === 'document_upload' ? '📄 Documento' :
-                           session.sessionType === 'media_processing' ? '🎬 Media' : '📁 Altro'}
-                        </p>
-                        <p className="text-xs text-gray-600 truncate max-w-xs">
-                          {session.sourceUrl || session.fileName || session.content?.slice(0, 50) + '...' || 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT') : 'N/A'}
-                      </p>
-                      <p className={`text-xs font-medium ${
-                        session.status === 'completed' ? 'text-green-600' :
-                        session.status === 'processing' ? 'text-yellow-600' :
-                        session.status === 'failed' ? 'text-red-600' : 'text-gray-600'
+                  <div key={session.id || index} className="group bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-[#FF6900]/30">
+                    {/* Status Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        session.sessionStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                        session.sessionStatus === 'pending' || session.sessionStatus === 'active' ? 'bg-yellow-100 text-yellow-800' :
+                        session.sessionStatus === 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {session.status === 'completed' ? '✅ Completato' :
-                         session.status === 'processing' ? '⏳ In corso...' :
-                         session.status === 'failed' ? '❌ Fallito' : '❓ Sconosciuto'}
-                      </p>
+                        <span className={`w-2 h-2 rounded-full mr-1 ${
+                          session.sessionStatus === 'completed' ? 'bg-green-500' :
+                          session.sessionStatus === 'pending' || session.sessionStatus === 'active' ? 'bg-yellow-500' :
+                          session.sessionStatus === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+                        }`}></span>
+                        {session.sessionStatus === 'completed' ? 'Completato' :
+                         session.sessionStatus === 'pending' ? 'In attesa' :
+                         session.sessionStatus === 'active' ? 'Attivo' :
+                         session.sessionStatus === 'failed' ? 'Fallito' : 'Sconosciuto'}
+                      </span>
+                      
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => {
+                          if (confirm('Sei sicuro di voler eliminare questa sessione di training?')) {
+                            deleteSessionMutation.mutate(session.id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition-all duration-200"
+                        data-testid={`button-delete-session-${session.id}`}
+                        title="Elimina sessione"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    {/* Content Preview */}
+                    <div className="mb-3">
+                      <div className="flex items-center space-x-2 mb-2">
+                        {session.sessionType === 'url_import' ? (
+                          <Globe className="w-4 h-4 text-blue-500" />
+                        ) : session.sessionType === 'media_upload' ? (
+                          <Upload className="w-4 h-4 text-purple-500" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-gray-500" />
+                        )}
+                        <span className="text-xs font-medium text-gray-700">
+                          {session.sessionType === 'url_import' ? 'URL Import' :
+                           session.sessionType === 'media_upload' ? 'Media Upload' :
+                           session.sessionType || 'Documento'}
+                        </span>
+                      </div>
+                      
+                      {session.sourceUrl && (
+                        <p className="text-sm text-gray-900 font-medium mb-1">
+                          <a
+                            href={session.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-[#FF6900] transition-colors truncate block"
+                            title={session.sourceUrl}
+                          >
+                            {new URL(session.sourceUrl).hostname}
+                          </a>
+                        </p>
+                      )}
+                      
+                      {session.contentExtracted && (
+                        <p className="text-xs text-gray-600 line-clamp-2">
+                          {session.contentExtracted.slice(0, 80)}...
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Metrics */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-3">
+                      <div className="flex items-center space-x-3">
+                        {session.embeddingsCreated > 0 && (
+                          <span className="flex items-center">
+                            <Database className="w-3 h-3 mr-1" />
+                            {session.embeddingsCreated}
+                          </span>
+                        )}
+                        {session.tokensProcessed > 0 && (
+                          <span className="flex items-center">
+                            <Zap className="w-3 h-3 mr-1" />
+                            {Math.round(session.tokensProcessed / 1000)}k
+                          </span>
+                        )}
+                      </div>
+                      <span>
+                        {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT', {
+                          day: '2-digit',
+                          month: '2-digit'
+                        }) : 'N/A'}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Database className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-sm">Nessun documento processato ancora</p>
-                <p className="text-gray-400 text-xs mt-1">I documenti caricati e le URL processate appariranno qui</p>
+              <div className="text-center py-12">
+                <Globe className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-sm font-medium">Nessuna URL processata ancora</p>
+                <p className="text-gray-400 text-xs mt-1">Aggiungi URL qui sopra per iniziare a popolare lo storyboard</p>
               </div>
             )}
           </div>
