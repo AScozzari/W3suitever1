@@ -5,6 +5,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as pdf from 'pdf-parse';
+import * as ffmpeg from 'fluent-ffmpeg';
 import { UnifiedOpenAIService } from './unified-openai';
 
 export interface MediaChunk {
@@ -101,7 +103,7 @@ export class MediaProcessorService {
   }
 
   /**
-   * Process PDF documents with text extraction and chunking
+   * Process PDF documents with real text extraction and chunking
    */
   private async processPDF(
     filePath: string,
@@ -109,16 +111,38 @@ export class MediaProcessorService {
     context: any
   ): Promise<ProcessingResult> {
     try {
-      // Note: In production, use pdf-parse or similar library
-      // For now, we'll simulate PDF processing
       const stats = fs.statSync(filePath);
+      const fileBuffer = fs.readFileSync(filePath);
       
-      // Simulated PDF extraction (replace with actual pdf-parse)
-      const simulatedText = `PDF content from ${path.basename(filePath)}`;
-      const chunks = this.chunkText(simulatedText, filePath);
+      // Real PDF text extraction using pdf-parse
+      const pdfData = await pdf(fileBuffer);
       
-      // Generate embeddings for each chunk
+      if (!pdfData.text || pdfData.text.trim().length === 0) {
+        throw new Error('PDF contains no extractable text');
+      }
+      
+      // Create intelligent chunks from extracted text
+      const chunks = this.chunkText(pdfData.text, filePath);
+      
+      // Add page information to chunks based on content
+      const pageTexts = pdfData.text.split(/\f/); // Form feed separates pages
+      let currentPageIndex = 0;
+      let pageStartIndex = 0;
+      
       for (const chunk of chunks) {
+        // Estimate which page this chunk belongs to
+        const chunkStart = pdfData.text.indexOf(chunk.content);
+        while (currentPageIndex < pageTexts.length - 1) {
+          const pageEndIndex = pageStartIndex + pageTexts[currentPageIndex].length;
+          if (chunkStart >= pageStartIndex && chunkStart < pageEndIndex) {
+            chunk.metadata.pageNumber = currentPageIndex + 1;
+            break;
+          }
+          pageStartIndex = pageEndIndex;
+          currentPageIndex++;
+        }
+        
+        // Generate embeddings for each chunk
         const embeddingResult = await this.openaiService.generateEmbedding(
           chunk.content,
           settings,
@@ -133,7 +157,7 @@ export class MediaProcessorService {
         success: true,
         chunks,
         metadata: {
-          totalPages: 1, // Would be extracted from PDF
+          totalPages: pdfData.numpages,
           fileSize: stats.size,
           mimeType: 'application/pdf',
           processingTimeMs: 0
@@ -299,7 +323,7 @@ export class MediaProcessorService {
   }
 
   /**
-   * Process video files (extract audio + keyframes)
+   * Process video files - extract audio track and analyze keyframes
    */
   private async processVideo(
     filePath: string,
@@ -308,28 +332,184 @@ export class MediaProcessorService {
   ): Promise<ProcessingResult> {
     try {
       const stats = fs.statSync(filePath);
+      const chunks: MediaChunk[] = [];
+      let totalDuration = 0;
       
-      // For video, we would:
-      // 1. Extract audio track and transcribe
-      // 2. Extract keyframes and analyze with Vision
-      // 3. Combine both into synchronized chunks
+      // Create temporary paths for extracted media
+      const tempDir = path.dirname(filePath);
+      const baseName = path.basename(filePath, path.extname(filePath));
+      const audioPath = path.join(tempDir, `${baseName}_audio.wav`);
+      const framePathPattern = path.join(tempDir, `${baseName}_frame_%03d.jpg`);
       
-      // For now, simulating video processing
-      const chunks: MediaChunk[] = [{
-        id: `video_${Date.now()}`,
-        content: `Video content from ${path.basename(filePath)}`,
-        type: 'mixed',
-        metadata: {
-          sourceFile: filePath,
-          chunkIndex: 0,
-          totalChunks: 1
+      try {
+        // Step 1: Get video metadata and extract audio
+        const videoInfo: any = await new Promise((resolve, reject) => {
+          ffmpeg.ffprobe(filePath, (err, metadata) => {
+            if (err) reject(err);
+            else resolve(metadata);
+          });
+        });
+        
+        totalDuration = videoInfo.format?.duration || 0;
+        
+        // Extract audio track
+        await new Promise<void>((resolve, reject) => {
+          ffmpeg(filePath)
+            .audioCodec('pcm_s16le')
+            .audioFrequency(16000)
+            .audioChannels(1)
+            .format('wav')
+            .output(audioPath)
+            .on('end', resolve)
+            .on('error', reject)
+            .run();
+        });
+        
+        // Step 2: Transcribe extracted audio
+        if (fs.existsSync(audioPath)) {
+          const transcriptionResult = await this.openaiService.transcribeAudio(
+            {
+              mediaType: 'audio',
+              filePath: audioPath,
+              language: 'it'
+            },
+            settings,
+            context
+          );
+          
+          // Create chunks from transcription segments
+          if (transcriptionResult.segments && transcriptionResult.segments.length > 0) {
+            for (let i = 0; i < transcriptionResult.segments.length; i++) {
+              const segment = transcriptionResult.segments[i];
+              const chunk: MediaChunk = {
+                id: `video_audio_${Date.now()}_${i}`,
+                content: segment.text,
+                type: 'audio',
+                metadata: {
+                  sourceFile: filePath,
+                  chunkIndex: i,
+                  totalChunks: transcriptionResult.segments.length,
+                  startTime: segment.start,
+                  endTime: segment.end
+                }
+              };
+              
+              // Generate embedding for audio segment
+              const embeddingResult = await this.openaiService.generateEmbedding(
+                segment.text,
+                settings,
+                context
+              );
+              if (embeddingResult.success && embeddingResult.embedding) {
+                chunk.embedding = embeddingResult.embedding;
+              }
+              
+              chunks.push(chunk);
+            }
+          }
+          
+          // Clean up audio file
+          fs.unlinkSync(audioPath);
         }
-      }];
+        
+        // Step 3: Extract keyframes (every 10 seconds)
+        const keyframeInterval = 10; // seconds
+        const numFrames = Math.min(6, Math.floor(totalDuration / keyframeInterval)); // Max 6 frames
+        
+        if (numFrames > 0) {
+          await new Promise<void>((resolve, reject) => {
+            ffmpeg(filePath)
+              .on('end', resolve)
+              .on('error', reject)
+              .outputOptions([
+                '-vf', `fps=1/${keyframeInterval}`,
+                '-vframes', numFrames.toString(),
+                '-q:v', '2'
+              ])
+              .output(framePathPattern)
+              .run();
+          });
+          
+          // Analyze extracted keyframes
+          for (let i = 1; i <= numFrames; i++) {
+            const framePath = path.join(tempDir, `${baseName}_frame_${i.toString().padStart(3, '0')}.jpg`);
+            
+            if (fs.existsSync(framePath)) {
+              try {
+                const visionResult = await this.openaiService.analyzeImage(
+                  {
+                    mediaType: 'image',
+                    filePath: framePath,
+                    analyzeContent: true
+                  },
+                  settings,
+                  context
+                );
+                
+                const frameTime = (i - 1) * keyframeInterval;
+                const chunk: MediaChunk = {
+                  id: `video_frame_${Date.now()}_${i}`,
+                  content: visionResult.description,
+                  type: 'visual',
+                  metadata: {
+                    sourceFile: filePath,
+                    chunkIndex: chunks.length,
+                    totalChunks: 0, // Will be updated
+                    startTime: frameTime,
+                    endTime: frameTime + 0.1 // Frame duration
+                  }
+                };
+                
+                // Generate embedding for frame description
+                const embeddingResult = await this.openaiService.generateEmbedding(
+                  visionResult.description,
+                  settings,
+                  context
+                );
+                if (embeddingResult.success && embeddingResult.embedding) {
+                  chunk.embedding = embeddingResult.embedding;
+                }
+                
+                chunks.push(chunk);
+              } catch (frameError) {
+                console.warn(`Failed to analyze frame ${i}:`, frameError);
+              } finally {
+                // Clean up frame file
+                fs.unlinkSync(framePath);
+              }
+            }
+          }
+        }
+        
+      } catch (processingError) {
+        // Clean up any temporary files
+        [audioPath].forEach(tempPath => {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+        });
+        
+        // Clean up any frame files
+        for (let i = 1; i <= 10; i++) {
+          const framePath = path.join(tempDir, `${baseName}_frame_${i.toString().padStart(3, '0')}.jpg`);
+          if (fs.existsSync(framePath)) {
+            fs.unlinkSync(framePath);
+          }
+        }
+        
+        throw processingError;
+      }
+      
+      // Update total chunks count
+      chunks.forEach(chunk => {
+        chunk.metadata.totalChunks = chunks.length;
+      });
       
       return {
         success: true,
         chunks,
         metadata: {
+          totalDuration,
           fileSize: stats.size,
           mimeType: this.getMimeType(filePath),
           processingTimeMs: 0
