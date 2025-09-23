@@ -47,7 +47,7 @@ import {
   calendarEventStatusEnum,
   hrRequestStatusEnum
 } from "../db/schema/w3suite";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance, aiSettings, aiUsageLogs, aiConversations } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -9528,6 +9528,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       handleApiError(error, res, 'recupero evento calendario per ID');
+    }
+  });
+
+  // ==================== AI SYSTEM ROUTES ====================
+  
+  // AI Settings Management
+  app.get('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const settings = await storage.getAISettings(tenantId);
+      
+      if (!settings) {
+        // Return default settings if none exist
+        const defaultSettings = {
+          tenantId,
+          openaiModel: 'gpt-5',
+          maxTokensPerResponse: 4000,
+          temperatureDefault: 0.7,
+          featuresEnabled: {
+            chat_assistant: true,
+            document_analysis: false,
+            financial_forecasting: false,
+            web_search: false,
+            code_interpreter: false
+          },
+          privacySettings: {
+            dataRetentionDays: 30,
+            allowDataTraining: false,
+            anonymizeConversations: true
+          },
+          isActive: false
+        };
+        return res.json({ success: true, data: defaultSettings });
+      }
+      
+      res.json({ success: true, data: settings });
+    } catch (error) {
+      handleApiError(error, res, 'recupero impostazioni AI');
+    }
+  });
+  
+  app.put('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const updates = req.body;
+      
+      // Check if settings exist, create if not
+      let settings = await storage.getAISettings(tenantId);
+      if (!settings) {
+        settings = await storage.createAISettings({
+          ...updates,
+          tenantId,
+          updatedAt: new Date()
+        });
+      } else {
+        settings = await storage.updateAISettings(tenantId, updates);
+      }
+      
+      res.json({ success: true, data: settings });
+    } catch (error) {
+      handleApiError(error, res, 'aggiornamento impostazioni AI');
+    }
+  });
+  
+  // AI Usage Analytics
+  app.get('/api/ai/usage/stats', ...authWithRBAC, requirePermission('ai.usage.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const days = parseInt(req.query.days as string) || 30;
+      
+      const stats = await storage.getAIUsageStats(tenantId, days);
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      handleApiError(error, res, 'recupero statistiche utilizzo AI');
+    }
+  });
+  
+  app.get('/api/ai/usage/logs', ...authWithRBAC, requirePermission('ai.usage.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const limit = parseInt(req.query.limit as string) || 100;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const logs = await storage.getAIUsageLogs(tenantId, limit, offset);
+      res.json({ success: true, data: logs });
+    } catch (error) {
+      handleApiError(error, res, 'recupero log utilizzo AI');
+    }
+  });
+  
+  // AI Conversations Management
+  app.get('/api/ai/conversations', ...authWithRBAC, requirePermission('ai.conversations.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.query.userId as string;
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const conversations = await storage.getAIConversations(tenantId, userId, limit);
+      res.json({ success: true, data: conversations });
+    } catch (error) {
+      handleApiError(error, res, 'recupero conversazioni AI');
+    }
+  });
+  
+  app.delete('/api/ai/conversations/:id', ...authWithRBAC, requirePermission('ai.conversations.delete'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const conversationId = req.params.id;
+      
+      if (!validateUUIDParam(conversationId, 'Conversation ID', res)) {
+        return;
+      }
+      
+      const deleted = await storage.deleteAIConversation(tenantId, conversationId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Conversazione non trovata' });
+      }
+      
+      res.json({ success: true, message: 'Conversazione eliminata con successo' });
+    } catch (error) {
+      handleApiError(error, res, 'eliminazione conversazione AI');
+    }
+  });
+  
+  // AI Chat Assistant (simplified endpoint for frontend)
+  app.post('/api/ai/chat', ...authWithRBAC, requirePermission('ai.chat.use'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const { message, context } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'Messaggio richiesto' });
+      }
+      
+      // Get AI settings for this tenant
+      const settings = await storage.getAISettings(tenantId);
+      if (!settings || !settings.isActive) {
+        return res.status(403).json({ error: 'AI non attivo per questo tenant' });
+      }
+      
+      if (!settings.featuresEnabled?.chat_assistant) {
+        return res.status(403).json({ error: 'Chat assistant non abilitato' });
+      }
+      
+      // Import and use the unified OpenAI service
+      const { createUnifiedOpenAIService } = await import('../services/unified-openai');
+      const openaiService = createUnifiedOpenAIService(storage);
+      
+      const response = await openaiService.chatAssistant(message, settings, {
+        tenantId,
+        userId,
+        businessEntityId: context?.businessEntityId || null,
+        contextData: context || {}
+      });
+      
+      if (!response.success) {
+        return res.status(500).json({ 
+          error: 'Errore durante la comunicazione con AI', 
+          details: response.error 
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          response: response.output,
+          tokensUsed: response.tokensUsed,
+          cost: response.cost,
+          responseTime: response.responseTime
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'chat con AI assistant');
+    }
+  });
+  
+  // AI Document Analysis
+  app.post('/api/ai/analyze-document', ...authWithRBAC, requirePermission('ai.documents.analyze'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const { documentContent, analysisQuery } = req.body;
+      
+      if (!documentContent || !analysisQuery) {
+        return res.status(400).json({ error: 'Contenuto documento e query di analisi richiesti' });
+      }
+      
+      const settings = await storage.getAISettings(tenantId);
+      if (!settings || !settings.isActive || !settings.featuresEnabled?.document_analysis) {
+        return res.status(403).json({ error: 'Analisi documenti non abilitata' });
+      }
+      
+      const { createUnifiedOpenAIService } = await import('../services/unified-openai');
+      const openaiService = createUnifiedOpenAIService(storage);
+      
+      const response = await openaiService.analyzeDocument(documentContent, analysisQuery, settings, {
+        tenantId,
+        userId,
+        businessEntityId: null,
+        contextData: {}
+      });
+      
+      if (!response.success) {
+        return res.status(500).json({ 
+          error: 'Errore durante l\'analisi del documento', 
+          details: response.error 
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          analysis: response.output,
+          tokensUsed: response.tokensUsed,
+          cost: response.cost,
+          responseTime: response.responseTime
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'analisi documento AI');
     }
   });
 
