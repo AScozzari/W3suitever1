@@ -1700,7 +1700,6 @@ export default function AISettingsPage() {
               <nav className="-mb-px flex space-x-8">
                 {[
                   { id: 'settings', name: 'Configurazione', icon: Settings },
-                  { id: 'training', name: 'Training AI', icon: Brain },
                   { id: 'analytics', name: 'Analytics', icon: BarChart3 },
                   { id: 'conversations', name: 'Archivio Chat', icon: MessageCircle }
                 ].map(({ id, name, icon: Icon }) => (
@@ -1727,7 +1726,6 @@ export default function AISettingsPage() {
       {/* Content */}
       <div className="px-6 py-8">
         {activeTab === 'settings' && renderSettingsTab()}
-        {activeTab === 'training' && renderTrainingTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'conversations' && renderConversationsTab()}
       </div>
