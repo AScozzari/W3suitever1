@@ -10452,6 +10452,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
             departmentRestriction: null,
             accessLevel: 'organization'
           });
+          
+          // Create training session record
+          await storage.createAITrainingSession({
+            tenantId,
+            userId,
+            sessionType: 'url_import',
+            sessionStatus: 'completed',
+            sourceUrl: url,
+            originalQuery: `URL Training: ${result.metadata.title || url}`,
+            totalChunks: 1,
+            processedChunks: 1,
+            failedChunks: 0,
+            embeddingsCreated: 1,
+            tokenCount: embeddingResult.usage?.total_tokens || 0,
+            estimatedCost: embeddingResult.cost || 0,
+            completedAt: new Date(),
+            updatedAt: new Date()
+          });
+          
+          console.log('[AI-URL-PROCESS] ✅ Created training session for URL:', url);
         }
       }
       
