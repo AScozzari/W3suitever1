@@ -978,7 +978,7 @@ export default function SettingsPage() {
 
   // Load payment methods reference data
   const { data: referencePaymentMethods = [] } = useQuery({
-    queryKey: ['/api/reference/payment-methods'],
+    queryKey: ['/api/payment-methods'],
     staleTime: 5 * 60 * 1000,
   });
 
