@@ -265,6 +265,48 @@ export const PERMISSIONS = {
     markRead: 'notifications.markRead',
     bulkActions: 'notifications.bulkActions',
     delete: 'notifications.delete'
+  },
+
+  // ==================== AI SYSTEM ====================
+  ai: {
+    settings: {
+      view: 'ai.settings.view',
+      manage: 'ai.settings.manage',
+      configure: 'ai.settings.configure'
+    },
+    usage: {
+      view: 'ai.usage.view',
+      analytics: 'ai.usage.analytics',
+      export: 'ai.usage.export'
+    },
+    chat: {
+      use: 'ai.chat.use',
+      create: 'ai.chat.create',
+      history: 'ai.chat.history'
+    },
+    conversations: {
+      view: 'ai.conversations.view',
+      create: 'ai.conversations.create',
+      delete: 'ai.conversations.delete',
+      manage: 'ai.conversations.manage'
+    },
+    documents: {
+      analyze: 'ai.documents.analyze',
+      process: 'ai.documents.process'
+    },
+    financial: {
+      forecast: 'ai.financial.forecast',
+      analyze: 'ai.financial.analyze'
+    },
+    search: {
+      web: 'ai.search.web',
+      internal: 'ai.search.internal'
+    },
+    admin: {
+      keys: 'ai.admin.keys',
+      monitor: 'ai.admin.monitor',
+      configure: 'ai.admin.configure'
+    }
   }
 } as const;
 
@@ -296,7 +338,7 @@ export const ROLE_TEMPLATES = {
     code: 'admin',
     name: 'Amministratore',
     description: 'Accesso completo a tutte le funzionalità del sistema',
-    permissions: getAllPermissions() // Tutti i permessi
+    permissions: getAllPermissions() // Tutti i permessi (include AI)
   },
 
   // FINANCE - Gestione finanziaria e contabile
@@ -364,6 +406,12 @@ export const ROLE_TEMPLATES = {
       PERMISSIONS.marketing.campaigns.analyze,
       // Reports completo
       ...Object.values(PERMISSIONS.reports),
+      // AI Basic access for Directors
+      PERMISSIONS.ai.settings.view,
+      PERMISSIONS.ai.usage.view,
+      PERMISSIONS.ai.usage.analytics,
+      PERMISSIONS.ai.chat.use,
+      PERMISSIONS.ai.conversations.view,
       // Settings organizzazione
       PERMISSIONS.settings.view,
       PERMISSIONS.settings.organization.view,
