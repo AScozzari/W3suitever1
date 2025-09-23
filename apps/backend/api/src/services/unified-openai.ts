@@ -109,7 +109,10 @@ export class UnifiedOpenAIService {
       // Build context-aware instructions
       const instructions = this.buildContextInstructions(settings, context);
 
-      // Use Chat Completions API instead of Responses API for wider compatibility
+      // Build OpenAI tools configuration
+      const openaiTools = this.buildOpenAITools(tools);
+      
+      // Use Chat Completions API with function calling support
       const response = await this.client.chat.completions.create({
         model: settings.openaiModel as string,
         messages: [
@@ -118,14 +121,90 @@ export class UnifiedOpenAIService {
         ],
         max_tokens: settings.maxTokensPerResponse,
         temperature: temperature,
-        stream: false, // For now, implement streaming separately
+        stream: false,
+        ...(openaiTools.length > 0 && { tools: openaiTools, tool_choice: "auto" })
       });
 
+      let finalResponse = response;
+      let additionalTokens = 0;
+      let additionalCost = 0;
+      
+      // Handle function calls if present
+      const message = response.choices[0].message;
+      if (message.tool_calls && message.tool_calls.length > 0) {
+        console.log(`[WEB-SEARCH] 🔧 Processing ${message.tool_calls.length} function call(s)`);
+        
+        const toolResults: any[] = [];
+        
+        for (const toolCall of message.tool_calls) {
+          if (toolCall.function.name === 'search_web') {
+            try {
+              const args = JSON.parse(toolCall.function.arguments);
+              console.log(`[WEB-SEARCH] 🔍 Executing web search: "${args.query}"`);
+              
+              // Use existing DuckDuckGo search function
+              const searchResults = await this.performWebSearch(args.query);
+              
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: JSON.stringify({
+                  query: args.query,
+                  results: searchResults,
+                  timestamp: new Date().toISOString()
+                })
+              });
+              
+              console.log(`[WEB-SEARCH] ✅ Found ${searchResults.length} results for: "${args.query}"`);
+            } catch (error: any) {
+              console.error(`[WEB-SEARCH] ❌ Error in web search:`, error);
+              
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool", 
+                content: JSON.stringify({
+                  error: "Web search failed",
+                  message: error.message
+                })
+              });
+            }
+          }
+        }
+        
+        if (toolResults.length > 0) {
+          // Get final response with search results
+          const finalMessages = [
+            { role: "system", content: instructions },
+            { role: "user", content: input },
+            message,
+            ...toolResults
+          ];
+          
+          console.log(`[WEB-SEARCH] 🤖 Generating final response with search results`);
+          
+          finalResponse = await this.client.chat.completions.create({
+            model: settings.openaiModel as string,
+            messages: finalMessages as any,
+            max_tokens: settings.maxTokensPerResponse,
+            temperature: temperature,
+            stream: false
+          });
+          
+          additionalTokens = finalResponse.usage?.total_tokens || 0;
+          additionalCost = this.calculateCost(
+            finalResponse.usage?.prompt_tokens || 0,
+            finalResponse.usage?.completion_tokens || 0,
+            settings.openaiModel as string,
+            'chat'
+          );
+        }
+      }
+
       const responseTime = Date.now() - startTime;
-      const tokensUsed = response.usage?.total_tokens || 0;
-      const inputTokens = response.usage?.prompt_tokens || 0;
-      const outputTokens = response.usage?.completion_tokens || 0;
-      const cost = this.calculateCost(inputTokens, outputTokens, settings.openaiModel as string, 'chat');
+      const tokensUsed = (response.usage?.total_tokens || 0) + additionalTokens;
+      const inputTokens = (response.usage?.prompt_tokens || 0) + (finalResponse.usage?.prompt_tokens || 0);
+      const outputTokens = (response.usage?.completion_tokens || 0) + (finalResponse.usage?.completion_tokens || 0);
+      const cost = this.calculateCost(inputTokens, outputTokens, settings.openaiModel as string, 'chat') + additionalCost;
 
       // Log usage for analytics
       await this.logUsage({
@@ -133,8 +212,8 @@ export class UnifiedOpenAIService {
         userId: context.userId,
         modelUsed: settings.openaiModel as any,
         featureType: 'chat', // Will be expanded based on tools used
-        tokensInput: response.usage?.prompt_tokens || 0,
-        tokensOutput: response.usage?.completion_tokens || 0,
+        tokensInput: inputTokens,
+        tokensOutput: outputTokens,
         tokensTotal: tokensUsed,
         costUsd: Math.round(cost * 100), // Store as cents
         responseTimeMs: responseTime,
@@ -142,17 +221,18 @@ export class UnifiedOpenAIService {
         requestContext: {
           tools_used: tools,
           module: context.moduleContext,
-          entity_id: context.businessEntityId
+          entity_id: context.businessEntityId,
+          function_calls_made: message.tool_calls ? message.tool_calls.length : 0
         }
       });
 
       return {
         success: true,
-        output: response.choices[0].message.content,
+        output: finalResponse.choices[0].message.content,
         tokensUsed,
         cost,
         responseTime,
-        conversationId: response.id || undefined
+        conversationId: finalResponse.id || undefined
       };
 
     } catch (error: any) {
@@ -1067,6 +1147,53 @@ export class UnifiedOpenAIService {
     if (featuresEnabled.computer_use) tools.push('computer_use');
     
     return tools;
+  }
+
+  /**
+   * Perform web search using DuckDuckGo (safe fallback)
+   */
+  private async performWebSearch(query: string): Promise<any[]> {
+    try {
+      // Import the DuckDuckGo search function from routes
+      const { performDuckDuckGoSearch } = await import('../core/routes');
+      return await performDuckDuckGoSearch(query);
+    } catch (error) {
+      console.error('[WEB-SEARCH] ❌ Search failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Build OpenAI-compatible tools configuration for function calling
+   */
+  private buildOpenAITools(tools: string[]): any[] {
+    const openaiTools: any[] = [];
+    
+    if (tools.includes('web_search')) {
+      openaiTools.push({
+        type: "function",
+        function: {
+          name: "search_web",
+          description: "Search the web for current information about any topic. Use this when you need real-time or recent information that might not be in your training data.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: {
+                type: "string",
+                description: "The search query to find relevant information"
+              }
+            },
+            required: ["query"]
+          }
+        }
+      });
+    }
+    
+    // Note: code_interpreter requires assistants API, not supported in chat completions
+    // file_search requires assistant API, not supported in chat completions
+    // computer_use is not a standard OpenAI tool
+    
+    return openaiTools;
   }
 
   private buildContextInstructions(settings: AISettings, context: OpenAIRequestContext): string {

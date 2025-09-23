@@ -10429,8 +10429,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Web Search: Real-time search implementation
-      if (includeWebSearch) {
+      // Web Search: Now handled by OpenAI function calling in unified-openai service
+      // OLD IMPLEMENTATION DISABLED to avoid conflicts with function calling
+      if (false && includeWebSearch) {
         try {
           console.log(`[WEB-SEARCH] 🌐 Performing web search for: "${message.slice(0, 50)}..."`);
           
@@ -10491,6 +10492,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import and use the unified OpenAI service
       const { createUnifiedOpenAIService } = await import('../services/unified-openai');
       const openaiService = createUnifiedOpenAIService(storage);
+      
+      // Enable web search feature if requested
+      if (includeWebSearch) {
+        settings.featuresEnabled = {
+          ...settings.featuresEnabled,
+          web_search: true
+        };
+      }
       
       const response = await openaiService.chatAssistant(enhancedMessage, settings, {
         tenantId,
