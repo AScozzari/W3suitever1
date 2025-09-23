@@ -100,8 +100,31 @@ export const hrAnnouncementAudienceEnum = pgEnum('hr_announcement_audience', ['a
 // AI System Enums
 export const aiConnectionStatusEnum = pgEnum('ai_connection_status', ['connected', 'disconnected', 'error']);
 export const aiPrivacyModeEnum = pgEnum('ai_privacy_mode', ['standard', 'strict']);
-export const aiFeatureTypeEnum = pgEnum('ai_feature_type', ['chat', 'document_analysis', 'natural_queries', 'financial_forecasting', 'web_search', 'code_interpreter', 'image_generation', 'voice_assistant']);
-export const aiModelEnum = pgEnum('ai_model', ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1', 'gpt-4.1-mini', 'o4-mini', 'o3', 'o3-mini']);
+export const aiFeatureTypeEnum = pgEnum('ai_feature_type', [
+  'chat', 
+  'embedding', 
+  'transcription', 
+  'vision_analysis', 
+  'url_scraping',
+  'document_analysis', 
+  'natural_queries', 
+  'financial_forecasting', 
+  'web_search', 
+  'code_interpreter', 
+  'image_generation', 
+  'voice_assistant'
+]);
+export const aiModelEnum = pgEnum('ai_model', [
+  'gpt-4o',
+  'gpt-4-turbo', 
+  'gpt-4o-mini',
+  'gpt-4',
+  'gpt-3.5-turbo',
+  'text-embedding-3-small',
+  'text-embedding-3-large', 
+  'whisper-1',
+  'dall-e-3'
+]);
 
 // ✅ CRITICAL ENUM FIX: Add missing calendar_event_category enum
 export const calendarEventCategoryEnum = pgEnum('calendar_event_category', [
@@ -2487,7 +2510,7 @@ export const aiSettings = w3suiteSchema.table("ai_settings", {
   tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   
   // Model Configuration
-  openaiModel: aiModelEnum("openai_model").default('gpt-4.1').notNull(),
+  openaiModel: aiModelEnum("openai_model").default('gpt-4-turbo').notNull(),
   openaiApiKey: text("openai_api_key"), // Encrypted storage for tenant-specific API key
   apiConnectionStatus: aiConnectionStatusEnum("api_connection_status").default('disconnected').notNull(),
   lastConnectionTest: timestamp("last_connection_test"),
@@ -2565,6 +2588,9 @@ export const aiUsageLogs = w3suiteSchema.table("ai_usage_logs", {
   userIndex: index("ai_usage_logs_user_idx").on(table.userId),
   timestampIndex: index("ai_usage_logs_timestamp_idx").on(table.requestTimestamp),
   featureIndex: index("ai_usage_logs_feature_idx").on(table.featureType),
+  // Composite index for granular analytics queries
+  analyticsIndex: index("ai_usage_logs_analytics_idx").on(table.tenantId, table.featureType, table.requestTimestamp),
+  costIndex: index("ai_usage_logs_cost_idx").on(table.tenantId, table.costUsd, table.requestTimestamp),
 }));
 
 // AI Conversations - Chat History with encryption and retention
