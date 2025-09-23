@@ -186,50 +186,56 @@ export async function rbacMiddleware(req: Request, res: Response, next: NextFunc
       scopeId = req.params?.legalEntityId || req.body?.legalEntityId;
     }
     
-    // Otteniamo i permessi dell'utente per questo tenant con lo scope corretto
-    const userPermissions = await rbacStorage.getUserPermissions(
-      req.user.id,
-      req.tenant.id,
-      scopeType,
-      scopeId,
-      parentScopes
-    );
-    
-    // Se l'utente non ha permessi, proviamo a inizializzare i ruoli di sistema
-    // e assegnare il ruolo admin al primo utente (utile per development)
-    if (userPermissions.length === 0) {
-      // Inizializza i ruoli di sistema per questo tenant se non esistono
-      await rbacStorage.initializeSystemRoles(req.tenant.id);
-      
-      // In development, assegna automaticamente il ruolo admin al primo utente
-      if (process.env.NODE_ENV === 'development') {
-        const adminRole = await db
-          .select()
-          .from(roles)
-          .where(and(
-            eq(roles.tenantId, req.tenant.id),
-            eq(roles.name, 'admin')
-          ))
-          .limit(1);
-        
-        if (adminRole.length > 0) {
-          // Assegna il ruolo admin all'utente corrente
-          await rbacStorage.assignRoleToUser({
-            userId: req.user.id,
-            roleId: adminRole[0].id,
-            scopeType: 'tenant',
-            scopeId: req.tenant.id
-          });
-          
-          // Aggiungi tutti i permessi al ruolo admin
-          await rbacStorage.setRolePermissions(adminRole[0].id, ['*']);
-          
-          // Ricarica i permessi
-          req.userPermissions = ['*'];
-        }
-      }
+    // In development mode with demo user, always give all permissions
+    if (process.env.NODE_ENV === 'development' && req.user.id === 'demo-user') {
+      console.log('[RBAC] 🔓 Development mode: Granting all permissions to demo-user');
+      req.userPermissions = ['*'];
     } else {
-      req.userPermissions = userPermissions;
+      // Otteniamo i permessi dell'utente per questo tenant con lo scope corretto
+      const userPermissions = await rbacStorage.getUserPermissions(
+        req.user.id,
+        req.tenant.id,
+        scopeType,
+        scopeId,
+        parentScopes
+      );
+      
+      // Se l'utente non ha permessi, proviamo a inizializzare i ruoli di sistema
+      // e assegnare il ruolo admin al primo utente (utile per development)
+      if (userPermissions.length === 0) {
+        // Inizializza i ruoli di sistema per questo tenant se non esistono
+        await rbacStorage.initializeSystemRoles(req.tenant.id);
+        
+        // In development, assegna automaticamente il ruolo admin al primo utente
+        if (process.env.NODE_ENV === 'development') {
+          const adminRole = await db
+            .select()
+            .from(roles)
+            .where(and(
+              eq(roles.tenantId, req.tenant.id),
+              eq(roles.name, 'admin')
+            ))
+            .limit(1);
+          
+          if (adminRole.length > 0) {
+            // Assegna il ruolo admin all'utente corrente
+            await rbacStorage.assignRoleToUser({
+              userId: req.user.id,
+              roleId: adminRole[0].id,
+              scopeType: 'tenant',
+              scopeId: req.tenant.id
+            });
+            
+            // Aggiungi tutti i permessi al ruolo admin
+            await rbacStorage.setRolePermissions(adminRole[0].id, ['*']);
+            
+            // Ricarica i permessi
+            req.userPermissions = ['*'];
+          }
+        }
+      } else {
+        req.userPermissions = userPermissions;
+      }
     }
     
     next();

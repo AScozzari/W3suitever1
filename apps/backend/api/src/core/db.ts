@@ -54,8 +54,9 @@ console.log('✅ Drizzle ORM initialized with TCP connection');
  * Necessario per Row Level Security (RLS)
  */
 export const setTenantContext = async (tenantId: string) => {
+  // Use raw SQL to avoid Drizzle template literal issues with set_config
   await db.execute(
-    sql`SELECT set_config('app.current_tenant_id', ${tenantId}, false)`
+    sql.raw(`SELECT set_config('app.current_tenant_id', '${tenantId}', false)`)
   );
 };
 
@@ -85,6 +86,6 @@ export const withTenantContext = async <T>(
     return await operation();
   } finally {
     // Reset context dopo l'operazione
-    await db.execute(sql`SELECT set_config('app.current_tenant_id', NULL, false)`);
+    await db.execute(sql.raw(`SELECT set_config('app.current_tenant_id', NULL, false)`));
   }
 };
