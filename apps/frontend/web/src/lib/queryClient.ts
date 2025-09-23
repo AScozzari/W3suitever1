@@ -325,8 +325,14 @@ export async function apiRequest(
     throw new Error(`Unknown AUTH_MODE: ${AUTH_MODE}. Must be 'development' or 'oauth2'`);
   }
   
+  // Serialize body if it's an object
+  let processedOptions = { ...options };
+  if (processedOptions.body && typeof processedOptions.body === 'object') {
+    processedOptions.body = JSON.stringify(processedOptions.body);
+  }
+
   const res = await fetch(finalUrl, {
-    ...options,
+    ...processedOptions,
     headers: {
       ...headers,
       ...options.headers,
