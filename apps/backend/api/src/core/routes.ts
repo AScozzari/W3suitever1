@@ -9533,6 +9533,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== AI SYSTEM ROUTES ====================
   
+  // Test OpenAI API connection
+  app.post('/api/ai/test-connection', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
+    try {
+      const { apiKey, model = 'gpt-5' } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'API key is required' 
+        });
+      }
+
+      // Test the API key with a simple request
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey });
+      
+      const testResponse = await openai.chat.completions.create({
+        model: model,
+        messages: [{ role: 'user', content: 'Test connection. Reply with "OK".' }],
+        max_tokens: 5
+      });
+
+      if (testResponse?.choices?.[0]?.message) {
+        res.json({ 
+          success: true, 
+          message: 'Connessione riuscita',
+          model: model,
+          responseId: testResponse.id
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Risposta API non valida' 
+        });
+      }
+    } catch (error: any) {
+      console.error('OpenAI connection test error:', error);
+      
+      let errorMessage = 'Errore di connessione';
+      if (error.status === 401) {
+        errorMessage = 'API key non valida o scaduta';
+      } else if (error.status === 429) {
+        errorMessage = 'Limite richieste raggiunto';
+      } else if (error.status === 403) {
+        errorMessage = 'Accesso negato - verifica i permessi API';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      res.status(400).json({ 
+        success: false, 
+        message: errorMessage 
+      });
+    }
+  });
+  
   // AI Settings Management
   app.get('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
     try {

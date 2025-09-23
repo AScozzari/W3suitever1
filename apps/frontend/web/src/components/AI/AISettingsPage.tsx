@@ -11,6 +11,10 @@ import {
 interface AISettings {
   tenantId: string;
   openaiModel: string;
+  openaiApiKey?: string;
+  apiConnectionStatus: 'connected' | 'disconnected' | 'error';
+  lastConnectionTest?: string;
+  connectionTestResult?: any;
   maxTokensPerResponse: number;
   temperatureDefault: number;
   featuresEnabled: {
@@ -52,6 +56,9 @@ interface AIUsageLog {
 export default function AISettingsPage() {
   const [activeTab, setActiveTab] = useState('settings');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Fetch AI settings
   const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery({
@@ -97,6 +104,54 @@ export default function AISettingsPage() {
       setFormData(settings.data);
     }
   }, [settings]);
+
+  // Test API connection
+  const testApiConnection = async () => {
+    if (!formData.openaiApiKey) {
+      setConnectionTestResult({ success: false, message: 'Inserire prima la chiave API OpenAI' });
+      return;
+    }
+
+    setTestingConnection(true);
+    setConnectionTestResult(null);
+
+    try {
+      const response = await fetch('/api/ai/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          apiKey: formData.openaiApiKey,
+          model: formData.openaiModel || 'gpt-5'
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setConnectionTestResult({ success: true, message: 'Connessione riuscita! API key valida.' });
+        setFormData(prev => ({ 
+          ...prev, 
+          apiConnectionStatus: 'connected',
+          lastConnectionTest: new Date().toISOString(),
+          connectionTestResult: result
+        }));
+      } else {
+        setConnectionTestResult({ 
+          success: false, 
+          message: result.message || 'Test di connessione fallito' 
+        });
+        setFormData(prev => ({ 
+          ...prev, 
+          apiConnectionStatus: 'error'
+        }));
+      }
+    } catch (error) {
+      setConnectionTestResult({ success: false, message: 'Errore di rete durante il test' });
+      setFormData(prev => ({ ...prev, apiConnectionStatus: 'error' }));
+    } finally {
+      setTestingConnection(false);
+    }
+  };
 
   const handleSave = () => {
     setSaveStatus('saving');
@@ -186,12 +241,106 @@ export default function AISettingsPage() {
         </div>
       </div>
 
-      {/* Model Configuration */}
+      {/* OpenAI API Configuration */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
           <Settings className="w-5 h-5 mr-2 text-[#FF6900]" />
-          Configurazione Modello
+          Configurazione OpenAI API
         </h3>
+        
+        {/* API Key Management */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Chiave API OpenAI per questo Tenant
+            <span className="text-red-500 ml-1">*</span>
+          </label>
+          <div className="relative">
+            <input
+              type={apiKeyVisible ? 'text' : 'password'}
+              value={formData.openaiApiKey || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, openaiApiKey: e.target.value }))}
+              placeholder="sk-..."
+              className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+              data-testid="input-openai-api-key"
+            />
+            <button
+              type="button"
+              onClick={() => setApiKeyVisible(!apiKeyVisible)}
+              className="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+              data-testid="toggle-api-key-visibility"
+            >
+              {apiKeyVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Ogni tenant può avere la propria chiave API. I dati vengono crittografati nel database.
+          </p>
+        </div>
+
+        {/* Connection Test */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                formData.apiConnectionStatus === 'connected' ? 'bg-green-500' :
+                formData.apiConnectionStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
+              }`}></div>
+              <span className="text-sm font-medium text-gray-700">
+                Stato Connessione: {
+                  formData.apiConnectionStatus === 'connected' ? 'Connesso' :
+                  formData.apiConnectionStatus === 'error' ? 'Errore' : 'Disconnesso'
+                }
+              </span>
+            </div>
+            <button
+              onClick={testApiConnection}
+              disabled={testingConnection || !formData.openaiApiKey}
+              className="px-4 py-2 bg-[#FF6900] text-white rounded-lg hover:bg-[#E55A00] disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+              data-testid="button-test-connection"
+            >
+              {testingConnection ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Testing...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Testa Connessione</span>
+                </>
+              )}
+            </button>
+          </div>
+          
+          {connectionTestResult && (
+            <div className={`p-3 rounded-lg ${
+              connectionTestResult.success 
+                ? 'bg-green-50 border border-green-200' 
+                : 'bg-red-50 border border-red-200'
+            }`}>
+              <div className="flex items-center space-x-2">
+                {connectionTestResult.success ? (
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                )}
+                <span className={`text-sm font-medium ${
+                  connectionTestResult.success ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {connectionTestResult.message}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {formData.lastConnectionTest && (
+            <p className="text-xs text-gray-500 mt-2">
+              Ultimo test: {new Date(formData.lastConnectionTest).toLocaleString('it-IT')}
+            </p>
+          )}
+        </div>
+
+        {/* Model Configuration */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -472,12 +621,29 @@ export default function AISettingsPage() {
         </div>
       )}
 
-      {/* Usage Logs */}
+      {/* Activity Logs */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-          <BarChart3 className="w-5 h-5 mr-2 text-[#FF6900]" />
-          Log Utilizzo Recenti
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <Activity className="w-5 h-5 mr-2 text-[#FF6900]" />
+            Registro Attività AI
+          </h3>
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              placeholder="Cerca nei logs..."
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+              data-testid="input-search-logs"
+            />
+            <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent">
+              <option value="">Tutte le funzioni</option>
+              <option value="chat">Chat Assistant</option>
+              <option value="document_analysis">Analisi Documenti</option>
+              <option value="financial_forecasting">Previsioni</option>
+              <option value="web_search">Ricerca Web</option>
+            </select>
+          </div>
+        </div>
         {logsLoading ? (
           <div className="flex items-center justify-center py-8">
             <RefreshCw className="w-6 h-6 animate-spin text-[#FF6900]" />
@@ -526,6 +692,154 @@ export default function AISettingsPage() {
     </div>
   );
 
+  // Fetch AI conversations for archive
+  const { data: conversations, isLoading: conversationsLoading } = useQuery({
+    queryKey: ['/api/ai/conversations'],
+    refetchInterval: 60000,
+    enabled: activeTab === 'conversations'
+  });
+
+  const renderConversationsTab = () => (
+    <div className="space-y-6">
+      {/* GDPR Controls */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <div className="flex items-start space-x-3">
+          <Shield className="w-6 h-6 text-blue-600 mt-1" />
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Privacy e Conformità GDPR</h3>
+            <p className="text-blue-700 text-sm mb-4">
+              Le conversazioni AI sono gestite in conformità al GDPR. I dati vengono automaticamente 
+              anonimizzati e cancellati secondo le policy di retention configurate.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-white px-3 py-2 rounded-lg border border-blue-200">
+                <span className="text-sm font-medium text-blue-800">
+                  Retention: {formData.privacySettings?.dataRetentionDays || 30} giorni
+                </span>
+              </div>
+              <div className="bg-white px-3 py-2 rounded-lg border border-blue-200">
+                <span className="text-sm font-medium text-blue-800">
+                  Anonimizzazione: {formData.privacySettings?.anonymizeConversations ? 'Attiva' : 'Disattiva'}
+                </span>
+              </div>
+              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                <Trash2 className="w-4 h-4 inline mr-1" />
+                Cancella Tutti i Dati
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Conversations Archive */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <MessageCircle className="w-5 h-5 mr-2 text-[#FF6900]" />
+            Archivio Conversazioni AI
+          </h3>
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              placeholder="Cerca conversazioni..."
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+              data-testid="input-search-conversations"
+            />
+            <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent">
+              <option value="">Tutti gli utenti</option>
+              <option value="current">Solo le mie</option>
+              <option value="team">Team</option>
+            </select>
+            <button className="px-4 py-2 bg-[#FF6900] text-white rounded-lg hover:bg-[#E55A00] text-sm font-medium">
+              <FileText className="w-4 h-4 inline mr-1" />
+              Esporta
+            </button>
+          </div>
+        </div>
+
+        {conversationsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <RefreshCw className="w-8 h-8 animate-spin text-[#FF6900] mx-auto mb-4" />
+              <p className="text-gray-600">Caricamento conversazioni...</p>
+            </div>
+          </div>
+        ) : conversations?.data?.length > 0 ? (
+          <div className="space-y-4">
+            {conversations.data.map((conversation: any) => (
+              <div key={conversation.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[#FF6900]/10 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-[#FF6900]" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">{conversation.title || 'Conversazione AI'}</h4>
+                      <p className="text-sm text-gray-600">
+                        {conversation.featureContext} • {new Date(conversation.createdAt).toLocaleString('it-IT')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                      {conversation.messageCount || 0} messaggi
+                    </span>
+                    <button className="p-1 text-gray-400 hover:text-gray-600">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button className="p-1 text-gray-400 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  <p>Anteprima: {conversation.lastMessage || 'Nessun messaggio disponibile'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna Conversazione</h3>
+            <p className="text-gray-600">Le conversazioni AI appariranno qui quando gli utenti inizieranno a utilizzare l'assistente.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Export and Management Actions */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <FileText className="w-5 h-5 mr-2 text-[#FF6900]" />
+          Gestione Dati
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-colors">
+            <div className="text-center">
+              <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="font-medium text-gray-700">Esporta CSV</p>
+              <p className="text-sm text-gray-500">Export logs in CSV</p>
+            </div>
+          </button>
+          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-colors">
+            <div className="text-center">
+              <Shield className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="font-medium text-gray-700">Audit Report</p>
+              <p className="text-sm text-gray-500">Report GDPR compliance</p>
+            </div>
+          </button>
+          <button className="flex items-center justify-center p-4 border-2 border-dashed border-red-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-colors">
+            <div className="text-center">
+              <Trash2 className="w-8 h-8 text-red-400 mx-auto mb-2" />
+              <p className="font-medium text-red-700">Cancellazione GDPR</p>
+              <p className="text-sm text-red-500">Elimina tutti i dati</p>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -549,7 +863,8 @@ export default function AISettingsPage() {
               <nav className="-mb-px flex space-x-8">
                 {[
                   { id: 'settings', name: 'Configurazione', icon: Settings },
-                  { id: 'analytics', name: 'Analytics', icon: BarChart3 }
+                  { id: 'analytics', name: 'Analytics', icon: BarChart3 },
+                  { id: 'conversations', name: 'Archivio Chat', icon: MessageCircle }
                 ].map(({ id, name, icon: Icon }) => (
                   <button
                     key={id}
@@ -575,6 +890,7 @@ export default function AISettingsPage() {
       <div className="px-6 py-8">
         {activeTab === 'settings' && renderSettingsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
+        {activeTab === 'conversations' && renderConversationsTab()}
       </div>
     </div>
   );

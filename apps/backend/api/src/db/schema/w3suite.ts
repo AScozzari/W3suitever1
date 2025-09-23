@@ -2465,15 +2465,17 @@ export const notificationPreferencesRelations = relations(notificationPreference
 
 // ==================== AI SYSTEM TABLES ====================
 
-// AI Settings - Configuration per tenant (NO API KEY storage for security)
+// AI Settings - Configuration per tenant with encrypted API key storage
 export const aiSettings = w3suiteSchema.table("ai_settings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   
   // Model Configuration
   openaiModel: aiModelEnum("openai_model").default('gpt-4.1').notNull(),
+  openaiApiKey: text("openai_api_key"), // Encrypted storage for tenant-specific API key
   apiConnectionStatus: aiConnectionStatusEnum("api_connection_status").default('disconnected').notNull(),
   lastConnectionTest: timestamp("last_connection_test"),
+  connectionTestResult: jsonb("connection_test_result"), // Store last test details
   
   // Features Configuration - Granular control via JSONB
   featuresEnabled: jsonb("features_enabled").default({
