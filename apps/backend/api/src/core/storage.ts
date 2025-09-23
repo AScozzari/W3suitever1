@@ -2677,7 +2677,7 @@ export class DatabaseStorage implements IStorage {
   
   async getAISettings(tenantId: string): Promise<AISettings | null> {
     try {
-      await this.setTenantContext(tenantId);
+      await setTenantContext(tenantId);
       const [result] = await db.select().from(aiSettings).where(eq(aiSettings.tenantId, tenantId)).limit(1);
       
       if (!result) {
