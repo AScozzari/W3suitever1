@@ -17,6 +17,7 @@ import {
 import { useLocation } from 'wouter';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
+import ChatWidget from './ChatWidget';
 
 // Palette colori W3 Suite - Coerente e Professionale
 const COLORS = {
@@ -2210,6 +2211,14 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
         onClose={() => setLoginModalOpen(false)}
         tenantCode={localStorage.getItem('currentTenant') || 'staging'}
       />
+
+      {/* ChatBot AI Tippy - Assistente WindTre */}
+      {user && (
+        <ChatWidget 
+          currentPage={location}
+          currentModule={currentModule}
+        />
+      )}
     </div>
   );
 }
