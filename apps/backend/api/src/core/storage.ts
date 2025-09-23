@@ -2685,7 +2685,27 @@ export class DatabaseStorage implements IStorage {
         return await this.createDefaultAISettings(tenantId);
       }
       
-      return result;
+      // ✅ FIX: Map snake_case DB fields to camelCase for API compatibility
+      const mappedResult = {
+        ...result,
+        isActive: result.is_active,
+        featuresEnabled: result.features_enabled,
+        apiConnectionStatus: result.api_connection_status,
+        openaiApiKey: result.openai_api_key,
+        lastConnectionTest: result.last_connection_test,
+        maxTokensPerResponse: result.max_tokens_per_response,
+        responseCreativity: result.response_creativity,
+        responseLengthLimit: result.response_length_limit,
+        monthlyTokenLimit: result.monthly_token_limit,
+        currentMonthUsage: result.current_month_usage,
+        usageResetDate: result.usage_reset_date,
+        chatRetentionDays: result.chat_retention_days,
+        dataSharingOpenai: result.data_sharing_openai,
+        contextSettings: result.context_settings,
+        connectionTestResult: result.connection_test_result
+      };
+      
+      return mappedResult as AISettings;
     } catch (error) {
       console.error('Error in getAISettings:', error);
       return null;
