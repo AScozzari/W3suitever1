@@ -3,6 +3,7 @@
 
 import OpenAI from "openai";
 import { AISettings, AIUsageLog, InsertAIUsageLog } from "../db/schema/w3suite";
+import { redisService, RedisService } from "../core/redis-service";
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cheerio from 'cheerio';
@@ -92,6 +93,7 @@ export class UnifiedOpenAIService {
   /**
    * Main unified method using OpenAI Responses API
    * Handles all tools orchestration in single API call
+   * Now with intelligent Redis cache for performance optimization
    */
   async createUnifiedResponse(
     input: string,
@@ -99,6 +101,32 @@ export class UnifiedOpenAIService {
     context: OpenAIRequestContext
   ): Promise<UnifiedOpenAIResponse> {
     const startTime = Date.now();
+
+    // 🤖 INTELLIGENT CACHE SYSTEM
+    // Generate cache key from input + settings for intelligent deduplication
+    const cacheKey = RedisService.generateContentHash(
+      input,
+      `${settings.openaiModel}:${settings.maxTokensPerResponse}:${settings.responseCreativity}:${JSON.stringify(settings.featuresEnabled)}`
+    );
+
+    // Try to get cached response first
+    try {
+      const cachedResponse = await redisService.getCachedAIResponse(cacheKey, context.tenantId);
+      if (cachedResponse) {
+        console.log(`[AI-CACHE] 🎯 Cache HIT for request: ${input.substring(0, 50)}...`);
+        
+        // Return cached response with cache flag
+        return {
+          ...cachedResponse,
+          responseTime: Date.now() - startTime, // Update with current response time
+          cached: true // Add cache indicator
+        };
+      }
+      
+      console.log(`[AI-CACHE] 💨 Cache MISS for request: ${input.substring(0, 50)}... Calling OpenAI...`);
+    } catch (cacheError) {
+      console.warn(`[AI-CACHE] ⚠️ Cache check failed, proceeding with OpenAI:`, cacheError);
+    }
     
     try {
       // Get enabled tools from settings
@@ -265,7 +293,8 @@ export class UnifiedOpenAIService {
         // Don't fail the request if conversation storage fails
       }
 
-      return {
+      // 🤖 SAVE TO CACHE for future requests
+      const responseObject = {
         success: true,
         output: finalResponse.choices[0].message.content,
         tokensUsed,
@@ -277,6 +306,21 @@ export class UnifiedOpenAIService {
           webResultsFound: webResults.length
         }
       };
+
+      // Cache the response for intelligent deduplication
+      try {
+        // Use different TTL based on content type
+        const hasWebResults = webResults.length > 0;
+        const cacheTTL = hasWebResults ? 7200 : 3600; // 2h for web searches, 1h for chat
+        
+        await redisService.cacheAIResponse(cacheKey, context.tenantId, responseObject, cacheTTL);
+        console.log(`[AI-CACHE] 💾 Response cached with TTL: ${cacheTTL}s (${hasWebResults ? 'web+chat' : 'chat-only'})`);
+      } catch (cacheError) {
+        console.warn(`[AI-CACHE] ⚠️ Failed to cache response:`, cacheError);
+        // Continue execution - cache failure shouldn't break the response
+      }
+
+      return responseObject;
 
     } catch (error: any) {
       const responseTime = Date.now() - startTime;

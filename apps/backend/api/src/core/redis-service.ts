@@ -283,6 +283,265 @@ export class RedisService {
     return current <= limit;
   }
 
+  // ==================== AI CACHE SYSTEM ====================
+
+  /**
+   * Cache AI chat response to avoid duplicate OpenAI calls
+   * Uses content hash as key for intelligent deduplication
+   */
+  async cacheAIResponse(
+    contentHash: string, 
+    tenantId: string, 
+    response: any, 
+    ttlSeconds: number = 3600 // 1 hour default
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    try {
+      const key = `ai_response:${tenantId}:${contentHash}`;
+      await this.redis.setex(key, ttlSeconds, JSON.stringify({
+        response,
+        cachedAt: new Date().toISOString(),
+        contentHash
+      }));
+      
+      logger.debug('🤖 AI Response cached', { contentHash, tenantId, ttl: ttlSeconds });
+    } catch (error) {
+      logger.warn('🤖 Failed to cache AI response', { error, contentHash, tenantId });
+    }
+  }
+
+  /**
+   * Retrieve cached AI response
+   */
+  async getCachedAIResponse(contentHash: string, tenantId: string): Promise<any | null> {
+    if (!this.isRedisAvailable || !this.redis) return null;
+    try {
+      const key = `ai_response:${tenantId}:${contentHash}`;
+      const cached = await this.redis.get(key);
+      
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        logger.debug('🤖 AI Response cache hit', { contentHash, tenantId });
+        return parsed.response;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.warn('🤖 Failed to retrieve cached AI response', { error, contentHash, tenantId });
+      return null;
+    }
+  }
+
+  /**
+   * Cache vector embeddings for faster RAG retrieval
+   */
+  async cacheEmbedding(
+    textHash: string, 
+    tenantId: string, 
+    embedding: number[], 
+    ttlSeconds: number = 86400 // 24 hours default
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    try {
+      const key = `embedding:${tenantId}:${textHash}`;
+      await this.redis.setex(key, ttlSeconds, JSON.stringify({
+        embedding,
+        cachedAt: new Date().toISOString(),
+        textHash
+      }));
+      
+      logger.debug('🔍 Embedding cached', { textHash, tenantId, vectorLength: embedding.length });
+    } catch (error) {
+      logger.warn('🔍 Failed to cache embedding', { error, textHash, tenantId });
+    }
+  }
+
+  /**
+   * Retrieve cached embedding
+   */
+  async getCachedEmbedding(textHash: string, tenantId: string): Promise<number[] | null> {
+    if (!this.isRedisAvailable || !this.redis) return null;
+    try {
+      const key = `embedding:${tenantId}:${textHash}`;
+      const cached = await this.redis.get(key);
+      
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        logger.debug('🔍 Embedding cache hit', { textHash, tenantId });
+        return parsed.embedding;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.warn('🔍 Failed to retrieve cached embedding', { error, textHash, tenantId });
+      return null;
+    }
+  }
+
+  /**
+   * Cache web search results to avoid duplicate searches
+   */
+  async cacheWebSearch(
+    searchHash: string, 
+    tenantId: string, 
+    results: any[], 
+    ttlSeconds: number = 7200 // 2 hours default
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    try {
+      const key = `web_search:${tenantId}:${searchHash}`;
+      await this.redis.setex(key, ttlSeconds, JSON.stringify({
+        results,
+        cachedAt: new Date().toISOString(),
+        searchHash,
+        resultsCount: results.length
+      }));
+      
+      logger.debug('🌐 Web search cached', { searchHash, tenantId, resultsCount: results.length });
+    } catch (error) {
+      logger.warn('🌐 Failed to cache web search', { error, searchHash, tenantId });
+    }
+  }
+
+  /**
+   * Retrieve cached web search results
+   */
+  async getCachedWebSearch(searchHash: string, tenantId: string): Promise<any[] | null> {
+    if (!this.isRedisAvailable || !this.redis) return null;
+    try {
+      const key = `web_search:${tenantId}:${searchHash}`;
+      const cached = await this.redis.get(key);
+      
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        logger.debug('🌐 Web search cache hit', { searchHash, tenantId });
+        return parsed.results;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.warn('🌐 Failed to retrieve cached web search', { error, searchHash, tenantId });
+      return null;
+    }
+  }
+
+  /**
+   * Cache document processing results (URL scraping, PDF analysis, etc.)
+   */
+  async cacheDocumentProcessing(
+    documentHash: string, 
+    tenantId: string, 
+    processedData: any, 
+    ttlSeconds: number = 43200 // 12 hours default
+  ): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    try {
+      const key = `document:${tenantId}:${documentHash}`;
+      await this.redis.setex(key, ttlSeconds, JSON.stringify({
+        processedData,
+        cachedAt: new Date().toISOString(),
+        documentHash
+      }));
+      
+      logger.debug('📄 Document processing cached', { documentHash, tenantId });
+    } catch (error) {
+      logger.warn('📄 Failed to cache document processing', { error, documentHash, tenantId });
+    }
+  }
+
+  /**
+   * Retrieve cached document processing results
+   */
+  async getCachedDocumentProcessing(documentHash: string, tenantId: string): Promise<any | null> {
+    if (!this.isRedisAvailable || !this.redis) return null;
+    try {
+      const key = `document:${tenantId}:${documentHash}`;
+      const cached = await this.redis.get(key);
+      
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        logger.debug('📄 Document processing cache hit', { documentHash, tenantId });
+        return parsed.processedData;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.warn('📄 Failed to retrieve cached document processing', { error, documentHash, tenantId });
+      return null;
+    }
+  }
+
+  /**
+   * Invalidate AI cache for a tenant (useful for cache refreshes)
+   */
+  async invalidateAICache(tenantId: string, cacheType?: 'ai_response' | 'embedding' | 'web_search' | 'document'): Promise<void> {
+    if (!this.isRedisAvailable || !this.redis) return;
+    try {
+      const patterns = cacheType 
+        ? [`${cacheType}:${tenantId}:*`]
+        : [`ai_response:${tenantId}:*`, `embedding:${tenantId}:*`, `web_search:${tenantId}:*`, `document:${tenantId}:*`];
+      
+      for (const pattern of patterns) {
+        const keys = await this.redis.keys(pattern);
+        if (keys.length > 0) {
+          await this.redis.del(...keys);
+          logger.info('🤖 AI Cache invalidated', { pattern, keysDeleted: keys.length });
+        }
+      }
+    } catch (error) {
+      logger.warn('🤖 Failed to invalidate AI cache', { error, tenantId, cacheType });
+    }
+  }
+
+  /**
+   * Get AI cache statistics for monitoring
+   */
+  async getAICacheStats(tenantId: string): Promise<{
+    aiResponses: number;
+    embeddings: number;
+    webSearches: number;
+    documents: number;
+    totalMemory: string;
+  }> {
+    if (!this.isRedisAvailable || !this.redis) {
+      return { aiResponses: 0, embeddings: 0, webSearches: 0, documents: 0, totalMemory: '0MB' };
+    }
+
+    try {
+      const [aiKeys, embeddingKeys, webSearchKeys, documentKeys] = await Promise.all([
+        this.redis.keys(`ai_response:${tenantId}:*`),
+        this.redis.keys(`embedding:${tenantId}:*`),
+        this.redis.keys(`web_search:${tenantId}:*`),
+        this.redis.keys(`document:${tenantId}:*`)
+      ]);
+
+      // Get memory usage (approximation)
+      const memoryInfo = await this.redis.memory('usage', ...aiKeys, ...embeddingKeys, ...webSearchKeys, ...documentKeys);
+      const totalMemoryBytes = Array.isArray(memoryInfo) ? memoryInfo.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0) : 0;
+      const totalMemoryMB = (totalMemoryBytes / 1024 / 1024).toFixed(2);
+
+      return {
+        aiResponses: aiKeys.length,
+        embeddings: embeddingKeys.length,
+        webSearches: webSearchKeys.length,
+        documents: documentKeys.length,
+        totalMemory: `${totalMemoryMB}MB`
+      };
+    } catch (error) {
+      logger.warn('🤖 Failed to get AI cache stats', { error, tenantId });
+      return { aiResponses: 0, embeddings: 0, webSearches: 0, documents: 0, totalMemory: '0MB' };
+    }
+  }
+
+  /**
+   * Generate cache key hash from content for intelligent deduplication
+   */
+  static generateContentHash(content: string, additional?: string): string {
+    const crypto = require('crypto');
+    const hashContent = additional ? `${content}:${additional}` : content;
+    return crypto.createHash('sha256').update(hashContent).digest('hex').substring(0, 16);
+  }
+
   // ==================== CLEANUP ====================
 
   async disconnect(): Promise<void> {
