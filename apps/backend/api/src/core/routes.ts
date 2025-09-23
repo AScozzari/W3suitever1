@@ -89,6 +89,7 @@ const createCalendarEventSchema = z.object({
 const updateCalendarEventSchema = createCalendarEventSchema.partial();
 
 import hierarchyRouter from "../routes/hierarchy";
+import { compatibilityLayer } from "./compatibility-layer";
 import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
 import { objectAclService } from "./objectAcl";
 import { HRStorage, CalendarScope } from "./hr-storage";
@@ -8100,10 +8101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
       
-      // Use the dedicated getMyRequests method for user-specific requests
-      const options = { page: 1, limit: 100 }; // Default pagination  
-      const result = await storage.getMyRequests(tenantId, userId, {}, options);
-      res.json(result?.requests || []);
+      // ✅ FIX: Use compatibility layer for universal requests system
+      const requests = await compatibilityLayer.getLegacyHrRequests(tenantId, userId);
+      res.json(requests || []);
     } catch (error) {
       console.error('Get user requests error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -9057,31 +9057,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Calculate performance metrics from HR requests and user data
-      const [performanceStats] = await db
-        .select({
-          totalRequests: sql<number>`count(*)`,
-          approvedRequests: sql<number>`count(case when ${hrRequests.status} = 'approved' then 1 end)`,
-          onTimeRequests: sql<number>`count(case when ${hrRequests.status} = 'approved' and extract(epoch from ${hrRequests.updatedAt} - ${hrRequests.createdAt}) <= 86400 then 1 end)`,
-          avgResponseTime: sql<number>`avg(extract(epoch from ${hrRequests.updatedAt} - ${hrRequests.createdAt}) / 3600.0)`
-        })
-        .from(hrRequests)
-        .where(and(
-          eq(hrRequests.tenantId, tenantId),
-          eq(hrRequests.requesterId, userId),
-          not(eq(hrRequests.status, 'draft'))
-        ));
+      // ✅ FIX: Calculate performance metrics using compatibility layer
+      const requests = await compatibilityLayer.getLegacyHrRequests(tenantId, userId);
+      const nonDraftRequests = requests.filter(req => req.status !== 'draft');
+      
+      const approvedRequests = nonDraftRequests.filter(req => req.status === 'approved');
+      const onTimeRequests = approvedRequests.filter(req => {
+        if (!req.createdAt || !req.updatedAt) return false;
+        const processingTime = new Date(req.updatedAt).getTime() - new Date(req.createdAt).getTime();
+        return processingTime <= 86400000; // 24 hours in milliseconds
+      });
+      
+      const totalProcessingTime = approvedRequests.reduce((sum, req) => {
+        if (!req.createdAt || !req.updatedAt) return sum;
+        return sum + (new Date(req.updatedAt).getTime() - new Date(req.createdAt).getTime());
+      }, 0);
+      
+      const performanceStats = {
+        totalRequests: nonDraftRequests.length,
+        approvedRequests: approvedRequests.length,
+        onTimeRequests: onTimeRequests.length,
+        avgResponseTime: approvedRequests.length > 0 ? (totalProcessingTime / approvedRequests.length) / 3600000 : 0 // Convert to hours
+      };
 
       // Calculate derived performance metrics
-      const totalRequests = performanceStats?.totalRequests || 0;
-      const approvedRequests = performanceStats?.approvedRequests || 0;
-      const onTimeRequests = performanceStats?.onTimeRequests || 0;
+      const totalRequests = performanceStats.totalRequests || 0;
+      const approvedRequestsCount = performanceStats.approvedRequests || 0;
+      const onTimeRequestsCount = performanceStats.onTimeRequests || 0;
       
-      const goalsAchieved = Math.min(10, Math.max(0, Math.round((approvedRequests / Math.max(totalRequests, 1)) * 10)));
+      const goalsAchieved = Math.min(10, Math.max(0, Math.round((approvedRequestsCount / Math.max(totalRequests, 1)) * 10)));
       const averageRating = totalRequests > 0 
-        ? Math.min(5, Math.max(1, 5 - (performanceStats?.avgResponseTime || 0) / 24)) // Rating based on response time
+        ? Math.min(5, Math.max(1, 5 - (performanceStats.avgResponseTime || 0) / 24)) // Rating based on response time
         : 4.0;
-      const recognitions = onTimeRequests >= 3 ? Math.min(5, Math.floor(onTimeRequests / 3)) : 0;
+      const recognitions = onTimeRequestsCount >= 3 ? Math.min(5, Math.floor(onTimeRequestsCount / 3)) : 0;
 
       // Mock goals data (could be enhanced with real goal tracking)
       const currentGoals = totalRequests > 0 ? [
@@ -9089,7 +9097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: '1',
           title: 'Migliorare Efficienza Richieste',
           description: 'Ridurre tempo di elaborazione richieste HR',
-          progress: Math.min(100, (onTimeRequests / Math.max(totalRequests, 1)) * 100),
+          progress: Math.min(100, (onTimeRequestsCount / Math.max(totalRequests, 1)) * 100),
           deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
           status: 'in_progress'
         },
