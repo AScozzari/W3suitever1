@@ -80,8 +80,6 @@ export class UnifiedOpenAIService {
   constructor(storage: any) {
     // Use Replit integration managed API key for security
     const apiKey = process.env.OPENAI_API_KEY;
-    console.log('[DEBUG-API-KEY] Environment key length:', apiKey?.length || 0);
-    console.log('[DEBUG-API-KEY] Environment key prefix:', apiKey?.substring(0, 10) || 'MISSING');
     if (!apiKey) {
       throw new Error("OPENAI_API_KEY not found. Install OpenAI integration via Replit.");
     }
@@ -100,8 +98,6 @@ export class UnifiedOpenAIService {
     context: OpenAIRequestContext
   ): Promise<UnifiedOpenAIResponse> {
     const startTime = Date.now();
-    console.log('[DEBUG-UNIFIED] Starting createUnifiedResponse');
-    console.log('[DEBUG-UNIFIED] Client API key prefix:', this.client.apiKey?.substring(0, 10) || 'MISSING');
     
     try {
       // Get enabled tools from settings
@@ -114,32 +110,16 @@ export class UnifiedOpenAIService {
       const instructions = this.buildContextInstructions(settings, context);
 
       // Use Chat Completions API instead of Responses API for wider compatibility
-      console.log('[DEBUG-UNIFIED] About to call chat.completions.create with client');
-      console.log('[DEBUG-UNIFIED] Client actual API key suffix:', this.client.apiKey?.substring(this.client.apiKey.length - 4) || 'MISSING');
-      
-      // SECURITY FIX: Force correct API key to prevent runtime modifications
-      const correctApiKey = process.env.OPENAI_API_KEY;
-      const secureClient = new OpenAI({ apiKey: correctApiKey });
-      console.log('[DEBUG-SECURITY] Using fresh client with environment key');
-      
-      let response;
-      try {
-        response = await secureClient.chat.completions.create({
-          model: settings.openaiModel as string,
-          messages: [
-            { role: "system", content: instructions },
-            { role: "user", content: input }
-          ],
-          max_tokens: settings.maxTokensPerResponse,
-          temperature: temperature,
-          stream: false, // For now, implement streaming separately
-        });
-        console.log('[DEBUG-UNIFIED] OpenAI call successful with secure client');
-      } catch (openaiError: any) {
-        console.error('[DEBUG-UNIFIED] OpenAI call failed:', openaiError.message);
-        console.error('[DEBUG-UNIFIED] Secure client API key suffix:', correctApiKey?.substring(correctApiKey.length - 4));
-        throw openaiError; // Re-throw to maintain original error handling
-      }
+      const response = await this.client.chat.completions.create({
+        model: settings.openaiModel as string,
+        messages: [
+          { role: "system", content: instructions },
+          { role: "user", content: input }
+        ],
+        max_tokens: settings.maxTokensPerResponse,
+        temperature: temperature,
+        stream: false, // For now, implement streaming separately
+      });
 
       const responseTime = Date.now() - startTime;
       const tokensUsed = response.usage?.total_tokens || 0;
