@@ -10,7 +10,7 @@ import * as path from 'path';
 const DEFAULT_MODEL = "gpt-4-turbo";
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const WHISPER_MODEL = "whisper-1";
-const VISION_MODEL = "gpt-4-vision-preview";
+const VISION_MODEL = "gpt-4o"; // Updated to current vision model
 
 export interface OpenAIToolConfig {
   web_search?: boolean;
@@ -121,7 +121,9 @@ export class UnifiedOpenAIService {
 
       const responseTime = Date.now() - startTime;
       const tokensUsed = response.usage?.total_tokens || 0;
-      const cost = this.calculateCost(tokensUsed, settings.openaiModel as string);
+      const inputTokens = response.usage?.prompt_tokens || 0;
+      const outputTokens = response.usage?.completion_tokens || 0;
+      const cost = this.calculateCost(inputTokens, outputTokens, settings.openaiModel as string, 'chat');
 
       // Log usage for analytics
       await this.logUsage({
@@ -305,21 +307,25 @@ export class UnifiedOpenAIService {
 
       const responseTime = Date.now() - startTime;
       
-      // Log usage for analytics
+      // Log usage with granular tracking 
+      const duration = transcription.duration || 0;
+      const durationMinutes = duration / 60;
       await this.logUsage({
         tenantId: context.tenantId,
         userId: context.userId,
         modelUsed: 'whisper-1' as any,
-        featureType: 'audio_transcription',
+        featureType: 'transcription',
         tokensInput: 0,
         tokensOutput: 0,
-        tokensTotal: Math.ceil(transcription.duration || 0),
-        costUsd: Math.round((transcription.duration || 0) * 0.6), // $0.006/second
+        tokensTotal: Math.ceil(duration), // Store as seconds for tracking
+        costUsd: Math.round(this.calculateCost(0, 0, 'whisper-1', 'transcription', durationMinutes) * 100), // Store as cents
         responseTimeMs: responseTime,
         success: true,
         requestContext: {
-          duration: transcription.duration,
-          language: transcription.language
+          duration: duration,
+          durationMinutes: durationMinutes,
+          language: transcription.language,
+          segmentsCount: transcription.segments?.length || 0
         }
       });
 
@@ -399,7 +405,7 @@ export class UnifiedOpenAIService {
         tokensInput: response.usage?.prompt_tokens || 0,
         tokensOutput: response.usage?.completion_tokens || 0,
         tokensTotal: tokensUsed,
-        costUsd: Math.round(this.calculateCost(tokensUsed, 'gpt-4o') * 100),
+        costUsd: Math.round(this.calculateCost(response.usage?.prompt_tokens || 0, response.usage?.completion_tokens || 0, 'gpt-4o', 'vision') * 100),
         responseTimeMs: responseTime,
         success: true,
         requestContext: {
@@ -588,21 +594,23 @@ export class UnifiedOpenAIService {
       const embedding = response.data[0].embedding;
       const responseTime = Date.now() - startTime;
       
-      // Log usage with unified tracking
-      await this.storage.createAIUsageLog({
+      // Log usage with standardized granular tracking
+      const totalTokens = response.usage?.total_tokens || 0;
+      await this.logUsage({
         tenantId: context.tenantId,
         userId: context.userId,
-        model: 'text-embedding-3-small',
-        feature: 'vector_embeddings',
-        promptTokens: response.usage?.prompt_tokens || 0,
-        completionTokens: 0,
-        totalTokens: response.usage?.total_tokens || 0,
-        cost: (response.usage?.total_tokens || 0) * 0.00000002, // $0.02 per 1M tokens for embeddings
+        modelUsed: 'text-embedding-3-small' as any,
+        featureType: 'embedding',
+        tokensInput: totalTokens, // For embeddings, input tokens = total tokens
+        tokensOutput: 0,
+        tokensTotal: totalTokens,
+        costUsd: Math.round(this.calculateCost(totalTokens, 0, 'text-embedding-3-small', 'embedding') * 100),
         responseTimeMs: responseTime,
         success: true,
         requestContext: {
-          ...context.contextData,
-          textLength: text.length
+          textLength: text.length,
+          embeddingDimensions: embedding.length,
+          modelUsed: 'text-embedding-3-small'
         }
       });
       
@@ -616,20 +624,24 @@ export class UnifiedOpenAIService {
     } catch (error: any) {
       console.error('Error generating embedding:', error);
       
-      // Log failed attempt
-      await this.storage.createAIUsageLog({
+      // Log failed attempt with standardized tracking
+      const responseTime = Date.now() - startTime;
+      await this.logUsage({
         tenantId: context.tenantId,
         userId: context.userId,
-        model: 'text-embedding-3-small',
-        feature: 'vector_embeddings',
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        cost: 0,
-        responseTimeMs: 0,
+        modelUsed: 'text-embedding-3-small' as any,
+        featureType: 'embedding',
+        tokensInput: 0,
+        tokensOutput: 0,
+        tokensTotal: 0,
+        costUsd: 0,
+        responseTimeMs: responseTime,
         success: false,
         errorMessage: error.message,
-        requestContext: context.contextData
+        requestContext: {
+          textLength: text.length,
+          errorType: error.name || 'unknown'
+        }
       });
       
       return {
@@ -724,26 +736,105 @@ export class UnifiedOpenAIService {
     return (response.usage?.total_tokens || 0);
   }
 
-  private calculateCost(tokens: number, model: string): number {
-    // Simplified cost calculation - should be updated with actual OpenAI pricing
-    const costPerToken = this.getModelCostPerToken(model);
-    return tokens * costPerToken;
+  /**
+   * Calculate granular cost based on operation type and token usage
+   */
+  private calculateCost(
+    inputTokens: number = 0,
+    outputTokens: number = 0,
+    model: string,
+    operationType: 'chat' | 'embedding' | 'transcription' | 'vision' | 'url_scraping' = 'chat',
+    duration?: number
+  ): number {
+    const pricing = this.getModelPricing(model);
+    
+    switch (operationType) {
+      case 'chat':
+      case 'vision':
+        return (inputTokens * pricing.input) + (outputTokens * pricing.output);
+      
+      case 'embedding':
+        const totalTokens = inputTokens + outputTokens;
+        return totalTokens * pricing.embedding;
+      
+      case 'transcription':
+        // Whisper pricing is per minute, not per token
+        return (duration || 0) * pricing.transcription;
+      
+      case 'url_scraping':
+        // Usually no direct cost for scraping, but may include processing
+        return 0;
+      
+      default:
+        return (inputTokens * pricing.input) + (outputTokens * pricing.output);
+    }
   }
 
-  private getModelCostPerToken(model: string): number {
-    // OpenAI pricing per 1K tokens (September 2024)
-    const pricing: Record<string, number> = {
-      'gpt-4-turbo': 0.00001,        // $10 per 1M tokens input, $30 per 1M output
-      'gpt-4o': 0.000005,            // $5 per 1M tokens input, $15 per 1M output
-      'gpt-4o-mini': 0.00000015,     // $0.15 per 1M tokens input, $0.60 per 1M output  
-      'gpt-4': 0.00003,              // $30 per 1M tokens input, $60 per 1M output
-      'gpt-3.5-turbo': 0.0000005,    // $0.50 per 1M tokens input, $1.50 per 1M output
-      'text-embedding-3-small': 0.00000002, // $0.02 per 1M tokens
-      'text-embedding-3-large': 0.00000013, // $0.13 per 1M tokens
-      'whisper-1': 0.00001           // $0.006 per minute (estimated per token)
+  // Backward compatibility method for existing calls
+  private calculateCostLegacy(tokens: number, model: string): number {
+    const pricing = this.getModelPricing(model);
+    return tokens * (pricing.input + pricing.output) / 2; // Average
+  }
+
+  private getModelPricing(model: string): {
+    input: number;
+    output: number;
+    embedding: number;
+    transcription: number;
+  } {
+    // Updated OpenAI pricing as of September 2024 (per token)
+    const pricingMap: Record<string, any> = {
+      'gpt-4o': {
+        input: 0.0000025,     // $2.50 per 1M input tokens
+        output: 0.00001,      // $10.00 per 1M output tokens
+        embedding: 0,         // N/A
+        transcription: 0,     // N/A
+      },
+      'gpt-4-turbo': {
+        input: 0.00001,       // $10.00 per 1M input tokens
+        output: 0.00003,      // $30.00 per 1M output tokens  
+        embedding: 0,
+        transcription: 0,
+      },
+      'gpt-4o-mini': {
+        input: 0.00000015,    // $0.15 per 1M input tokens
+        output: 0.0000006,    // $0.60 per 1M output tokens
+        embedding: 0,
+        transcription: 0,
+      },
+      'gpt-4': {
+        input: 0.00003,       // $30.00 per 1M input tokens
+        output: 0.00006,      // $60.00 per 1M output tokens
+        embedding: 0,
+        transcription: 0,
+      },
+      'gpt-3.5-turbo': {
+        input: 0.0000005,     // $0.50 per 1M input tokens
+        output: 0.0000015,    // $1.50 per 1M output tokens
+        embedding: 0,
+        transcription: 0,
+      },
+      'text-embedding-3-small': {
+        input: 0,
+        output: 0,
+        embedding: 0.00000002, // $0.02 per 1M tokens
+        transcription: 0,
+      },
+      'text-embedding-3-large': {
+        input: 0,
+        output: 0,
+        embedding: 0.00000013, // $0.13 per 1M tokens
+        transcription: 0,
+      },
+      'whisper-1': {
+        input: 0,
+        output: 0,
+        embedding: 0,
+        transcription: 0.006,  // $0.006 per minute
+      }
     };
     
-    return pricing[model] || 0.000005; // Default fallback to GPT-3.5 pricing
+    return pricingMap[model] || pricingMap['gpt-3.5-turbo']; // Fallback
   }
 
   private async logUsage(logData: InsertAIUsageLog): Promise<void> {

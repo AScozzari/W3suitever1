@@ -5,7 +5,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as pdf from 'pdf-parse';
+// Note: Import pdf-parse only when needed to avoid initialization issues
+// import * as pdf from 'pdf-parse';
 import * as ffmpeg from 'fluent-ffmpeg';
 import { UnifiedOpenAIService } from './unified-openai';
 
@@ -114,7 +115,8 @@ export class MediaProcessorService {
       const stats = fs.statSync(filePath);
       const fileBuffer = fs.readFileSync(filePath);
       
-      // Real PDF text extraction using pdf-parse
+      // Real PDF text extraction using pdf-parse (dynamic import)
+      const pdf = require('pdf-parse');
       const pdfData = await pdf(fileBuffer);
       
       if (!pdfData.text || pdfData.text.trim().length === 0) {
