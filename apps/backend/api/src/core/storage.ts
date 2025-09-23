@@ -31,6 +31,7 @@ import {
   aiSettings,
   aiUsageLogs,
   aiConversations,
+  aiTrainingSessions,
   type User,
   type UpsertUser,
   type Tenant,
@@ -85,6 +86,8 @@ import {
   type InsertAIUsageLog,
   type AIConversation,
   type InsertAIConversation,
+  type AITrainingSession,
+  type InsertAITrainingSession,
   // Vector Embeddings types
   vectorEmbeddings,
   vectorSearchQueries,
@@ -2845,6 +2848,205 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return result.rowCount > 0;
+  }
+
+  // ===============================
+  // AI TRAINING SESSIONS
+  // ===============================
+
+  async createAITrainingSession(sessionData: InsertAITrainingSession): Promise<AITrainingSession> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(sessionData.tenantId);
+      
+      const [session] = await db
+        .insert(aiTrainingSessions)
+        .values({
+          ...sessionData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[AI-TRAINING] ✅ Created training session for tenant ${sessionData.tenantId}`);
+      return session;
+    } catch (error) {
+      console.error('[AI-TRAINING] ❌ Error creating training session:', error);
+      throw error;
+    }
+  }
+
+  async getAITrainingSessions(
+    tenantId: string, 
+    filters?: { 
+      sessionType?: string; 
+      sessionStatus?: string; 
+      userId?: string;
+      limit?: number;
+    }
+  ): Promise<AITrainingSession[]> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      let query = db
+        .select()
+        .from(aiTrainingSessions)
+        .where(eq(aiTrainingSessions.tenantId, tenantId));
+      
+      // Apply filters
+      const conditions = [];
+      if (filters?.sessionType) {
+        conditions.push(eq(aiTrainingSessions.sessionType, filters.sessionType as any));
+      }
+      if (filters?.sessionStatus) {
+        conditions.push(eq(aiTrainingSessions.sessionStatus, filters.sessionStatus as any));
+      }
+      if (filters?.userId) {
+        conditions.push(eq(aiTrainingSessions.userId, filters.userId));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      const sessions = await query
+        .orderBy(desc(aiTrainingSessions.createdAt))
+        .limit(filters?.limit || 100);
+      
+      console.log(`[AI-TRAINING] 📚 Retrieved ${sessions.length} training sessions for tenant ${tenantId}`);
+      return sessions;
+    } catch (error) {
+      console.error('[AI-TRAINING] ❌ Error getting training sessions:', error);
+      return [];
+    }
+  }
+
+  async updateAITrainingSession(
+    sessionId: string, 
+    updates: Partial<InsertAITrainingSession>
+  ): Promise<AITrainingSession | null> {
+    try {
+      const [session] = await db
+        .update(aiTrainingSessions)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(aiTrainingSessions.id, sessionId))
+        .returning();
+      
+      if (session) {
+        console.log(`[AI-TRAINING] ✅ Updated training session ${sessionId}`);
+      }
+      return session || null;
+    } catch (error) {
+      console.error('[AI-TRAINING] ❌ Error updating training session:', error);
+      return null;
+    }
+  }
+
+  async createAIUsageLog(logData: InsertAIUsageLog): Promise<AIUsageLog> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(logData.tenantId);
+      
+      const [log] = await db
+        .insert(aiUsageLogs)
+        .values({
+          ...logData,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[AI-USAGE] 📊 Logged AI usage for tenant ${logData.tenantId}`);
+      return log;
+    } catch (error) {
+      console.error('[AI-USAGE] ❌ Error logging AI usage:', error);
+      throw error;
+    }
+  }
+
+  async getAIUsageStatsByTenant(
+    tenantId: string, 
+    startDate?: Date, 
+    endDate?: Date
+  ): Promise<{
+    totalRequests: number;
+    totalTokens: number;
+    totalCost: number;
+    avgResponseTime: number;
+    byFeature: Record<string, { count: number; tokens: number; cost: number }>;
+    byModel: Record<string, { count: number; tokens: number; cost: number }>;
+  }> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      let query = db
+        .select()
+        .from(aiUsageLogs)
+        .where(eq(aiUsageLogs.tenantId, tenantId));
+      
+      if (startDate && endDate) {
+        query = query.where(
+          and(
+            gte(aiUsageLogs.createdAt, startDate),
+            lte(aiUsageLogs.createdAt, endDate)
+          )
+        );
+      }
+      
+      const logs = await query;
+      
+      // Aggregate statistics
+      const stats = {
+        totalRequests: logs.length,
+        totalTokens: 0,
+        totalCost: 0,
+        avgResponseTime: 0,
+        byFeature: {} as Record<string, { count: number; tokens: number; cost: number }>,
+        byModel: {} as Record<string, { count: number; tokens: number; cost: number }>
+      };
+      
+      let totalResponseTime = 0;
+      
+      for (const log of logs) {
+        stats.totalTokens += log.tokensTotal || 0;
+        stats.totalCost += (log.costUsd || 0) / 100; // Convert cents to dollars
+        totalResponseTime += log.responseTimeMs || 0;
+        
+        // Group by feature
+        const feature = log.featureType || 'unknown';
+        if (!stats.byFeature[feature]) {
+          stats.byFeature[feature] = { count: 0, tokens: 0, cost: 0 };
+        }
+        stats.byFeature[feature].count++;
+        stats.byFeature[feature].tokens += log.tokensTotal || 0;
+        stats.byFeature[feature].cost += (log.costUsd || 0) / 100;
+        
+        // Group by model
+        const model = log.modelUsed || 'unknown';
+        if (!stats.byModel[model]) {
+          stats.byModel[model] = { count: 0, tokens: 0, cost: 0 };
+        }
+        stats.byModel[model].count++;
+        stats.byModel[model].tokens += log.tokensTotal || 0;
+        stats.byModel[model].cost += (log.costUsd || 0) / 100;
+      }
+      
+      stats.avgResponseTime = logs.length > 0 ? totalResponseTime / logs.length : 0;
+      
+      console.log(`[AI-USAGE] 📊 Calculated usage stats for tenant ${tenantId}: ${stats.totalRequests} requests`);
+      return stats;
+    } catch (error) {
+      console.error('[AI-USAGE] ❌ Error calculating usage stats:', error);
+      return {
+        totalRequests: 0,
+        totalTokens: 0,
+        totalCost: 0,
+        avgResponseTime: 0,
+        byFeature: {},
+        byModel: {}
+      };
+    }
   }
 
   // ===============================
