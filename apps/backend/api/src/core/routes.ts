@@ -10393,7 +10393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (queryEmbeddingResult.success && queryEmbeddingResult.embedding) {
             // Search vector database for relevant training content using the embedding
-            const vectorResults = await storage.searchSimilarEmbeddings(
+            const vectorResults = await storage.searchSimilarVectorEmbeddings(
               tenantId, 
               queryEmbeddingResult.embedding, 
               {
@@ -10521,6 +10521,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Update ragContext with web results from UnifiedOpenAI service
+      if (response.outputMeta?.webResults) {
+        ragContext.webResults = response.outputMeta.webResults;
+      }
+      
       res.json({
         success: true,
         data: {
@@ -10530,7 +10535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseTime: response.responseTime,
           ragContext: {
             documentsFound: ragContext.documents.length,
-            webResultsFound: ragContext.webResults.length,
+            webResultsFound: response.outputMeta?.webResultsFound || ragContext.webResults.length,
             contextEnhanced: includeDocuments || includeWebSearch
           }
         }

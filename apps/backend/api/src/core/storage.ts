@@ -3177,12 +3177,11 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(vectorEmbeddings.accessLevel, options.accessLevel));
       }
       
-      // Execute similarity search with pgvector (simplified query to fix Drizzle error)
+      // Execute similarity search with pgvector (fixed query with correct fields)
       const results = await db
         .select({
           id: vectorEmbeddings.id,
           tenantId: vectorEmbeddings.tenantId,
-          collectionId: vectorEmbeddings.collectionId,
           sourceType: vectorEmbeddings.sourceType,
           sourceId: vectorEmbeddings.sourceId,
           sourceUrl: vectorEmbeddings.sourceUrl,
@@ -3193,7 +3192,7 @@ export class DatabaseStorage implements IStorage {
           accessLevel: vectorEmbeddings.accessLevel,
           status: vectorEmbeddings.status,
           createdAt: vectorEmbeddings.createdAt,
-          createdBy: vectorEmbeddings.createdBy
+          ownerUserId: vectorEmbeddings.ownerUserId
         })
         .from(vectorEmbeddings)
         .where(and(...conditions))

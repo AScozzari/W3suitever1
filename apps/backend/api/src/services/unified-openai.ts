@@ -128,6 +128,7 @@ export class UnifiedOpenAIService {
       let finalResponse = response;
       let additionalTokens = 0;
       let additionalCost = 0;
+      const webResults: any[] = []; // Accumulate web search results
       
       // Handle function calls if present
       const message = response.choices[0].message;
@@ -144,6 +145,9 @@ export class UnifiedOpenAIService {
               
               // Use existing DuckDuckGo search function
               const searchResults = await this.performWebSearch(args.query);
+              
+              // Accumulate results for final return
+              webResults.push(...searchResults);
               
               toolResults.push({
                 tool_call_id: toolCall.id,
@@ -232,7 +236,11 @@ export class UnifiedOpenAIService {
         tokensUsed,
         cost,
         responseTime,
-        conversationId: finalResponse.id || undefined
+        conversationId: finalResponse.id || undefined,
+        outputMeta: {
+          webResults,
+          webResultsFound: webResults.length
+        }
       };
 
     } catch (error: any) {
