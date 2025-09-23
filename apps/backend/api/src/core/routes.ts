@@ -9676,11 +9676,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const { apiKey } = req.body;
       
-      // Use provided API key or get from settings
+      // Use provided API key or get from environment (secure approach)
       let testApiKey = apiKey;
       if (!testApiKey) {
-        const settings = await storage.getAISettings(tenantId);
-        testApiKey = settings?.openaiApiKey || process.env.OPENAI_API_KEY;
+        // Always use environment API key for security - never from database
+        testApiKey = process.env.OPENAI_API_KEY;
+        if (!testApiKey) {
+          console.warn('No OPENAI_API_KEY found in environment variables');
+        }
       }
       
       if (!testApiKey) {
