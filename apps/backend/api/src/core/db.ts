@@ -55,7 +55,7 @@ console.log('✅ Drizzle ORM initialized with TCP connection');
  */
 export const setTenantContext = async (tenantId: string) => {
   await db.execute(
-    sql`SELECT set_current_tenant(${tenantId})`
+    sql`SELECT set_config('app.current_tenant_id', ${tenantId}, false)`
   );
 };
 
@@ -65,7 +65,7 @@ export const setTenantContext = async (tenantId: string) => {
 export const getCurrentTenant = async (): Promise<string | null> => {
   try {
     const result = await db.execute(
-      sql`SELECT get_current_tenant() as tenant_id`
+      sql`SELECT current_setting('app.current_tenant_id', true) as tenant_id`
     );
     return result.rows[0]?.tenant_id as string || null;
   } catch (error) {
