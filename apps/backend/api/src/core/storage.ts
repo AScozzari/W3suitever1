@@ -3139,7 +3139,7 @@ export class DatabaseStorage implements IStorage {
    * @param options - Search options including filters and limit
    * @returns Array of similar embeddings with similarity scores
    */
-  async searchSimilarEmbeddings(
+  async searchSimilarVectorEmbeddings(
     tenantId: string,
     queryEmbedding: number[],
     options: {
