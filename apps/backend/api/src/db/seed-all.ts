@@ -26,17 +26,15 @@ async function seedAll() {
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  seedAll()
-    .then(() => {
-      console.log("✅ Seeding completed successfully");
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error("❌ Seeding failed:", error);
-      process.exit(1);
-    });
-}
+// Auto-run seeding on module load
+seedAll()
+  .then(() => {
+    console.log("✅ Seeding completed successfully");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("❌ Seeding failed:", error);
+    process.exit(1);
+  });
 
 export { seedAll };
