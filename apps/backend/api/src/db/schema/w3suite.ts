@@ -81,6 +81,12 @@ export const hrAnnouncementTypeEnum = pgEnum('hr_announcement_type', ['policy', 
 export const hrAnnouncementPriorityEnum = pgEnum('hr_announcement_priority', ['low', 'medium', 'high', 'urgent']);
 export const hrAnnouncementAudienceEnum = pgEnum('hr_announcement_audience', ['all', 'store', 'area', 'role', 'specific']);
 
+// AI System Enums
+export const aiConnectionStatusEnum = pgEnum('ai_connection_status', ['connected', 'disconnected', 'error']);
+export const aiPrivacyModeEnum = pgEnum('ai_privacy_mode', ['standard', 'strict']);
+export const aiFeatureTypeEnum = pgEnum('ai_feature_type', ['chat', 'document_analysis', 'natural_queries', 'financial_forecasting', 'web_search', 'code_interpreter', 'image_generation', 'voice_assistant']);
+export const aiModelEnum = pgEnum('ai_model', ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1', 'gpt-4.1-mini', 'o4-mini', 'o3', 'o3-mini']);
+
 // ✅ CRITICAL ENUM FIX: Add missing calendar_event_category enum
 export const calendarEventCategoryEnum = pgEnum('calendar_event_category', [
   'sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing'
@@ -2456,3 +2462,156 @@ export const notificationPreferencesRelations = relations(notificationPreference
   tenant: one(tenants, { fields: [notificationPreferences.tenantId], references: [tenants.id] }),
   user: one(users, { fields: [notificationPreferences.userId], references: [users.id] }),
 }));
+
+// ==================== AI SYSTEM TABLES ====================
+
+// AI Settings - Configuration per tenant (NO API KEY storage for security)
+export const aiSettings = w3suiteSchema.table("ai_settings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Model Configuration
+  openaiModel: aiModelEnum("openai_model").default('gpt-4.1').notNull(),
+  apiConnectionStatus: aiConnectionStatusEnum("api_connection_status").default('disconnected').notNull(),
+  lastConnectionTest: timestamp("last_connection_test"),
+  
+  // Features Configuration - Granular control via JSONB
+  featuresEnabled: jsonb("features_enabled").default({
+    chat_assistant: true,
+    document_analysis: true,
+    natural_queries: true,
+    financial_forecasting: false,
+    web_search: false,
+    code_interpreter: false,
+    file_search: true,
+    image_generation: false,
+    voice_assistant: false,
+    realtime_streaming: false,
+    background_processing: true
+  }).notNull(),
+  
+  // Response Configuration
+  maxTokensPerResponse: integer("max_tokens_per_response").default(1000).notNull(),
+  responseCreativity: smallint("response_creativity").default(7), // 0-20 scale (mapped to 0-2.0 temperature)
+  responseLengthLimit: integer("response_length_limit").default(4000).notNull(),
+  
+  // Usage & Limits
+  monthlyTokenLimit: integer("monthly_token_limit").default(100000).notNull(),
+  currentMonthUsage: integer("current_month_usage").default(0).notNull(),
+  usageResetDate: date("usage_reset_date"),
+  
+  // Privacy & Data Retention
+  privacyMode: aiPrivacyModeEnum("privacy_mode").default('standard').notNull(),
+  chatRetentionDays: integer("chat_retention_days").default(30).notNull(),
+  dataSharingOpenai: boolean("data_sharing_openai").default(false).notNull(),
+  
+  // Enterprise Features
+  contextSettings: jsonb("context_settings").default({
+    hr_context_enabled: true,
+    finance_context_enabled: true,
+    business_rules_integration: false,
+    custom_instructions: ""
+  }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIndex: index("ai_settings_tenant_idx").on(table.tenantId),
+}));
+
+// AI Usage Logs - Tracking & Analytics per tenant
+export const aiUsageLogs = w3suiteSchema.table("ai_usage_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: 'set null' }),
+  
+  // Request Details
+  modelUsed: aiModelEnum("model_used").notNull(),
+  featureType: aiFeatureTypeEnum("feature_type").notNull(),
+  tokensInput: integer("tokens_input").default(0).notNull(),
+  tokensOutput: integer("tokens_output").default(0).notNull(),
+  tokensTotal: integer("tokens_total").default(0).notNull(),
+  costUsd: integer("cost_usd").default(0).notNull(), // Stored as cents for precision
+  
+  // Performance & Success
+  responseTimeMs: integer("response_time_ms"),
+  success: boolean("success").default(true).notNull(),
+  errorMessage: text("error_message"),
+  
+  // Request Context
+  requestContext: jsonb("request_context").default({}),
+  
+  requestTimestamp: timestamp("request_timestamp").defaultNow().notNull(),
+}, (table) => ({
+  tenantIndex: index("ai_usage_logs_tenant_idx").on(table.tenantId),
+  userIndex: index("ai_usage_logs_user_idx").on(table.userId),
+  timestampIndex: index("ai_usage_logs_timestamp_idx").on(table.requestTimestamp),
+  featureIndex: index("ai_usage_logs_feature_idx").on(table.featureType),
+}));
+
+// AI Conversations - Chat History with encryption and retention
+export const aiConversations = w3suiteSchema.table("ai_conversations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Conversation Metadata
+  title: varchar("title", { length: 255 }).notNull(),
+  conversationData: jsonb("conversation_data").notNull(), // Encrypted chat history
+  featureContext: aiFeatureTypeEnum("feature_context").default('chat').notNull(),
+  
+  // Business Context
+  moduleContext: varchar("module_context", { length: 50 }), // 'hr', 'finance', 'general'
+  businessEntityId: uuid("business_entity_id"), // Related entity (user, store, etc.)
+  
+  // Retention Management
+  expiresAt: timestamp("expires_at"), // Based on retention policy
+  isArchived: boolean("is_archived").default(false).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantIndex: index("ai_conversations_tenant_idx").on(table.tenantId),
+  userIndex: index("ai_conversations_user_idx").on(table.userId),
+  contextIndex: index("ai_conversations_context_idx").on(table.featureContext),
+  expiresIndex: index("ai_conversations_expires_idx").on(table.expiresAt),
+}));
+
+// AI System Relations
+export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
+  tenant: one(tenants, { fields: [aiSettings.tenantId], references: [tenants.id] }),
+}));
+
+export const aiUsageLogsRelations = relations(aiUsageLogs, ({ one }) => ({
+  tenant: one(tenants, { fields: [aiUsageLogs.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [aiUsageLogs.userId], references: [users.id] }),
+}));
+
+export const aiConversationsRelations = relations(aiConversations, ({ one }) => ({
+  tenant: one(tenants, { fields: [aiConversations.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [aiConversations.userId], references: [users.id] }),
+}));
+
+// AI Insert Schemas and Types
+export const insertAISettingsSchema = createInsertSchema(aiSettings).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertAISettings = z.infer<typeof insertAISettingsSchema>;
+export type AISettings = typeof aiSettings.$inferSelect;
+
+export const insertAIUsageLogSchema = createInsertSchema(aiUsageLogs).omit({ 
+  id: true, 
+  requestTimestamp: true 
+});
+export type InsertAIUsageLog = z.infer<typeof insertAIUsageLogSchema>;
+export type AIUsageLog = typeof aiUsageLogs.$inferSelect;
+
+export const insertAIConversationSchema = createInsertSchema(aiConversations).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertAIConversation = z.infer<typeof insertAIConversationSchema>;
+export type AIConversation = typeof aiConversations.$inferSelect;

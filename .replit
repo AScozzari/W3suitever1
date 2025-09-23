@@ -54,7 +54,7 @@ task = "shell.exec"
 args = "./start-enterprise.sh"
 
 [agent]
-integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0", "javascript_object_storage:1.0.0"]
+integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0", "javascript_object_storage:1.0.0", "javascript_openai:1.0.0"]
 
 [[ports]]
 localPort = 3000
@@ -171,7 +171,6 @@ localPort = 40925
 
 [[ports]]
 localPort = 41015
-externalPort = 3000
 
 [[ports]]
 localPort = 41471
@@ -190,6 +189,10 @@ localPort = 42407
 
 [[ports]]
 localPort = 42505
+
+[[ports]]
+localPort = 43093
+externalPort = 3000
 
 [[ports]]
 localPort = 43267

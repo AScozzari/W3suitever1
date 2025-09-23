@@ -27,6 +27,10 @@ import {
   hrRequestApprovals,
   hrRequestComments,
   hrRequestStatusHistory,
+  // AI System tables
+  aiSettings,
+  aiUsageLogs,
+  aiConversations,
   type User,
   type UpsertUser,
   type Tenant,
@@ -73,6 +77,13 @@ import {
   type HrRequestComment,
   type InsertHrRequestComment,
   type HrRequestStatusHistory,
+  // AI System types
+  type AISettings,
+  type InsertAISettings,
+  type AIUsageLog,
+  type InsertAIUsageLog,
+  type AIConversation,
+  type InsertAIConversation,
   type InsertHrRequestStatusHistory,
 } from "../db/schema/w3suite";
 
