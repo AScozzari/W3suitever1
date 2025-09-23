@@ -55,7 +55,7 @@ console.log('✅ Drizzle ORM initialized with TCP connection');
  */
 export const setTenantContext = async (tenantId: string) => {
   await db.execute(
-    sql`SELECT set_current_tenant(${tenantId}::uuid)`
+    sql`SELECT set_current_tenant(${tenantId})`
   );
 };
 

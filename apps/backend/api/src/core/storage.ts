@@ -2658,15 +2658,11 @@ export class DatabaseStorage implements IStorage {
   // ===============================
   
   async createAISettings(settings: InsertAISettings): Promise<AISettings> {
-    await setTenantContext(settings.tenantId);
-    
     const [result] = await db.insert(aiSettings).values(settings).returning();
     return result;
   }
   
   async getAISettings(tenantId: string): Promise<AISettings | null> {
-    await setTenantContext(tenantId);
-    
     const result = await db
       .select()
       .from(aiSettings)
@@ -2677,8 +2673,6 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateAISettings(tenantId: string, updates: Partial<InsertAISettings>): Promise<AISettings> {
-    await setTenantContext(tenantId);
-    
     const [result] = await db
       .update(aiSettings)
       .set({ ...updates, updatedAt: new Date() })
@@ -2693,15 +2687,11 @@ export class DatabaseStorage implements IStorage {
   // ===============================
   
   async logAIUsage(log: InsertAIUsageLog): Promise<AIUsageLog> {
-    await setTenantContext(log.tenantId);
-    
     const [result] = await db.insert(aiUsageLogs).values(log).returning();
     return result;
   }
   
   async getAIUsageLogs(tenantId: string, limit = 100, offset = 0): Promise<AIUsageLog[]> {
-    await setTenantContext(tenantId);
-    
     return await db
       .select()
       .from(aiUsageLogs)
@@ -2717,7 +2707,6 @@ export class DatabaseStorage implements IStorage {
     totalCost: number;
     avgResponseTime: number;
   }> {
-    await setTenantContext(tenantId);
     
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
@@ -2749,15 +2738,11 @@ export class DatabaseStorage implements IStorage {
   // ===============================
   
   async createAIConversation(conversation: InsertAIConversation): Promise<AIConversation> {
-    await setTenantContext(conversation.tenantId);
-    
     const [result] = await db.insert(aiConversations).values(conversation).returning();
     return result;
   }
   
   async getAIConversations(tenantId: string, userId?: string, limit = 50): Promise<AIConversation[]> {
-    await setTenantContext(tenantId);
-    
     const conditions = [eq(aiConversations.tenantId, tenantId)];
     if (userId) {
       conditions.push(eq(aiConversations.userId, userId));
@@ -2772,8 +2757,6 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteAIConversation(tenantId: string, conversationId: string): Promise<boolean> {
-    await setTenantContext(tenantId);
-    
     const result = await db
       .delete(aiConversations)
       .where(and(
