@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Send, X, Minimize2, Bot, User } from 'lucide-react';
+import { Send, X, Minimize2, Bot, User, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import tippyIcon from '@assets/tippy_1758625115704.png';
+// Temporarily using fallback icon - will fix image path later
+// import tippyIcon from '@assets/tippy_1758625115704.png';
 
 interface Message {
   id: string;
@@ -183,14 +184,9 @@ Come posso aiutarti oggi?`,
           title="Chiedimi qualsiasi cosa!"
           data-testid="button-open-chat"
         >
-          <img 
-            src={tippyIcon} 
-            alt="Tippy Assistant" 
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%'
-            }}
+          <MessageCircle 
+            size={24} 
+            color="white"
           />
         </button>
         
@@ -252,15 +248,19 @@ Come posso aiutarti oggi?`,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img 
-              src={tippyIcon} 
-              alt="Tippy" 
+            <div
               style={{
                 width: '32px',
                 height: '32px',
-                borderRadius: '50%'
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
-            />
+            >
+              <MessageCircle size={18} color="white" />
+            </div>
             <div>
               <p style={{ color: 'white', fontWeight: 600, fontSize: '14px', margin: 0 }}>
                 Tippy WindTre
@@ -345,15 +345,7 @@ Come posso aiutarti oggi?`,
                     {message.sender === 'user' ? (
                       <User size={16} color="white" />
                     ) : (
-                      <img 
-                        src={tippyIcon} 
-                        alt="Tippy" 
-                        style={{
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%'
-                        }}
-                      />
+                      <MessageCircle size={16} color="white" />
                     )}
                   </div>
                   
