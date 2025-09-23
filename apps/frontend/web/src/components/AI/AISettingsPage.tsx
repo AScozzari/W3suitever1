@@ -5,7 +5,8 @@ import {
   Settings, Activity, MessageCircle, FileText, TrendingUp, Search,
   Shield, Clock, DollarSign, Eye, EyeOff, Save, Zap, Brain,
   BarChart3, Database, Trash2, RefreshCw, AlertTriangle,
-  CheckCircle, Users, Lock, Unlock
+  CheckCircle, Users, Lock, Unlock, Upload, Link, CheckSquare,
+  ChevronDown, ChevronUp, Globe, Mic, Image, Video, FileUp
 } from 'lucide-react';
 
 interface AISettings {
@@ -28,6 +29,15 @@ interface AISettings {
     dataRetentionDays?: number;
     allowDataTraining?: boolean;
     anonymizeConversations?: boolean;
+  };
+  trainingMode?: boolean;
+  trainingSettings?: {
+    urlIngestion?: boolean;
+    documentProcessing?: boolean;
+    imageAnalysis?: boolean;
+    audioTranscription?: boolean;
+    videoProcessing?: boolean;
+    responseValidation?: boolean;
   };
   isActive?: boolean;
   createdAt?: string;
@@ -59,6 +69,7 @@ export default function AISettingsPage() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [trainingPanelExpanded, setTrainingPanelExpanded] = useState(false);
 
   // Fetch AI settings
   const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery<{success: boolean, data: AISettings}>({
@@ -128,7 +139,7 @@ export default function AISettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           apiKey: formData.openaiApiKey,
-          model: formData.openaiModel || 'gpt-5'
+          model: formData.openaiModel || 'gpt-4-turbo'
         }),
       });
 
@@ -354,14 +365,15 @@ export default function AISettingsPage() {
               Modello OpenAI
             </label>
             <select
-              value={formData.openaiModel || 'gpt-5'}
+              value={formData.openaiModel || 'gpt-4-turbo'}
               onChange={(e) => setFormData(prev => ({ ...prev, openaiModel: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
               data-testid="select-openai-model"
             >
-              <option value="gpt-5">GPT-5 (Raccomandato)</option>
-              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-4o">GPT-4o (Più Recente)</option>
+              <option value="gpt-4-turbo">GPT-4 Turbo (Raccomandato)</option>
               <option value="gpt-4">GPT-4</option>
+              <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Economico)</option>
             </select>
           </div>
           <div>
@@ -527,12 +539,15 @@ export default function AISettingsPage() {
             <div className="flex items-center space-x-3">
               <EyeOff className="w-5 h-5 text-gray-600" />
               <div>
-                <h4 className="font-medium text-gray-900">Training OpenAI</h4>
-                <p className="text-sm text-gray-600">Consenti utilizzo dati per training modelli</p>
+                <h4 className="font-medium text-gray-900">Training AI</h4>
+                <p className="text-sm text-gray-600">Attiva modalità training per migliorare il contesto AI</p>
               </div>
             </div>
             <button
-              onClick={() => handlePrivacyToggle('allowDataTraining')}
+              onClick={() => {
+                handlePrivacyToggle('allowDataTraining');
+                setTrainingPanelExpanded(prev => !prev);
+              }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
                 formData.privacySettings?.allowDataTraining ? 'bg-[#FF6900]' : 'bg-gray-200'
               }`}
@@ -546,6 +561,151 @@ export default function AISettingsPage() {
             </button>
           </div>
         </div>
+        
+        {/* Training AI Panel - Espandibile */}
+        {formData.privacySettings?.allowDataTraining && (
+          <div className="mt-6 p-6 bg-gradient-to-r from-[#FF6900]/5 to-[#7B2CBF]/5 rounded-lg border border-[#FF6900]/20">
+            <div className="space-y-6">
+              {/* Header con icona */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Brain className="w-6 h-6 text-[#FF6900]" />
+                  <h4 className="text-lg font-semibold text-gray-900">Training AI - Migliora il Contesto</h4>
+                </div>
+                <button
+                  onClick={() => setTrainingPanelExpanded(!trainingPanelExpanded)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  {trainingPanelExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                </button>
+              </div>
+              
+              {trainingPanelExpanded && (
+                <div className="space-y-6">
+                  {/* Sezione 1: Validazione Risposte */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <CheckSquare className="w-5 h-5 text-green-600" />
+                      <h5 className="font-semibold text-gray-900">Validazione Risposte AI</h5>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Correggi e valida le risposte dell'AI per migliorare l'accuratezza futura.
+                    </p>
+                    <button 
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                      data-testid="button-review-responses"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Rivedi Risposte Recenti</span>
+                    </button>
+                  </div>
+                  
+                  {/* Sezione 2: URL Context */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Globe className="w-5 h-5 text-blue-600" />
+                      <h5 className="font-semibold text-gray-900">Importa Contenuti da URL</h5>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Inserisci URL di documenti, pagine web o risorse online da memorizzare nel database vettoriale.
+                    </p>
+                    <div className="flex space-x-2">
+                      <input
+                        type="url"
+                        placeholder="https://esempio.com/documento"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+                        data-testid="input-training-url"
+                      />
+                      <button 
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                        data-testid="button-process-url"
+                      >
+                        <Link className="w-4 h-4" />
+                        <span>Processa</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Sezione 3: Media Upload */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Upload className="w-5 h-5 text-purple-600" />
+                      <h5 className="font-semibold text-gray-900">Upload Media & Documenti</h5>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Carica PDF, immagini, audio o video per arricchire il contesto dell'AI.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {/* PDF Upload */}
+                      <button 
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        data-testid="button-upload-pdf"
+                      >
+                        <FileText className="w-6 h-6 text-gray-600" />
+                        <span className="text-xs text-gray-600">PDF</span>
+                      </button>
+                      
+                      {/* Image Upload */}
+                      <button 
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        data-testid="button-upload-image"
+                      >
+                        <Image className="w-6 h-6 text-gray-600" />
+                        <span className="text-xs text-gray-600">Immagini</span>
+                      </button>
+                      
+                      {/* Audio Upload */}
+                      <button 
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        data-testid="button-upload-audio"
+                      >
+                        <Mic className="w-6 h-6 text-gray-600" />
+                        <span className="text-xs text-gray-600">Audio</span>
+                      </button>
+                      
+                      {/* Video Upload */}
+                      <button 
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        data-testid="button-upload-video"
+                      >
+                        <Video className="w-6 h-6 text-gray-600" />
+                        <span className="text-xs text-gray-600">Video</span>
+                      </button>
+                    </div>
+                    
+                    {/* Progress Indicator (hidden by default) */}
+                    <div className="mt-4 hidden" id="upload-progress">
+                      <div className="flex items-center space-x-2">
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#FF6900]" />
+                        <span className="text-sm text-gray-600">Processing media content...</span>
+                      </div>
+                      <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-[#FF6900] h-2 rounded-full" style={{width: '45%'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Stats Section */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-white/60 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-[#FF6900]">0</p>
+                      <p className="text-xs text-gray-600">Documenti Processati</p>
+                    </div>
+                    <div className="bg-white/60 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-[#7B2CBF]">0</p>
+                      <p className="text-xs text-gray-600">Embeddings Creati</p>
+                    </div>
+                    <div className="bg-white/60 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-green-600">0</p>
+                      <p className="text-xs text-gray-600">Validazioni</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Save Button */}
