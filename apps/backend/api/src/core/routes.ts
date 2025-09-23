@@ -9596,7 +9596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Settings Management
   app.get('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const settings = await storage.getAISettings(tenantId);
       
       if (!settings) {
@@ -9631,7 +9631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.manage'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const updates = req.body;
       
       // Check if settings exist, create if not
@@ -9655,7 +9655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Usage Analytics
   app.get('/api/ai/usage/stats', ...authWithRBAC, requirePermission('ai.usage.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const days = parseInt(req.query.days as string) || 30;
       
       const stats = await storage.getAIUsageStats(tenantId, days);
@@ -9667,7 +9667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/ai/usage/logs', ...authWithRBAC, requirePermission('ai.usage.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const limit = parseInt(req.query.limit as string) || 100;
       const offset = parseInt(req.query.offset as string) || 0;
       
@@ -9681,7 +9681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Conversations Management
   app.get('/api/ai/conversations', ...authWithRBAC, requirePermission('ai.conversations.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.query.userId as string;
       const limit = parseInt(req.query.limit as string) || 50;
       
@@ -9694,7 +9694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.delete('/api/ai/conversations/:id', ...authWithRBAC, requirePermission('ai.conversations.delete'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const conversationId = req.params.id;
       
       if (!validateUUIDParam(conversationId, 'Conversation ID', res)) {
@@ -9718,7 +9718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create vector collection
   app.post('/api/ai/vectors/collections', ...authWithRBAC, requirePermission('ai.vectors.manage'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const { name, description, collectionType, embeddingModel, chunkingStrategy, departmentScope } = req.body;
       
@@ -9758,7 +9758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get vector collections
   app.get('/api/ai/vectors/collections', ...authWithRBAC, requirePermission('ai.vectors.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const collections = await storage.getVectorCollections(tenantId);
       
       res.json({ 
@@ -9774,7 +9774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate and store embedding
   app.post('/api/ai/vectors/embeddings', ...authWithRBAC, requirePermission('ai.vectors.manage'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const { 
         text, 
@@ -9866,7 +9866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search similar embeddings
   app.post('/api/ai/vectors/search', ...authWithRBAC, requirePermission('ai.vectors.search'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const { 
         query, 
@@ -10004,7 +10004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get vector search analytics
   app.get('/api/ai/vectors/analytics', ...authWithRBAC, requirePermission('ai.analytics.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const days = parseInt(req.query.days as string) || 30;
       
       const analytics = await storage.getVectorSearchAnalytics(tenantId, days);
@@ -10022,7 +10022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Chat Assistant (enhanced with RAG and Web Search)
   app.post('/api/ai/chat', ...authWithRBAC, requirePermission('ai.chat.use'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const { message, context, includeDocuments = false, includeWebSearch = false } = req.body;
       
@@ -10153,7 +10153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Document Analysis
   app.post('/api/ai/analyze-document', ...authWithRBAC, requirePermission('ai.documents.analyze'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const { documentContent, analysisQuery } = req.body;
       
@@ -10202,7 +10202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get AI Training Sessions
   app.get('/api/ai/training/sessions', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const filters = {
         sessionType: req.query.sessionType as string,
         sessionStatus: req.query.sessionStatus as string,
@@ -10220,7 +10220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create AI Training Session
   app.post('/api/ai/training/sessions', ...authWithRBAC, requirePermission('ai.training.create'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const sessionData = {
         ...req.body,
@@ -10241,7 +10241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Validate AI Response
   app.post('/api/ai/training/validate', ...authWithRBAC, requirePermission('ai.training.validate'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const { 
         originalQuery, 
@@ -10301,9 +10301,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Process URL for Training
   app.post('/api/ai/training/url', ...authWithRBAC, requirePermission('ai.training.url'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const userId = req.user.id;
       const { url, extractContent = true } = req.body;
+      
+      console.log('[AI-URL-PROCESS] 📡 Processing URL request:', { tenantId, userId, url, extractContent });
       
       if (!url) {
         return res.status(400).json({ error: 'URL richiesto' });
@@ -10398,7 +10400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     trainingUpload.single('file'),
     async (req: any, res) => {
       try {
-        const tenantId = req.tenantId;
+        const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
         const userId = req.user.id;
         const file = req.file;
         
@@ -10516,7 +10518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete Training Session
   app.delete('/api/ai/training/sessions/:id', ...authWithRBAC, requirePermission('ai.training.create'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const sessionId = req.params.id;
       
       if (!sessionId) {
@@ -10543,7 +10545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Training Statistics
   app.get('/api/ai/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
       const days = parseInt(req.query.days as string) || 30;
       
       const sessions = await storage.getAITrainingSessions(tenantId, { limit: 1000 });
