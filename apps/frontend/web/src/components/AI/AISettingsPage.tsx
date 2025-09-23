@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Settings, Activity, MessageCircle, FileText, TrendingUp, Search,
   Shield, Clock, DollarSign, Eye, EyeOff, Save, Zap, Brain,
@@ -67,6 +68,7 @@ interface AIUsageLog {
 }
 
 export default function AISettingsPage() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('settings');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
@@ -144,16 +146,57 @@ export default function AISettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, extractContent: true }),
       });
-      if (!response.ok) throw new Error('Failed to process URL');
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] });
       setUrlToProcess('');
       setProcessingUrl(false);
+      
+      // Success toast with details
+      toast({
+        title: "✅ URL Processato con Successo",
+        description: `Contenuto estratto: ${data.data?.metadata?.contentLength || 'N/A'} caratteri usando metodo ${data.data?.metadata?.scrapingMethod || 'standard'}`,
+        duration: 5000,
+      });
     },
-    onError: () => setProcessingUrl(false),
+    onError: (error: Error) => {
+      setProcessingUrl(false);
+      
+      // Detailed error toast based on error type
+      let errorTitle = "❌ Errore Processamento URL";
+      let errorDescription = error.message;
+      
+      if (error.message.includes('Network error')) {
+        errorTitle = "🌐 Errore di Connessione";
+        errorDescription = "Sito non raggiungibile o non accessibile. Verifica l'URL.";
+      } else if (error.message.includes('CORS error')) {
+        errorTitle = "🔒 Blocco CORS";
+        errorDescription = "Il sito blocca le richieste cross-origin. Prova con un URL diverso.";
+      } else if (error.message.includes('403 Forbidden')) {
+        errorTitle = "🚫 Accesso Negato";
+        errorDescription = "Il sito ha protezioni anti-bot. Potrebbe non essere accessibile.";
+      } else if (error.message.includes('404 Not Found')) {
+        errorTitle = "📄 Pagina Non Trovata";
+        errorDescription = "L'URL specificato non esiste o non è più disponibile.";
+      } else if (error.message.includes('Timeout')) {
+        errorTitle = "⏱️ Timeout";
+        errorDescription = "Il sito ha impiegato troppo tempo a rispondere (>30s).";
+      }
+      
+      toast({
+        title: errorTitle,
+        description: errorDescription,
+        variant: "destructive",
+        duration: 8000,
+      });
+    },
   });
 
   // Upload media mutation
@@ -263,17 +306,31 @@ export default function AISettingsPage() {
   // Handle URL processing
   const handleProcessUrl = async () => {
     if (!urlToProcess.trim()) {
-      alert('Inserisci un URL valido');
+      toast({
+        title: "⚠️ URL Richiesto",
+        description: "Inserisci un URL valido per procedere con il processamento.",
+        variant: "destructive",
+        duration: 4000,
+      });
+      return;
+    }
+
+    // URL validation
+    try {
+      new URL(urlToProcess.trim());
+    } catch {
+      toast({
+        title: "❌ URL Non Valido", 
+        description: "Inserisci un URL completo (es: https://windtre.it)",
+        variant: "destructive",
+        duration: 4000,
+      });
       return;
     }
     
     setProcessingUrl(true);
-    try {
-      await processUrlMutation.mutateAsync(urlToProcess.trim());
-      alert('URL processato con successo!');
-    } catch (error) {
-      alert('Errore nel processamento URL: ' + (error as Error).message);
-    }
+    // The mutation handles success/error toasts automatically
+    await processUrlMutation.mutateAsync(urlToProcess.trim());
   };
 
   // Handle file upload
