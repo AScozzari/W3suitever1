@@ -231,6 +231,92 @@ export class UnifiedOpenAIService {
   }
 
   /**
+   * Generate embeddings for text using OpenAI
+   * @param text - Text to embed
+   * @param settings - AI settings with API key
+   * @param context - Request context for logging
+   * @returns Embedding vector and metadata
+   */
+  async generateEmbedding(
+    text: string,
+    settings: AISettings,
+    context: OpenAIRequestContext
+  ): Promise<{
+    success: boolean;
+    embedding?: number[];
+    dimensions?: number;
+    model?: string;
+    usage?: any;
+    error?: string;
+  }> {
+    try {
+      const startTime = Date.now();
+      
+      // Use OpenAI directly for embeddings
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: settings.openaiApiKey });
+      
+      const response = await openai.embeddings.create({
+        model: 'text-embedding-3-small', // 1536 dimensions
+        input: text,
+        encoding_format: 'float'
+      });
+      
+      const embedding = response.data[0].embedding;
+      const responseTime = Date.now() - startTime;
+      
+      // Log usage with unified tracking
+      await this.storage.createAIUsageLog({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        model: 'text-embedding-3-small',
+        feature: 'vector_embeddings',
+        promptTokens: response.usage?.prompt_tokens || 0,
+        completionTokens: 0,
+        totalTokens: response.usage?.total_tokens || 0,
+        cost: (response.usage?.total_tokens || 0) * 0.00000002, // $0.02 per 1M tokens for embeddings
+        responseTimeMs: responseTime,
+        success: true,
+        requestContext: {
+          ...context.contextData,
+          textLength: text.length
+        }
+      });
+      
+      return {
+        success: true,
+        embedding,
+        dimensions: embedding.length,
+        model: 'text-embedding-3-small',
+        usage: response.usage
+      };
+    } catch (error: any) {
+      console.error('Error generating embedding:', error);
+      
+      // Log failed attempt
+      await this.storage.createAIUsageLog({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        model: 'text-embedding-3-small',
+        feature: 'vector_embeddings',
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        cost: 0,
+        responseTimeMs: 0,
+        success: false,
+        errorMessage: error.message,
+        requestContext: context.contextData
+      });
+      
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+  
+  /**
    * Test API connection
    */
   async testConnection(): Promise<{ success: boolean; model?: string; error?: string }> {

@@ -9709,6 +9709,312 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ==================== VECTOR EMBEDDINGS ROUTES (PGVECTOR) ====================
+  
+  // Create vector collection
+  app.post('/api/ai/vectors/collections', ...authWithRBAC, requirePermission('ai.vectors.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const { name, description, collectionType, embeddingModel, chunkingStrategy, departmentScope } = req.body;
+      
+      if (!name || !collectionType || !embeddingModel) {
+        return res.status(400).json({ error: 'Nome, tipo collezione e modello embedding richiesti' });
+      }
+      
+      const collection = await storage.createVectorCollection({
+        tenantId,
+        name,
+        description,
+        collectionType,
+        embeddingModel,
+        chunkingStrategy: chunkingStrategy || {
+          method: 'sliding_window',
+          chunk_size: 1000,
+          overlap: 200
+        },
+        isPublic: false,
+        allowedRoles: [req.user.role],
+        departmentScope,
+        totalEmbeddings: 0,
+        totalTokens: 0,
+        createdBy: userId
+      });
+      
+      res.status(201).json({ 
+        success: true, 
+        data: collection,
+        message: 'Collezione vector creata con successo' 
+      });
+    } catch (error: any) {
+      handleApiError(error, res, 'creazione collezione vector');
+    }
+  });
+  
+  // Get vector collections
+  app.get('/api/ai/vectors/collections', ...authWithRBAC, requirePermission('ai.vectors.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const collections = await storage.getVectorCollections(tenantId);
+      
+      res.json({ 
+        success: true, 
+        data: collections,
+        count: collections.length 
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero collezioni vector');
+    }
+  });
+  
+  // Generate and store embedding
+  app.post('/api/ai/vectors/embeddings', ...authWithRBAC, requirePermission('ai.vectors.manage'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const { 
+        text, 
+        collectionId, 
+        sourceType, 
+        sourceId, 
+        metadata,
+        departmentRestriction,
+        accessLevel = 'internal'
+      } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: 'Testo richiesto per generare embedding' });
+      }
+      
+      // Get AI settings for OpenAI API key
+      const settings = await storage.getAISettings(tenantId);
+      if (!settings || !settings.openaiApiKey) {
+        return res.status(403).json({ error: 'OpenAI API key non configurata' });
+      }
+      
+      // Use unified OpenAI service for embeddings
+      const { createUnifiedOpenAIService } = await import('../services/unified-openai');
+      const openaiService = createUnifiedOpenAIService(storage);
+      
+      const startTime = Date.now();
+      
+      // Generate embedding using unified service (includes usage tracking)
+      const embeddingResult = await openaiService.generateEmbedding(
+        text,
+        settings,
+        {
+          tenantId,
+          userId,
+          businessEntityId: null,
+          contextData: {
+            sourceType,
+            collectionId,
+            textLength: text.length
+          }
+        }
+      );
+      
+      if (!embeddingResult.success) {
+        return res.status(400).json({ 
+          error: embeddingResult.error || 'Errore generazione embedding' 
+        });
+      }
+      
+      const embedding = embeddingResult.embedding!;
+      const processingTime = Date.now() - startTime;
+      
+      // Store embedding in database with RLS
+      const storedEmbedding = await storage.createVectorEmbedding({
+        tenantId,
+        collectionId: collectionId || null,
+        sourceType: sourceType || 'manual',
+        sourceId: sourceId || null,
+        sourceUrl: null,
+        contentChunk: text,
+        embedding: embedding,
+        embeddingModel: 'text-embedding-3-small',
+        metadata: metadata || {},
+        tags: null,
+        departmentRestriction,
+        accessLevel,
+        status: 'ready',
+        processingTimeMs: processingTime,
+        createdBy: userId
+      });
+      
+      // Usage already logged by unified service
+      
+      res.status(201).json({ 
+        success: true,
+        data: {
+          id: storedEmbedding.id,
+          processingTimeMs: processingTime,
+          embeddingDimensions: embedding.length
+        },
+        message: 'Embedding generato e salvato con successo'
+      });
+    } catch (error: any) {
+      console.error('Error generating embedding:', error);
+      handleApiError(error, res, 'generazione embedding');
+    }
+  });
+  
+  // Search similar embeddings
+  app.post('/api/ai/vectors/search', ...authWithRBAC, requirePermission('ai.vectors.search'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const { 
+        query, 
+        limit = 10, 
+        threshold = 0.5,
+        sourceType,
+        departmentRestriction,
+        accessLevel 
+      } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ error: 'Query richiesta per ricerca' });
+      }
+      
+      // Get AI settings for OpenAI API key
+      const settings = await storage.getAISettings(tenantId);
+      if (!settings || !settings.openaiApiKey) {
+        return res.status(403).json({ error: 'OpenAI API key non configurata' });
+      }
+      
+      // Use unified OpenAI service
+      const { createUnifiedOpenAIService } = await import('../services/unified-openai');
+      const openaiService = createUnifiedOpenAIService(storage);
+      
+      const startTime = Date.now();
+      
+      // Generate query embedding using unified service
+      const embeddingResult = await openaiService.generateEmbedding(
+        query,
+        settings,
+        {
+          tenantId,
+          userId,
+          businessEntityId: null,
+          contextData: {
+            searchType: 'semantic',
+            queryLength: query.length
+          }
+        }
+      );
+      
+      if (!embeddingResult.success) {
+        return res.status(400).json({ 
+          error: embeddingResult.error || 'Errore generazione query embedding' 
+        });
+      }
+      
+      const queryEmbedding = embeddingResult.embedding!;
+      const embeddingTime = Date.now() - startTime;
+      
+      // Search similar embeddings using pgvector
+      const searchStartTime = Date.now();
+      const results = await storage.searchSimilarEmbeddings(
+        tenantId,
+        queryEmbedding,
+        {
+          limit,
+          threshold,
+          sourceType,
+          departmentRestriction,
+          accessLevel
+        }
+      );
+      const searchTime = Date.now() - searchStartTime;
+      const totalTime = Date.now() - startTime;
+      
+      // Log search query for analytics
+      await storage.logVectorSearchQuery({
+        tenantId,
+        userId,
+        queryText: query,
+        queryEmbedding: queryEmbedding,
+        queryType: 'semantic',
+        searchFilters: {
+          sourceType,
+          departmentRestriction,
+          accessLevel
+        },
+        maxResults: limit,
+        similarityThreshold: threshold,
+        resultsReturned: results.length,
+        topScore: results[0]?.similarity || null,
+        responseTimeMs: totalTime,
+        searchContext: 'api_search',
+        moduleContext: 'hr'
+      });
+      
+      // Usage already logged by unified service for embedding generation
+      // Log additional search metrics
+      await storage.createAIUsageLog({
+        tenantId,
+        userId,
+        model: 'pgvector-search',
+        feature: 'vector_search_execution',
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        cost: 0, // No additional cost for search
+        responseTimeMs: searchTime,
+        success: true,
+        requestContext: {
+          resultsCount: results.length,
+          searchTimeMs: searchTime,
+          threshold,
+          limit
+        }
+      });
+      
+      res.json({
+        success: true,
+        data: results.map(r => ({
+          id: r.id,
+          contentChunk: r.contentChunk,
+          similarity: r.similarity,
+          sourceType: r.sourceType,
+          sourceId: r.sourceId,
+          metadata: r.metadata,
+          tags: r.tags,
+          createdAt: r.createdAt
+        })),
+        stats: {
+          totalResults: results.length,
+          embeddingTimeMs: embeddingTime,
+          searchTimeMs: searchTime,
+          totalTimeMs: totalTime
+        },
+        message: `Trovati ${results.length} risultati simili`
+      });
+    } catch (error: any) {
+      console.error('Error searching embeddings:', error);
+      handleApiError(error, res, 'ricerca embeddings');
+    }
+  });
+  
+  // Get vector search analytics
+  app.get('/api/ai/vectors/analytics', ...authWithRBAC, requirePermission('ai.analytics.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const days = parseInt(req.query.days as string) || 30;
+      
+      const analytics = await storage.getVectorSearchAnalytics(tenantId, days);
+      
+      res.json({
+        success: true,
+        data: analytics,
+        period: `${days} giorni`
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero analytics vector search');
+    }
+  });
+  
   // AI Chat Assistant (simplified endpoint for frontend)
   app.post('/api/ai/chat', ...authWithRBAC, requirePermission('ai.chat.use'), async (req: any, res) => {
     try {

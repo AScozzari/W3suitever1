@@ -18,12 +18,28 @@ import {
   integer,
   date,
   uniqueIndex,
+  customType,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Import public schema tables for FK references
 import { brands, channels, commercialAreas, drivers, countries, italianCities, paymentMethods, paymentMethodsConditions } from './public';
+
+// ==================== CUSTOM TYPES FOR PGVECTOR ====================
+// Define custom type for pgvector columns
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return 'vector(1536)';
+  },
+  toDriver(value: number[]): string {
+    return JSON.stringify(value);
+  },
+  fromDriver(value: string): number[] {
+    return JSON.parse(value);
+  },
+});
 
 // ==================== W3 SUITE SCHEMA ====================
 export const w3suiteSchema = pgSchema("w3suite");
@@ -2579,6 +2595,133 @@ export const aiConversations = w3suiteSchema.table("ai_conversations", {
   expiresIndex: index("ai_conversations_expires_idx").on(table.expiresAt),
 }));
 
+// ==================== VECTOR EMBEDDINGS SYSTEM (pgvector) ====================
+// Enterprise-grade vector storage with multi-tenant RLS isolation
+
+// Vector Embeddings Enums
+export const vectorSourceTypeEnum = pgEnum('vector_source_type', [
+  'document', 'knowledge_base', 'chat_history', 'policy', 'training_material', 
+  'product_catalog', 'customer_data', 'financial_report', 'hr_document'
+]);
+export const vectorStatusEnum = pgEnum('vector_status', ['pending', 'processing', 'ready', 'failed', 'archived']);
+export const embeddingModelEnum = pgEnum('embedding_model', [
+  'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002'
+]);
+
+// Vector Embeddings - Core table for storing document embeddings with pgvector
+export const vectorEmbeddings = w3suiteSchema.table("vector_embeddings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Source Reference
+  sourceType: vectorSourceTypeEnum("source_type").notNull(),
+  sourceId: uuid("source_id"), // Reference to original document/entity
+  sourceUrl: text("source_url"), // Optional URL reference
+  
+  // Content & Embeddings (pgvector support)
+  contentChunk: text("content_chunk").notNull(), // Original text chunk
+  embedding: vector("embedding"), // OpenAI embedding dimension (1536 for text-embedding-3-small)
+  embeddingModel: embeddingModelEnum("embedding_model").notNull(),
+  
+  // Metadata & Search Optimization
+  metadata: jsonb("metadata").default({}).notNull(), // Searchable metadata
+  tags: text("tags").array(), // Search tags array
+  language: varchar("language", { length: 10 }).default('it'), // Language code
+  
+  // Security & Access Control
+  accessLevel: varchar("access_level", { length: 50 }).default('private'), // public, private, restricted
+  ownerUserId: varchar("owner_user_id").references(() => users.id, { onDelete: 'set null' }), // VARCHAR for OAuth2 compatibility
+  departmentRestriction: varchar("department_restriction", { length: 100 }), // HR, Finance, etc.
+  
+  // Performance & Status
+  chunkIndex: integer("chunk_index").default(0), // Position in document
+  chunkTotal: integer("chunk_total").default(1), // Total chunks for document
+  tokenCount: integer("token_count").notNull(), // Tokens in chunk
+  status: vectorStatusEnum("status").default('pending').notNull(),
+  
+  // Audit & Lifecycle
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  expiresAt: timestamp("expires_at"), // For retention policies
+  processingTimeMs: integer("processing_time_ms"), // Time to generate embedding
+}, (table) => ({
+  // Indexes for performance and search
+  tenantIndex: index("vector_embeddings_tenant_idx").on(table.tenantId),
+  sourceIndex: index("vector_embeddings_source_idx").on(table.sourceType, table.sourceId),
+  statusIndex: index("vector_embeddings_status_idx").on(table.status),
+  ownerIndex: index("vector_embeddings_owner_idx").on(table.ownerUserId),
+  expiresIndex: index("vector_embeddings_expires_idx").on(table.expiresAt),
+  // Note: HNSW index for vector similarity will be created via SQL migration
+}));
+
+// Vector Search Queries - Audit and performance tracking
+export const vectorSearchQueries = w3suiteSchema.table("vector_search_queries", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(), // VARCHAR for OAuth2 compatibility
+  
+  // Query Details
+  queryText: text("query_text").notNull(),
+  queryEmbedding: vector("query_embedding"), // Store query embedding for analysis
+  queryType: varchar("query_type", { length: 50 }), // semantic, hybrid, filtered
+  
+  // Search Parameters
+  searchFilters: jsonb("search_filters").default({}).notNull(),
+  maxResults: integer("max_results").default(10),
+  similarityThreshold: real("similarity_threshold"), // Minimum similarity score
+  
+  // Results Metadata
+  resultsReturned: integer("results_returned").default(0),
+  topScore: real("top_score"), // Best similarity score
+  responseTimeMs: integer("response_time_ms").notNull(),
+  
+  // Context & Purpose
+  searchContext: varchar("search_context", { length: 100 }), // hr_search, document_qa, etc.
+  moduleContext: varchar("module_context", { length: 50 }), // hr, finance, general
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  tenantUserIndex: index("vector_search_queries_tenant_user_idx").on(table.tenantId, table.userId),
+  timestampIndex: index("vector_search_queries_timestamp_idx").on(table.createdAt),
+  contextIndex: index("vector_search_queries_context_idx").on(table.searchContext),
+}));
+
+// Vector Collections - Logical groupings of embeddings
+export const vectorCollections = w3suiteSchema.table("vector_collections", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  
+  // Collection Info
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  collectionType: varchar("collection_type", { length: 50 }).notNull(), // knowledge_base, policies, etc.
+  
+  // Settings & Configuration
+  embeddingModel: embeddingModelEnum("embedding_model").notNull(),
+  chunkingStrategy: jsonb("chunking_strategy").default({
+    method: 'sliding_window',
+    chunk_size: 1000,
+    overlap: 200
+  }).notNull(),
+  
+  // Access Control
+  isPublic: boolean("is_public").default(false).notNull(),
+  allowedRoles: text("allowed_roles").array(), // Role-based access
+  departmentScope: varchar("department_scope", { length: 100 }),
+  
+  // Statistics
+  totalEmbeddings: integer("total_embeddings").default(0).notNull(),
+  totalTokens: integer("total_tokens").default(0).notNull(),
+  lastUpdatedAt: timestamp("last_updated_at").defaultNow().notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }), // VARCHAR for OAuth2 compatibility
+}, (table) => ({
+  tenantNameIndex: uniqueIndex("vector_collections_tenant_name_idx").on(table.tenantId, table.name),
+  typeIndex: index("vector_collections_type_idx").on(table.collectionType),
+}));
+
 // AI System Relations
 export const aiSettingsRelations = relations(aiSettings, ({ one }) => ({
   tenant: one(tenants, { fields: [aiSettings.tenantId], references: [tenants.id] }),
@@ -2592,6 +2735,22 @@ export const aiUsageLogsRelations = relations(aiUsageLogs, ({ one }) => ({
 export const aiConversationsRelations = relations(aiConversations, ({ one }) => ({
   tenant: one(tenants, { fields: [aiConversations.tenantId], references: [tenants.id] }),
   user: one(users, { fields: [aiConversations.userId], references: [users.id] }),
+}));
+
+// Vector Embeddings Relations
+export const vectorEmbeddingsRelations = relations(vectorEmbeddings, ({ one }) => ({
+  tenant: one(tenants, { fields: [vectorEmbeddings.tenantId], references: [tenants.id] }),
+  owner: one(users, { fields: [vectorEmbeddings.ownerUserId], references: [users.id] }),
+}));
+
+export const vectorSearchQueriesRelations = relations(vectorSearchQueries, ({ one }) => ({
+  tenant: one(tenants, { fields: [vectorSearchQueries.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [vectorSearchQueries.userId], references: [users.id] }),
+}));
+
+export const vectorCollectionsRelations = relations(vectorCollections, ({ one }) => ({
+  tenant: one(tenants, { fields: [vectorCollections.tenantId], references: [tenants.id] }),
+  createdBy: one(users, { fields: [vectorCollections.createdBy], references: [users.id] }),
 }));
 
 // AI Insert Schemas and Types
@@ -2617,3 +2776,28 @@ export const insertAIConversationSchema = createInsertSchema(aiConversations).om
 });
 export type InsertAIConversation = z.infer<typeof insertAIConversationSchema>;
 export type AIConversation = typeof aiConversations.$inferSelect;
+
+// Vector Embeddings Insert Schemas and Types
+export const insertVectorEmbeddingSchema = createInsertSchema(vectorEmbeddings).omit({ 
+  id: true, 
+  createdAt: true,
+  updatedAt: true,
+  lastAccessedAt: true 
+});
+export type InsertVectorEmbedding = z.infer<typeof insertVectorEmbeddingSchema>;
+export type VectorEmbedding = typeof vectorEmbeddings.$inferSelect;
+
+export const insertVectorSearchQuerySchema = createInsertSchema(vectorSearchQueries).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertVectorSearchQuery = z.infer<typeof insertVectorSearchQuerySchema>;
+export type VectorSearchQuery = typeof vectorSearchQueries.$inferSelect;
+
+export const insertVectorCollectionSchema = createInsertSchema(vectorCollections).omit({ 
+  id: true, 
+  createdAt: true,
+  lastUpdatedAt: true 
+});
+export type InsertVectorCollection = z.infer<typeof insertVectorCollectionSchema>;
+export type VectorCollection = typeof vectorCollections.$inferSelect;

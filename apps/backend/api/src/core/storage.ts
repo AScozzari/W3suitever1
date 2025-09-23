@@ -85,6 +85,16 @@ import {
   type InsertAIUsageLog,
   type AIConversation,
   type InsertAIConversation,
+  // Vector Embeddings types
+  vectorEmbeddings,
+  vectorSearchQueries,
+  vectorCollections,
+  type VectorEmbedding,
+  type InsertVectorEmbedding,
+  type VectorSearchQuery,
+  type InsertVectorSearchQuery,
+  type VectorCollection,
+  type InsertVectorCollection,
 } from "../db/schema/w3suite";
 
 // Import from Public schema (shared reference data)
@@ -2835,6 +2845,309 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return result.rowCount > 0;
+  }
+
+  // ===============================
+  // VECTOR EMBEDDINGS - PGVECTOR ENTERPRISE
+  // ===============================
+  
+  /**
+   * Create a new vector embedding with RLS tenant isolation
+   * @param embedding - Vector embedding data with tenant context
+   * @returns Created embedding with ID
+   */
+  async createVectorEmbedding(embedding: InsertVectorEmbedding): Promise<VectorEmbedding> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(embedding.tenantId);
+      
+      const [result] = await db
+        .insert(vectorEmbeddings)
+        .values({
+          ...embedding,
+          status: 'ready',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[VECTOR-RLS] ✅ Created embedding for tenant ${embedding.tenantId}`);
+      return result;
+    } catch (error) {
+      console.error('[VECTOR-RLS] ❌ Error creating embedding:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Search for similar embeddings using pgvector cosine similarity
+   * @param tenantId - Tenant ID for RLS isolation
+   * @param queryEmbedding - Query vector for similarity search
+   * @param options - Search options including filters and limit
+   * @returns Array of similar embeddings with similarity scores
+   */
+  async searchSimilarEmbeddings(
+    tenantId: string,
+    queryEmbedding: number[],
+    options: {
+      limit?: number;
+      threshold?: number;
+      sourceType?: string;
+      departmentRestriction?: string;
+      accessLevel?: string;
+    } = {}
+  ): Promise<Array<VectorEmbedding & { similarity: number }>> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const { limit = 10, threshold = 0.5 } = options;
+      
+      // Build query embedding JSON string for pgvector
+      const queryVector = JSON.stringify(queryEmbedding);
+      
+      // Build WHERE conditions
+      const conditions = [
+        eq(vectorEmbeddings.tenantId, tenantId),
+        eq(vectorEmbeddings.status, 'ready')
+      ];
+      
+      if (options.sourceType) {
+        conditions.push(eq(vectorEmbeddings.sourceType, options.sourceType as any));
+      }
+      
+      if (options.departmentRestriction) {
+        conditions.push(eq(vectorEmbeddings.departmentRestriction, options.departmentRestriction));
+      }
+      
+      if (options.accessLevel) {
+        conditions.push(eq(vectorEmbeddings.accessLevel, options.accessLevel));
+      }
+      
+      // Execute similarity search with pgvector
+      // Calculate distance once and filter in WHERE (not HAVING)
+      const results = await db
+        .select({
+          id: vectorEmbeddings.id,
+          tenantId: vectorEmbeddings.tenantId,
+          collectionId: vectorEmbeddings.collectionId,
+          sourceType: vectorEmbeddings.sourceType,
+          sourceId: vectorEmbeddings.sourceId,
+          sourceUrl: vectorEmbeddings.sourceUrl,
+          contentChunk: vectorEmbeddings.contentChunk,
+          // Don't return raw embedding to reduce payload and prevent data exposure
+          metadata: vectorEmbeddings.metadata,
+          tags: vectorEmbeddings.tags,
+          departmentRestriction: vectorEmbeddings.departmentRestriction,
+          accessLevel: vectorEmbeddings.accessLevel,
+          status: vectorEmbeddings.status,
+          createdAt: vectorEmbeddings.createdAt,
+          createdBy: vectorEmbeddings.createdBy,
+          similarity: sql<number>`1 - (${vectorEmbeddings.embedding} <=> ${queryVector}::vector)`
+        })
+        .from(vectorEmbeddings)
+        .where(and(
+          ...conditions,
+          // Apply similarity threshold in WHERE clause
+          sql`1 - (${vectorEmbeddings.embedding} <=> ${queryVector}::vector) > ${threshold}`
+        ))
+        .orderBy(sql`${vectorEmbeddings.embedding} <=> ${queryVector}::vector`)
+        .limit(limit);
+      
+      console.log(`[VECTOR-RLS] 🔍 Found ${results.length} similar embeddings for tenant ${tenantId}`);
+      
+      // Return results with similarity score
+      return results.map(r => ({
+        ...r,
+        similarity: r.similarity
+      })) as Array<VectorEmbedding & { similarity: number }>;
+    } catch (error) {
+      console.error('[VECTOR-RLS] ❌ Error searching embeddings:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create a new vector collection for organizing embeddings
+   * @param collection - Collection data with tenant context
+   * @returns Created collection
+   */
+  async createVectorCollection(collection: InsertVectorCollection): Promise<VectorCollection> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(collection.tenantId);
+      
+      const [result] = await db
+        .insert(vectorCollections)
+        .values({
+          ...collection,
+          createdAt: new Date(),
+          lastUpdatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[VECTOR-RLS] 📁 Created collection "${collection.name}" for tenant ${collection.tenantId}`);
+      return result;
+    } catch (error) {
+      console.error('[VECTOR-RLS] ❌ Error creating collection:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Log a vector search query for audit and analytics
+   * @param searchQuery - Search query data with results metadata
+   * @returns Created search query log
+   */
+  async logVectorSearchQuery(searchQuery: InsertVectorSearchQuery): Promise<VectorSearchQuery> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(searchQuery.tenantId);
+      
+      const [result] = await db
+        .insert(vectorSearchQueries)
+        .values({
+          ...searchQuery,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      console.log(`[VECTOR-RLS] 📊 Logged search query for tenant ${searchQuery.tenantId}`);
+      return result;
+    } catch (error) {
+      console.error('[VECTOR-RLS] ❌ Error logging search query:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get vector collections for a tenant
+   * @param tenantId - Tenant ID for RLS isolation
+   * @returns Array of vector collections
+   */
+  async getVectorCollections(tenantId: string): Promise<VectorCollection[]> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const collections = await db
+        .select()
+        .from(vectorCollections)
+        .where(eq(vectorCollections.tenantId, tenantId))
+        .orderBy(desc(vectorCollections.createdAt));
+      
+      console.log(`[VECTOR-RLS] 📚 Retrieved ${collections.length} collections for tenant ${tenantId}`);
+      return collections;
+    } catch (error) {
+      console.error('[VECTOR-RLS] ❌ Error getting collections:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Update vector embedding status (for async processing)
+   * @param tenantId - Tenant ID for RLS isolation
+   * @param embeddingId - Embedding ID
+   * @param status - New status
+   * @param processingTimeMs - Processing time in milliseconds
+   */
+  async updateVectorEmbeddingStatus(
+    tenantId: string,
+    embeddingId: string,
+    status: 'pending' | 'processing' | 'ready' | 'failed' | 'archived',
+    processingTimeMs?: number
+  ): Promise<boolean> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const updateData: any = {
+        status,
+        updatedAt: new Date()
+      };
+      
+      if (processingTimeMs !== undefined) {
+        updateData.processingTimeMs = processingTimeMs;
+      }
+      
+      const result = await db
+        .update(vectorEmbeddings)
+        .set(updateData)
+        .where(and(
+          eq(vectorEmbeddings.tenantId, tenantId),
+          eq(vectorEmbeddings.id, embeddingId)
+        ));
+      
+      console.log(`[VECTOR-RLS] ✅ Updated embedding ${embeddingId} status to ${status}`);
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('[VECTOR-RLS] ❌ Error updating embedding status:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Get vector search analytics for a tenant
+   * @param tenantId - Tenant ID
+   * @param days - Number of days to look back
+   * @returns Search analytics data
+   */
+  async getVectorSearchAnalytics(tenantId: string, days = 30): Promise<{
+    totalSearches: number;
+    avgResponseTime: number;
+    avgResultsReturned: number;
+    topSearchContexts: Array<{ context: string; count: number }>;
+  }> {
+    try {
+      // Set tenant context for RLS
+      await setTenantContext(tenantId);
+      
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const queries = await db
+        .select()
+        .from(vectorSearchQueries)
+        .where(and(
+          eq(vectorSearchQueries.tenantId, tenantId),
+          gte(vectorSearchQueries.createdAt, cutoffDate)
+        ));
+      
+      // Calculate analytics
+      const totalSearches = queries.length;
+      const avgResponseTime = queries.reduce((sum, q) => sum + q.responseTimeMs, 0) / (totalSearches || 1);
+      const avgResultsReturned = queries.reduce((sum, q) => sum + q.resultsReturned, 0) / (totalSearches || 1);
+      
+      // Top search contexts
+      const contextCounts = queries.reduce((acc, q) => {
+        if (q.searchContext) {
+          acc[q.searchContext] = (acc[q.searchContext] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const topSearchContexts = Object.entries(contextCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([context, count]) => ({ context, count }));
+      
+      console.log(`[VECTOR-RLS] 📈 Analytics for tenant ${tenantId}: ${totalSearches} searches in ${days} days`);
+      
+      return {
+        totalSearches,
+        avgResponseTime: Math.round(avgResponseTime),
+        avgResultsReturned: Math.round(avgResultsReturned),
+        topSearchContexts
+      };
+    } catch (error) {
+      console.error('[VECTOR-RLS] ❌ Error getting search analytics:', error);
+      return {
+        totalSearches: 0,
+        avgResponseTime: 0,
+        avgResultsReturned: 0,
+        topSearchContexts: []
+      };
+    }
   }
 
 }
