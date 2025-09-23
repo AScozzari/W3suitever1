@@ -22,14 +22,14 @@ export async function apiGet<T = any>(url: string): Promise<T> {
 export async function apiPost<T = any>(url: string, data?: any): Promise<T> {
   return apiRequest<T>(url, {
     method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data, // Don't stringify here - apiRequest will handle it
   });
 }
 
 export async function apiPut<T = any>(url: string, data?: any): Promise<T> {
   return apiRequest<T>(url, {
     method: 'PUT',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data, // Don't stringify here - apiRequest will handle it
   });
 }
 

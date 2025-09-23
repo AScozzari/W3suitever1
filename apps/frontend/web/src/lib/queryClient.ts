@@ -289,7 +289,6 @@ export async function apiRequest(
   }
   
   let headers: Record<string, string> = {
-    "Content-Type": "application/json",
     'X-Tenant-ID': tenantId, // Header per il tenant ID
   };
   
@@ -325,10 +324,43 @@ export async function apiRequest(
     throw new Error(`Unknown AUTH_MODE: ${AUTH_MODE}. Must be 'development' or 'oauth2'`);
   }
   
-  // Serialize body if it's an object
+  // Process body and set appropriate Content-Type
   let processedOptions = { ...options };
-  if (processedOptions.body && typeof processedOptions.body === 'object') {
-    processedOptions.body = JSON.stringify(processedOptions.body);
+  
+  // Check if body exists and needs processing
+  if (processedOptions.body !== undefined && processedOptions.body !== null) {
+    // Check if body is FormData, Blob, ArrayBuffer, or URLSearchParams (don't serialize these)
+    const isSpecialBody = processedOptions.body instanceof FormData ||
+                         processedOptions.body instanceof Blob ||
+                         processedOptions.body instanceof ArrayBuffer ||
+                         processedOptions.body instanceof URLSearchParams;
+    
+    if (!isSpecialBody) {
+      // If body is an object (including arrays), serialize it
+      if (typeof processedOptions.body === 'object') {
+        console.log('[API-REQUEST] 🔄 Serializing object body to JSON');
+        processedOptions.body = JSON.stringify(processedOptions.body);
+        // Set Content-Type for JSON if not already set
+        if (!headers['Content-Type'] && !options?.headers?.['Content-Type']) {
+          headers['Content-Type'] = 'application/json';
+        }
+      } else if (typeof processedOptions.body !== 'string') {
+        // Guard against non-string, non-object bodies that would become "[object Object]"
+        console.error('[API-REQUEST] ❌ Invalid body type:', typeof processedOptions.body);
+        throw new Error(`Invalid body type for API request: ${typeof processedOptions.body}. Body must be string, object, FormData, Blob, or ArrayBuffer.`);
+      } else {
+        // Body is already a string (probably pre-serialized JSON)
+        // Set Content-Type if it looks like JSON and header not set
+        if (!headers['Content-Type'] && !options?.headers?.['Content-Type']) {
+          try {
+            JSON.parse(processedOptions.body);
+            headers['Content-Type'] = 'application/json';
+          } catch {
+            // Not JSON, don't set Content-Type
+          }
+        }
+      }
+    }
   }
 
   const res = await fetch(finalUrl, {
