@@ -77,6 +77,7 @@ import {
   type HrRequestComment,
   type InsertHrRequestComment,
   type HrRequestStatusHistory,
+  type InsertHrRequestStatusHistory,
   // AI System types
   type AISettings,
   type InsertAISettings,
@@ -84,7 +85,6 @@ import {
   type InsertAIUsageLog,
   type AIConversation,
   type InsertAIConversation,
-  type InsertHrRequestStatusHistory,
 } from "../db/schema/w3suite";
 
 // Import from Public schema (shared reference data)
@@ -2651,6 +2651,137 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return Number(result[0]?.count || 0);
+  }
+
+  // ===============================
+  // AI SETTINGS MANAGEMENT
+  // ===============================
+  
+  async createAISettings(settings: InsertAISettings): Promise<AISettings> {
+    await setTenantContext(settings.tenantId);
+    
+    const [result] = await db.insert(aiSettings).values(settings).returning();
+    return result;
+  }
+  
+  async getAISettings(tenantId: string): Promise<AISettings | null> {
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .select()
+      .from(aiSettings)
+      .where(eq(aiSettings.tenantId, tenantId))
+      .limit(1);
+    
+    return result[0] || null;
+  }
+  
+  async updateAISettings(tenantId: string, updates: Partial<InsertAISettings>): Promise<AISettings> {
+    await setTenantContext(tenantId);
+    
+    const [result] = await db
+      .update(aiSettings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(aiSettings.tenantId, tenantId))
+      .returning();
+    
+    return result;
+  }
+  
+  // ===============================
+  // AI USAGE LOGS
+  // ===============================
+  
+  async logAIUsage(log: InsertAIUsageLog): Promise<AIUsageLog> {
+    await setTenantContext(log.tenantId);
+    
+    const [result] = await db.insert(aiUsageLogs).values(log).returning();
+    return result;
+  }
+  
+  async getAIUsageLogs(tenantId: string, limit = 100, offset = 0): Promise<AIUsageLog[]> {
+    await setTenantContext(tenantId);
+    
+    return await db
+      .select()
+      .from(aiUsageLogs)
+      .where(eq(aiUsageLogs.tenantId, tenantId))
+      .orderBy(desc(aiUsageLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+  
+  async getAIUsageStats(tenantId: string, days = 30): Promise<{
+    totalRequests: number;
+    totalTokens: number;
+    totalCost: number;
+    avgResponseTime: number;
+  }> {
+    await setTenantContext(tenantId);
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const result = await db
+      .select({
+        totalRequests: sql<number>`count(*)`,
+        totalTokens: sql<number>`sum(${aiUsageLogs.tokensUsed})`,
+        totalCost: sql<number>`sum(${aiUsageLogs.cost})`,
+        avgResponseTime: sql<number>`avg(${aiUsageLogs.responseTimeMs})`
+      })
+      .from(aiUsageLogs)
+      .where(and(
+        eq(aiUsageLogs.tenantId, tenantId),
+        gte(aiUsageLogs.createdAt, startDate)
+      ));
+    
+    const stats = result[0];
+    return {
+      totalRequests: Number(stats?.totalRequests || 0),
+      totalTokens: Number(stats?.totalTokens || 0),
+      totalCost: Number(stats?.totalCost || 0),
+      avgResponseTime: Number(stats?.avgResponseTime || 0)
+    };
+  }
+  
+  // ===============================
+  // AI CONVERSATIONS
+  // ===============================
+  
+  async createAIConversation(conversation: InsertAIConversation): Promise<AIConversation> {
+    await setTenantContext(conversation.tenantId);
+    
+    const [result] = await db.insert(aiConversations).values(conversation).returning();
+    return result;
+  }
+  
+  async getAIConversations(tenantId: string, userId?: string, limit = 50): Promise<AIConversation[]> {
+    await setTenantContext(tenantId);
+    
+    const conditions = [eq(aiConversations.tenantId, tenantId)];
+    if (userId) {
+      conditions.push(eq(aiConversations.userId, userId));
+    }
+    
+    return await db
+      .select()
+      .from(aiConversations)
+      .where(and(...conditions))
+      .orderBy(desc(aiConversations.createdAt))
+      .limit(limit);
+  }
+  
+  async deleteAIConversation(tenantId: string, conversationId: string): Promise<boolean> {
+    await setTenantContext(tenantId);
+    
+    const result = await db
+      .delete(aiConversations)
+      .where(and(
+        eq(aiConversations.tenantId, tenantId),
+        eq(aiConversations.id, conversationId)
+      ));
+    
+    return result.rowCount > 0;
   }
 
 }
