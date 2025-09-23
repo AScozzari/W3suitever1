@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Settings, Activity, MessageCircle, FileText, TrendingUp, Search,
@@ -141,17 +141,10 @@ export default function AISettingsPage() {
   // Process URL mutation
   const processUrlMutation = useMutation({
     mutationFn: async (url: string) => {
-      const response = await fetch('/api/ai/training/url', {
+      return await apiRequest('/api/ai/training/url', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, extractContent: true }),
+        body: { url, extractContent: true },
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });

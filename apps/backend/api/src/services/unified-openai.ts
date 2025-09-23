@@ -454,6 +454,46 @@ export class UnifiedOpenAIService {
   }
 
   /**
+   * Check if IP address is private/internal (SSRF protection)
+   */
+  private isPrivateOrInternalIP(ip: string): boolean {
+    // IPv4 private ranges
+    const privateIPv4Ranges = [
+      /^10\./,                    // 10.0.0.0/8
+      /^172\.(1[6-9]|2[0-9]|3[01])\./, // 172.16.0.0/12
+      /^192\.168\./,              // 192.168.0.0/16
+      /^169\.254\./,              // 169.254.0.0/16 (link-local)
+      /^127\./,                   // 127.0.0.0/8 (loopback)
+      /^0\.0\.0\.0$/,             // 0.0.0.0
+    ];
+    
+    // IPv6 private ranges
+    const privateIPv6Ranges = [
+      /^fc00:/i,                  // fc00::/7 (unique local)
+      /^fd[0-9a-f]{2}:/i,         // fd00::/8 (unique local)
+      /^fe80:/i,                  // fe80::/10 (link-local)
+      /^::1$/i,                   // ::1 (loopback)
+      /^::$/i,                    // :: (unspecified)
+    ];
+    
+    // Check IPv4
+    for (const range of privateIPv4Ranges) {
+      if (range.test(ip)) return true;
+    }
+    
+    // Check IPv6
+    for (const range of privateIPv6Ranges) {
+      if (range.test(ip)) return true;
+    }
+    
+    // Special metadata service IPs
+    const metadataIPs = ['169.254.169.254', '100.100.100.200'];
+    if (metadataIPs.includes(ip)) return true;
+    
+    return false;
+  }
+
+  /**
    * Scrape and process URL content with robust error handling
    */
   async scrapeURL(
@@ -462,24 +502,93 @@ export class UnifiedOpenAIService {
     context: OpenAIRequestContext
   ): Promise<{ content: string, metadata: any }> {
     const startTime = Date.now();
-    let browser = null;
+    const totalTimeout = 30000; // 30 second total timeout
     
     try {
-      // URL validation
+      // URL validation and SSRF protection
       const urlObj = new URL(url);
       if (!['http:', 'https:'].includes(urlObj.protocol)) {
         throw new Error('Only HTTP and HTTPS URLs are supported');
       }
 
+      // Robust SSRF protection with DNS resolution
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      // Validate hostname and resolve DNS to check actual IPs
+      const dns = await import('dns').then(m => m.promises);
+      
+      try {
+        const addresses = await dns.resolve4(hostname).catch(() => []);
+        const ipv6Addresses = await dns.resolve6(hostname).catch(() => []);
+        const allIPs = [...addresses, ...ipv6Addresses];
+        
+        // Check all resolved IPs for private/internal ranges
+        for (const ip of allIPs) {
+          if (this.isPrivateOrInternalIP(ip)) {
+            throw new Error(`SSRF_BLOCKED: Hostname ${hostname} resolves to private/internal IP ${ip}`);
+          }
+        }
+      } catch (error: any) {
+        if (error.message.includes('SSRF_BLOCKED')) {
+          throw error;
+        }
+        // DNS resolution failed - apply basic hostname checks as fallback
+        console.warn(`DNS resolution failed for ${hostname}, using fallback checks`);
+      }
+      
+      // Basic hostname checks as additional protection
+      if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
+        throw new Error('SSRF_BLOCKED: Access to localhost/loopback addresses is not allowed');
+      }
+      
+      // Block obvious private IP patterns
+      const privateIPRegex = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.|fd[0-9a-f]{2}:|fe80:|::1$|127\.)/i;
+      if (privateIPRegex.test(hostname)) {
+        throw new Error('SSRF_BLOCKED: Access to private/internal network addresses is not allowed');
+      }
+      
+      // Block metadata service endpoints
+      const metadataHosts = ['169.254.169.254', 'metadata.google.internal', 'metadata'];
+      if (metadataHosts.includes(hostname)) {
+        throw new Error('SSRF_BLOCKED: Access to cloud metadata services is not allowed');
+      }
+
+      // Enforce domain allowlist (strict)
+      const allowedDomains = ['windtre.it', 'tre.it', 'tre.com', 'repubblica.it', 'corriere.it', 'gazzetta.it'];
+      const domain = hostname.replace(/^www\./, '');
+      if (!allowedDomains.some(allowed => domain === allowed || domain.endsWith('.' + allowed))) {
+        throw new Error(`ALLOWLIST_BLOCKED: Domain ${domain} is not in the allowed list for URL scraping`);
+      }
+
+      // Enforce total timeout for entire operation
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR: Total operation timeout (30s) exceeded')), totalTimeout);
+      });
+
       // Try static HTML first with Cheerio (faster for static content)
       try {
-        const staticResult = await this.scrapeStaticContent(url, startTime, context);
+        const staticResult = await Promise.race([
+          this.scrapeStaticContent(url, startTime, context),
+          timeoutPromise
+        ]);
         return staticResult;
       } catch (staticError: any) {
+        if (staticError.message.includes('TIMEOUT_ERROR')) {
+          throw staticError;
+        }
         console.log(`Static scraping failed for ${url}, trying dynamic rendering:`, staticError.message);
         
+        // Check remaining time before dynamic fallback
+        const elapsed = Date.now() - startTime;
+        if (elapsed >= totalTimeout) {
+          throw new Error('TIMEOUT_ERROR: No time remaining for dynamic rendering fallback');
+        }
+        
         // Fallback to Puppeteer for JavaScript-heavy sites
-        const dynamicResult = await this.scrapeDynamicContent(url, startTime, context);
+        const dynamicResult = await Promise.race([
+          this.scrapeDynamicContent(url, startTime, context),
+          timeoutPromise
+        ]);
         return dynamicResult;
       }
     } catch (error: any) {
@@ -515,9 +624,8 @@ export class UnifiedOpenAIService {
         throw new Error(`URL scraping failed for ${url}: ${error.message}`);
       }
     } finally {
-      if (browser) {
-        await browser.close();
-      }
+      // Browser cleanup is handled within scrapeDynamicContent method
+      // No browser instance is maintained at this level
     }
   }
 
@@ -545,10 +653,28 @@ export class UnifiedOpenAIService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP_${response.status}: ${response.statusText}`);
+      }
+
+      // Verify content type is HTML
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('text/html') && !contentType.includes('application/xhtml')) {
+        throw new Error(`CONTENT_TYPE_ERROR: Expected HTML but got ${contentType}`);
+      }
+
+      // Check content length to prevent memory exhaustion
+      const contentLength = response.headers.get('content-length');
+      const maxSize = 5 * 1024 * 1024; // 5MB limit
+      if (contentLength && parseInt(contentLength) > maxSize) {
+        throw new Error(`CONTENT_SIZE_ERROR: Content too large (${contentLength} bytes, max ${maxSize})`);
       }
 
       const html = await response.text();
+      
+      // Additional size check after reading
+      if (html.length > maxSize) {
+        throw new Error(`CONTENT_SIZE_ERROR: Content too large (${html.length} characters, max ${maxSize})`);
+      }
       const $ = cheerio.load(html);
       
       // Extract structured content
@@ -733,7 +859,21 @@ export class UnifiedOpenAIService {
         }
       };
     } finally {
-      await browser.close();
+      // Guaranteed cleanup of all resources
+      if (page) {
+        try {
+          await page.close();
+        } catch (e) {
+          console.warn('Failed to close page:', e);
+        }
+      }
+      if (browser) {
+        try {
+          await browser.close();
+        } catch (e) {
+          console.warn('Failed to close browser:', e);
+        }
+      }
     }
   }
 
