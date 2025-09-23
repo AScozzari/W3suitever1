@@ -99,6 +99,7 @@ import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import { UnifiedOpenAIService } from "../services/unified-openai";
 import { MediaProcessorService } from "../services/media-processors";
+
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 const hrStorage = new HRStorage();
 const openaiService = new UnifiedOpenAIService(storage);
@@ -10152,21 +10153,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // RAG: Search relevant documents if requested
       if (includeDocuments) {
         try {
-          // Search vector database for relevant training content
-          const vectorResults = await storage.searchSimilarEmbeddings(tenantId, message, 5, 0.7);
-          if (vectorResults && vectorResults.length > 0) {
-            ragContext.documents = vectorResults.map((result: any) => ({
-              content: result.content,
-              source: result.metadata?.source || 'training_data',
-              similarity: result.similarity
-            }));
+          // First, generate embedding for the user query
+          const { createUnifiedOpenAIService } = await import('../services/unified-openai');
+          const openaiService = createUnifiedOpenAIService(storage);
+          
+          const queryEmbeddingResult = await openaiService.generateEmbedding(
+            message,
+            settings,
+            {
+              tenantId,
+              userId,
+              businessEntityId: null,
+              contextData: {
+                searchType: 'rag_query',
+                queryLength: message.length
+              }
+            }
+          );
+          
+          if (queryEmbeddingResult.success && queryEmbeddingResult.embedding) {
+            // Search vector database for relevant training content using the embedding
+            const vectorResults = await storage.searchSimilarEmbeddings(
+              tenantId, 
+              queryEmbeddingResult.embedding, 
+              {
+                limit: 5,
+                threshold: 0.7
+              }
+            );
             
-            // Add document context to the message
-            const documentContext = vectorResults
-              .map((doc: any) => `[DOCUMENTO] ${doc.content}`)
-              .join('\n\n');
-            
-            enhancedMessage = `Contesto documenti rilevanti:\n${documentContext}\n\nDomanda utente: ${message}`;
+            if (vectorResults && vectorResults.length > 0) {
+              ragContext.documents = vectorResults.map((result: any) => ({
+                content: result.content,
+                source: result.metadata?.source || 'training_data',
+                similarity: result.similarity
+              }));
+              
+              // Add document context to the message
+              const documentContext = vectorResults
+                .map((doc: any) => `[DOCUMENTO] ${doc.content}`)
+                .join('\n\n');
+              
+              enhancedMessage = `Contesto documenti rilevanti:\n${documentContext}\n\nDomanda utente: ${message}`;
+              
+              console.log(`[RAG-SUCCESS] 📚 Found ${vectorResults.length} relevant documents for query: "${message.slice(0, 50)}..."`);
+            } else {
+              console.log('[RAG-INFO] 📭 No relevant documents found above similarity threshold');
+            }
+          } else {
+            console.warn('[RAG-ERROR] Failed to generate query embedding:', queryEmbeddingResult.error);
           }
         } catch (error) {
           console.warn('Error searching documents for RAG:', error);
@@ -10174,33 +10209,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Web Search: For real-time WindTre information
+      // Web Search: Real-time search implementation
       if (includeWebSearch) {
         try {
-          // Simple web search implementation (you can enhance this)
-          // For now, we'll add WindTre-specific context
-          const windtreContext = `
-            [CONTESTO WINDTRE]
-            Sei Tippy, l'assistente AI di WindTre, operatore di telecomunicazioni italiano.
-            Offerte principali WindTre:
-            - WindTre GO: piano prepagato con giga illimitati
-            - WindTre Super: piano in abbonamento con chiamate e internet
-            - WindTre Business: soluzioni per aziende
-            - WindTre Casa: fibra ottica per casa
+          console.log(`[WEB-SEARCH] 🌐 Performing web search for: "${message.slice(0, 50)}..."`);
+          
+          // Create search query based on context and message
+          let searchQuery = message;
+          if (context?.currentModule) {
+            searchQuery = `${message} WindTre ${context.currentModule}`;
+          } else {
+            searchQuery = `${message} WindTre telecomunicazioni`;
+          }
+          
+          const webResults = await performWebSearch(searchQuery);
+          
+          if (webResults && webResults.length > 0) {
+            ragContext.webResults = webResults.map((result: any) => ({
+              title: result.title,
+              content: result.snippet || result.content,
+              source: result.link || result.url,
+              relevance: result.relevance || 1.0
+            }));
             
-            Devi aiutare con:
-            - Consulenza vendite e prezzi
-            - Costruzione pitch di vendita
-            - Informazioni su piani e offerte
-            - Supporto commerciale
-          `;
-          
-          ragContext.webResults = [{ 
-            content: windtreContext, 
-            source: 'windtre_knowledge_base' 
-          }];
-          
-          enhancedMessage = `${windtreContext}\n\nPagina corrente: ${context?.currentPage || 'dashboard'}\nModulo: ${context?.currentModule || 'generale'}\n\nRichiesta utente: ${message}`;
+            // Add web search context to the message
+            const webContext = webResults
+              .slice(0, 3) // Limit to top 3 results
+              .map((result: any) => `[WEB] ${result.title}: ${result.snippet || result.content}`)
+              .join('\n\n');
+            
+            enhancedMessage = `Informazioni web aggiornate:\n${webContext}\n\nContesto WindTre: Sei Tippy, assistente AI di WindTre. Usa le informazioni web per fornire risposte aggiornate.\n\nDomanda utente: ${message}`;
+            
+            console.log(`[WEB-SEARCH] ✅ Found ${webResults.length} web results`);
+          } else {
+            console.log('[WEB-SEARCH] 📭 No web results found, using fallback WindTre context');
+            
+            // Fallback to static WindTre context if web search fails
+            const windtreContext = `
+              [CONTESTO WINDTRE STATICO]
+              Sei Tippy, l'assistente AI di WindTre, operatore di telecomunicazioni italiano.
+              Offerte principali WindTre:
+              - WindTre GO: piano prepagato con giga illimitati
+              - WindTre Super: piano in abbonamento con chiamate e internet
+              - WindTre Business: soluzioni per aziende
+              - WindTre Casa: fibra ottica per casa
+            `;
+            
+            ragContext.webResults = [{ 
+              content: windtreContext, 
+              source: 'windtre_fallback_knowledge' 
+            }];
+            
+            enhancedMessage = `${windtreContext}\n\nPagina corrente: ${context?.currentPage || 'dashboard'}\nModulo: ${context?.currentModule || 'generale'}\n\nRichiesta utente: ${message}`;
+          }
         } catch (error) {
           console.warn('Error performing web search:', error);
           // Continue without web search context
