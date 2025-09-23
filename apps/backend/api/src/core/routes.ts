@@ -47,7 +47,7 @@ import {
   calendarEventStatusEnum,
   hrRequestStatusEnum
 } from "../db/schema/w3suite";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance, aiSettings, aiUsageLogs, aiConversations } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance, aiSettings, aiUsageLogs, aiConversations, aiTrainingSessions, insertAITrainingSessionSchema } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -96,8 +96,12 @@ import { encryptionKeyService } from "./encryption-service";
 import { HRNotificationHelper } from "./notification-service";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
+import { UnifiedOpenAIService } from "../services/unified-openai";
+import { MediaProcessorService } from "../services/media-processors";
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 const hrStorage = new HRStorage();
+const openaiService = new UnifiedOpenAIService(storage);
+const mediaProcessor = new MediaProcessorService(openaiService);
 
 // Zod validation schemas for logs API
 const getLogsQuerySchema = z.object({
@@ -10112,6 +10116,363 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       handleApiError(error, res, 'analisi documento AI');
+    }
+  });
+
+  // ==================== AI TRAINING ROUTES ====================
+  
+  // Get AI Training Sessions
+  app.get('/api/ai/training/sessions', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const filters = {
+        sessionType: req.query.sessionType as string,
+        sessionStatus: req.query.sessionStatus as string,
+        userId: req.query.userId as string,
+        limit: parseInt(req.query.limit as string) || 50
+      };
+      
+      const sessions = await storage.getAITrainingSessions(tenantId, filters);
+      res.json({ success: true, data: sessions });
+    } catch (error) {
+      handleApiError(error, res, 'recupero sessioni training AI');
+    }
+  });
+  
+  // Create AI Training Session
+  app.post('/api/ai/training/sessions', ...authWithRBAC, requirePermission('ai.training.create'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const sessionData = {
+        ...req.body,
+        tenantId,
+        userId,
+        sessionStatus: 'in_progress' as const,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const session = await storage.createAITrainingSession(sessionData);
+      res.json({ success: true, data: session });
+    } catch (error) {
+      handleApiError(error, res, 'creazione sessione training AI');
+    }
+  });
+  
+  // Validate AI Response
+  app.post('/api/ai/training/validate', ...authWithRBAC, requirePermission('ai.training.validate'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const { 
+        originalQuery, 
+        originalResponse, 
+        correctedResponse, 
+        feedback,
+        sessionId 
+      } = req.body;
+      
+      if (!originalQuery || !originalResponse || !correctedResponse) {
+        return res.status(400).json({ 
+          error: 'Query originale, risposta originale e risposta corretta sono richieste' 
+        });
+      }
+      
+      const settings = await storage.getAISettings(tenantId);
+      if (!settings || !settings.isActive) {
+        return res.status(403).json({ error: 'AI non configurata o non attiva' });
+      }
+      
+      const result = await openaiService.validateResponse(
+        originalQuery,
+        originalResponse,
+        correctedResponse,
+        feedback,
+        settings,
+        {
+          tenantId,
+          userId,
+          moduleContext: 'general',
+          businessEntityId: null
+        }
+      );
+      
+      // Update training session if provided
+      if (sessionId) {
+        await storage.updateAITrainingSession(sessionId, {
+          validationFeedback: feedback,
+          correctedResponse: correctedResponse,
+          sessionStatus: 'completed',
+          embeddingsCreated: 1
+        });
+      }
+      
+      res.json({ 
+        success: true, 
+        data: {
+          improved: result.improved,
+          embeddingCreated: !!result.embedding
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'validazione risposta AI');
+    }
+  });
+  
+  // Process URL for Training
+  app.post('/api/ai/training/url', ...authWithRBAC, requirePermission('ai.training.url'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user.id;
+      const { url, extractContent = true } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL richiesto' });
+      }
+      
+      const settings = await storage.getAISettings(tenantId);
+      if (!settings || !settings.isActive) {
+        return res.status(403).json({ error: 'AI non configurata o non attiva' });
+      }
+      
+      const result = await openaiService.scrapeURL(url, settings, {
+        tenantId,
+        userId,
+        moduleContext: 'general',
+        businessEntityId: null
+      });
+      
+      // Generate embeddings for scraped content if requested
+      if (extractContent && result.content) {
+        const embeddingResult = await openaiService.generateEmbedding(
+          result.content, 
+          settings,
+          {
+            tenantId,
+            userId,
+            moduleContext: 'general',
+            businessEntityId: null
+          }
+        );
+        
+        if (embeddingResult.success && embeddingResult.embedding) {
+          // Store the embedding
+          await storage.createVectorEmbedding({
+            tenantId,
+            contentId: uuidv4(),
+            contentType: 'url',
+            content: result.content.substring(0, 5000), // Store first 5000 chars
+            embedding: embeddingResult.embedding,
+            metadata: {
+              url: url,
+              title: result.metadata.title,
+              scrapedAt: new Date()
+            },
+            departmentRestriction: null,
+            accessLevel: 'organization'
+          });
+        }
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          content: result.content,
+          metadata: result.metadata
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'processamento URL per training');
+    }
+  });
+  
+  // Upload and Process Media for Training
+  const trainingUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 100 * 1024 * 1024 // 100MB max
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'audio/mpeg',
+        'audio/wav',
+        'audio/ogg',
+        'video/mp4',
+        'video/webm',
+        'application/pdf'
+      ];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Tipo di file non supportato'));
+      }
+    }
+  });
+  
+  app.post('/api/ai/training/media', 
+    ...authWithRBAC, 
+    requirePermission('ai.training.media'),
+    trainingUpload.single('file'),
+    async (req: any, res) => {
+      try {
+        const tenantId = req.tenantId;
+        const userId = req.user.id;
+        const file = req.file;
+        
+        if (!file) {
+          return res.status(400).json({ error: 'File richiesto' });
+        }
+        
+        const settings = await storage.getAISettings(tenantId);
+        if (!settings || !settings.isActive) {
+          return res.status(403).json({ error: 'AI non configurata o non attiva' });
+        }
+        
+        // Determine media type from mimetype
+        let mediaType: 'pdf' | 'image' | 'audio' | 'video';
+        if (file.mimetype === 'application/pdf') {
+          mediaType = 'pdf';
+        } else if (file.mimetype.startsWith('image/')) {
+          mediaType = 'image';
+        } else if (file.mimetype.startsWith('audio/')) {
+          mediaType = 'audio';
+        } else if (file.mimetype.startsWith('video/')) {
+          mediaType = 'video';
+        } else {
+          return res.status(400).json({ error: 'Tipo di file non supportato' });
+        }
+        
+        // Create temporary file
+        const tmpPath = `/tmp/${uuidv4()}_${file.originalname}`;
+        require('fs').writeFileSync(tmpPath, file.buffer);
+        
+        // Process media
+        const processingResult = await mediaProcessor.processMedia(
+          tmpPath,
+          mediaType,
+          settings,
+          {
+            tenantId,
+            userId,
+            moduleContext: 'general',
+            businessEntityId: null
+          }
+        );
+        
+        // Clean up temp file
+        require('fs').unlinkSync(tmpPath);
+        
+        if (!processingResult.success) {
+          return res.status(500).json({ 
+            error: 'Errore durante il processamento del media',
+            details: processingResult.error 
+          });
+        }
+        
+        // Store chunks with embeddings
+        const storedChunks = [];
+        for (const chunk of processingResult.chunks) {
+          if (chunk.embedding) {
+            const stored = await storage.createVectorEmbedding({
+              tenantId,
+              contentId: chunk.id,
+              contentType: mediaType,
+              content: chunk.content.substring(0, 5000),
+              embedding: chunk.embedding,
+              metadata: {
+                ...chunk.metadata,
+                originalFile: file.originalname,
+                mimeType: file.mimetype,
+                fileSize: file.size
+              },
+              mediaType: mediaType,
+              departmentRestriction: null,
+              accessLevel: 'organization'
+            });
+            storedChunks.push(stored.id);
+          }
+        }
+        
+        // Create training session record
+        const session = await storage.createAITrainingSession({
+          tenantId,
+          userId,
+          sessionType: 'media_upload',
+          sessionStatus: 'completed',
+          originalQuery: `Media upload: ${file.originalname}`,
+          mediaUrls: [file.originalname],
+          mediaType: mediaType,
+          embeddingsCreated: storedChunks.length,
+          processingTimeMs: processingResult.metadata.processingTimeMs,
+          metadata: {
+            chunks: storedChunks,
+            fileInfo: {
+              name: file.originalname,
+              size: file.size,
+              type: file.mimetype
+            },
+            processingResult: processingResult.metadata
+          }
+        });
+        
+        res.json({
+          success: true,
+          data: {
+            sessionId: session.id,
+            chunksProcessed: processingResult.chunks.length,
+            embeddingsCreated: storedChunks.length,
+            metadata: processingResult.metadata
+          }
+        });
+      } catch (error) {
+        handleApiError(error, res, 'processamento media per training');
+      }
+    }
+  );
+  
+  // Get Training Statistics
+  app.get('/api/ai/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const days = parseInt(req.query.days as string) || 30;
+      
+      const sessions = await storage.getAITrainingSessions(tenantId, { limit: 1000 });
+      
+      // Calculate statistics
+      const stats = {
+        totalSessions: sessions.length,
+        byType: {} as Record<string, number>,
+        byStatus: {} as Record<string, number>,
+        totalEmbeddings: 0,
+        totalValidations: 0,
+        totalMediaUploads: 0,
+        totalUrls: 0
+      };
+      
+      for (const session of sessions) {
+        // Count by type
+        const type = session.sessionType || 'unknown';
+        stats.byType[type] = (stats.byType[type] || 0) + 1;
+        
+        // Count by status
+        const status = session.sessionStatus || 'unknown';
+        stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
+        
+        // Count specific types
+        stats.totalEmbeddings += session.embeddingsCreated || 0;
+        if (session.sessionType === 'validation') stats.totalValidations++;
+        if (session.sessionType === 'media_upload') stats.totalMediaUploads++;
+        if (session.sessionType === 'url_ingestion') stats.totalUrls++;
+      }
+      
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      handleApiError(error, res, 'recupero statistiche training AI');
     }
   });
 
