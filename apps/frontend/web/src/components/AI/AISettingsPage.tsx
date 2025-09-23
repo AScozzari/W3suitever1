@@ -78,6 +78,13 @@ export default function AISettingsPage() {
     refetchInterval: 30000,
   });
 
+  // Fetch AI conversations for archive
+  const { data: conversations, isLoading: conversationsLoading } = useQuery<{success: boolean, data: any[]}>({
+    queryKey: ['/api/ai/conversations'],
+    refetchInterval: 60000,
+    enabled: activeTab === 'conversations'
+  });
+
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (updates: Partial<AISettings>) => {
@@ -691,13 +698,6 @@ export default function AISettingsPage() {
       </div>
     </div>
   );
-
-  // Fetch AI conversations for archive
-  const { data: conversations, isLoading: conversationsLoading } = useQuery<{success: boolean, data: any[]}>({
-    queryKey: ['/api/ai/conversations'],
-    refetchInterval: 60000,
-    enabled: activeTab === 'conversations'
-  });
 
   const renderConversationsTab = () => (
     <div className="space-y-6">
