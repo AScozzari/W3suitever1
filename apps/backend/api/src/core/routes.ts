@@ -9548,7 +9548,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test OpenAI API connection
   app.post('/api/ai/test-connection', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
     try {
-      const { apiKey, model = 'gpt-5' } = req.body;
+      const { apiKey, model = 'gpt-4-turbo' } = req.body;
       
       if (!apiKey) {
         return res.status(400).json({ 
@@ -9558,7 +9558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Test the API key with a simple request
-      const OpenAI = require('openai');
+      const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({ apiKey });
       
       const testResponse = await openai.chat.completions.create({
@@ -9692,7 +9692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Test OpenAI connection
-      const { OpenAI } = require('openai');
+      const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({ apiKey: testApiKey });
       
       const startTime = Date.now();
