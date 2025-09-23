@@ -122,13 +122,10 @@ export default function AISettingsPage() {
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (updates: Partial<AISettings>) => {
-      const response = await fetch('/api/ai/settings', {
+      return await apiRequest('/api/ai/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: updates,
       });
-      if (!response.ok) throw new Error('Failed to update settings');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/settings'] });
