@@ -587,43 +587,50 @@ export default function AISettingsPage() {
   const renderAnalyticsTab = () => (
     <div className="space-y-6">
       {/* Usage Statistics */}
-      {stats?.data && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Richieste Totali</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.data.totalRequests}</p>
-              </div>
-              <Activity className="w-8 h-8 text-[#FF6900]" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Richieste Totali</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.data?.totalRequests || 0}</p>
             </div>
+            <Activity className="w-8 h-8 text-[#FF6900]" />
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Token Utilizzati</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.data.totalTokens.toLocaleString()}</p>
-              </div>
-              <Database className="w-8 h-8 text-[#7B2CBF]" />
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Token Utilizzati</p>
+              <p className="text-2xl font-bold text-gray-900">{(stats?.data?.totalTokens || 0).toLocaleString()}</p>
             </div>
+            <Database className="w-8 h-8 text-[#7B2CBF]" />
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Costo Totale</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.data.totalCost.toFixed(2)}</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-green-600" />
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Costo Totale</p>
+              <p className="text-2xl font-bold text-gray-900">${(stats?.data?.totalCost || 0).toFixed(2)}</p>
             </div>
+            <DollarSign className="w-8 h-8 text-green-600" />
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tempo Medio</p>
-                <p className="text-2xl font-bold text-gray-900">{Math.round(stats.data.avgResponseTime)}ms</p>
-              </div>
-              <Clock className="w-8 h-8 text-blue-600" />
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Tempo Medio</p>
+              <p className="text-2xl font-bold text-gray-900">{Math.round(stats?.data?.avgResponseTime || 0)}ms</p>
             </div>
+            <Clock className="w-8 h-8 text-blue-600" />
+          </div>
+        </div>
+      </div>
+
+      {statsLoading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin text-[#FF6900] mx-auto mb-4" />
+            <p className="text-gray-600">Caricamento statistiche...</p>
           </div>
         </div>
       )}
@@ -669,12 +676,12 @@ export default function AISettingsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {usageLogs?.data?.map((log: AIUsageLog) => (
+                {usageLogs?.data?.length > 0 ? usageLogs.data.map((log: AIUsageLog) => (
                   <tr key={log.id}>
-                    <td className="px-4 py-3 text-sm text-gray-900">{log.feature}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{log.tokensUsed}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">${log.cost.toFixed(4)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{log.responseTimeMs}ms</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{log.feature || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{log.tokensUsed || 0}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">${(log.cost || 0).toFixed(4)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{log.responseTimeMs || 0}ms</td>
                     <td className="px-4 py-3">
                       {log.success ? (
                         <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
@@ -687,10 +694,16 @@ export default function AISettingsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
-                      {new Date(log.createdAt).toLocaleString('it-IT')}
+                      {log.createdAt ? new Date(log.createdAt).toLocaleString('it-IT') : 'N/A'}
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      Nessun log di utilizzo disponibile. I logs appariranno quando l'AI Assistant verrà utilizzato.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
