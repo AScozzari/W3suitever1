@@ -1,0 +1,96 @@
+🔍 [CALENDAR-DEBUG] Sample event: undefined
+HRCalendar.tsx:144 Uncaught TypeError: backendEvents.map is not a function
+    at HRCalendar.tsx:144:45
+    at mountMemo (chunk-ZHRYBLGQ.js?v=11b0b4f3:12194:27)
+    at Object.useMemo (chunk-ZHRYBLGQ.js?v=11b0b4f3:12518:24)
+    at useMemo (chunk-L7SIRVDC.js?v=11b0b4f3:1094:29)
+    at HRCalendar (HRCalendar.tsx:140:26)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=11b0b4f3:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=11b0b4f3:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=11b0b4f3:15914:22)
+    at HTMLUnknownElement.callCallback2 (chunk-ZHRYBLGQ.js?v=11b0b4f3:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-ZHRYBLGQ.js?v=11b0b4f3:3699:24)
+(anonymous) @ HRCalendar.tsx:144
+mountMemo @ chunk-ZHRYBLGQ.js?v=11b0b4f3:12194
+useMemo @ chunk-ZHRYBLGQ.js?v=11b0b4f3:12518
+useMemo @ chunk-L7SIRVDC.js?v=11b0b4f3:1094
+HRCalendar @ HRCalendar.tsx:140
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=11b0b4f3:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=11b0b4f3:15914
+callCallback2 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3674
+invokeGuardedCallbackDev @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3699
+invokeGuardedCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:3733
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19765
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=11b0b4f3:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18627Understand this error
+hook.js:608 The above error occurred in the <HRCalendar> component:
+
+    at HRCalendar (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/HRCalendar.tsx:49:38)
+    at div
+    at ShiftsSection
+    at div
+    at main
+    at div
+    at div
+    at Layout (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/Layout.tsx:101:34)
+    at HRManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/HRManagementPage.tsx:66:21)
+    at AuthenticatedApp (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:625:29)
+    at TenantWrapper (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/App.tsx:468:26)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=11b0b4f3:262:17)
+    at Router
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=11b0b4f3:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:14032
+update.callback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:14052
+callCallback @ chunk-ZHRYBLGQ.js?v=11b0b4f3:11248
+commitUpdateQueue @ chunk-ZHRYBLGQ.js?v=11b0b4f3:11265
+commitLayoutEffectOnFiber @ chunk-ZHRYBLGQ.js?v=11b0b4f3:17093
+commitLayoutMountEffects_complete @ chunk-ZHRYBLGQ.js?v=11b0b4f3:17980
+commitLayoutEffects_begin @ chunk-ZHRYBLGQ.js?v=11b0b4f3:17969
+commitLayoutEffects @ chunk-ZHRYBLGQ.js?v=11b0b4f3:17920
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19353
+commitRoot @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=11b0b4f3:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18627Understand this error
+chunk-ZHRYBLGQ.js?v=11b0b4f3:9129 Uncaught TypeError: backendEvents.map is not a function
+    at HRCalendar.tsx:144:45
+    at mountMemo (chunk-ZHRYBLGQ.js?v=11b0b4f3:12194:27)
+    at Object.useMemo (chunk-ZHRYBLGQ.js?v=11b0b4f3:12518:24)
+    at useMemo (chunk-L7SIRVDC.js?v=11b0b4f3:1094:29)
+    at HRCalendar (HRCalendar.tsx:140:26)
+    at renderWithHooks (chunk-ZHRYBLGQ.js?v=11b0b4f3:11548:26)
+    at mountIndeterminateComponent (chunk-ZHRYBLGQ.js?v=11b0b4f3:14926:21)
+    at beginWork (chunk-ZHRYBLGQ.js?v=11b0b4f3:15914:22)
+    at beginWork$1 (chunk-ZHRYBLGQ.js?v=11b0b4f3:19753:22)
+    at performUnitOfWork (chunk-ZHRYBLGQ.js?v=11b0b4f3:19198:20)
+(anonymous) @ HRCalendar.tsx:144
+mountMemo @ chunk-ZHRYBLGQ.js?v=11b0b4f3:12194
+useMemo @ chunk-ZHRYBLGQ.js?v=11b0b4f3:12518
+useMemo @ chunk-L7SIRVDC.js?v=11b0b4f3:1094
+HRCalendar @ HRCalendar.tsx:140
+renderWithHooks @ chunk-ZHRYBLGQ.js?v=11b0b4f3:11548
+mountIndeterminateComponent @ chunk-ZHRYBLGQ.js?v=11b0b4f3:14926
+beginWork @ chunk-ZHRYBLGQ.js?v=11b0b4f3:15914
+beginWork$1 @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19753
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19198
+workLoopSync @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=11b0b4f3:19116
+recoverFromConcurrentError @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18736
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18879
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=11b0b4f3:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=11b0b4f3:18627Understand this error
+client:736  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/ net::ERR_CONNECTION_TIMED_OUT
