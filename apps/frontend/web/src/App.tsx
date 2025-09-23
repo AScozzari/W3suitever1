@@ -14,7 +14,6 @@ import HRManagementPage from "./pages/HRManagementPage";
 import NotificationCenter from "./pages/NotificationCenter";
 import NotFound from "./pages/NotFound";
 import TenantVerificationTest from "./pages/TenantVerificationTest";
-import AISettingsPage from "./components/AI/AISettingsPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { useEffect, useState } from "react";
@@ -62,10 +61,6 @@ function Router() {
         {(params) => <TenantWrapper params={params}><AuthenticatedApp><SettingsPage /></AuthenticatedApp></TenantWrapper>}
       </Route>
       
-      {/* AI Settings Page Route */}
-      <Route path="/:tenant/ai-settings">
-        {(params) => <TenantWrapper params={params}><AuthenticatedApp><AISettingsPage /></AuthenticatedApp></TenantWrapper>}
-      </Route>
       
       {/* Workflow Management Page Route */}
       <Route path="/:tenant/workflow-management">

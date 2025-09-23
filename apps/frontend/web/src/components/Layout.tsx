@@ -457,7 +457,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, path: '' },
     { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
-    { id: 'ai', label: 'AI Tools', icon: Zap, path: '/ai-settings' },
+    { id: 'ai', label: 'AI Tools', icon: Zap, path: '/settings' },
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase, path: '/magazzino' },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building, path: '/amministrazione' },
     { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' },
