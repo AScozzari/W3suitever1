@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
+import { randomUUID } from 'crypto';
 
 // Default model configuration
 const DEFAULT_MODEL = "gpt-4-turbo";
@@ -210,6 +211,9 @@ export class UnifiedOpenAIService {
       const outputTokens = (response.usage?.completion_tokens || 0) + (finalResponse.usage?.completion_tokens || 0);
       const cost = this.calculateCost(inputTokens, outputTokens, settings.openaiModel as string, 'chat') + additionalCost;
 
+      // Generate unique conversation ID for consistency
+      const conversationId = randomUUID();
+
       // Log usage for analytics
       await this.logUsage({
         tenantId: context.tenantId,
@@ -226,9 +230,40 @@ export class UnifiedOpenAIService {
           tools_used: tools,
           module: context.moduleContext,
           entity_id: context.businessEntityId,
-          function_calls_made: message.tool_calls ? message.tool_calls.length : 0
+          function_calls_made: message.tool_calls ? message.tool_calls.length : 0,
+          conversation_id: conversationId
         }
       });
+
+      // Save conversation for chat history
+      try {
+        await this.storage.createAIConversation({
+          tenantId: context.tenantId,
+          userId: context.userId,
+          title: input.length > 50 ? input.substring(0, 50) + '...' : input,
+          conversationData: {
+            messages: [
+              { role: "user", content: input },
+              { role: "assistant", content: finalResponse.choices[0].message.content }
+            ],
+            toolCalls: message.tool_calls || [],
+            webResults: webResults,
+            metadata: {
+              tokensUsed,
+              cost,
+              responseTime,
+              model: settings.openaiModel
+            }
+          },
+          featureContext: 'chat',
+          moduleContext: context.moduleContext,
+          businessEntityId: context.businessEntityId
+        });
+        console.log(`[CHAT-STORAGE] ✅ Conversation saved with ID: ${conversationId}`);
+      } catch (error: any) {
+        console.error('[CHAT-STORAGE] ❌ Failed to save conversation:', error);
+        // Don't fail the request if conversation storage fails
+      }
 
       return {
         success: true,
@@ -236,7 +271,7 @@ export class UnifiedOpenAIService {
         tokensUsed,
         cost,
         responseTime,
-        conversationId: finalResponse.id || undefined,
+        conversationId: conversationId,
         outputMeta: {
           webResults,
           webResultsFound: webResults.length

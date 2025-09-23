@@ -2758,52 +2758,17 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAIUsageLogs(tenantId: string, limit = 100, offset = 0): Promise<AIUsageLog[]> {
-    // Metodo temporaneo per evitare errori SQL - ritorna dati di demo
     try {
-      const sampleLogs: AIUsageLog[] = [
-        {
-          id: 'log-1',
-          tenantId: tenantId,
-          userId: 'admin-user',
-          modelUsed: 'gpt-4' as any,
-          featureType: 'chat_assistant' as any,
-          tokensInput: 150,
-          tokensOutput: 300,
-          tokensTotal: 450,
-          costUsd: 0.012,
-          responseTimeMs: 1500,
-          success: true,
-          errorMessage: null,
-          requestContext: { feature: 'chat_assistant', conversation_id: 'conv-1' },
-          responseQuality: 9,
-          userFeedback: 'positive',
-          createdAt: new Date(Date.now() - 1000 * 60 * 30), // 30 minuti fa
-          updatedAt: new Date(Date.now() - 1000 * 60 * 30)
-        },
-        {
-          id: 'log-2',
-          tenantId: tenantId,
-          userId: 'admin-user',
-          modelUsed: 'gpt-4' as any,
-          featureType: 'document_analysis' as any,
-          tokensInput: 800,
-          tokensOutput: 200,
-          tokensTotal: 1000,
-          costUsd: 0.028,
-          responseTimeMs: 2100,
-          success: true,
-          errorMessage: null,
-          requestContext: { feature: 'document_analysis', document_id: 'doc-1' },
-          responseQuality: 8,
-          userFeedback: null,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 ore fa
-          updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
-        }
-      ];
-      
-      return sampleLogs.slice(offset, offset + limit);
+      return await withTenantContext(tenantId, () =>
+        db.select()
+          .from(aiUsageLogs)
+          .where(eq(aiUsageLogs.tenantId, tenantId))
+          .orderBy(desc(aiUsageLogs.requestTimestamp))
+          .limit(limit)
+          .offset(offset)
+      );
     } catch (error) {
-      console.error('Error in getAIUsageLogs:', error);
+      console.error('[AI-ANALYTICS] ❌ Error getting AI usage logs:', error);
       return [];
     }
   }
@@ -2814,16 +2779,33 @@ export class DatabaseStorage implements IStorage {
     totalCost: number;
     avgResponseTime: number;
   }> {
-    // Metodo temporaneo per evitare errori SQL - ritorna statistiche di demo
     try {
-      return {
-        totalRequests: 127,
-        totalTokens: 45800,
-        totalCost: 1.23,
-        avgResponseTime: 1750
-      };
+      const dateFrom = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      
+      return await withTenantContext(tenantId, async () => {
+        const stats = await db
+          .select({
+            totalRequests: sql<number>`count(*)::int`,
+            totalTokens: sql<number>`sum(${aiUsageLogs.tokensTotal})::int`,
+            totalCostCents: sql<number>`sum(${aiUsageLogs.costUsd})::int`,
+            avgResponseTime: sql<number>`avg(${aiUsageLogs.responseTimeMs})::int`
+          })
+          .from(aiUsageLogs)
+          .where(and(
+            eq(aiUsageLogs.tenantId, tenantId),
+            gte(aiUsageLogs.requestTimestamp, dateFrom)
+          ));
+
+        const result = stats[0];
+        return {
+          totalRequests: result?.totalRequests || 0,
+          totalTokens: result?.totalTokens || 0,
+          totalCost: (result?.totalCostCents || 0) / 100, // Convert cents to dollars
+          avgResponseTime: result?.avgResponseTime || 0
+        };
+      });
     } catch (error) {
-      console.error('Error in getAIUsageStats:', error);
+      console.error('[AI-ANALYTICS] ❌ Error getting AI usage stats:', error);
       return {
         totalRequests: 0,
         totalTokens: 0,
