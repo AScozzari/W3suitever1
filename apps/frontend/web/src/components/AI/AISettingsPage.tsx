@@ -70,6 +70,10 @@ export default function AISettingsPage() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [trainingPanelExpanded, setTrainingPanelExpanded] = useState(false);
+  const [urlToProcess, setUrlToProcess] = useState('');
+  const [processingUrl, setProcessingUrl] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Fetch AI settings
   const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery<{success: boolean, data: AISettings}>({
@@ -90,10 +94,24 @@ export default function AISettingsPage() {
   });
 
   // Fetch AI conversations for archive
-  const { data: conversations, isLoading: conversationsLoading } = useQuery<{success: boolean, data: any[]}>({
+  const { data: conversations, isLoading: conversationsLoading } = useQuery<{success: boolean, data: any[]}>>({
     queryKey: ['/api/ai/conversations'],
     refetchInterval: 60000,
     enabled: activeTab === 'conversations'
+  });
+
+  // Fetch training statistics
+  const { data: trainingStats, isLoading: trainingStatsLoading } = useQuery<{success: boolean, data: any}>>({
+    queryKey: ['/api/ai/training/stats'],
+    refetchInterval: 30000,
+    enabled: trainingPanelExpanded
+  });
+
+  // Fetch training sessions for storyboard
+  const { data: trainingSessions, isLoading: trainingSessionsLoading } = useQuery<{success: boolean, data: any[]}>>({
+    queryKey: ['/api/ai/training/sessions'],
+    refetchInterval: 30000,
+    enabled: trainingPanelExpanded
   });
 
   // Update settings mutation
@@ -113,6 +131,48 @@ export default function AISettingsPage() {
       setTimeout(() => setSaveStatus('idle'), 3000);
     },
     onError: () => setSaveStatus('error'),
+  });
+
+  // Process URL mutation
+  const processUrlMutation = useMutation({
+    mutationFn: async (url: string) => {
+      const response = await fetch('/api/ai/training/url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, extractContent: true }),
+      });
+      if (!response.ok) throw new Error('Failed to process URL');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] });
+      setUrlToProcess('');
+      setProcessingUrl(false);
+    },
+    onError: () => setProcessingUrl(false),
+  });
+
+  // Upload media mutation
+  const uploadMediaMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch('/api/ai/training/media', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Failed to upload media');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] });
+      setUploadingFile(false);
+      setUploadProgress(0);
+    },
+    onError: () => {
+      setUploadingFile(false);
+      setUploadProgress(0);
+    },
   });
 
   const [formData, setFormData] = useState<Partial<AISettings>>({});
@@ -195,6 +255,77 @@ export default function AISettingsPage() {
         [setting]: !prev.privacySettings?.[setting]
       }
     }));
+  };
+
+  // Handle URL processing
+  const handleProcessUrl = async () => {
+    if (!urlToProcess.trim()) {
+      alert('Inserisci un URL valido');
+      return;
+    }
+    
+    setProcessingUrl(true);
+    try {
+      await processUrlMutation.mutateAsync(urlToProcess.trim());
+      alert('URL processato con successo!');
+    } catch (error) {
+      alert('Errore nel processamento URL: ' + (error as Error).message);
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (fileType: 'pdf' | 'image' | 'audio' | 'video') => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    
+    const acceptTypes = {
+      pdf: '.pdf',
+      image: '.jpg,.jpeg,.png,.gif,.webp',
+      audio: '.mp3,.wav,.ogg,.m4a',
+      video: '.mp4,.avi,.mov,.webm'
+    };
+    
+    input.accept = acceptTypes[fileType];
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      setUploadingFile(true);
+      setUploadProgress(0);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('mediaType', fileType);
+      
+      try {
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          setUploadProgress(prev => Math.min(prev + 10, 90));
+        }, 200);
+        
+        await uploadMediaMutation.mutateAsync(formData);
+        
+        clearInterval(interval);
+        setUploadProgress(100);
+        
+        alert(`${fileType.toUpperCase()} caricato e processato con successo!`);
+        
+        setTimeout(() => {
+          setUploadProgress(0);
+        }, 1000);
+      } catch (error) {
+        alert('Errore nel caricamento: ' + (error as Error).message);
+      }
+    };
+    
+    input.click();
+  };
+
+  // Handle review responses
+  const handleReviewResponses = () => {
+    // Navigate to responses review (could be a modal or separate page)
+    alert('Funzionalità di review delle risposte in arrivo!');
+    // TODO: Implement response review interface
   };
 
   if (settingsLoading) {
@@ -592,6 +723,7 @@ export default function AISettingsPage() {
                       Correggi e valida le risposte dell'AI per migliorare l'accuratezza futura.
                     </p>
                     <button 
+                      onClick={handleReviewResponses}
                       className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
                       data-testid="button-review-responses"
                     >
@@ -612,16 +744,24 @@ export default function AISettingsPage() {
                     <div className="flex space-x-2">
                       <input
                         type="url"
+                        value={urlToProcess}
+                        onChange={(e) => setUrlToProcess(e.target.value)}
                         placeholder="https://esempio.com/documento"
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
                         data-testid="input-training-url"
                       />
                       <button 
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                        onClick={handleProcessUrl}
+                        disabled={processingUrl || !urlToProcess.trim()}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                         data-testid="button-process-url"
                       >
-                        <Link className="w-4 h-4" />
-                        <span>Processa</span>
+                        {processingUrl ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Link className="w-4 h-4" />
+                        )}
+                        <span>{processingUrl ? 'Processando...' : 'Processa'}</span>
                       </button>
                     </div>
                   </div>
@@ -639,7 +779,9 @@ export default function AISettingsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {/* PDF Upload */}
                       <button 
-                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        onClick={() => handleFileUpload('pdf')}
+                        disabled={uploadingFile}
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
                         data-testid="button-upload-pdf"
                       >
                         <FileText className="w-6 h-6 text-gray-600" />
@@ -648,7 +790,9 @@ export default function AISettingsPage() {
                       
                       {/* Image Upload */}
                       <button 
-                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        onClick={() => handleFileUpload('image')}
+                        disabled={uploadingFile}
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
                         data-testid="button-upload-image"
                       >
                         <Image className="w-6 h-6 text-gray-600" />
@@ -657,7 +801,9 @@ export default function AISettingsPage() {
                       
                       {/* Audio Upload */}
                       <button 
-                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        onClick={() => handleFileUpload('audio')}
+                        disabled={uploadingFile}
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
                         data-testid="button-upload-audio"
                       >
                         <Mic className="w-6 h-6 text-gray-600" />
@@ -666,7 +812,9 @@ export default function AISettingsPage() {
                       
                       {/* Video Upload */}
                       <button 
-                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-all flex flex-col items-center space-y-1"
+                        onClick={() => handleFileUpload('video')}
+                        disabled={uploadingFile}
+                        className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
                         data-testid="button-upload-video"
                       >
                         <Video className="w-6 h-6 text-gray-600" />
@@ -674,32 +822,108 @@ export default function AISettingsPage() {
                       </button>
                     </div>
                     
-                    {/* Progress Indicator (hidden by default) */}
-                    <div className="mt-4 hidden" id="upload-progress">
-                      <div className="flex items-center space-x-2">
-                        <RefreshCw className="w-4 h-4 animate-spin text-[#FF6900]" />
-                        <span className="text-sm text-gray-600">Processing media content...</span>
+                    {/* Progress Indicator */}
+                    {uploadingFile && (
+                      <div className="mt-4">
+                        <div className="flex items-center space-x-2">
+                          <RefreshCw className="w-4 h-4 animate-spin text-[#FF6900]" />
+                          <span className="text-sm text-gray-600">Processing media content...</span>
+                        </div>
+                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-[#FF6900] h-2 rounded-full transition-all duration-300" 
+                            style={{width: `${uploadProgress}%`}}
+                          ></div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">{uploadProgress}% completato</p>
                       </div>
-                      <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-[#FF6900] h-2 rounded-full" style={{width: '45%'}}></div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                   
                   {/* Stats Section */}
                   <div className="grid grid-cols-3 gap-4">
                     <div className="bg-white/60 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-[#FF6900]">0</p>
+                      <p className="text-2xl font-bold text-[#FF6900]">
+                        {trainingStatsLoading ? '...' : (trainingStats?.data?.documentsProcessed || 0)}
+                      </p>
                       <p className="text-xs text-gray-600">Documenti Processati</p>
                     </div>
                     <div className="bg-white/60 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-[#7B2CBF]">0</p>
+                      <p className="text-2xl font-bold text-[#7B2CBF]">
+                        {trainingStatsLoading ? '...' : (trainingStats?.data?.embeddingsCreated || 0)}
+                      </p>
                       <p className="text-xs text-gray-600">Embeddings Creati</p>
                     </div>
                     <div className="bg-white/60 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-green-600">0</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {trainingStatsLoading ? '...' : (trainingStats?.data?.validationsCompleted || 0)}
+                      </p>
                       <p className="text-xs text-gray-600">Validazioni</p>
                     </div>
+                  </div>
+                  
+                  {/* Training Sessions Storyboard */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Database className="w-5 h-5 text-blue-600" />
+                        <h5 className="font-semibold text-gray-900">Storico Documenti Processati</h5>
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {trainingSessions?.data?.length || 0} sessioni trovate
+                      </span>
+                    </div>
+                    
+                    {trainingSessionsLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <RefreshCw className="w-5 h-5 animate-spin text-[#FF6900]" />
+                        <span className="ml-2 text-sm text-gray-600">Caricamento sessioni...</span>
+                      </div>
+                    ) : trainingSessions?.data?.length > 0 ? (
+                      <div className="max-h-64 overflow-y-auto space-y-3">
+                        {trainingSessions.data.map((session: any, index: number) => (
+                          <div key={session.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-2 h-2 rounded-full ${
+                                session.status === 'completed' ? 'bg-green-500' :
+                                session.status === 'processing' ? 'bg-yellow-500' :
+                                session.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                              }`}></div>
+                              <div>
+                                <p className="font-medium text-sm text-gray-900">
+                                  {session.sessionType === 'url_ingestion' ? 'URL' :
+                                   session.sessionType === 'document_upload' ? 'Documento' :
+                                   session.sessionType === 'media_processing' ? 'Media' : 'Altro'}
+                                </p>
+                                <p className="text-xs text-gray-600 truncate max-w-xs">
+                                  {session.sourceUrl || session.fileName || session.content?.slice(0, 50) + '...' || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-500">
+                                {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT') : 'N/A'}
+                              </p>
+                              <p className="text-xs font-medium ${
+                                session.status === 'completed' ? 'text-green-600' :
+                                session.status === 'processing' ? 'text-yellow-600' :
+                                session.status === 'failed' ? 'text-red-600' : 'text-gray-600'
+                              }">
+                                {session.status === 'completed' ? 'Completato' :
+                                 session.status === 'processing' ? 'In corso...' :
+                                 session.status === 'failed' ? 'Fallito' : 'Sconosciuto'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Database className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 text-sm">Nessun documento processato ancora</p>
+                        <p className="text-gray-400 text-xs mt-1">I documenti caricati e le URL processate appariranno qui</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -741,6 +965,268 @@ export default function AISettingsPage() {
           </span>
         </button>
       </div>
+    </div>
+  );
+
+  const renderTrainingTab = () => (
+    <div className="space-y-8">
+      {/* Training Mode Toggle */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-[#FF6900]/10 rounded-lg">
+              <Brain className="w-6 h-6 text-[#FF6900]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Training AI</h3>
+              <p className="text-gray-600">Addestra l'AI con contenuti personalizzati per il tuo business</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              formData.trainingMode 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {formData.trainingMode ? 'Attivo' : 'Disattivo'}
+            </span>
+            <button
+              onClick={() => setFormData(prev => ({ ...prev, trainingMode: !prev.trainingMode }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
+                formData.trainingMode ? 'bg-[#FF6900]' : 'bg-gray-200'
+              }`}
+              data-testid="toggle-training-mode"
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  formData.trainingMode ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Training Sections */}
+      {formData.trainingMode && (
+        <div className="space-y-6">
+          {/* Sezione 1: Validazione Risposte */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <CheckSquare className="w-5 h-5 text-green-600" />
+              <h5 className="font-semibold text-gray-900">Validazione Risposte AI</h5>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Correggi e valida le risposte dell'AI per migliorare l'accuratezza futura.
+            </p>
+            <button 
+              onClick={handleReviewResponses}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+              data-testid="button-review-responses"
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span>Rivedi Risposte Recenti</span>
+            </button>
+          </div>
+          
+          {/* Sezione 2: URL Context */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <Globe className="w-5 h-5 text-blue-600" />
+              <h5 className="font-semibold text-gray-900">Importa Contenuti da URL</h5>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Inserisci URL di documenti, pagine web o risorse online da memorizzare nel database vettoriale.
+            </p>
+            <div className="flex space-x-2">
+              <input
+                type="url"
+                value={urlToProcess}
+                onChange={(e) => setUrlToProcess(e.target.value)}
+                placeholder="https://esempio.com/documento"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+                data-testid="input-training-url"
+              />
+              <button 
+                onClick={handleProcessUrl}
+                disabled={processingUrl || !urlToProcess.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                data-testid="button-process-url"
+              >
+                {processingUrl ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Link className="w-4 h-4" />
+                )}
+                <span>{processingUrl ? 'Processando...' : 'Processa'}</span>
+              </button>
+            </div>
+          </div>
+          
+          {/* Sezione 3: Media Upload */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <Upload className="w-5 h-5 text-purple-600" />
+              <h5 className="font-semibold text-gray-900">Upload Media & Documenti</h5>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Carica PDF, immagini, audio o video per arricchire il contesto dell'AI.
+            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <button 
+                onClick={() => handleFileUpload('pdf')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-pdf"
+              >
+                <FileText className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">PDF</span>
+              </button>
+              
+              <button 
+                onClick={() => handleFileUpload('image')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-image"
+              >
+                <Image className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">Immagini</span>
+              </button>
+              
+              <button 
+                onClick={() => handleFileUpload('audio')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-audio"
+              >
+                <Mic className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">Audio</span>
+              </button>
+              
+              <button 
+                onClick={() => handleFileUpload('video')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-video"
+              >
+                <Video className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">Video</span>
+              </button>
+            </div>
+            
+            {uploadingFile && (
+              <div className="mt-4">
+                <div className="flex items-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#FF6900]" />
+                  <span className="text-sm text-gray-600">Processing media content...</span>
+                </div>
+                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-[#FF6900] h-2 rounded-full transition-all duration-300" 
+                    style={{width: `${uploadProgress}%`}}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{uploadProgress}% completato</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Stats Section */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white/60 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[#FF6900]">
+                {trainingStatsLoading ? '...' : (trainingStats?.data?.documentsProcessed || 0)}
+              </p>
+              <p className="text-xs text-gray-600">Documenti Processati</p>
+            </div>
+            <div className="bg-white/60 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[#7B2CBF]">
+                {trainingStatsLoading ? '...' : (trainingStats?.data?.embeddingsCreated || 0)}
+              </p>
+              <p className="text-xs text-gray-600">Embeddings Creati</p>
+            </div>
+            <div className="bg-white/60 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {trainingStatsLoading ? '...' : (trainingStats?.data?.validationsCompleted || 0)}
+              </p>
+              <p className="text-xs text-gray-600">Validazioni</p>
+            </div>
+          </div>
+          
+          {/* Training Sessions Storyboard */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Database className="w-5 h-5 text-blue-600" />
+                <h5 className="font-semibold text-gray-900">Storico Documenti Processati</h5>
+              </div>
+              <span className="text-sm text-gray-500">
+                {trainingSessions?.data?.length || 0} sessioni trovate
+              </span>
+            </div>
+            
+            {trainingSessionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-5 h-5 animate-spin text-[#FF6900]" />
+                <span className="ml-2 text-sm text-gray-600">Caricamento sessioni...</span>
+              </div>
+            ) : trainingSessions?.data?.length > 0 ? (
+              <div className="max-h-64 overflow-y-auto space-y-3">
+                {trainingSessions.data.map((session: any, index: number) => (
+                  <div key={session.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        session.status === 'completed' ? 'bg-green-500' :
+                        session.status === 'processing' ? 'bg-yellow-500' :
+                        session.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                      }`}></div>
+                      <div>
+                        <p className="font-medium text-sm text-gray-900">
+                          {session.sessionType === 'url_ingestion' ? '🌐 URL' :
+                           session.sessionType === 'document_upload' ? '📄 Documento' :
+                           session.sessionType === 'media_processing' ? '🎬 Media' : '📁 Altro'}
+                        </p>
+                        <p className="text-xs text-gray-600 truncate max-w-xs">
+                          {session.sourceUrl || session.fileName || session.content?.slice(0, 50) + '...' || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">
+                        {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT') : 'N/A'}
+                      </p>
+                      <p className={`text-xs font-medium ${
+                        session.status === 'completed' ? 'text-green-600' :
+                        session.status === 'processing' ? 'text-yellow-600' :
+                        session.status === 'failed' ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {session.status === 'completed' ? '✅ Completato' :
+                         session.status === 'processing' ? '⏳ In corso...' :
+                         session.status === 'failed' ? '❌ Fallito' : '❓ Sconosciuto'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Database className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-sm">Nessun documento processato ancora</p>
+                <p className="text-gray-400 text-xs mt-1">I documenti caricati e le URL processate appariranno qui</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!formData.trainingMode && (
+        <div className="text-center py-12">
+          <Brain className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Training AI Disattivo</h3>
+          <p className="text-gray-500">Attiva il Training AI per iniziare ad addestrare l'intelligenza artificiale con i tuoi contenuti.</p>
+        </div>
+      )}
     </div>
   );
 
@@ -1036,6 +1522,7 @@ export default function AISettingsPage() {
               <nav className="-mb-px flex space-x-8">
                 {[
                   { id: 'settings', name: 'Configurazione', icon: Settings },
+                  { id: 'training', name: 'Training AI', icon: Brain },
                   { id: 'analytics', name: 'Analytics', icon: BarChart3 },
                   { id: 'conversations', name: 'Archivio Chat', icon: MessageCircle }
                 ].map(({ id, name, icon: Icon }) => (
@@ -1062,6 +1549,7 @@ export default function AISettingsPage() {
       {/* Content */}
       <div className="px-6 py-8">
         {activeTab === 'settings' && renderSettingsTab()}
+        {activeTab === 'training' && renderTrainingTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'conversations' && renderConversationsTab()}
       </div>
