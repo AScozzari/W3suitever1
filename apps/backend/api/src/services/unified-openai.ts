@@ -5,6 +5,8 @@ import OpenAI from "openai";
 import { AISettings, AIUsageLog, InsertAIUsageLog } from "../db/schema/w3suite";
 import * as fs from 'fs';
 import * as path from 'path';
+import * as cheerio from 'cheerio';
+import puppeteer from 'puppeteer';
 
 // Default model configuration
 const DEFAULT_MODEL = "gpt-4-turbo";
@@ -452,26 +454,38 @@ export class UnifiedOpenAIService {
   }
 
   /**
-   * Scrape and process URL content
+   * Scrape and process URL content with robust error handling
    */
   async scrapeURL(
     url: string,
     settings: AISettings,
     context: OpenAIRequestContext
   ): Promise<{ content: string, metadata: any }> {
+    const startTime = Date.now();
+    let browser = null;
+    
     try {
-      const startTime = Date.now();
-      
-      // This would integrate with a web scraping service
-      // For now, using a simple fetch
-      const response = await fetch(url);
-      const html = await response.text();
-      
-      // Extract text content (simplified - would use cheerio or similar)
-      const textContent = html.replace(/<[^>]*>/g, '').substring(0, 10000);
+      // URL validation
+      const urlObj = new URL(url);
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        throw new Error('Only HTTP and HTTPS URLs are supported');
+      }
+
+      // Try static HTML first with Cheerio (faster for static content)
+      try {
+        const staticResult = await this.scrapeStaticContent(url, startTime, context);
+        return staticResult;
+      } catch (staticError: any) {
+        console.log(`Static scraping failed for ${url}, trying dynamic rendering:`, staticError.message);
+        
+        // Fallback to Puppeteer for JavaScript-heavy sites
+        const dynamicResult = await this.scrapeDynamicContent(url, startTime, context);
+        return dynamicResult;
+      }
+    } catch (error: any) {
       const responseTime = Date.now() - startTime;
       
-      // Log the URL processing
+      // Log failed attempt
       await this.logUsage({
         tenantId: context.tenantId,
         userId: context.userId,
@@ -479,23 +493,247 @@ export class UnifiedOpenAIService {
         featureType: 'url_scraping',
         tokensInput: 0,
         tokensOutput: 0,
-        tokensTotal: Math.ceil(textContent.length / 4), // Rough token estimate
+        tokensTotal: 0,
+        costUsd: 0,
+        responseTimeMs: responseTime,
+        success: false,
+        requestContext: { url, error: error.message }
+      });
+      
+      // Provide specific error messages
+      if (error.message.includes('fetch')) {
+        throw new Error(`Network error accessing ${url}: Check if the site is accessible and allows scraping`);
+      } else if (error.message.includes('timeout')) {
+        throw new Error(`Timeout error: ${url} took too long to respond (>30s)`);
+      } else if (error.message.includes('CORS')) {
+        throw new Error(`CORS error: ${url} blocks cross-origin requests`);
+      } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+        throw new Error(`Access denied: ${url} returned 403 Forbidden (may have anti-bot protection)`);
+      } else if (error.message.includes('404')) {
+        throw new Error(`Page not found: ${url} returned 404 Not Found`);
+      } else {
+        throw new Error(`URL scraping failed for ${url}: ${error.message}`);
+      }
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
+  }
+
+  /**
+   * Scrape static HTML content using Cheerio (faster method)
+   */
+  private async scrapeStaticContent(
+    url: string,
+    startTime: number,
+    context: OpenAIRequestContext
+  ): Promise<{ content: string, metadata: any }> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'Connection': 'keep-alive',
+        },
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const html = await response.text();
+      const $ = cheerio.load(html);
+      
+      // Extract structured content
+      const title = $('title').text().trim() || $('h1').first().text().trim() || '';
+      const description = $('meta[name="description"]').attr('content') || 
+                         $('meta[property="og:description"]').attr('content') || '';
+      
+      // Remove script, style, and other non-content elements
+      $('script, style, nav, header, footer, aside, .navigation, .menu, .sidebar').remove();
+      
+      // Extract main content
+      let mainContent = '';
+      const contentSelectors = ['main', 'article', '.content', '.post', '.entry', 'body'];
+      
+      for (const selector of contentSelectors) {
+        const element = $(selector).first();
+        if (element.length > 0) {
+          mainContent = element.text().trim();
+          break;
+        }
+      }
+      
+      // Fallback to body if no main content found
+      if (!mainContent) {
+        mainContent = $('body').text().trim();
+      }
+      
+      // Clean up whitespace and limit length
+      const cleanContent = mainContent
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s*\n/g, '\n')
+        .trim()
+        .substring(0, 50000); // Increased limit for better content capture
+
+      if (cleanContent.length < 100) {
+        throw new Error('Insufficient content extracted - may need dynamic rendering');
+      }
+
+      const responseTime = Date.now() - startTime;
+      
+      // Log successful scraping
+      await this.logUsage({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        modelUsed: 'text-embedding-3-small' as any,
+        featureType: 'url_scraping',
+        tokensInput: 0,
+        tokensOutput: 0,
+        tokensTotal: Math.ceil(cleanContent.length / 4),
         costUsd: 0,
         responseTimeMs: responseTime,
         success: true,
-        requestContext: { url, contentLength: textContent.length }
+        requestContext: { 
+          url, 
+          contentLength: cleanContent.length,
+          method: 'static_cheerio',
+          title: title
+        }
       });
-      
+
       return {
-        content: textContent,
+        content: cleanContent,
         metadata: {
           url: url,
-          title: this.extractTitle(html),
-          contentLength: textContent.length
+          title: title,
+          description: description,
+          contentLength: cleanContent.length,
+          scrapingMethod: 'static',
+          responseTime: responseTime
         }
       };
-    } catch (error: any) {
-      throw new Error(`URL scraping failed: ${error.message}`);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  /**
+   * Scrape dynamic content using Puppeteer (for JavaScript-heavy sites)
+   */
+  private async scrapeDynamicContent(
+    url: string,
+    startTime: number,
+    context: OpenAIRequestContext
+  ): Promise<{ content: string, metadata: any }> {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    });
+
+    try {
+      const page = await browser.newPage();
+      
+      // Set realistic browser properties
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+      await page.setViewport({ width: 1920, height: 1080 });
+      
+      // Set timeout and navigate
+      await page.goto(url, { 
+        waitUntil: 'networkidle2', 
+        timeout: 30000 
+      });
+      
+      // Wait for dynamic content to load
+      await page.waitForTimeout(3000);
+      
+      // Extract content using page evaluation
+      const result = await page.evaluate(() => {
+        // Remove unwanted elements
+        const unwanted = document.querySelectorAll('script, style, nav, header, footer, aside, .navigation, .menu, .sidebar');
+        unwanted.forEach(el => el.remove());
+        
+        const title = document.title || document.querySelector('h1')?.textContent || '';
+        const description = document.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                           document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
+        
+        // Try to find main content
+        const contentSelectors = ['main', 'article', '.content', '.post', '.entry'];
+        let content = '';
+        
+        for (const selector of contentSelectors) {
+          const element = document.querySelector(selector);
+          if (element) {
+            content = element.textContent || '';
+            break;
+          }
+        }
+        
+        // Fallback to body
+        if (!content) {
+          content = document.body.textContent || '';
+        }
+        
+        return {
+          title: title.trim(),
+          description: description.trim(),
+          content: content.trim()
+        };
+      });
+      
+      // Clean up content
+      const cleanContent = result.content
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s*\n/g, '\n')
+        .trim()
+        .substring(0, 50000);
+
+      if (cleanContent.length < 100) {
+        throw new Error('Insufficient content extracted even with dynamic rendering');
+      }
+
+      const responseTime = Date.now() - startTime;
+      
+      // Log successful dynamic scraping
+      await this.logUsage({
+        tenantId: context.tenantId,
+        userId: context.userId,
+        modelUsed: 'text-embedding-3-small' as any,
+        featureType: 'url_scraping',
+        tokensInput: 0,
+        tokensOutput: 0,
+        tokensTotal: Math.ceil(cleanContent.length / 4),
+        costUsd: 0,
+        responseTimeMs: responseTime,
+        success: true,
+        requestContext: { 
+          url, 
+          contentLength: cleanContent.length,
+          method: 'dynamic_puppeteer',
+          title: result.title
+        }
+      });
+
+      return {
+        content: cleanContent,
+        metadata: {
+          url: url,
+          title: result.title,
+          description: result.description,
+          contentLength: cleanContent.length,
+          scrapingMethod: 'dynamic',
+          responseTime: responseTime
+        }
+      };
+    } finally {
+      await browser.close();
     }
   }
 
