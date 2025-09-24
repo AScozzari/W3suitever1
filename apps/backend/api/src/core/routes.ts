@@ -99,10 +99,12 @@ import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import { UnifiedOpenAIService } from "../services/unified-openai";
 import { MediaProcessorService } from "../services/media-processors";
+import { AIRegistryService } from "../services/ai-registry-service";
 
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 const hrStorage = new HRStorage();
 const openaiService = new UnifiedOpenAIService(storage);
+const aiRegistryService = new AIRegistryService(storage); // ➕ NEW: Registry-aware service
 const mediaProcessor = new MediaProcessorService(openaiService);
 
 // ============================================================================
@@ -10489,9 +10491,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Import and use the unified OpenAI service
-      const { createUnifiedOpenAIService } = await import('../services/unified-openai');
-      const openaiService = createUnifiedOpenAIService(storage);
+      // ➕ AI REGISTRY INTEGRATION - Backward compatible enhancement
+      // Extract agentId from context (optional - fallback to legacy if not provided)
+      const agentId = context?.agentId || null;
+      
+      // Enhanced context with agent support
+      const registryContext = {
+        tenantId,
+        userId,
+        businessEntityId: context?.businessEntityId || null,
+        agentId: agentId, // ➕ NEW: Agent ID for registry-aware processing
+        contextData: {
+          ...context,
+          ragContext,
+          isEnhancedChat: true,
+          includeDocuments,
+          includeWebSearch
+        }
+      };
       
       // Enable web search feature if requested
       if (includeWebSearch) {
@@ -10501,18 +10518,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
-      const response = await openaiService.chatAssistant(enhancedMessage, settings, {
-        tenantId,
-        userId,
-        businessEntityId: context?.businessEntityId || null,
-        contextData: {
-          ...context,
-          ragContext,
-          isEnhancedChat: true,
-          includeDocuments,
-          includeWebSearch
-        }
-      });
+      // Use AIRegistryService which provides backward compatibility
+      // ✅ BACKWARD COMPATIBLE: If no agentId, behaves exactly like legacy UnifiedOpenAI
+      const response = await aiRegistryService.chatAssistant(enhancedMessage, settings, registryContext);
       
       if (!response.success) {
         return res.status(500).json({ 
