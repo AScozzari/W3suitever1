@@ -1550,6 +1550,188 @@ export default function AIManagement() {
                 </div>
               </div>
 
+              {/* RAG Training Section */}
+              <div style={{
+                marginTop: '32px',
+                paddingTop: '24px',
+                borderTop: `1px solid ${COLORS.neutral.lighter}`
+              }}>
+                <h4 style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: COLORS.neutral.dark,
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Database size={18} style={{ color: COLORS.primary.purple }} />
+                  RAG Training & Knowledge Base
+                </h4>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '20px',
+                  marginBottom: '20px'
+                }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      color: COLORS.neutral.dark,
+                      marginBottom: '8px'
+                    }}>
+                      📄 Upload Documenti
+                    </label>
+                    <div style={{
+                      border: `2px dashed ${COLORS.neutral.lighter}`,
+                      borderRadius: '8px',
+                      padding: '24px',
+                      textAlign: 'center',
+                      background: COLORS.neutral.lightest,
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.borderColor = COLORS.primary.orange;
+                      e.currentTarget.style.background = '#fff5f0';
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.style.borderColor = COLORS.neutral.lighter;
+                      e.currentTarget.style.background = COLORS.neutral.lightest;
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.borderColor = COLORS.neutral.lighter;
+                      e.currentTarget.style.background = COLORS.neutral.lightest;
+                      // Handle file drop
+                      const files = Array.from(e.dataTransfer.files);
+                      console.log('Files dropped:', files);
+                    }}
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                    data-testid="dropzone-documents"
+                    >
+                      <Upload size={32} style={{ color: COLORS.neutral.medium, marginBottom: '8px' }} />
+                      <p style={{ color: COLORS.neutral.medium, fontSize: '14px', margin: 0 }}>
+                        Trascina file o clicca per selezionare
+                      </p>
+                      <p style={{ color: COLORS.neutral.light, fontSize: '12px', margin: '4px 0 0 0' }}>
+                        PDF, TXT, DOC, DOCX supportati
+                      </p>
+                      <input
+                        id="file-upload"
+                        type="file"
+                        multiple
+                        accept=".pdf,.txt,.doc,.docx,.md"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          console.log('Files selected:', files);
+                        }}
+                        data-testid="input-file-upload"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      color: COLORS.neutral.dark,
+                      marginBottom: '8px'
+                    }}>
+                      🌐 URL Knowledge Sources
+                    </label>
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      marginBottom: '12px'
+                    }}>
+                      <input
+                        type="url"
+                        placeholder="https://example.com/documentation"
+                        style={{
+                          flex: 1,
+                          padding: '12px',
+                          border: `1px solid ${COLORS.neutral.lighter}`,
+                          borderRadius: '8px',
+                          background: COLORS.neutral.white,
+                          color: COLORS.neutral.dark,
+                          fontSize: '14px',
+                          transition: 'all 0.2s ease',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+                        onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
+                        data-testid="input-knowledge-url"
+                      />
+                      <button
+                        style={{
+                          padding: '12px 16px',
+                          background: COLORS.gradients.purple,
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                        data-testid="button-add-url"
+                      >
+                        <Plus size={16} />
+                        Aggiungi
+                      </button>
+                    </div>
+                    
+                    <div style={{
+                      maxHeight: '120px',
+                      overflowY: 'auto',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '8px',
+                      background: COLORS.neutral.white
+                    }}>
+                      {/* URL list will be populated here */}
+                      <div style={{
+                        padding: '12px',
+                        textAlign: 'center',
+                        color: COLORS.neutral.light,
+                        fontSize: '12px',
+                        fontStyle: 'italic'
+                      }}>
+                        Nessun URL aggiunto
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  background: `${COLORS.primary.orange}15`,
+                  border: `1px solid ${COLORS.primary.orange}30`,
+                  borderRadius: '8px',
+                  padding: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <Lightbulb size={20} style={{ color: COLORS.primary.orange }} />
+                  <div style={{ fontSize: '13px', color: COLORS.neutral.dark }}>
+                    <strong>💡 Come funziona:</strong> I documenti e URL caricati vengono processati,
+                    suddivisi in chunks e convertiti in embeddings vettoriali. Questi arricchiscono
+                    il contesto RAG dell'agente per risposte più precise e informate.
+                  </div>
+                </div>
+              </div>
+
               <div style={{
                 display: 'flex',
                 justifyContent: 'flex-end',
