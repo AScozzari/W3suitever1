@@ -9,6 +9,7 @@ import {
   CheckCircle, Users, Lock, Unlock, Upload, Link, CheckSquare,
   ChevronDown, ChevronUp, Globe, Mic, Image, Video, FileUp
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface AISettings {
   tenantId: string;
