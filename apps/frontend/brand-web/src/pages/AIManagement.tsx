@@ -417,6 +417,24 @@ export default function AIManagement() {
     staleTime: 30000 // Cache per 30 secondi
   });
 
+  // 8. DELETE KNOWLEDGE MUTATIONS - Per eliminare documenti/URL
+  const deleteKnowledgeMutation = useMutation({
+    mutationFn: async ({ agentId, itemId, type }: { agentId: string; itemId: string; type: 'document' | 'url' }) => {
+      return apiRequest(`/brand-api/ai/agents/${agentId}/knowledge/${itemId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ type })
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/ai/agents', variables.agentId, 'knowledge'] });
+      alert(`${variables.type === 'document' ? 'Documento' : 'URL'} eliminato con successo!`);
+    },
+    onError: (error) => {
+      console.error('Error deleting knowledge item:', error);
+      alert('Errore nell\'eliminazione');
+    }
+  });
+
   if (!isAuthenticated) {
     window.location.href = '/brandinterface/login';
     return null;
@@ -2131,7 +2149,7 @@ export default function AIManagement() {
                             justifyContent: 'space-between',
                             marginBottom: '8px'
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                               {item.sourceType === 'pdf_document' ? (
                                 <FileText size={16} style={{ color: COLORS.semantic.error }} />
                               ) : (
@@ -2156,12 +2174,64 @@ export default function AIManagement() {
                                 {item.origin === 'brand' ? 'Brand' : 'Tenant'}
                               </span>
                             </div>
-                            <span style={{
-                              fontSize: '12px',
-                              color: COLORS.neutral.light
+                            
+                            <div style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '8px',
+                              marginLeft: '12px'
                             }}>
-                              {format(new Date(item.createdAt), 'dd/MM/yyyy HH:mm')}
-                            </span>
+                              <span style={{
+                                fontSize: '12px',
+                                color: COLORS.neutral.light,
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {format(new Date(item.createdAt), 'dd/MM/yyyy HH:mm')}
+                              </span>
+                              
+                              {/* 🗑️ DELETE BUTTON - Solo per elementi Brand-level */}
+                              {item.origin === 'brand' && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Sei sicuro di voler eliminare ${item.filename || item.sourceUrl}?`)) {
+                                      deleteKnowledgeMutation.mutate({
+                                        agentId: knowledgeAgent.id,
+                                        itemId: item.id,
+                                        type: item.sourceType === 'pdf_document' ? 'document' : 'url'
+                                      });
+                                    }
+                                  }}
+                                  disabled={deleteKnowledgeMutation.isPending}
+                                  style={{
+                                    padding: '4px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    color: COLORS.neutral.light,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    opacity: deleteKnowledgeMutation.isPending ? 0.5 : 1
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = `${COLORS.semantic.error}15`;
+                                    e.currentTarget.style.color = COLORS.semantic.error;
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = COLORS.neutral.light;
+                                  }}
+                                  data-testid={`button-delete-knowledge-${item.id}`}
+                                >
+                                  {deleteKnowledgeMutation.isPending ? (
+                                    <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                  ) : (
+                                    <Trash2 size={12} />
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <p style={{
                             fontSize: '13px',

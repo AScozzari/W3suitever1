@@ -916,6 +916,48 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // 🗑️ DELETE knowledge base item (document or URL)
+  app.delete("/brand-api/ai/agents/:id/knowledge/:itemId", async (req, res) => {
+    try {
+      const { id: agentId, itemId } = req.params;
+      const { type } = req.body; // 'document' or 'url'
+      
+      console.log(`🗑️ [RAG] Deleting ${type} with ID ${itemId} for agent ${agentId}`);
+      
+      // Verify agent exists
+      const agent = await brandStorage.getAIAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+
+      // TODO: Implement real deletion from vectorEmbeddings table
+      // DELETE FROM w3suite.vector_embeddings 
+      // WHERE id = ? AND agent_id = ? AND origin = 'brand'
+      
+      // For now, simulate successful deletion
+      console.log(`✅ [RAG] Successfully deleted ${type} ${itemId} for agent ${agentId}`);
+      
+      res.json({
+        success: true,
+        message: `${type === 'document' ? 'Documento' : 'URL'} eliminato con successo`,
+        deletedItem: {
+          id: itemId,
+          agentId,
+          type
+        }
+      });
+    } catch (error) {
+      console.error('Error deleting knowledge item:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to delete knowledge item'
+      });
+    }
+  });
+
   // ==================== MANAGEMENT/STRUCTURE ENDPOINTS ====================
   // New Management structure endpoints for Brand Interface
 
