@@ -986,15 +986,13 @@ export default function AISettingsPage() {
 
   const renderConversationsTab = () => (
     <div className="space-y-6">
-      {/* GDPR Controls */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
         <div className="flex items-start space-x-3">
           <Shield className="w-6 h-6 text-blue-600 mt-1" />
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-blue-900 mb-2">Privacy e Conformità GDPR</h3>
             <p className="text-blue-700 text-sm mb-4">
-              Le conversazioni AI sono gestite in conformità al GDPR. I dati vengono automaticamente 
-              anonimizzati e cancellati secondo le policy di retention configurate.
+              Le conversazioni AI sono gestite in conformità al GDPR.
             </p>
             <div className="flex flex-wrap gap-3">
               <div className="bg-white px-3 py-2 rounded-lg border border-blue-200">
@@ -1007,119 +1005,15 @@ export default function AISettingsPage() {
                   Anonimizzazione: {formData.privacySettings?.anonymizeConversations ? 'Attiva' : 'Disattiva'}
                 </span>
               </div>
-              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
-                <Trash2 className="w-4 h-4 inline mr-1" />
-                Cancella Tutti i Dati
-              </button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Conversations Archive */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <MessageCircle className="w-5 h-5 mr-2 text-[#FF6900]" />
-            Archivio Conversazioni AI
-          </h3>
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              placeholder="Cerca conversazioni..."
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
-              data-testid="input-search-conversations"
-            />
-            <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent">
-              <option value="">Tutti gli utenti</option>
-              <option value="current">Solo le mie</option>
-              <option value="team">Team</option>
-            </select>
-            <button className="px-4 py-2 bg-[#FF6900] text-white rounded-lg hover:bg-[#E55A00] text-sm font-medium">
-              <FileText className="w-4 h-4 inline mr-1" />
-              Esporta
-            </button>
-          </div>
-        </div>
-
-        {conversationsLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <RefreshCw className="w-8 h-8 animate-spin text-[#FF6900] mx-auto mb-4" />
-              <p className="text-gray-600">Caricamento conversazioni...</p>
-            </div>
-          </div>
-        ) : conversations?.data?.length > 0 ? (
-          <div className="space-y-4">
-            {conversations.data.map((conversation: any) => (
-              <div key={conversation.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-[#FF6900]/10 rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-[#FF6900]" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">{conversation.title || 'Conversazione AI'}</h4>
-                      <p className="text-sm text-gray-600">
-                        {conversation.featureContext} • {new Date(conversation.createdAt).toLocaleString('it-IT')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                      {conversation.messageCount || 0} messaggi
-                    </span>
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-red-600">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                  <p>Anteprima: {conversation.lastMessage || 'Nessun messaggio disponibile'}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna Conversazione</h3>
-            <p className="text-gray-600">Le conversazioni AI appariranno qui quando gli utenti inizieranno a utilizzare l'assistente.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Export and Management Actions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <FileText className="w-5 h-5 mr-2 text-[#FF6900]" />
-          Gestione Dati
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-colors">
-            <div className="text-center">
-              <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="font-medium text-gray-700">Esporta CSV</p>
-              <p className="text-sm text-gray-500">Export logs in CSV</p>
-            </div>
-          </button>
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-colors">
-            <div className="text-center">
-              <Shield className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="font-medium text-gray-700">Audit Report</p>
-              <p className="text-sm text-gray-500">Report GDPR compliance</p>
-            </div>
-          </button>
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-red-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-colors">
-            <div className="text-center">
-              <Trash2 className="w-8 h-8 text-red-400 mx-auto mb-2" />
-              <p className="font-medium text-red-700">Cancellazione GDPR</p>
-              <p className="text-sm text-red-500">Elimina tutti i dati</p>
-            </div>
-          </button>
+        <div className="text-center py-12">
+          <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Archivio Conversazioni AI</h3>
+          <p className="text-gray-600">Le conversazioni AI appariranno qui quando gli utenti inizieranno a utilizzare l'assistente.</p>
         </div>
       </div>
     </div>
