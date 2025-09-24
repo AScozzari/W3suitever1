@@ -196,6 +196,9 @@ export default function AIManagement() {
     baseConfiguration: '{"maxTokens": 4000, "temperature": 0.7, "model": "gpt-4-turbo"}'
   });
 
+  // RAG Knowledge state
+  const [knowledgeUrl, setKnowledgeUrl] = useState('');
+
   // Analytics filters
   const [analyticsFilters, setAnalyticsFilters] = useState({
     agentId: '',
@@ -357,6 +360,50 @@ export default function AIManagement() {
     onError: (error) => {
       console.error('Error in bulk operation:', error);
       alert('Errore nell\'operazione bulk');
+    }
+  });
+
+  // 6. RAG KNOWLEDGE BASE MUTATIONS
+  const uploadDocumentsMutation = useMutation({
+    mutationFn: async ({ agentId, files }: { agentId: string; files: File[] }) => {
+      const formData = new FormData();
+      files.forEach(file => formData.append('documents', file));
+      
+      const response = await fetch(`/brand-api/ai/agents/${agentId}/documents`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload documents');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/ai/agents', variables.agentId, 'knowledge'] });
+      alert(`Documenti caricati con successo! Processamento in corso...`);
+    },
+    onError: (error) => {
+      console.error('Error uploading documents:', error);
+      alert('Errore nel caricamento documenti');
+    }
+  });
+
+  const addUrlMutation = useMutation({
+    mutationFn: async ({ agentId, url }: { agentId: string; url: string }) => {
+      return apiRequest(`/brand-api/ai/agents/${agentId}/urls`, {
+        method: 'POST',
+        body: JSON.stringify({ url })
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/ai/agents', variables.agentId, 'knowledge'] });
+      alert(`URL aggiunto con successo! Processamento in corso...`);
+    },
+    onError: (error) => {
+      console.error('Error adding URL:', error);
+      alert('Errore nell\'aggiunta URL');
     }
   });
 
@@ -1607,20 +1654,36 @@ export default function AIManagement() {
                       e.preventDefault();
                       e.currentTarget.style.borderColor = COLORS.neutral.lighter;
                       e.currentTarget.style.background = COLORS.neutral.lightest;
-                      // Handle file drop
+                      
                       const files = Array.from(e.dataTransfer.files);
-                      console.log('Files dropped:', files);
+                      if (files.length > 0 && editingAgent?.id) {
+                        uploadDocumentsMutation.mutate({ 
+                          agentId: editingAgent.id, 
+                          files 
+                        });
+                      }
                     }}
                     onClick={() => document.getElementById('file-upload')?.click()}
                     data-testid="dropzone-documents"
                     >
-                      <Upload size={32} style={{ color: COLORS.neutral.medium, marginBottom: '8px' }} />
-                      <p style={{ color: COLORS.neutral.medium, fontSize: '14px', margin: 0 }}>
-                        Trascina file o clicca per selezionare
-                      </p>
-                      <p style={{ color: COLORS.neutral.light, fontSize: '12px', margin: '4px 0 0 0' }}>
-                        PDF, TXT, DOC, DOCX supportati
-                      </p>
+                      {uploadDocumentsMutation.isPending ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <Loader2 size={32} style={{ color: COLORS.primary.orange, marginBottom: '8px', animation: 'spin 1s linear infinite' }} />
+                          <p style={{ color: COLORS.primary.orange, fontSize: '14px', margin: 0 }}>
+                            Caricamento in corso...
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload size={32} style={{ color: COLORS.neutral.medium, marginBottom: '8px' }} />
+                          <p style={{ color: COLORS.neutral.medium, fontSize: '14px', margin: 0 }}>
+                            Trascina file o clicca per selezionare
+                          </p>
+                          <p style={{ color: COLORS.neutral.light, fontSize: '12px', margin: '4px 0 0 0' }}>
+                            PDF, TXT, DOC, DOCX supportati
+                          </p>
+                        </>
+                      )}
                       <input
                         id="file-upload"
                         type="file"
@@ -1629,7 +1692,14 @@ export default function AIManagement() {
                         style={{ display: 'none' }}
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
-                          console.log('Files selected:', files);
+                          if (files.length > 0 && editingAgent?.id) {
+                            uploadDocumentsMutation.mutate({ 
+                              agentId: editingAgent.id, 
+                              files 
+                            });
+                          }
+                          // Reset input
+                          e.target.value = '';
                         }}
                         data-testid="input-file-upload"
                       />
@@ -1653,6 +1723,8 @@ export default function AIManagement() {
                     }}>
                       <input
                         type="url"
+                        value={knowledgeUrl}
+                        onChange={(e) => setKnowledgeUrl(e.target.value)}
                         placeholder="https://example.com/documentation"
                         style={{
                           flex: 1,
@@ -1670,25 +1742,43 @@ export default function AIManagement() {
                         data-testid="input-knowledge-url"
                       />
                       <button
+                        onClick={() => {
+                          if (!knowledgeUrl.trim() || !editingAgent?.id) return;
+                          addUrlMutation.mutate({ 
+                            agentId: editingAgent.id, 
+                            url: knowledgeUrl.trim() 
+                          });
+                          setKnowledgeUrl(''); // Clear input after adding
+                        }}
+                        disabled={!knowledgeUrl.trim() || !editingAgent?.id || addUrlMutation.isPending}
                         style={{
                           padding: '12px 16px',
-                          background: COLORS.gradients.purple,
+                          background: knowledgeUrl.trim() && editingAgent?.id ? COLORS.gradients.purple : COLORS.neutral.light,
                           color: 'white',
                           border: 'none',
                           borderRadius: '8px',
                           fontSize: '14px',
                           fontWeight: 600,
-                          cursor: 'pointer',
+                          cursor: knowledgeUrl.trim() && editingAgent?.id ? 'pointer' : 'not-allowed',
                           transition: 'all 0.2s ease',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px'
+                          gap: '8px',
+                          opacity: knowledgeUrl.trim() && editingAgent?.id ? 1 : 0.5
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                        onMouseOver={(e) => {
+                          if (knowledgeUrl.trim() && editingAgent?.id) {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }
+                        }}
                         onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                         data-testid="button-add-url"
                       >
-                        <Plus size={16} />
+                        {addUrlMutation.isPending ? (
+                          <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        ) : (
+                          <Plus size={16} />
+                        )}
                         Aggiungi
                       </button>
                     </div>

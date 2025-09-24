@@ -795,6 +795,121 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==============================================================================
+  // AI AGENT RAG KNOWLEDGE BASE ENDPOINTS  
+  // ==============================================================================
+
+  // Upload documents for agent knowledge base
+  app.post("/brand-api/ai/agents/:id/documents", async (req, res) => {
+    try {
+      const { id: agentId } = req.params;
+      
+      // Verify agent exists
+      const agent = await brandStorage.getAIAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+
+      // TODO: Implement file upload with multer
+      // TODO: Process documents (chunk + embed)
+      // TODO: Save to vectorEmbeddings with agent metadata
+      
+      res.json({
+        success: true,
+        message: 'Document upload endpoint - implementation pending',
+        data: { agentId, uploadCount: 0 }
+      });
+    } catch (error) {
+      console.error('Error uploading agent documents:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to upload documents'
+      });
+    }
+  });
+
+  // Add URL knowledge source for agent
+  app.post("/brand-api/ai/agents/:id/urls", async (req, res) => {
+    try {
+      const { id: agentId } = req.params;
+      const { url } = req.body;
+      
+      // Verify agent exists
+      const agent = await brandStorage.getAIAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+
+      if (!url) {
+        return res.status(400).json({
+          success: false,
+          error: 'URL is required'
+        });
+      }
+
+      // TODO: Validate URL format
+      // TODO: Scrape content from URL
+      // TODO: Process content (chunk + embed) 
+      // TODO: Save to vectorEmbeddings with agent metadata
+      
+      res.json({
+        success: true,
+        message: 'URL processing endpoint - implementation pending',
+        data: { agentId, url }
+      });
+    } catch (error) {
+      console.error('Error adding agent URL:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to add URL knowledge source'
+      });
+    }
+  });
+
+  // Get agent knowledge base (embeddings)
+  app.get("/brand-api/ai/agents/:id/knowledge", async (req, res) => {
+    try {
+      const { id: agentId } = req.params;
+      
+      // Verify agent exists
+      const agent = await brandStorage.getAIAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+
+      // TODO: Query vectorEmbeddings where metadata contains agentId
+      // TODO: Return paginated list with source info
+      
+      res.json({
+        success: true,
+        data: {
+          agentId,
+          knowledgeBase: [],
+          stats: {
+            totalDocuments: 0,
+            totalUrls: 0,
+            totalEmbeddings: 0
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching agent knowledge base:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch knowledge base'
+      });
+    }
+  });
+
   // ==================== MANAGEMENT/STRUCTURE ENDPOINTS ====================
   // New Management structure endpoints for Brand Interface
 
