@@ -1667,21 +1667,22 @@ export default function Management() {
                 ))}
               </tbody>
             </table>
-          </div>
 
-          {/* Pagination */}
-          <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            <span style={{
-              fontSize: '14px',
-              color: COLORS.neutral.medium
-            }}>
-              Totale: {organizationsData?.organizations?.length || 0} organizzazioni
-            </span>
+            {/* Pagination */}
+            <div style={{ marginTop: '20px', textAlign: 'center' }}>
+              <span style={{
+                fontSize: '14px',
+                color: COLORS.neutral.medium
+              }}>
+                Totale: {organizationsData?.organizations?.length || 0} organizzazioni
+              </span>
+            </div>
           </div>
-        </div>
-      );
-    }
+        )}
+    </div>
+  );
 
+  // Modal per creare nuova organizzazione
   const renderNewOrganizationModal = () => {
     if (!newOrgModalOpen) return null;
 
