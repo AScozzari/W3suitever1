@@ -34,12 +34,11 @@ export default function App() {
 function Routes() {
   return (
     <Switch>
-      {/* ORDINE CRITICO: Route statiche prima di quelle parametrizzate */}
+      {/* Brand Interface routes - no tenant parameters needed */}
       <Route path="/login">
         <Login />
       </Route>
       
-      {/* Static routes */}
       <Route path="/dashboard">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
       </Route>
@@ -53,31 +52,9 @@ function Routes() {
         <BrandTenantWrapper params={null}><Management /></BrandTenantWrapper>
       </Route>
       
-      {/* Tenant-specific routes */}
-      <Route path="/:tenant/login">
-        {(params) => <BrandTenantWrapper params={params}><Login /></BrandTenantWrapper>}
-      </Route>
-      <Route path="/:tenant/dashboard">
-        {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
-      </Route>
-      <Route path="/:tenant/crm">
-        {(params) => <BrandTenantWrapper params={params}><CRM /></BrandTenantWrapper>}
-      </Route>
-      <Route path="/:tenant/ai-management">
-        {(params) => <BrandTenantWrapper params={params}><AIManagement /></BrandTenantWrapper>}
-      </Route>
-      <Route path="/:tenant/management">
-        {(params) => <BrandTenantWrapper params={params}><Management /></BrandTenantWrapper>}
-      </Route>
-      
       {/* Default route */}
       <Route path="/">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
-      </Route>
-      
-      {/* Fallback generic tenant route - MUST BE LAST */}
-      <Route path="/:tenant">
-        {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
       </Route>
     </Switch>
   );
