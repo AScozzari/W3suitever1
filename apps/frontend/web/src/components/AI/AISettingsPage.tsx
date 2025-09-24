@@ -348,7 +348,7 @@ export default function AISettingsPage() {
     
     setProcessingUrl(true);
     // The mutation handles success/error toasts automatically
-    await processUrlMutation.mutateAsync(urlToProcess.trim());
+    await processAgentUrlMutation.mutateAsync(urlToProcess.trim());
   };
 
   // Handle file upload
@@ -810,7 +810,12 @@ export default function AISettingsPage() {
               Correggi e valida le risposte dell'AI per migliorare l'accuratezza futura.
             </p>
             <button 
-              onClick={handleReviewResponses}
+              onClick={() => {
+                toast({ 
+                  title: "Review Responses", 
+                  description: "Funzione in via di sviluppo..." 
+                });
+              }}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
               data-testid="button-review-responses"
             >
@@ -926,19 +931,19 @@ export default function AISettingsPage() {
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white/60 rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-[#FF6900]">
-                {trainingStatsLoading ? '...' : (trainingStats?.data?.documentsProcessed || 0)}
+                {agentTrainingStatsLoading ? '...' : (agentTrainingStats?.data?.documentsProcessed || 0)}
               </p>
               <p className="text-xs text-gray-600">Documenti Processati</p>
             </div>
             <div className="bg-white/60 rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-[#7B2CBF]">
-                {trainingStatsLoading ? '...' : (trainingStats?.data?.embeddingsCreated || 0)}
+                {agentTrainingStatsLoading ? '...' : (agentTrainingStats?.data?.embeddingsCreated || 0)}
               </p>
               <p className="text-xs text-gray-600">Embeddings Creati</p>
             </div>
             <div className="bg-white/60 rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-green-600">
-                {trainingStatsLoading ? '...' : (trainingStats?.data?.validationsCompleted || 0)}
+                {agentTrainingStatsLoading ? '...' : (agentTrainingStats?.data?.validationsCompleted || 0)}
               </p>
               <p className="text-xs text-gray-600">Validazioni</p>
             </div>
@@ -953,7 +958,7 @@ export default function AISettingsPage() {
               </div>
               <div className="flex items-center space-x-3">
                 <span className="text-sm text-gray-500">
-                  {trainingSessions?.data?.length || 0} URL salvate
+                  {agentTrainingSessions?.data?.length || 0} URL salvate
                 </span>
                 <button
                   onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] })}
@@ -971,9 +976,9 @@ export default function AISettingsPage() {
                 <RefreshCw className="w-5 h-5 animate-spin text-[#FF6900]" />
                 <span className="ml-2 text-sm text-gray-600">Caricamento storyboard...</span>
               </div>
-            ) : trainingSessions?.data?.length > 0 ? (
+            ) : agentTrainingSessions?.data?.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                {trainingSessions.data.map((session: any, index: number) => (
+                {agentTrainingSessions.data.map((session: any, index: number) => (
                   <div key={session.id || index} className="group bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-[#FF6900]/30">
                     {/* Status Badge */}
                     <div className="flex items-center justify-between mb-3">
@@ -997,7 +1002,10 @@ export default function AISettingsPage() {
                       <button
                         onClick={() => {
                           if (confirm('Sei sicuro di voler eliminare questa sessione di training?')) {
-                            deleteSessionMutation.mutate(session.id);
+                            toast({ 
+                              title: "Eliminazione sessione", 
+                              description: "Funzione in via di sviluppo..." 
+                            });
                           }
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition-all duration-200"
@@ -1265,7 +1273,7 @@ export default function AISettingsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {usageLogs?.data?.length > 0 ? usageLogs.data.map((log: AIUsageLog) => {
+                {(usageLogs?.data?.length || 0) > 0 ? usageLogs!.data!.map((log: AIUsageLog) => {
                   const getOperationDisplay = (featureType: string) => {
                     const typeMap: Record<string, { label: string, icon: string, color: string }> = {
                       'chat': { label: 'Chat Assistant', icon: '💬', color: 'bg-blue-100 text-blue-800' },
@@ -1409,9 +1417,9 @@ export default function AISettingsPage() {
               <p className="text-gray-600">Caricamento conversazioni...</p>
             </div>
           </div>
-        ) : conversations?.data?.length > 0 ? (
+        ) : (conversations?.data?.length || 0) > 0 ? (
           <div className="space-y-4">
-            {conversations.data.map((conversation: any) => (
+            {conversations!.data!.map((conversation: any) => (
               <div key={conversation.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
@@ -1723,9 +1731,9 @@ export default function AISettingsPage() {
                 <RefreshCw className="w-5 h-5 animate-spin text-[#FF6900]" />
                 <span className="ml-2 text-sm text-gray-600">Caricamento sessioni...</span>
               </div>
-            ) : agentTrainingSessions?.data?.length > 0 ? (
+            ) : (agentTrainingSessions?.data?.length || 0) > 0 ? (
               <div className="max-h-80 overflow-y-auto space-y-3">
-                {agentTrainingSessions.data.map((session: any, index: number) => {
+                {agentTrainingSessions!.data!.map((session: any, index: number) => {
                   const sessionType = session.sessionType || 'unknown';
                   const sessionStatus = session.sessionStatus || session.status || 'unknown';
                   
