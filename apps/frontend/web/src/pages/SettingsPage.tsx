@@ -5799,6 +5799,77 @@ export default function SettingsPage() {
     note: ''
   });
 
+  // 🔧 FIX: Popola il form quando viene aperto in modalità modifica
+  useEffect(() => {
+    if (legalEntityModal.open && legalEntityModal.data) {
+      console.log('🔄 Populating form with existing legal entity data:', legalEntityModal.data);
+      // Popola il form con i dati esistenti
+      setNewRagioneSociale({
+        codice: legalEntityModal.data.codice || '',
+        nome: legalEntityModal.data.nome || '',
+        formaGiuridica: legalEntityModal.data.formaGiuridica || 'Srl',
+        pIva: legalEntityModal.data.pIva || '',
+        codiceFiscale: legalEntityModal.data.codiceFiscale || '',
+        indirizzo: legalEntityModal.data.indirizzo || '',
+        citta: legalEntityModal.data.citta || '',
+        cap: legalEntityModal.data.cap || '',
+        provincia: legalEntityModal.data.provincia || '',
+        telefono: legalEntityModal.data.telefono || '',
+        email: legalEntityModal.data.email || '',
+        pec: legalEntityModal.data.pec || '',
+        stato: legalEntityModal.data.stato || 'Attiva',
+        capitaleSociale: legalEntityModal.data.capitaleSociale || '',
+        dataCostituzione: legalEntityModal.data.dataCostituzione || '',
+        rea: legalEntityModal.data.rea || '',
+        registroImprese: legalEntityModal.data.registroImprese || '',
+        logo: legalEntityModal.data.logo || '',
+        codiceSDI: legalEntityModal.data.codiceSDI || '',
+        refAmminNome: legalEntityModal.data.refAmminNome || '',
+        refAmminCognome: legalEntityModal.data.refAmminCognome || '',
+        refAmminEmail: legalEntityModal.data.refAmminEmail || '',
+        refAmminCodiceFiscale: legalEntityModal.data.refAmminCodiceFiscale || '',
+        refAmminIndirizzo: legalEntityModal.data.refAmminIndirizzo || '',
+        refAmminCitta: legalEntityModal.data.refAmminCitta || '',
+        refAmminCap: legalEntityModal.data.refAmminCap || '',
+        refAmminPaese: legalEntityModal.data.refAmminPaese || '',
+        note: legalEntityModal.data.note || ''
+      });
+    } else if (legalEntityModal.open && !legalEntityModal.data) {
+      console.log('🆕 Resetting form for new legal entity');
+      // Reset del form per nuova entità
+      setNewRagioneSociale({
+        codice: '',
+        nome: '',
+        formaGiuridica: 'Srl',
+        pIva: '',
+        codiceFiscale: '',
+        indirizzo: '',
+        citta: '',
+        cap: '',
+        provincia: '',
+        telefono: '',
+        email: '',
+        pec: '',
+        stato: 'Attiva',
+        capitaleSociale: '',
+        dataCostituzione: '',
+        rea: '',
+        registroImprese: '',
+        logo: '',
+        codiceSDI: '',
+        refAmminNome: '',
+        refAmminCognome: '',
+        refAmminEmail: '',
+        refAmminCodiceFiscale: '',
+        refAmminIndirizzo: '',
+        refAmminCitta: '',
+        refAmminCap: '',
+        refAmminPaese: '',
+        note: ''
+      });
+    }
+  }, [legalEntityModal.open, legalEntityModal.data]);
+
   // State per il modal fornitore - updated with separate payment fields
   const [newSupplier, setNewSupplier] = useState<SupplierValidation>({
     // ANAGRAFICI
@@ -5838,10 +5909,12 @@ export default function SettingsPage() {
     return tenantId || '00000000-0000-0000-0000-000000000001';
   };
 
-  // Handler per salvare la nuova ragione sociale - USA API REALE
+  // Handler per salvare la ragione sociale - USA API REALE (CREATE/UPDATE)
   const handleSaveRagioneSociale = async () => {
     try {
       const currentTenantId = DEMO_TENANT_ID;
+      const isEdit = legalEntityModal.data && legalEntityModal.data.id;
+      
       // Genera codice RS: inizia con 8, almeno 7 cifre totali  
       const newCode = newRagioneSociale.codice || `8${String(Date.now()).slice(-6)}`;
       
@@ -5882,9 +5955,11 @@ export default function SettingsPage() {
         note: newRagioneSociale.note
       };
 
-      // Chiamata API per creare la ragione sociale
-      const response = await fetch('/api/legal-entities', {
-        method: 'POST',
+      console.log(`💾 ${isEdit ? 'Updating' : 'Creating'} legal entity:`, legalEntityData);
+
+      // Chiamata API per creare o aggiornare la ragione sociale
+      const response = await fetch(isEdit ? `/api/legal-entities/${legalEntityModal.data.id}` : '/api/legal-entities', {
+        method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Tenant-ID': currentTenantId
@@ -5893,54 +5968,22 @@ export default function SettingsPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create legal entity: ${response.statusText}`);
+        throw new Error(`Failed to ${isEdit ? 'update' : 'create'} legal entity: ${response.statusText}`);
       }
 
-      const newLegalEntity = await response.json();
-      console.log('✅ Legal entity created:', newLegalEntity);
+      const legalEntityResult = await response.json();
+      console.log(`✅ Legal entity ${isEdit ? 'updated' : 'created'}:`, legalEntityResult);
 
-      // Refresh the list dopo la creazione
+      // Refresh the list dopo l'operazione
       await refetchLegalEntities();
       
       setLegalEntityModal({ open: false, data: null });
       
-      // Reset form
-      setNewRagioneSociale({
-        codice: '',
-        nome: '',
-        formaGiuridica: 'Srl',
-        pIva: '',
-        codiceFiscale: '',
-        indirizzo: '',
-        citta: '',
-        cap: '',
-        provincia: '',
-        telefono: '',
-        email: '',
-        pec: '',
-        stato: 'Attiva',
-        // Enterprise fields
-        capitaleSociale: '',
-        dataCostituzione: '',
-        rea: '',
-        registroImprese: '',
-        logo: '',
-        codiceSDI: '',
-        // Administrative contact section
-        refAmminNome: '',
-        refAmminCognome: '',
-        refAmminEmail: '',
-        refAmminCodiceFiscale: '',
-        refAmminIndirizzo: '',
-        refAmminCitta: '',
-        refAmminCap: '',
-        refAmminPaese: '',
-        // Notes field
-        note: ''
-      });
+      alert(`Ragione sociale ${isEdit ? 'modificata' : 'salvata'} con successo!`);
+
     } catch (error) {
-      console.error('❌ Error creating legal entity:', error);
-      alert('Errore nella creazione della ragione sociale. Riprova.');
+      console.error(`❌ Error ${legalEntityModal.data ? 'updating' : 'creating'} legal entity:`, error);
+      alert(`Errore nella ${legalEntityModal.data ? 'modifica' : 'creazione'} della ragione sociale. Riprova.`);
     }
   };
 
