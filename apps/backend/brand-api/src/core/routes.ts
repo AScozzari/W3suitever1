@@ -518,6 +518,264 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== AI MANAGEMENT ENDPOINTS ====================
+  
+  // AI Agents Registry Routes - require authentication
+  app.get("/brand-api/ai/agents", async (req, res) => {
+    try {
+      const { moduleContext, status, search, page = '1', limit = '25' } = req.query;
+      
+      const filters = {
+        moduleContext: moduleContext as string,
+        status: status as string, 
+        search: search as string
+      };
+      
+      // Remove empty filters
+      Object.keys(filters).forEach(key => {
+        if (!filters[key as keyof typeof filters] || filters[key as keyof typeof filters] === 'all') {
+          delete filters[key as keyof typeof filters];
+        }
+      });
+      
+      const agents = await brandStorage.getAIAgents(filters);
+      
+      res.json({
+        success: true,
+        data: {
+          agents,
+          pagination: {
+            page: parseInt(page as string),
+            limit: parseInt(limit as string),
+            total: agents.length
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching AI agents:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch AI agents'
+      });
+    }
+  });
+
+  app.get("/brand-api/ai/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = await brandStorage.getAIAgent(id);
+      
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: agent
+      });
+    } catch (error) {
+      console.error('Error fetching AI agent:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch AI agent'
+      });
+    }
+  });
+
+  app.post("/brand-api/ai/agents", async (req, res) => {
+    try {
+      const agentData = req.body;
+      
+      // Validate required fields
+      if (!agentData.agentId || !agentData.name || !agentData.systemPrompt) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: agentId, name, systemPrompt'
+        });
+      }
+      
+      // Check if agentId already exists
+      const existingAgent = await brandStorage.getAIAgentByAgentId(agentData.agentId);
+      if (existingAgent) {
+        return res.status(409).json({
+          success: false,
+          error: 'Agent ID already exists'
+        });
+      }
+      
+      const newAgent = await brandStorage.createAIAgent(agentData);
+      
+      res.status(201).json({
+        success: true,
+        data: newAgent
+      });
+    } catch (error) {
+      console.error('Error creating AI agent:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create AI agent'
+      });
+    }
+  });
+
+  app.put("/brand-api/ai/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      const updatedAgent = await brandStorage.updateAIAgent(id, updateData);
+      
+      if (!updatedAgent) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: updatedAgent
+      });
+    } catch (error) {
+      console.error('Error updating AI agent:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update AI agent'
+      });
+    }
+  });
+
+  app.delete("/brand-api/ai/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const deleted = await brandStorage.deleteAIAgent(id);
+      
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'AI agent deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting AI agent:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to delete AI agent'
+      });
+    }
+  });
+
+  app.post("/brand-api/ai/agents/bulk", async (req, res) => {
+    try {
+      const { operation, agentIds, values } = req.body;
+      
+      if (!operation || !agentIds || !Array.isArray(agentIds)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: operation, agentIds (array)'
+        });
+      }
+      
+      const result = await brandStorage.bulkUpdateAIAgents(agentIds, operation, values);
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in bulk operation:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to perform bulk operation'
+      });
+    }
+  });
+
+  app.get("/brand-api/ai/agents/export.csv", async (req, res) => {
+    try {
+      const { moduleContext, status, search } = req.query;
+      
+      const filters = {
+        moduleContext: moduleContext as string,
+        status: status as string,
+        search: search as string
+      };
+      
+      // Remove empty filters
+      Object.keys(filters).forEach(key => {
+        if (!filters[key as keyof typeof filters] || filters[key as keyof typeof filters] === 'all') {
+          delete filters[key as keyof typeof filters];
+        }
+      });
+      
+      const csvContent = await brandStorage.exportAIAgentsCSV(filters);
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="ai-agents-export-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csvContent);
+    } catch (error) {
+      console.error('Error exporting AI agents CSV:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to export AI agents CSV'
+      });
+    }
+  });
+
+  // AI Analytics Routes (placeholder for now)
+  app.get("/brand-api/ai/analytics", async (req, res) => {
+    try {
+      // Placeholder analytics data
+      const analyticsData = {
+        totalAgents: 1,
+        activeAgents: 1,
+        totalInteractions: 0,
+        totalTokensUsed: 0,
+        agentsByModule: [
+          { module: 'general', count: 1, percentage: 100 }
+        ],
+        usageByAgent: [],
+        tenantUsage: []
+      };
+      
+      res.json({
+        success: true,
+        data: analyticsData
+      });
+    } catch (error) {
+      console.error('Error fetching AI analytics:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch AI analytics'
+      });
+    }
+  });
+
+  // AI Configurations Routes (placeholder for now)
+  app.get("/brand-api/ai/configurations", async (req, res) => {
+    try {
+      res.json({
+        success: true,
+        data: []
+      });
+    } catch (error) {
+      console.error('Error fetching AI configurations:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch AI configurations'
+      });
+    }
+  });
+
   // ==================== MANAGEMENT/STRUCTURE ENDPOINTS ====================
   // New Management structure endpoints for Brand Interface
 

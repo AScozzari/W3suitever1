@@ -1,9 +1,10 @@
-import { db, brandTenants, brandUsers, brandRoles, brandAuditLogs } from "../db/index.js";
+import { db, brandTenants, brandUsers, brandRoles, brandAuditLogs, aiAgentsRegistry } from "../db/index.js";
 import { eq, and, sql, inArray, like, or, count, desc } from "drizzle-orm";
 import type { 
   BrandTenant, NewBrandTenant, BrandUser, NewBrandUser, BrandRole, NewBrandRole, 
   BrandAuditLog, NewBrandAuditLog, StoreListDTO, StoreFiltersDTO, StoreListResponseDTO,
-  StructureStatsDTO, CreateOrganizationDTO, BulkOperationDTO, BulkOperationResultDTO
+  StructureStatsDTO, CreateOrganizationDTO, BulkOperationDTO, BulkOperationResultDTO,
+  AIAgent, NewAIAgent
 } from "../db/index.js";
 import { nanoid } from "nanoid";
 
@@ -41,6 +42,18 @@ export interface IBrandStorage {
   
   // Export operations
   exportStoresCSV(filters: StoreFiltersDTO): Promise<string>;
+  
+  // ==================== AI AGENTS REGISTRY ====================
+  
+  // AI Agents operations
+  getAIAgents(filters?: { moduleContext?: string; status?: string; search?: string }): Promise<AIAgent[]>;
+  getAIAgent(id: string): Promise<AIAgent | null>;
+  getAIAgentByAgentId(agentId: string): Promise<AIAgent | null>;
+  createAIAgent(data: NewAIAgent): Promise<AIAgent>;
+  updateAIAgent(id: string, data: Partial<AIAgent>): Promise<AIAgent | null>;
+  deleteAIAgent(id: string): Promise<boolean>;
+  bulkUpdateAIAgents(agentIds: string[], operation: string, values?: any): Promise<{ processedCount: number; errorCount: number }>;
+  exportAIAgentsCSV(filters?: { moduleContext?: string; status?: string; search?: string }): Promise<string>;
 }
 
 class BrandDrizzleStorage implements IBrandStorage {
@@ -468,6 +481,222 @@ class BrandDrizzleStorage implements IBrandStorage {
       return csvContent;
     } catch (error) {
       console.error('Error exporting stores CSV:', error);
+      throw error;
+    }
+  }
+
+  // ==================== AI AGENTS REGISTRY IMPLEMENTATION ====================
+
+  async getAIAgents(filters?: { moduleContext?: string; status?: string; search?: string }): Promise<AIAgent[]> {
+    try {
+      let query = db.select().from(aiAgentsRegistry);
+      
+      const conditions = [];
+      
+      if (filters?.moduleContext && filters.moduleContext !== 'all') {
+        conditions.push(eq(aiAgentsRegistry.moduleContext, filters.moduleContext as any));
+      }
+      
+      if (filters?.status && filters.status !== 'all') {
+        conditions.push(eq(aiAgentsRegistry.status, filters.status as any));
+      }
+      
+      if (filters?.search) {
+        conditions.push(
+          or(
+            like(aiAgentsRegistry.name, `%${filters.search}%`),
+            like(aiAgentsRegistry.agentId, `%${filters.search}%`),
+            like(aiAgentsRegistry.description, `%${filters.search}%`)
+          )
+        );
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query.orderBy(desc(aiAgentsRegistry.updatedAt));
+    } catch (error) {
+      console.error('Error fetching AI agents:', error);
+      return [];
+    }
+  }
+
+  async getAIAgent(id: string): Promise<AIAgent | null> {
+    try {
+      const results = await db.select()
+        .from(aiAgentsRegistry)
+        .where(eq(aiAgentsRegistry.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error fetching AI agent:', error);
+      return null;
+    }
+  }
+
+  async getAIAgentByAgentId(agentId: string): Promise<AIAgent | null> {
+    try {
+      const results = await db.select()
+        .from(aiAgentsRegistry)
+        .where(eq(aiAgentsRegistry.agentId, agentId))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error fetching AI agent by agentId:', error);
+      return null;
+    }
+  }
+
+  async createAIAgent(data: NewAIAgent): Promise<AIAgent> {
+    try {
+      const results = await db.insert(aiAgentsRegistry)
+        .values({
+          ...data,
+          id: nanoid(),
+          version: 1,
+          status: 'active' as const,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log(`✅ AI Agent created: ${data.agentId}`);
+      return results[0];
+    } catch (error) {
+      console.error('Error creating AI agent:', error);
+      throw error;
+    }
+  }
+
+  async updateAIAgent(id: string, data: Partial<AIAgent>): Promise<AIAgent | null> {
+    try {
+      const results = await db.update(aiAgentsRegistry)
+        .set({ 
+          ...data, 
+          updatedAt: new Date(),
+          version: sql`${aiAgentsRegistry.version} + 1`
+        })
+        .where(eq(aiAgentsRegistry.id, id))
+        .returning();
+      
+      if (results[0]) {
+        console.log(`✅ AI Agent updated: ${results[0].agentId}`);
+      }
+      
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error updating AI agent:', error);
+      throw error;
+    }
+  }
+
+  async deleteAIAgent(id: string): Promise<boolean> {
+    try {
+      const results = await db.delete(aiAgentsRegistry)
+        .where(eq(aiAgentsRegistry.id, id))
+        .returning();
+      
+      const deleted = results.length > 0;
+      if (deleted) {
+        console.log(`✅ AI Agent deleted: ${id}`);
+      }
+      
+      return deleted;
+    } catch (error) {
+      console.error('Error deleting AI agent:', error);
+      return false;
+    }
+  }
+
+  async bulkUpdateAIAgents(agentIds: string[], operation: string, values?: any): Promise<{ processedCount: number; errorCount: number }> {
+    let processedCount = 0;
+    let errorCount = 0;
+    
+    try {
+      for (const agentId of agentIds) {
+        try {
+          let updateData: Partial<AIAgent> = { updatedAt: new Date() };
+          
+          switch (operation) {
+            case 'activate':
+              updateData.status = 'active';
+              break;
+            case 'deactivate':
+              updateData.status = 'inactive';
+              break;
+            case 'deprecate':
+              updateData.status = 'deprecated';
+              break;
+            case 'delete':
+              await this.deleteAIAgent(agentId);
+              processedCount++;
+              continue;
+            default:
+              if (values) {
+                updateData = { ...updateData, ...values };
+              }
+          }
+          
+          const result = await this.updateAIAgent(agentId, updateData);
+          if (result) {
+            processedCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          console.error(`Error in bulk operation for agent ${agentId}:`, error);
+          errorCount++;
+        }
+      }
+      
+      console.log(`✅ Bulk operation completed: ${processedCount} processed, ${errorCount} errors`);
+      return { processedCount, errorCount };
+    } catch (error) {
+      console.error('Error in bulk update:', error);
+      throw error;
+    }
+  }
+
+  async exportAIAgentsCSV(filters?: { moduleContext?: string; status?: string; search?: string }): Promise<string> {
+    try {
+      const agents = await this.getAIAgents(filters);
+      
+      // CSV headers
+      const headers = [
+        'ID',
+        'Agent ID',
+        'Nome',
+        'Descrizione',
+        'Modulo',
+        'Stato',
+        'Versione',
+        'Creato',
+        'Aggiornato'
+      ];
+      
+      // Convert agents to CSV rows
+      const rows = agents.map(agent => [
+        agent.id,
+        agent.agentId,
+        agent.name,
+        agent.description || '',
+        agent.moduleContext,
+        agent.status,
+        agent.version.toString(),
+        agent.createdAt.toISOString(),
+        agent.updatedAt.toISOString()
+      ]);
+      
+      // Format as CSV
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(field => `"${field}"`).join(','))
+      ].join('\n');
+      
+      return csvContent;
+    } catch (error) {
+      console.error('Error exporting AI agents CSV:', error);
       throw error;
     }
   }

@@ -13,7 +13,7 @@ import {
   ArrowUpRight, ArrowDownRight, ChevronDown, BarChart,
   Folder, UserX, Star, Home, Building, Briefcase, Wrench,
   LogOut, HelpCircle, MapPin, UserCircle, Store, Building2,
-  Megaphone, Cog, Globe, Moon, Sun
+  Megaphone, Cog, Globe, Moon, Sun, Brain
 } from 'lucide-react';
 
 // Palette colori W3 Suite - Coerente e Professionale
@@ -113,6 +113,13 @@ export default function BrandLayout({ children }: BrandLayoutProps) {
       icon: Users,
       path: '/crm',
       description: 'Gestione clienti'
+    },
+    {
+      id: 'ai-management',
+      name: 'AI Management',
+      icon: Brain,
+      path: '/ai-management',
+      description: 'Gestione agenti AI centralizzata'
     },
     {
       id: 'management',

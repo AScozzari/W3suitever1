@@ -4,6 +4,8 @@
 import { UnifiedOpenAIService, OpenAIRequestContext, UnifiedOpenAIResponse } from './unified-openai';
 import { AISettings } from '../db/schema/w3suite';
 import { AgentProfile } from '../../../brand-api/src/db/schema/brand-interface';
+import { db as brandDB, aiAgentsRegistry } from '../../../brand-api/src/db/index.js';
+import { eq } from 'drizzle-orm';
 
 // Extended context to support agent registry
 export interface RegistryAwareContext extends OpenAIRequestContext {
@@ -81,42 +83,71 @@ export class AIRegistryService {
    */
   private async loadAgentRegistry(): Promise<void> {
     try {
-      // For now, mock data - will be replaced with actual DB query in FASE 2
-      const mockAgents: AgentProfile[] = [
-        {
-          id: 'tippy-sales-id',
-          agentId: 'tippy-sales',
-          name: 'Tippy - Sales Assistant',
-          description: 'Assistente vendite WindTre specializzato in supporto commerciale',
-          systemPrompt: 'Sei Tippy, assistente AI specializzato nel supporto vendite WindTre. Aiuti con informazioni su offerte, piani tariffari, supporto commerciale e costruzione pitch per clienti business. Rispondi sempre in italiano con tono amichevole e professionale.',
-          personality: {
-            tone: 'friendly',
-            style: 'professional',
-            expertise: 'sales',
-            brand: 'windtre'
-          },
-          moduleContext: 'sales',
-          baseConfiguration: {
+      console.log('🔄 Loading AI agents from brand_interface.ai_agents_registry...');
+      
+      // 🆕 REAL DATABASE QUERY: Fetch active agents from brand_interface schema
+      const activeAgents = await brandDB.select()
+        .from(aiAgentsRegistry)
+        .where(eq(aiAgentsRegistry.status, 'active'));
+
+      console.log(`📊 Found ${activeAgents.length} active agents in database`);
+
+      // Load real agents into registry
+      activeAgents.forEach(agent => {
+        // Convert database agent to AgentProfile format
+        const agentProfile: AgentProfile = {
+          id: agent.id,
+          agentId: agent.agentId,
+          name: agent.name,
+          description: agent.description || '',
+          systemPrompt: agent.systemPrompt,
+          personality: agent.personality || {},
+          moduleContext: agent.moduleContext,
+          baseConfiguration: agent.baseConfiguration || {
             default_model: 'gpt-4-turbo',
             temperature: 0.7,
-            max_tokens: 1000,
-            features: ['web_search', 'document_analysis']
+            max_tokens: 1000
           },
-          version: 1,
-          status: 'active'
-        }
-      ];
-
-      // Load mock agents into registry
-      mockAgents.forEach(agent => {
-        this.agentRegistry.set(agent.agentId, agent);
+          version: agent.version,
+          status: agent.status
+        };
+        
+        this.agentRegistry.set(agent.agentId, agentProfile);
+        console.log(`✅ Loaded agent: ${agent.agentId} (${agent.name})`);
       });
 
-      console.log(`✅ AI Registry loaded with ${mockAgents.length} agents`);
+      console.log(`✅ AI Registry loaded with ${activeAgents.length} agents from database`);
       
     } catch (error) {
-      console.error('Failed to load agent registry:', error);
-      // Continue with empty registry - fallback to legacy behavior
+      console.error('❌ Failed to load agent registry from database:', error);
+      console.log('🔄 Falling back to Tippy mock agent for backward compatibility...');
+      
+      // FALLBACK: Load only Tippy as backup to maintain backward compatibility
+      const fallbackAgent: AgentProfile = {
+        id: 'tippy-sales-id',
+        agentId: 'tippy-sales',
+        name: 'Tippy - Sales Assistant (Fallback)',
+        description: 'Assistente vendite WindTre specializzato in supporto commerciale',
+        systemPrompt: 'Sei Tippy, assistente AI specializzato nel supporto vendite WindTre. Aiuti con informazioni su offerte, piani tariffari, supporto commerciale e costruzione pitch per clienti business. Rispondi sempre in italiano con tono amichevole e professionale.',
+        personality: {
+          tone: 'friendly',
+          style: 'professional',
+          expertise: 'sales',
+          brand: 'windtre'
+        },
+        moduleContext: 'sales',
+        baseConfiguration: {
+          default_model: 'gpt-4-turbo',
+          temperature: 0.7,
+          max_tokens: 1000,
+          features: ['web_search', 'document_analysis']
+        },
+        version: 1,
+        status: 'active'
+      };
+      
+      this.agentRegistry.set(fallbackAgent.agentId, fallbackAgent);
+      console.log('✅ Fallback Tippy agent loaded for backward compatibility');
     }
   }
 
