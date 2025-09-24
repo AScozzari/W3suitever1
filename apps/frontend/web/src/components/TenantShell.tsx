@@ -37,6 +37,8 @@ interface TenantShellProps {
  * ✅ Sicurezza: nessun accesso senza tenant valido
  */
 export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
+  console.log(`[TENANT-SHELL] 🎯 Component rendered with slug: "${tenantSlug}"`);
+  
   const [tenantValid, setTenantValid] = useState<boolean | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [tenantData, setTenantData] = useState<any>(null);
@@ -196,79 +198,88 @@ export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
  * Tutte le route qui dentro hanno automaticamente tenant context
  */
 const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
+  const [location] = useLocation();
+  
+  // Extract the sub-path after /:tenant/
+  const segments = location.split('/').filter(Boolean);
+  const subPath = segments.slice(1).join('/'); // Remove tenant segment
+  const currentPath = subPath || 'dashboard'; // Default to dashboard
+  
+  console.log(`[TENANT-ROUTES] 🛣️ Location: ${location}, SubPath: ${subPath}, CurrentPath: ${currentPath}`);
+  
   return (
     <Switch>
       {/* Login route - no auth required */}
-      <Route path="/login">
+      <Route path={`/${tenantSlug}/login`}>
         <Login tenantCode={tenantSlug} />
       </Route>
       
       {/* All other routes require authentication */}
-      <Route path="/portale">
+      <Route path={`/${tenantSlug}/portale`}>
         <AuthenticatedRoute>
           <MyPortal />
         </AuthenticatedRoute>
       </Route>
       
-      <Route path="/hr-management">
+      <Route path={`/${tenantSlug}/hr-management`}>
         <AuthenticatedRoute>
           <HRManagementPage />
         </AuthenticatedRoute>
       </Route>
       
-      <Route path="/settings">
+      <Route path={`/${tenantSlug}/settings`}>
         <AuthenticatedRoute>
           <SettingsPage />
         </AuthenticatedRoute>
       </Route>
       
-      <Route path="/workflow-management">
+      <Route path={`/${tenantSlug}/workflow-management`}>
         <AuthenticatedRoute>
           <WorkflowManagementPage />
         </AuthenticatedRoute>
       </Route>
       
-      <Route path="/demo-fields">
+      <Route path={`/${tenantSlug}/demo-fields`}>
         <AuthenticatedRoute>
           <StandardFieldsDemo />
         </AuthenticatedRoute>
       </Route>
       
-      <Route path="/tenant-verification">
+      <Route path={`/${tenantSlug}/tenant-verification`}>
         <AuthenticatedRoute>
           <TenantVerificationTest />
         </AuthenticatedRoute>
       </Route>
       
-      <Route path="/notification-center">
+      <Route path={`/${tenantSlug}/notification-center`}>
         <AuthenticatedRoute>
           <NotificationCenter />
         </AuthenticatedRoute>
       </Route>
       
-      <Route path="/dashboard">
+      <Route path={`/${tenantSlug}/dashboard`}>
         <AuthenticatedRoute>
           <DashboardPage />
         </AuthenticatedRoute>
       </Route>
       
       {/* Legacy redirects */}
-      <Route path="/calendar">
+      <Route path={`/${tenantSlug}/calendar`}>
         <Redirect to={`/${tenantSlug}/portale`} replace />
       </Route>
-      <Route path="/time-tracking">
+      <Route path={`/${tenantSlug}/time-tracking`}>
         <Redirect to={`/${tenantSlug}/portale`} replace />
       </Route>
-      <Route path="/leave-management">
+      <Route path={`/${tenantSlug}/leave-management`}>
         <Redirect to={`/${tenantSlug}/portale`} replace />
       </Route>
-      <Route path="/shift-planning">
+      <Route path={`/${tenantSlug}/shift-planning`}>
         <Redirect to={`/${tenantSlug}/hr-management`} replace />
       </Route>
-      <Route path="/documents">
+      <Route path={`/${tenantSlug}/documents`}>
         <Redirect to={`/${tenantSlug}/portale`} replace />
       </Route>
-      <Route path="/expense-management">
+      <Route path={`/${tenantSlug}/expense-management`}>
         <Redirect to={`/${tenantSlug}/portale`} replace />
       </Route>
       <Route path="/employee/dashboard">
