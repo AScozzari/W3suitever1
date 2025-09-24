@@ -11343,6 +11343,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cross-Tenant Knowledge Endpoint (for Brand Interface)
+  app.get('/api/ai/agents/:agentId/cross-tenant-knowledge', async (req: any, res) => {
+    try {
+      const { agentId } = req.params;
+      const { includeDocuments = true, includeUrls = true, limit = 50 } = req.query;
+      
+      // Service-to-service authentication (Brand Interface calling W3 Backend)
+      const authHeader = req.headers.authorization;
+      const serviceHeader = req.headers['x-service'];
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ') || serviceHeader !== 'brand-interface') {
+        return res.status(401).json({ error: 'Service authentication required' });
+      }
+      
+      if (!agentId) {
+        return res.status(400).json({ error: 'Agent ID richiesto' });
+      }
+      
+      console.log(`[CROSS-TENANT-KNOWLEDGE] 🧠 Fetching knowledge for agent ${agentId}`);
+      
+      // Get all training sessions for this agent across all tenants
+      const allSessions = await storage.getAITrainingSessions(null, { limit: 1000 });
+      
+      // Filter sessions for this specific agent
+      const agentSessions = allSessions.filter(session => {
+        return session.metadata?.agentId === agentId || 
+               session.originalQuery?.includes(`[Agent:${agentId}]`) ||
+               session.sessionType === 'agent_specific';
+      });
+      
+      // Get vector embeddings for this agent
+      const vectorEmbeddings = await storage.getVectorCollections(null);
+      const agentEmbeddings = vectorEmbeddings.filter(embedding => 
+        embedding.metadata?.agentId === agentId
+      );
+      
+      // Build knowledge items response
+      const items = [];
+      
+      // Add documents from training sessions
+      if (includeDocuments) {
+        const docSessions = agentSessions.filter(s => 
+          s.sessionType === 'media_upload' || s.sessionType === 'pdf_upload'
+        );
+        
+        for (const session of docSessions) {
+          if (session.mediaUrls && session.mediaUrls.length > 0) {
+            items.push({
+              id: session.id,
+              agentId,
+              sourceType: 'pdf_document',
+              origin: 'tenant', // These are tenant-specific uploads
+              filename: session.mediaUrls[0],
+              contentPreview: `Documento processato: ${session.mediaUrls[0]}`,
+              createdAt: session.completedAt || session.updatedAt,
+              tenantId: session.tenantId,
+              embeddingsCount: session.embeddingsCreated || 0
+            });
+          }
+        }
+      }
+      
+      // Add URLs from training sessions
+      if (includeUrls) {
+        const urlSessions = agentSessions.filter(s => 
+          s.sessionType === 'url_ingestion' && s.sourceUrl
+        );
+        
+        for (const session of urlSessions) {
+          items.push({
+            id: session.id,
+            agentId,
+            sourceType: 'url_content',
+            origin: 'tenant', // These are tenant-specific URLs
+            sourceUrl: session.sourceUrl,
+            contentPreview: session.originalQuery || `URL processato: ${session.sourceUrl}`,
+            createdAt: session.completedAt || session.updatedAt,
+            tenantId: session.tenantId,
+            embeddingsCount: session.embeddingsCreated || 0
+          });
+        }
+      }
+      
+      // Calculate stats
+      const stats = {
+        documents: items.filter(i => i.sourceType === 'pdf_document').length,
+        urls: items.filter(i => i.sourceType === 'url_content').length,
+        totalEmbeddings: agentEmbeddings.length,
+        brandLevel: 0, // Brand-managed knowledge (none in W3 Backend)
+        tenantLevel: items.length // All items are tenant-specific
+      };
+      
+      // Sort by creation date (newest first) and apply limit
+      const sortedItems = items
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, parseInt(limit as string) || 50);
+      
+      console.log(`[CROSS-TENANT-KNOWLEDGE] ✅ Found ${sortedItems.length} knowledge items for agent ${agentId} (${stats.documents} docs, ${stats.urls} URLs, ${stats.totalEmbeddings} embeddings)`);
+      
+      res.json({
+        success: true,
+        items: sortedItems,
+        stats,
+        metadata: {
+          agentId,
+          totalItems: items.length,
+          returnedItems: sortedItems.length,
+          includeDocuments,
+          includeUrls
+        }
+      });
+    } catch (error) {
+      console.error('[CROSS-TENANT-KNOWLEDGE] ❌ Error:', error);
+      res.status(500).json({ 
+        error: 'Errore recupero knowledge cross-tenant',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
   // Mount the hierarchy system router with authentication
   app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
