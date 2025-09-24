@@ -5957,29 +5957,28 @@ export default function SettingsPage() {
 
       console.log(`💾 ${isEdit ? 'Updating' : 'Creating'} legal entity:`, legalEntityData);
 
-      // Chiamata API per creare o aggiornare la ragione sociale
-      const response = await fetch(isEdit ? `/api/legal-entities/${legalEntityModal.data.id}` : '/api/legal-entities', {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': currentTenantId
-        },
-        body: JSON.stringify(legalEntityData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEdit ? 'update' : 'create'} legal entity: ${response.statusText}`);
+      let result;
+      if (isEdit) {
+        // Update existing legal entity using ApiService (with proper auth headers)
+        result = await apiService.updateLegalEntity(legalEntityModal.data.id, legalEntityData);
+      } else {
+        // Create new legal entity using ApiService
+        result = await apiService.createLegalEntity(legalEntityData);
       }
-
-      const legalEntityResult = await response.json();
-      console.log(`✅ Legal entity ${isEdit ? 'updated' : 'created'}:`, legalEntityResult);
-
-      // Refresh the list dopo l'operazione
-      await refetchLegalEntities();
       
-      setLegalEntityModal({ open: false, data: null });
-      
-      alert(`Ragione sociale ${isEdit ? 'modificata' : 'salvata'} con successo!`);
+      if (result.success) {
+        console.log(`✅ Legal entity ${isEdit ? 'updated' : 'created'}:`, result.data);
+        
+        // Refresh the list dopo l'operazione
+        await refetchLegalEntities();
+        
+        setLegalEntityModal({ open: false, data: null });
+        
+        alert(`Ragione sociale ${isEdit ? 'modificata' : 'salvata'} con successo!`);
+      } else {
+        console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} legal entity:`, result.error);
+        alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} della ragione sociale: ${result.error}. Riprova.`);
+      }
 
     } catch (error) {
       console.error(`❌ Error ${legalEntityModal.data ? 'updating' : 'creating'} legal entity:`, error);
