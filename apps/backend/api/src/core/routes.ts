@@ -11006,6 +11006,248 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Process URL for Agent-Specific Training
+  app.post('/api/ai/agents/:agentId/training/url', ...authWithRBAC, requirePermission('ai.training.url'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const userId = req.user.id;
+      const { agentId } = req.params;
+      const { url, extractContent = true } = req.body;
+      
+      console.log('[AGENT-URL-PROCESS] 📡 Processing URL for agent:', { tenantId, userId, agentId, url, extractContent });
+      
+      if (!agentId) {
+        return res.status(400).json({ error: 'Agent ID richiesto' });
+      }
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL richiesto' });
+      }
+      
+      const settings = await storage.getAISettings(tenantId);
+      if (!settings || !settings.isActive) {
+        return res.status(403).json({ error: 'AI non configurata o non attiva' });
+      }
+      
+      const result = await openaiService.scrapeURL(url, settings, {
+        tenantId,
+        userId,
+        moduleContext: 'agent_specific',
+        businessEntityId: agentId
+      });
+      
+      // Generate embeddings for scraped content if requested
+      if (extractContent && result.content) {
+        const embeddingResult = await openaiService.generateEmbedding(
+          result.content, 
+          settings,
+          {
+            tenantId,
+            userId,
+            moduleContext: 'agent_specific',
+            businessEntityId: agentId
+          }
+        );
+        
+        if (embeddingResult.success && embeddingResult.embedding) {
+          // Store the embedding with agent-specific metadata
+          await storage.createVectorEmbedding({
+            tenantId,
+            contentId: uuidv4(),
+            contentType: 'url',
+            content: result.content.substring(0, 5000), // Store first 5000 chars
+            embedding: embeddingResult.embedding,
+            metadata: {
+              url: url,
+              title: result.metadata.title,
+              scrapedAt: new Date(),
+              agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
+              agentSpecific: true
+            },
+            departmentRestriction: null,
+            accessLevel: 'organization'
+          });
+          
+          // Create agent-specific training session record
+          await storage.createAITrainingSession({
+            tenantId,
+            userId,
+            sessionType: 'url_ingestion',
+            sessionStatus: 'completed',
+            sourceUrl: url,
+            originalQuery: `[Agent:${agentId}] URL Training: ${result.metadata.title || url}`,
+            totalChunks: 1,
+            processedChunks: 1,
+            failedChunks: 0,
+            embeddingsCreated: 1,
+            tokenCount: embeddingResult.usage?.total_tokens || 0,
+            estimatedCost: embeddingResult.cost || 0,
+            completedAt: new Date(),
+            updatedAt: new Date(),
+            metadata: {
+              agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
+              agentSpecific: true,
+              url: url,
+              title: result.metadata.title
+            }
+          });
+          
+          console.log(`[AGENT-URL-PROCESS] ✅ Created agent-specific training session for agent ${agentId}, URL:`, url);
+        }
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          content: result.content,
+          metadata: {
+            ...result.metadata,
+            agentId: agentId,
+            agentSpecific: true
+          }
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, `processamento URL per agent ${req.params.agentId}`);
+    }
+  });
+
+  // Upload and Process Media for Agent-Specific Training
+  app.post('/api/ai/agents/:agentId/training/media', 
+    ...authWithRBAC, 
+    requirePermission('ai.training.media'),
+    trainingUpload.single('file'),
+    async (req: any, res) => {
+      try {
+        const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+        const userId = req.user.id;
+        const { agentId } = req.params;
+        const file = req.file;
+        
+        console.log(`[AGENT-MEDIA-PROCESS] 📎 Processing media for agent:`, { tenantId, userId, agentId, fileName: file?.originalname });
+        
+        if (!agentId) {
+          return res.status(400).json({ error: 'Agent ID richiesto' });
+        }
+        
+        if (!file) {
+          return res.status(400).json({ error: 'File richiesto' });
+        }
+        
+        const settings = await storage.getAISettings(tenantId);
+        if (!settings || !settings.isActive) {
+          return res.status(403).json({ error: 'AI non configurata o non attiva' });
+        }
+        
+        // Determine media type from mimetype
+        let mediaType: 'pdf' | 'image' | 'audio' | 'video';
+        if (file.mimetype === 'application/pdf') {
+          mediaType = 'pdf';
+        } else if (file.mimetype.startsWith('image/')) {
+          mediaType = 'image';
+        } else if (file.mimetype.startsWith('audio/')) {
+          mediaType = 'audio';
+        } else if (file.mimetype.startsWith('video/')) {
+          mediaType = 'video';
+        } else {
+          return res.status(400).json({ error: 'Tipo di file non supportato' });
+        }
+        
+        // Create temporary file
+        const tmpPath = `/tmp/${uuidv4()}_${file.originalname}`;
+        require('fs').writeFileSync(tmpPath, file.buffer);
+        
+        // Process media with agent-specific context
+        const processingResult = await mediaProcessor.processMedia(
+          tmpPath,
+          mediaType,
+          settings,
+          {
+            tenantId,
+            userId,
+            moduleContext: 'agent_specific',
+            businessEntityId: agentId
+          }
+        );
+        
+        // Clean up temp file
+        require('fs').unlinkSync(tmpPath);
+        
+        if (!processingResult.success) {
+          return res.status(500).json({ 
+            error: 'Errore durante il processamento del media',
+            details: processingResult.error 
+          });
+        }
+        
+        // Store chunks with embeddings for agent-specific training
+        const storedChunks = [];
+        for (const chunk of processingResult.chunks) {
+          if (chunk.embedding) {
+            const stored = await storage.createVectorEmbedding({
+              tenantId,
+              contentId: chunk.id,
+              contentType: mediaType,
+              content: chunk.content.substring(0, 5000),
+              embedding: chunk.embedding,
+              metadata: {
+                ...chunk.metadata,
+                originalFile: file.originalname,
+                mimeType: file.mimetype,
+                fileSize: file.size,
+                agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
+                agentSpecific: true
+              },
+              mediaType: mediaType,
+              departmentRestriction: null,
+              accessLevel: 'organization'
+            });
+            storedChunks.push(stored.id);
+          }
+        }
+        
+        // Create agent-specific training session record
+        const session = await storage.createAITrainingSession({
+          tenantId,
+          userId,
+          sessionType: 'media_upload',
+          sessionStatus: 'completed',
+          originalQuery: `[Agent:${agentId}] Media upload: ${file.originalname}`,
+          mediaUrls: [file.originalname],
+          mediaType: mediaType,
+          embeddingsCreated: storedChunks.length,
+          processingTimeMs: processingResult.metadata.processingTimeMs,
+          metadata: {
+            chunks: storedChunks,
+            fileInfo: {
+              name: file.originalname,
+              size: file.size,
+              type: file.mimetype
+            },
+            processingResult: processingResult.metadata,
+            agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
+            agentSpecific: true
+          }
+        });
+
+        console.log(`[AGENT-MEDIA-PROCESS] ✅ Created agent-specific training session for agent ${agentId}, file:`, file.originalname);
+        
+        res.json({
+          success: true,
+          data: {
+            sessionId: session.id,
+            chunksProcessed: storedChunks.length,
+            mediaType: mediaType,
+            fileName: file.originalname,
+            agentId: agentId
+          }
+        });
+      } catch (error) {
+        handleApiError(error, res, `processamento media per agent ${req.params.agentId}`);
+      }
+    }
+  );
+
   // ==================== AGENT-SPECIFIC TRAINING ENDPOINTS ====================
   
   // Get Agent-Specific Training Sessions
