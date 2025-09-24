@@ -54,25 +54,50 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Only fetch user and tenant data if we have OAuth2 tokens
-  const hasToken = typeof window !== 'undefined' && localStorage.getItem('oauth2_tokens');
+  // 🔧 Enhanced TenantProvider - Works with TenantShell
+  // TenantShell handles tenant resolution, this provider manages session/user data
+  
+  // Always try to fetch session data in development mode
+  const isDevelopment = import.meta.env.VITE_AUTH_MODE === 'development';
+  const hasToken = typeof window !== 'undefined' && 
+    (localStorage.getItem('oauth2_tokens') || isDevelopment);
   
   const { data: sessionData, isLoading, error } = useQuery<SessionData>({
     queryKey: ['/api/auth/session'],
-    enabled: !!hasToken, // Only run query if we have a token
-    retry: false,
+    enabled: !!hasToken,
+    retry: 1,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false
   });
 
   useEffect(() => {
-    if (sessionData && sessionData.user) {
-      // Session includes user with tenant info
-      setCurrentUser(sessionData.user);
-      setCurrentTenant(sessionData.user.tenant);
+    // Get tenant info from localStorage (set by TenantShell)
+    const storedTenantId = localStorage.getItem('currentTenantId');
+    const storedTenantName = localStorage.getItem('currentTenant');
+    
+    if (storedTenantId && storedTenantName) {
+      // Create tenant object from stored data
+      const tenantFromStorage: Tenant = {
+        id: storedTenantId,
+        name: storedTenantName.charAt(0).toUpperCase() + storedTenantName.slice(1),
+        code: storedTenantName,
+        plan: 'enterprise',
+        isActive: true
+      };
       
-      // Set default tenant ID for all API calls
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('currentTenantId', sessionData.user.tenantId);
+      setCurrentTenant(tenantFromStorage);
+      console.log('[TENANT-PROVIDER] 📋 Tenant set from storage:', tenantFromStorage);
+    }
+    
+    if (sessionData && sessionData.user) {
+      // Update user data from session
+      setCurrentUser(sessionData.user);
+      console.log('[TENANT-PROVIDER] 👤 User session loaded:', sessionData.user.email);
+      
+      // If session includes tenant info, update it
+      if (sessionData.user.tenant) {
+        setCurrentTenant(sessionData.user.tenant);
+        console.log('[TENANT-PROVIDER] 🏢 Tenant updated from session:', sessionData.user.tenant);
       }
     }
   }, [sessionData]);
