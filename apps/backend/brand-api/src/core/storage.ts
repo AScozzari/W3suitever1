@@ -189,15 +189,25 @@ class BrandDrizzleStorage implements IBrandStorage {
   // Helper function for secure W3 backend calls (same pattern as routes.ts)
   private async secureW3BackendCall(endpoint: string, options: any = {}) {
     try {
+      // Use development mode headers for W3 Backend authentication
+      const headers = process.env.NODE_ENV === 'development' ? {
+        'Content-Type': 'application/json',
+        'X-Auth-Session': 'authenticated',
+        'X-Demo-User': 'demo-user',
+        'X-Service': 'brand-interface',
+        'X-Service-Version': '1.0.0',
+        ...options.headers
+      } : {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`,
+        'X-Service': 'brand-interface',
+        'X-Service-Version': '1.0.0',
+        ...options.headers
+      };
+
       const response = await fetch(`http://localhost:3004${endpoint}`, {
         method: options.method || 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.W3_SERVICE_TOKEN || 'dev-service-token'}`,
-          'X-Service': 'brand-interface',
-          'X-Service-Version': '1.0.0',
-          ...options.headers
-        },
+        headers,
         body: options.body ? JSON.stringify(options.body) : undefined
       });
 
