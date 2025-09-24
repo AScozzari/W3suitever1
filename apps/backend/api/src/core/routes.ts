@@ -11006,6 +11006,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== AGENT-SPECIFIC TRAINING ENDPOINTS ====================
+  
+  // Get Agent-Specific Training Sessions
+  app.get('/api/ai/agents/:agentId/training/sessions', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { agentId } = req.params;
+      
+      if (!agentId) {
+        return res.status(400).json({ error: 'Agent ID richiesto' });
+      }
+      
+      // Get all training sessions and filter by agent
+      const allSessions = await storage.getAITrainingSessions(tenantId, { limit: 1000 });
+      
+      // Filter sessions for this specific agent
+      const agentSessions = allSessions.filter(session => {
+        // Check if this session was created for this specific agent
+        return session.metadata?.agentId === agentId || 
+               session.originalQuery?.includes(`agent:${agentId}`) ||
+               session.sessionType === 'agent_specific';
+      });
+      
+      console.log(`[AGENT-TRAINING] Found ${agentSessions.length} training sessions for agent ${agentId} in tenant ${tenantId}`);
+      
+      res.json({ 
+        success: true, 
+        data: agentSessions,
+        metadata: {
+          total: agentSessions.length,
+          agentId,
+          tenantId
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero sessioni training agent-specific');
+    }
+  });
+  
+  // Get Agent-Specific Training Statistics
+  app.get('/api/ai/agents/:agentId/training/stats', ...authWithRBAC, requirePermission('ai.training.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      const { agentId } = req.params;
+      
+      if (!agentId) {
+        return res.status(400).json({ error: 'Agent ID richiesto' });
+      }
+      
+      // Get all training sessions and filter by agent
+      const allSessions = await storage.getAITrainingSessions(tenantId, { limit: 1000 });
+      
+      // Filter sessions for this specific agent
+      const agentSessions = allSessions.filter(session => {
+        return session.metadata?.agentId === agentId || 
+               session.originalQuery?.includes(`agent:${agentId}`) ||
+               session.sessionType === 'agent_specific';
+      });
+      
+      // Calculate agent-specific statistics
+      const stats = {
+        totalSessions: agentSessions.length,
+        documentsProcessed: agentSessions.filter(s => s.sessionType === 'url_ingestion' || s.sessionType === 'media_upload').length,
+        embeddingsCreated: agentSessions.reduce((sum, s) => sum + (s.embeddingsCreated || 0), 0),
+        validationsCompleted: agentSessions.filter(s => s.sessionStatus === 'completed').length,
+        byType: {} as Record<string, number>,
+        byStatus: {} as Record<string, number>,
+        totalUrls: agentSessions.filter(s => s.sessionType === 'url_ingestion').length,
+        totalMediaUploads: agentSessions.filter(s => s.sessionType === 'media_upload').length
+      };
+      
+      // Count by type and status
+      for (const session of agentSessions) {
+        const type = session.sessionType || 'unknown';
+        const status = session.sessionStatus || 'unknown';
+        stats.byType[type] = (stats.byType[type] || 0) + 1;
+        stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
+      }
+      
+      console.log(`[AGENT-TRAINING] Calculated stats for agent ${agentId}: ${stats.documentsProcessed} docs, ${stats.embeddingsCreated} embeddings`);
+      
+      res.json({ 
+        success: true, 
+        data: stats,
+        metadata: {
+          agentId,
+          tenantId,
+          calculatedAt: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'recupero statistiche training agent-specific');
+    }
+  });
+
   // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
   // Mount the hierarchy system router with authentication
   app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
