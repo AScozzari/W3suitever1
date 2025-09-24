@@ -139,35 +139,26 @@ export default function Management() {
   const [activeTab, setActiveTab] = useState('structure');
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
-  // Filters state for Struttura tab with proper serialization support
+  // Filters state for Organizations Management (simplified)
   const [filters, setFilters] = useState({
-    areaCommerciale: '',
-    canale: '',
-    citta: '',
-    provincia: '',
     stato: 'all' as 'all' | 'active' | 'inactive' | 'pending',
     search: '',
     page: 1,
     limit: 25
   });
 
-  // Bulk operations state
-  const [selectedStores, setSelectedStores] = useState<string[]>([]);
-  const [bulkOperation, setBulkOperation] = useState('');
-  const [bulkValues, setBulkValues] = useState<any>({});
+  // Organizations management state
+  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
   
   // Modals state
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
   
-  // Organization form state
+  // Organization form state (for creating new organizations)
   const [organizationForm, setOrganizationForm] = useState({
     name: '',
-    brandAdminEmail: '',
-    city: '',
-    province: '',
-    country: 'IT',
-    phone: '',
-    contactEmail: ''
+    slug: '',
+    status: 'active' as 'active' | 'inactive' | 'pending',
+    notes: ''
   });
 
   // Audit filters
@@ -178,19 +169,14 @@ export default function Management() {
     dateTo: ''
   });
 
-  // Types
-  interface StructureStatsResponse {
+  // Types for Organizations Management
+  interface OrganizationsStatsResponse {
     success: boolean;
     data: {
-      totalStores: number;
-      activeStores: number;
-      storesByChannel: Array<{
-        canale: string;
-        count: number;
-        percentage: number;
-      }>;
-      storesByArea: Array<{
-        areaCommerciale: string;
+      totalOrganizations: number;
+      activeOrganizations: number;
+      organizationsByStatus: Array<{
+        status: string;
         count: number;
         percentage: number;
       }>;
@@ -203,22 +189,19 @@ export default function Management() {
     timestamp?: string;
   }
 
-  interface StoresListResponse {
+  interface OrganizationsListResponse {
     success: boolean;
     data: {
-      stores: Array<{
+      organizations: Array<{
         id: string;
-        codigo: string;
-        ragioneSocialeName: string;
-        nome: string;
-        via: string;
-        citta: string;
-        provincia: string;
-        stato: string;
-        canale: string;
-        areaCommerciale: string;
+        name: string;
+        slug: string;
+        status: string;
+        notes?: string;
+        createdAt: string;
+        updatedAt?: string;
       }>;
-      pagination: {
+      pagination?: {
         total: number;
         page: number;
         limit: number;
@@ -260,30 +243,56 @@ export default function Management() {
     return params.toString();
   }, [filters, currentTenant, isCrossTenant]);
 
-  // 1. REAL-TIME ANALYTICS WITH SSE + FALLBACK POLLING
-  const sseStatsUrl = `/brand-api/structure/stats/stream?${filterParams}`;
-  const fallbackStatsUrl = `/brand-api/structure/stats?${filterParams}`;
-  
-  const { 
-    data: structureStats, 
-    isLoading: statsLoading, 
-    isConnected: statsConnected,
-    error: statsError,
-    lastUpdate: statsLastUpdate
-  } = useSSE<StructureStatsResponse>(sseStatsUrl, fallbackStatsUrl, {
-    enabled: activeTab === 'structure' && isAuthenticated
-  });
+  // 1. ORGANIZATIONS DATA FETCHING (Management Center Transformation)
+  const organizationsParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filters.search) params.append('search', filters.search);
+    if (filters.stato && filters.stato !== 'all') params.append('status', filters.stato);
+    return params.toString();
+  }, [filters.search, filters.stato]);
 
-  // FIXED: Structure stores with proper queryFn to handle filter serialization
-  const { data: storesData, isLoading: storesLoading } = useQuery<StoresListResponse>({
-    queryKey: ['/brand-api/structure/stores', filterParams],
+  // Fetch organizations list from w3suite.tenants  
+  const { data: organizationsData, isLoading: organizationsLoading } = useQuery<OrganizationsListResponse>({
+    queryKey: ['/brand-api/organizations', organizationsParams],
     queryFn: async () => {
-      const response = await fetch(`/brand-api/structure/stores?${filterParams}`);
+      const response = await fetch(`/brand-api/organizations?${organizationsParams}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     },
-    enabled: activeTab === 'structure' && isAuthenticated
+    enabled: activeTab === 'structure' && isAuthenticated,
+    refetchInterval: 30000
   });
+
+  // Calculate stats from organizations data
+  const organizationsStats = useMemo(() => {
+    if (!organizationsData?.organizations) return null;
+    
+    const orgs = organizationsData.organizations;
+    const totalOrgs = orgs.length;
+    const activeOrgs = orgs.filter(org => org.status === 'active').length;
+    const statusCounts = orgs.reduce((acc, org) => {
+      acc[org.status] = (acc[org.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      success: true,
+      data: {
+        totalOrganizations: totalOrgs,
+        activeOrganizations: activeOrgs,
+        organizationsByStatus: Object.entries(statusCounts).map(([status, count]) => ({
+          status,
+          count,
+          percentage: Math.round((count / totalOrgs) * 100)
+        })),
+        growth: {
+          thisMonth: totalOrgs,
+          lastMonth: Math.max(0, totalOrgs - 2), // Mock growth calculation
+          percentage: 5.2 // Mock growth percentage
+        }
+      }
+    };
+  }, [organizationsData]);
 
   // Fetch audit logs
   const { data: auditData, isLoading: auditLoading } = useQuery({
@@ -305,10 +314,10 @@ export default function Management() {
     enabled: activeTab === 'audit' && isAuthenticated
   });
 
-  // 4. ORGANIZATION CREATION MUTATION
+  // 4. ORGANIZATION CREATION MUTATION (New W3 Suite Tenants)
   const createOrganizationMutation = useMutation({
-    mutationFn: async (data: typeof organizationForm) => {
-      return apiRequest('/brand-api/tenants', {
+    mutationFn: async (data: { name: string; slug: string; status: string; notes?: string }) => {
+      return apiRequest('/brand-api/organizations', {
         method: 'POST',
         body: JSON.stringify(data)
       });
@@ -318,40 +327,28 @@ export default function Management() {
       setShowOrganizationModal(false);
       setOrganizationForm({
         name: '',
-        brandAdminEmail: '',
-        city: '',
-        province: '',
-        country: 'IT',
-        phone: '',
-        contactEmail: ''
+        slug: '',
+        status: 'active',
+        notes: ''
       });
-      alert('Organizzazione creata con successo!');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating organization:', error);
-      alert('Errore nella creazione dell\'organizzazione');
+      // TODO: Show error toast notification
     }
   });
 
-  // 2. BULK OPERATIONS MUTATION
-  const bulkOperationMutation = useMutation({
-    mutationFn: async (operation: { operation: string; storeIds: string[]; values?: any; reason?: string }) => {
-      return apiRequest('/brand-api/structure/bulk', {
-        method: 'POST',
-        body: JSON.stringify(operation)
-      });
+  // 5. SLUG VALIDATION QUERY
+  const { data: slugValidation } = useQuery({
+    queryKey: ['/brand-api/organizations/validate-slug', organizationForm.slug],
+    queryFn: async () => {
+      if (!organizationForm.slug || organizationForm.slug.length < 2) return null;
+      const response = await fetch(`/brand-api/organizations/validate-slug/${organizationForm.slug}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
     },
-    onSuccess: (result: BulkOperationResult) => {
-      queryClient.invalidateQueries({ queryKey: ['/brand-api/structure/stores'] });
-      setSelectedStores([]);
-      setBulkOperation('');
-      setBulkValues({});
-      alert(`Operazione completata: ${result.processedCount} elaborati, ${result.errorCount} errori`);
-    },
-    onError: (error) => {
-      console.error('Error in bulk operation:', error);
-      alert('Errore nell\'operazione bulk');
-    }
+    enabled: !!organizationForm.slug && organizationForm.slug.length >= 2,
+    staleTime: 1000 // Cache for 1 second to avoid excessive requests
   });
 
   if (!isAuthenticated) {
@@ -1229,7 +1226,7 @@ export default function Management() {
                 letterSpacing: '0.5px',
                 marginBottom: '12px'
               }}>
-                PDV Totali
+                Organizzazioni Totali
               </p>
               <div style={{
                 fontSize: '32px',
@@ -1237,10 +1234,10 @@ export default function Management() {
                 color: COLORS.neutral.dark,
                 marginBottom: '4px'
               }}>
-                {structureStats?.data?.totalStores ? (
-                  <AnimatedCounter value={structureStats.data.totalStores} />
+                {organizationsStats?.data?.totalOrganizations ? (
+                  <AnimatedCounter value={organizationsStats.data.totalOrganizations} />
                 ) : (
-                  statsLoading ? '...' : <AnimatedCounter value={75} />
+                  organizationsLoading ? '...' : <AnimatedCounter value={0} />
                 )}
               </div>
               <p style={{
@@ -1252,7 +1249,7 @@ export default function Management() {
                 gap: '4px'
               }}>
                 <TrendingUp size={14} />
-                +{structureStats?.data?.growth?.percentage || '7.1'}% questo mese
+                +{organizationsStats?.data?.growth?.percentage || '5.2'}% questo mese
               </p>
             </div>
             <div style={{
@@ -1298,7 +1295,7 @@ export default function Management() {
                 letterSpacing: '0.5px',
                 marginBottom: '12px'
               }}>
-                PDV Attivi
+                Organizzazioni Attive
               </p>
               <div style={{
                 fontSize: '32px',
@@ -1306,10 +1303,10 @@ export default function Management() {
                 color: COLORS.neutral.dark,
                 marginBottom: '4px'
               }}>
-                {structureStats?.data?.activeStores ? (
-                  <AnimatedCounter value={structureStats.data.activeStores} />
+                {organizationsStats?.data?.activeOrganizations ? (
+                  <AnimatedCounter value={organizationsStats.data.activeOrganizations} />
                 ) : (
-                  statsLoading ? '...' : <AnimatedCounter value={70} />
+                  organizationsLoading ? '...' : <AnimatedCounter value={0} />
                 )}
               </div>
               <p style={{
@@ -1439,7 +1436,7 @@ export default function Management() {
         }}>
           <input
             type="text"
-            placeholder="Cerca stores..."
+            placeholder="Cerca organizzazioni..."
             value={filters.search}
             onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
             style={{
@@ -1453,30 +1450,8 @@ export default function Management() {
             }}
             onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
             onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-            data-testid="input-search-stores"
+            data-testid="input-search-organizations"
           />
-          
-          <select
-            value={filters.canale}
-            onChange={(e) => setFilters(prev => ({ ...prev, canale: e.target.value, page: 1 }))}
-            style={{
-              padding: '12px',
-              border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
-              background: COLORS.neutral.white,
-              fontSize: '14px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              outline: 'none'
-            }}
-            onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
-            onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-            data-testid="select-channel-filter"
-          >
-            <option value="">Tutti i canali</option>
-            <option value="Retail">Retail</option>
-            <option value="Franchise">Franchise</option>
-          </select>
           
           <select
             value={filters.stato}
@@ -1499,30 +1474,12 @@ export default function Management() {
             <option value="active">Attivi</option>
             <option value="inactive">Inattivi</option>
             <option value="pending">In attesa</option>
+            <option value="suspended">Sospesi</option>
           </select>
-          
-          <input
-            type="text"
-            placeholder="Area commerciale"
-            value={filters.areaCommerciale}
-            onChange={(e) => setFilters(prev => ({ ...prev, areaCommerciale: e.target.value, page: 1 }))}
-            style={{
-              padding: '12px',
-              border: `1px solid ${COLORS.neutral.lighter}`,
-              borderRadius: '8px',
-              background: COLORS.neutral.white,
-              fontSize: '14px',
-              transition: 'all 0.2s ease',
-              outline: 'none'
-            }}
-            onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
-            onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-            data-testid="input-area-filter"
-          />
         </div>
       </div>
 
-      {/* Stores Table with bulk selection */}
+      {/* Organizations Table */}
       <div style={{
         ...cardStyle,
         padding: '24px'
@@ -1538,45 +1495,36 @@ export default function Management() {
             fontWeight: 700,
             color: COLORS.neutral.dark
           }}>
-            Stores ({storesData?.data?.pagination?.total || 0})
+            Organizzazioni ({organizationsData?.organizations?.length || 0})
           </h3>
           
-          {storesData?.data?.stores && storesData.data.stores.length > 0 && (
-            <div style={{
+          <button
+            onClick={() => setShowOrganizationModal(true)}
+            style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
-            }}>
-              <button
-                onClick={toggleSelectAll}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  background: 'none',
-                  border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  color: COLORS.neutral.dark,
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = COLORS.neutral.lightest}
-                onMouseOut={(e) => e.currentTarget.style.background = 'none'}
-                data-testid="button-select-all"
-              >
-                {selectedStores.length === storesData.data.stores.length ? 
-                  <CheckSquare size={16} /> : 
-                  <Square size={16} />
-                }
-                Seleziona tutti
-              </button>
-            </div>
-          )}
+              gap: '8px',
+              padding: '12px 16px',
+              background: COLORS.gradients.orange,
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'white',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 8px rgba(255, 105, 0, 0.2)'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            data-testid="button-new-organization"
+          >
+            <Plus size={16} />
+            Nuova Organizzazione
+          </button>
         </div>
         
-        {storesLoading ? (
+        {organizationsLoading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>
             <Loader2 size={32} className="animate-spin" style={{ color: COLORS.primary.orange }} />
           </div>

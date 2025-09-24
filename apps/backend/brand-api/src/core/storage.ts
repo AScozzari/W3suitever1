@@ -2,6 +2,9 @@ import {
   db, brandTenants, brandUsers, brandRoles, brandAuditLogs, aiAgentsRegistry,
   aiKnowledgeSources, aiCrossTenantEmbeddings, aiKnowledgeBases
 } from "../db/index.js";
+// Import W3Suite database connection and tenants table for organizations management
+import { db as w3db } from "../../../api/src/core/db.js";
+import { tenants as w3Tenants, insertTenantSchema, type Tenant, type InsertTenant } from "../../../api/src/db/schema/w3suite.js";
 import { eq, and, sql, inArray, like, or, count, desc } from "drizzle-orm";
 import type { 
   BrandTenant, NewBrandTenant, BrandUser, NewBrandUser, BrandRole, NewBrandRole, 
@@ -44,6 +47,15 @@ export interface IBrandStorage {
   getStructureStats(tenantId?: string): Promise<StructureStatsDTO>;
   createOrganization(data: CreateOrganizationDTO): Promise<BrandTenant>;
   performBulkOperation(operation: BulkOperationDTO): Promise<BulkOperationResultDTO>;
+  
+  // ==================== ORGANIZATIONS MANAGEMENT (W3 Suite Tenants) ====================
+  
+  // Organizations operations using w3suite.tenants
+  getOrganizations(): Promise<Tenant[]>;
+  getOrganization(id: string): Promise<Tenant | null>;
+  createOrganizationRecord(data: InsertTenant): Promise<Tenant>;
+  updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null>;
+  validateSlug(slug: string): Promise<boolean>;
   
   // Export operations
   exportStoresCSV(filters: StoreFiltersDTO): Promise<string>;
@@ -879,6 +891,73 @@ class BrandDrizzleStorage implements IBrandStorage {
         embeddingsGenerated: 5,
         savedToOrigin: 'brand'
       };
+    }
+  }
+
+  // ==================== ORGANIZATIONS MANAGEMENT (W3 Suite Tenants) ====================
+
+  // Get all organizations from w3suite.tenants
+  async getOrganizations(): Promise<Tenant[]> {
+    try {
+      return await w3db.select().from(w3Tenants);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+      throw error;
+    }
+  }
+
+  // Get single organization by ID
+  async getOrganization(id: string): Promise<Tenant | null> {
+    try {
+      const results = await w3db.select()
+        .from(w3Tenants)
+        .where(eq(w3Tenants.id, id))
+        .limit(1);
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error fetching organization:', error);
+      throw error;
+    }
+  }
+
+  // Create new organization record in w3suite.tenants
+  async createOrganizationRecord(data: InsertTenant): Promise<Tenant> {
+    try {
+      const results = await w3db.insert(w3Tenants)
+        .values(data)
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      throw error;
+    }
+  }
+
+  // Update organization
+  async updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null> {
+    try {
+      const results = await w3db.update(w3Tenants)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(w3Tenants.id, id))
+        .returning();
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      throw error;
+    }
+  }
+
+  // Validate slug uniqueness
+  async validateSlug(slug: string): Promise<boolean> {
+    try {
+      const results = await w3db.select()
+        .from(w3Tenants)
+        .where(eq(w3Tenants.slug, slug))
+        .limit(1);
+      return results.length === 0; // true if slug is available
+    } catch (error) {
+      console.error('Error validating slug:', error);
+      return false; // Safe default - assume slug is taken
     }
   }
 }

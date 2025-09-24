@@ -127,13 +127,16 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
 
     try {
-      const tenants = await brandStorage.getTenants();
+      const organizations = await brandStorage.getOrganizations();
       res.json({ 
-        organizations: tenants.map(t => ({
-          id: t.id,
-          name: t.name,
-          status: t.status,
-          settings: t.settings
+        organizations: organizations.map(org => ({
+          id: org.id,
+          name: org.name,
+          slug: org.slug,
+          status: org.status,
+          notes: org.notes,
+          createdAt: org.createdAt,
+          updatedAt: org.updatedAt
         })),
         context: "cross-tenant",
         message: "All organizations visible in cross-tenant mode"
@@ -1284,6 +1287,116 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
       console.error("Error creating organization:", error);
       res.status(500).json({ 
         error: "Failed to create organization",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // ==================== NEW ORGANIZATIONS ENDPOINTS (W3 Suite Tenants) ====================
+
+  // Create new organization using w3suite.tenants
+  app.post("/brand-api/organizations", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Only super_admin can create new organizations
+    if (user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Only super administrators can create organizations" });
+    }
+
+    const { name, slug, status = 'active', notes } = req.body;
+
+    // Validate required fields
+    if (!name) {
+      return res.status(400).json({ 
+        error: "Missing required field: name is required" 
+      });
+    }
+
+    // Validate slug if provided
+    if (slug) {
+      const isSlugAvailable = await brandStorage.validateSlug(slug);
+      if (!isSlugAvailable) {
+        return res.status(400).json({ 
+          error: "Slug is already taken. Please choose a different one." 
+        });
+      }
+    }
+
+    try {
+      const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      
+      const newOrganization = await brandStorage.createOrganizationRecord({
+        name,
+        slug: finalSlug,
+        status,
+        notes: notes || null
+      });
+
+      // Log the creation for audit
+      await brandStorage.createAuditLog({
+        tenantId: newOrganization.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'CREATE_W3_ORGANIZATION',
+        resourceType: 'w3_organization',
+        resourceIds: [newOrganization.id],
+        metadata: {
+          organizationName: newOrganization.name,
+          organizationSlug: newOrganization.slug,
+          organizationStatus: newOrganization.status,
+          createdByUserId: user.id
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          id: newOrganization.id,
+          name: newOrganization.name,
+          slug: newOrganization.slug,
+          status: newOrganization.status,
+          notes: newOrganization.notes,
+          createdAt: newOrganization.createdAt
+        },
+        message: `Organization '${newOrganization.name}' created successfully`
+      });
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      res.status(500).json({ 
+        error: "Failed to create organization",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Validate slug availability
+  app.get("/brand-api/organizations/validate-slug/:slug", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    const { slug } = req.params;
+
+    if (!slug) {
+      return res.status(400).json({ error: "Slug parameter is required" });
+    }
+
+    try {
+      const isAvailable = await brandStorage.validateSlug(slug);
+      res.json({
+        slug,
+        available: isAvailable,
+        message: isAvailable ? "Slug is available" : "Slug is already taken"
+      });
+    } catch (error) {
+      console.error("Error validating slug:", error);
+      res.status(500).json({ 
+        error: "Failed to validate slug",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
