@@ -203,28 +203,15 @@ export default function Management() {
     timestamp?: string;
   }
 
-  interface StoresListResponse {
-    success: boolean;
-    data: {
-      stores: Array<{
-        id: string;
-        codigo: string;
-        ragioneSocialeName: string;
-        nome: string;
-        via: string;
-        citta: string;
-        provincia: string;
-        stato: string;
-        canale: string;
-        areaCommerciale: string;
-      }>;
-      pagination: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      };
-    };
+  interface OrganizationsListResponse {
+    organizations: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      status: 'active' | 'inactive' | 'suspended';
+      createdAt: string;
+      notes?: string;
+    }>;
   }
 
   interface AuditLog {
@@ -274,11 +261,11 @@ export default function Management() {
     enabled: activeTab === 'structure' && isAuthenticated
   });
 
-  // FIXED: Structure stores with proper queryFn to handle filter serialization
-  const { data: storesData, isLoading: storesLoading } = useQuery<StoresListResponse>({
-    queryKey: ['/brand-api/structure/stores', filterParams],
+  // Query for organizations data
+  const { data: organizationsData, isLoading: organizationsLoading } = useQuery<OrganizationsListResponse>({
+    queryKey: ['/brand-api/organizations'],
     queryFn: async () => {
-      const response = await fetch(`/brand-api/structure/stores?${filterParams}`);
+      const response = await fetch(`/brand-api/organizations`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     },
@@ -408,9 +395,9 @@ export default function Management() {
   };
 
   const toggleSelectAll = () => {
-    const allStoreIds = storesData?.data?.stores?.map(s => s.id) || [];
+    const allOrgIds = organizationsData?.organizations?.map(org => org.id) || [];
     setSelectedStores(prev => 
-      prev.length === allStoreIds.length ? [] : allStoreIds
+      prev.length === allOrgIds.length ? [] : allOrgIds
     );
   };
 
@@ -1538,10 +1525,10 @@ export default function Management() {
             fontWeight: 700,
             color: COLORS.neutral.dark
           }}>
-            Stores ({storesData?.data?.pagination?.total || 0})
+            Organizzazioni ({organizationsData?.organizations?.length || 0})
           </h3>
           
-          {storesData?.data?.stores && storesData.data.stores.length > 0 && (
+          {organizationsData?.organizations && organizationsData.organizations.length > 0 && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -1566,7 +1553,7 @@ export default function Management() {
                 onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                 data-testid="button-select-all"
               >
-                {selectedStores.length === storesData.data.stores.length ? 
+                {selectedStores.length === organizationsData.organizations.length ? 
                   <CheckSquare size={16} /> : 
                   <Square size={16} />
                 }
@@ -1576,7 +1563,7 @@ export default function Management() {
           )}
         </div>
         
-        {storesLoading ? (
+        {organizationsLoading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>
             <Loader2 size={32} className="animate-spin" style={{ color: COLORS.primary.orange }} />
           </div>
@@ -1607,16 +1594,6 @@ export default function Management() {
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
-                    Codice
-                  </th>
-                  <th style={{
-                    padding: '12px',
-                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    color: COLORS.neutral.dark
-                  }}>
                     Nome
                   </th>
                   <th style={{
@@ -1627,7 +1604,7 @@ export default function Management() {
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
-                    Città
+                    Slug
                   </th>
                   <th style={{
                     padding: '12px',
@@ -1637,17 +1614,7 @@ export default function Management() {
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
-                    Canale
-                  </th>
-                  <th style={{
-                    padding: '12px',
-                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    color: COLORS.neutral.dark
-                  }}>
-                    Area
+                    Data Creazione
                   </th>
                   <th style={{
                     padding: '12px',
@@ -1659,12 +1626,22 @@ export default function Management() {
                   }}>
                     Stato
                   </th>
+                  <th style={{
+                    padding: '12px',
+                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: COLORS.neutral.dark
+                  }}>
+                    Note
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {storesData?.data?.stores?.map((store) => (
-                  <tr key={store.id} 
-                    data-testid={`row-store-${store.id}`}
+                {organizationsData?.organizations?.map((org) => (
+                  <tr key={org.id} 
+                    data-testid={`row-org-${org.id}`}
                     style={{
                       transition: 'background 0.2s ease'
                     }}
@@ -1676,16 +1653,16 @@ export default function Management() {
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`
                     }}>
                       <button
-                        onClick={() => toggleStoreSelection(store.id)}
+                        onClick={() => toggleStoreSelection(org.id)}
                         style={{
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
                           padding: '4px'
                         }}
-                        data-testid={`checkbox-store-${store.id}`}
+                        data-testid={`checkbox-org-${org.id}`}
                       >
-                        {selectedStores.includes(store.id) ?
+                        {selectedStores.includes(org.id) ?
                           <CheckSquare size={16} style={{ color: COLORS.primary.orange }} /> :
                           <Square size={16} style={{ color: COLORS.neutral.medium }} />
                         }
@@ -1698,7 +1675,7 @@ export default function Management() {
                       color: COLORS.neutral.dark,
                       fontWeight: 500
                     }}>
-                      {store.codigo}
+                      {org.name}
                     </td>
                     <td style={{
                       padding: '12px',
@@ -1706,7 +1683,7 @@ export default function Management() {
                       fontSize: '13px',
                       color: COLORS.neutral.dark
                     }}>
-                      {store.nome}
+                      {org.slug}
                     </td>
                     <td style={{
                       padding: '12px',
@@ -1714,23 +1691,7 @@ export default function Management() {
                       fontSize: '13px',
                       color: COLORS.neutral.dark
                     }}>
-                      {store.citta}, {store.provincia}
-                    </td>
-                    <td style={{
-                      padding: '12px',
-                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
-                      color: COLORS.neutral.dark
-                    }}>
-                      {store.canale}
-                    </td>
-                    <td style={{
-                      padding: '12px',
-                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
-                      color: COLORS.neutral.dark
-                    }}>
-                      {store.areaCommerciale}
+                      {format(new Date(org.createdAt), 'dd/MM/yyyy')}
                     </td>
                     <td style={{
                       padding: '12px',
@@ -1742,16 +1703,28 @@ export default function Management() {
                         borderRadius: '12px',
                         fontSize: '12px',
                         fontWeight: 500,
-                        background: store.stato === 'active' ? `${COLORS.semantic.success}20` : 
-                                   store.stato === 'inactive' ? `${COLORS.semantic.error}20` : 
+                        background: org.status === 'active' ? `${COLORS.semantic.success}20` : 
+                                   org.status === 'inactive' ? `${COLORS.semantic.error}20` : 
                                    `${COLORS.semantic.warning}20`,
-                        color: store.stato === 'active' ? COLORS.semantic.success : 
-                               store.stato === 'inactive' ? COLORS.semantic.error : 
+                        color: org.status === 'active' ? COLORS.semantic.success : 
+                               org.status === 'inactive' ? COLORS.semantic.error : 
                                COLORS.semantic.warning
                       }}>
-                        {store.stato === 'active' ? 'Attivo' : 
-                         store.stato === 'inactive' ? 'Inattivo' : 'In attesa'}
+                        {org.status === 'active' ? 'Attivo' : 
+                         org.status === 'inactive' ? 'Inattivo' : 'Sospeso'}
                       </span>
+                    </td>
+                    <td style={{
+                      padding: '12px',
+                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                      fontSize: '13px',
+                      color: COLORS.neutral.medium,
+                      maxWidth: '150px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {org.notes || '-'}
                     </td>
                   </tr>
                 ))}
