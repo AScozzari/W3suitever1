@@ -1123,7 +1123,7 @@ export default function Management() {
           padding: '24px',
           overflow: 'hidden'
         }}>
-          {legalEntitiesData?.length > 0 ? (
+          {legalEntitiesData?.legalEntities?.length > 0 ? (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -1137,7 +1137,7 @@ export default function Management() {
                   </tr>
                 </thead>
                 <tbody>
-                  {legalEntitiesData.map((entity: any, index: number) => (
+                  {legalEntitiesData.legalEntities.map((entity: any, index: number) => (
                     <tr key={entity.id} style={{ 
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
                       transition: 'background-color 0.2s ease'
@@ -1926,8 +1926,8 @@ export default function Management() {
                         {/* Edit Organization (Tenant) */}
                         <button
                           onClick={() => {
-                            // TODO: Implementare modal edit organizzazione
-                            alert(`Edit organizzazione: ${org.name}`);
+                            // TODO: Implementare modal edit organizzazione completo
+                            alert(`Edit organizzazione: ${org.name} - Da implementare!`);
                           }}
                           style={{
                             background: 'none',
