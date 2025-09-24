@@ -218,7 +218,6 @@ class BrandDrizzleStorage implements IBrandStorage {
       // Build query parameters for W3 backend
       const queryParams = new URLSearchParams();
       
-      if (filters.tenantId) queryParams.set('tenantId', filters.tenantId);
       if (filters.areaCommerciale) queryParams.set('areaCommerciale', filters.areaCommerciale);
       if (filters.canale) queryParams.set('canale', filters.canale);
       if (filters.citta) queryParams.set('citta', filters.citta);
@@ -229,8 +228,12 @@ class BrandDrizzleStorage implements IBrandStorage {
       queryParams.set('page', String(filters.page || 1));
       queryParams.set('limit', String(filters.limit || 20));
 
-      // Call W3 backend for stores data
-      const storesData = await this.secureW3BackendCall(`/api/stores?${queryParams.toString()}`);
+      // Call W3 backend for stores data with required headers
+      const storesData = await this.secureW3BackendCall(`/api/stores?${queryParams.toString()}`, {
+        headers: {
+          'X-Tenant-ID': filters.tenantId || '00000000-0000-0000-0000-000000000001' // Default staging tenant
+        }
+      });
       
       // Transform to expected DTO format
       const stores: StoreListDTO[] = storesData.stores.map((store: any) => ({
