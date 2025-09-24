@@ -341,7 +341,8 @@ export async function apiRequest(
         console.log('[API-REQUEST] 🔄 Serializing object body to JSON');
         processedOptions.body = JSON.stringify(processedOptions.body);
         // Set Content-Type for JSON if not already set
-        if (!headers['Content-Type'] && !options?.headers?.['Content-Type']) {
+        const existingHeaders = options?.headers as Record<string, string> | undefined;
+        if (!headers['Content-Type'] && !existingHeaders?.['Content-Type']) {
           headers['Content-Type'] = 'application/json';
         }
       } else if (typeof processedOptions.body !== 'string') {
@@ -351,7 +352,8 @@ export async function apiRequest(
       } else {
         // Body is already a string (probably pre-serialized JSON)
         // Set Content-Type if it looks like JSON and header not set
-        if (!headers['Content-Type'] && !options?.headers?.['Content-Type']) {
+        const existingHeaders = options?.headers as Record<string, string> | undefined;
+        if (!headers['Content-Type'] && !existingHeaders?.['Content-Type']) {
           try {
             JSON.parse(processedOptions.body);
             headers['Content-Type'] = 'application/json';
