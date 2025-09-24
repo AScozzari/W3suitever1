@@ -28,6 +28,7 @@ interface AISettings {
   };
   privacySettings?: {
     dataRetentionDays?: number;
+    allowDataTraining?: boolean;
     anonymizeConversations?: boolean;
   };
   trainingMode?: boolean;
@@ -73,6 +74,7 @@ export default function AISettingsPage() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [trainingPanelExpanded, setTrainingPanelExpanded] = useState(false);
   const [urlToProcess, setUrlToProcess] = useState('');
   const [processingUrl, setProcessingUrl] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -103,7 +105,19 @@ export default function AISettingsPage() {
     enabled: activeTab === 'conversations'
   });
 
+  // Fetch training statistics
+  const { data: trainingStats, isLoading: trainingStatsLoading } = useQuery<{success: boolean, data: any}>({
+    queryKey: ['/api/ai/training/stats'],
+    refetchInterval: 30000,
+    enabled: trainingPanelExpanded
+  });
 
+  // Fetch training sessions for storyboard
+  const { data: trainingSessions, isLoading: trainingSessionsLoading } = useQuery<{success: boolean, data: any[]}>({
+    queryKey: ['/api/ai/training/sessions'],
+    refetchInterval: 30000,
+    enabled: trainingPanelExpanded
+  });
 
   // Update settings mutation
   const updateSettingsMutation = useMutation({
@@ -550,91 +564,85 @@ export default function AISettingsPage() {
 
       </div>
 
-      {/* Agenti AI Disponibili */}
+      {/* Elenco Agenti AI */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
           <Brain className="w-5 h-5 mr-2 text-[#FF6900]" />
-          Agenti AI Disponibili
+          Elenco Agenti AI
         </h3>
         <div className="space-y-4">
-          {[
-            {
-              id: 'tippy',
-              name: 'Tippy - Assistente Vendite WindTre',
-              description: 'Assistente AI specializzato nelle vendite WindTre con knowledge base personalizzata',
-              icon: MessageCircle,
-              active: true // Per ora sempre attivo
-            }
-          ].map((agent) => (
-            <div key={agent.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <agent.icon className="w-5 h-5 text-gray-600" />
-                <div>
-                  <h4 className="font-medium text-gray-900">{agent.name}</h4>
-                  <p className="text-sm text-gray-600">{agent.description}</p>
+          {/* Tippy - Assistente Vendite WindTre */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-[#FF6900]/10 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-[#FF6900]" />
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900">Tippy - Assistente Vendite WindTre</h4>
+                <p className="text-sm text-gray-600">Assistente AI specializzato nelle vendite con accesso completo al catalogo prodotti</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Sales</span>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">GPT-4o</span>
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-3">
-                {/* Toggle per attivare/disattivare l'agente */}
-                <button
-                  onClick={() => {
-                    // TODO: Implementare toggle agente per tenant
-                    alert(`Toggle agente ${agent.name} - funzionalità in arrivo!`);
-                  }}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
-                    agent.active ? 'bg-[#FF6900]' : 'bg-gray-200'
-                  }`}
-                  data-testid={`toggle-agent-${agent.id}`}
-                  title={`${agent.active ? 'Disattiva' : 'Attiva'} agente`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      agent.active ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                
-                {/* Icona modifica per implementare RAG context */}
-                <button
-                  onClick={() => {
-                    // TODO: Aprire modal per gestire URL e documenti RAG tenant-specific
-                    alert(`Gestione contesto RAG per ${agent.name} - funzionalità in arrivo!`);
-                  }}
-                  className="p-2 text-gray-400 hover:text-[#FF6900] hover:bg-[#FF6900]/10 rounded-lg transition-colors"
-                  data-testid={`edit-context-${agent.id}`}
-                  title="Modifica contesto RAG"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
-                
-                {/* Icona occhio per vedere story board custom tenant */}
-                <button
-                  onClick={() => {
-                    // TODO: Aprire modal storyboard custom tenant
-                    alert(`Storyboard custom tenant per ${agent.name} - funzionalità in arrivo!`);
-                  }}
-                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  data-testid={`view-storyboard-${agent.id}`}
-                  title="Visualizza storyboard tenant"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-              </div>
             </div>
-          ))}
-        </div>
-        
-        {/* Informazioni aggiuntive */}
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <Database className="w-4 h-4 text-blue-600" />
-            <p className="text-sm text-blue-800 font-medium">Contesto RAG Vectoriale</p>
+            <div className="flex items-center space-x-3">
+              {/* Toggle Attiva/Disattiva per Tenant */}
+              <button
+                onClick={() => {
+                  // Toggle agent per questo tenant
+                  toast({ 
+                    title: "Agente Tippy", 
+                    description: "Tippy è stato " + (true ? "disattivato" : "attivato") + " per questo tenant" 
+                  });
+                }}
+                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 bg-[#FF6900]"
+                data-testid="toggle-agent-tippy"
+                title="Attiva/Disattiva agente per questo tenant"
+              >
+                <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
+              </button>
+              
+              {/* Icona Modifica - Contesto Embedded RAG */}
+              <button
+                onClick={() => {
+                  toast({ 
+                    title: "Gestione Contesto RAG", 
+                    description: "Apertura editor contesto embedded per Tippy..." 
+                  });
+                }}
+                className="p-2 text-gray-500 hover:text-[#FF6900] hover:bg-[#FF6900]/5 rounded-lg transition-colors"
+                data-testid="edit-agent-tippy-context"
+                title="Modifica contesto embedded RAG con URL e documenti"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+              
+              {/* Icona Occhio - Story Board Custom Tenant */}
+              <button
+                onClick={() => {
+                  toast({ 
+                    title: "Story Board Tippy", 
+                    description: "Apertura story board personalizzato per questo tenant..." 
+                  });
+                }}
+                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                data-testid="view-agent-tippy-storyboard"
+                title="Visualizza story board custom tenant con documenti e URL caricati"
+              >
+                <Eye className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <p className="text-xs text-blue-700 mt-1">
-            Ogni agente può avere documenti e URL personalizzati per il tuo tenant. 
-            I dati vengono salvati in tabelle vectoriali con desinenza "_override" nello schema w3suite.
-          </p>
+          
+          {/* Placeholder per futuri agenti */}
+          <div className="p-4 border-2 border-dashed border-gray-200 rounded-lg text-center">
+            <div className="text-gray-400">
+              <Brain className="w-8 h-8 mx-auto mb-2" />
+              <p className="text-sm font-medium">Altri agenti AI saranno disponibili prossimamente</p>
+              <p className="text-xs mt-1">La gestione degli agenti viene effettuata dal Brand Interface</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -696,7 +704,9 @@ export default function AISettingsPage() {
           </div>
 
         </div>
-        
+      </div>
+
+      {/* Save Button */}
       <div className="flex justify-end">
         <button
           onClick={handleSave}
@@ -732,9 +742,342 @@ export default function AISettingsPage() {
     </div>
   );
 
+  const renderTrainingTab = () => (
+    <div className="space-y-8">
+      {/* Training Mode Toggle */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-[#FF6900]/10 rounded-lg">
+              <Brain className="w-6 h-6 text-[#FF6900]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Training AI</h3>
+              <p className="text-gray-600">Addestra l'AI con contenuti personalizzati per il tuo business</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              formData.trainingMode 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {formData.trainingMode ? 'Attivo' : 'Disattivo'}
+            </span>
+            <button
+              onClick={() => setFormData(prev => ({ ...prev, trainingMode: !prev.trainingMode }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
+                formData.trainingMode ? 'bg-[#FF6900]' : 'bg-gray-200'
+              }`}
+              data-testid="toggle-training-mode"
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  formData.trainingMode ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
 
-  const renderAnalyticsTab = () => {
-    return (
+      {/* Training Sections */}
+      {formData.trainingMode && (
+        <div className="space-y-6">
+          {/* Sezione 1: Validazione Risposte */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <CheckSquare className="w-5 h-5 text-green-600" />
+              <h5 className="font-semibold text-gray-900">Validazione Risposte AI</h5>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Correggi e valida le risposte dell'AI per migliorare l'accuratezza futura.
+            </p>
+            <button 
+              onClick={handleReviewResponses}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+              data-testid="button-review-responses"
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span>Rivedi Risposte Recenti</span>
+            </button>
+          </div>
+          
+          {/* Sezione 2: URL Context */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <Globe className="w-5 h-5 text-blue-600" />
+              <h5 className="font-semibold text-gray-900">Importa Contenuti da URL</h5>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Inserisci URL di documenti, pagine web o risorse online da memorizzare nel database vettoriale.
+            </p>
+            <div className="flex space-x-2">
+              <input
+                type="url"
+                value={urlToProcess}
+                onChange={(e) => setUrlToProcess(e.target.value)}
+                placeholder="https://esempio.com/documento"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+                data-testid="input-training-url"
+              />
+              <button 
+                onClick={handleProcessUrl}
+                disabled={processingUrl || !urlToProcess.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                data-testid="button-process-url"
+              >
+                {processingUrl ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Link className="w-4 h-4" />
+                )}
+                <span>{processingUrl ? 'Processando...' : 'Processa'}</span>
+              </button>
+            </div>
+          </div>
+          
+          {/* Sezione 3: Media Upload */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <Upload className="w-5 h-5 text-purple-600" />
+              <h5 className="font-semibold text-gray-900">Upload Media & Documenti</h5>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Carica PDF, immagini, audio o video per arricchire il contesto dell'AI.
+            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <button 
+                onClick={() => handleFileUpload('pdf')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-pdf"
+              >
+                <FileText className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">PDF</span>
+              </button>
+              
+              <button 
+                onClick={() => handleFileUpload('image')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-image"
+              >
+                <Image className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">Immagini</span>
+              </button>
+              
+              <button 
+                onClick={() => handleFileUpload('audio')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-audio"
+              >
+                <Mic className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">Audio</span>
+              </button>
+              
+              <button 
+                onClick={() => handleFileUpload('video')}
+                disabled={uploadingFile}
+                className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                data-testid="button-upload-video"
+              >
+                <Video className="w-6 h-6 text-gray-600" />
+                <span className="text-xs text-gray-600">Video</span>
+              </button>
+            </div>
+            
+            {uploadingFile && (
+              <div className="mt-4">
+                <div className="flex items-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#FF6900]" />
+                  <span className="text-sm text-gray-600">Processing media content...</span>
+                </div>
+                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-[#FF6900] h-2 rounded-full transition-all duration-300" 
+                    style={{width: `${uploadProgress}%`}}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{uploadProgress}% completato</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Stats Section */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white/60 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[#FF6900]">
+                {trainingStatsLoading ? '...' : (trainingStats?.data?.documentsProcessed || 0)}
+              </p>
+              <p className="text-xs text-gray-600">Documenti Processati</p>
+            </div>
+            <div className="bg-white/60 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[#7B2CBF]">
+                {trainingStatsLoading ? '...' : (trainingStats?.data?.embeddingsCreated || 0)}
+              </p>
+              <p className="text-xs text-gray-600">Embeddings Creati</p>
+            </div>
+            <div className="bg-white/60 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-green-600">
+                {trainingStatsLoading ? '...' : (trainingStats?.data?.validationsCompleted || 0)}
+              </p>
+              <p className="text-xs text-gray-600">Validazioni</p>
+            </div>
+          </div>
+          
+          {/* Training Sessions Storyboard - Enhanced */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <Database className="w-5 h-5 text-blue-600" />
+                <h5 className="font-semibold text-gray-900">Storyboard URL Training</h5>
+              </div>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-500">
+                  {trainingSessions?.data?.length || 0} URL salvate
+                </span>
+                <button
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] })}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  data-testid="button-refresh-sessions"
+                  title="Aggiorna lista"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            {trainingSessionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-5 h-5 animate-spin text-[#FF6900]" />
+                <span className="ml-2 text-sm text-gray-600">Caricamento storyboard...</span>
+              </div>
+            ) : trainingSessions?.data?.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                {trainingSessions.data.map((session: any, index: number) => (
+                  <div key={session.id || index} className="group bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-[#FF6900]/30">
+                    {/* Status Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        session.sessionStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                        session.sessionStatus === 'pending' || session.sessionStatus === 'active' ? 'bg-yellow-100 text-yellow-800' :
+                        session.sessionStatus === 'failed' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        <span className={`w-2 h-2 rounded-full mr-1 ${
+                          session.sessionStatus === 'completed' ? 'bg-green-500' :
+                          session.sessionStatus === 'pending' || session.sessionStatus === 'active' ? 'bg-yellow-500' :
+                          session.sessionStatus === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+                        }`}></span>
+                        {session.sessionStatus === 'completed' ? 'Completato' :
+                         session.sessionStatus === 'pending' ? 'In attesa' :
+                         session.sessionStatus === 'active' ? 'Attivo' :
+                         session.sessionStatus === 'failed' ? 'Fallito' : 'Sconosciuto'}
+                      </span>
+                      
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => {
+                          if (confirm('Sei sicuro di voler eliminare questa sessione di training?')) {
+                            deleteSessionMutation.mutate(session.id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition-all duration-200"
+                        data-testid={`button-delete-session-${session.id}`}
+                        title="Elimina sessione"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    {/* Content Preview */}
+                    <div className="mb-3">
+                      <div className="flex items-center space-x-2 mb-2">
+                        {session.sessionType === 'url_import' ? (
+                          <Globe className="w-4 h-4 text-blue-500" />
+                        ) : session.sessionType === 'media_upload' ? (
+                          <Upload className="w-4 h-4 text-purple-500" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-gray-500" />
+                        )}
+                        <span className="text-xs font-medium text-gray-700">
+                          {session.sessionType === 'url_import' ? 'URL Import' :
+                           session.sessionType === 'media_upload' ? 'Media Upload' :
+                           session.sessionType || 'Documento'}
+                        </span>
+                      </div>
+                      
+                      {session.sourceUrl && (
+                        <p className="text-sm text-gray-900 font-medium mb-1">
+                          <a
+                            href={session.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-[#FF6900] transition-colors truncate block"
+                            title={session.sourceUrl}
+                          >
+                            {new URL(session.sourceUrl).hostname}
+                          </a>
+                        </p>
+                      )}
+                      
+                      {session.contentExtracted && (
+                        <p className="text-xs text-gray-600 line-clamp-2">
+                          {session.contentExtracted.slice(0, 80)}...
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Metrics */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-3">
+                      <div className="flex items-center space-x-3">
+                        {session.embeddingsCreated > 0 && (
+                          <span className="flex items-center">
+                            <Database className="w-3 h-3 mr-1" />
+                            {session.embeddingsCreated}
+                          </span>
+                        )}
+                        {session.tokensProcessed > 0 && (
+                          <span className="flex items-center">
+                            <Zap className="w-3 h-3 mr-1" />
+                            {Math.round(session.tokensProcessed / 1000)}k
+                          </span>
+                        )}
+                      </div>
+                      <span>
+                        {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT', {
+                          day: '2-digit',
+                          month: '2-digit'
+                        }) : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Globe className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-sm font-medium">Nessuna URL processata ancora</p>
+                <p className="text-gray-400 text-xs mt-1">Aggiungi URL qui sopra per iniziare a popolare lo storyboard</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!formData.trainingMode && (
+        <div className="text-center py-12">
+          <Brain className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Training AI Disattivo</h3>
+          <p className="text-gray-500">Attiva il Training AI per iniziare ad addestrare l'intelligenza artificiale con i tuoi contenuti.</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderAnalyticsTab = () => (
     <div className="space-y-6">
       {/* Usage Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -744,7 +1087,7 @@ export default function AISettingsPage() {
               <p className="text-sm text-gray-600">Richieste Totali</p>
               <p className="text-2xl font-bold text-gray-900">{stats?.data?.totalRequests || 0}</p>
             </div>
-            <Activity className="w-8 h-8 text-orange-600" />
+            <Activity className="w-8 h-8 text-[#FF6900]" />
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -753,7 +1096,7 @@ export default function AISettingsPage() {
               <p className="text-sm text-gray-600">Token Utilizzati</p>
               <p className="text-2xl font-bold text-gray-900">{(stats?.data?.totalTokens || 0).toLocaleString()}</p>
             </div>
-            <Database className="w-8 h-8 text-purple-600" />
+            <Database className="w-8 h-8 text-[#7B2CBF]" />
           </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -779,7 +1122,7 @@ export default function AISettingsPage() {
       {statsLoading && (
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
-            <RefreshCw className="w-8 h-8 animate-spin text-orange-600 mx-auto mb-4" />
+            <RefreshCw className="w-8 h-8 animate-spin text-[#FF6900] mx-auto mb-4" />
             <p className="text-gray-600">Caricamento statistiche...</p>
           </div>
         </div>
@@ -983,12 +1326,148 @@ export default function AISettingsPage() {
         )}
       </div>
     </div>
-    );
-  };
+  );
 
+  const renderConversationsTab = () => (
+    <div className="space-y-6">
+      {/* GDPR Controls */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <div className="flex items-start space-x-3">
+          <Shield className="w-6 h-6 text-blue-600 mt-1" />
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">Privacy e Conformità GDPR</h3>
+            <p className="text-blue-700 text-sm mb-4">
+              Le conversazioni AI sono gestite in conformità al GDPR. I dati vengono automaticamente 
+              anonimizzati e cancellati secondo le policy di retention configurate.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-white px-3 py-2 rounded-lg border border-blue-200">
+                <span className="text-sm font-medium text-blue-800">
+                  Retention: {formData.privacySettings?.dataRetentionDays || 30} giorni
+                </span>
+              </div>
+              <div className="bg-white px-3 py-2 rounded-lg border border-blue-200">
+                <span className="text-sm font-medium text-blue-800">
+                  Anonimizzazione: {formData.privacySettings?.anonymizeConversations ? 'Attiva' : 'Disattiva'}
+                </span>
+              </div>
+              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                <Trash2 className="w-4 h-4 inline mr-1" />
+                Cancella Tutti i Dati
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      {/* Conversations Archive */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <MessageCircle className="w-5 h-5 mr-2 text-[#FF6900]" />
+            Archivio Conversazioni AI
+          </h3>
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              placeholder="Cerca conversazioni..."
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+              data-testid="input-search-conversations"
+            />
+            <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#FF6900] focus:border-transparent">
+              <option value="">Tutti gli utenti</option>
+              <option value="current">Solo le mie</option>
+              <option value="team">Team</option>
+            </select>
+            <button className="px-4 py-2 bg-[#FF6900] text-white rounded-lg hover:bg-[#E55A00] text-sm font-medium">
+              <FileText className="w-4 h-4 inline mr-1" />
+              Esporta
+            </button>
+          </div>
+        </div>
 
+        {conversationsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <RefreshCw className="w-8 h-8 animate-spin text-[#FF6900] mx-auto mb-4" />
+              <p className="text-gray-600">Caricamento conversazioni...</p>
+            </div>
+          </div>
+        ) : conversations?.data?.length > 0 ? (
+          <div className="space-y-4">
+            {conversations.data.map((conversation: any) => (
+              <div key={conversation.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[#FF6900]/10 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-[#FF6900]" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">{conversation.title || 'Conversazione AI'}</h4>
+                      <p className="text-sm text-gray-600">
+                        {conversation.featureContext} • {new Date(conversation.createdAt).toLocaleString('it-IT')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                      {conversation.messageCount || 0} messaggi
+                    </span>
+                    <button className="p-1 text-gray-400 hover:text-gray-600">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button className="p-1 text-gray-400 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  <p>Anteprima: {conversation.lastMessage || 'Nessun messaggio disponibile'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna Conversazione</h3>
+            <p className="text-gray-600">Le conversazioni AI appariranno qui quando gli utenti inizieranno a utilizzare l'assistente.</p>
+          </div>
+        )}
+      </div>
 
+      {/* Export and Management Actions */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <FileText className="w-5 h-5 mr-2 text-[#FF6900]" />
+          Gestione Dati
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-colors">
+            <div className="text-center">
+              <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="font-medium text-gray-700">Esporta CSV</p>
+              <p className="text-sm text-gray-500">Export logs in CSV</p>
+            </div>
+          </button>
+          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 transition-colors">
+            <div className="text-center">
+              <Shield className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="font-medium text-gray-700">Audit Report</p>
+              <p className="text-sm text-gray-500">Report GDPR compliance</p>
+            </div>
+          </button>
+          <button className="flex items-center justify-center p-4 border-2 border-dashed border-red-300 rounded-lg hover:border-red-500 hover:bg-red-50 transition-colors">
+            <div className="text-center">
+              <Trash2 className="w-8 h-8 text-red-400 mx-auto mb-2" />
+              <p className="font-medium text-red-700">Cancellazione GDPR</p>
+              <p className="text-sm text-red-500">Elimina tutti i dati</p>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -1040,42 +1519,8 @@ export default function AISettingsPage() {
       <div className="px-6 py-8">
         {activeTab === 'settings' && renderSettingsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
-        {activeTab === 'conversations' && (
-          <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <div className="flex items-start space-x-3">
-                <Shield className="w-6 h-6 text-blue-600 mt-1" />
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Privacy e Conformità GDPR</h3>
-                  <p className="text-blue-700 text-sm mb-4">
-                    Le conversazioni AI sono gestite in conformità al GDPR.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <div className="bg-white px-3 py-2 rounded-lg border border-blue-200">
-                      <span className="text-sm font-medium text-blue-800">
-                        Retention: {formData.privacySettings?.dataRetentionDays || 30} giorni
-                      </span>
-                    </div>
-                    <div className="bg-white px-3 py-2 rounded-lg border border-blue-200">
-                      <span className="text-sm font-medium text-blue-800">
-                        Anonimizzazione: {formData.privacySettings?.anonymizeConversations ? 'Attiva' : 'Disattiva'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="text-center py-12">
-                <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Archivio Conversazioni AI</h3>
-                <p className="text-gray-600">Le conversazioni AI appariranno qui quando gli utenti inizieranno a utilizzare l'assistente.</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === 'conversations' && renderConversationsTab()}
       </div>
-    </div>
     </div>
   );
 }

@@ -1,0 +1,37 @@
+era questo il prompt originale che ti spiegava esattamente quale divi doveva rimanere e quale doveva essere modificato e come gestire ogni ai agent: FE: Stato Ai attivo e disattivo rimane spenge tutte le funzionalità AI all'interno del tenant,configurazione open ai api rimane dove inserisci la token api key del mio tenant e affccio test di connessione, ma da questo div dobbiamo togliere la possibità di decidere la temperatura e il modello e il numero massimo di token, funzionalità ai diventa elenco degli agenti Ai disponibili per ora solo tippy dopo su ogni agente ho l'opportunità di attivarlo o disattivarlo per il mio tenant ed un icona modifica che mi dia l'opportunità di implementare il contesto embended rag con url e documenti che scriveranno e leggeranno le tabelle nel db vectoriale con la desinenza override sempra in schema w3 suite ed un occhio che mi dia la story borad custom tenant di ogni agente dove posso eliminare url e documenti caricati con varie info e time stamp. Il div impostazioni privacy rimangono che lavorano trasversarlmente su tutti gli angenti e sparisce la voce trainin AI. ti è tutto chiaro ? hai domande?
+
+7 minutes ago
+
+Show less
+
+Planned AI settings page changes (8 seconds)
+Perfetto! Ora ho capito esattamente cosa dovevo fare. Mi scuso per la confusione - avevo le tue istruzioni precise e invece ho fatto un casino completo.
+
+🎯 Specifiche Chiare dal Tuo Prompt Originale
+DIV DA MANTENERE INVARIATI:
+
+✅ Analytics (rimane tutto)
+✅ Chat Archive (rimane tutto)
+✅ Stato AI attivo/disattivo (rimane - spegne tutte le funzionalità AI del tenant)
+✅ Impostazioni Privacy (rimangono - lavorano trasversalmente su tutti gli agenti)
+MODIFICHE SPECIFICHE RICHIESTE:
+
+1. Configurazione OpenAI API (modificare, non eliminare)
+✅ Mantenere: inserimento token API key del tenant + test connessione
+❌ Rimuovere: temperatura, modello, numero massimo token
+2. "Funzionalità AI" → "Elenco Agenti AI" (trasformare)
+Sostituire il contenuto con elenco agenti disponibili (per ora solo Tippy)
+Ogni agente deve avere:
+Toggle attiva/disattiva per il tenant
+Icona modifica → contesto embedded RAG (URL + documenti)
+Icona occhio → story board custom tenant dell'agente
+Gestione tabelle DB vettoriale con desinenza _override in schema w3suite
+3. Training AI
+❌ Eliminare completamente questa voce
+🔧 Piano di Implementazione Corretto
+Devo:
+
+Ripristinare il file originale completo
+Modificare SOLO i div specifici che hai indicato
+Mantenere tutto il resto intatto (Analytics, Chat Archive, layout dinamico)
+È tutto chiarissimo ora! Vuoi che proceda con questa implementazione corretta partendo dal file originale?
