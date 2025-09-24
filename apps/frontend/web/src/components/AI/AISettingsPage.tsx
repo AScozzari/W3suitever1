@@ -1462,7 +1462,7 @@ export default function AISettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Costo Totale</p>
-              <p className="text-2xl font-bold text-gray-900">${(stats?.data?.totalCost || 0).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">${(Number(stats?.data?.totalCost) || 0).toFixed(2)}</p>
             </div>
             <DollarSign className="w-8 h-8 text-green-600" />
           </div>
@@ -1504,8 +1504,7 @@ export default function AISettingsPage() {
           ].map(({ type, label, icon, color }) => {
             const logsForType = usageLogs?.data?.filter((log: AIUsageLog) => log.featureType === type) || [];
             const requestCount = logsForType.length;
-            const totalCostCents = logsForType.reduce((sum: number, log: AIUsageLog) => sum + (log.costUsd || 0), 0);
-            const totalCostDollars = totalCostCents / 100; // Convert cents to dollars
+            const totalCostDollars = logsForType.reduce((sum: number, log: AIUsageLog) => sum + (log.costUsd || 0), 0);
             
             return (
               <div key={type} className="bg-gray-50 rounded-lg p-4 text-center">
@@ -1535,8 +1534,7 @@ export default function AISettingsPage() {
               { type: 'url_scraping', label: 'URL Content Extraction', color: '#06B6D4' }
             ].map(({ type, label, color }) => {
               const logs = usageLogs?.data?.filter((log: AIUsageLog) => log.featureType === type) || [];
-              const totalCostCents = logs.reduce((sum: number, log: AIUsageLog) => sum + (log.costUsd || 0), 0);
-              const totalCostDollars = totalCostCents / 100; // Convert cents to dollars
+              const totalCostDollars = logs.reduce((sum: number, log: AIUsageLog) => sum + (log.costUsd || 0), 0);
               const totalTokens = logs.reduce((sum: number, log: AIUsageLog) => sum + (log.tokensTotal || 0), 0);
               
               // Calculate percentage based on total cost from all logs (consistent units - cents)
@@ -1623,7 +1621,7 @@ export default function AISettingsPage() {
                   };
 
                   const opType = getOperationDisplay(log.featureType);
-                  const costInDollars = (log.costUsd || 0) / 100; // Convert cents to dollars
+                  const costInDollars = log.costUsd || 0; // Already in dollars from backend
                   
                   return (
                     <tr key={log.id} className="hover:bg-gray-50" data-testid={`row-log-${log.id}`}>
