@@ -162,6 +162,7 @@ export const tenants = w3suiteSchema.table("tenants", {
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 100 }).unique(),
   status: varchar("status", { length: 50 }).default("active"),
+  notes: text("notes"), // Added notes field for Management Center
   settings: jsonb("settings").default({}),
   features: jsonb("features").default({}),
   createdAt: timestamp("created_at").defaultNow(),
