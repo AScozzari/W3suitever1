@@ -184,6 +184,8 @@ export default function AIManagement() {
   // Modals state
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<any>(null);
+  const [showKnowledgeModal, setShowKnowledgeModal] = useState(false);
+  const [knowledgeAgent, setKnowledgeAgent] = useState<any>(null);
   
   // Agent form state
   const [agentForm, setAgentForm] = useState({
@@ -407,6 +409,14 @@ export default function AIManagement() {
     }
   });
 
+  // 7. KNOWLEDGE BASE QUERY - Per visualizzare documenti/URL embeddati
+  const { data: knowledgeData, isLoading: isLoadingKnowledge } = useQuery({
+    queryKey: ['/brand-api/ai/agents', knowledgeAgent?.id, 'knowledge'],
+    queryFn: () => apiRequest(`/brand-api/ai/agents/${knowledgeAgent.id}/knowledge`),
+    enabled: !!knowledgeAgent?.id && showKnowledgeModal,
+    staleTime: 30000 // Cache per 30 secondi
+  });
+
   if (!isAuthenticated) {
     window.location.href = '/brandinterface/login';
     return null;
@@ -437,6 +447,11 @@ export default function AIManagement() {
       baseConfiguration: JSON.stringify(agent.baseConfiguration, null, 2)
     });
     setShowAgentModal(true);
+  };
+
+  const handleViewKnowledge = (agent: AIAgent) => {
+    setKnowledgeAgent(agent);
+    setShowKnowledgeModal(true);
   };
 
   const handleBulkOperation = () => {
@@ -1246,6 +1261,7 @@ export default function AIManagement() {
                                 </button>
                                 
                                 <button
+                                  onClick={() => handleViewKnowledge(agent)}
                                   style={{
                                     padding: '6px',
                                     background: 'transparent',
@@ -1916,6 +1932,284 @@ export default function AIManagement() {
             <p style={{ color: COLORS.neutral.medium }}>
               Monitoring e analytics degli agenti AI - In arrivo...
             </p>
+          </div>
+        )}
+
+        {/* 📚 Knowledge Base Viewer Modal */}
+        {showKnowledgeModal && knowledgeAgent && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '900px',
+              maxHeight: '80vh',
+              overflow: 'hidden',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}>
+              {/* Modal Header */}
+              <div style={{
+                padding: '24px',
+                borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Database size={24} style={{ color: COLORS.primary.purple }} />
+                  <div>
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: 700,
+                      color: COLORS.neutral.dark,
+                      margin: 0
+                    }}>
+                      Knowledge Base: {knowledgeAgent.name}
+                    </h3>
+                    <p style={{
+                      fontSize: '14px',
+                      color: COLORS.neutral.medium,
+                      margin: '4px 0 0 0'
+                    }}>
+                      Documenti e URL embeddati nel contesto RAG
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowKnowledgeModal(false);
+                    setKnowledgeAgent(null);
+                  }}
+                  style={{
+                    padding: '8px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: COLORS.neutral.medium,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = COLORS.neutral.lightest}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  data-testid="button-close-knowledge-modal"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div style={{
+                padding: '24px',
+                maxHeight: 'calc(80vh - 120px)',
+                overflowY: 'auto'
+              }}>
+                {isLoadingKnowledge ? (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '64px'
+                  }}>
+                    <Loader2 size={48} style={{ 
+                      color: COLORS.primary.purple, 
+                      marginBottom: '16px',
+                      animation: 'spin 1s linear infinite' 
+                    }} />
+                    <p style={{ color: COLORS.neutral.medium }}>
+                      Caricamento knowledge base...
+                    </p>
+                  </div>
+                ) : knowledgeData?.data?.knowledgeBase?.length > 0 ? (
+                  <div>
+                    {/* Stats Overview */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: '16px',
+                      marginBottom: '32px'
+                    }}>
+                      <div style={{
+                        background: `${COLORS.primary.orange}15`,
+                        border: `1px solid ${COLORS.primary.orange}30`,
+                        borderRadius: '12px',
+                        padding: '16px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{
+                          fontSize: '24px',
+                          fontWeight: 700,
+                          color: COLORS.primary.orange,
+                          marginBottom: '4px'
+                        }}>
+                          {knowledgeData.data.stats.totalDocuments}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: COLORS.neutral.medium,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          Documenti
+                        </div>
+                      </div>
+                      <div style={{
+                        background: `${COLORS.primary.purple}15`,
+                        border: `1px solid ${COLORS.primary.purple}30`,
+                        borderRadius: '12px',
+                        padding: '16px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{
+                          fontSize: '24px',
+                          fontWeight: 700,
+                          color: COLORS.primary.purple,
+                          marginBottom: '4px'
+                        }}>
+                          {knowledgeData.data.stats.totalUrls}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: COLORS.neutral.medium,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          URL Sources
+                        </div>
+                      </div>
+                      <div style={{
+                        background: `${COLORS.semantic.info}15`,
+                        border: `1px solid ${COLORS.semantic.info}30`,
+                        borderRadius: '12px',
+                        padding: '16px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{
+                          fontSize: '24px',
+                          fontWeight: 700,
+                          color: COLORS.semantic.info,
+                          marginBottom: '4px'
+                        }}>
+                          {knowledgeData.data.stats.totalEmbeddings}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: COLORS.neutral.medium,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          Embeddings
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Knowledge Items List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {knowledgeData.data.knowledgeBase.map((item: any, index: number) => (
+                        <div key={item.id || index} style={{
+                          background: COLORS.neutral.white,
+                          border: `1px solid ${COLORS.neutral.lighter}`,
+                          borderRadius: '12px',
+                          padding: '16px',
+                          transition: 'all 0.2s ease'
+                        }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            marginBottom: '8px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {item.sourceType === 'pdf_document' ? (
+                                <FileText size={16} style={{ color: COLORS.semantic.error }} />
+                              ) : (
+                                <Link2 size={16} style={{ color: COLORS.semantic.info }} />
+                              )}
+                              <span style={{
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: COLORS.neutral.dark
+                              }}>
+                                {item.filename || item.sourceUrl}
+                              </span>
+                              <span style={{
+                                fontSize: '11px',
+                                background: item.origin === 'brand' ? COLORS.primary.orange : COLORS.primary.purple,
+                                color: 'white',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}>
+                                {item.origin === 'brand' ? 'Brand' : 'Tenant'}
+                              </span>
+                            </div>
+                            <span style={{
+                              fontSize: '12px',
+                              color: COLORS.neutral.light
+                            }}>
+                              {format(new Date(item.createdAt), 'dd/MM/yyyy HH:mm')}
+                            </span>
+                          </div>
+                          <p style={{
+                            fontSize: '13px',
+                            color: COLORS.neutral.medium,
+                            lineHeight: '1.4',
+                            margin: 0
+                          }}>
+                            {item.contentPreview}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '64px',
+                    textAlign: 'center'
+                  }}>
+                    <Database size={64} style={{ 
+                      color: COLORS.neutral.light, 
+                      marginBottom: '16px',
+                      opacity: 0.5 
+                    }} />
+                    <h4 style={{
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      color: COLORS.neutral.dark,
+                      marginBottom: '8px'
+                    }}>
+                      Nessuna Knowledge Base
+                    </h4>
+                    <p style={{
+                      fontSize: '14px',
+                      color: COLORS.neutral.medium,
+                      maxWidth: '400px',
+                      lineHeight: '1.5'
+                    }}>
+                      Questo agente non ha ancora documenti o URL nella sua knowledge base.
+                      Utilizza la sezione "RAG Training" nel modal di modifica per aggiungere contenuti.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
