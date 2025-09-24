@@ -1573,6 +1573,17 @@ export default function Management() {
                   }}>
                     Note
                   </th>
+                  <th style={{
+                    padding: '12px',
+                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: COLORS.neutral.dark,
+                    width: '120px'
+                  }}>
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1662,6 +1673,114 @@ export default function Management() {
                       whiteSpace: 'nowrap'
                     }}>
                       {org.notes || '-'}
+                    </td>
+                    <td style={{
+                      padding: '12px',
+                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                      textAlign: 'center'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        gap: '8px',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}>
+                        {/* Edit Organization (Tenant) */}
+                        <button
+                          onClick={() => {
+                            // TODO: Implementare modal edit organizzazione
+                            alert(`Edit organizzazione: ${org.name}`);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '6px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            color: COLORS.primary.orange
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = `${COLORS.primary.orange}20`;
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                          title="Modifica organizzazione"
+                          data-testid={`button-edit-org-${org.id}`}
+                        >
+                          <Edit size={16} />
+                        </button>
+                        
+                        {/* Add Legal Entity */}
+                        <button
+                          onClick={() => {
+                            // TODO: Implementare modal crea ragione sociale
+                            alert(`Aggiungi ragione sociale per: ${org.name}`);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '6px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            color: COLORS.semantic.success
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = `${COLORS.semantic.success}20`;
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                          title="Aggiungi ragione sociale"
+                          data-testid={`button-add-legal-${org.id}`}
+                        >
+                          <Plus size={16} />
+                        </button>
+                        
+                        {/* View Legal Entities */}
+                        <button
+                          onClick={() => {
+                            // TODO: Implementare drill-down ragioni sociali
+                            alert(`Visualizza ragioni sociali di: ${org.name}`);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '6px',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            color: COLORS.semantic.info
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.background = `${COLORS.semantic.info}20`;
+                            e.currentTarget.style.transform = 'scale(1.1)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'none';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                          title="Visualizza ragioni sociali"
+                          data-testid={`button-view-legal-${org.id}`}
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
