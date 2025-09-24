@@ -209,3 +209,63 @@ export interface BulkOperationResultDTO {
   operation: string;
   timestamp: string;
 }
+
+// ==================== AI AGENT REGISTRY ====================
+// Central registry for AI agents managed by Brand Interface
+
+export const agentModuleContextEnum = brandInterfaceSchema.enum("agent_module_context", [
+  "sales", "hr", "finance", "operations", "support", "general"
+]);
+
+export const agentStatusEnum = brandInterfaceSchema.enum("agent_status", [
+  "active", "inactive", "deprecated", "development"
+]);
+
+// AI Agents Registry - Master control for all tenants
+export const aiAgentsRegistry = brandInterfaceSchema.table("ai_agents_registry", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  agentId: varchar("agent_id", { length: 50 }).notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  systemPrompt: text("system_prompt").notNull(),
+  personality: jsonb("personality").default({}),
+  moduleContext: agentModuleContextEnum("module_context").notNull().default("general"),
+  baseConfiguration: jsonb("base_configuration").default({}),
+  version: integer("version").notNull().default(1),
+  status: agentStatusEnum("status").notNull().default("active"),
+  isLegacy: boolean("is_legacy").default(false), // Flag per agenti migrati
+  targetTenants: text("target_tenants").array(), // Specific tenants or null for all
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by", { length: 255 }),
+  brandTenantId: uuid("brand_tenant_id").notNull().references(() => brandTenants.id)
+});
+
+// ==================== AI AGENT TYPES ====================
+
+export type AIAgentRegistry = typeof aiAgentsRegistry.$inferSelect;
+export type NewAIAgentRegistry = typeof aiAgentsRegistry.$inferInsert;
+
+// Agent profile DTO for runtime usage
+export interface AgentProfile {
+  id: string;
+  agentId: string;
+  name: string;
+  description?: string;
+  systemPrompt: string;
+  personality: Record<string, any>;
+  moduleContext: string;
+  baseConfiguration: Record<string, any>;
+  version: number;
+  status: string;
+}
+
+// ==================== AI AGENT SCHEMAS ====================
+
+export const insertAIAgentRegistrySchema = createInsertSchema(aiAgentsRegistry).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const selectAIAgentRegistrySchema = createSelectSchema(aiAgentsRegistry);
