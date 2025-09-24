@@ -872,6 +872,47 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Get agent URLs only (for editing modal)
+  app.get("/brand-api/ai/agents/:id/urls", async (req, res) => {
+    try {
+      const { id: agentId } = req.params;
+      
+      // Verify agent exists
+      const agent = await brandStorage.getAIAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({
+          success: false,
+          error: 'AI agent not found'
+        });
+      }
+
+      // Get only URLs for this agent (for editing modal)
+      const knowledgeBase = await brandStorage.getAgentCrossTenantKnowledge(agentId, {
+        includeUrls: true,
+        includeDocuments: false,
+        limit: 20
+      });
+      
+      // Filter only URL items
+      const urlItems = knowledgeBase.items.filter(item => item.sourceType === 'url_content');
+      
+      res.json({
+        success: true,
+        data: {
+          agentId,
+          urls: urlItems,
+          count: urlItems.length
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching agent URLs:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch URLs'
+      });
+    }
+  });
+
   // Get agent knowledge base (embeddings)
   app.get("/brand-api/ai/agents/:id/knowledge", async (req, res) => {
     try {

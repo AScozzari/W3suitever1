@@ -401,6 +401,7 @@ export default function AIManagement() {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/ai/agents', variables.agentId, 'knowledge'] });
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/ai/agents', variables.agentId, 'urls'] });
       alert(`URL aggiunto con successo! Processamento in corso...`);
     },
     onError: (error) => {
@@ -427,12 +428,21 @@ export default function AIManagement() {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/brand-api/ai/agents', variables.agentId, 'knowledge'] });
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/ai/agents', variables.agentId, 'urls'] });
       alert(`${variables.type === 'document' ? 'Documento' : 'URL'} eliminato con successo!`);
     },
     onError: (error) => {
       console.error('Error deleting knowledge item:', error);
       alert('Errore nell\'eliminazione');
     }
+  });
+
+  // 9. URL LIST QUERY - Per visualizzare URL nel modal editing
+  const { data: urlListData, isLoading: isLoadingUrls } = useQuery({
+    queryKey: ['/brand-api/ai/agents', editingAgent?.id, 'urls'],
+    queryFn: () => apiRequest(`/brand-api/ai/agents/${editingAgent.id}/urls`),
+    enabled: !!editingAgent?.id && showEditModal,
+    staleTime: 10000 // Cache per 10 secondi
   });
 
   if (!isAuthenticated) {
@@ -1824,16 +1834,93 @@ export default function AIManagement() {
                       borderRadius: '8px',
                       background: COLORS.neutral.white
                     }}>
-                      {/* URL list will be populated here */}
-                      <div style={{
-                        padding: '12px',
-                        textAlign: 'center',
-                        color: COLORS.neutral.light,
-                        fontSize: '12px',
-                        fontStyle: 'italic'
-                      }}>
-                        Nessun URL aggiunto
-                      </div>
+                      {/* 🌐 LISTA URL REALE */}
+                      {isLoadingUrls ? (
+                        <div style={{
+                          padding: '12px',
+                          textAlign: 'center',
+                          color: COLORS.neutral.light,
+                          fontSize: '12px'
+                        }}>
+                          <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', marginRight: '8px' }} />
+                          Caricamento URL...
+                        </div>
+                      ) : urlListData?.data?.urls?.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px' }}>
+                          {urlListData.data.urls.map((url: any, index: number) => (
+                            <div key={url.id || index} style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 12px',
+                              background: `${COLORS.semantic.info}10`,
+                              border: `1px solid ${COLORS.semantic.info}30`,
+                              borderRadius: '6px',
+                              fontSize: '12px'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+                                <Link2 size={12} style={{ color: COLORS.semantic.info }} />
+                                <span style={{
+                                  color: COLORS.neutral.dark,
+                                  fontWeight: 500,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {url.sourceUrl}
+                                </span>
+                                <span style={{
+                                  fontSize: '10px',
+                                  background: url.origin === 'brand' ? COLORS.primary.orange : COLORS.primary.purple,
+                                  color: 'white',
+                                  padding: '1px 4px',
+                                  borderRadius: '3px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {url.origin}
+                                </span>
+                              </div>
+                              
+                              {/* 🗑️ DELETE BUTTON per URL */}
+                              {url.origin === 'brand' && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Eliminare URL: ${url.sourceUrl}?`)) {
+                                      deleteKnowledgeMutation.mutate({
+                                        agentId: editingAgent.id,
+                                        itemId: url.id,
+                                        type: 'url'
+                                      });
+                                    }
+                                  }}
+                                  disabled={deleteKnowledgeMutation.isPending}
+                                  style={{
+                                    padding: '2px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: COLORS.neutral.light,
+                                    cursor: 'pointer',
+                                    borderRadius: '3px'
+                                  }}
+                                  data-testid={`button-delete-url-${url.id}`}
+                                >
+                                  <Trash2 size={10} />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{
+                          padding: '12px',
+                          textAlign: 'center',
+                          color: COLORS.neutral.light,
+                          fontSize: '12px',
+                          fontStyle: 'italic'
+                        }}>
+                          Nessun URL aggiunto
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
