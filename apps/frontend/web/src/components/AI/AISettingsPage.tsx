@@ -74,7 +74,11 @@ export default function AISettingsPage() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [trainingPanelExpanded, setTrainingPanelExpanded] = useState(false);
+  
+  // Agent-specific training states
+  const [selectedAgentForTraining, setSelectedAgentForTraining] = useState<string | null>(null);
+  const [agentTrainingModalOpen, setAgentTrainingModalOpen] = useState(false);
+  const [agentStoryboardModalOpen, setAgentStoryboardModalOpen] = useState(false);
   const [urlToProcess, setUrlToProcess] = useState('');
   const [processingUrl, setProcessingUrl] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -105,18 +109,18 @@ export default function AISettingsPage() {
     enabled: activeTab === 'conversations'
   });
 
-  // Fetch training statistics
-  const { data: trainingStats, isLoading: trainingStatsLoading } = useQuery<{success: boolean, data: any}>({
-    queryKey: ['/api/ai/training/stats'],
+  // Fetch agent-specific training statistics  
+  const { data: agentTrainingStats, isLoading: agentTrainingStatsLoading } = useQuery<{success: boolean, data: any}>({
+    queryKey: ['/api/ai/agents', selectedAgentForTraining, 'training/stats'],
     refetchInterval: 30000,
-    enabled: trainingPanelExpanded
+    enabled: !!selectedAgentForTraining && agentTrainingModalOpen
   });
 
-  // Fetch training sessions for storyboard
-  const { data: trainingSessions, isLoading: trainingSessionsLoading } = useQuery<{success: boolean, data: any[]}>({
-    queryKey: ['/api/ai/training/sessions'],
+  // Fetch agent-specific training sessions for storyboard
+  const { data: agentTrainingSessions, isLoading: agentTrainingSessionsLoading } = useQuery<{success: boolean, data: any[]}>({
+    queryKey: ['/api/ai/agents', selectedAgentForTraining, 'training/sessions'],
     refetchInterval: 30000,
-    enabled: trainingPanelExpanded
+    enabled: !!selectedAgentForTraining && (agentTrainingModalOpen || agentStoryboardModalOpen)
   });
 
   // Update settings mutation
@@ -135,17 +139,17 @@ export default function AISettingsPage() {
     onError: () => setSaveStatus('error'),
   });
 
-  // Process URL mutation
-  const processUrlMutation = useMutation({
-    mutationFn: async (url: string) => {
-      return await apiRequest('/api/ai/training/url', {
+  // Process URL mutation for specific agent
+  const processAgentUrlMutation = useMutation({
+    mutationFn: async ({ agentId, url }: { agentId: string; url: string }) => {
+      return await apiRequest(`/api/ai/agents/${agentId}/training/url`, {
         method: 'POST',
         body: { url, extractContent: true },
       });
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents', selectedAgentForTraining, 'training/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents', selectedAgentForTraining, 'training/sessions'] });
       setUrlToProcess('');
       setProcessingUrl(false);
       
@@ -190,15 +194,15 @@ export default function AISettingsPage() {
   });
 
   // Delete training session mutation
-  const deleteSessionMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      return await apiRequest(`/api/ai/training/sessions/${sessionId}`, {
+  const deleteAgentSessionMutation = useMutation({
+    mutationFn: async ({ agentId, sessionId }: { agentId: string; sessionId: string }) => {
+      return await apiRequest(`/api/ai/agents/${agentId}/training/sessions/${sessionId}`, {
         method: 'DELETE',
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/ai/training/sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents', selectedAgentForTraining, 'training/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/agents', selectedAgentForTraining, 'training/sessions'] });
       
       toast({
         title: "🗑️ Sessione Eliminata",
@@ -394,11 +398,32 @@ export default function AISettingsPage() {
     input.click();
   };
 
-  // Handle review responses
-  const handleReviewResponses = () => {
-    // Navigate to responses review (could be a modal or separate page)
-    alert('Funzionalità di review delle risposte in arrivo!');
-    // TODO: Implement response review interface
+  // Agent-specific training functions
+  const openAgentTrainingModal = (agentId: string) => {
+    setSelectedAgentForTraining(agentId);
+    setAgentTrainingModalOpen(true);
+  };
+
+  const openAgentStoryboardModal = (agentId: string) => {
+    setSelectedAgentForTraining(agentId);
+    setAgentStoryboardModalOpen(true);
+  };
+
+  const closeTrainingModals = () => {
+    setAgentTrainingModalOpen(false);
+    setAgentStoryboardModalOpen(false);
+    setSelectedAgentForTraining(null);
+    setUrlToProcess('');
+  };
+
+  const handleProcessAgentUrl = () => {
+    if (!urlToProcess.trim() || !selectedAgentForTraining) return;
+    
+    setProcessingUrl(true);
+    processAgentUrlMutation.mutate({
+      agentId: selectedAgentForTraining,
+      url: urlToProcess
+    });
   };
 
   if (settingsLoading) {
@@ -605,12 +630,7 @@ export default function AISettingsPage() {
               
               {/* Icona Modifica - Contesto Embedded RAG */}
               <button
-                onClick={() => {
-                  toast({ 
-                    title: "Gestione Contesto RAG", 
-                    description: "Apertura editor contesto embedded per Tippy..." 
-                  });
-                }}
+                onClick={() => openAgentTrainingModal('a1f4d085-4b60-4661-aea8-3e1fefa0d282')}
                 className="p-2 text-gray-500 hover:text-[#FF6900] hover:bg-[#FF6900]/5 rounded-lg transition-colors"
                 data-testid="edit-agent-tippy-context"
                 title="Modifica contesto embedded RAG con URL e documenti"
@@ -620,12 +640,7 @@ export default function AISettingsPage() {
               
               {/* Icona Occhio - Story Board Custom Tenant */}
               <button
-                onClick={() => {
-                  toast({ 
-                    title: "Story Board Tippy", 
-                    description: "Apertura story board personalizzato per questo tenant..." 
-                  });
-                }}
+                onClick={() => openAgentStoryboardModal('a1f4d085-4b60-4661-aea8-3e1fefa0d282')}
                 className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 data-testid="view-agent-tippy-storyboard"
                 title="Visualizza story board custom tenant con documenti e URL caricati"
@@ -1521,6 +1536,311 @@ export default function AISettingsPage() {
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'conversations' && renderConversationsTab()}
       </div>
+
+      {/* Agent Training Modal */}
+      <Dialog open={agentTrainingModalOpen} onOpenChange={setAgentTrainingModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Brain className="w-6 h-6 text-[#FF6900]" />
+              <span>Training AI - Tippy (Agent Specific)</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Sezione URL Context */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+              <div className="flex items-center space-x-2 mb-4">
+                <Globe className="w-5 h-5 text-blue-600" />
+                <h5 className="font-semibold text-gray-900">Importa Contenuti da URL</h5>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Inserisci URL di documenti, pagine web o risorse online da memorizzare nel database vettoriale per questo agente specifico.
+              </p>
+              <div className="flex space-x-2">
+                <input
+                  type="url"
+                  value={urlToProcess}
+                  onChange={(e) => setUrlToProcess(e.target.value)}
+                  placeholder="https://esempio.com/documento"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
+                  data-testid="input-agent-training-url"
+                />
+                <button 
+                  onClick={handleProcessAgentUrl}
+                  disabled={processingUrl || !urlToProcess.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                  data-testid="button-process-agent-url"
+                >
+                  {processingUrl ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Link className="w-4 h-4" />
+                  )}
+                  <span>{processingUrl ? 'Processando...' : 'Processa'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Sezione Media Upload */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 border border-gray-200">
+              <div className="flex items-center space-x-2 mb-4">
+                <Upload className="w-5 h-5 text-purple-600" />
+                <h5 className="font-semibold text-gray-900">Upload Media & Documenti</h5>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Carica PDF, immagini, audio o video per arricchire il contesto dell'agente Tippy.
+              </p>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* PDF Upload */}
+                <button 
+                  onClick={() => handleFileUpload('pdf')}
+                  disabled={uploadingFile}
+                  className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                  data-testid="button-upload-agent-pdf"
+                >
+                  <FileText className="w-6 h-6 text-gray-600" />
+                  <span className="text-xs text-gray-600">PDF</span>
+                </button>
+                
+                {/* Image Upload */}
+                <button 
+                  onClick={() => handleFileUpload('image')}
+                  disabled={uploadingFile}
+                  className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                  data-testid="button-upload-agent-image"
+                >
+                  <Image className="w-6 h-6 text-gray-600" />
+                  <span className="text-xs text-gray-600">Immagini</span>
+                </button>
+                
+                {/* Audio Upload */}
+                <button 
+                  onClick={() => handleFileUpload('audio')}
+                  disabled={uploadingFile}
+                  className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                  data-testid="button-upload-agent-audio"
+                >
+                  <Mic className="w-6 h-6 text-gray-600" />
+                  <span className="text-xs text-gray-600">Audio</span>
+                </button>
+                
+                {/* Video Upload */}
+                <button 
+                  onClick={() => handleFileUpload('video')}
+                  disabled={uploadingFile}
+                  className="p-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#FF6900] hover:bg-[#FF6900]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex flex-col items-center space-y-1"
+                  data-testid="button-upload-agent-video"
+                >
+                  <Video className="w-6 h-6 text-gray-600" />
+                  <span className="text-xs text-gray-600">Video</span>
+                </button>
+              </div>
+              
+              {/* Progress Indicator */}
+              {uploadingFile && (
+                <div className="mt-4">
+                  <div className="flex items-center space-x-2">
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#FF6900]" />
+                    <span className="text-sm text-gray-600">Processing media content...</span>
+                  </div>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-[#FF6900] h-2 rounded-full transition-all duration-300" 
+                      style={{width: `${uploadProgress}%`}}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{uploadProgress}% completato</p>
+                </div>
+              )}
+            </div>
+
+            {/* Stats Section */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white/60 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-[#FF6900]">
+                  {agentTrainingStatsLoading ? '...' : (agentTrainingStats?.data?.documentsProcessed || 0)}
+                </p>
+                <p className="text-xs text-gray-600">Documenti Processati</p>
+              </div>
+              <div className="bg-white/60 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-[#7B2CBF]">
+                  {agentTrainingStatsLoading ? '...' : (agentTrainingStats?.data?.embeddingsCreated || 0)}
+                </p>
+                <p className="text-xs text-gray-600">Embeddings Creati</p>
+              </div>
+              <div className="bg-white/60 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-green-600">
+                  {agentTrainingStatsLoading ? '...' : (agentTrainingStats?.data?.validationsCompleted || 0)}
+                </p>
+                <p className="text-xs text-gray-600">Validazioni</p>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={closeTrainingModals}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                data-testid="button-close-agent-training"
+              >
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Agent Storyboard Modal */}
+      <Dialog open={agentStoryboardModalOpen} onOpenChange={setAgentStoryboardModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Eye className="w-6 h-6 text-blue-600" />
+              <span>Storyboard Training - Tippy (Agent Specific)</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Header Info */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Database className="w-5 h-5 text-blue-600" />
+                <h5 className="font-semibold text-gray-900">Contenuti Training per Agente</h5>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  URL • Documenti • Media
+                </span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {agentTrainingSessions?.data?.length || 0} sessioni trovate
+              </span>
+            </div>
+            
+            {agentTrainingSessionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-5 h-5 animate-spin text-[#FF6900]" />
+                <span className="ml-2 text-sm text-gray-600">Caricamento sessioni...</span>
+              </div>
+            ) : agentTrainingSessions?.data?.length > 0 ? (
+              <div className="max-h-80 overflow-y-auto space-y-3">
+                {agentTrainingSessions.data.map((session: any, index: number) => {
+                  const sessionType = session.sessionType || 'unknown';
+                  const sessionStatus = session.sessionStatus || session.status || 'unknown';
+                  
+                  return (
+                    <div key={session.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                      <div className="flex items-center space-x-3 flex-1">
+                        {/* Status Indicator */}
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                          sessionStatus === 'completed' ? 'bg-green-500' :
+                          sessionStatus === 'processing' ? 'bg-yellow-500 animate-pulse' :
+                          sessionStatus === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                        }`}></div>
+                        
+                        {/* Content Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-lg">
+                              {sessionType === 'url_ingestion' ? '🌐' :
+                               sessionType === 'document_upload' ? '📄' :
+                               sessionType === 'media_processing' ? '🎬' : '📁'}
+                            </span>
+                            <p className="font-medium text-sm text-gray-900">
+                              {sessionType === 'url_ingestion' ? 'URL Processato' :
+                               sessionType === 'document_upload' ? 'Documento Caricato' :
+                               sessionType === 'media_processing' ? 'Media Processato' : 'Contenuto Altro'}
+                            </p>
+                          </div>
+                          <p className="text-xs text-gray-600 truncate">
+                            {sessionType === 'url_ingestion' && session.sourceUrl ? (
+                              <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
+                                {session.sourceUrl.length > 50 ? session.sourceUrl.substring(0, 50) + '...' : session.sourceUrl}
+                              </span>
+                            ) : sessionType === 'document_upload' && session.fileName ? (
+                              <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs">
+                                📎 {session.fileName}
+                              </span>
+                            ) : sessionType === 'media_processing' && session.fileName ? (
+                              <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs">
+                                🎥 {session.fileName}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">
+                                {session.content?.slice(0, 50) + '...' || 'Contenuto non disponibile'}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Status and Actions */}
+                      <div className="flex items-center space-x-3">
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500">
+                            {session.createdAt ? new Date(session.createdAt).toLocaleDateString('it-IT', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : 'N/A'}
+                          </p>
+                          <p className={`text-xs font-medium ${
+                            sessionStatus === 'completed' ? 'text-green-600' :
+                            sessionStatus === 'processing' ? 'text-yellow-600' :
+                            sessionStatus === 'failed' ? 'text-red-600' : 'text-gray-600'
+                          }`}>
+                            {sessionStatus === 'completed' ? '✅ Completato' :
+                             sessionStatus === 'processing' ? '⏳ In corso...' :
+                             sessionStatus === 'failed' ? '❌ Fallito' : '❓ Sconosciuto'}
+                          </p>
+                        </div>
+                        
+                        {/* Delete Button */}
+                        {session.id && selectedAgentForTraining && (
+                          <button
+                            onClick={() => deleteAgentSessionMutation.mutate({ 
+                              agentId: selectedAgentForTraining, 
+                              sessionId: session.id 
+                            })}
+                            disabled={deleteAgentSessionMutation.isPending}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                            title="Elimina sessione"
+                            data-testid={`button-delete-agent-session-${session.id}`}
+                          >
+                            {deleteAgentSessionMutation.isPending ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Database className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-sm">Nessun contenuto processato ancora per questo agente</p>
+                <p className="text-gray-400 text-xs mt-1">Le URL processate, documenti caricati e media per Tippy appariranno qui</p>
+              </div>
+            )}
+
+            {/* Close Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={closeTrainingModals}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                data-testid="button-close-agent-storyboard"
+              >
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
