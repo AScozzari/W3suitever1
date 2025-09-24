@@ -799,10 +799,11 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   // AI AGENT RAG KNOWLEDGE BASE ENDPOINTS  
   // ==============================================================================
 
-  // Upload documents for agent knowledge base
+  // Upload documents for agent knowledge base - IMPLEMENTED
   app.post("/brand-api/ai/agents/:id/documents", async (req, res) => {
     try {
       const { id: agentId } = req.params;
+      const { content, filename } = req.body;
       
       // Verify agent exists
       const agent = await brandStorage.getAIAgent(agentId);
@@ -813,14 +814,34 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         });
       }
 
-      // TODO: Implement file upload with multer
-      // TODO: Process documents (chunk + embed)
-      // TODO: Save to vectorEmbeddings with agent metadata
+      if (!content || !filename) {
+        return res.status(400).json({
+          success: false,
+          error: 'content and filename are required'
+        });
+      }
+
+      console.log(`[BRAND-TRAINING] 📄 Processing document training for agent ${agentId}: ${filename}`);
+
+      // Process document using Brand training pipeline
+      const result = await brandStorage.processAgentTraining({
+        agentId,
+        sourceType: 'document',
+        content,
+        filename,
+        origin: 'brand'
+      });
       
       res.json({
         success: true,
-        message: 'Document upload endpoint - implementation pending',
-        data: { agentId, uploadCount: 0 }
+        message: 'Document processed successfully for cross-tenant training',
+        data: { 
+          agentId, 
+          filename,
+          chunksCreated: result.chunksCreated,
+          embeddingsGenerated: result.embeddingsGenerated,
+          savedToOrigin: 'brand'
+        }
       });
     } catch (error) {
       console.error('Error uploading agent documents:', error);
@@ -831,7 +852,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
-  // Add URL knowledge source for agent
+  // Add URL knowledge source for agent - IMPLEMENTED
   app.post("/brand-api/ai/agents/:id/urls", async (req, res) => {
     try {
       const { id: agentId } = req.params;
@@ -853,15 +874,36 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         });
       }
 
-      // TODO: Validate URL format
-      // TODO: Scrape content from URL
-      // TODO: Process content (chunk + embed) 
-      // TODO: Save to vectorEmbeddings with agent metadata
+      // Basic URL validation
+      try {
+        new URL(url);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid URL format'
+        });
+      }
+
+      console.log(`[BRAND-TRAINING] 🌐 Processing URL training for agent ${agentId}: ${url}`);
+
+      // Process URL using Brand training pipeline
+      const result = await brandStorage.processAgentTraining({
+        agentId,
+        sourceType: 'url',
+        sourceUrl: url,
+        origin: 'brand'
+      });
       
       res.json({
         success: true,
-        message: 'URL processing endpoint - implementation pending',
-        data: { agentId, url }
+        message: 'URL processed successfully for cross-tenant training',
+        data: { 
+          agentId, 
+          url,
+          chunksCreated: result.chunksCreated,
+          embeddingsGenerated: result.embeddingsGenerated,
+          savedToOrigin: 'brand'
+        }
       });
     } catch (error) {
       console.error('Error adding agent URL:', error);

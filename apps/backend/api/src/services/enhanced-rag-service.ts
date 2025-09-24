@@ -1,6 +1,5 @@
 import { db, setTenantContext } from '../core/db.js';
 import { vectorEmbeddings } from '../db/schema/w3suite.js';
-import { aiCrossTenantEmbeddings, aiKnowledgeSources } from '../db/schema/brand-interface.js';
 import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import OpenAI from 'openai';
 
@@ -143,8 +142,9 @@ export class EnhancedRAGService {
         .where(
           and(
             eq(vectorEmbeddings.tenantId, tenantId),
-            eq(vectorEmbeddings.status, 'active'),
-            sql`${vectorEmbeddings.metadata}->>'agentId' = ${agentId}`
+            eq(vectorEmbeddings.agentId, agentId),
+            eq(vectorEmbeddings.origin, 'tenant'),
+            eq(vectorEmbeddings.status, 'ready')
           )
         )
         .limit(limit * 2) // Get more for similarity filtering
@@ -185,7 +185,7 @@ export class EnhancedRAGService {
   }
 
   /**
-   * Cerca in cross-tenant embeddings (Brand global)
+   * Cerca in cross-tenant embeddings (Brand global) - usando w3suite.vectorEmbeddings con origin='brand'
    */
   private async searchCrossTenantEmbeddings(
     queryEmbedding: number[],
@@ -193,44 +193,29 @@ export class EnhancedRAGService {
     limit: number
   ): Promise<RAGSearchResult[]> {
     try {
-      // Query cross-tenant embeddings - NO tenant context (global)
+      // Query cross-tenant embeddings - origin='brand' senza tenant specifico
       const embeddings = await db
         .select({
-          id: aiCrossTenantEmbeddings.id,
-          sourceId: aiCrossTenantEmbeddings.sourceId,
-          agentId: aiCrossTenantEmbeddings.agentId,
-          contentChunk: aiCrossTenantEmbeddings.contentChunk,
-          embeddingVector: aiCrossTenantEmbeddings.embeddingVector,
-          chunkMetadata: aiCrossTenantEmbeddings.chunkMetadata,
-          tags: aiCrossTenantEmbeddings.tags,
-          status: aiCrossTenantEmbeddings.status
+          id: vectorEmbeddings.id,
+          agentId: vectorEmbeddings.agentId,
+          contentChunk: vectorEmbeddings.contentChunk,
+          embeddingVector: vectorEmbeddings.embeddingVector,
+          sourceUrl: vectorEmbeddings.sourceUrl,
+          metadata: vectorEmbeddings.metadata,
+          tags: vectorEmbeddings.tags
         })
-        .from(aiCrossTenantEmbeddings)
+        .from(vectorEmbeddings)
         .where(
           and(
-            eq(aiCrossTenantEmbeddings.agentId, agentId),
-            eq(aiCrossTenantEmbeddings.status, 'active')
+            eq(vectorEmbeddings.agentId, agentId),
+            eq(vectorEmbeddings.origin, 'brand'),
+            eq(vectorEmbeddings.status, 'ready')
           )
         )
         .limit(limit * 2) // Get more for similarity filtering
-        .orderBy(desc(aiCrossTenantEmbeddings.createdAt));
+        .orderBy(desc(vectorEmbeddings.createdAt));
 
       console.log(`[ENHANCED-RAG] 🌐 Found ${embeddings.length} cross-tenant embeddings for agent ${agentId}`);
-
-      // Get source info per ogni embedding
-      const sourceIds = embeddings.map(e => e.sourceId).filter(Boolean);
-      const sources = sourceIds.length > 0 ? await db
-        .select({
-          id: aiKnowledgeSources.id,
-          filename: aiKnowledgeSources.filename,
-          sourceUrl: aiKnowledgeSources.sourceUrl,
-          sourceType: aiKnowledgeSources.sourceType,
-          origin: aiKnowledgeSources.origin
-        })
-        .from(aiKnowledgeSources)
-        .where(inArray(aiKnowledgeSources.id, sourceIds)) : [];
-
-      const sourceMap = new Map(sources.map(s => [s.id, s]));
 
       // Calcola similarity per ogni embedding
       const results: RAGSearchResult[] = [];
@@ -238,7 +223,6 @@ export class EnhancedRAGService {
         try {
           const embeddingArray = JSON.parse(embedding.embeddingVector || '[]');
           const similarity = this.calculateCosineSimilarity(queryEmbedding, embeddingArray);
-          const source = sourceMap.get(embedding.sourceId);
           
           results.push({
             id: embedding.id,
@@ -247,11 +231,10 @@ export class EnhancedRAGService {
             contentChunk: embedding.contentChunk || '',
             similarity,
             source: {
-              filename: source?.filename,
-              sourceUrl: source?.sourceUrl,
+              sourceUrl: embedding.sourceUrl,
               origin: 'brand'
             },
-            metadata: embedding.chunkMetadata || {}
+            metadata: embedding.metadata || {}
           });
         } catch (parseError) {
           console.warn(`[ENHANCED-RAG] ⚠️ Failed to parse cross-tenant embedding ${embedding.id}:`, parseError);
