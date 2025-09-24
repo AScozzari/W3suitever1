@@ -290,7 +290,7 @@ export default function Management() {
   const { data: legalEntitiesData, isLoading: legalEntitiesLoading } = useQuery({
     queryKey: ['/brand-api/legal-entities', drillDownView.tenantId],
     queryFn: async () => {
-      const response = await fetch(`/brand-api/legal-entities?tenantId=${drillDownView.tenantId}`);
+      const response = await fetch(`/brand-api/legal-entities/${drillDownView.tenantId}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     },
