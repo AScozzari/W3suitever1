@@ -2,8 +2,8 @@
 import { pgTable, varchar, text, timestamp, uuid, integer, boolean, jsonb, uniqueIndex } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { tenants } from './core';
-import { stores } from './organization';
+import { tenants } from './w3suite';
+import { stores } from './w3suite';
 
 // ==================== PRODUCTS ====================
 export const products = pgTable('products', {

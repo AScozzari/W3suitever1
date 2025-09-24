@@ -10,23 +10,55 @@ W3 Suite is a multi-tenant enterprise platform offering a comprehensive business
 **❌ NEVER create shared/ folder - IT DOES NOT EXIST**
 **❌ NEVER reference shared/schema.ts - IT DOES NOT EXIST**
 
-#### Correct Schema Location:
-- ✅ **ALWAYS** use: `apps/backend/api/src/db/schema/`
-- ✅ **w3suite.ts** = Tenant-specific tables (users, stores, roles, HR tables with RLS)
-- ✅ **public.ts** = Shared reference data (countries, cities, payment methods - no tenant)
-- ✅ **brand-interface.ts** = Brand HQ system tables
+#### ✅ CLEAN ARCHITECTURE - POST REFACTORING 2024/09/24:
+- 🎯 **ALWAYS** use: `apps/backend/api/src/db/schema/`
+- 🏢 **w3suite.ts** = Tenant-specific tables (users, stores, roles, HR tables with RLS)
+- 🌐 **public.ts** = Shared reference data (countries, cities, payment methods - no tenant)  
+- 🎯 **brand-interface.ts** = Brand HQ system tables
+- 📋 **index.ts** = ONLY backward compatibility re-exports (NO new definitions)
 
-#### Correct Import Pattern:
+#### ✅ SCHEMA POSITIONING RULES:
 ```typescript
-// ✅ CORRECT
-import { users, stores, leaveRequests } from '@/db/schema/w3suite';
-import { countries, paymentMethods } from '@/db/schema/public';
-import { brandTenants } from '@/db/schema/brand-interface';
+// 🏢 W3SUITE SCHEMA - Tenant Data (RLS Enabled)
+- tenants, users, legalEntities, stores
+- roles, rolePerms, userAssignments  
+- customers, leads, products, inventory (CRM/Warehouse)
+- HR: calendarEvents, shifts, leaveRequests, timeTracking
+- AI: aiSettings, aiConversations, aiUsageLogs
+- notifications, structuredLogs, entityLogs
 
-// ❌ WRONG - WILL FAIL
-import { users } from '@shared/schema'; // DOES NOT EXIST
-import { users } from 'shared/schema.ts'; // DOES NOT EXIST
+// 🌐 PUBLIC SCHEMA - Reference Data (NO RLS)
+- brands, channels, commercialAreas, drivers
+- countries, italianCities, legalForms
+- paymentMethods, paymentMethodsConditions
+
+// 🎯 BRAND_INTERFACE SCHEMA - Brand HQ (Brand RLS)
+- brandTenants, brandUsers, brandRoles
+- brandCampaigns, brandPriceLists, brandTemplates
 ```
+
+#### ✅ Correct Import Pattern:
+```typescript
+// ✅ CORRECT - Direct from canonical schema
+import { users, stores, leaveRequests } from './db/schema/w3suite';
+import { countries, paymentMethods } from './db/schema/public';
+import { brandTenants } from './db/schema/brand-interface';
+
+// ✅ ACCEPTABLE - Backward compatibility (index.ts re-exports)
+import { users, stores } from './db/schema'; // Re-exported from w3suite
+import { brands, channels } from './db/schema'; // Re-exported from public
+
+// ❌ WRONG - OBSOLETE FILES REMOVED
+import { users } from './db/schema/core'; // FILE REMOVED 2024/09/24
+import { roles } from './db/schema/rbac'; // FILE REMOVED 2024/09/24
+import { stores } from './db/schema/organization'; // NEVER EXISTED
+```
+
+#### 🚫 FORBIDDEN ACTIONS:
+- **NEVER** create duplicate enum definitions across schema files
+- **NEVER** create duplicate table definitions across schema files  
+- **NEVER** define new tables in `index.ts` (only re-exports allowed)
+- **NEVER** import from removed files: `core.ts`, `rbac.ts`, `organization.ts`
 
 ### 2. FRONTEND CONSISTENCY (OBBLIGATORIO)
 - ✅ **ALL pages MUST use Layout** with header and sidebar

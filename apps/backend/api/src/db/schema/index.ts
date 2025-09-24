@@ -61,9 +61,9 @@ export {
   userStores as w3suiteUserStores
 } from './w3suite';
 
-// ==================== ENUMS ====================
-export const scopeTypeEnum = pgEnum('scope_type', ['tenant', 'legal_entity', 'store']);
-export const permModeEnum = pgEnum('perm_mode', ['grant', 'revoke']);
+// ==================== ENUMS RE-EXPORTED FROM W3SUITE ====================
+// Import and re-export enums from w3suite schema for backward compatibility
+export { scopeTypeEnum, permModeEnum } from './w3suite';
 
 // ==================== USERS & TENANTS RE-EXPORTED FROM W3SUITE ====================
 // Import and re-export from w3suite schema for backward compatibility
@@ -81,73 +81,40 @@ import { legalEntities as w3suiteLegalEntitiesTable } from './w3suite';
 export const legalEntities = w3suiteLegalEntitiesTable;
 export type { InsertLegalEntity, LegalEntity } from './w3suite';
 
-// ==================== BRANDS ====================
-export const brands = pgTable("brands", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 50 }).unique().notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  status: varchar("status", { length: 50 }).default("active"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// ==================== PUBLIC SCHEMA RE-EXPORTS ====================
+// Import and re-export from public schema for backward compatibility
+import { 
+  brands as publicBrands, 
+  channels as publicChannels, 
+  commercialAreas as publicCommercialAreas, 
+  drivers as publicDrivers
+} from './public';
 
-// ==================== CHANNELS ====================
-export const channels = pgTable("channels", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 50 }).unique().notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const brands = publicBrands;
+export const channels = publicChannels;
+export const commercialAreas = publicCommercialAreas;
+export const drivers = publicDrivers;
 
-// ==================== COMMERCIAL AREAS ====================
-export const commercialAreas = pgTable("commercial_areas", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 20 }).unique().notNull(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertCommercialAreaSchema = createInsertSchema(commercialAreas).omit({ 
-  id: true, 
-  createdAt: true
-});
-export type InsertCommercialArea = z.infer<typeof insertCommercialAreaSchema>;
-export type CommercialArea = typeof commercialAreas.$inferSelect;
-
-// ==================== BUSINESS DRIVERS ====================
-export const drivers = pgTable("drivers", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 50 }).unique().notNull(),
-  name: varchar("name", { length: 255 }).notNull(),
-  active: boolean("active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Export types for backward compatibility
+export type { InsertBrand, Brand } from './public';
+export type { InsertChannel, Channel } from './public';
+export type { InsertCommercialArea, CommercialArea } from './public';
+export type { InsertDriver, Driver } from './public';
 
 // ==================== STORES RE-EXPORTED FROM W3SUITE ====================
 import { stores as w3suiteStoresTable } from './w3suite';
 export const stores = w3suiteStoresTable;
 export type { InsertStore, Store } from './w3suite';
 
-// ==================== STORE ASSOCIATIONS ====================
-export const storeBrands = pgTable("store_brands", {
-  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  brandId: uuid("brand_id").notNull().references(() => brands.id),
-  isPrimary: boolean("is_primary").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.storeId, table.brandId] }),
-]);
+// ==================== STORE ASSOCIATIONS RE-EXPORTED FROM W3SUITE ====================
+// Import and re-export from w3suite schema for backward compatibility
+import { 
+  storeBrands as w3suiteStoreBrands,
+  storeDriverPotential as w3suiteStoreDriverPotential
+} from './w3suite';
 
-export const storeDriverPotential = pgTable("store_driver_potential", {
-  storeId: uuid("store_id").notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  driverId: uuid("driver_id").notNull().references(() => drivers.id),
-  potentialScore: smallint("potential_score").notNull(),
-  clusterLabel: varchar("cluster_label", { length: 50 }),
-  kpis: jsonb("kpis"),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  primaryKey({ columns: [table.storeId, table.driverId] }),
-]);
+export const storeBrands = w3suiteStoreBrands;
+export const storeDriverPotential = w3suiteStoreDriverPotential;
 
 // ==================== RBAC SYSTEM RE-EXPORTED FROM W3SUITE ====================
 // Import and re-export from w3suite schema for backward compatibility
@@ -165,60 +132,22 @@ export const userAssignments = w3suiteUserAssignmentsTable;
 export type { InsertRole, Role } from './w3suite';
 export type { InsertUserAssignment, UserAssignment } from './w3suite';
 
-// ==================== REFERENCE TABLES ====================
+// ==================== REFERENCE TABLES RE-EXPORTED FROM PUBLIC ====================
+// Import and re-export from public schema for backward compatibility
+import { 
+  legalForms as publicLegalForms,
+  countries as publicCountries,
+  italianCities as publicItalianCities
+} from './public';
 
-// Forme giuridiche italiane
-export const legalForms = pgTable("legal_forms", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 20 }).unique().notNull(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  minCapital: varchar("min_capital", { length: 50 }),
-  liability: varchar("liability", { length: 50 }), // "limited", "unlimited", "mixed"
-  active: boolean("active").default(true),
-  sortOrder: smallint("sort_order").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export const legalForms = publicLegalForms;
+export const countries = publicCountries;
+export const italianCities = publicItalianCities;
 
-export const insertLegalFormSchema = createInsertSchema(legalForms).omit({ 
-  id: true, 
-  createdAt: true 
-});
-export type InsertLegalForm = z.infer<typeof insertLegalFormSchema>;
-export type LegalForm = typeof legalForms.$inferSelect;
-
-// Paesi
-export const countries = pgTable("countries", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code", { length: 3 }).unique().notNull(), // ISO 3166-1
-  name: varchar("name", { length: 100 }).notNull(),
-  active: boolean("active").default(true),
-  isDefault: boolean("is_default").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertCountrySchema = createInsertSchema(countries).omit({ 
-  id: true, 
-  createdAt: true 
-});
-export type InsertCountry = z.infer<typeof insertCountrySchema>;
-export type Country = typeof countries.$inferSelect;
-
-// Città italiane
-export const italianCities = pgTable("italian_cities", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name", { length: 100 }).notNull(),
-  province: varchar("province", { length: 2 }).notNull(), // Codice provincia (MI, RM, etc)
-  provinceName: varchar("province_name", { length: 100 }).notNull(),
-  region: varchar("region", { length: 100 }).notNull(),
-  postalCode: varchar("postal_code", { length: 5 }).notNull(),
-  active: boolean("active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_italian_cities_name").on(table.name),
-  index("idx_italian_cities_province").on(table.province),
-  uniqueIndex("italian_cities_unique").on(table.name, table.province),
-]);
+// Export types for backward compatibility
+export type { InsertLegalForm, LegalForm } from './public';
+export type { InsertCountry, Country } from './public';
+export type { InsertItalianCity, ItalianCity } from './public';
 
 // ==================== USER EXTRA PERMS RE-EXPORTED FROM W3SUITE ====================
 import { userExtraPerms as w3suiteUserExtraPermsTable } from './w3suite';
