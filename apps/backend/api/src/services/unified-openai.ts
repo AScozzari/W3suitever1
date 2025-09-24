@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
 import { randomUUID } from 'crypto';
+import { enhancedRAGService, RAGQueryOptions } from './enhanced-rag-service.js';
 
 // Default model configuration
 const DEFAULT_MODEL = "gpt-4-turbo";
@@ -63,6 +64,7 @@ export interface OpenAIRequestContext {
   userId: string;
   moduleContext?: 'hr' | 'finance' | 'general';
   businessEntityId?: string;
+  agentId?: string; // For RAG multi-source support
 }
 
 export interface UnifiedOpenAIResponse {
@@ -111,8 +113,35 @@ export class UnifiedOpenAIService {
       // Map creativity (0-20) to temperature (0-2.0)
       const temperature = (settings.responseCreativity || 7) / 10.0;
       
-      // Build context-aware instructions
-      const instructions = this.buildContextInstructions(settings, context);
+      // 🧠 ENHANCED RAG: Build knowledge context for agent-specific queries
+      let ragContext = '';
+      if (context.agentId) {
+        try {
+          console.log(`[ENHANCED-RAG] 🤖 Building RAG context for agent ${context.agentId}`);
+          ragContext = await enhancedRAGService.buildRAGContext(
+            input,
+            context.agentId,
+            context.tenantId,
+            {
+              limit: 8,
+              similarityThreshold: 0.6,
+              includeOverride: true,
+              includeCrossTenant: true
+            }
+          );
+          
+          if (ragContext) {
+            console.log(`[ENHANCED-RAG] ✅ RAG context built: ${ragContext.length} characters`);
+          } else {
+            console.log(`[ENHANCED-RAG] 📭 No relevant knowledge found for query`);
+          }
+        } catch (ragError: any) {
+          console.error(`[ENHANCED-RAG] ❌ RAG failed, continuing without context:`, ragError.message);
+        }
+      }
+      
+      // Build context-aware instructions (now with RAG)
+      const instructions = this.buildContextInstructions(settings, context, ragContext);
 
       // Build OpenAI tools configuration
       const openaiTools = this.buildOpenAITools(tools);
@@ -1243,7 +1272,7 @@ export class UnifiedOpenAIService {
     return openaiTools;
   }
 
-  private buildContextInstructions(settings: AISettings, context: OpenAIRequestContext): string {
+  private buildContextInstructions(settings: AISettings, context: OpenAIRequestContext, ragContext?: string): string {
     const contextSettings = settings.contextSettings as any;
     let instructions = "You are an AI assistant for the W3 Suite enterprise platform.";
     
@@ -1252,6 +1281,14 @@ export class UnifiedOpenAIService {
       instructions += " Focus on HR-related tasks, employee management, and HR policies.";
     } else if (context.moduleContext === 'finance' && contextSettings?.finance_context_enabled) {
       instructions += " Focus on financial analysis, budgeting, and business metrics.";
+    }
+    
+    // 🧠 Add RAG knowledge context if available
+    if (ragContext && ragContext.trim()) {
+      instructions += "\n\n## Relevant Knowledge Base:\n";
+      instructions += "Use the following knowledge from both tenant-specific training and Brand resources to inform your responses. Prioritize this information when relevant to the user's query:\n\n";
+      instructions += ragContext;
+      instructions += "\n\nImportant: Base your responses on this knowledge when applicable, but also use your general training when the knowledge base doesn't cover the topic.";
     }
     
     // Add custom instructions
