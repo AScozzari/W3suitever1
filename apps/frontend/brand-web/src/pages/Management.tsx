@@ -428,6 +428,7 @@ export default function Management() {
 
   // Handle Add Legal Entity
   const handleAddLegalEntity = (tenantId: string, tenantName: string) => {
+    alert('🎯 MODAL CLICKED! TenantId: ' + tenantId + ', Name: ' + tenantName);
     setLegalEntityModal({ 
       isOpen: true, 
       editingEntity: null, 
@@ -2361,6 +2362,7 @@ export default function Management() {
         {renderOrganizationModal()}
 
         {/* Legal Entity Modal */}
+        {console.log('🎯 [MANAGEMENT-DEBUG] About to render LegalEntityModal:', { modalState: legalEntityModal })}
         <LegalEntityModal
           isOpen={legalEntityModal.isOpen}
           onClose={handleCloseLegalEntityModal}

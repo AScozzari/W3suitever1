@@ -66,6 +66,7 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
   editingEntity,
   tenantId
 }) => {
+  console.log('🎯 [MODAL-RENDER] LegalEntityModal rendering:', { isOpen, tenantId, editingEntity });
   const queryClient = useQueryClient();
 
   // Form setup with react-hook-form and zod validation
