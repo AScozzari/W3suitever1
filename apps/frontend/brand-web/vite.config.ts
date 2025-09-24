@@ -27,8 +27,8 @@ export default defineConfig({
       "localhost",
       "127.0.0.1"
     ],
-    // HMR configuration for reverse proxy compatibility  
-    hmr: {
+    // HMR configuration for Replit environment compatibility
+    hmr: process.env.REPL_ID ? false : {
       port: 3001,
       host: 'localhost',
       clientPort: undefined // Use the port from the request URL
