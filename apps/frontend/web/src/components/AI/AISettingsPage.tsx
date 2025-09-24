@@ -348,7 +348,10 @@ export default function AISettingsPage() {
     
     setProcessingUrl(true);
     // The mutation handles success/error toasts automatically
-    await processAgentUrlMutation.mutateAsync(urlToProcess.trim());
+    await processAgentUrlMutation.mutateAsync({
+      agentId: selectedAgentForTraining,
+      url: urlToProcess.trim()
+    });
   };
 
   // Handle file upload
