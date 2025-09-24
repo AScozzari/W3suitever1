@@ -2,9 +2,18 @@ import {
   db, brandTenants, brandUsers, brandRoles, brandAuditLogs, aiAgentsRegistry,
   aiKnowledgeSources, aiCrossTenantEmbeddings, aiKnowledgeBases
 } from "../db/index.js";
-// Import W3Suite database connection and tenants table for organizations management
+// Import W3Suite database connection and tables for organizations and legal entities management
 import { db as w3db } from "../../../api/src/core/db.js";
-import { tenants as w3Tenants, insertTenantSchema, type Tenant, type InsertTenant } from "../../../api/src/db/schema/w3suite.js";
+import { 
+  tenants as w3Tenants, 
+  legalEntities as w3LegalEntities,
+  insertTenantSchema, 
+  insertLegalEntitySchema,
+  type Tenant, 
+  type InsertTenant,
+  type LegalEntity,
+  type InsertLegalEntity
+} from "../../../api/src/db/schema/w3suite.js";
 import { eq, and, sql, inArray, like, or, count, desc } from "drizzle-orm";
 import type { 
   BrandTenant, NewBrandTenant, BrandUser, NewBrandUser, BrandRole, NewBrandRole, 
@@ -56,6 +65,12 @@ export interface IBrandStorage {
   createOrganizationRecord(data: InsertTenant): Promise<Tenant>;
   updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null>;
   validateSlug(slug: string): Promise<boolean>;
+  
+  // ==================== LEGAL ENTITIES MANAGEMENT ====================
+  
+  // Legal Entities operations using w3suite.legal_entities
+  getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]>;
+  createLegalEntity(data: InsertLegalEntity): Promise<LegalEntity>;
   
   // Export operations
   exportStoresCSV(filters: StoreFiltersDTO): Promise<string>;
@@ -959,6 +974,39 @@ class BrandDrizzleStorage implements IBrandStorage {
       console.error('Error validating slug:', error);
       return false; // Safe default - assume slug is taken
     }
+  }
+
+  // ==================== LEGAL ENTITIES MANAGEMENT ====================
+
+  // Get legal entities for specific tenant
+  async getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]> {
+    try {
+      const results = await w3db.select()
+        .from(w3LegalEntities)
+        .where(eq(w3LegalEntities.tenantId, tenantId));
+      return results;
+    } catch (error) {
+      console.error(`Error fetching legal entities for tenant ${tenantId}:`, error);
+      throw error;
+    }
+  }
+
+  // Create new legal entity
+  async createLegalEntity(data: InsertLegalEntity): Promise<LegalEntity> {
+    try {
+      const results = await w3db.insert(w3LegalEntities)
+        .values(data)
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating legal entity:', error);
+      throw error;
+    }
+  }
+
+  // Alias for backward compatibility with route handler
+  async createOrganization(data: InsertTenant): Promise<Tenant> {
+    return this.createOrganizationRecord(data);
   }
 }
 

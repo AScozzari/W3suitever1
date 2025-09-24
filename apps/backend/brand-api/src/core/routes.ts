@@ -147,6 +147,157 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Legal Entities management endpoints
+  app.post("/brand-api/organizations", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control - only super_admin and national_manager can create orgs
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create organizations" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const { name, slug, status, notes } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ error: "Organization name is required" });
+      }
+
+      const organization = await brandStorage.createOrganization({
+        name,
+        slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+        status: status || 'active',
+        notes: notes || ''
+      });
+
+      res.status(201).json({
+        success: true,
+        organization: {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          status: organization.status,
+          notes: organization.notes,
+          createdAt: organization.createdAt
+        },
+        message: "Organization created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      res.status(500).json({ error: "Failed to create organization" });
+    }
+  });
+
+  // Get legal entities for specific tenant
+  app.get("/brand-api/legal-entities/:tenantId", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to view legal entities" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const legalEntities = await brandStorage.getLegalEntitiesByTenant(tenantId);
+      res.json({
+        legalEntities: legalEntities.map(entity => ({
+          id: entity.id,
+          tenantId: entity.tenantId,
+          codice: entity.codice,
+          nome: entity.nome,
+          pIva: entity.pIva,
+          codiceFiscale: entity.codiceFiscale,
+          formaGiuridica: entity.formaGiuridica,
+          stato: entity.stato,
+          createdAt: entity.createdAt,
+          updatedAt: entity.updatedAt
+        })),
+        tenantId,
+        context: "cross-tenant",
+        message: `Legal entities for tenant ${tenantId}`
+      });
+    } catch (error) {
+      console.error(`Error fetching legal entities for tenant ${tenantId}:`, error);
+      res.status(500).json({ error: "Failed to fetch legal entities" });
+    }
+  });
+
+  // Create new legal entity for specific tenant
+  app.post("/brand-api/legal-entities", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create legal entities" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const { tenantId, codice, nome, pIva, codiceFiscale, formaGiuridica, ...otherFields } = req.body;
+
+      // Validazione campi obbligatori
+      if (!tenantId) {
+        return res.status(400).json({ error: "tenantId is required" });
+      }
+      if (!nome) {
+        return res.status(400).json({ error: "Nome (legal entity name) is required" });
+      }
+      if (!pIva) {
+        return res.status(400).json({ error: "Partita IVA is required" });
+      }
+
+      // Auto-generate codice if not provided (8 + timestamp last 6 digits)
+      const finalCodice = codice || `8${String(Date.now()).slice(-6)}`;
+
+      const legalEntityData = {
+        tenantId,
+        codice: finalCodice,
+        nome,
+        pIva,
+        codiceFiscale,
+        formaGiuridica,
+        stato: 'Attiva',
+        ...otherFields
+      };
+
+      const legalEntity = await brandStorage.createLegalEntity(legalEntityData);
+
+      res.status(201).json({
+        success: true,
+        legalEntity: {
+          id: legalEntity.id,
+          tenantId: legalEntity.tenantId,
+          codice: legalEntity.codice,
+          nome: legalEntity.nome,
+          pIva: legalEntity.pIva,
+          codiceFiscale: legalEntity.codiceFiscale,
+          formaGiuridica: legalEntity.formaGiuridica,
+          stato: legalEntity.stato,
+          createdAt: legalEntity.createdAt
+        },
+        message: "Legal entity created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating legal entity:", error);
+      res.status(500).json({ error: "Failed to create legal entity" });
+    }
+  });
+
   app.get("/brand-api/analytics/cross-tenant", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
