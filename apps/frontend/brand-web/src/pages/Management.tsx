@@ -162,12 +162,9 @@ export default function Management() {
   // Organization form state
   const [organizationForm, setOrganizationForm] = useState({
     name: '',
-    brandAdminEmail: '',
-    city: '',
-    province: '',
-    country: 'IT',
-    phone: '',
-    contactEmail: ''
+    slug: '',
+    status: 'active',
+    notes: ''
   });
 
   // Audit filters
@@ -295,7 +292,7 @@ export default function Management() {
   // 4. ORGANIZATION CREATION MUTATION
   const createOrganizationMutation = useMutation({
     mutationFn: async (data: typeof organizationForm) => {
-      return apiRequest('/brand-api/tenants', {
+      return apiRequest('/brand-api/organizations', {
         method: 'POST',
         body: JSON.stringify(data)
       });
@@ -305,12 +302,9 @@ export default function Management() {
       setShowOrganizationModal(false);
       setOrganizationForm({
         name: '',
-        brandAdminEmail: '',
-        city: '',
-        province: '',
-        country: 'IT',
-        phone: '',
-        contactEmail: ''
+        slug: '',
+        status: 'active',
+        notes: ''
       });
       alert('Organizzazione creata con successo!');
     },
@@ -522,12 +516,13 @@ export default function Management() {
                 color: COLORS.neutral.dark,
                 marginBottom: '8px'
               }}>
-                Email Admin Brand *
+                Slug
               </label>
               <input
-                type="email"
-                value={organizationForm.brandAdminEmail}
-                onChange={(e) => setOrganizationForm(prev => ({ ...prev, brandAdminEmail: e.target.value }))}
+                type="text"
+                value={organizationForm.slug}
+                onChange={(e) => setOrganizationForm(prev => ({ ...prev, slug: e.target.value }))}
+                placeholder="Lascia vuoto per auto-generare dal nome"
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -541,102 +536,7 @@ export default function Management() {
                 }}
                 onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
                 onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-                data-testid="input-admin-email"
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: COLORS.neutral.dark,
-                  marginBottom: '8px'
-                }}>
-                  Città
-                </label>
-                <input
-                  type="text"
-                  value={organizationForm.city}
-                  onChange={(e) => setOrganizationForm(prev => ({ ...prev, city: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
-                    background: COLORS.neutral.white,
-                    color: COLORS.neutral.dark,
-                    fontSize: '14px',
-                    transition: 'all 0.2s ease',
-                    outline: 'none'
-                  }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
-                  onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-                  data-testid="input-city"
-                />
-              </div>
-
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: COLORS.neutral.dark,
-                  marginBottom: '8px'
-                }}>
-                  Provincia
-                </label>
-                <input
-                  type="text"
-                  value={organizationForm.province}
-                  onChange={(e) => setOrganizationForm(prev => ({ ...prev, province: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
-                    background: COLORS.neutral.white,
-                    color: COLORS.neutral.dark,
-                    fontSize: '14px',
-                    transition: 'all 0.2s ease',
-                    outline: 'none'
-                  }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
-                  onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-                  data-testid="input-province"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 600,
-                color: COLORS.neutral.dark,
-                marginBottom: '8px'
-              }}>
-                Telefono
-              </label>
-              <input
-                type="tel"
-                value={organizationForm.phone}
-                onChange={(e) => setOrganizationForm(prev => ({ ...prev, phone: e.target.value }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
-                  background: COLORS.neutral.white,
-                  color: COLORS.neutral.dark,
-                  fontSize: '14px',
-                  transition: 'all 0.2s ease',
-                  outline: 'none'
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
-                onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-                data-testid="input-phone"
+                data-testid="input-organization-slug"
               />
             </div>
 
@@ -648,12 +548,11 @@ export default function Management() {
                 color: COLORS.neutral.dark,
                 marginBottom: '8px'
               }}>
-                Email Contatto
+                Stato
               </label>
-              <input
-                type="email"
-                value={organizationForm.contactEmail}
-                onChange={(e) => setOrganizationForm(prev => ({ ...prev, contactEmail: e.target.value }))}
+              <select
+                value={organizationForm.status}
+                onChange={(e) => setOrganizationForm(prev => ({ ...prev, status: e.target.value }))}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -667,7 +566,45 @@ export default function Management() {
                 }}
                 onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
                 onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-                data-testid="input-contact-email"
+                data-testid="select-organization-status"
+              >
+                <option value="active">Attivo</option>
+                <option value="inactive">Inattivo</option>
+                <option value="suspended">Sospeso</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: COLORS.neutral.dark,
+                marginBottom: '8px'
+              }}>
+                Note
+              </label>
+              <textarea
+                value={organizationForm.notes}
+                onChange={(e) => setOrganizationForm(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Note aggiuntive sull'organizzazione..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  background: COLORS.neutral.white,
+                  color: COLORS.neutral.dark,
+                  fontSize: '14px',
+                  transition: 'all 0.2s ease',
+                  outline: 'none',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+                onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
+                data-testid="textarea-organization-notes"
               />
             </div>
           </div>
@@ -705,14 +642,14 @@ export default function Management() {
             </button>
             <button
               onClick={() => createOrganizationMutation.mutate(organizationForm)}
-              disabled={!organizationForm.name || !organizationForm.brandAdminEmail || createOrganizationMutation.isPending}
+              disabled={!organizationForm.name || createOrganizationMutation.isPending}
               style={{
                 padding: '12px 24px',
                 border: 'none',
                 borderRadius: '8px',
-                background: organizationForm.name && organizationForm.brandAdminEmail ? COLORS.gradients.orange : COLORS.neutral.light,
+                background: organizationForm.name ? COLORS.gradients.orange : COLORS.neutral.light,
                 color: 'white',
-                cursor: organizationForm.name && organizationForm.brandAdminEmail ? 'pointer' : 'not-allowed',
+                cursor: organizationForm.name ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -721,7 +658,7 @@ export default function Management() {
                 transition: 'all 0.2s ease'
               }}
               onMouseOver={(e) => {
-                if (organizationForm.name && organizationForm.brandAdminEmail) {
+                if (organizationForm.name) {
                   e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.boxShadow = '0 6px 24px rgba(255, 105, 0, 0.3)';
                 }
