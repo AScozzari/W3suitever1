@@ -1333,21 +1333,8 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         notes: notes || null
       });
 
-      // Log the creation for audit
-      await brandStorage.createAuditLog({
-        tenantId: newOrganization.id,
-        userEmail: user.email,
-        userRole: user.role,
-        action: 'CREATE_W3_ORGANIZATION',
-        resourceType: 'w3_organization',
-        resourceIds: [newOrganization.id],
-        metadata: {
-          organizationName: newOrganization.name,
-          organizationSlug: newOrganization.slug,
-          organizationStatus: newOrganization.status,
-          createdByUserId: user.id
-        }
-      });
+      // Note: No audit log needed for W3Suite organizations
+      // They are managed separately from Brand Interface
 
       res.json({
         success: true,

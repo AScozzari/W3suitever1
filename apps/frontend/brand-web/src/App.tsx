@@ -69,13 +69,15 @@ function Routes() {
       <Route path="/:tenant/management">
         {(params) => <BrandTenantWrapper params={params}><Management /></BrandTenantWrapper>}
       </Route>
-      <Route path="/:tenant">
-        {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
-      </Route>
       
       {/* Default route */}
       <Route path="/">
         <BrandTenantWrapper params={null}><Dashboard /></BrandTenantWrapper>
+      </Route>
+      
+      {/* Fallback generic tenant route - MUST BE LAST */}
+      <Route path="/:tenant">
+        {(params) => <BrandTenantWrapper params={params}><Dashboard /></BrandTenantWrapper>}
       </Route>
     </Switch>
   );
