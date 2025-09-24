@@ -139,26 +139,35 @@ export default function Management() {
   const [activeTab, setActiveTab] = useState('structure');
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
-  // Filters state for Organizations Management (simplified)
+  // Filters state for Struttura tab with proper serialization support
   const [filters, setFilters] = useState({
+    areaCommerciale: '',
+    canale: '',
+    citta: '',
+    provincia: '',
     stato: 'all' as 'all' | 'active' | 'inactive' | 'pending',
     search: '',
     page: 1,
     limit: 25
   });
 
-  // Organizations management state
-  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
+  // Bulk operations state
+  const [selectedStores, setSelectedStores] = useState<string[]>([]);
+  const [bulkOperation, setBulkOperation] = useState('');
+  const [bulkValues, setBulkValues] = useState<any>({});
   
   // Modals state
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
   
-  // Organization form state (for creating new organizations)
+  // Organization form state
   const [organizationForm, setOrganizationForm] = useState({
     name: '',
-    slug: '',
-    status: 'active' as 'active' | 'inactive' | 'pending',
-    notes: ''
+    brandAdminEmail: '',
+    city: '',
+    province: '',
+    country: 'IT',
+    phone: '',
+    contactEmail: ''
   });
 
   // Audit filters
@@ -169,14 +178,19 @@ export default function Management() {
     dateTo: ''
   });
 
-  // Types for Organizations Management
-  interface OrganizationsStatsResponse {
+  // Types
+  interface StructureStatsResponse {
     success: boolean;
     data: {
-      totalOrganizations: number;
-      activeOrganizations: number;
-      organizationsByStatus: Array<{
-        status: string;
+      totalStores: number;
+      activeStores: number;
+      storesByChannel: Array<{
+        canale: string;
+        count: number;
+        percentage: number;
+      }>;
+      storesByArea: Array<{
+        areaCommerciale: string;
         count: number;
         percentage: number;
       }>;
@@ -189,19 +203,28 @@ export default function Management() {
     timestamp?: string;
   }
 
-  interface OrganizationsListResponse {
+  interface StoresListResponse {
     success: boolean;
-    organizations: Array<{
-      id: string;
-      name: string;
-      slug: string;
-      status: string;
-      notes?: string;
-      createdAt: string;
-      updatedAt?: string;
-    }>;
-    context?: string;
-    message?: string;
+    data: {
+      stores: Array<{
+        id: string;
+        codigo: string;
+        ragioneSocialeName: string;
+        nome: string;
+        via: string;
+        citta: string;
+        provincia: string;
+        stato: string;
+        canale: string;
+        areaCommerciale: string;
+      }>;
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    };
   }
 
   interface AuditLog {
@@ -237,56 +260,30 @@ export default function Management() {
     return params.toString();
   }, [filters, currentTenant, isCrossTenant]);
 
-  // 1. ORGANIZATIONS DATA FETCHING (Management Center Transformation)
-  const organizationsParams = useMemo(() => {
-    const params = new URLSearchParams();
-    if (filters.search) params.append('search', filters.search);
-    if (filters.stato && filters.stato !== 'all') params.append('status', filters.stato);
-    return params.toString();
-  }, [filters.search, filters.stato]);
+  // 1. REAL-TIME ANALYTICS WITH SSE + FALLBACK POLLING
+  const sseStatsUrl = `/brand-api/structure/stats/stream?${filterParams}`;
+  const fallbackStatsUrl = `/brand-api/structure/stats?${filterParams}`;
+  
+  const { 
+    data: structureStats, 
+    isLoading: statsLoading, 
+    isConnected: statsConnected,
+    error: statsError,
+    lastUpdate: statsLastUpdate
+  } = useSSE<StructureStatsResponse>(sseStatsUrl, fallbackStatsUrl, {
+    enabled: activeTab === 'structure' && isAuthenticated
+  });
 
-  // Fetch organizations list from w3suite.tenants  
-  const { data: organizationsData, isLoading: organizationsLoading } = useQuery<OrganizationsListResponse>({
-    queryKey: ['/brand-api/organizations', organizationsParams],
+  // FIXED: Structure stores with proper queryFn to handle filter serialization
+  const { data: storesData, isLoading: storesLoading } = useQuery<StoresListResponse>({
+    queryKey: ['/brand-api/structure/stores', filterParams],
     queryFn: async () => {
-      const response = await fetch(`/brand-api/organizations?${organizationsParams}`);
+      const response = await fetch(`/brand-api/structure/stores?${filterParams}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     },
-    enabled: activeTab === 'structure' && isAuthenticated,
-    refetchInterval: 30000
+    enabled: activeTab === 'structure' && isAuthenticated
   });
-
-  // Calculate stats from organizations data
-  const organizationsStats = useMemo(() => {
-    if (!organizationsData?.organizations) return null;
-    
-    const orgs = organizationsData.organizations;
-    const totalOrgs = orgs.length;
-    const activeOrgs = orgs.filter(org => org.status === 'active').length;
-    const statusCounts = orgs.reduce((acc, org) => {
-      acc[org.status] = (acc[org.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      success: true,
-      data: {
-        totalOrganizations: totalOrgs,
-        activeOrganizations: activeOrgs,
-        organizationsByStatus: Object.entries(statusCounts).map(([status, count]) => ({
-          status,
-          count,
-          percentage: Math.round((count / totalOrgs) * 100)
-        })),
-        growth: {
-          thisMonth: totalOrgs,
-          lastMonth: Math.max(0, totalOrgs - 2), // Mock growth calculation
-          percentage: 5.2 // Mock growth percentage
-        }
-      }
-    };
-  }, [organizationsData]);
 
   // Fetch audit logs
   const { data: auditData, isLoading: auditLoading } = useQuery({
@@ -308,10 +305,10 @@ export default function Management() {
     enabled: activeTab === 'audit' && isAuthenticated
   });
 
-  // 4. ORGANIZATION CREATION MUTATION (New W3 Suite Tenants)
+  // 4. ORGANIZATION CREATION MUTATION
   const createOrganizationMutation = useMutation({
-    mutationFn: async (data: { name: string; slug: string; status: string; notes?: string }) => {
-      return apiRequest('/brand-api/organizations', {
+    mutationFn: async (data: typeof organizationForm) => {
+      return apiRequest('/brand-api/tenants', {
         method: 'POST',
         body: JSON.stringify(data)
       });
@@ -321,28 +318,40 @@ export default function Management() {
       setShowOrganizationModal(false);
       setOrganizationForm({
         name: '',
-        slug: '',
-        status: 'active',
-        notes: ''
+        brandAdminEmail: '',
+        city: '',
+        province: '',
+        country: 'IT',
+        phone: '',
+        contactEmail: ''
       });
+      alert('Organizzazione creata con successo!');
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('Error creating organization:', error);
-      // TODO: Show error toast notification
+      alert('Errore nella creazione dell\'organizzazione');
     }
   });
 
-  // 5. SLUG VALIDATION QUERY
-  const { data: slugValidation } = useQuery({
-    queryKey: ['/brand-api/organizations/validate-slug', organizationForm.slug],
-    queryFn: async () => {
-      if (!organizationForm.slug || organizationForm.slug.length < 2) return null;
-      const response = await fetch(`/brand-api/organizations/validate-slug/${organizationForm.slug}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return response.json();
+  // 2. BULK OPERATIONS MUTATION
+  const bulkOperationMutation = useMutation({
+    mutationFn: async (operation: { operation: string; storeIds: string[]; values?: any; reason?: string }) => {
+      return apiRequest('/brand-api/structure/bulk', {
+        method: 'POST',
+        body: JSON.stringify(operation)
+      });
     },
-    enabled: !!organizationForm.slug && organizationForm.slug.length >= 2,
-    staleTime: 1000 // Cache for 1 second to avoid excessive requests
+    onSuccess: (result: BulkOperationResult) => {
+      queryClient.invalidateQueries({ queryKey: ['/brand-api/structure/stores'] });
+      setSelectedStores([]);
+      setBulkOperation('');
+      setBulkValues({});
+      alert(`Operazione completata: ${result.processedCount} elaborati, ${result.errorCount} errori`);
+    },
+    onError: (error) => {
+      console.error('Error in bulk operation:', error);
+      alert('Errore nell\'operazione bulk');
+    }
   });
 
   if (!isAuthenticated) {
@@ -1220,7 +1229,7 @@ export default function Management() {
                 letterSpacing: '0.5px',
                 marginBottom: '12px'
               }}>
-                Organizzazioni Totali
+                PDV Totali
               </p>
               <div style={{
                 fontSize: '32px',
@@ -1228,10 +1237,10 @@ export default function Management() {
                 color: COLORS.neutral.dark,
                 marginBottom: '4px'
               }}>
-                {organizationsStats?.data?.totalOrganizations ? (
-                  <AnimatedCounter value={organizationsStats.data.totalOrganizations} />
+                {structureStats?.data?.totalStores ? (
+                  <AnimatedCounter value={structureStats.data.totalStores} />
                 ) : (
-                  organizationsLoading ? '...' : <AnimatedCounter value={0} />
+                  statsLoading ? '...' : <AnimatedCounter value={75} />
                 )}
               </div>
               <p style={{
@@ -1243,7 +1252,7 @@ export default function Management() {
                 gap: '4px'
               }}>
                 <TrendingUp size={14} />
-                +{organizationsStats?.data?.growth?.percentage || '5.2'}% questo mese
+                +{structureStats?.data?.growth?.percentage || '7.1'}% questo mese
               </p>
             </div>
             <div style={{
@@ -1289,7 +1298,7 @@ export default function Management() {
                 letterSpacing: '0.5px',
                 marginBottom: '12px'
               }}>
-                Organizzazioni Attive
+                PDV Attivi
               </p>
               <div style={{
                 fontSize: '32px',
@@ -1297,10 +1306,10 @@ export default function Management() {
                 color: COLORS.neutral.dark,
                 marginBottom: '4px'
               }}>
-                {organizationsStats?.data?.activeOrganizations ? (
-                  <AnimatedCounter value={organizationsStats.data.activeOrganizations} />
+                {structureStats?.data?.activeStores ? (
+                  <AnimatedCounter value={structureStats.data.activeStores} />
                 ) : (
-                  organizationsLoading ? '...' : <AnimatedCounter value={0} />
+                  statsLoading ? '...' : <AnimatedCounter value={70} />
                 )}
               </div>
               <p style={{
@@ -1430,7 +1439,7 @@ export default function Management() {
         }}>
           <input
             type="text"
-            placeholder="Cerca organizzazioni..."
+            placeholder="Cerca stores..."
             value={filters.search}
             onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
             style={{
@@ -1444,8 +1453,30 @@ export default function Management() {
             }}
             onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
             onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
-            data-testid="input-search-organizations"
+            data-testid="input-search-stores"
           />
+          
+          <select
+            value={filters.canale}
+            onChange={(e) => setFilters(prev => ({ ...prev, canale: e.target.value, page: 1 }))}
+            style={{
+              padding: '12px',
+              border: `1px solid ${COLORS.neutral.lighter}`,
+              borderRadius: '8px',
+              background: COLORS.neutral.white,
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+            onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+            onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
+            data-testid="select-channel-filter"
+          >
+            <option value="">Tutti i canali</option>
+            <option value="Retail">Retail</option>
+            <option value="Franchise">Franchise</option>
+          </select>
           
           <select
             value={filters.stato}
@@ -1468,12 +1499,30 @@ export default function Management() {
             <option value="active">Attivi</option>
             <option value="inactive">Inattivi</option>
             <option value="pending">In attesa</option>
-            <option value="suspended">Sospesi</option>
           </select>
+          
+          <input
+            type="text"
+            placeholder="Area commerciale"
+            value={filters.areaCommerciale}
+            onChange={(e) => setFilters(prev => ({ ...prev, areaCommerciale: e.target.value, page: 1 }))}
+            style={{
+              padding: '12px',
+              border: `1px solid ${COLORS.neutral.lighter}`,
+              borderRadius: '8px',
+              background: COLORS.neutral.white,
+              fontSize: '14px',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+            onFocus={(e) => e.currentTarget.style.borderColor = COLORS.primary.orange}
+            onBlur={(e) => e.currentTarget.style.borderColor = COLORS.neutral.lighter}
+            data-testid="input-area-filter"
+          />
         </div>
       </div>
 
-      {/* Organizations Table */}
+      {/* Stores Table with bulk selection */}
       <div style={{
         ...cardStyle,
         padding: '24px'
@@ -1489,36 +1538,45 @@ export default function Management() {
             fontWeight: 700,
             color: COLORS.neutral.dark
           }}>
-            Organizzazioni ({organizationsData?.organizations?.length || 0})
+            Stores ({storesData?.data?.pagination?.total || 0})
           </h3>
           
-          <button
-            onClick={() => setShowOrganizationModal(true)}
-            style={{
+          {storesData?.data?.stores && storesData.data.stores.length > 0 && (
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              background: COLORS.gradients.orange,
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-              color: 'white',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 2px 8px rgba(255, 105, 0, 0.2)'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            data-testid="button-new-organization"
-          >
-            <Plus size={16} />
-            Nuova Organizzazione
-          </button>
+              gap: '8px'
+            }}>
+              <button
+                onClick={toggleSelectAll}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  background: 'none',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: COLORS.neutral.dark,
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = COLORS.neutral.lightest}
+                onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                data-testid="button-select-all"
+              >
+                {selectedStores.length === storesData.data.stores.length ? 
+                  <CheckSquare size={16} /> : 
+                  <Square size={16} />
+                }
+                Seleziona tutti
+              </button>
+            </div>
+          )}
         </div>
         
-        {organizationsLoading ? (
+        {storesLoading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>
             <Loader2 size={32} className="animate-spin" style={{ color: COLORS.primary.orange }} />
           </div>
@@ -1530,6 +1588,27 @@ export default function Management() {
             }}>
               <thead>
                 <tr>
+                  <th style={{
+                    padding: '12px',
+                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: COLORS.neutral.dark,
+                    width: '40px'
+                  }}>
+                    {/* Checkbox column */}
+                  </th>
+                  <th style={{
+                    padding: '12px',
+                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: COLORS.neutral.dark
+                  }}>
+                    Codice
+                  </th>
                   <th style={{
                     padding: '12px',
                     borderBottom: `2px solid ${COLORS.neutral.lighter}`,
@@ -1548,7 +1627,7 @@ export default function Management() {
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
-                    Slug
+                    Città
                   </th>
                   <th style={{
                     padding: '12px',
@@ -1558,7 +1637,17 @@ export default function Management() {
                     fontWeight: 600,
                     color: COLORS.neutral.dark
                   }}>
-                    Data Creazione
+                    Canale
+                  </th>
+                  <th style={{
+                    padding: '12px',
+                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: COLORS.neutral.dark
+                  }}>
+                    Area
                   </th>
                   <th style={{
                     padding: '12px',
@@ -1570,36 +1659,12 @@ export default function Management() {
                   }}>
                     Stato
                   </th>
-                  <th style={{
-                    padding: '12px',
-                    borderBottom: `2px solid ${COLORS.neutral.lighter}`,
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    color: COLORS.neutral.dark
-                  }}>
-                    Note
-                  </th>
                 </tr>
               </thead>
               <tbody>
-                {organizationsData?.organizations?.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{
-                      padding: '40px 20px',
-                      textAlign: 'center',
-                      color: COLORS.neutral.medium,
-                      fontSize: '14px'
-                    }}>
-                      <div style={{ marginBottom: '12px' }}>
-                        <Building2 size={48} style={{ color: COLORS.neutral.light, margin: '0 auto 16px' }} />
-                      </div>
-                      Nessuna organizzazione trovata
-                    </td>
-                  </tr>
-                ) : organizationsData?.organizations?.map((org) => (
-                  <tr key={org.id} 
-                    data-testid={`row-organization-${org.id}`}
+                {storesData?.data?.stores?.map((store) => (
+                  <tr key={store.id} 
+                    data-testid={`row-store-${store.id}`}
                     style={{
                       transition: 'background 0.2s ease'
                     }}
@@ -1608,21 +1673,32 @@ export default function Management() {
                   >
                     <td style={{
                       padding: '12px',
-                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      color: COLORS.neutral.dark
+                      borderBottom: `1px solid ${COLORS.neutral.lighter}`
                     }}>
-                      {org.name}
+                      <button
+                        onClick={() => toggleStoreSelection(store.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '4px'
+                        }}
+                        data-testid={`checkbox-store-${store.id}`}
+                      >
+                        {selectedStores.includes(store.id) ?
+                          <CheckSquare size={16} style={{ color: COLORS.primary.orange }} /> :
+                          <Square size={16} style={{ color: COLORS.neutral.medium }} />
+                        }
+                      </button>
                     </td>
                     <td style={{
                       padding: '12px',
                       borderBottom: `1px solid ${COLORS.neutral.lighter}`,
                       fontSize: '13px',
-                      color: COLORS.primary.orange,
-                      fontFamily: 'monospace'
+                      color: COLORS.neutral.dark,
+                      fontWeight: 500
                     }}>
-                      {org.slug}
+                      {store.codigo}
                     </td>
                     <td style={{
                       padding: '12px',
@@ -1630,7 +1706,31 @@ export default function Management() {
                       fontSize: '13px',
                       color: COLORS.neutral.dark
                     }}>
-                      {org.createdAt ? format(new Date(org.createdAt), 'dd/MM/yyyy HH:mm') : '-'}
+                      {store.nome}
+                    </td>
+                    <td style={{
+                      padding: '12px',
+                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                      fontSize: '13px',
+                      color: COLORS.neutral.dark
+                    }}>
+                      {store.citta}, {store.provincia}
+                    </td>
+                    <td style={{
+                      padding: '12px',
+                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                      fontSize: '13px',
+                      color: COLORS.neutral.dark
+                    }}>
+                      {store.canale}
+                    </td>
+                    <td style={{
+                      padding: '12px',
+                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                      fontSize: '13px',
+                      color: COLORS.neutral.dark
+                    }}>
+                      {store.areaCommerciale}
                     </td>
                     <td style={{
                       padding: '12px',
@@ -1642,304 +1742,358 @@ export default function Management() {
                         borderRadius: '12px',
                         fontSize: '12px',
                         fontWeight: 500,
-                        color: org.status === 'active' ? '#22c55e' : 
-                               org.status === 'inactive' ? '#ef4444' : '#f59e0b',
-                        backgroundColor: org.status === 'active' ? '#dcfce7' : 
-                                        org.status === 'inactive' ? '#fee2e2' : '#fef3c7'
+                        background: store.stato === 'active' ? `${COLORS.semantic.success}20` : 
+                                   store.stato === 'inactive' ? `${COLORS.semantic.error}20` : 
+                                   `${COLORS.semantic.warning}20`,
+                        color: store.stato === 'active' ? COLORS.semantic.success : 
+                               store.stato === 'inactive' ? COLORS.semantic.error : 
+                               COLORS.semantic.warning
                       }}>
-                        {org.status === 'active' ? 'Attivo' : 
-                         org.status === 'inactive' ? 'Inattivo' : 'Sospeso'}
+                        {store.stato === 'active' ? 'Attivo' : 
+                         store.stato === 'inactive' ? 'Inattivo' : 'In attesa'}
                       </span>
-                    </td>
-                    <td style={{
-                      padding: '12px',
-                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-                      fontSize: '13px',
-                      color: COLORS.neutral.medium,
-                      maxWidth: '150px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {org.notes || '-'}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-
-            {/* Pagination */}
-            <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <span style={{
-                fontSize: '14px',
-                color: COLORS.neutral.medium
-              }}>
-                Totale: {organizationsData?.organizations?.length || 0} organizzazioni
-              </span>
-            </div>
           </div>
         )}
+      </div>
+      
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes progressBar {
+          from { width: 0; }
+          to { width: auto; }
+        }
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </div>
   );
 
-  // Modal per creare nuova organizzazione
-  const renderNewOrganizationModal = () => {
-    if (!newOrgModalOpen) return null;
-
-    return (
+  // Coming Soon Tab Component
+  const renderComingSoonTab = (tab: typeof tabs[0]) => (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '60vh',
+      animation: 'fadeInUp 0.5s ease'
+    }}>
       <div style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '20px'
+        ...cardStyle,
+        padding: '64px',
+        textAlign: 'center',
+        maxWidth: '500px',
+        background: 'white',
+        position: 'relative',
+        overflow: 'visible'
       }}>
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '32px',
-          width: '100%',
-          maxWidth: '500px',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '24px'
+        {/* Badge */}
+        {tab.badge && (
+          <span style={{
+            position: 'absolute',
+            top: '-12px',
+            right: '24px',
+            padding: '6px 12px',
+            background: tab.gradient,
+            color: 'white',
+            borderRadius: '20px',
+            fontSize: '11px',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
           }}>
-            <h2 style={{
-              margin: 0,
-              fontSize: '24px',
-              fontWeight: 600,
-              color: COLORS.neutral.dark
-            }}>
-              Nuova Organizzazione
-            </h2>
-            <button
-              onClick={() => setNewOrgModalOpen(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '8px',
-                borderRadius: '4px',
-                color: COLORS.neutral.medium
-              }}
-              data-testid="button-close-modal"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <form onSubmit={handleCreateOrganization}>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: COLORS.neutral.dark
-              }}>
-                Nome Organizzazione *
-              </label>
-              <input
-                type="text"
-                value={newOrgForm.name}
-                onChange={(e) => setNewOrgForm(prev => ({ 
-                  ...prev, 
-                  name: e.target.value,
-                  slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-                }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: `2px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                placeholder="Es. Acme Corporation"
-                required
-                data-testid="input-organization-name"
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: COLORS.neutral.dark
-              }}>
-                Slug URL *
-              </label>
-              <input
-                type="text"
-                value={newOrgForm.slug}
-                onChange={(e) => setNewOrgForm(prev => ({
-                  ...prev,
-                  slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
-                }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: `2px solid ${slugValidation.isValid ? COLORS.semantic.success : COLORS.semantic.error}`,
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                placeholder="acme-corp"
-                required
-                data-testid="input-organization-slug"
-              />
-              <div style={{ 
-                marginTop: '6px',
-                fontSize: '12px',
-                color: slugValidation.isValid ? COLORS.semantic.success : COLORS.semantic.error
-              }}>
-                {slugValidation.message}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: COLORS.neutral.dark
-              }}>
-                Stato
-              </label>
-              <select
-                value={newOrgForm.status}
-                onChange={(e) => setNewOrgForm(prev => ({ ...prev, status: e.target.value as any }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: `2px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-                data-testid="select-organization-status"
-              >
-                <option value="active">Attivo</option>
-                <option value="inactive">Inattivo</option>
-                <option value="pending">Sospeso</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '32px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '6px',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: COLORS.neutral.dark
-              }}>
-                Note (opzionale)
-              </label>
-              <textarea
-                value={newOrgForm.notes}
-                onChange={(e) => setNewOrgForm(prev => ({ ...prev, notes: e.target.value }))}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: `2px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  minHeight: '80px',
-                  outline: 'none',
-                  resize: 'vertical',
-                  boxSizing: 'border-box'
-                }}
-                placeholder="Aggiungi note o descrizione..."
-                data-testid="textarea-organization-notes"
-              />
-            </div>
-
-            <div style={{
+            {tab.badge}
+          </span>
+        )}
+        
+        {/* Icon */}
+        <div style={{
+          width: '96px',
+          height: '96px',
+          background: tab.gradient,
+          borderRadius: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 24px',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+          animation: 'float 3s ease-in-out infinite'
+        }}>
+          <tab.icon size={48} style={{ color: 'white' }} strokeWidth={1.5} />
+        </div>
+        
+        {/* Title */}
+        <h2 style={{
+          fontSize: '28px',
+          fontWeight: 700,
+          color: COLORS.neutral.dark,
+          marginBottom: '12px',
+          background: tab.gradient,
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}>
+          {tab.name}
+        </h2>
+        
+        {/* Description */}
+        <p style={{
+          fontSize: '16px',
+          color: COLORS.neutral.medium,
+          marginBottom: '32px',
+          lineHeight: '1.6'
+        }}>
+          {tab.description}
+        </p>
+        
+        {/* Coming Soon Badge */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '12px 24px',
+          background: COLORS.neutral.lightest,
+          borderRadius: '30px',
+          marginBottom: '24px'
+        }}>
+          <Rocket size={20} style={{ color: tab.color }} />
+          <span style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color: COLORS.neutral.dark
+          }}>
+            Coming Q1 2025
+          </span>
+        </div>
+        
+        {/* Features Preview */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '12px',
+          marginTop: '32px'
+        }}>
+          {[
+            { icon: Sparkles, text: 'AI Analytics' },
+            { icon: Shield, text: 'Enterprise Security' },
+            { icon: Zap, text: 'Real-time Updates' },
+            { icon: Globe, text: 'Global Scale' }
+          ].map((feature, idx) => (
+            <div key={idx} style={{
               display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end'
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              background: COLORS.neutral.lightest,
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: COLORS.neutral.medium,
+              animation: `fadeInUp 0.5s ease`,
+              animationDelay: `${0.1 * (idx + 1)}s`,
+              animationFillMode: 'both'
             }}>
-              <button
-                type="button"
-                onClick={() => setNewOrgModalOpen(false)}
-                style={{
-                  background: 'transparent',
-                  border: `2px solid ${COLORS.neutral.lighter}`,
-                  color: COLORS.neutral.dark,
-                  padding: '12px 24px',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
-                data-testid="button-cancel-organization"
-              >
-                Annulla
-              </button>
-              <button
-                type="submit"
-                disabled={createOrgMutation.isPending || !slugValidation.isValid}
-                style={{
-                  background: createOrgMutation.isPending || !slugValidation.isValid ? COLORS.neutral.light : COLORS.primary.orange,
-                  color: 'white',
-                  border: 'none',
-                  padding: '12px 24px',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: createOrgMutation.isPending || !slugValidation.isValid ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-                data-testid="button-create-organization"
-              >
-                {createOrgMutation.isPending ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Creando...
-                  </>
-                ) : (
-                  <>
-                    <Building2 size={16} />
-                    Crea Organizzazione
-                  </>
-                )}
-              </button>
+              <feature.icon size={14} />
+              {feature.text}
             </div>
-          </form>
+          ))}
         </div>
       </div>
-    );
-  };
-  // Main render del componente
-  return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: `linear-gradient(135deg, ${COLORS.primary.orange}08 0%, ${COLORS.primary.purple}08 100%)`,
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif'
-    }}>
-      {renderHeader()}
-      {renderTabsNavigation()}
-      {renderFilterSection()}
-      {activeTab === 'gestione' && renderStructureTab()}
-      {renderNewOrganizationModal()}
+      
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+      `}</style>
     </div>
   );
-};
+
+  return (
+    <BrandLayout>
+      <div style={{
+        padding: '24px',
+        minHeight: '100vh',
+        background: '#ffffff'
+      }}>
+        {/* Header */}
+        <div style={{ marginBottom: '32px' }}>
+          <h1 style={{
+            fontSize: '32px',
+            fontWeight: 700,
+            marginBottom: '8px',
+            background: COLORS.gradients.orange,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Management Center
+          </h1>
+          <p style={{
+            fontSize: '16px',
+            color: COLORS.neutral.medium,
+            margin: 0
+          }}>
+            Enterprise control hub per la gestione avanzata del business
+          </p>
+        </div>
+
+        {/* Modern Tab Navigation */}
+        <div style={{
+          ...glassStyle,
+          padding: '16px',
+          marginBottom: '32px',
+          background: 'hsla(255, 255, 255, 0.03)',
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '12px'
+          }}>
+            {tabs.map((tab, index) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: activeTab === tab.id ? 'none' : `1px solid ${COLORS.neutral.lighter}`,
+                  background: activeTab === tab.id ? tab.gradient : COLORS.neutral.white,
+                  color: activeTab === tab.id ? 'white' : COLORS.neutral.dark,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '8px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  animation: `fadeInUp 0.5s ease`,
+                  animationDelay: `${0.1 * index}s`,
+                  animationFillMode: 'both',
+                  transform: activeTab === tab.id ? 'scale(1)' : 'scale(1)',
+                  boxShadow: activeTab === tab.id ? `0 8px 24px ${tab.color}30` : 'none'
+                }}
+                onMouseOver={(e) => {
+                  if (activeTab !== tab.id) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (activeTab !== tab.id) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.98)';
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = activeTab === tab.id ? 'scale(1)' : 'translateY(-2px)';
+                }}
+                data-testid={`tab-${tab.id}`}
+              >
+                {/* Badge */}
+                {tab.badge && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    padding: '4px 8px',
+                    background: activeTab === tab.id ? 'rgba(255, 255, 255, 0.2)' : tab.gradient,
+                    color: activeTab === tab.id ? 'white' : 'white',
+                    borderRadius: '12px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    {tab.badge}
+                  </span>
+                )}
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    background: activeTab === tab.id ? 'rgba(255, 255, 255, 0.2)' : tab.gradient,
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <tab.icon size={20} style={{ color: activeTab === tab.id ? 'white' : 'white' }} strokeWidth={2} />
+                  </div>
+                  
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      marginBottom: '2px'
+                    }}>
+                      {tab.name}
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      opacity: 0.8,
+                      fontWeight: 400,
+                      color: activeTab === tab.id ? 'rgba(255, 255, 255, 0.9)' : COLORS.neutral.medium
+                    }}>
+                      {tab.description}
+                    </div>
+                  </div>
+                  
+                  <ChevronRight size={16} style={{ 
+                    opacity: activeTab === tab.id ? 1 : 0.3,
+                    transition: 'all 0.3s ease'
+                  }} />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div>
+          {activeTab === 'structure' && renderStructureTab()}
+          {activeTab === 'audit' && renderAuditTab()}
+          {activeTab === 'pricing' && renderComingSoonTab(tabs.find(t => t.id === 'pricing')!)}
+          {activeTab === 'supply' && renderComingSoonTab(tabs.find(t => t.id === 'supply')!)}
+          {activeTab === 'intelligence' && renderComingSoonTab(tabs.find(t => t.id === 'intelligence')!)}
+        </div>
+
+        {/* Organization Modal */}
+        {renderOrganizationModal()}
+      </div>
+    </BrandLayout>
+  );
+}
