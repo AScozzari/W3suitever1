@@ -1,10 +1,15 @@
-import { db, brandTenants, brandUsers, brandRoles, brandAuditLogs, aiAgentsRegistry } from "../db/index.js";
+import { 
+  db, brandTenants, brandUsers, brandRoles, brandAuditLogs, aiAgentsRegistry,
+  aiKnowledgeSources, aiCrossTenantEmbeddings, aiKnowledgeBases
+} from "../db/index.js";
 import { eq, and, sql, inArray, like, or, count, desc } from "drizzle-orm";
 import type { 
   BrandTenant, NewBrandTenant, BrandUser, NewBrandUser, BrandRole, NewBrandRole, 
   BrandAuditLog, NewBrandAuditLog, StoreListDTO, StoreFiltersDTO, StoreListResponseDTO,
   StructureStatsDTO, CreateOrganizationDTO, BulkOperationDTO, BulkOperationResultDTO,
-  AIAgent, NewAIAgent
+  AIAgent, NewAIAgent, AiKnowledgeSource, InsertAiKnowledgeSource,
+  AiCrossTenantEmbedding, InsertAiCrossTenantEmbedding,
+  AiKnowledgeBase, InsertAiKnowledgeBase
 } from "../db/index.js";
 import { nanoid } from "nanoid";
 
