@@ -346,6 +346,16 @@ export default function AISettingsPage() {
       return;
     }
     
+    if (!selectedAgentForTraining) {
+      toast({
+        title: "⚠️ Nessun Agente Selezionato",
+        description: "Seleziona un agente per processare l'URL.",
+        variant: "destructive",
+        duration: 4000,
+      });
+      return;
+    }
+    
     setProcessingUrl(true);
     // The mutation handles success/error toasts automatically
     await processAgentUrlMutation.mutateAsync({
