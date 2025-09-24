@@ -168,6 +168,13 @@ export default function Management() {
     editingEntity: null,
     tenantId: undefined
   });
+
+  // Drill-down state for legal entities view
+  const [drillDownView, setDrillDownView] = useState<{
+    isActive: boolean;
+    tenantId?: string;
+    tenantName?: string;
+  }>({ isActive: false });
   
   // Organization form state
   const [organizationForm, setOrganizationForm] = useState({
@@ -277,6 +284,17 @@ export default function Management() {
       return response.json();
     },
     enabled: activeTab === 'structure' && isAuthenticated
+  });
+
+  // Query for legal entities (drill-down view)
+  const { data: legalEntitiesData, isLoading: legalEntitiesLoading } = useQuery({
+    queryKey: ['/brand-api/legal-entities', drillDownView.tenantId],
+    queryFn: async () => {
+      const response = await fetch(`/brand-api/legal-entities?tenantId=${drillDownView.tenantId}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    },
+    enabled: drillDownView.isActive && !!drillDownView.tenantId && isAuthenticated
   });
 
   // Fetch audit logs
@@ -419,8 +437,16 @@ export default function Management() {
 
   // Handle View Legal Entities  
   const handleViewLegalEntities = (tenantId: string, tenantName: string) => {
-    // TODO: Implement drill-down view to show legal entities list
-    alert(`Visualizzazione ragioni sociali per: ${tenantName}`);
+    setDrillDownView({ 
+      isActive: true, 
+      tenantId: tenantId, 
+      tenantName: tenantName 
+    });
+  };
+
+  // Handle Back to Organizations (exit drill-down)
+  const handleBackToOrganizations = () => {
+    setDrillDownView({ isActive: false });
   };
 
   // Handle Close Modal
@@ -1001,14 +1027,192 @@ export default function Management() {
     </div>
   );
 
-  // Structure Tab (modernized)
-  const renderStructureTab = () => (
+  // Legal Entities Drill-down View
+  const renderLegalEntitiesView = () => (
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
       gap: '24px',
       animation: 'fadeInUp 0.5s ease'
     }}>
+      {/* Back Navigation */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '16px'
+      }}>
+        <button
+          onClick={handleBackToOrganizations}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            background: 'transparent',
+            border: `1px solid ${COLORS.neutral.lighter}`,
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            color: COLORS.neutral.dark,
+            transition: 'all 0.3s ease'
+          }}
+          data-testid="button-back-to-organizations"
+        >
+          <ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} />
+          Torna alle Organizzazioni
+        </button>
+        
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <Building2 size={20} style={{ color: COLORS.primary.orange }} />
+          <h2 style={{
+            fontSize: '20px',
+            fontWeight: 600,
+            color: COLORS.neutral.dark,
+            margin: 0
+          }}>
+            Ragioni Sociali - {drillDownView.tenantName}
+          </h2>
+        </div>
+
+        <button
+          onClick={() => handleAddLegalEntity(drillDownView.tenantId!, drillDownView.tenantName!)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            background: COLORS.gradients.orange,
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600,
+            transition: 'all 0.3s ease'
+          }}
+          data-testid="button-add-legal-entity-drill-down"
+        >
+          <Plus size={16} />
+          Aggiungi Ragione Sociale
+        </button>
+      </div>
+
+      {/* Legal Entities List */}
+      {legalEntitiesLoading ? (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px',
+          ...cardStyle
+        }}>
+          <Loader2 size={24} style={{ color: COLORS.primary.orange, animation: 'spin 1s linear infinite' }} />
+          <span style={{ marginLeft: '12px', color: COLORS.neutral.medium }}>
+            Caricamento ragioni sociali...
+          </span>
+        </div>
+      ) : (
+        <div style={{
+          ...cardStyle,
+          padding: '24px',
+          overflow: 'hidden'
+        }}>
+          {legalEntitiesData?.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${COLORS.neutral.lighter}` }}>
+                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Nome</th>
+                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Codice</th>
+                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Forma Giuridica</th>
+                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>P.IVA</th>
+                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>PEC</th>
+                    <th style={{ textAlign: 'left', padding: '12px', color: COLORS.neutral.dark, fontWeight: 600 }}>Stato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {legalEntitiesData.map((entity: any, index: number) => (
+                    <tr key={entity.id} style={{ 
+                      borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                      transition: 'background-color 0.2s ease'
+                    }}>
+                      <td style={{ padding: '12px', color: COLORS.neutral.dark }}>{entity.nome}</td>
+                      <td style={{ padding: '12px', color: COLORS.neutral.medium, fontFamily: 'monospace' }}>{entity.codice}</td>
+                      <td style={{ padding: '12px', color: COLORS.neutral.dark }}>{entity.formaGiuridica}</td>
+                      <td style={{ padding: '12px', color: COLORS.neutral.medium, fontFamily: 'monospace' }}>{entity.pIva}</td>
+                      <td style={{ padding: '12px', color: COLORS.neutral.medium }}>{entity.pec}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          background: entity.stato === 'active' ? COLORS.semantic.success + '20' : COLORS.semantic.warning + '20',
+                          color: entity.stato === 'active' ? COLORS.semantic.success : COLORS.semantic.warning
+                        }}>
+                          {entity.stato === 'active' ? 'Attiva' : entity.stato === 'suspended' ? 'Sospesa' : 'Bozza'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px',
+              color: COLORS.neutral.medium
+            }}>
+              <Building2 size={48} style={{ color: COLORS.neutral.light, marginBottom: '16px' }} />
+              <h3 style={{ color: COLORS.neutral.dark, marginBottom: '8px' }}>Nessuna Ragione Sociale</h3>
+              <p>Nessuna ragione sociale trovata per questa organizzazione.</p>
+              <button
+                onClick={() => handleAddLegalEntity(drillDownView.tenantId!, drillDownView.tenantName!)}
+                style={{
+                  marginTop: '16px',
+                  padding: '8px 16px',
+                  background: COLORS.gradients.orange,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600
+                }}
+                data-testid="button-add-first-legal-entity"
+              >
+                <Plus size={16} style={{ marginRight: '8px' }} />
+                Aggiungi Prima Ragione Sociale
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Structure Tab (modernized)
+  const renderStructureTab = () => {
+    // If drill-down is active, show legal entities view
+    if (drillDownView.isActive) {
+      return renderLegalEntitiesView();
+    }
+
+    // Otherwise show normal organizations structure
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '24px',
+        animation: 'fadeInUp 0.5s ease'
+      }}>
       {/* Real-time connection indicator */}
       {statsConnected && (
         <div style={{
