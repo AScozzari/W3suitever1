@@ -428,7 +428,6 @@ export default function Management() {
 
   // Handle Add Legal Entity
   const handleAddLegalEntity = (tenantId: string, tenantName: string) => {
-    alert('🎯 MODAL CLICKED! TenantId: ' + tenantId + ', Name: ' + tenantName);
     setLegalEntityModal({ 
       isOpen: true, 
       editingEntity: null, 

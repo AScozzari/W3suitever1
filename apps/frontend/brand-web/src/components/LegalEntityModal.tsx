@@ -32,22 +32,15 @@ import {
 import { apiRequest } from '../lib/queryClient';
 import { z } from 'zod';
 
-// Temporary local schema - TODO: Move to shared schema
+// ✅ SCHEMA CORRETTO - Matches backend w3suite.legalEntities exactly
 const insertLegalEntitySchema = z.object({
-  nome: z.string().min(1, "Nome è obbligatorio"),
-  codice: z.string(),
-  formaGiuridica: z.enum(['SRL', 'SPA', 'SNC', 'SAS', 'SAPA', 'SRLS']),
-  pIva: z.string().min(1, "Partita IVA è obbligatoria"),
-  codiceFiscale: z.string().optional(),
-  indirizzo: z.string().min(1, "Indirizzo è obbligatorio"),
-  citta: z.string().min(1, "Città è obbligatoria"),
-  cap: z.string().optional(),
-  provincia: z.string().optional(),
-  telefono: z.string().optional(),
-  email: z.string().email().optional(),
-  pec: z.string().email("PEC deve essere una email valida").min(1, "PEC è obbligatoria"),
-  stato: z.enum(['active', 'suspended', 'draft', 'closed']),
-  tenantId: z.string().uuid()
+  tenantId: z.string().uuid("Tenant ID deve essere un UUID valido"),
+  codice: z.string().max(20, "Codice massimo 20 caratteri").optional(),
+  nome: z.string().min(1, "Nome è obbligatorio").max(255, "Nome massimo 255 caratteri"),
+  formaGiuridica: z.string().max(100, "Forma giuridica massimo 100 caratteri").optional(),
+  pIva: z.string().max(50, "P.IVA massimo 50 caratteri").optional(),
+  billingProfileId: z.string().uuid().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
+  stato: z.string().max(50).default("Attiva").optional()
 });
 
 // Type inference from the schema
@@ -66,27 +59,19 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
   editingEntity,
   tenantId
 }) => {
-  console.log('🎯 [MODAL-RENDER] LegalEntityModal rendering:', { isOpen, tenantId, editingEntity });
   const queryClient = useQueryClient();
 
   // Form setup with react-hook-form and zod validation
   const form = useForm<LegalEntityFormData>({
     resolver: zodResolver(insertLegalEntitySchema),
     defaultValues: {
-      nome: '',
-      codice: '',
-      formaGiuridica: 'SRL',
-      pIva: '',
-      codiceFiscale: '',
-      indirizzo: '',
-      citta: '',
-      cap: '',
-      provincia: '',
-      telefono: '',
-      email: '',
-      pec: '',
-      stato: 'active',
       tenantId: tenantId,
+      codice: '',
+      nome: '',
+      formaGiuridica: '',
+      pIva: '',
+      billingProfileId: undefined,
+      stato: 'Attiva',
       ...editingEntity
     }
   });
@@ -101,20 +86,12 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
         });
       } else {
         form.reset({
-          nome: '',
+          tenantId: tenantId,
           codice: '',
-          formaGiuridica: 'SRL',
+          nome: '',
           pIva: '',
-          codiceFiscale: '',
-          indirizzo: '',
-          citta: '',
-          cap: '',
-          provincia: '',
-          telefono: '',
-          email: '',
-          pec: '',
-          stato: 'active',
-          tenantId: tenantId
+          billingProfileId: '',
+          stato: 'Attiva'
         });
       }
     }
@@ -149,7 +126,6 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ['/brand-api/organizations'] });
       
       // Simple feedback (can be replaced with toast system later)
-      console.log('✅ Legal entity saved successfully');
       
       // Close modal and reset form
       onClose();
@@ -274,10 +250,10 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="active">Attiva</SelectItem>
-                        <SelectItem value="suspended">Sospesa</SelectItem>
-                        <SelectItem value="draft">Bozza</SelectItem>
-                        <SelectItem value="closed">Cessata</SelectItem>
+                        <SelectItem value="Attiva">Attiva</SelectItem>
+                        <SelectItem value="Sospesa">Sospesa</SelectItem>
+                        <SelectItem value="Bozza">Bozza</SelectItem>
+                        <SelectItem value="Cessata">Cessata</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -286,14 +262,12 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
               />
             </div>
 
-            {/* Fiscal Information */}
-            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="pIva"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Partita IVA *</FormLabel>
+                    <FormLabel>Partita IVA</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="IT12345678901"
@@ -307,100 +281,21 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="codiceFiscale"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Codice Fiscale</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="RSSMRA80A01H501U"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                        className="font-mono"
-                        data-testid="input-codice-fiscale"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            {/* Address Information */}
-            <FormField
-              control={form.control}
-              name="indirizzo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Indirizzo Sede Legale *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Via Roma, 123"
-                      {...field}
-                      data-testid="input-indirizzo"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-3 gap-4">
+            {/* Optional Billing Profile */}
+            <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
-                name="citta"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Città *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Milano"
-                        {...field}
-                        data-testid="input-citta"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="provincia"
+                name="billingProfileId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Provincia</FormLabel>
+                    <FormLabel>Billing Profile ID (Opzionale)</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="MI"
-                        maxLength={2}
+                        placeholder="UUID del profilo di fatturazione"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                        data-testid="input-provincia"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="cap"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CAP</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="20121"
-                        maxLength={5}
-                        {...field}
-                        data-testid="input-cap"
+                        data-testid="input-billing-profile"
                       />
                     </FormControl>
                     <FormMessage />
@@ -408,63 +303,6 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="telefono"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefono</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="+39 02 12345678"
-                        {...field}
-                        data-testid="input-telefono"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="info@company.it"
-                        {...field}
-                        data-testid="input-email"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* PEC - Full width important field */}
-            <FormField
-              control={form.control}
-              name="pec"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>PEC *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="pec@pec.company.it"
-                      {...field}
-                      data-testid="input-pec"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter>
               <Button 
