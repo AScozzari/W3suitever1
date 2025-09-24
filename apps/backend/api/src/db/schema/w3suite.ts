@@ -160,7 +160,7 @@ export const hrRequestApprovalActionEnum = pgEnum('hr_request_approval_action', 
 export const tenants = w3suiteSchema.table("tenants", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 100 }).unique(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
   status: varchar("status", { length: 50 }).default("active"),
   notes: text("notes"), // Added notes field for Management Center
   settings: jsonb("settings").default({}),
@@ -174,6 +174,8 @@ export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true, 
   createdAt: true, 
   updatedAt: true 
+}).extend({
+  slug: z.string().min(1, "Slug non può essere vuoto").max(100, "Slug troppo lungo")
 });
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type Tenant = typeof tenants.$inferSelect;
