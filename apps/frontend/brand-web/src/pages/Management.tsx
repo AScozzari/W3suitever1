@@ -1682,46 +1682,6 @@ export default function Management() {
       );
     }
 
-    // Empty state quando non ci sono dati
-    return (
-      <div style={{ 
-        padding: '40px',
-        textAlign: 'center',
-        color: COLORS.neutral.medium,
-        borderRadius: '8px',
-        background: 'white'
-      }}>
-        <Building2 size={64} style={{ margin: '0 auto 20px', display: 'block', color: COLORS.neutral.light }} />
-        <h3 style={{ margin: '0 0 8px', color: COLORS.neutral.dark }}>
-          Nessuna organizzazione trovata
-        </h3>
-        <p style={{ margin: '0 0 20px', fontSize: '14px' }}>
-          Inizia creando la tua prima organizzazione
-        </p>
-        <button
-          onClick={() => setNewOrgModalOpen(true)}
-          style={{
-            background: COLORS.primary.orange,
-            color: 'white',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          data-testid="button-create-first-organization"
-        >
-          <Plus size={16} />
-          Crea Organizzazione
-        </button>
-      </div>
-    );
-  };
-
   const renderNewOrganizationModal = () => {
     if (!newOrgModalOpen) return null;
 
