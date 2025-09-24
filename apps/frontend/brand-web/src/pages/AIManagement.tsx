@@ -441,7 +441,7 @@ export default function AIManagement() {
   const { data: urlListData, isLoading: isLoadingUrls } = useQuery({
     queryKey: ['/brand-api/ai/agents', editingAgent?.id, 'urls'],
     queryFn: () => apiRequest(`/brand-api/ai/agents/${editingAgent.id}/urls`),
-    enabled: !!editingAgent?.id && showEditModal,
+    enabled: !!editingAgent?.id && showAgentModal,
     staleTime: 10000 // Cache per 10 secondi
   });
 
