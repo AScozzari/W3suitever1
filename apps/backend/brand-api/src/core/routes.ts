@@ -1,6 +1,6 @@
 import express from "express";
 import http from "http";
-import { createTenantContextMiddleware, BrandAuthService, authenticateToken } from "./auth.js";
+import { createTenantContextMiddleware, BrandAuthService, authenticateToken, BRAND_TENANT_ID } from "./auth.js";
 import { brandStorage } from "./storage.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
@@ -84,7 +84,26 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     if (req.path === "/auth/login" || req.path === "/health") {
       return next();
     }
-    // Apply JWT middleware for all other routes
+    
+    // 🔧 DEVELOPMENT MODE: Bypass authentication
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔧 [BRAND-DEV] Development mode: Bypassing authentication for", req.path);
+      // Simulate authenticated super admin user
+      (req as any).user = {
+        id: "brand-admin-user",
+        email: "admin@brandinterface.com", 
+        firstName: "Brand",
+        lastName: "Admin",
+        role: "super_admin",
+        commercialAreas: [],
+        permissions: ["*"], // All permissions
+        isActive: true,
+        brandTenantId: BRAND_TENANT_ID
+      };
+      return next();
+    }
+    
+    // Apply JWT middleware for all other routes in production
     return authenticateToken()(req, res, next);
   });
 
