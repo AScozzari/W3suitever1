@@ -1,0 +1,228 @@
+client:536 WebSocket connection to 'wss://localhost:3001/brandinterface/?token=KZZxGrEAla0s' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:749
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+6ai-management:1 Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+Management.tsx:281  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/brand-api/structure/stores?page=1&limit=25 400 (Bad Request)
+queryFn @ Management.tsx:281
+fetchFn @ @tanstack_react-query.js?v=667575cc:1097
+run @ @tanstack_react-query.js?v=667575cc:795
+start @ @tanstack_react-query.js?v=667575cc:838
+fetch @ @tanstack_react-query.js?v=667575cc:1144
+executeFetch_fn @ @tanstack_react-query.js?v=667575cc:1639
+onSubscribe @ @tanstack_react-query.js?v=667575cc:1335
+subscribe @ @tanstack_react-query.js?v=667575cc:24
+(anonymous) @ @tanstack_react-query.js?v=667575cc:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=667575cc:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=667575cc:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=667575cc:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=667575cc:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=667575cc:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=667575cc:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=667575cc:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=667575cc:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=667575cc:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=667575cc:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=667575cc:18627Understand this error
+useSSE.ts:93 SSE connection opened: /brand-api/structure/stats/stream?page=1&limit=25
+Management.tsx:281  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/brand-api/structure/stores?page=1&limit=25 400 (Bad Request)
+queryFn @ Management.tsx:281
+fetchFn @ @tanstack_react-query.js?v=667575cc:1097
+run @ @tanstack_react-query.js?v=667575cc:795
+(anonymous) @ @tanstack_react-query.js?v=667575cc:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=667575cc:816
+Promise.catch
+run @ @tanstack_react-query.js?v=667575cc:799
+start @ @tanstack_react-query.js?v=667575cc:838
+fetch @ @tanstack_react-query.js?v=667575cc:1144
+executeFetch_fn @ @tanstack_react-query.js?v=667575cc:1639
+onSubscribe @ @tanstack_react-query.js?v=667575cc:1335
+subscribe @ @tanstack_react-query.js?v=667575cc:24
+(anonymous) @ @tanstack_react-query.js?v=667575cc:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=667575cc:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=667575cc:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=667575cc:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=667575cc:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=667575cc:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=667575cc:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=667575cc:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=667575cc:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=667575cc:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=667575cc:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=667575cc:18627Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+Management.tsx:281  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/brand-api/structure/stores?page=1&limit=25 400 (Bad Request)
+queryFn @ Management.tsx:281
+fetchFn @ @tanstack_react-query.js?v=667575cc:1097
+run @ @tanstack_react-query.js?v=667575cc:795
+(anonymous) @ @tanstack_react-query.js?v=667575cc:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=667575cc:816
+Promise.catch
+run @ @tanstack_react-query.js?v=667575cc:799
+(anonymous) @ @tanstack_react-query.js?v=667575cc:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=667575cc:816
+Promise.catch
+run @ @tanstack_react-query.js?v=667575cc:799
+start @ @tanstack_react-query.js?v=667575cc:838
+fetch @ @tanstack_react-query.js?v=667575cc:1144
+executeFetch_fn @ @tanstack_react-query.js?v=667575cc:1639
+onSubscribe @ @tanstack_react-query.js?v=667575cc:1335
+subscribe @ @tanstack_react-query.js?v=667575cc:24
+(anonymous) @ @tanstack_react-query.js?v=667575cc:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=667575cc:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=667575cc:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=667575cc:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=667575cc:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=667575cc:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=667575cc:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=667575cc:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=667575cc:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=667575cc:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=667575cc:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=667575cc:18627Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+Management.tsx:281  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/brand-api/structure/stores?page=1&limit=25 400 (Bad Request)
+queryFn @ Management.tsx:281
+fetchFn @ @tanstack_react-query.js?v=667575cc:1097
+run @ @tanstack_react-query.js?v=667575cc:795
+(anonymous) @ @tanstack_react-query.js?v=667575cc:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=667575cc:816
+Promise.catch
+run @ @tanstack_react-query.js?v=667575cc:799
+(anonymous) @ @tanstack_react-query.js?v=667575cc:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=667575cc:816
+Promise.catch
+run @ @tanstack_react-query.js?v=667575cc:799
+(anonymous) @ @tanstack_react-query.js?v=667575cc:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=667575cc:816
+Promise.catch
+run @ @tanstack_react-query.js?v=667575cc:799
+start @ @tanstack_react-query.js?v=667575cc:838
+fetch @ @tanstack_react-query.js?v=667575cc:1144
+executeFetch_fn @ @tanstack_react-query.js?v=667575cc:1639
+onSubscribe @ @tanstack_react-query.js?v=667575cc:1335
+subscribe @ @tanstack_react-query.js?v=667575cc:24
+(anonymous) @ @tanstack_react-query.js?v=667575cc:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=667575cc:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=667575cc:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=667575cc:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=667575cc:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=667575cc:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=667575cc:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=667575cc:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=667575cc:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=667575cc:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=667575cc:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=667575cc:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=667575cc:18627Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
+ping @ client:736
+waitForSuccessfulPing @ client:755
+await in waitForSuccessfulPing
+(anonymous) @ client:561Understand this error
+client:736  GET https://localhost:3001/brandinterface/ net::ERR_CONNECTION_REFUSED
