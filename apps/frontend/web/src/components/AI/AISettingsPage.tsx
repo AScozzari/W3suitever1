@@ -562,123 +562,93 @@ export default function AISettingsPage() {
           )}
         </div>
 
-        {/* Model Configuration */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Modello OpenAI
-            </label>
-            <select
-              value={formData.openaiModel || 'gpt-4-turbo'}
-              onChange={(e) => setFormData(prev => ({ ...prev, openaiModel: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
-              data-testid="select-openai-model"
-            >
-              <option value="gpt-4o">GPT-4o (Più Recente)</option>
-              <option value="gpt-4-turbo">GPT-4 Turbo (Raccomandato)</option>
-              <option value="gpt-4">GPT-4</option>
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Economico)</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Max Token per Risposta
-            </label>
-            <input
-              type="number"
-              value={formData.maxTokensPerResponse || 4000}
-              onChange={(e) => setFormData(prev => ({ ...prev, maxTokensPerResponse: parseInt(e.target.value) }))}
-              min="100"
-              max="8000"
-              step="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6900] focus:border-transparent"
-              data-testid="input-max-tokens"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Temperatura ({formData.temperatureDefault || 0.7})
-            </label>
-            <input
-              type="range"
-              value={formData.temperatureDefault || 0.7}
-              onChange={(e) => setFormData(prev => ({ ...prev, temperatureDefault: parseFloat(e.target.value) }))}
-              min="0"
-              max="1"
-              step="0.1"
-              className="w-full"
-              data-testid="slider-temperature"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>Preciso</span>
-              <span>Creativo</span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Feature Toggles */}
+      {/* Agenti AI Disponibili */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-          <Zap className="w-5 h-5 mr-2 text-[#FF6900]" />
-          Funzionalità AI
+          <Brain className="w-5 h-5 mr-2 text-[#FF6900]" />
+          Agenti AI Disponibili
         </h3>
         <div className="space-y-4">
           {[
             {
-              key: 'chat_assistant' as const,
+              id: 'tippy',
+              name: 'Tippy - Assistente Vendite WindTre',
+              description: 'Assistente AI specializzato nelle vendite WindTre con knowledge base personalizzata',
               icon: MessageCircle,
-              title: 'Chat Assistant',
-              description: 'Assistente AI conversazionale per supporto generale'
-            },
-            {
-              key: 'document_analysis' as const,
-              icon: FileText,
-              title: 'Analisi Documenti',
-              description: 'Analisi e estrazione informazioni da documenti'
-            },
-            {
-              key: 'financial_forecasting' as const,
-              icon: TrendingUp,
-              title: 'Previsioni Finanziarie',
-              description: 'Analisi predittive e forecasting finanziario'
-            },
-            {
-              key: 'web_search' as const,
-              icon: Search,
-              title: 'Ricerca Web',
-              description: 'Ricerca informazioni aggiornate sul web'
-            },
-            {
-              key: 'code_interpreter' as const,
-              icon: Database,
-              title: 'Code Interpreter',
-              description: 'Esecuzione codice e analisi dati avanzate'
+              active: true // Per ora sempre attivo
             }
-          ].map(({ key, icon: Icon, title, description }) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          ].map((agent) => (
+            <div key={agent.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
-                <Icon className="w-5 h-5 text-gray-600" />
+                <agent.icon className="w-5 h-5 text-gray-600" />
                 <div>
-                  <h4 className="font-medium text-gray-900">{title}</h4>
-                  <p className="text-sm text-gray-600">{description}</p>
+                  <h4 className="font-medium text-gray-900">{agent.name}</h4>
+                  <p className="text-sm text-gray-600">{agent.description}</p>
                 </div>
               </div>
-              <button
-                onClick={() => handleFeatureToggle(key)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
-                  formData.featuresEnabled?.[key] ? 'bg-[#FF6900]' : 'bg-gray-200'
-                }`}
-                data-testid={`toggle-feature-${key}`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    formData.featuresEnabled?.[key] ? 'translate-x-6' : 'translate-x-1'
+              
+              <div className="flex items-center space-x-3">
+                {/* Toggle per attivare/disattivare l'agente */}
+                <button
+                  onClick={() => {
+                    // TODO: Implementare toggle agente per tenant
+                    alert(`Toggle agente ${agent.name} - funzionalità in arrivo!`);
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
+                    agent.active ? 'bg-[#FF6900]' : 'bg-gray-200'
                   }`}
-                />
-              </button>
+                  data-testid={`toggle-agent-${agent.id}`}
+                  title={`${agent.active ? 'Disattiva' : 'Attiva'} agente`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      agent.active ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                
+                {/* Icona modifica per implementare RAG context */}
+                <button
+                  onClick={() => {
+                    // TODO: Aprire modal per gestire URL e documenti RAG tenant-specific
+                    alert(`Gestione contesto RAG per ${agent.name} - funzionalità in arrivo!`);
+                  }}
+                  className="p-2 text-gray-400 hover:text-[#FF6900] hover:bg-[#FF6900]/10 rounded-lg transition-colors"
+                  data-testid={`edit-context-${agent.id}`}
+                  title="Modifica contesto RAG"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+                
+                {/* Icona occhio per vedere story board custom tenant */}
+                <button
+                  onClick={() => {
+                    // TODO: Aprire modal storyboard custom tenant
+                    alert(`Storyboard custom tenant per ${agent.name} - funzionalità in arrivo!`);
+                  }}
+                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  data-testid={`view-storyboard-${agent.id}`}
+                  title="Visualizza storyboard tenant"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
+        </div>
+        
+        {/* Informazioni aggiuntive */}
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Database className="w-4 h-4 text-blue-600" />
+            <p className="text-sm text-blue-800 font-medium">Contesto RAG Vectoriale</p>
+          </div>
+          <p className="text-xs text-blue-700 mt-1">
+            Ogni agente può avere documenti e URL personalizzati per il tuo tenant. 
+            I dati vengono salvati in tabelle vectoriali con desinenza "_override" nello schema w3suite.
+          </p>
         </div>
       </div>
 
@@ -739,35 +709,8 @@ export default function AISettingsPage() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <EyeOff className="w-5 h-5 text-gray-600" />
-              <div>
-                <h4 className="font-medium text-gray-900">Training AI</h4>
-                <p className="text-sm text-gray-600">Attiva modalità training per migliorare il contesto AI</p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                handlePrivacyToggle('allowDataTraining');
-                setTrainingPanelExpanded(prev => !prev);
-              }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
-                formData.privacySettings?.allowDataTraining ? 'bg-[#FF6900]' : 'bg-gray-200'
-              }`}
-              data-testid="toggle-training"
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  formData.privacySettings?.allowDataTraining ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
         </div>
         
-        {/* Training AI Panel - Espandibile */}
-        {formData.privacySettings?.allowDataTraining && (
           <div className="mt-6 p-6 bg-gradient-to-r from-[#FF6900]/5 to-[#7B2CBF]/5 rounded-lg border border-[#FF6900]/20">
             <div className="space-y-6">
               {/* Header con icona */}
