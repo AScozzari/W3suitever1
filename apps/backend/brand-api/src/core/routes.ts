@@ -1158,44 +1158,6 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     });
   });
 
-  // Get structure stores with filtering and pagination
-  app.get("/brand-api/structure/stores", async (req, res) => {
-    const context = (req as any).brandContext;
-    const user = (req as any).user;
-
-    // Role-based access control
-    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
-      return res.status(403).json({ error: "Insufficient permissions for structure data" });
-    }
-
-    try {
-      const filters = {
-        tenantId: req.query.tenantId as string,
-        areaCommerciale: req.query.areaCommerciale as string,
-        canale: req.query.canale as string,
-        citta: req.query.citta as string,
-        provincia: req.query.provincia as string,
-        stato: req.query.stato as 'active' | 'inactive' | 'pending' | 'all',
-        search: req.query.search as string,
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 25
-      };
-
-      const storesData = await brandStorage.getStructureStores(filters);
-
-      res.json({
-        success: true,
-        data: storesData,
-        message: "Structure stores retrieved successfully"
-      });
-    } catch (error) {
-      console.error("Error fetching structure stores:", error);
-      res.status(500).json({ 
-        error: "Failed to fetch structure stores",
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
 
   // Get audit logs
   app.get("/brand-api/audit-logs", async (req, res) => {
