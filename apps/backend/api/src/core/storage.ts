@@ -2787,7 +2787,7 @@ export class DatabaseStorage implements IStorage {
           .select({
             totalRequests: sql<number>`count(*)::int`,
             totalTokens: sql<number>`sum(${aiUsageLogs.tokensTotal})::int`,
-            totalCostCents: sql<number>`sum(${aiUsageLogs.costUsd})::int`,
+            totalCostUsd: sql<number>`sum(${aiUsageLogs.costUsd})`,
             avgResponseTime: sql<number>`avg(${aiUsageLogs.responseTimeMs})::int`
           })
           .from(aiUsageLogs)
@@ -2800,7 +2800,7 @@ export class DatabaseStorage implements IStorage {
         return {
           totalRequests: result?.totalRequests || 0,
           totalTokens: result?.totalTokens || 0,
-          totalCost: (result?.totalCostCents || 0) / 100, // Convert cents to dollars
+          totalCost: result?.totalCostUsd || 0, // Already in USD, no conversion needed
           avgResponseTime: result?.avgResponseTime || 0
         };
       });
