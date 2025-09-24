@@ -17,7 +17,7 @@ import {
   StandardPartitaIVAField,
   StandardPaeseField
 } from '../components/Leave/forms/StandardFields';
-import AISettingsPage from '../components/AI/AISettingsPage';
+import AISettingsPage from '../components/AI/AISettingsPageClean';
 import { z } from 'zod';
 import { 
   supplierValidationSchema, 
