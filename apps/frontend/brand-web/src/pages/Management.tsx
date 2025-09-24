@@ -2054,6 +2054,7 @@ export default function Management() {
       `}</style>
     </div>
   );
+  };
 
   // Coming Soon Tab Component
   const renderComingSoonTab = (tab: typeof tabs[0]) => (
