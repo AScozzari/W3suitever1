@@ -262,6 +262,7 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
               />
             </div>
 
+            <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
                 name="pIva"
@@ -302,30 +303,31 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
                   </FormItem>
                 )}
               />
-
-
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleClose}
-                data-testid="button-cancel"
-              >
-                Annulla
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createLegalEntityMutation.isPending}
-                data-testid="button-save"
-              >
-                {createLegalEntityMutation.isPending ? (
-                  'Salvando...'
-                ) : (
-                  editingEntity ? 'Aggiorna' : 'Crea'
-                )} Ragione Sociale
-              </Button>
-            </DialogFooter>
+            </div>
           </form>
+
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleClose}
+              data-testid="button-cancel"
+            >
+              Annulla
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={createLegalEntityMutation.isPending}
+              onClick={form.handleSubmit(onSubmit)}
+              data-testid="button-save"
+            >
+              {createLegalEntityMutation.isPending ? (
+                'Salvando...'
+              ) : (
+                editingEntity ? 'Aggiorna' : 'Crea'
+              )} Ragione Sociale
+            </Button>
+          </DialogFooter>
         </Form>
       </DialogContent>
     </Dialog>
