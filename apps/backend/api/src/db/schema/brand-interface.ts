@@ -285,3 +285,101 @@ export const insertBrandConfigSchema = createInsertSchema(brandConfigs).omit({
 });
 export type InsertBrandConfig = z.infer<typeof insertBrandConfigSchema>;
 export type BrandConfig = typeof brandConfigs.$inferSelect;
+
+// ==================== AI KNOWLEDGE CROSS-TENANT TABLES ====================
+
+// AI Knowledge Sources - Cross-tenant fonte singole (documenti/URL)
+export const aiKnowledgeSources = brandInterfaceSchema.table("ai_knowledge_sources", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  agentId: varchar("agent_id", { length: 100 }).notNull(), // Reference to AI agent
+  sourceType: varchar("source_type", { length: 50 }).notNull(), // 'document', 'url'
+  filename: varchar("filename", { length: 255 }), // Per documenti
+  sourceUrl: text("source_url"), // Per URL
+  contentPreview: text("content_preview"), // Preview del contenuto
+  storagePath: text("storage_path"), // Path in object storage
+  contentHash: varchar("content_hash", { length: 64 }), // SHA-256 for deduplication
+  fileSize: smallint("file_size"), // Size in KB
+  processingStatus: varchar("processing_status", { length: 50 }).default('pending'), // 'pending', 'processing', 'completed', 'failed'
+  embeddingsCreated: smallint("embeddings_created").default(0), // Numero embeddings generati
+  metadata: jsonb("metadata").default({}), // Additional metadata
+  
+  // Cross-tenant: No tenantId - disponibile a tutti
+  origin: varchar("origin", { length: 50 }).default('brand'), // 'brand' vs 'tenant'
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  validatedAt: timestamp("validated_at"), // Quando è stato verificato il contenuto
+});
+
+export const insertAiKnowledgeSourceSchema = createInsertSchema(aiKnowledgeSources).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertAiKnowledgeSource = z.infer<typeof insertAiKnowledgeSourceSchema>;
+export type AiKnowledgeSource = typeof aiKnowledgeSources.$inferSelect;
+
+// AI Cross-Tenant Embeddings - Embeddings vettoriali global
+export const aiCrossTenantEmbeddings = brandInterfaceSchema.table("ai_cross_tenant_embeddings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  sourceId: uuid("source_id").notNull().references(() => aiKnowledgeSources.id), // Reference alla source
+  agentId: varchar("agent_id", { length: 100 }).notNull(), // AI agent owner
+  chunkIndex: smallint("chunk_index").notNull(), // Indice chunk (0, 1, 2...)
+  contentChunk: text("content_chunk").notNull(), // Testo del chunk
+  embeddingVector: text("embedding_vector").notNull(), // JSON array dei float vectors
+  vectorDimensions: smallint("vector_dimensions").default(1536), // Dimensioni (default text-embedding-3-small)
+  
+  // Context & Metadata
+  contextBefore: text("context_before"), // Contesto precedente
+  contextAfter: text("context_after"), // Contesto successivo
+  chunkMetadata: jsonb("chunk_metadata").default({}), // Metadati specifici chunk
+  
+  // Search & Performance
+  tags: text("tags").array(), // Tags per categorizzazione
+  accessLevel: varchar("access_level", { length: 50 }).default('global'), // 'global', 'restricted'
+  status: varchar("status", { length: 50 }).default('active'), // 'active', 'archived', 'invalid'
+  
+  // Cross-tenant: Available to all tenants
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAiCrossTenantEmbeddingSchema = createInsertSchema(aiCrossTenantEmbeddings).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertAiCrossTenantEmbedding = z.infer<typeof insertAiCrossTenantEmbeddingSchema>;
+export type AiCrossTenantEmbedding = typeof aiCrossTenantEmbeddings.$inferSelect;
+
+// AI Knowledge Base Collections - Collezioni logiche di knowledge per agenti
+export const aiKnowledgeBases = brandInterfaceSchema.table("ai_knowledge_bases", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  agentId: varchar("agent_id", { length: 100 }).notNull(), // AI agent owner
+  name: varchar("name", { length: 255 }).notNull(), // Nome collezione
+  description: text("description"), // Descrizione
+  category: varchar("category", { length: 100 }), // 'sales', 'support', 'training', etc.
+  
+  // Statistics
+  totalSources: smallint("total_sources").default(0), // Numero fonti associate
+  totalEmbeddings: smallint("total_embeddings").default(0), // Numero embeddings totali
+  lastTrainingAt: timestamp("last_training_at"), // Ultimo aggiornamento training
+  
+  // Configuration
+  isActive: boolean("is_active").default(true),
+  priority: smallint("priority").default(0), // Priority for RAG retrieval
+  settings: jsonb("settings").default({}), // Configurazioni specifiche
+  
+  // Cross-tenant: Available to all tenants
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAiKnowledgeBaseSchema = createInsertSchema(aiKnowledgeBases).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertAiKnowledgeBase = z.infer<typeof insertAiKnowledgeBaseSchema>;
+export type AiKnowledgeBase = typeof aiKnowledgeBases.$inferSelect;
