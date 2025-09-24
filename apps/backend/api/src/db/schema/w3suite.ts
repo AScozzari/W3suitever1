@@ -2536,9 +2536,9 @@ export const aiSettings = w3suiteSchema.table("ai_settings", {
   responseCreativity: smallint("response_creativity").default(7), // 0-20 scale (mapped to 0-2.0 temperature)
   responseLengthLimit: integer("response_length_limit").default(4000).notNull(),
   
-  // TODO: ➕ AI AGENT REGISTRY COMPATIBILITY (FASE 1 - Will be added after database sync)
-  // activeAgents: jsonb("active_agents").default('["tippy-sales"]').notNull(), // Lista agenti attivi per tenant
-  // agentOverrides: jsonb("agent_overrides").default('{}').notNull(), // Override specifici tenant per agenti
+  // ➕ AI AGENT REGISTRY COMPATIBILITY (FASE 2 - Now active!)
+  activeAgents: jsonb("active_agents").default('["tippy-sales"]').notNull(), // Lista agenti attivi per tenant
+  agentOverrides: jsonb("agent_overrides").default('{}').notNull(), // Override specifici tenant per agenti
   
   // Usage & Limits
   monthlyTokenLimit: integer("monthly_token_limit").default(100000).notNull(),
