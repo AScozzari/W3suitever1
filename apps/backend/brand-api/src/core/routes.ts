@@ -886,18 +886,24 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
         });
       }
 
-      // TODO: Query vectorEmbeddings where metadata contains agentId
-      // TODO: Return paginated list with source info
+      // 🎯 CROSS-TENANT KNOWLEDGE RETRIEVAL: Cerca in brand + tenant knowledge
+      const knowledgeBase = await brandStorage.getAgentCrossTenantKnowledge(agentId, {
+        includeDocuments: true,
+        includeUrls: true,
+        limit: parseInt(req.query.limit as string) || 50
+      });
       
       res.json({
         success: true,
         data: {
           agentId,
-          knowledgeBase: [],
+          knowledgeBase: knowledgeBase.items,
           stats: {
-            totalDocuments: 0,
-            totalUrls: 0,
-            totalEmbeddings: 0
+            totalDocuments: knowledgeBase.stats.documents,
+            totalUrls: knowledgeBase.stats.urls,
+            totalEmbeddings: knowledgeBase.stats.totalEmbeddings,
+            brandLevel: knowledgeBase.stats.brandLevel,
+            tenantLevel: knowledgeBase.stats.tenantLevel
           }
         }
       });

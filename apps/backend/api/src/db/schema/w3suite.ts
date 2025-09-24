@@ -2639,6 +2639,9 @@ export const embeddingModelEnum = pgEnum('embedding_model', [
   'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002'
 ]);
 
+// Cross-tenant RAG Origin - CRITICO per distinguere brand vs tenant knowledge
+export const vectorOriginEnum = pgEnum('vector_origin', ['brand', 'tenant']);
+
 // Media Type Enum for multimodal content
 export const mediaTypeEnum = pgEnum('media_type', [
   'text', 'pdf', 'image', 'audio', 'video', 'url', 'document'
@@ -2653,6 +2656,10 @@ export const extractionMethodEnum = pgEnum('extraction_method', [
 export const vectorEmbeddings = w3suiteSchema.table("vector_embeddings", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  
+  // 🎯 CROSS-TENANT RAG: Brand vs Tenant distinction
+  origin: vectorOriginEnum("origin").notNull(), // 'brand' = Brand Interface, 'tenant' = Tenant specific
+  agentId: varchar("agent_id", { length: 100 }), // Agent ID for filtering (e.g., 'tippy-sales')
   
   // Source Reference
   sourceType: vectorSourceTypeEnum("source_type").notNull(),
@@ -2715,6 +2722,12 @@ export const vectorEmbeddings = w3suiteSchema.table("vector_embeddings", {
   statusIndex: index("vector_embeddings_status_idx").on(table.status),
   ownerIndex: index("vector_embeddings_owner_idx").on(table.ownerUserId),
   expiresIndex: index("vector_embeddings_expires_idx").on(table.expiresAt),
+  
+  // 🎯 CROSS-TENANT RAG INDEXES: Performance critici per ricerca combinata brand+tenant
+  crossTenantAgentIndex: index("vector_embeddings_cross_tenant_agent_idx").on(table.origin, table.agentId),
+  tenantAgentIndex: index("vector_embeddings_tenant_agent_idx").on(table.tenantId, table.agentId),
+  agentStatusIndex: index("vector_embeddings_agent_status_idx").on(table.agentId, table.status),
+  
   // Note: HNSW index for vector similarity will be created via SQL migration
 }));
 

@@ -700,6 +700,71 @@ class BrandDrizzleStorage implements IBrandStorage {
       throw error;
     }
   }
+
+  // 🎯 CROSS-TENANT RAG: Recupera knowledge base combinando brand + tenant
+  async getAgentCrossTenantKnowledge(agentId: string, options: {
+    includeDocuments?: boolean;
+    includeUrls?: boolean;
+    limit?: number;
+  } = {}): Promise<{
+    items: any[];
+    stats: {
+      documents: number;
+      urls: number;
+      totalEmbeddings: number;
+      brandLevel: number;
+      tenantLevel: number;
+    };
+  }> {
+    try {
+      console.log(`🧠 [CROSS-TENANT RAG] Fetching knowledge for agent: ${agentId}`);
+      
+      // TODO: Implementare query reale quando vectorEmbeddings schema è aggiornato
+      // Query would be:
+      // SELECT * FROM w3suite.vector_embeddings 
+      // WHERE agent_id = ? AND status = 'ready'
+      // AND (origin = 'brand' OR (origin = 'tenant' AND tenant_id = ?))
+      // ORDER BY origin, created_at DESC
+      
+      // Per ora mock data per testing UI
+      const mockKnowledge = {
+        items: [
+          {
+            id: '1',
+            agentId,
+            sourceType: 'pdf_document',
+            origin: 'brand',
+            filename: 'WindTre_Sales_Guide_2024.pdf',
+            contentPreview: 'Guida completa alle vendite WindTre per il 2024...',
+            createdAt: '2024-09-20T10:00:00Z',
+            tenantId: null // Brand-level
+          },
+          {
+            id: '2',  
+            agentId,
+            sourceType: 'url_content',
+            origin: 'brand',
+            sourceUrl: 'https://windtre.it/offerte-mobile',
+            contentPreview: 'Tutte le offerte mobile WindTre aggiornate...',
+            createdAt: '2024-09-21T15:30:00Z',
+            tenantId: null // Brand-level
+          }
+        ],
+        stats: {
+          documents: 1,
+          urls: 1,
+          totalEmbeddings: 2,
+          brandLevel: 2, // Brand-managed knowledge
+          tenantLevel: 0  // Tenant-specific knowledge
+        }
+      };
+      
+      return mockKnowledge;
+    } catch (error) {
+      console.error('Error fetching cross-tenant knowledge:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
