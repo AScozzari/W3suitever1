@@ -4,6 +4,7 @@ import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSSE } from '../hooks/useSSE';
 import BrandLayout from '../components/BrandLayout';
+import LegalEntityModal from '../components/LegalEntityModal';
 import { 
   Settings, Building2, ShoppingCart, Package, Briefcase,
   BarChart3, Filter, Search, Download, Plus, Edit, Trash2,
@@ -158,6 +159,15 @@ export default function Management() {
   
   // Modals state
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
+  const [legalEntityModal, setLegalEntityModal] = useState<{
+    isOpen: boolean;
+    editingEntity?: any;
+    tenantId?: string;
+  }>({
+    isOpen: false,
+    editingEntity: null,
+    tenantId: undefined
+  });
   
   // Organization form state
   const [organizationForm, setOrganizationForm] = useState({
@@ -394,6 +404,30 @@ export default function Management() {
       prev.length === allOrgIds.length ? [] : allOrgIds
     );
   };
+
+  // ==================== LEGAL ENTITY MODAL FUNCTIONS ====================
+
+
+  // Handle Add Legal Entity
+  const handleAddLegalEntity = (tenantId: string, tenantName: string) => {
+    setLegalEntityModal({ 
+      isOpen: true, 
+      editingEntity: null, 
+      tenantId: tenantId 
+    });
+  };
+
+  // Handle View Legal Entities  
+  const handleViewLegalEntities = (tenantId: string, tenantName: string) => {
+    // TODO: Implement drill-down view to show legal entities list
+    alert(`Visualizzazione ragioni sociali per: ${tenantName}`);
+  };
+
+  // Handle Close Modal
+  const handleCloseLegalEntityModal = () => {
+    setLegalEntityModal({ isOpen: false, editingEntity: null, tenantId: undefined });
+  };
+
 
   // Role-based access control
   if (user?.role !== 'super_admin' && user?.role !== 'national_manager') {
@@ -1720,8 +1754,7 @@ export default function Management() {
                         {/* Add Legal Entity */}
                         <button
                           onClick={() => {
-                            // TODO: Implementare modal crea ragione sociale
-                            alert(`Aggiungi ragione sociale per: ${org.name}`);
+                            handleAddLegalEntity(org.id, org.name);
                           }}
                           style={{
                             background: 'none',
@@ -1752,8 +1785,7 @@ export default function Management() {
                         {/* View Legal Entities */}
                         <button
                           onClick={() => {
-                            // TODO: Implementare drill-down ragioni sociali
-                            alert(`Visualizza ragioni sociali di: ${org.name}`);
+                            handleViewLegalEntities(org.id, org.name);
                           }}
                           style={{
                             background: 'none',
@@ -2122,6 +2154,14 @@ export default function Management() {
 
         {/* Organization Modal */}
         {renderOrganizationModal()}
+
+        {/* Legal Entity Modal */}
+        <LegalEntityModal
+          isOpen={legalEntityModal.isOpen}
+          onClose={handleCloseLegalEntityModal}
+          editingEntity={legalEntityModal.editingEntity}
+          tenantId={legalEntityModal.tenantId || ''}
+        />
       </div>
     </BrandLayout>
   );
