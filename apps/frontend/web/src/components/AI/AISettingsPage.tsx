@@ -1537,9 +1537,9 @@ export default function AISettingsPage() {
               const totalCostDollars = logs.reduce((sum: number, log: AIUsageLog) => sum + (log.costUsd || 0), 0);
               const totalTokens = logs.reduce((sum: number, log: AIUsageLog) => sum + (log.tokensTotal || 0), 0);
               
-              // Calculate percentage based on total cost from all logs (consistent units - cents)
-              const allLogsCostCents = usageLogs?.data?.reduce((sum: number, log: AIUsageLog) => sum + (log.costUsd || 0), 0) || 0;
-              const percentage = allLogsCostCents > 0 ? (totalCostCents / allLogsCostCents * 100) : 0;
+              // Calculate percentage based on total cost from all logs (in dollars)
+              const allLogsCostDollars = usageLogs?.data?.reduce((sum: number, log: AIUsageLog) => sum + (log.costUsd || 0), 0) || 0;
+              const percentage = allLogsCostDollars > 0 ? (totalCostDollars / allLogsCostDollars * 100) : 0;
               
               return (
                 <div key={type} className="flex items-center justify-between py-2">
