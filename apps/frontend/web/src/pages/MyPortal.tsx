@@ -142,10 +142,10 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // ✅ UPDATED: Universal Requests data for employee portal (scoped to current user)
+  // ✅ UPDATED: Universal Requests data for employee portal (temporary: showing all HR requests)
   const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
-    queryKey: ['/api/requests', 'category', 'hr', 'mine'],
-    queryFn: () => apiRequest('/api/requests?category=hr&mine=true'),
+    queryKey: ['/api/requests', 'category', 'hr', 'all'],
+    queryFn: () => apiRequest('/api/requests?category=hr&mine=false'),
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
