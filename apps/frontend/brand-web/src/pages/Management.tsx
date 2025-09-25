@@ -2360,7 +2360,7 @@ export default function Management() {
         {/* Organization Modal */}
         {renderOrganizationModal()}
 
-        {/* Legal Entity Modal - Simple Working Version with All Schema Fields */}
+        {/* Legal Entity Modal - NECESSARI SOLO: Nome, Codice, PEC, P.IVA, Forma Giuridica, Stato */}
         {legalEntityModal.isOpen && (
           <div style={{
             position: 'fixed',
@@ -2378,10 +2378,8 @@ export default function Management() {
               backgroundColor: 'white',
               padding: '32px',
               borderRadius: '12px',
-              maxWidth: '700px',
+              maxWidth: '600px',
               width: '90%',
-              maxHeight: '80vh',
-              overflowY: 'auto',
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -2407,42 +2405,60 @@ export default function Management() {
                 const formData = new FormData(e.target as HTMLFormElement);
                 const data = Object.fromEntries(formData);
                 
-                // Generate code if empty (8 + timestamp)
+                // Generate code if empty
                 if (!data.codice) {
                   data.codice = `8${String(Date.now()).slice(-6)}`;
                 }
                 
-                // Add tenantId
+                // Add tenantId from drill-down context
                 data.tenantId = legalEntityModal.tenantId || '';
                 
-                console.log('🎉 FORM DATA:', data);
+                console.log('📝 Creazione Legal Entity:', data);
                 
                 try {
                   const response = await fetch('/brand-api/legal-entities', {
                     method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                   });
                   
                   if (response.ok) {
-                    console.log('✅ Ragione sociale creata con successo!');
+                    console.log('✅ Ragione sociale creata');
                     handleCloseLegalEntityModal();
-                    // Refresh the page to show new data
                     window.location.reload();
                   } else {
-                    console.error('❌ Errore nella creazione:', response.status);
+                    console.error('❌ Errore creazione:', response.status);
                   }
                 } catch (error) {
                   console.error('❌ Errore:', error);
                 }
               }}>
-                {/* Row 1: Codice e Nome */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '16px' }}>
+                {/* Nome (obbligatorio) */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                    Nome Ragione Sociale *
+                  </label>
+                  <input
+                    name="nome"
+                    required
+                    defaultValue={legalEntityModal.editingEntity?.nome || ''}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
+                    placeholder="Es: Acme SRL"
+                  />
+                </div>
+                
+                {/* Codice e Forma Giuridica */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                      Codice Ragione Sociale
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                      Codice
                     </label>
                     <input
                       name="codice"
@@ -2450,37 +2466,15 @@ export default function Management() {
                       style={{
                         width: '100%',
                         padding: '12px',
-                        border: '1px solid #d1d5db',
+                        border: '2px solid #e5e7eb',
                         borderRadius: '8px',
                         fontSize: '14px'
                       }}
-                      placeholder="Auto-generato se vuoto"
+                      placeholder="Auto-generato"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                      Nome *
-                    </label>
-                    <input
-                      name="nome"
-                      required
-                      defaultValue={legalEntityModal.editingEntity?.nome || ''}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="Nome della ragione sociale"
-                    />
-                  </div>
-                </div>
-                
-                {/* Row 2: Forma Giuridica e P.IVA */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
                       Forma Giuridica
                     </label>
                     <select
@@ -2489,23 +2483,26 @@ export default function Management() {
                       style={{
                         width: '100%',
                         padding: '12px',
-                        border: '1px solid #d1d5db',
+                        border: '2px solid #e5e7eb',
                         borderRadius: '8px',
                         fontSize: '14px'
                       }}
                     >
-                      <option value="">Seleziona forma giuridica</option>
-                      <option value="SRL">SRL - Società a Responsabilità Limitata</option>
-                      <option value="SPA">SPA - Società per Azioni</option>
-                      <option value="SNCA">SNCA - Società in Nome Collettivo</option>
-                      <option value="SAS">SAS - Società in Accomandita Semplice</option>
+                      <option value="">Seleziona</option>
+                      <option value="SRL">SRL</option>
+                      <option value="SPA">SPA</option>
+                      <option value="SNCA">SNCA</option>
+                      <option value="SAS">SAS</option>
                       <option value="DI">Ditta Individuale</option>
                       <option value="COOP">Cooperativa</option>
-                      <option value="ALTRO">Altro</option>
                     </select>
                   </div>
+                </div>
+                
+                {/* P.IVA e PEC */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
                       Partita IVA
                     </label>
                     <input
@@ -2514,55 +2511,53 @@ export default function Management() {
                       style={{
                         width: '100%',
                         padding: '12px',
-                        border: '1px solid #d1d5db',
+                        border: '2px solid #e5e7eb',
                         borderRadius: '8px',
                         fontSize: '14px'
                       }}
                       placeholder="IT01234567890"
-                      pattern="[A-Z]{2}[0-9]{11}"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                      PEC
+                    </label>
+                    <input
+                      name="pec"
+                      type="email"
+                      defaultValue={legalEntityModal.editingEntity?.pec || ''}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                      placeholder="pec@esempio.it"
                     />
                   </div>
                 </div>
                 
-                {/* Row 3: Billing Profile e Stato */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                      Billing Profile ID
-                    </label>
-                    <input
-                      name="billingProfileId"
-                      defaultValue={legalEntityModal.editingEntity?.billingProfileId || ''}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="UUID del profilo di fatturazione"
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                      Stato
-                    </label>
-                    <select
-                      name="stato"
-                      defaultValue={legalEntityModal.editingEntity?.stato || 'Attiva'}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                    >
-                      <option value="Attiva">Attiva</option>
-                      <option value="Sospesa">Sospesa</option>
-                      <option value="Chiusa">Chiusa</option>
-                    </select>
-                  </div>
+                {/* Stato */}
+                <div style={{ marginBottom: '32px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                    Stato
+                  </label>
+                  <select
+                    name="stato"
+                    defaultValue={legalEntityModal.editingEntity?.stato || 'Attiva'}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <option value="Attiva">Attiva</option>
+                    <option value="Sospesa">Sospesa</option>
+                    <option value="Chiusa">Chiusa</option>
+                  </select>
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -2593,7 +2588,7 @@ export default function Management() {
                       fontWeight: '600'
                     }}
                   >
-                    {legalEntityModal.editingEntity ? 'Aggiorna' : 'Salva'} Ragione Sociale
+                    {legalEntityModal.editingEntity ? 'Aggiorna' : 'Salva'}
                   </button>
                 </div>
               </form>
