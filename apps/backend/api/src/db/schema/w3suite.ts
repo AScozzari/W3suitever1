@@ -281,32 +281,14 @@ export const stores = w3suiteSchema.table("stores", {
   channelId: uuid("channel_id").notNull().references(() => channels.id),
   commercialAreaId: uuid("commercial_area_id").notNull().references(() => commercialAreas.id),
   
-  // LEGACY LOCATION FIELDS (for backwards compatibility)
-  address: text("address"), // DEPRECATED - use encryptedAddress
-  latitude: varchar("latitude", { length: 20 }), // DEPRECATED - use encryptedCoordinates
-  longitude: varchar("longitude", { length: 20 }), // DEPRECATED - use encryptedCoordinates
-  geo: jsonb("geo"), // DEPRECATED - use encryptedGeoData
-  
-  // ENCRYPTED LOCATION FIELDS
-  encryptedAddress: text("encrypted_address"), // Base64 encrypted physical address
-  encryptedCoordinates: text("encrypted_coordinates"), // Base64 encrypted lat/lng
-  encryptedGeoData: text("encrypted_geo_data"), // Base64 encrypted detailed geo info
-  
-  // STORE ENCRYPTION METADATA
-  storeEncryptionKeyId: varchar("store_encryption_key_id", { length: 100 }).references(() => encryptionKeys.keyId),
-  addressIv: varchar("address_iv", { length: 100 }), // IV for address
-  coordinatesIv: varchar("coordinates_iv", { length: 100 }), // IV for coordinates
-  geoDataIv: varchar("geo_data_iv", { length: 100 }), // IV for geo data
-  addressTag: varchar("address_tag", { length: 100 }), // Auth tag for address
-  coordinatesTag: varchar("coordinates_tag", { length: 100 }), // Auth tag for coordinates
-  geoDataTag: varchar("geo_data_tag", { length: 100 }), // Auth tag for geo data
-  locationEncryptedAt: timestamp("location_encrypted_at"), // When location was encrypted
+  // LOCATION FIELDS (real database fields only)
+  address: text("address"),
+  geo: jsonb("geo"),
   
   citta: varchar("citta", { length: 100 }),
   provincia: varchar("provincia", { length: 10 }),
   cap: varchar("cap", { length: 10 }),
   region: varchar("region", { length: 100 }),
-  wifiNetworks: jsonb("wifi_networks").default([]), // Store WiFi SSIDs for geofencing
   status: varchar("status", { length: 50 }).default("active"),
   openedAt: date("opened_at"),
   closedAt: date("closed_at"),
@@ -327,7 +309,6 @@ export const stores = w3suiteSchema.table("stores", {
   telegram: varchar("telegram", { length: 255 }),
 }, (table) => [
   uniqueIndex("stores_tenant_code_unique").on(table.tenantId, table.code),
-  index("stores_encryption_key_idx").on(table.storeEncryptionKeyId),
 ]);
 
 export const insertStoreSchema = createInsertSchema(stores).omit({ 

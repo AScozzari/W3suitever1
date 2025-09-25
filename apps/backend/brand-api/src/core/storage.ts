@@ -940,13 +940,30 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
-  // Get single organization by ID
-  async getOrganization(id: string): Promise<Tenant | null> {
+  // Get single organization by ID or slug
+  async getOrganization(idOrSlug: string): Promise<Tenant | null> {
     try {
-      const results = await w3db.select()
-        .from(w3Tenants)
-        .where(eq(w3Tenants.id, id))
-        .limit(1);
+      // Check if the input looks like a UUID (36 chars with dashes)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      
+      let results: Tenant[] = [];
+      
+      if (isUuid) {
+        // Search by UUID if it looks like one
+        results = await w3db.select()
+          .from(w3Tenants)
+          .where(eq(w3Tenants.id, idOrSlug))
+          .limit(1);
+      }
+      
+      // If not found by UUID or not a UUID, try by slug
+      if (results.length === 0) {
+        results = await w3db.select()
+          .from(w3Tenants)
+          .where(eq(w3Tenants.slug, idOrSlug))
+          .limit(1);
+      }
+      
       return results[0] || null;
     } catch (error) {
       console.error('Error fetching organization:', error);
