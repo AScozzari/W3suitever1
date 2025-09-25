@@ -407,7 +407,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
 
     try {
+      console.log(`🔍 [BRAND-API-STORES] Fetching stores for tenantId: ${tenantId}`);
       const stores = await brandStorage.getStoresByOrganization(tenantId);
+      console.log(`✅ [BRAND-API-STORES] Retrieved ${stores?.length || 0} stores from database`);
       res.json({
         stores: stores.map(store => ({
           id: store.id,
@@ -456,7 +458,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
 
     try {
+      console.log(`🔍 [BRAND-API-LEGAL] Fetching legal entities for tenantId: ${tenantId}`);
       const legalEntities = await brandStorage.getLegalEntitiesByOrganization(tenantId);
+      console.log(`✅ [BRAND-API-LEGAL] Retrieved ${legalEntities?.length || 0} legal entities from database`);
       res.json({
         legalEntities: legalEntities.map(entity => ({
           id: entity.id,
