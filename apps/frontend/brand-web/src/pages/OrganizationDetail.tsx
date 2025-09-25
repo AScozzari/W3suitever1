@@ -14,7 +14,6 @@ import {
 import { apiRequest } from '../lib/queryClient';
 import { useLocation } from 'wouter';
 
-// Organization interface for type safety
 interface Organization {
   id: string;
   name: string;
@@ -25,7 +24,6 @@ interface Organization {
   notes?: string;
 }
 
-// Modern W3 Suite Color Palette
 const COLORS = {
   primary: {
     orange: '#FF6900',
@@ -63,7 +61,6 @@ const COLORS = {
   }
 };
 
-// Glassmorphism styles aligned with W3 Suite
 const glassStyle = {
   background: 'hsla(255, 255, 255, 0.08)',
   backdropFilter: 'blur(24px) saturate(140%)',
@@ -88,8 +85,6 @@ export default function OrganizationDetail() {
   const { currentTenant } = useBrandTenant();
   const orgId = params?.orgId;
 
-  // Active tab state
-  // Initialize active tab from URL or default to 'dashboard'
   const getInitialTab = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab');
@@ -99,7 +94,6 @@ export default function OrganizationDetail() {
 
   const [activeTab, setActiveTab] = useState(getInitialTab);
 
-  // Modal state management
   const [legalEntityModal, setLegalEntityModal] = useState<{ open: boolean; data: any }>({ 
     open: false, 
     data: null 
@@ -129,7 +123,6 @@ export default function OrganizationDetail() {
     enabled: !!orgId,
   });
 
-  // Update URL when tab changes
   const updateTabUrl = (tabId: string) => {
     const url = new URL(window.location.href);
     url.searchParams.set('tab', tabId);
@@ -137,7 +130,6 @@ export default function OrganizationDetail() {
     setActiveTab(tabId);
   };
 
-  // Handle browser back/forward navigation
   useEffect(() => {
     const handlePopState = () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -151,7 +143,6 @@ export default function OrganizationDetail() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Fetch organization data
   const { data: organizationResponse, isLoading: orgLoading, error: orgError } = useQuery<{organization: Organization}>({
     queryKey: [`/brand-api/organizations/${orgId}`],
     enabled: !!orgId,
@@ -164,7 +155,6 @@ export default function OrganizationDetail() {
     setLocation('/management');
   };
 
-  // Tab configuration
   const tabs = [
     { 
       id: 'dashboard', 
@@ -192,7 +182,6 @@ export default function OrganizationDetail() {
     },
   ];
 
-  // Show error state if organization fetch failed
   if (orgError) {
     return (
       <BrandLayout>
@@ -249,7 +238,6 @@ export default function OrganizationDetail() {
     );
   }
 
-  // Show loading state while fetching
   if (isLoading) {
     return (
       <BrandLayout>
