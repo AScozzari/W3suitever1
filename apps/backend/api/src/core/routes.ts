@@ -1049,7 +1049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[DEV-AUTH] 👤 User: ${demoUser || 'admin@w3suite.com'}`);
         
         req.user = {
-          id: '00000000-0000-0000-0000-000000000002', // ✅ AUDIT TRAIL FIX: Valid UUID for entity_logs
+          id: demoUser || 'admin-user', // ✅ MY REQUEST FIX: Use string ID to match universal_requests requester_id
           email: demoUser || 'admin@w3suite.com',
           tenantId: req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001',
           roles: ['admin', 'manager'],
@@ -5987,7 +5987,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id, 'entity' as log_type, created_at, 'INFO' as level, 
           CONCAT('Entity ', action, ': ', entity_type) as message,
           'entity_engine' as component, action, entity_type, entity_id, 
-          entity_id as correlation_id, user_id, user_email, NULL as duration,
+          entity_id::text as correlation_id, user_id, user_email, NULL as duration,
           NULL as metadata, NULL as http_method, NULL as http_path, NULL as http_status_code,
           previous_status, new_status, changes, notes
         FROM w3suite.entity_logs 
