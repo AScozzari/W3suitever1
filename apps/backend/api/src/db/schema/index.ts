@@ -21,7 +21,6 @@ import { z } from "zod";
 export {
   // HR tables
   calendarEvents,
-  leaveRequests, // ⚠️ DEPRECATED: Use universal_requests instead
   shifts,
   shiftTemplates,
   timeTracking,
@@ -32,7 +31,6 @@ export {
   employeeBalances,
   // HR types
   type CalendarEvent,
-  type LeaveRequest, // ⚠️ DEPRECATED: Use UniversalRequest instead
   type Shift,
   type ShiftTemplate,
   type TimeTracking,
@@ -43,7 +41,6 @@ export {
   type EmployeeBalance,
   // HR insert schemas
   type InsertCalendarEvent,
-  type InsertLeaveRequest, // ⚠️ DEPRECATED: Use InsertUniversalRequest instead
   type InsertShift,
   type InsertShiftTemplate,
   type InsertTimeTracking,

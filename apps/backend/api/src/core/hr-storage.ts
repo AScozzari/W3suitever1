@@ -3,7 +3,7 @@ import { db, setTenantContext } from "./db";
 import { eq, and, or, between, inArray, gte, lte, desc, isNull, sql } from "drizzle-orm";
 import {
   calendarEvents,
-  leaveRequests,
+  universalRequests,
   shifts,
   shiftTemplates,
   timeTracking,
@@ -14,12 +14,10 @@ import {
   userAssignments,
   stores,
   CalendarEvent,
-  LeaveRequest,
   Shift,
   ShiftTemplate,
   TimeTracking,
   InsertCalendarEvent,
-  InsertLeaveRequest,
   InsertShift,
   InsertShiftTemplate,
   InsertTimeTracking,

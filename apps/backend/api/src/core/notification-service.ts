@@ -6,7 +6,7 @@ import {
   notificationPreferences,
   users,
   tenants,
-  hrRequests,
+  universalRequests,
   InsertNotification,
   InsertNotificationTemplate,
   InsertNotificationPreference,

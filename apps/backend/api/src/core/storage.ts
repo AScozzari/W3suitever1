@@ -14,7 +14,7 @@ import {
   notifications,
   // HR tables
   calendarEvents,
-  leaveRequests,
+  universalRequests,
   shifts,
   shiftTemplates,
   timeTracking,
@@ -22,11 +22,6 @@ import {
   expenseReports,
   hrAnnouncements,
   employeeBalances,
-  // HR Request System
-  hrRequests,
-  hrRequestApprovals,
-  hrRequestComments,
-  hrRequestStatusHistory,
   // AI System tables
   aiSettings,
   aiUsageLogs,

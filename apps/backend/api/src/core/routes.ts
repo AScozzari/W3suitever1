@@ -14,7 +14,6 @@ import { sql, eq, inArray, and, or, between, gte, lte, desc, isNull, not } from 
 import { 
   tenants, 
   users, 
-  leaveRequests,
   shifts,
   timeTracking,
   hrDocuments,
@@ -42,7 +41,7 @@ import {
   calendarEventStatusEnum,
   hrRequestStatusEnum
 } from "../db/schema/w3suite";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification, insertHrRequestSchema, insertHrRequestCommentSchema, InsertHrRequest, InsertHrRequestComment, insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance, aiSettings, aiUsageLogs, aiConversations, aiTrainingSessions, insertAITrainingSessionSchema } from "../db/schema/w3suite";
+import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification,  insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance, aiSettings, aiUsageLogs, aiConversations, aiTrainingSessions, insertAITrainingSessionSchema } from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -349,50 +348,6 @@ const createNotificationBodySchema = insertNotificationSchema.omit({ tenantId: t
 
 const bulkMarkReadBodySchema = z.object({
   notificationIds: z.array(z.string().uuid()).min(1).max(100)
-});
-
-// Zod validation schemas for HR request API
-const createHrRequestBodySchema = insertHrRequestSchema.omit({ 
-  tenantId: true, 
-  status: true,
-  currentApproverId: true 
-}).extend({
-  // Type-specific payload validation can be added here
-  payload: z.record(z.any()).optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  attachments: z.array(z.string()).optional(),
-  priority: z.enum(['normal', 'high', 'urgent']).optional()
-});
-
-const hrRequestFiltersSchema = z.object({
-  status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']).optional(),
-  category: z.string().optional(),
-  type: z.string().optional(),
-  priority: z.enum(['normal', 'high', 'urgent']).optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  page: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1)).default('1'),
-  limit: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1).max(100)).default('20'),
-  sortBy: z.enum(['created', 'updated', 'priority', 'startDate']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional()
-});
-
-const addCommentBodySchema = z.object({
-  comment: z.string().min(1).max(2000),
-  isInternal: z.boolean().optional()
-});
-
-const approveRequestBodySchema = z.object({
-  comment: z.string().max(1000).optional()
-});
-
-const rejectRequestBodySchema = z.object({
-  reason: z.string().min(1).max(1000)
-});
-
-const cancelRequestBodySchema = z.object({
-  reason: z.string().max(1000).optional()
 });
 
 // ✅ FASE 1.3: Use only official database enum values - no Italian states
