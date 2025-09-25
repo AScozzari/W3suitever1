@@ -7676,26 +7676,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filters = universalRequestFiltersSchema.parse(req.query);
       
       // Build dynamic WHERE conditions for unified filtering
-      const conditions = [eq(hrRequests.tenantId, tenantId)];
+      const conditions = [eq(universalRequests.tenantId, tenantId)];
       
-      // Category filter (temporary: use hrRequests until schema sync)
-      if (filters.category === 'hr') {
-        // Only show HR requests for now
-      } else {
-        conditions.push(sql`false`); // Block non-HR for schema safety
+      // Mine filter - only show current user's requests
+      if (filters.mine === 'true' || filters.mine === true) {
+        conditions.push(eq(universalRequests.requesterId, userId));
+      }
+      
+      // Category filter
+      if (filters.category) {
+        conditions.push(eq(universalRequests.category, filters.category));
       }
       
       // Status filter
       if (filters.status) {
-        conditions.push(eq(hrRequests.status, filters.status));
+        conditions.push(eq(universalRequests.status, filters.status));
       }
       
       // Full-text search
       if (filters.search) {
         conditions.push(
           or(
-            sql`${hrRequests.title} ILIKE ${`%${filters.search}%`}`,
-            sql`${hrRequests.description} ILIKE ${`%${filters.search}%`}`
+            sql`${universalRequests.title} ILIKE ${`%${filters.search}%`}`,
+            sql`${universalRequests.description} ILIKE ${`%${filters.search}%`}`
           )
         );
       }
@@ -7703,32 +7706,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate offset for pagination
       const offset = (filters.page - 1) * filters.limit;
       
-      // Build sort column - FIXED to match hrRequests table
+      // Build sort column - FIXED to match universalRequests table
       const sortColumn = {
-        created: hrRequests.createdAt,
-        updated: hrRequests.updatedAt,
-        priority: hrRequests.priority,
-        startDate: hrRequests.startDate,
-        status: hrRequests.status,
-        category: hrRequests.category
+        created: universalRequests.createdAt,
+        updated: universalRequests.updatedAt,
+        priority: universalRequests.priority,
+        startDate: universalRequests.startDate,
+        status: universalRequests.status,
+        category: universalRequests.category
       }[filters.sortBy];
       
-      // TEMPORARY: Test with existing hrRequests table to verify pattern works
+      // Get universal requests with proper data structure
       const requests = await db
         .select({
-          id: hrRequests.id,
-          category: hrRequests.category,
-          requestType: hrRequests.type,
-          title: hrRequests.title,
-          status: hrRequests.status,
-          createdAt: hrRequests.createdAt
+          id: universalRequests.id,
+          category: universalRequests.category,
+          requestType: universalRequests.requestType,
+          requestSubtype: universalRequests.requestSubtype,
+          title: universalRequests.title,
+          description: universalRequests.description,
+          status: universalRequests.status,
+          priority: universalRequests.priority,
+          startDate: universalRequests.startDate,
+          endDate: universalRequests.endDate,
+          requesterId: universalRequests.requesterId,
+          createdAt: universalRequests.createdAt,
+          updatedAt: universalRequests.updatedAt
         })
-        .from(hrRequests)
-        .where(and(
-          eq(hrRequests.tenantId, tenantId),
-          // Apply same category filter pattern
-          ...(filters.category === 'hr' ? [] : [sql`false`]) // Only show hr requests for now
-        ))
+        .from(universalRequests)
+        .where(and(...conditions))
         .orderBy(filters.sortOrder === 'desc' ? desc(sortColumn) : sortColumn)
         .limit(filters.limit)
         .offset(offset);
@@ -7736,12 +7742,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get total count for pagination
       const countResult = await db
         .select({ count: sql`count(*)` })
-        .from(hrRequests)
-        .where(and(
-          eq(hrRequests.tenantId, tenantId),
-          // Apply same category filter pattern
-          ...(filters.category === 'hr' ? [] : [sql`false`])
-        ));
+        .from(universalRequests)
+        .where(and(...conditions));
       
       const total = Number(countResult[0]?.count) || 0;
       const totalPages = Math.ceil(total / filters.limit);
