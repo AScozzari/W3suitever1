@@ -106,7 +106,7 @@ export default function OrganizationDetail() {
   });
 
   // 🔥 QUERY DATI REALI - Legal Entities dal database W3Suite
-  const { data: legalEntities = [], isLoading: legalEntitiesLoading, error: legalEntitiesError } = useQuery({
+  const { data: legalEntitiesResponse, isLoading: legalEntitiesLoading, error: legalEntitiesError } = useQuery({
     queryKey: ['/brand-api/organizations', orgId, 'legal-entities'],
     queryFn: async () => {
       const response = await apiRequest(`/brand-api/organizations/${orgId}/legal-entities`);
@@ -114,9 +114,10 @@ export default function OrganizationDetail() {
     },
     enabled: !!orgId,
   });
+  const legalEntities = legalEntitiesResponse?.legalEntities || [];
 
   // 🔥 QUERY DATI REALI - Stores dal database W3Suite  
-  const { data: stores = [], isLoading: storesLoading, error: storesError } = useQuery({
+  const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
     queryKey: ['/brand-api/organizations', orgId, 'stores'],
     queryFn: async () => {
       const response = await apiRequest(`/brand-api/organizations/${orgId}/stores`);
@@ -124,6 +125,7 @@ export default function OrganizationDetail() {
     },
     enabled: !!orgId,
   });
+  const stores = storesResponse?.stores || [];
 
   // 🔥 QUERY DATI REALI - Organizational Analytics dal nuovo endpoint
   const { data: analyticsResponse, isLoading: analyticsLoading, error: analyticsError } = useQuery({
