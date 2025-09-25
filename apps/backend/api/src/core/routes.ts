@@ -6021,9 +6021,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sortDirection = filters.sortOrder === 'asc' ? sql`ASC` : sql`DESC`;
       const offset = (filters.page - 1) * filters.limit;
 
-      // Execute unified query
+      // Execute unified query - Fixed to specify explicit fields for UNION
       const logs = await db
-        .select()
+        .select({
+          id: sql`id`,
+          logType: sql`log_type`,
+          createdAt: sql`created_at`,
+          level: sql`level`,
+          message: sql`message`,
+          component: sql`component`,
+          action: sql`action`,
+          entityType: sql`entity_type`,
+          entityId: sql`entity_id`,
+          correlationId: sql`correlation_id`,
+          userId: sql`user_id`,
+          userEmail: sql`user_email`,
+          duration: sql`duration`,
+          metadata: sql`metadata`,
+          requestId: sql`request_id`,
+          previousStatus: sql`previous_status`,
+          newStatus: sql`new_status`,
+          changes: sql`changes`,
+          notes: sql`notes`
+        })
         .from(
           sql`(${structuredQuery} UNION ALL ${entityQuery}) as unified_logs`
         )
