@@ -9,7 +9,6 @@ import {
   timeTracking,
   hrDocuments,
   expenseReports,
-  hrAnnouncements,
   users,
   userAssignments,
   stores,

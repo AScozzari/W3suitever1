@@ -20,8 +20,6 @@ import {
   timeTracking,
   hrDocuments,
   expenseReports,
-  hrAnnouncements,
-  employeeBalances,
   // AI System tables
   aiSettings,
   aiUsageLogs,
@@ -59,8 +57,6 @@ import {
   type TimeTracking,
   type HrDocument,
   type ExpenseReport,
-  type HrAnnouncement,
-  type EmployeeBalance,
   type InsertCalendarEvent,
   type InsertLeaveRequest,
   type InsertShift,

@@ -90,9 +90,6 @@ export const expensePaymentMethodEnum = pgEnum('expense_payment_method', ['cash'
 export const expenseCategoryEnum = pgEnum('expense_category', ['travel', 'meal', 'accommodation', 'transport', 'supplies', 'other']);
 
 // HR Announcement Enums
-export const hrAnnouncementTypeEnum = pgEnum('hr_announcement_type', ['policy', 'event', 'deadline', 'benefit', 'general']);
-export const hrAnnouncementPriorityEnum = pgEnum('hr_announcement_priority', ['low', 'medium', 'high', 'urgent']);
-export const hrAnnouncementAudienceEnum = pgEnum('hr_announcement_audience', ['all', 'store', 'area', 'role', 'specific']);
 
 // AI System Enums
 export const aiConnectionStatusEnum = pgEnum('ai_connection_status', ['connected', 'disconnected', 'error']);
