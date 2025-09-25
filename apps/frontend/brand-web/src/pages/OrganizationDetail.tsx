@@ -1106,19 +1106,588 @@ export default function OrganizationDetail() {
       
       case 'analytics':
         return (
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: COLORS.neutral.dark,
-              marginBottom: '16px',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Analytics Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px 24px',
+              background: 'linear-gradient(135deg, #fff5f0, #ffffff)',
+              borderRadius: '12px',
+              border: '1px solid #f0f1f3',
             }}>
-              Analytics Avanzate
-            </h3>
-            <p style={{ color: COLORS.neutral.medium, fontSize: '16px' }}>
-              Analisi dettagliate, report e metriche business approfondite.
-              Questa sezione verrà implementata nella Task 7.
-            </p>
+              <div>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: COLORS.neutral.dark,
+                  margin: '0 0 4px 0',
+                }}>
+                  Business Analytics
+                </h2>
+                <p style={{
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                  margin: '0',
+                }}>
+                  Analisi approfondite e insights strategici per l'organizzazione
+                </p>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+              }}>
+                <select style={{
+                  padding: '8px 12px',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  color: COLORS.neutral.dark,
+                  background: 'white',
+                }}>
+                  <option>Ultimi 30 giorni</option>
+                  <option>Ultimi 90 giorni</option>
+                  <option>Ultimo anno</option>
+                </select>
+                <button style={{
+                  padding: '8px 16px',
+                  background: COLORS.gradients.orange,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}>
+                  Export Report
+                </button>
+              </div>
+            </div>
+
+            {/* Key Performance Indicators */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px',
+            }}>
+              {[
+                {
+                  title: 'Total Revenue',
+                  value: '€2.4M',
+                  change: '+15.2%',
+                  trend: 'up',
+                  period: 'vs mese scorso',
+                  icon: DollarSign,
+                  color: COLORS.semantic.success,
+                  chart: 'line'
+                },
+                {
+                  title: 'Growth Rate',
+                  value: '8.7%',
+                  change: '+2.1%',
+                  trend: 'up',
+                  period: 'trimestre',
+                  icon: TrendingUp,
+                  color: COLORS.primary.orange,
+                  chart: 'area'
+                },
+                {
+                  title: 'Conversion Rate',
+                  value: '24.3%',
+                  change: '-1.2%',
+                  trend: 'down',
+                  period: 'ultimi 30gg',
+                  icon: Target,
+                  color: COLORS.semantic.warning,
+                  chart: 'bar'
+                },
+                {
+                  title: 'Customer Satisfaction',
+                  value: '4.8/5',
+                  change: '+0.3',
+                  trend: 'up',
+                  period: 'rating medio',
+                  icon: Star,
+                  color: COLORS.semantic.info,
+                  chart: 'gauge'
+                },
+              ].map((kpi, index) => (
+                <div
+                  key={index}
+                  style={{
+                    ...cardStyle,
+                    padding: '20px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+                  }}
+                  data-testid={`analytics-kpi-${kpi.title.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: `linear-gradient(90deg, ${kpi.color}, ${kpi.color}80)`,
+                  }} />
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '12px',
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: `${kpi.color}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <kpi.icon size={20} style={{ color: kpi.color }} />
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '3px 6px',
+                      borderRadius: '6px',
+                      background: kpi.trend === 'up' ? `${COLORS.semantic.success}15` :
+                                 kpi.trend === 'down' ? `${COLORS.semantic.error}15` :
+                                 `${COLORS.neutral.light}15`,
+                      color: kpi.trend === 'up' ? COLORS.semantic.success :
+                             kpi.trend === 'down' ? COLORS.semantic.error :
+                             COLORS.neutral.medium,
+                      fontSize: '11px',
+                      fontWeight: '600',
+                    }}>
+                      {kpi.trend === 'up' && <TrendingUp size={10} />}
+                      {kpi.trend === 'down' && <TrendingUp size={10} style={{ transform: 'rotate(180deg)' }} />}
+                      {kpi.change}
+                    </div>
+                  </div>
+                  
+                  <h3 style={{
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    color: COLORS.neutral.dark,
+                    margin: '0 0 4px 0',
+                    lineHeight: '1',
+                  }}>
+                    {kpi.value}
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    margin: '0 0 2px 0',
+                  }}>
+                    {kpi.title}
+                  </p>
+                  <p style={{
+                    fontSize: '12px',
+                    color: COLORS.neutral.light,
+                    margin: '0',
+                  }}>
+                    {kpi.period}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Charts Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr',
+              gap: '24px',
+            }}>
+              {/* Revenue Trends Chart */}
+              <div style={{ ...cardStyle, padding: '24px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '20px',
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    margin: '0',
+                  }}>
+                    Revenue Trends
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                  }}>
+                    {['Monthly', 'Weekly', 'Daily'].map((period, idx) => (
+                      <button
+                        key={idx}
+                        style={{
+                          padding: '4px 8px',
+                          background: idx === 0 ? COLORS.primary.orange : 'none',
+                          color: idx === 0 ? 'white' : COLORS.neutral.medium,
+                          border: `1px solid ${idx === 0 ? COLORS.primary.orange : COLORS.neutral.lighter}`,
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {period}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Simulated Line Chart */}
+                <div style={{
+                  height: '200px',
+                  background: '#fafbfc',
+                  borderRadius: '8px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'end',
+                  padding: '16px',
+                  gap: '8px',
+                }}>
+                  {[65, 85, 78, 92, 88, 95, 110, 105, 125, 118, 135, 142].map((height, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        flex: 1,
+                        height: `${height}px`,
+                        background: `linear-gradient(to top, ${COLORS.primary.orange}, ${COLORS.primary.orangeLight})`,
+                        borderRadius: '2px',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.opacity = '0.8';
+                        e.currentTarget.style.transform = 'scaleY(1.05)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.opacity = '1';
+                        e.currentTarget.style.transform = 'scaleY(1)';
+                      }}
+                      title={`€${(height * 20).toLocaleString()}`}
+                    />
+                  ))}
+                  <div style={{
+                    position: 'absolute',
+                    top: '16px',
+                    left: '16px',
+                    fontSize: '12px',
+                    color: COLORS.neutral.light,
+                  }}>
+                    €3.0K
+                  </div>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '16px',
+                    left: '16px',
+                    fontSize: '12px',
+                    color: COLORS.neutral.light,
+                  }}>
+                    €0
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Summary */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Top Performing Stores */}
+                <div style={{ ...cardStyle, padding: '20px' }}>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    marginBottom: '16px',
+                  }}>
+                    Top Performing Stores
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {[
+                      { name: 'Milano Centro', revenue: '€145K', growth: '+12%' },
+                      { name: 'Roma EUR', revenue: '€128K', growth: '+8%' },
+                      { name: 'Torino Porta Nuova', revenue: '€98K', growth: '+15%' },
+                      { name: 'Napoli Chiaia', revenue: '€87K', growth: '+5%' },
+                    ].map((store, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 0',
+                          borderBottom: index < 3 ? `1px solid ${COLORS.neutral.lighter}` : 'none',
+                        }}
+                      >
+                        <div>
+                          <p style={{
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: COLORS.neutral.dark,
+                            margin: '0 0 2px 0',
+                          }}>
+                            {store.name}
+                          </p>
+                          <p style={{
+                            fontSize: '12px',
+                            color: COLORS.neutral.medium,
+                            margin: '0',
+                          }}>
+                            {store.revenue}
+                          </p>
+                        </div>
+                        <div style={{
+                          padding: '2px 6px',
+                          background: `${COLORS.semantic.success}15`,
+                          color: COLORS.semantic.success,
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                        }}>
+                          {store.growth}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Market Share Chart */}
+                <div style={{ ...cardStyle, padding: '20px' }}>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    marginBottom: '16px',
+                  }}>
+                    Market Share
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    height: '120px',
+                    marginBottom: '16px',
+                  }}>
+                    {/* Simulated Donut Chart */}
+                    <div style={{
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      background: `conic-gradient(
+                        ${COLORS.primary.orange} 0deg 144deg,
+                        ${COLORS.semantic.info} 144deg 216deg,
+                        ${COLORS.semantic.success} 216deg 288deg,
+                        ${COLORS.neutral.light} 288deg 360deg
+                      )`,
+                      position: 'relative',
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: '20px',
+                        left: '20px',
+                        width: '60px',
+                        height: '60px',
+                        background: 'white',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        color: COLORS.neutral.dark,
+                      }}>
+                        40%
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[
+                      { label: 'WindTre', value: '40%', color: COLORS.primary.orange },
+                      { label: 'Competitors', value: '35%', color: COLORS.semantic.info },
+                      { label: 'Others', value: '25%', color: COLORS.neutral.light },
+                    ].map((segment, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: segment.color,
+                        }} />
+                        <span style={{ color: COLORS.neutral.medium, flex: 1 }}>
+                          {segment.label}
+                        </span>
+                        <span style={{ color: COLORS.neutral.dark, fontWeight: '600' }}>
+                          {segment.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Analytics Table */}
+            <div style={{ ...cardStyle, padding: '24px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '20px',
+              }}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: COLORS.neutral.dark,
+                  margin: '0',
+                }}>
+                  Detailed Performance Analytics
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                }}>
+                  <input
+                    type="text"
+                    placeholder="Cerca store..."
+                    style={{
+                      padding: '6px 12px',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      width: '150px',
+                    }}
+                  />
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'none',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: COLORS.neutral.medium,
+                    cursor: 'pointer',
+                  }}>
+                    Filter
+                  </button>
+                </div>
+              </div>
+              
+              <div style={{
+                borderRadius: '8px',
+                border: `1px solid ${COLORS.neutral.lighter}`,
+                overflow: 'hidden',
+              }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '13px',
+                }}>
+                  <thead>
+                    <tr style={{ background: '#fafbfc' }}>
+                      {['Store Name', 'Revenue', 'Growth', 'Customers', 'Avg. Order', 'Status'].map((header, index) => (
+                        <th
+                          key={index}
+                          style={{
+                            padding: '12px 16px',
+                            textAlign: 'left',
+                            fontWeight: '600',
+                            color: COLORS.neutral.dark,
+                            borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                          }}
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Milano Centro', '€145K', '+12%', '2,847', '€51', 'Excellent'],
+                      ['Roma EUR', '€128K', '+8%', '2,156', '€59', 'Good'],
+                      ['Torino Porta Nuova', '€98K', '+15%', '1,923', '€51', 'Excellent'],
+                      ['Napoli Chiaia', '€87K', '+5%', '1,745', '€50', 'Good'],
+                      ['Bologna Centro', '€76K', '+3%', '1,534', '€50', 'Average'],
+                    ].map((row, rowIndex) => (
+                      <tr
+                        key={rowIndex}
+                        style={{
+                          borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fafbfc';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        {row.map((cell, cellIndex) => (
+                          <td
+                            key={cellIndex}
+                            style={{
+                              padding: '12px 16px',
+                              color: cellIndex === 0 ? COLORS.neutral.dark : 
+                                     cellIndex === 2 ? COLORS.semantic.success :
+                                     cellIndex === 5 ? (
+                                       cell === 'Excellent' ? COLORS.semantic.success :
+                                       cell === 'Good' ? COLORS.semantic.info :
+                                       COLORS.semantic.warning
+                                     ) : COLORS.neutral.medium,
+                              fontWeight: cellIndex === 0 ? '600' : '500',
+                            }}
+                          >
+                            {cellIndex === 5 && (
+                              <span style={{
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                background: cell === 'Excellent' ? `${COLORS.semantic.success}15` :
+                                           cell === 'Good' ? `${COLORS.semantic.info}15` :
+                                           `${COLORS.semantic.warning}15`,
+                                fontSize: '11px',
+                                fontWeight: '600',
+                              }}>
+                                {cell}
+                              </span>
+                            )}
+                            {cellIndex !== 5 && cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         );
       
