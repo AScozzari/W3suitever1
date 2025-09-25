@@ -187,7 +187,7 @@ Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, p
           decision_style: "data_driven",
           language: "italian"
         },
-        moduleContext: "workflow",
+        moduleContext: "general",
         baseConfiguration: {
           default_model: "gpt-4-turbo",
           temperature: 0.3,
@@ -200,7 +200,7 @@ Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, p
         isLegacy: false,
         targetTenants: null, // Disponibile per tutti i tenant
         brandTenantId: tenantId,
-        createdBy: "system"
+        createdBy: null
       })
       .onConflictDoNothing();
 
@@ -229,7 +229,7 @@ Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, p
         isLegacy: false,
         targetTenants: null, // Disponibile per tutti i tenant
         brandTenantId: tenantId,
-        createdBy: "system"
+        createdBy: null
       })
       .onConflictDoNothing();
     

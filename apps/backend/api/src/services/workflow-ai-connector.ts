@@ -113,7 +113,7 @@ export class WorkflowAIConnector {
       return {
         success: false,
         decision: {} as WorkflowRoutingDecision,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }
@@ -130,7 +130,7 @@ export class WorkflowAIConnector {
           user: users
         })
         .from(universalRequests)
-        .leftJoin(users, eq(universalRequests.userId, users.id))
+        .leftJoin(users, eq(universalRequests.requesterId, users.id))
         .where(and(
           eq(universalRequests.id, requestId),
           eq(universalRequests.tenantId, tenantId)
@@ -197,6 +197,7 @@ export class WorkflowAIConnector {
       const aiContext: RegistryAwareContext = {
         agentId: this.workflowAgentId,
         tenantId: context.tenantId,
+        userId: context.user.id,
         moduleContext: 'workflow' as any
       };
 
@@ -209,7 +210,8 @@ export class WorkflowAIConnector {
       );
 
       // Parse della risposta AI (dovrebbe essere JSON strutturato)
-      const decision = this.parseAIDecision(aiResponse.content);
+      const responseContent = aiResponse.response || aiResponse.content || aiResponse.text || JSON.stringify(aiResponse);
+      const decision = this.parseAIDecision(responseContent);
       
       console.log(`[WORKFLOW-AI] 💡 AI Decision:`, {
         selectedTeam: decision.selectedTeam,
@@ -360,7 +362,7 @@ Rispondi SOLO con JSON valido nel formato richiesto.
       await db
         .update(universalRequests)
         .set({
-          status: 'pending_approval',
+          status: 'pending',
           priority: decision.priority,
           dueDate: new Date(Date.now() + parseInt(decision.sla) * 60 * 60 * 1000), // SLA in ore
           updatedAt: new Date()
