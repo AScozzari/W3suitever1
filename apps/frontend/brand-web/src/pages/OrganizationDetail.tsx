@@ -84,7 +84,8 @@ export default function OrganizationDetail() {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute('/organizations/:orgId');
   const { currentTenant } = useBrandTenant();
-  const orgId = params?.orgId;
+  // Clean orgId to remove query parameters
+  const orgId = params?.orgId?.split('?')[0];
 
   const getInitialTab = () => {
     const urlParams = new URLSearchParams(window.location.search);
