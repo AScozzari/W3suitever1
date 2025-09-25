@@ -8,7 +8,8 @@ import {
   Building2, ArrowLeft, BarChart3, Users, MapPin, Phone, Mail, 
   Calendar, TrendingUp, Activity, DollarSign, Target, Eye, 
   ChevronRight, Settings, Edit, Briefcase, Store, FileText,
-  PieChart, LineChart, Award, Star, Clock, Globe, Shield, AlertTriangle
+  PieChart, LineChart, Award, Star, Clock, Globe, Shield, AlertTriangle,
+  RefreshCw, Archive, MoreVertical
 } from 'lucide-react';
 import { apiRequest } from '../lib/queryClient';
 import { useLocation } from 'wouter';
@@ -366,88 +367,238 @@ export default function OrganizationDetail() {
           </div>
         </div>
         
-        <button
-          style={{
+        {/* Professional Action Bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+        }}>
+          {/* Primary Action - Edit */}
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              background: COLORS.gradients.orange,
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              boxShadow: '0 3px 12px rgba(255, 105, 0, 0.3)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+              e.currentTarget.style.background = COLORS.primary.orangeLight;
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 3px 12px rgba(255, 105, 0, 0.3)';
+              e.currentTarget.style.background = COLORS.gradients.orange;
+            }}
+            data-testid="button-edit-organization"
+          >
+            <Edit size={16} />
+            Modifica
+          </button>
+
+          {/* Secondary Actions */}
+          <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '12px 16px',
-            background: COLORS.gradients.orange,
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(255, 105, 0, 0.3)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.4)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 105, 0, 0.3)';
-          }}
-          data-testid="button-edit-organization"
-        >
-          <Edit size={16} />
-          Modifica Organizzazione
-        </button>
+            padding: '8px',
+            background: 'white',
+            borderRadius: '10px',
+            border: `1px solid ${COLORS.neutral.lighter}`,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          }}>
+            {[
+              { icon: RefreshCw, label: 'Aggiorna', color: COLORS.semantic.info, testId: 'refresh' },
+              { icon: Archive, label: 'Archivia', color: COLORS.neutral.medium, testId: 'archive' },
+              { icon: Settings, label: 'Impostazioni', color: COLORS.neutral.medium, testId: 'settings' },
+              { icon: MoreVertical, label: 'Altri', color: COLORS.neutral.medium, testId: 'more' },
+            ].map((action, index) => (
+              <button
+                key={index}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  color: action.color,
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = `${action.color}15`;
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                title={action.label}
+                data-testid={`button-${action.testId}-organization`}
+              >
+                <action.icon size={16} />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Quick Stats Cards */}
+      {/* Professional KPI Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '20px',
+        marginBottom: '24px',
       }}>
         {[
-          { label: 'Organization ID', value: organization?.id?.slice(-8) || 'N/A', icon: Target, color: COLORS.semantic.info },
-          { label: 'Slug', value: organization?.slug || 'N/A', icon: Globe, color: COLORS.semantic.success },
-          { label: 'Created', value: organization?.createdAt ? new Date(organization.createdAt).toLocaleDateString('it-IT') : 'N/A', icon: Calendar, color: COLORS.primary.orange },
-          { label: 'Status', value: organization?.status || 'N/A', icon: Shield, color: COLORS.primary.purple },
+          { 
+            label: 'Organization ID', 
+            value: organization?.id?.slice(-8) || 'N/A', 
+            icon: Target, 
+            color: COLORS.semantic.info,
+            trend: null,
+            description: 'Identificativo univoco'
+          },
+          { 
+            label: 'Organization Slug', 
+            value: organization?.slug || 'N/A', 
+            icon: Globe, 
+            color: COLORS.semantic.success,
+            trend: null,
+            description: 'URL-friendly identifier'
+          },
+          { 
+            label: 'Data Creazione', 
+            value: organization?.createdAt ? new Date(organization.createdAt).toLocaleDateString('it-IT') : 'N/A', 
+            icon: Calendar, 
+            color: COLORS.primary.orange,
+            trend: null,
+            description: 'Data di registrazione'
+          },
+          { 
+            label: 'Status Operativo', 
+            value: organization?.status || 'N/A', 
+            icon: Shield, 
+            color: organization?.status === 'active' ? COLORS.semantic.success : COLORS.semantic.warning,
+            trend: organization?.status === 'active' ? '+0%' : null,
+            description: organization?.status === 'active' ? 'Sistema operativo' : 'Verifica richiesta'
+          },
         ].map((stat, index) => (
           <div
             key={index}
             style={{
-              padding: '16px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #fafbfc, #ffffff)',
-              border: '1px solid #f0f1f3',
+              padding: '24px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #ffffff, #fafbfc)',
+              border: '1px solid #e5e7eb',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
               display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
+              flexDirection: 'column',
+              position: 'relative',
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              overflow: 'hidden',
             }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
+              e.currentTarget.style.borderColor = stat.color;
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+            }}
+            data-testid={`kpi-card-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}
           >
+            {/* Gradient accent */}
             <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: `${stat.color}15`,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '3px',
+              background: `linear-gradient(90deg, ${stat.color}, ${stat.color}80)`,
+            }} />
+            
+            {/* Header */}
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '16px',
             }}>
-              <stat.icon size={20} style={{ color: stat.color }} />
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: `linear-gradient(135deg, ${stat.color}15, ${stat.color}25)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: `0 4px 12px ${stat.color}20`,
+              }}>
+                <stat.icon size={24} style={{ color: stat.color }} />
+              </div>
+              
+              {stat.trend && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '8px',
+                  background: `${COLORS.semantic.success}15`,
+                  color: COLORS.semantic.success,
+                  fontSize: '12px',
+                  fontWeight: '600',
+                }}>
+                  <TrendingUp size={12} />
+                  {stat.trend}
+                </div>
+              )}
             </div>
-            <div>
+            
+            {/* Content */}
+            <div style={{ flex: 1 }}>
               <p style={{
-                fontSize: '12px',
+                fontSize: '13px',
                 color: COLORS.neutral.medium,
-                margin: '0 0 2px 0',
+                margin: '0 0 8px 0',
                 fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
               }}>
                 {stat.label}
               </p>
               <p style={{
-                fontSize: '18px',
+                fontSize: '24px',
                 fontWeight: '700',
                 color: COLORS.neutral.dark,
-                margin: '0',
+                margin: '0 0 8px 0',
+                lineHeight: '1.2',
               }}>
                 {stat.value}
+              </p>
+              <p style={{
+                fontSize: '12px',
+                color: COLORS.neutral.light,
+                margin: '0',
+                fontStyle: 'italic',
+              }}>
+                {stat.description}
               </p>
             </div>
           </div>
