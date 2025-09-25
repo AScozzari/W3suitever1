@@ -142,10 +142,10 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // ✅ RESTORED: HR Requests data for employee portal (scoped to current user)
+  // ✅ UPDATED: Universal Requests data for employee portal (scoped to current user)
   const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
-    queryKey: ['/api/hr/requests', 'mine'],
-    queryFn: () => apiRequest('/api/hr/requests/mine'),
+    queryKey: ['/api/requests', 'category', 'hr', 'mine'],
+    queryFn: () => apiRequest('/api/requests?category=hr&mine=true'),
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
@@ -179,10 +179,10 @@ export default function MyPortal() {
   // ✅ RESTORED: Use actual requests data instead of placeholder
   const myRequests = myRequestsData || [];
   
-  // ✅ STEP 2: Create HR Request Mutation
+  // ✅ STEP 2: Create Universal Request Mutation
   const createRequestMutation = useMutation({
     mutationFn: async (requestData: any) => {
-      return await apiRequest('/api/hr/requests', {
+      return await apiRequest('/api/requests', {
         method: 'POST',
         body: JSON.stringify(requestData),
         headers: {
@@ -191,7 +191,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/requests', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/requests', 'category', 'hr', 'mine'] });
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
