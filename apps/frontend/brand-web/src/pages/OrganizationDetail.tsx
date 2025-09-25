@@ -109,23 +109,41 @@ export default function OrganizationDetail() {
   const { data: legalEntitiesResponse, isLoading: legalEntitiesLoading, error: legalEntitiesError } = useQuery({
     queryKey: ['/brand-api/organizations', orgId, 'legal-entities'],
     queryFn: async () => {
-      const response = await apiRequest(`/brand-api/organizations/${orgId}/legal-entities`);
-      return response.json();
+      try {
+        console.log('[LEGAL-ENTITIES] Calling API:', `/brand-api/organizations/${orgId}/legal-entities`);
+        const response = await apiRequest(`/brand-api/organizations/${orgId}/legal-entities`);
+        const data = await response.json();
+        console.log('[LEGAL-ENTITIES] Raw API Response:', data);
+        return data;
+      } catch (error) {
+        console.error('[LEGAL-ENTITIES] API Error:', error);
+        throw error;
+      }
     },
     enabled: !!orgId,
   });
   const legalEntities = legalEntitiesResponse?.legalEntities || [];
+  console.log('[LEGAL-ENTITIES] Extracted array:', legalEntities);
 
   // 🔥 QUERY DATI REALI - Stores dal database W3Suite  
   const { data: storesResponse, isLoading: storesLoading, error: storesError } = useQuery({
     queryKey: ['/brand-api/organizations', orgId, 'stores'],
     queryFn: async () => {
-      const response = await apiRequest(`/brand-api/organizations/${orgId}/stores`);
-      return response.json();
+      try {
+        console.log('[STORES] Calling API:', `/brand-api/organizations/${orgId}/stores`);
+        const response = await apiRequest(`/brand-api/organizations/${orgId}/stores`);
+        const data = await response.json();
+        console.log('[STORES] Raw API Response:', data);
+        return data;
+      } catch (error) {
+        console.error('[STORES] API Error:', error);
+        throw error;
+      }
     },
     enabled: !!orgId,
   });
   const stores = storesResponse?.stores || [];
+  console.log('[STORES] Extracted array:', stores);
 
   // 🔥 QUERY DATI REALI - Organizational Analytics dal nuovo endpoint
   const { data: analyticsResponse, isLoading: analyticsLoading, error: analyticsError } = useQuery({
