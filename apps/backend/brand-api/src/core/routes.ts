@@ -80,8 +80,8 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
 
   // Apply JWT authentication middleware to all routes except auth/login and health
   app.use("/brand-api", (req, res, next) => {
-    // Skip auth for login and health endpoints
-    if (req.path === "/auth/login" || req.path === "/health") {
+    // Skip auth for login, health and reference endpoints  
+    if (req.path === "/auth/login" || req.path === "/health" || req.path.startsWith("/reference/")) {
       return next();
     }
     
@@ -1650,7 +1650,7 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   // ==================== REFERENCE DATA ENDPOINTS ====================
   
   // Get Italian cities from public schema - NO auth required (reference data)
-  app.get("/api/reference/italian-cities", async (req, res) => {
+  app.get("/brand-api/reference/italian-cities", async (req, res) => {
     try {
       const cities = await brandStorage.getItalianCities();
       

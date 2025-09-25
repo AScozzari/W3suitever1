@@ -179,20 +179,9 @@ export default function Management() {
     active: boolean;
   }
 
-  // Fetch Italian Cities from Public Schema
+  // Fetch Italian Cities from Public Schema via Brand API
   const { data: italianCities = [], isLoading: citiesLoading, error: citiesError } = useQuery<ItalianCity[]>({
-    queryKey: ['/api/reference/italian-cities'],
-    queryFn: async (): Promise<ItalianCity[]> => {
-      const response = await fetch('/api/reference/italian-cities', {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch Italian cities');
-      }
-      return response.json();
-    },
+    queryKey: ['/brand-api/reference/italian-cities'],
     staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
     gcTime: 1000 * 60 * 60 * 24 * 7, // Keep in cache for 7 days
   });
