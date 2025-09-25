@@ -124,6 +124,13 @@ export default function AISettingsPage() {
     enabled: !!selectedAgentForTraining && (agentTrainingModalOpen || agentStoryboardModalOpen)
   });
 
+  // Fetch available AI agents - only when tenant is loaded
+  const { data: aiAgents, isLoading: aiAgentsLoading } = useQuery<{success: boolean, data: any[]}>({
+    queryKey: ['/api/ai/agents'],
+    refetchInterval: 60000, // Refresh every minute
+    enabled: !!settings?.data?.tenantId, // Wait for tenant to be loaded
+  });
+
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (updates: Partial<AISettings>) => {
@@ -610,68 +617,85 @@ export default function AISettingsPage() {
           Elenco Agenti AI
         </h3>
         <div className="space-y-4">
-          {/* Tippy - Assistente Vendite WindTre */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-[#FF6900]/10 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-[#FF6900]" />
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900">Tippy - Assistente Vendite WindTre</h4>
-                <p className="text-sm text-gray-600">Assistente AI specializzato nelle vendite con accesso completo al catalogo prodotti</p>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Sales</span>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">GPT-4o</span>
+          {aiAgentsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-[#FF6900]" />
+              <span className="ml-2 text-gray-600">Caricamento agenti AI...</span>
+            </div>
+          ) : aiAgents?.data && aiAgents.data.length > 0 ? (
+            aiAgents.data.map((agent: any) => (
+              <div key={agent.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-lg bg-[#FF6900]/10 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-[#FF6900]" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">{agent.name}</h4>
+                    <p className="text-sm text-gray-600">{agent.description}</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full capitalize">
+                        {agent.moduleContext || 'General'}
+                      </span>
+                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                        {agent.status === 'active' ? 'Attivo' : 'Inattivo'}
+                      </span>
+                      {agent.isLegacy && (
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Legacy</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  {/* Toggle Attiva/Disattiva per Tenant */}
+                  <button
+                    onClick={() => {
+                      toast({ 
+                        title: `Agente ${agent.name}`, 
+                        description: `${agent.name} è stato ${agent.status === 'active' ? "disattivato" : "attivato"} per questo tenant` 
+                      });
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 ${
+                      agent.status === 'active' ? 'bg-[#FF6900]' : 'bg-gray-300'
+                    }`}
+                    data-testid={`toggle-agent-${agent.id}`}
+                    title="Attiva/Disattiva agente per questo tenant"
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      agent.status === 'active' ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                  
+                  {/* Icona Modifica - Contesto Embedded RAG */}
+                  <button
+                    onClick={() => openAgentTrainingModal(agent.id)}
+                    className="p-2 text-gray-500 hover:text-[#FF6900] hover:bg-[#FF6900]/5 rounded-lg transition-colors"
+                    data-testid={`edit-agent-${agent.id}-context`}
+                    title="Modifica contesto embedded RAG con URL e documenti"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                  
+                  {/* Icona Occhio - Story Board Custom Tenant */}
+                  <button
+                    onClick={() => openAgentStoryboardModal(agent.id)}
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    data-testid={`view-agent-${agent.id}-storyboard`}
+                    title="Visualizza story board custom tenant con documenti e URL caricati"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="p-4 border-2 border-dashed border-gray-200 rounded-lg text-center">
+              <div className="text-gray-400">
+                <Brain className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-sm font-medium">Nessun agente AI configurato</p>
+                <p className="text-xs mt-1">La gestione degli agenti viene effettuata dal Brand Interface</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              {/* Toggle Attiva/Disattiva per Tenant */}
-              <button
-                onClick={() => {
-                  // Toggle agent per questo tenant
-                  toast({ 
-                    title: "Agente Tippy", 
-                    description: "Tippy è stato " + (true ? "disattivato" : "attivato") + " per questo tenant" 
-                  });
-                }}
-                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF6900] focus:ring-offset-2 bg-[#FF6900]"
-                data-testid="toggle-agent-tippy"
-                title="Attiva/Disattiva agente per questo tenant"
-              >
-                <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
-              </button>
-              
-              {/* Icona Modifica - Contesto Embedded RAG */}
-              <button
-                onClick={() => openAgentTrainingModal('a1f4d085-4b60-4661-aea8-3e1fefa0d282')}
-                className="p-2 text-gray-500 hover:text-[#FF6900] hover:bg-[#FF6900]/5 rounded-lg transition-colors"
-                data-testid="edit-agent-tippy-context"
-                title="Modifica contesto embedded RAG con URL e documenti"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              
-              {/* Icona Occhio - Story Board Custom Tenant */}
-              <button
-                onClick={() => openAgentStoryboardModal('a1f4d085-4b60-4661-aea8-3e1fefa0d282')}
-                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                data-testid="view-agent-tippy-storyboard"
-                title="Visualizza story board custom tenant con documenti e URL caricati"
-              >
-                <Eye className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          
-          {/* Placeholder per futuri agenti */}
-          <div className="p-4 border-2 border-dashed border-gray-200 rounded-lg text-center">
-            <div className="text-gray-400">
-              <Brain className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-sm font-medium">Altri agenti AI saranno disponibili prossimamente</p>
-              <p className="text-xs mt-1">La gestione degli agenti viene effettuata dal Brand Interface</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

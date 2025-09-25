@@ -10305,6 +10305,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get Available AI Agents
+  app.get('/api/ai/agents', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || DEMO_TENANT_ID;
+      
+      console.log(`[AI-AGENTS] 🔍 Fetching available agents for tenant: ${tenantId}`);
+      
+      const agents = await aiRegistryService.getAvailableAgents(tenantId);
+      
+      console.log(`[AI-AGENTS] ✅ Found ${agents.length} available agents`);
+      agents.forEach(agent => {
+        console.log(`[AI-AGENTS] 📋 Agent: ${agent.name} (${agent.id}) - Status: ${agent.status}`);
+      });
+      
+      res.json({
+        success: true,
+        data: agents
+      });
+    } catch (error) {
+      console.error('[AI-AGENTS] ❌ Error fetching agents:', error);
+      handleApiError(error, res, 'recupero agenti AI');
+    }
+  });
+
   // AI Settings Management
   app.get('/api/ai/settings', ...authWithRBAC, requirePermission('ai.settings.view'), async (req: any, res) => {
     try {
