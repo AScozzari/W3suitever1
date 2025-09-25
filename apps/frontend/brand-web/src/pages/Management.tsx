@@ -3088,6 +3088,7 @@ export default function Management() {
                         <option value="Sospesa">Sospesa</option>
                         <option value="Bozza">Bozza</option>
                         <option value="Cessata">Cessata</option>
+                        <option value="Trasferita">Trasferita</option>
                       </select>
                     </div>
                   </div>
