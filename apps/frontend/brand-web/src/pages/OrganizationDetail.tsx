@@ -2254,7 +2254,7 @@ export default function OrganizationDetail() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )))}
                   </tbody>
                 </table>
               </div>
@@ -2890,7 +2890,7 @@ export default function OrganizationDetail() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )))}
                   </tbody>
                 </table>
               </div>
