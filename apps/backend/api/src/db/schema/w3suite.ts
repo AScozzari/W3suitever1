@@ -1249,92 +1249,7 @@ export const insertExpenseItemSchema = createInsertSchema(expenseItems).omit({
 export type InsertExpenseItem = z.infer<typeof insertExpenseItemSchema>;
 export type ExpenseItem = typeof expenseItems.$inferSelect;
 
-// ==================== EMPLOYEE BALANCES ====================
-export const employeeBalances = w3suiteSchema.table("employee_balances", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  year: integer("year").notNull(),
-  
-  // Vacation days
-  vacationDaysEntitled: integer("vacation_days_entitled").notNull().default(0),
-  vacationDaysUsed: integer("vacation_days_used").notNull().default(0),
-  vacationDaysRemaining: integer("vacation_days_remaining").notNull().default(0),
-  
-  // Other leave types
-  sickDaysUsed: integer("sick_days_used").notNull().default(0),
-  personalDaysUsed: integer("personal_days_used").notNull().default(0),
-  
-  // Time balances
-  overtimeHours: integer("overtime_hours").notNull().default(0), // Stored as minutes
-  compTimeHours: integer("comp_time_hours").notNull().default(0), // Compensatory time in minutes
-  
-  // Adjustments tracking
-  adjustments: jsonb("adjustments").default([]), // [{ date, type, amount, reason, authorizedBy }]
-  
-  // Calculation metadata
-  lastCalculatedAt: timestamp("last_calculated_at"),
-  
-  // Audit
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("employee_balances_tenant_user_year_idx").on(table.tenantId, table.userId, table.year),
-  uniqueIndex("employee_balances_user_year_unique").on(table.userId, table.year),
-]);
 
-export const insertEmployeeBalanceSchema = createInsertSchema(employeeBalances).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-});
-export type InsertEmployeeBalance = z.infer<typeof insertEmployeeBalanceSchema>;
-export type EmployeeBalance = typeof employeeBalances.$inferSelect;
-
-// ==================== HR ANNOUNCEMENTS ====================
-export const hrAnnouncements = w3suiteSchema.table("hr_announcements", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
-  
-  // Content
-  title: varchar("title", { length: 255 }).notNull(),
-  content: text("content").notNull(),
-  
-  // Classification
-  type: hrAnnouncementTypeEnum("type").notNull().default("general"),
-  priority: hrAnnouncementPriorityEnum("priority").notNull().default("medium"),
-  
-  // Targeting
-  targetAudience: hrAnnouncementAudienceEnum("target_audience").notNull().default("all"),
-  targetIds: jsonb("target_ids").default([]), // Store/area/user IDs for specific targeting
-  
-  // Publishing
-  publishDate: timestamp("publish_date").notNull(),
-  expiryDate: timestamp("expiry_date"),
-  isActive: boolean("is_active").default(true),
-  
-  // Attachments and engagement
-  attachments: jsonb("attachments").default([]), // [{ fileName, path, type }]
-  viewCount: integer("view_count").default(0),
-  
-  // Audit
-  createdBy: varchar("created_by").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("hr_announcements_tenant_active_idx").on(table.tenantId, table.isActive),
-  index("hr_announcements_tenant_publish_idx").on(table.tenantId, table.publishDate),
-  index("hr_announcements_tenant_priority_idx").on(table.tenantId, table.priority),
-  index("hr_announcements_target_audience_idx").on(table.targetAudience),
-]);
-
-export const insertHrAnnouncementSchema = createInsertSchema(hrAnnouncements).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-});
-export type InsertHrAnnouncement = z.infer<typeof insertHrAnnouncementSchema>;
-export type HrAnnouncement = typeof hrAnnouncements.$inferSelect;
 
 
 
@@ -1361,8 +1276,6 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   shiftTemplates: many(shiftTemplates),
   hrDocuments: many(hrDocuments),
   expenseReports: many(expenseReports),
-  employeeBalances: many(employeeBalances),
-  hrAnnouncements: many(hrAnnouncements),
   // Universal Request System relations
   universalRequests: many(universalRequests),
   // Notification System relations
@@ -1386,10 +1299,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   timeTrackingEntries: many(timeTracking),
   hrDocuments: many(hrDocuments),
   expenseReports: many(expenseReports),
-  employeeBalances: many(employeeBalances),
   createdShifts: many(shifts),
   approvedTimeTracking: many(timeTracking),
-  createdAnnouncements: many(hrAnnouncements),
   // Universal Request System relations
   universalRequests: many(universalRequests),
   // Notification System relations
@@ -1584,16 +1495,6 @@ export const expenseItemsRelations = relations(expenseItems, ({ one }) => ({
 }));
 
 // Employee Balances Relations
-export const employeeBalancesRelations = relations(employeeBalances, ({ one }) => ({
-  tenant: one(tenants, { fields: [employeeBalances.tenantId], references: [tenants.id] }),
-  user: one(users, { fields: [employeeBalances.userId], references: [users.id] }),
-}));
-
-// HR Announcements Relations
-export const hrAnnouncementsRelations = relations(hrAnnouncements, ({ one }) => ({
-  tenant: one(tenants, { fields: [hrAnnouncements.tenantId], references: [tenants.id] }),
-  createdByUser: one(users, { fields: [hrAnnouncements.createdBy], references: [users.id] }),
-}));
 
 // ==================== HR REQUEST SYSTEM RELATIONS ====================
 
@@ -1691,6 +1592,8 @@ export const insertApprovalWorkflowSchema = createInsertSchema(approvalWorkflows
 });
 export type InsertApprovalWorkflow = z.infer<typeof insertApprovalWorkflowSchema>;
 export type ApprovalWorkflow = typeof approvalWorkflows.$inferSelect;
+
+
 
 // ==================== UNIFIED REQUESTS SYSTEM ====================
 // ✅ ENTERPRISE CENTRALIZZAZIONE: Tabella unica per tutte le richieste aziendali

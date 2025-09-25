@@ -27,8 +27,6 @@ export {
   hrDocuments,
   expenseReports,
   expenseItems,
-  hrAnnouncements,
-  employeeBalances,
   // HR types
   type CalendarEvent,
   type Shift,
@@ -37,8 +35,6 @@ export {
   type HrDocument,
   type ExpenseReport,
   type ExpenseItem,
-  type HrAnnouncement,
-  type EmployeeBalance,
   // HR insert schemas
   type InsertCalendarEvent,
   type InsertShift,
@@ -47,8 +43,6 @@ export {
   type InsertHrDocument,
   type InsertExpenseReport,
   type InsertExpenseItem,
-  type InsertHrAnnouncement,
-  type InsertEmployeeBalance,
   // Other w3suite tables needed for storage
   users as w3suiteUsers,
   tenants as w3suiteTenants,
