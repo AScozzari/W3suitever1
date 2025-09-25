@@ -9,7 +9,8 @@ import {
   Calendar, TrendingUp, Activity, DollarSign, Target, Eye, 
   ChevronRight, Settings, Edit, Briefcase, Store, FileText,
   PieChart, LineChart, Award, Star, Clock, Globe, Shield, AlertTriangle,
-  RefreshCw, Archive, MoreVertical
+  RefreshCw, Archive, MoreVertical, X, Save, Plus, Trash2, Filter,
+  Search, Bell
 } from 'lucide-react';
 import { apiRequest } from '../lib/queryClient';
 import { useLocation } from 'wouter';
@@ -3681,7 +3682,7 @@ export default function OrganizationDetail() {
                       </label>
                       <input
                         type="text"
-                        name="codice"
+                        name="code"
                         placeholder="ST12345 (auto-generato)"
                         defaultValue={storeModal.data?.codice || ''}
                         style={{
@@ -3728,7 +3729,7 @@ export default function OrganizationDetail() {
                       />
                     </div>
 
-                    {/* Tipo Store */}
+                    {/* Channel ID - Campo W3 Suite */}
                     <div>
                       <label style={{
                         display: 'block',
@@ -3737,11 +3738,12 @@ export default function OrganizationDetail() {
                         color: '#374151',
                         marginBottom: '8px'
                       }}>
-                        Tipo Store <span style={{ color: '#ef4444' }}>*</span>
+                        Canale <span style={{ color: '#ef4444' }}>*</span>
                       </label>
                       <select
-                        name="tipo"
-                        defaultValue={storeModal.data?.tipo || ''}
+                        name="channelId"
+                        required
+                        defaultValue={storeModal.data?.channelId || ''}
                         style={{
                           width: '100%',
                           padding: '12px 16px',
@@ -3754,13 +3756,10 @@ export default function OrganizationDetail() {
                           transition: 'border-color 0.2s ease'
                         }}
                       >
-                        <option value="">Seleziona tipo...</option>
-                        <option value="Flagship">Flagship Store</option>
-                        <option value="Standard">Store Standard</option>
-                        <option value="Express">Express Store</option>
-                        <option value="Corner">Corner Store</option>
-                        <option value="Outlet">Outlet</option>
-                        <option value="Temporaneo">Store Temporaneo</option>
+                        <option value="">Seleziona canale...</option>
+                        <option value="retail">Retail</option>
+                        <option value="franchise">Franchise</option>
+                        <option value="dealer">Dealer</option>
                       </select>
                     </div>
 
@@ -3835,7 +3834,7 @@ export default function OrganizationDetail() {
                       </label>
                       <input
                         type="text"
-                        name="indirizzo"
+                        name="address"
                         placeholder="es. Via Giuseppe Garibaldi, 45"
                         defaultValue={storeModal.data?.indirizzo || ''}
                         style={{
@@ -3979,7 +3978,7 @@ export default function OrganizationDetail() {
                       </label>
                       <input
                         type="tel"
-                        name="telefono"
+                        name="phone"
                         placeholder="+39 02 1234567"
                         defaultValue={storeModal.data?.telefono || ''}
                         style={{
@@ -4082,7 +4081,7 @@ export default function OrganizationDetail() {
                       </select>
                     </div>
 
-                    {/* Data Apertura */}
+                    {/* Commercial Area ID - Campo W3 Suite */}
                     <div>
                       <label style={{
                         display: 'block',
@@ -4091,12 +4090,12 @@ export default function OrganizationDetail() {
                         color: '#374151',
                         marginBottom: '8px'
                       }}>
-                        Data Apertura
+                        Area Commerciale <span style={{ color: '#ef4444' }}>*</span>
                       </label>
-                      <input
-                        type="date"
-                        name="dataApertura"
-                        defaultValue={storeModal.data?.dataApertura || ''}
+                      <select
+                        name="commercialAreaId"
+                        required
+                        defaultValue={storeModal.data?.commercialAreaId || ''}
                         style={{
                           width: '100%',
                           padding: '12px 16px',
@@ -4104,40 +4103,18 @@ export default function OrganizationDetail() {
                           borderRadius: '10px',
                           fontSize: '14px',
                           background: '#ffffff',
+                          cursor: 'pointer',
                           outline: 'none',
                           transition: 'border-color 0.2s ease'
                         }}
-                      />
+                      >
+                        <option value="">Seleziona area...</option>
+                        <option value="north">Nord</option>
+                        <option value="center">Centro</option>
+                        <option value="south">Sud</option>
+                      </select>
                     </div>
 
-                    {/* Superficie */}
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Superficie (mq)
-                      </label>
-                      <input
-                        type="number"
-                        name="superficie"
-                        placeholder="150"
-                        defaultValue={storeModal.data?.superficie || ''}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: '2px solid #e5e7eb',
-                          borderRadius: '10px',
-                          fontSize: '14px',
-                          background: '#ffffff',
-                          outline: 'none',
-                          transition: 'border-color 0.2s ease'
-                        }}
-                      />
-                    </div>
                   </div>
                 </div>
 
