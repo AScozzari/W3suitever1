@@ -2818,6 +2818,11 @@ export default function OrganizationDetail() {
                               }}
                               title="Visualizza dettagli"
                               data-testid={`button-view-store-${store.id}`}
+                              onClick={() => {
+                                // TODO: Navigate to store detail page
+                                console.log('👁️ View Store:', store.id, store.nome || store.name);
+                                alert(`Visualizzazione dettagli Store: ${store.nome || store.name}`);
+                              }}
                             >
                               <Eye size={16} />
                             </button>
@@ -2842,6 +2847,12 @@ export default function OrganizationDetail() {
                               }}
                               title="Modifica"
                               data-testid={`button-edit-store-${store.id}`}
+                              onClick={() => {
+                                // TODO: Open edit modal/form
+                                console.log('✏️ Edit Store:', store.id, store.nome || store.name);
+                                setEditStoreData(store);
+                                setIsStoreModalOpen(true);
+                              }}
                             >
                               <Edit size={16} />
                             </button>
@@ -2864,10 +2875,17 @@ export default function OrganizationDetail() {
                               onMouseOut={(e) => {
                                 e.currentTarget.style.background = 'none';
                               }}
-                              title="Più opzioni"
-                              data-testid={`button-more-store-${store.id}`}
+                              title="Elimina"
+                              data-testid={`button-delete-store-${store.id}`}
+                              onClick={() => {
+                                // TODO: Confirm and delete with API call
+                                if (confirm(`Sei sicuro di voler eliminare lo Store "${store.nome || store.name}"?`)) {
+                                  console.log('🗑️ Delete Store:', store.id, store.nome || store.name);
+                                  alert(`Store "${store.nome || store.name}" eliminato (simulazione)`);
+                                }
+                              }}
                             >
-                              <MoreVertical size={16} />
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         </td>
