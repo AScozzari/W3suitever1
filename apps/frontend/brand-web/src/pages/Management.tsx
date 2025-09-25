@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../lib/queryClient';
 import { format } from 'date-fns';
+import { useLocation } from 'wouter';
 
 // Modern W3 Suite Color Palette
 const COLORS = {
@@ -136,6 +137,7 @@ export default function Management() {
   const { isAuthenticated, user } = useBrandAuth();
   const { currentTenant, isCrossTenant } = useBrandTenant();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('structure');
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
@@ -2288,10 +2290,10 @@ export default function Management() {
                           <Plus size={16} />
                         </button>
                         
-                        {/* View Legal Entities */}
+                        {/* View Organization Details */}
                         <button
                           onClick={() => {
-                            handleViewLegalEntities(org.id, org.name);
+                            setLocation(`/organizations/${org.id}`);
                           }}
                           style={{
                             background: 'none',
@@ -2313,8 +2315,8 @@ export default function Management() {
                             e.currentTarget.style.background = 'none';
                             e.currentTarget.style.transform = 'scale(1)';
                           }}
-                          title="Visualizza ragioni sociali"
-                          data-testid={`button-view-legal-${org.id}`}
+                          title="Visualizza dettagli organizzazione"
+                          data-testid={`button-view-organization-${org.id}`}
                         >
                           <Eye size={16} />
                         </button>
