@@ -168,6 +168,35 @@ export default function Management() {
     tenantId: undefined
   });
 
+  // Italian Cities Interface
+  interface ItalianCity {
+    id: string;
+    name: string;
+    province: string;
+    provinceName: string;
+    region: string;
+    postalCode: string;
+    active: boolean;
+  }
+
+  // Fetch Italian Cities from Public Schema
+  const { data: italianCities = [], isLoading: citiesLoading, error: citiesError } = useQuery<ItalianCity[]>({
+    queryKey: ['/api/reference/italian-cities'],
+    queryFn: async (): Promise<ItalianCity[]> => {
+      const response = await fetch('/api/reference/italian-cities', {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch Italian cities');
+      }
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+    gcTime: 1000 * 60 * 60 * 24 * 7, // Keep in cache for 7 days
+  });
+
   // Drill-down state for legal entities view
   const [drillDownView, setDrillDownView] = useState<{
     isActive: boolean;
@@ -2824,24 +2853,65 @@ export default function Management() {
                       }}>
                         Città <span style={{ color: '#ef4444' }}>*</span>
                       </label>
-                      <input
-                        type="text"
-                        name="citta"
-                        placeholder="Milano"
-                        defaultValue={legalEntityModal.editingEntity?.citta || ''}
-                        style={{
+                      {citiesLoading ? (
+                        <select disabled style={{
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
                           borderRadius: '8px',
                           fontSize: '14px',
-                          background: '#fafbfc',
+                          background: '#f9fafb',
                           outline: 'none'
-                        }}
-                      />
+                        }}>
+                          <option>Caricamento città...</option>
+                        </select>
+                      ) : citiesError ? (
+                        <select disabled style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #ef4444',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fef2f2',
+                          outline: 'none'
+                        }}>
+                          <option>Errore nel caricamento città</option>
+                        </select>
+                      ) : (
+                        <select
+                          name="citta"
+                          defaultValue={legalEntityModal.editingEntity?.citta || ''}
+                          onChange={(e) => {
+                            const selectedCity = italianCities.find(city => city.name === e.target.value);
+                            if (selectedCity) {
+                              // Auto-popola CAP e provincia
+                              const capField = document.querySelector('input[name="cap"]') as HTMLInputElement;
+                              const provinciaField = document.querySelector('input[name="provincia"]') as HTMLInputElement;
+                              if (capField) capField.value = selectedCity.postalCode;
+                              if (provinciaField) provinciaField.value = selectedCity.province;
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '6px 10px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            background: '#fafbfc',
+                            outline: 'none'
+                          }}
+                        >
+                          <option value="">Seleziona una città...</option>
+                          {italianCities.map((city) => (
+                            <option key={city.id} value={city.name}>
+                              {city.name} ({city.province}) - {city.postalCode}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
 
-                    {/* CAP */}
+                    {/* CAP - Auto-popolato */}
                     <div>
                       <label style={{
                         display: 'block',
@@ -2850,26 +2920,29 @@ export default function Management() {
                         color: '#374151',
                         marginBottom: '8px'
                       }}>
-                        CAP
+                        CAP <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '400' }}>(auto)</span>
                       </label>
                       <input
                         type="text"
                         name="cap"
-                        placeholder="20121"
+                        placeholder="Seleziona prima una città"
                         defaultValue={legalEntityModal.editingEntity?.cap || ''}
+                        readOnly
                         style={{
                           width: '100%',
                           padding: '6px 10px',
                           border: '1px solid #e5e7eb',
                           borderRadius: '8px',
                           fontSize: '14px',
-                          background: '#fafbfc',
-                          outline: 'none'
+                          background: '#f9fafb',
+                          color: '#6b7280',
+                          outline: 'none',
+                          cursor: 'not-allowed'
                         }}
                       />
                     </div>
 
-                    {/* Provincia */}
+                    {/* Provincia - Auto-popolata */}
                     <div>
                       <label style={{
                         display: 'block',
@@ -2878,13 +2951,14 @@ export default function Management() {
                         color: '#374151',
                         marginBottom: '8px'
                       }}>
-                        Provincia
+                        Provincia <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: '400' }}>(auto)</span>
                       </label>
                       <input
                         type="text"
                         name="provincia"
-                        placeholder="MI"
+                        placeholder="Seleziona prima una città"
                         maxLength={2}
+                        readOnly
                         defaultValue={legalEntityModal.editingEntity?.provincia || ''}
                         style={{
                           width: '100%',
@@ -2892,9 +2966,11 @@ export default function Management() {
                           border: '1px solid #e5e7eb',
                           borderRadius: '8px',
                           fontSize: '14px',
-                          background: '#fafbfc',
+                          background: '#f9fafb',
+                          color: '#6b7280',
                           textTransform: 'uppercase',
-                          outline: 'none'
+                          outline: 'none',
+                          cursor: 'not-allowed'
                         }}
                       />
                     </div>

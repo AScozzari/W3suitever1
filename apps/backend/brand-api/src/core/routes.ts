@@ -1647,6 +1647,23 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // ==================== REFERENCE DATA ENDPOINTS ====================
+  
+  // Get Italian cities from public schema - NO auth required (reference data)
+  app.get("/api/reference/italian-cities", async (req, res) => {
+    try {
+      const cities = await brandStorage.getItalianCities();
+      
+      res.json(cities);
+    } catch (error) {
+      console.error("Error fetching Italian cities:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch Italian cities",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Crea server HTTP
   const server = http.createServer(app);
 

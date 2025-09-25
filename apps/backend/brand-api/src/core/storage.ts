@@ -14,6 +14,10 @@ import {
   type LegalEntity,
   type InsertLegalEntity
 } from "../../../api/src/db/schema/w3suite.js";
+import { 
+  italianCities,
+  type ItalianCity
+} from "../../../api/src/db/schema/public.js";
 import { eq, and, sql, inArray, like, or, count, desc } from "drizzle-orm";
 import type { 
   BrandTenant, NewBrandTenant, BrandUser, NewBrandUser, BrandRole, NewBrandRole, 
@@ -63,6 +67,9 @@ export interface IBrandStorage {
   getOrganizations(): Promise<Tenant[]>;
   getOrganization(id: string): Promise<Tenant | null>;
   createOrganizationRecord(data: InsertTenant): Promise<Tenant>;
+  
+  // Reference data operations
+  getItalianCities(): Promise<ItalianCity[]>;
   updateOrganization(id: string, data: Partial<Tenant>): Promise<Tenant | null>;
   validateSlug(slug: string): Promise<boolean>;
   
@@ -935,6 +942,21 @@ class BrandDrizzleStorage implements IBrandStorage {
     }
   }
 
+  // ==================== REFERENCE DATA OPERATIONS ====================
+  
+  async getItalianCities(): Promise<ItalianCity[]> {
+    try {
+      const results = await w3db.select()
+        .from(italianCities)
+        .where(eq(italianCities.active, true))
+        .orderBy(italianCities.name);
+      return results;
+    } catch (error) {
+      console.error('Error fetching Italian cities:', error);
+      throw error;
+    }
+  }
+
   // Create new organization record in w3suite.tenants
   async createOrganizationRecord(data: InsertTenant): Promise<Tenant> {
     try {
@@ -1005,7 +1027,7 @@ class BrandDrizzleStorage implements IBrandStorage {
   }
 
   // Alias for backward compatibility with route handler
-  async createOrganization(data: InsertTenant): Promise<Tenant> {
+  async createOrganizationFromTenant(data: InsertTenant): Promise<Tenant> {
     return this.createOrganizationRecord(data);
   }
 }
