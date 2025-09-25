@@ -1,0 +1,20 @@
+{isOpen: false, tenantId: '', editingEntity: null}
+useSSE.ts:93 SSE connection opened: /brand-api/structure/stats/stream?page=1&limit=25
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: true, tenantId: '927b5ed6-413e-4a55-b8e5-fd2af0c52398', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: true, tenantId: '927b5ed6-413e-4a55-b8e5-fd2af0c52398', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: true, tenantId: '927b5ed6-413e-4a55-b8e5-fd2af0c52398', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: true, tenantId: '927b5ed6-413e-4a55-b8e5-fd2af0c52398', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
+LegalEntityModal.tsx:68 🔍 LegalEntityModal render: {isOpen: false, tenantId: '', editingEntity: null}
