@@ -2232,19 +2232,656 @@ export default function OrganizationDetail() {
       
       case 'stores':
         return (
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: COLORS.neutral.dark,
-              marginBottom: '16px',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Stores Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px 24px',
+              background: 'linear-gradient(135deg, #fff5f0, #ffffff)',
+              borderRadius: '12px',
+              border: '1px solid #f0f1f3',
             }}>
-              Stores Management
-            </h3>
-            <p style={{ color: COLORS.neutral.medium, fontSize: '16px' }}>
-              Gestione completa dei punti vendita con gerarchia legal entity → stores.
-              Questa sezione verrà implementata nella Task 9.
-            </p>
+              <div>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: COLORS.neutral.dark,
+                  margin: '0 0 4px 0',
+                }}>
+                  Stores Management
+                </h2>
+                <p style={{
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                  margin: '0',
+                }}>
+                  Gestione completa dei punti vendita con gerarchia Legal Entity → Stores
+                </p>
+              </div>
+              <button style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                background: COLORS.gradients.orange,
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 3px 12px rgba(255, 105, 0, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 3px 12px rgba(255, 105, 0, 0.3)';
+              }}
+              data-testid="button-add-store"
+              >
+                <Store size={16} />
+                Nuovo Store
+              </button>
+            </div>
+
+            {/* Hierarchy Selector */}
+            <div style={{
+              ...cardStyle,
+              padding: '20px',
+              background: 'linear-gradient(135deg, #f0f9ff, #ffffff)',
+              border: '1px solid #e0f2fe',
+            }}>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: COLORS.neutral.dark,
+                margin: '0 0 12px 0',
+              }}>
+                Gerarchia Legal Entity → Stores
+              </h3>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                flexWrap: 'wrap',
+              }}>
+                <select style={{
+                  padding: '10px 16px',
+                  border: `2px solid ${COLORS.semantic.info}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: COLORS.neutral.dark,
+                  background: 'white',
+                  cursor: 'pointer',
+                  minWidth: '200px',
+                }}>
+                  <option value="">Tutte le Legal Entities</option>
+                  <option value="wtr001">WindTre Retail S.r.l. (12 stores)</option>
+                  <option value="wtb001">WindTre Business S.p.A. (4 stores)</option>
+                  <option value="wts001">WindTre Services S.r.l. (2 stores)</option>
+                  <option value="wtsol1">WindTre Solutions S.n.c. (0 stores)</option>
+                </select>
+                <div style={{
+                  padding: '8px 12px',
+                  background: `${COLORS.semantic.info}15`,
+                  color: COLORS.semantic.info,
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <Briefcase size={14} />
+                  18 stores totali in 4 legal entities
+                </div>
+              </div>
+            </div>
+
+            {/* Filters and Search */}
+            <div style={{
+              ...cardStyle,
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flex: 1,
+                minWidth: '300px',
+              }}>
+                <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
+                  <input
+                    type="text"
+                    placeholder="Cerca per nome store, codice, indirizzo..."
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 16px',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      color: COLORS.neutral.dark,
+                      background: 'white',
+                    }}
+                    data-testid="input-search-stores"
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: COLORS.neutral.medium,
+                  }}>
+                    <Target size={16} />
+                  </div>
+                </div>
+                
+                <select style={{
+                  padding: '10px 12px',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: COLORS.neutral.dark,
+                  background: 'white',
+                  cursor: 'pointer',
+                }}>
+                  <option value="">Tutti gli stati</option>
+                  <option value="active">Operativi</option>
+                  <option value="inactive">Chiusi</option>
+                  <option value="maintenance">Manutenzione</option>
+                </select>
+
+                <select style={{
+                  padding: '10px 12px',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: COLORS.neutral.dark,
+                  background: 'white',
+                  cursor: 'pointer',
+                }}>
+                  <option value="">Tutte le città</option>
+                  <option value="milano">Milano</option>
+                  <option value="roma">Roma</option>
+                  <option value="torino">Torino</option>
+                  <option value="napoli">Napoli</option>
+                </select>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <button style={{
+                  padding: '10px 16px',
+                  background: 'none',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <FileText size={16} />
+                  Export
+                </button>
+                <button style={{
+                  padding: '10px 12px',
+                  background: 'none',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  color: COLORS.neutral.medium,
+                  cursor: 'pointer',
+                }}>
+                  <Settings size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Stores Table */}
+            <div style={{ ...cardStyle, padding: '0', overflow: 'hidden' }}>
+              <div style={{
+                padding: '20px 24px',
+                borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                background: '#fafbfc',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    margin: '0',
+                  }}>
+                    Stores (18 elementi)
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                  }}>
+                    <span style={{
+                      fontSize: '13px',
+                      color: COLORS.neutral.medium,
+                    }}>
+                      Ultima sincronizzazione: 1 minuto fa
+                    </span>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: COLORS.semantic.success,
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ overflow: 'auto' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '14px',
+                }}>
+                  <thead>
+                    <tr style={{ background: '#fafbfc' }}>
+                      {[
+                        'Store Name',
+                        'Codice',
+                        'Legal Entity',
+                        'Indirizzo',
+                        'Città',
+                        'Status',
+                        'Manager',
+                        'Azioni'
+                      ].map((header, index) => (
+                        <th
+                          key={index}
+                          style={{
+                            padding: '16px 20px',
+                            textAlign: 'left',
+                            fontWeight: '600',
+                            color: COLORS.neutral.dark,
+                            borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                            position: 'sticky',
+                            top: 0,
+                            background: '#fafbfc',
+                            zIndex: 10,
+                          }}
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      {
+                        name: 'Milano Centro',
+                        code: 'MI001',
+                        legalEntity: 'WindTre Retail S.r.l.',
+                        address: 'Via Dante 15',
+                        city: 'Milano',
+                        status: 'active',
+                        manager: 'Marco Rossi',
+                        id: '1'
+                      },
+                      {
+                        name: 'Roma EUR',
+                        code: 'RM001',
+                        legalEntity: 'WindTre Retail S.r.l.',
+                        address: 'Via Cristoforo Colombo 112',
+                        city: 'Roma',
+                        status: 'active',
+                        manager: 'Giulia Bianchi',
+                        id: '2'
+                      },
+                      {
+                        name: 'Torino Porta Nuova',
+                        code: 'TO001',
+                        legalEntity: 'WindTre Services S.r.l.',
+                        address: 'Corso Inghilterra 23',
+                        city: 'Torino',
+                        status: 'active',
+                        manager: 'Alessandro Verdi',
+                        id: '3'
+                      },
+                      {
+                        name: 'Napoli Chiaia',
+                        code: 'NA001',
+                        legalEntity: 'WindTre Business S.p.A.',
+                        address: 'Via dei Mille 45',
+                        city: 'Napoli',
+                        status: 'maintenance',
+                        manager: 'Francesca Neri',
+                        id: '4'
+                      },
+                      {
+                        name: 'Bologna Centro',
+                        code: 'BO001',
+                        legalEntity: 'WindTre Retail S.r.l.',
+                        address: 'Via Indipendenza 8',
+                        city: 'Bologna',
+                        status: 'active',
+                        manager: 'Roberto Blu',
+                        id: '5'
+                      },
+                      {
+                        name: 'Firenze Duomo',
+                        code: 'FI001',
+                        legalEntity: 'WindTre Business S.p.A.',
+                        address: 'Piazza del Duomo 14',
+                        city: 'Firenze',
+                        status: 'inactive',
+                        manager: 'Elena Gialli',
+                        id: '6'
+                      },
+                    ].map((store, rowIndex) => (
+                      <tr
+                        key={store.id}
+                        style={{
+                          borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fafbfc';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                        data-testid={`store-row-${store.id}`}
+                      >
+                        <td style={{ padding: '16px 20px' }}>
+                          <div>
+                            <p style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: COLORS.neutral.dark,
+                              margin: '0 0 2px 0',
+                            }}>
+                              {store.name}
+                            </p>
+                            <p style={{
+                              fontSize: '12px',
+                              color: COLORS.neutral.medium,
+                              margin: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}>
+                              <Store size={12} />
+                              Aperto il 10/01/2021
+                            </p>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <code style={{
+                            background: `${COLORS.semantic.info}15`,
+                            color: COLORS.semantic.info,
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}>
+                            {store.code}
+                          </code>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}>
+                            <Briefcase size={14} style={{ color: COLORS.primary.orange }} />
+                            <span style={{
+                              fontSize: '13px',
+                              color: COLORS.neutral.dark,
+                              fontWeight: '500',
+                            }}>
+                              {store.legalEntity}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
+                          {store.address}
+                        </td>
+                        <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
+                          {store.city}
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            background: store.status === 'active' ? 
+                              `${COLORS.semantic.success}15` : 
+                              store.status === 'maintenance' ?
+                              `${COLORS.semantic.warning}15` :
+                              `${COLORS.neutral.medium}15`,
+                            color: store.status === 'active' ? 
+                              COLORS.semantic.success : 
+                              store.status === 'maintenance' ?
+                              COLORS.semantic.warning :
+                              COLORS.neutral.medium,
+                          }}>
+                            {store.status === 'active' ? 'Operativo' : 
+                             store.status === 'maintenance' ? 'Manutenzione' : 'Chiuso'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                          }}>
+                            <div style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              background: COLORS.gradients.orange,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '10px',
+                              fontWeight: '600',
+                              color: 'white',
+                            }}>
+                              {store.manager.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <span style={{
+                              fontSize: '13px',
+                              color: COLORS.neutral.dark,
+                              fontWeight: '500',
+                            }}>
+                              {store.manager}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                          }}>
+                            <button
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                color: COLORS.semantic.info,
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.background = `${COLORS.semantic.info}15`;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'none';
+                              }}
+                              title="Visualizza dettagli"
+                              data-testid={`button-view-store-${store.id}`}
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                color: COLORS.primary.orange,
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.background = `${COLORS.primary.orange}15`;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'none';
+                              }}
+                              title="Modifica"
+                              data-testid={`button-edit-store-${store.id}`}
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                color: COLORS.neutral.medium,
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.background = `${COLORS.neutral.medium}15`;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'none';
+                              }}
+                              title="Più opzioni"
+                              data-testid={`button-more-store-${store.id}`}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Table Footer */}
+              <div style={{
+                padding: '16px 24px',
+                borderTop: `1px solid ${COLORS.neutral.lighter}`,
+                background: '#fafbfc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <p style={{
+                  fontSize: '13px',
+                  color: COLORS.neutral.medium,
+                  margin: '0',
+                }}>
+                  Mostrando 6 di 18 stores
+                </p>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'white',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: COLORS.neutral.medium,
+                    cursor: 'pointer',
+                  }}>
+                    Precedente
+                  </button>
+                  <span style={{
+                    padding: '6px 12px',
+                    background: COLORS.primary.orange,
+                    color: 'white',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                  }}>
+                    1
+                  </span>
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'white',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: COLORS.neutral.dark,
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                  }}>
+                    2
+                  </button>
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'white',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: COLORS.neutral.dark,
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                  }}>
+                    3
+                  </button>
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'white',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: COLORS.neutral.medium,
+                    cursor: 'pointer',
+                  }}>
+                    Successivo
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         );
       
