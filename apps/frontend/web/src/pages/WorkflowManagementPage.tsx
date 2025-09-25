@@ -2678,42 +2678,55 @@ const WorkflowManagementPage: React.FC = () => {
                 </div>
               </div>
               
-              <Tabs value={activeView} onValueChange={(value: any) => setActiveView(value)} className="w-auto">
-                <TabsList className="backdrop-blur-sm bg-white/10 border border-white/20">
-                  <TabsTrigger 
-                    value="dashboard" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-                    data-testid="tab-dashboard"
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="builder" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-                    data-testid="tab-builder"
-                  >
-                    <GitBranch className="w-4 h-4 mr-2" />
-                    Builder
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="teams" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-                    data-testid="tab-teams"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Teams
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="analytics" 
-                    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-                    data-testid="tab-analytics"
-                  >
-                    <Activity className="w-4 h-4 mr-2" />
-                    Analytics
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="flex items-center gap-4">
+                <Tabs value={activeView} onValueChange={(value: any) => setActiveView(value)} className="w-auto">
+                  <TabsList className="backdrop-blur-sm bg-white/10 border border-white/20">
+                    <TabsTrigger 
+                      value="dashboard" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-dashboard"
+                    >
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="builder" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-builder"
+                    >
+                      <GitBranch className="w-4 h-4 mr-2" />
+                      Builder
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="teams" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-teams"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Teams
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="analytics" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-analytics"
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      Analytics
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                
+                {/* Back to Settings Button */}
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '/staging/settings'}
+                  className="backdrop-blur-sm bg-white/10 border-white/20 text-slate-700 dark:text-slate-300 hover:bg-white/20 hover:border-white/30 transition-all duration-200"
+                  data-testid="button-back-settings"
+                >
+                  <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                  Torna alle Impostazioni
+                </Button>
+              </div>
             </div>
           </div>
 
