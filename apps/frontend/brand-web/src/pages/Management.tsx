@@ -334,11 +334,11 @@ export default function Management() {
         status: 'active',
         notes: ''
       });
-      alert('Organizzazione creata con successo!');
+      console.log('✅ Organizzazione creata con successo!');
     },
     onError: (error) => {
       console.error('Error creating organization:', error);
-      alert('Errore nella creazione dell\'organizzazione');
+      console.error('❌ Errore nella creazione dell\'organizzazione');
     }
   });
 
@@ -355,11 +355,11 @@ export default function Management() {
       setSelectedStores([]);
       setBulkOperation('');
       setBulkValues({});
-      alert(`Operazione completata: ${result.processedCount} elaborati, ${result.errorCount} errori`);
+      console.log(`✅ Operazione completata: ${result.processedCount} elaborati, ${result.errorCount} errori`);
     },
     onError: (error) => {
       console.error('Error in bulk operation:', error);
-      alert('Errore nell\'operazione bulk');
+      console.error('❌ Errore nell\'operazione bulk');
     }
   });
 
@@ -384,17 +384,17 @@ export default function Management() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      alert('Export CSV completato!');
+      console.log('✅ Export CSV completato!');
     } catch (error) {
       console.error('Export error:', error);
-      alert('Errore durante l\'export CSV');
+      console.error('❌ Errore durante l\'export CSV');
     }
   };
 
   // 2. BULK OPERATIONS HELPERS
   const handleBulkOperation = () => {
     if (!bulkOperation || selectedStores.length === 0) {
-      alert('Seleziona stores e operazione');
+      console.warn('⚠️ Seleziona stores e operazione');
       return;
     }
 

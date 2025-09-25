@@ -137,7 +137,7 @@ const LegalEntityModal: React.FC<LegalEntityModalProps> = ({
     onError: (error) => {
       console.error('❌ Error saving legal entity:', error);
       // Simple error feedback (can be replaced with toast system later)
-      alert('Errore nel salvare la ragione sociale. Riprova.');
+      console.error('❌ Errore nel salvare la ragione sociale. Riprova.');
     }
   });
 
