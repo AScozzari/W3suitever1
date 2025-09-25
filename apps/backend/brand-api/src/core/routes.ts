@@ -432,6 +432,44 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Get organizational analytics for a tenant
+  app.get("/brand-api/organizations/:id/analytics", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id: tenantId } = req.params;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager' && user.role !== 'regional_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to view organizational analytics" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      console.log(`🔧 [BRAND-DEV] Development mode: Bypassing authentication for /organizations/${tenantId}/analytics`);
+      console.log("🎯 Brand Auth Context:", context.type);
+
+      const analytics = await brandStorage.getOrganizationalAnalytics(tenantId);
+
+      res.json({
+        success: true,
+        data: analytics,
+        organizationId: tenantId,
+        context: "cross-tenant",
+        metadata: {
+          tenantId: tenantId,
+          generatedAt: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error(`Error fetching organizational analytics for ${tenantId}:`, error);
+      res.status(500).json({ error: "Failed to fetch organizational analytics" });
+    }
+  });
+
   // Create new store
   app.post("/brand-api/stores", express.json(), async (req, res) => {
     const context = (req as any).brandContext;
