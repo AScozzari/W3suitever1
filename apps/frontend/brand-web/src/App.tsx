@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import CRM from "./pages/CRM";
 import AIManagement from "./pages/AIManagement";
 import Management from "./pages/Management";
+import OrganizationDetail from "./pages/OrganizationDetail";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandAuthProvider } from "./contexts/BrandAuthContext";
 import { BrandTenantProvider, BrandTenantWrapper } from "./contexts/BrandTenantContext";
@@ -50,6 +51,9 @@ function Routes() {
       </Route>
       <Route path="/management">
         <BrandTenantWrapper params={null}><Management /></BrandTenantWrapper>
+      </Route>
+      <Route path="/organizations/:orgId">
+        <BrandTenantWrapper params={null}><OrganizationDetail /></BrandTenantWrapper>
       </Route>
       
       {/* Default route */}

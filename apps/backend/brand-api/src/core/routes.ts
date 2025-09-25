@@ -148,6 +148,47 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Get single organization by ID
+  app.get("/brand-api/organizations/:id", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to view organization details" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const organization = await brandStorage.getOrganization(id);
+      
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      res.json({
+        organization: {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          status: organization.status,
+          notes: organization.notes,
+          createdAt: organization.createdAt,
+          updatedAt: organization.updatedAt
+        },
+        context: "cross-tenant",
+        message: `Organization details for ${organization.name}`
+      });
+    } catch (error) {
+      console.error(`Error fetching organization ${id}:`, error);
+      res.status(500).json({ error: "Failed to fetch organization details" });
+    }
+  });
+
   // Legal Entities management endpoints
   app.post("/brand-api/organizations", express.json(), async (req, res) => {
     const context = (req as any).brandContext;
