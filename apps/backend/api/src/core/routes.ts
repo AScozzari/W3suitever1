@@ -84,7 +84,6 @@ const createCalendarEventSchema = z.object({
 const updateCalendarEventSchema = createCalendarEventSchema.partial();
 
 import hierarchyRouter from "../routes/hierarchy";
-import { compatibilityLayer } from "./compatibility-layer";
 import { avatarService, uploadConfigSchema, objectPathSchema, objectStorageService, ObjectMetadata } from "./objectStorage";
 import { objectAclService } from "./objectAcl";
 import { HRStorage, CalendarScope } from "./hr-storage";
@@ -8311,24 +8310,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user's own requests
-  app.get('/api/hr/requests/mine', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      // ✅ FIX: Use compatibility layer for universal requests system
-      const requests = await compatibilityLayer.getLegacyHrRequests(tenantId, userId);
-      res.json(requests || []);
-    } catch (error) {
-      console.error('Get user requests error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
   
   // Get specific request details
   app.get('/api/hr/requests/:id', tenantMiddleware, rbacMiddleware, requirePermission('hr.requests.view.self'), async (req: any, res) => {
@@ -9139,8 +9120,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // ✅ FIX: Calculate performance metrics using compatibility layer
-      const requests = await compatibilityLayer.getLegacyHrRequests(tenantId, userId);
+      // ✅ FIX: Calculate performance metrics using universal requests
+      const requests = await db
+        .select()
+        .from(universalRequests)
+        .where(and(
+          eq(universalRequests.tenantId, tenantId),
+          eq(universalRequests.requesterId, userId),
+          eq(universalRequests.category, 'hr')
+        ));
       const nonDraftRequests = requests.filter(req => req.status !== 'draft');
       
       const approvedRequests = nonDraftRequests.filter(req => req.status === 'approved');
