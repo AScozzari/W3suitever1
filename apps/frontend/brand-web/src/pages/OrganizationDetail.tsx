@@ -1367,7 +1367,7 @@ export default function OrganizationDetail() {
               );
             })()}
 
-            {/* Charts Grid */}
+            {/* Organizational Analytics Charts */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '2fr 1fr',
@@ -1387,7 +1387,7 @@ export default function OrganizationDetail() {
                     color: COLORS.neutral.dark,
                     margin: '0',
                   }}>
-                    Revenue Trends
+                    AI Token Usage Trend
                   </h3>
                   <div style={{
                     display: 'flex',
@@ -1489,7 +1489,7 @@ export default function OrganizationDetail() {
                     color: COLORS.neutral.dark,
                     marginBottom: '16px',
                   }}>
-                    Top Performing Stores
+                    Database Usage
                   </h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {[
@@ -1548,7 +1548,7 @@ export default function OrganizationDetail() {
                     color: COLORS.neutral.dark,
                     marginBottom: '16px',
                   }}>
-                    Market Share
+                    File Storage
                   </h3>
                   <div style={{
                     display: 'flex',
