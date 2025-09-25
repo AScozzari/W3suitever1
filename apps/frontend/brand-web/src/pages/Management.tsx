@@ -1926,8 +1926,8 @@ export default function Management() {
                         {/* Edit Organization (Tenant) */}
                         <button
                           onClick={() => {
-                            // TODO: Implementare modal edit organizzazione completo
-                            alert(`Edit organizzazione: ${org.name} - Da implementare!`);
+                            // TODO: Implementare modal edit organizzazione completo  
+                            console.log('Edit organizzazione:', org.name, '- Da implementare!');
                           }}
                           style={{
                             background: 'none',
@@ -2361,7 +2361,6 @@ export default function Management() {
         {renderOrganizationModal()}
 
         {/* Legal Entity Modal */}
-        {console.log('🎯 [MANAGEMENT-DEBUG] About to render LegalEntityModal:', { modalState: legalEntityModal })}
         <LegalEntityModal
           isOpen={legalEntityModal.isOpen}
           onClose={handleCloseLegalEntityModal}
