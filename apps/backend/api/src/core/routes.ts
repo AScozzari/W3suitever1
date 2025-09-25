@@ -477,6 +477,7 @@ const universalRequestFiltersSchema = z.object({
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
   
   // User filters
+  mine: z.union([z.literal('true'), z.literal('false'), z.boolean()]).optional(), // FIX: Add missing mine filter
   requesterId: z.string().optional(),
   currentApproverId: z.string().optional(),
   onBehalfOf: z.string().optional(),
