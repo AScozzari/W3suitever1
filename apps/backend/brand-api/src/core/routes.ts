@@ -432,6 +432,44 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     }
   });
 
+  // Get legal entities for organization
+  app.get("/brand-api/organizations/:id/legal-entities", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id: tenantId } = req.params;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to view organization legal entities" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const legalEntities = await brandStorage.getLegalEntitiesByOrganization(tenantId);
+      res.json({
+        legalEntities: legalEntities.map(entity => ({
+          id: entity.id,
+          tenantId: entity.tenantId,
+          codice: entity.codice,
+          nome: entity.nome,
+          pIva: entity.pIva,
+          stato: entity.stato,
+          createdAt: entity.createdAt,
+          updatedAt: entity.updatedAt
+        })),
+        organizationId: tenantId,
+        context: "cross-tenant",
+        message: `Legal entities for organization ${tenantId}`
+      });
+    } catch (error) {
+      console.error(`Error fetching legal entities for organization ${tenantId}:`, error);
+      res.status(500).json({ error: "Failed to fetch organization legal entities" });
+    }
+  });
+
   // Get organizational analytics for a tenant
   app.get("/brand-api/organizations/:id/analytics", async (req, res) => {
     const context = (req as any).brandContext;

@@ -89,6 +89,7 @@ export interface IBrandStorage {
   // Stores operations using w3suite.stores
   getStoresByTenant(tenantId: string): Promise<Store[]>;
   getStoresByOrganization(tenantId: string): Promise<Store[]>;
+  getLegalEntitiesByOrganization(tenantId: string): Promise<LegalEntity[]>;
   createStore(data: InsertStore): Promise<Store>;
   updateStore(id: string, data: Partial<Store>): Promise<Store | null>;
   
@@ -1134,6 +1135,10 @@ class BrandDrizzleStorage implements IBrandStorage {
   // Alias for getStoresByTenant (same functionality, different naming for consistency)
   async getStoresByOrganization(tenantId: string): Promise<Store[]> {
     return this.getStoresByTenant(tenantId);
+  }
+
+  async getLegalEntitiesByOrganization(tenantId: string): Promise<LegalEntity[]> {
+    return this.getLegalEntitiesByTenant(tenantId);
   }
 
   // Create new store
