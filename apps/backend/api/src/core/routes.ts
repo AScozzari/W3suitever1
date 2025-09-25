@@ -11558,6 +11558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Store the embedding with agent-specific metadata
           await storage.createVectorEmbedding({
             tenantId,
+            agentId: agentId,  // 🎯 AGENT-SPECIFIC DATABASE FIELD
             contentId: uuidv4(),
             contentType: 'url',
             content: result.content.substring(0, 5000), // Store first 5000 chars
@@ -11566,7 +11567,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               url: url,
               title: result.metadata.title,
               scrapedAt: new Date(),
-              agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
               agentSpecific: true
             },
             departmentRestriction: null,
@@ -11577,6 +11577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createAITrainingSession({
             tenantId,
             userId,
+            agentId: agentId,  // 🎯 AGENT-SPECIFIC DATABASE FIELD
             sessionType: 'url_ingestion',
             sessionStatus: 'completed',
             sourceUrl: url,
@@ -11590,7 +11591,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             completedAt: new Date(),
             updatedAt: new Date(),
             metadata: {
-              agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
               agentSpecific: true,
               url: url,
               title: result.metadata.title
@@ -11691,6 +11691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (chunk.embedding) {
             const stored = await storage.createVectorEmbedding({
               tenantId,
+              agentId: agentId,  // 🎯 AGENT-SPECIFIC DATABASE FIELD
               contentId: chunk.id,
               contentType: mediaType,
               content: chunk.content.substring(0, 5000),
@@ -11700,7 +11701,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 originalFile: file.originalname,
                 mimeType: file.mimetype,
                 fileSize: file.size,
-                agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
                 agentSpecific: true
               },
               mediaType: mediaType,
@@ -11715,6 +11715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const session = await storage.createAITrainingSession({
           tenantId,
           userId,
+          agentId: agentId,  // 🎯 AGENT-SPECIFIC DATABASE FIELD
           sessionType: 'media_upload',
           sessionStatus: 'completed',
           originalQuery: `[Agent:${agentId}] Media upload: ${file.originalname}`,
@@ -11730,7 +11731,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: file.mimetype
             },
             processingResult: processingResult.metadata,
-            agentId: agentId,  // 🎯 AGENT-SPECIFIC METADATA
             agentSpecific: true
           }
         });
