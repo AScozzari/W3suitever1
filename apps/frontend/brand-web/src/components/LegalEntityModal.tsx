@@ -46,10 +46,13 @@ const insertLegalEntitySchema = z.object({
 // Type inference from the schema
 type LegalEntityFormData = z.infer<typeof insertLegalEntitySchema>;
 
+// Type for existing entities (includes id for updates)
+type LegalEntityWithId = LegalEntityFormData & { id: string };
+
 interface LegalEntityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  editingEntity?: LegalEntityFormData | null;
+  editingEntity?: LegalEntityWithId | null;
   tenantId: string;
 }
 
