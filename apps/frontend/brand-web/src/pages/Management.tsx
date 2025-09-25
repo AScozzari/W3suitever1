@@ -4,7 +4,6 @@ import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSSE } from '../hooks/useSSE';
 import BrandLayout from '../components/BrandLayout';
-import LegalEntityModal from '../components/LegalEntityModal';
 import { 
   Settings, Building2, ShoppingCart, Package, Briefcase,
   BarChart3, Filter, Search, Download, Plus, Edit, Trash2,
@@ -2360,7 +2359,7 @@ export default function Management() {
         {/* Organization Modal */}
         {renderOrganizationModal()}
 
-        {/* Legal Entity Modal - NECESSARI SOLO: Nome, Codice, PEC, P.IVA, Forma Giuridica, Stato */}
+        {/* Modal Ragione Sociale - ESATTA COPIA DEL MODAL W3 SUITE */}
         {legalEntityModal.isOpen && (
           <div style={{
             position: 'fixed',
@@ -2368,230 +2367,703 @@ export default function Management() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            background: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000
+            zIndex: 9999,
+            animation: 'fadeIn 0.2s ease-out'
           }}>
             <div style={{
-              backgroundColor: 'white',
-              padding: '32px',
+              background: 'white',
               borderRadius: '12px',
-              maxWidth: '600px',
               width: '90%',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+              maxWidth: '600px',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+              borderTop: '3px solid transparent',
+              borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+              animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
-                  {legalEntityModal.editingEntity ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
-                </h2>
-                <button
-                  onClick={handleCloseLegalEntityModal}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    color: '#6b7280'
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-              
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target as HTMLFormElement);
-                const data = Object.fromEntries(formData);
-                
-                // Generate code if empty
-                if (!data.codice) {
-                  data.codice = `8${String(Date.now()).slice(-6)}`;
-                }
-                
-                // Add tenantId from drill-down context
-                data.tenantId = legalEntityModal.tenantId || '';
-                
-                console.log('📝 Creazione Legal Entity:', data);
-                
-                try {
-                  const response = await fetch('/brand-api/legal-entities', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                  });
-                  
-                  if (response.ok) {
-                    console.log('✅ Ragione sociale creata');
-                    handleCloseLegalEntityModal();
-                    window.location.reload();
-                  } else {
-                    console.error('❌ Errore creazione:', response.status);
-                  }
-                } catch (error) {
-                  console.error('❌ Errore:', error);
-                }
+              {/* Header Modal */}
+              <div style={{
+                padding: '24px 32px',
+                background: '#ffffff',
+                borderBottom: '1px solid #e5e7eb'
               }}>
-                {/* Nome (obbligatorio) */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Nome Ragione Sociale *
-                  </label>
-                  <input
-                    name="nome"
-                    required
-                    defaultValue={legalEntityModal.editingEntity?.nome || ''}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '16px',
-                      fontWeight: '500'
-                    }}
-                    placeholder="Es: Acme SRL"
-                  />
-                </div>
-                
-                {/* Codice e Forma Giuridica */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start'
+                }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                      Codice
-                    </label>
-                    <input
-                      name="codice"
-                      defaultValue={legalEntityModal.editingEntity?.codice || ''}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="Auto-generato"
-                    />
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '8px'
+                    }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Building2 size={20} color="white" />
+                      </div>
+                      <h2 style={{
+                        fontSize: '20px',
+                        fontWeight: '600',
+                        color: '#111827',
+                        margin: 0,
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        {legalEntityModal.editingEntity ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                      </h2>
+                    </div>
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#6b7280',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: 500
+                    }}>
+                      {legalEntityModal.editingEntity ? 'Modifica i dati dell\'entità giuridica' : 'Inserisci i dati della nuova entità giuridica'}
+                    </p>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                      Forma Giuridica
-                    </label>
-                    <select
-                      name="formaGiuridica"
-                      defaultValue={legalEntityModal.editingEntity?.formaGiuridica || ''}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                    >
-                      <option value="">Seleziona</option>
-                      <option value="SRL">SRL</option>
-                      <option value="SPA">SPA</option>
-                      <option value="SNCA">SNCA</option>
-                      <option value="SAS">SAS</option>
-                      <option value="DI">Ditta Individuale</option>
-                      <option value="COOP">Cooperativa</option>
-                    </select>
-                  </div>
-                </div>
-                
-                {/* P.IVA e PEC */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                      Partita IVA
-                    </label>
-                    <input
-                      name="pIva"
-                      defaultValue={legalEntityModal.editingEntity?.pIva || ''}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="IT01234567890"
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                      PEC
-                    </label>
-                    <input
-                      name="pec"
-                      type="email"
-                      defaultValue={legalEntityModal.editingEntity?.pec || ''}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="pec@esempio.it"
-                    />
-                  </div>
-                </div>
-                
-                {/* Stato */}
-                <div style={{ marginBottom: '32px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Stato
-                  </label>
-                  <select
-                    name="stato"
-                    defaultValue={legalEntityModal.editingEntity?.stato || 'Attiva'}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '14px'
-                    }}
-                  >
-                    <option value="Attiva">Attiva</option>
-                    <option value="Sospesa">Sospesa</option>
-                    <option value="Chiusa">Chiusa</option>
-                  </select>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                   <button
-                    type="button"
                     onClick={handleCloseLegalEntityModal}
                     style={{
-                      padding: '12px 24px',
-                      backgroundColor: '#f3f4f6',
-                      color: '#374151',
-                      border: 'none',
+                      background: 'rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(226, 232, 240, 0.8)',
                       borderRadius: '8px',
                       cursor: 'pointer',
-                      fontWeight: '600'
+                      padding: '8px',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      color: '#64748b',
+                      backdropFilter: 'blur(8px)'
                     }}
                   >
-                    Annulla
-                  </button>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '12px 24px',
-                      backgroundColor: '#FF6900',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '600'
-                    }}
-                  >
-                    {legalEntityModal.editingEntity ? 'Aggiorna' : 'Salva'}
+                    <X size={18} />
                   </button>
                 </div>
-              </form>
+              </div>
+
+              {/* Body Modal */}
+              <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target as HTMLFormElement);
+                  const data = Object.fromEntries(formData);
+                  
+                  // Generate code if empty
+                  if (!data.codice) {
+                    data.codice = `8${String(Date.now()).slice(-6)}`;
+                  }
+                  
+                  data.tenantId = legalEntityModal.tenantId || '';
+                  
+                  console.log('📝 Creazione Legal Entity:', data);
+                  
+                  try {
+                    const response = await fetch('/brand-api/legal-entities', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(data)
+                    });
+                    
+                    if (response.ok) {
+                      console.log('✅ Ragione sociale creata');
+                      handleCloseLegalEntityModal();
+                      window.location.reload();
+                    } else {
+                      console.error('❌ Errore creazione:', response.status);
+                    }
+                  } catch (error) {
+                    console.error('❌ Errore:', error);
+                  }
+                }}>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {/* Codice */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Codice Ragione Sociale
+                      </label>
+                      <input
+                        type="text"
+                        name="codice"
+                        placeholder="8xxxxxxx (auto-generato, min. 7 cifre)"
+                        defaultValue={legalEntityModal.editingEntity?.codice || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Nome */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="nome"
+                        required
+                        placeholder="es. Franchising Ltd"
+                        defaultValue={legalEntityModal.editingEntity?.nome || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Forma Giuridica */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <select
+                        name="formaGiuridica"
+                        defaultValue={legalEntityModal.editingEntity?.formaGiuridica || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="">Seleziona...</option>
+                        <option value="SRL">SRL - Società a Responsabilità Limitata</option>
+                        <option value="SPA">SPA - Società per Azioni</option>
+                        <option value="SNC">SNC - Società in Nome Collettivo</option>
+                        <option value="SAS">SAS - Società in Accomandita Semplice</option>
+                        <option value="SAPA">SAPA - Società in Accomandita per Azioni</option>
+                        <option value="SRLS">SRLS - Società a Responsabilità Limitata Semplificata</option>
+                      </select>
+                    </div>
+
+                    {/* Partita IVA */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Partita IVA <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="pIva"
+                        placeholder="IT12345678901"
+                        defaultValue={legalEntityModal.editingEntity?.pIva || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          fontFamily: 'monospace',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Codice Fiscale */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Codice Fiscale
+                      </label>
+                      <input
+                        type="text"
+                        name="codiceFiscale"
+                        placeholder="RSSMRA80A01H501U"
+                        defaultValue={legalEntityModal.editingEntity?.codiceFiscale || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          fontFamily: 'monospace',
+                          textTransform: 'uppercase',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Capitale Sociale */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Capitale Sociale
+                      </label>
+                      <input
+                        type="text"
+                        name="capitaleSociale"
+                        placeholder="es. €10.000"
+                        defaultValue={legalEntityModal.editingEntity?.capitaleSociale || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Data Costituzione */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Data Costituzione
+                      </label>
+                      <input
+                        type="date"
+                        name="dataCostituzione"
+                        defaultValue={legalEntityModal.editingEntity?.dataCostituzione || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* REA */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        R.E.A.
+                      </label>
+                      <input
+                        type="text"
+                        name="rea"
+                        placeholder="es. MI-1234567"
+                        defaultValue={legalEntityModal.editingEntity?.rea || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Registro Imprese */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Registro Imprese
+                      </label>
+                      <input
+                        type="text"
+                        name="registroImprese"
+                        placeholder="es. 123456789012"
+                        defaultValue={legalEntityModal.editingEntity?.registroImprese || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Codice SDI */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Codice SDI
+                        <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '4px' }}>
+                          (Sistema di Interscambio)
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        name="codiceSDI"
+                        placeholder="A4707H7"
+                        defaultValue={legalEntityModal.editingEntity?.codiceSDI || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          fontFamily: 'monospace',
+                          textTransform: 'uppercase',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Indirizzo - full width */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="indirizzo"
+                        placeholder="es. Via Roma 123"
+                        defaultValue={legalEntityModal.editingEntity?.indirizzo || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Città */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Città <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="citta"
+                        placeholder="Milano"
+                        defaultValue={legalEntityModal.editingEntity?.citta || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* CAP */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        CAP
+                      </label>
+                      <input
+                        type="text"
+                        name="cap"
+                        placeholder="20121"
+                        defaultValue={legalEntityModal.editingEntity?.cap || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Provincia */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Provincia
+                      </label>
+                      <input
+                        type="text"
+                        name="provincia"
+                        placeholder="MI"
+                        maxLength={2}
+                        defaultValue={legalEntityModal.editingEntity?.provincia || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          textTransform: 'uppercase',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Telefono */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Telefono
+                      </label>
+                      <input
+                        type="tel"
+                        name="telefono"
+                        placeholder="+39 02 1234567"
+                        defaultValue={legalEntityModal.editingEntity?.telefono || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="info@azienda.it"
+                        defaultValue={legalEntityModal.editingEntity?.email || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* PEC */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        PEC <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="email"
+                        name="pec"
+                        placeholder="azienda@pec.it"
+                        defaultValue={legalEntityModal.editingEntity?.pec || ''}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Stato */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Stato
+                      </label>
+                      <select
+                        name="stato"
+                        defaultValue={legalEntityModal.editingEntity?.stato || 'Attiva'}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="Attiva">Attiva</option>
+                        <option value="Sospesa">Sospesa</option>
+                        <option value="Bozza">Bozza</option>
+                        <option value="Cessata">Cessata</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Footer Modal */}
+                  <div style={{
+                    padding: '20px 0 0 0',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '12px',
+                    borderTop: '1px solid #e5e7eb',
+                    marginTop: '32px',
+                    paddingTop: '20px'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={handleCloseLegalEntityModal}
+                      style={{
+                        padding: '10px 20px',
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#475569',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      Annulla
+                    </button>
+                    <button
+                      type="submit"
+                      style={{
+                        padding: '10px 20px',
+                        background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {legalEntityModal.editingEntity ? 'Aggiorna' : 'Salva'} Ragione Sociale
+                    </button>
+                  </div>
+
+                </form>
+              </div>
             </div>
           </div>
         )}
