@@ -7,12 +7,16 @@ import { db as w3db } from "../../../api/src/core/db.js";
 import { 
   tenants as w3Tenants, 
   legalEntities as w3LegalEntities,
+  stores as w3Stores,
   insertTenantSchema, 
   insertLegalEntitySchema,
+  insertStoreSchema,
   type Tenant, 
   type InsertTenant,
   type LegalEntity,
-  type InsertLegalEntity
+  type InsertLegalEntity,
+  type Store,
+  type InsertStore
 } from "../../../api/src/db/schema/w3suite.js";
 import { 
   italianCities,
@@ -78,6 +82,14 @@ export interface IBrandStorage {
   // Legal Entities operations using w3suite.legal_entities
   getLegalEntitiesByTenant(tenantId: string): Promise<LegalEntity[]>;
   createLegalEntity(data: InsertLegalEntity): Promise<LegalEntity>;
+  
+  // ==================== STORES MANAGEMENT ====================
+  
+  // Stores operations using w3suite.stores
+  getStoresByTenant(tenantId: string): Promise<Store[]>;
+  getStoresByOrganization(tenantId: string): Promise<Store[]>;
+  createStore(data: InsertStore): Promise<Store>;
+  updateStore(id: string, data: Partial<Store>): Promise<Store | null>;
   
   // Export operations
   exportStoresCSV(filters: StoreFiltersDTO): Promise<string>;
@@ -1022,6 +1034,53 @@ class BrandDrizzleStorage implements IBrandStorage {
       return results[0];
     } catch (error) {
       console.error('Error creating legal entity:', error);
+      throw error;
+    }
+  }
+
+  // ==================== STORES MANAGEMENT IMPLEMENTATION ====================
+
+  // Get stores by tenant (organization)
+  async getStoresByTenant(tenantId: string): Promise<Store[]> {
+    try {
+      const results = await w3db.select()
+        .from(w3Stores)
+        .where(eq(w3Stores.tenantId, tenantId));
+      return results;
+    } catch (error) {
+      console.error(`Error fetching stores for tenant ${tenantId}:`, error);
+      throw error;
+    }
+  }
+
+  // Alias for getStoresByTenant (same functionality, different naming for consistency)
+  async getStoresByOrganization(tenantId: string): Promise<Store[]> {
+    return this.getStoresByTenant(tenantId);
+  }
+
+  // Create new store
+  async createStore(data: InsertStore): Promise<Store> {
+    try {
+      const results = await w3db.insert(w3Stores)
+        .values(data)
+        .returning();
+      return results[0];
+    } catch (error) {
+      console.error('Error creating store:', error);
+      throw error;
+    }
+  }
+
+  // Update existing store
+  async updateStore(id: string, data: Partial<Store>): Promise<Store | null> {
+    try {
+      const results = await w3db.update(w3Stores)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(w3Stores.id, id))
+        .returning();
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error updating store:', error);
       throw error;
     }
   }

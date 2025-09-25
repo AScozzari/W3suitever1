@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import { createTenantContextMiddleware, BrandAuthService, authenticateToken, BRAND_TENANT_ID } from "./auth.js";
 import { brandStorage } from "./storage.js";
+import { insertStoreSchema } from "../../../api/src/db/schema/w3suite.js";
 
 export async function registerBrandRoutes(app: express.Express): Promise<http.Server> {
   console.log("📡 Setting up Brand Interface API routes...");
@@ -295,6 +296,237 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     } catch (error) {
       console.error("Error creating legal entity:", error);
       res.status(500).json({ error: "Failed to create legal entity" });
+    }
+  });
+
+  // ==================== STORES ENDPOINTS ====================
+
+  // Get stores for specific tenant/organization
+  app.get("/brand-api/stores/:tenantId", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { tenantId } = req.params;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to view stores" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const stores = await brandStorage.getStoresByTenant(tenantId);
+      res.json({
+        stores: stores.map(store => ({
+          id: store.id,
+          tenantId: store.tenantId,
+          legalEntityId: store.legalEntityId,
+          code: store.code,
+          nome: store.nome,
+          channelId: store.channelId,
+          commercialAreaId: store.commercialAreaId,
+          citta: store.citta,
+          provincia: store.provincia,
+          cap: store.cap,
+          status: store.status,
+          phone: store.phone,
+          email: store.email,
+          createdAt: store.createdAt,
+          updatedAt: store.updatedAt
+        })),
+        tenantId,
+        context: "cross-tenant",
+        message: `Stores for tenant ${tenantId}`
+      });
+    } catch (error) {
+      console.error(`Error fetching stores for tenant ${tenantId}:`, error);
+      res.status(500).json({ error: "Failed to fetch stores" });
+    }
+  });
+
+  // Alias endpoint - Get stores for organization (same as above, different naming for consistency)
+  app.get("/brand-api/organizations/:id/stores", async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id: tenantId } = req.params;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to view organization stores" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      const stores = await brandStorage.getStoresByOrganization(tenantId);
+      res.json({
+        stores: stores.map(store => ({
+          id: store.id,
+          tenantId: store.tenantId,
+          legalEntityId: store.legalEntityId,
+          code: store.code,
+          nome: store.nome,
+          channelId: store.channelId,
+          commercialAreaId: store.commercialAreaId,
+          citta: store.citta,
+          provincia: store.provincia,
+          cap: store.cap,
+          status: store.status,
+          phone: store.phone,
+          email: store.email,
+          createdAt: store.createdAt,
+          updatedAt: store.updatedAt
+        })),
+        organizationId: tenantId,
+        context: "cross-tenant",
+        message: `Stores for organization ${tenantId}`
+      });
+    } catch (error) {
+      console.error(`Error fetching stores for organization ${tenantId}:`, error);
+      res.status(500).json({ error: "Failed to fetch organization stores" });
+    }
+  });
+
+  // Create new store
+  app.post("/brand-api/stores", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to create stores" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      // Validate request body with Zod schema
+      const parseResult = insertStoreSchema.safeParse(req.body);
+      
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid store data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+
+      const validatedData = parseResult.data;
+      const { tenantId, legalEntityId, code, nome, channelId, commercialAreaId, ...otherFields } = validatedData;
+
+      // Auto-generate code if not provided
+      const finalCode = code || `ST${String(Date.now()).slice(-6)}`;
+
+      const storeData = {
+        ...validatedData,
+        code: finalCode,
+        status: validatedData.status || 'active'
+      };
+
+      const store = await brandStorage.createStore(storeData);
+
+      res.status(201).json({
+        success: true,
+        store: {
+          id: store.id,
+          tenantId: store.tenantId,
+          legalEntityId: store.legalEntityId,
+          code: store.code,
+          nome: store.nome,
+          channelId: store.channelId,
+          commercialAreaId: store.commercialAreaId,
+          citta: store.citta,
+          provincia: store.provincia,
+          cap: store.cap,
+          status: store.status,
+          phone: store.phone,
+          email: store.email,
+          createdAt: store.createdAt
+        },
+        message: "Store created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating store:", error);
+      res.status(500).json({ error: "Failed to create store" });
+    }
+  });
+
+  // Update existing store
+  app.patch("/brand-api/stores/:id", express.json(), async (req, res) => {
+    const context = (req as any).brandContext;
+    const user = (req as any).user;
+    const { id } = req.params;
+
+    // Role-based access control
+    if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      return res.status(403).json({ error: "Insufficient permissions to update stores" });
+    }
+
+    if (!context.isCrossTenant) {
+      return res.status(400).json({ error: "This endpoint requires cross-tenant access" });
+    }
+
+    try {
+      // Create partial schema for updates (excluding immutable fields)
+      const updateSchema = insertStoreSchema.partial().omit({
+        id: true,
+        tenantId: true,
+        createdAt: true,
+        updatedAt: true
+      });
+
+      // Validate request body with partial schema
+      const parseResult = updateSchema.safeParse(req.body);
+      
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid update data", 
+          details: parseResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        });
+      }
+
+      const allowedFields = parseResult.data;
+
+      const store = await brandStorage.updateStore(id, allowedFields);
+
+      if (!store) {
+        return res.status(404).json({ error: "Store not found" });
+      }
+
+      res.json({
+        success: true,
+        store: {
+          id: store.id,
+          tenantId: store.tenantId,
+          legalEntityId: store.legalEntityId,
+          code: store.code,
+          nome: store.nome,
+          channelId: store.channelId,
+          commercialAreaId: store.commercialAreaId,
+          citta: store.citta,
+          provincia: store.provincia,
+          cap: store.cap,
+          status: store.status,
+          phone: store.phone,
+          email: store.email,
+          updatedAt: store.updatedAt
+        },
+        message: "Store updated successfully"
+      });
+    } catch (error) {
+      console.error("Error updating store:", error);
+      res.status(500).json({ error: "Failed to update store" });
     }
   });
 
