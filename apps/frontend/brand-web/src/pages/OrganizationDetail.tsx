@@ -111,8 +111,7 @@ export default function OrganizationDetail() {
     queryFn: async () => {
       try {
         console.log('[LEGAL-ENTITIES] Calling API:', `/brand-api/organizations/${orgId}/legal-entities`);
-        const response = await apiRequest(`/brand-api/organizations/${orgId}/legal-entities`);
-        const data = await response.json();
+        const data = await apiRequest(`/brand-api/organizations/${orgId}/legal-entities`);
         console.log('[LEGAL-ENTITIES] Raw API Response:', data);
         return data;
       } catch (error) {
@@ -131,8 +130,7 @@ export default function OrganizationDetail() {
     queryFn: async () => {
       try {
         console.log('[STORES] Calling API:', `/brand-api/organizations/${orgId}/stores`);
-        const response = await apiRequest(`/brand-api/organizations/${orgId}/stores`);
-        const data = await response.json();
+        const data = await apiRequest(`/brand-api/organizations/${orgId}/stores`);
         console.log('[STORES] Raw API Response:', data);
         return data;
       } catch (error) {
@@ -149,8 +147,8 @@ export default function OrganizationDetail() {
   const { data: analyticsResponse, isLoading: analyticsLoading, error: analyticsError } = useQuery({
     queryKey: ['/brand-api/organizations', orgId, 'analytics'],
     queryFn: async () => {
-      const response = await apiRequest(`/brand-api/organizations/${orgId}/analytics`);
-      return response.json();
+      const data = await apiRequest(`/brand-api/organizations/${orgId}/analytics`);
+      return data;
     },
     enabled: !!orgId,
   });

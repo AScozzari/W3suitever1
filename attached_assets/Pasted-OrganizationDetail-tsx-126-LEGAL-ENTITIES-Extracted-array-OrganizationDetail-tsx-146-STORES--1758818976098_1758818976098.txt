@@ -1,0 +1,308 @@
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:113 [LEGAL-ENTITIES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/legal-entities
+OrganizationDetail.tsx:133 [STORES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/stores
+OrganizationDetail.tsx:119 [LEGAL-ENTITIES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:115:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:119
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:139 [STORES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:135:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:139
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:113 [LEGAL-ENTITIES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/legal-entities
+OrganizationDetail.tsx:133 [STORES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/stores
+OrganizationDetail.tsx:119 [LEGAL-ENTITIES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:115:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:119
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:139 [STORES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:135:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:139
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:113 [LEGAL-ENTITIES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/legal-entities
+OrganizationDetail.tsx:133 [STORES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/stores
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:119 [LEGAL-ENTITIES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:115:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:119
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:139 [STORES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:135:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:139
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:113 [LEGAL-ENTITIES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/legal-entities
+OrganizationDetail.tsx:133 [STORES] Calling API: /brand-api/organizations/00000000-0000-0000-0000-000000000001/stores
+OrganizationDetail.tsx:119 [LEGAL-ENTITIES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:115:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:119
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:139 [STORES] API Error: TypeError: response.json is not a function
+    at queryFn (OrganizationDetail.tsx:135:37)
+overrideMethod @ hook.js:608
+queryFn @ OrganizationDetail.tsx:139
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=397c1581:1097
+run @ @tanstack_react-query.js?v=397c1581:795
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+(anonymous) @ @tanstack_react-query.js?v=397c1581:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=397c1581:816
+Promise.catch
+run @ @tanstack_react-query.js?v=397c1581:799
+start @ @tanstack_react-query.js?v=397c1581:838
+fetch @ @tanstack_react-query.js?v=397c1581:1144
+executeFetch_fn @ @tanstack_react-query.js?v=397c1581:1639
+onSubscribe @ @tanstack_react-query.js?v=397c1581:1335
+subscribe @ @tanstack_react-query.js?v=397c1581:24
+(anonymous) @ @tanstack_react-query.js?v=397c1581:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=397c1581:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=397c1581:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=397c1581:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=397c1581:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=397c1581:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=397c1581:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=397c1581:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=397c1581:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=397c1581:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=397c1581:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=397c1581:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=397c1581:18627Understand this error
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array: []
+OrganizationDetail.tsx:126 [LEGAL-ENTITIES] Extracted array: []
+OrganizationDetail.tsx:146 [STORES] Extracted array:
