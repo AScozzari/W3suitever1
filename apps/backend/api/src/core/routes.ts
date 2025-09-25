@@ -24,11 +24,6 @@ import {
   hrAnnouncements
 } from "../db/schema";
 import {
-  // HR Request System
-  hrRequests,
-  hrRequestApprovals,
-  hrRequestComments,
-  hrRequestStatusHistory,
   // Universal Request System (PHASE 2)
   universalRequests,
   insertUniversalRequestSchema,
@@ -8915,144 +8910,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Universal Requests API - Service-agnostic approval system
-  app.get('/api/universal-requests', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      const userRole = req.user?.role || 'EMPLOYEE';
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      const { serviceType = 'hr', status, priority } = req.query;
-      
-      // Build filter conditions
-      const conditions = [eq(hrRequests.tenantId, tenantId), not(eq(hrRequests.status, 'draft'))];
-      
-      if (status) {
-        conditions.push(eq(hrRequests.status, status as any));
-      }
-      
-      if (priority) {
-        conditions.push(eq(hrRequests.priority, priority as any));
-      }
-
-      // RBAC filtering - show only appropriate requests based on user role
-      if (userRole === 'EMPLOYEE') {
-        conditions.push(eq(hrRequests.requesterId, userId));
-      } else if (userRole === 'TEAM_LEADER') {
-        // Team leaders can see their team's requests (simplified - could be enhanced with team relationships)
-        // For now, show requests they can approve or their own
-        conditions.push(or(
-          eq(hrRequests.requesterId, userId),
-          eq(hrRequests.status, 'pending')
-        ));
-      }
-      // HR_MANAGER and ADMIN can see all requests
-
-      // Get real HR requests from database with all conditions
-      const query = db
-        .select()
-        .from(hrRequests)
-        .leftJoin(users, eq(hrRequests.requesterId, users.id))
-        .where(and(...conditions))
-        .orderBy(desc(hrRequests.createdAt))
-        .limit(50);
-      
-      const requests = await query;
-      
-      // Transform to Universal Request format
-      const universalRequests = requests.map(req => ({
-        id: req.hr_requests.id,
-        serviceType: serviceType,
-        requestType: req.hr_requests.category,
-        title: `${req.hr_requests.category} Request`,
-        description: req.hr_requests.notes || '',
-        requesterId: req.hr_requests.requesterId,
-        requesterName: req.users ? `${req.users.firstName || 'N/A'} ${req.users.lastName || ''}`.trim() : 'N/A',
-        status: req.hr_requests.status,
-        priority: req.hr_requests.priority || 'normal',
-        currentApproverId: null, // Could be enhanced with approval flow
-        approvalLevel: req.hr_requests.status === 'pending' ? 1 : (req.hr_requests.status === 'approved' ? 2 : 0),
-        metadata: {},
-        createdAt: req.hr_requests.createdAt,
-        updatedAt: req.hr_requests.updatedAt
-      }));
-      
-      res.json(universalRequests);
-    } catch (error) {
-      console.error('Get universal requests error:', error);
-      res.status(500).json({ error: 'Failed to get universal requests' });
-    }
-  });
-  
-  // Approve/Reject Universal Request
-  app.post('/api/universal-requests/:id/approve', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      const requestId = req.params.id;
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      const { action, comments } = req.body;
-      
-      if (!action || !['approve', 'reject'].includes(action)) {
-        return res.status(400).json({ error: 'Invalid action' });
-      }
-      
-      // Mock approval response
-      res.json({
-        success: true,
-        requestId,
-        action,
-        processedBy: userId,
-        processedAt: new Date(),
-        comments
-      });
-    } catch (error) {
-      console.error('Process universal request error:', error);
-      res.status(500).json({ error: 'Failed to process request' });
-    }
-  });
-  
-  // Bulk Process Universal Requests
-  app.post('/api/universal-requests/bulk', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      const { requestIds, action } = req.body;
-      
-      if (!Array.isArray(requestIds) || requestIds.length === 0) {
-        return res.status(400).json({ error: 'Request IDs required' });
-      }
-      
-      if (!action || !['approve', 'reject', 'delegate'].includes(action)) {
-        return res.status(400).json({ error: 'Invalid action' });
-      }
-      
-      // Mock bulk response
-      res.json({
-        success: true,
-        processed: requestIds.length,
-        action,
-        processedBy: userId,
-        processedAt: new Date()
-      });
-    } catch (error) {
-      console.error('Bulk process error:', error);
-      res.status(500).json({ error: 'Failed to process bulk requests' });
-    }
-  });
   
   // Get Organizational Structure
   app.get('/api/organizational-structure', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
@@ -9222,9 +9079,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rejectedToday: sql<number>`count(case when status = 'rejected' and date(updated_at) = current_date then 1 end)`,
           avgProcessingTime: sql<number>`avg(extract(epoch from updated_at - created_at) / 3600.0)`
         })
-        .from(hrRequests)
+        .from(universalRequests)
         .where(and(
-          eq(hrRequests.tenantId, tenantId),
+          eq(universalRequests.tenantId, tenantId),
           sql`status != 'draft'`
         ));
 
@@ -9235,9 +9092,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalApprovals: sql<number>`count(case when status = 'approved' then 1 end)`,
           escalations: sql<number>`count(case when extract(epoch from updated_at - created_at) > 172800 and status = 'pending' then 1 end)`
         })
-        .from(hrRequests)
+        .from(universalRequests)
         .where(and(
-          eq(hrRequests.tenantId, tenantId),
+          eq(universalRequests.tenantId, tenantId),
           sql`status != 'draft'`
         ));
       
