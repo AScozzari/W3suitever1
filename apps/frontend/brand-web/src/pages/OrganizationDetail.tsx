@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../lib/queryClient';
 import { useLocation } from 'wouter';
+import { useEffect } from 'react';
 
 // Organization interface for type safety
 interface Organization {
@@ -89,7 +90,37 @@ export default function OrganizationDetail() {
   const orgId = params?.orgId;
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Initialize active tab from URL or default to 'dashboard'
+  const getInitialTab = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab');
+    const validTabs = ['dashboard', 'analytics', 'legal-entities', 'stores'];
+    return validTabs.includes(tabFromUrl) ? tabFromUrl : 'dashboard';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
+
+  // Update URL when tab changes
+  const updateTabUrl = (tabId) => {
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabId);
+    window.history.replaceState({}, '', url);
+    setActiveTab(tabId);
+  };
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabFromUrl = urlParams.get('tab');
+      const validTabs = ['dashboard', 'analytics', 'legal-entities', 'stores'];
+      const validTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'dashboard';
+      setActiveTab(validTab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Fetch organization data
   const { data: organizationResponse, isLoading: orgLoading, error: orgError } = useQuery<{organization: Organization}>({
@@ -621,7 +652,7 @@ export default function OrganizationDetail() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => updateTabUrl(tab.id)}
             style={{
               display: 'flex',
               alignItems: 'center',
