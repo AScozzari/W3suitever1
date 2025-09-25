@@ -5918,46 +5918,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const filters = validationResult.data;
       
-      // ✅ Build WHERE conditions for raw SQL
-      let whereConditions = [`tenant_id = ${tenantId}`];
-      
-      // Date conditions
+      // ✅ Build proper parameterized query conditions
+      let dateConditions = [];
       if (filters.lastHours) {
         const hoursAgo = new Date(Date.now() - filters.lastHours * 60 * 60 * 1000);
-        whereConditions.push(`created_at >= '${hoursAgo.toISOString()}'`);
+        dateConditions.push(sql`created_at >= ${hoursAgo}`);
       } else {
         if (filters.dateFrom) {
-          whereConditions.push(`created_at >= '${filters.dateFrom}'`);
+          dateConditions.push(sql`created_at >= ${filters.dateFrom}`);
         }
         if (filters.dateTo) {
-          whereConditions.push(`created_at <= '${filters.dateTo}'`);
+          dateConditions.push(sql`created_at <= ${filters.dateTo}`);
         }
       }
 
-      // Additional filters for structured logs
-      let structuredWhere = [...whereConditions];
-      if (filters.level) structuredWhere.push(`level = '${filters.level}'`);
-      if (filters.component) structuredWhere.push(`component ILIKE '%${filters.component}%'`);
-      if (filters.action) structuredWhere.push(`action ILIKE '%${filters.action}%'`);
-      if (filters.entityType) structuredWhere.push(`entity_type = '${filters.entityType}'`);
-      if (filters.entityId) structuredWhere.push(`entity_id = '${filters.entityId}'`);
-      if (filters.userId) structuredWhere.push(`user_id = '${filters.userId}'`);
-      if (filters.userEmail) structuredWhere.push(`user_email ILIKE '%${filters.userEmail}%'`);
-      if (filters.correlationId) structuredWhere.push(`correlation_id = '${filters.correlationId}'`);
-      if (filters.search) structuredWhere.push(`(message ILIKE '%${filters.search}%' OR component ILIKE '%${filters.search}%')`);
-      if (filters.logType === 'entity') structuredWhere.push('FALSE'); // Exclude if only entity logs requested
+      // ✅ Build structured logs conditions using proper SQL placeholders
+      let structuredConditions = [sql`tenant_id = ${tenantId}`];
+      structuredConditions.push(...dateConditions);
+      
+      if (filters.level) structuredConditions.push(sql`level = ${filters.level}`);
+      if (filters.component) structuredConditions.push(sql`component ILIKE ${'%' + filters.component + '%'}`);
+      if (filters.action) structuredConditions.push(sql`action ILIKE ${'%' + filters.action + '%'}`);
+      if (filters.entityType) structuredConditions.push(sql`entity_type = ${filters.entityType}`);
+      if (filters.entityId) structuredConditions.push(sql`entity_id = ${filters.entityId}`);
+      if (filters.userId) structuredConditions.push(sql`user_id = ${filters.userId}`);
+      if (filters.userEmail) structuredConditions.push(sql`user_email ILIKE ${'%' + filters.userEmail + '%'}`);
+      if (filters.correlationId) structuredConditions.push(sql`correlation_id = ${filters.correlationId}`);
+      if (filters.search) structuredConditions.push(sql`(message ILIKE ${'%' + filters.search + '%'} OR component ILIKE ${'%' + filters.search + '%'})`);
+      if (filters.logType === 'entity') structuredConditions.push(sql`FALSE`);
 
-      // Additional filters for entity logs
-      let entityWhere = [...whereConditions];
-      if (filters.action) entityWhere.push(`action ILIKE '%${filters.action}%'`);
-      if (filters.entityType) entityWhere.push(`entity_type = '${filters.entityType}'`);
-      if (filters.entityId) entityWhere.push(`entity_id = '${filters.entityId}'`);
-      if (filters.userId) entityWhere.push(`user_id = '${filters.userId}'`);
-      if (filters.userEmail) entityWhere.push(`user_email ILIKE '%${filters.userEmail}%'`);
-      if (filters.search) entityWhere.push(`(notes ILIKE '%${filters.search}%' OR action ILIKE '%${filters.search}%')`);
-      if (filters.logType === 'structured') entityWhere.push('FALSE'); // Exclude if only structured logs requested
+      // ✅ Build entity logs conditions using proper SQL placeholders
+      let entityConditions = [sql`tenant_id = ${tenantId}`];
+      entityConditions.push(...dateConditions);
+      
+      if (filters.action) entityConditions.push(sql`action ILIKE ${'%' + filters.action + '%'}`);
+      if (filters.entityType) entityConditions.push(sql`entity_type = ${filters.entityType}`);
+      if (filters.entityId) entityConditions.push(sql`entity_id = ${filters.entityId}`);
+      if (filters.userId) entityConditions.push(sql`user_id = ${filters.userId}`);
+      if (filters.userEmail) entityConditions.push(sql`user_email ILIKE ${'%' + filters.userEmail + '%'}`);
+      if (filters.search) entityConditions.push(sql`(notes ILIKE ${'%' + filters.search + '%'} OR action ILIKE ${'%' + filters.search + '%'})`);
+      if (filters.logType === 'structured') entityConditions.push(sql`FALSE`);
 
-      // ✅ Build complete raw SQL query to avoid Drizzle issues
+      // ✅ Build complete parameterized query
       const sortColumn = {
         created_at: 'created_at',
         level: 'level', 
@@ -5966,33 +5968,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entity_type: 'entity_type'
       }[filters.sortBy] || 'created_at';
       
-      const sortDirection = filters.sortOrder === 'asc' ? 'ASC' : 'DESC';
+      const sortDirection = filters.sortOrder === 'asc' ? sql`ASC` : sql`DESC`;
       const offset = (filters.page - 1) * filters.limit;
 
-      // Execute unified query using raw SQL
+      // Execute unified query using parameterized SQL with request tracking via correlation_id
+      const structuredQueryPart = sql`
+        SELECT 
+          id, 'structured' as log_type, created_at, level, message, component, action, 
+          entity_type, entity_id, correlation_id, user_id, user_email, duration, 
+          metadata, http_method, http_path, http_status_code, 
+          NULL as previous_status, NULL as new_status, NULL as changes, NULL as notes
+        FROM w3suite.structured_logs 
+        WHERE ${sql.join(structuredConditions, sql` AND `)}
+      `;
+      
+      const entityQueryPart = sql`
+        SELECT 
+          id, 'entity' as log_type, created_at, 'INFO' as level, 
+          CONCAT('Entity ', action, ': ', entity_type) as message,
+          'entity_engine' as component, action, entity_type, entity_id, 
+          entity_id as correlation_id, user_id, user_email, NULL as duration,
+          NULL as metadata, NULL as http_method, NULL as http_path, NULL as http_status_code,
+          previous_status, new_status, changes, notes
+        FROM w3suite.entity_logs 
+        WHERE ${sql.join(entityConditions, sql` AND `)}
+      `;
+
       const unifiedQuery = sql`
         SELECT * FROM (
-          SELECT 
-            id, 'structured' as log_type, created_at, level, message, component, action, 
-            entity_type, entity_id, correlation_id, user_id, user_email, duration, 
-            metadata, request_id, NULL as previous_status, NULL as new_status, 
-            NULL as changes, NULL as notes
-          FROM w3suite.structured_logs 
-          WHERE ${sql.raw(structuredWhere.join(' AND '))}
-          
+          ${structuredQueryPart}
           UNION ALL
-          
-          SELECT 
-            id, 'entity' as log_type, created_at, 'INFO' as level, 
-            CONCAT('Entity ', action, ': ', entity_type) as message,
-            'entity_engine' as component, action, entity_type, entity_id, 
-            entity_id as correlation_id, user_id, user_email, NULL as duration,
-            NULL as metadata, NULL as request_id, previous_status, new_status, 
-            changes, notes
-          FROM w3suite.entity_logs 
-          WHERE ${sql.raw(entityWhere.join(' AND '))}
+          ${entityQueryPart}
         ) as unified_logs
-        ORDER BY ${sql.raw(sortColumn)} ${sql.raw(sortDirection)}
+        ORDER BY ${sql.identifier(sortColumn)} ${sortDirection}
         LIMIT ${filters.limit} OFFSET ${offset}
       `;
       
