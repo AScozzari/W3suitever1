@@ -396,7 +396,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const tenantId = rawTenantId?.split('?')[0];
 
     // Role-based access control
+    console.log(`🔐 [BRAND-API-AUTH] Stores endpoint - User role: '${user.role}', Required: 'super_admin' or 'national_manager'`);
     if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      console.log(`❌ [BRAND-API-AUTH] REJECTED: User role '${user.role}' insufficient for stores`);
       return res.status(403).json({ error: "Insufficient permissions to view organization stores" });
     }
 
@@ -443,7 +445,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
     const tenantId = rawTenantId?.split('?')[0];
 
     // Role-based access control
+    console.log(`🔐 [BRAND-API-AUTH] Legal entities endpoint - User role: '${user.role}', Required: 'super_admin' or 'national_manager'`);
     if (user.role !== 'super_admin' && user.role !== 'national_manager') {
+      console.log(`❌ [BRAND-API-AUTH] REJECTED: User role '${user.role}' insufficient for legal entities`);
       return res.status(403).json({ error: "Insufficient permissions to view organization legal entities" });
     }
 
