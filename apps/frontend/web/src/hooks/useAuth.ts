@@ -37,9 +37,9 @@ export function useAuth(): { user: AuthUser | null; isAuthenticated: boolean; is
   const [isLoading, setIsLoading] = useState(AUTH_MODE === 'oauth2');
   const [isAuthenticated, setIsAuthenticated] = useState(AUTH_MODE === 'development');
   const [user, setUser] = useState<AuthUser | null>(AUTH_MODE === 'development' ? {
-    id: 'demo-user',
-    name: 'Demo User', 
-    email: 'demo@w3suite.com',
+    id: 'admin-user', // FIX: Use admin-user to match database requests
+    name: 'Admin User', 
+    email: 'admin@w3suite.com', // FIX: Use correct admin email
     role: 'hr_manager', // CRITICAL FIX: Grant HR manager role for HR Dashboard access
     tenantId: DEFAULT_TENANT_ID
   } : null);
@@ -52,9 +52,9 @@ export function useAuth(): { user: AuthUser | null; isAuthenticated: boolean; is
     // Provide proper initialData structure for development
     initialData: AUTH_MODE === 'development' ? {
       user: {
-        id: 'demo-user',
-        name: 'Demo User',
-        email: 'demo@w3suite.com',
+        id: 'admin-user', // FIX: Use admin-user to match database requests
+        name: 'Admin User',
+        email: 'admin@w3suite.com', // FIX: Use correct admin email
         role: 'hr_manager', // CRITICAL: Ensure Session provides hr_manager role
         tenantId: DEFAULT_TENANT_ID
       }
@@ -89,9 +89,9 @@ export function useAuth(): { user: AuthUser | null; isAuthenticated: boolean; is
       setIsAuthenticated(true);
       setIsLoading(false);
       setUser({
-        id: 'demo-user',
-        name: 'Demo User',
-        email: 'demo@w3suite.com', 
+        id: 'admin-user', // FIX: Use admin-user to match database requests
+        name: 'Admin User',
+        email: 'admin@w3suite.com', // FIX: Use correct admin email
         role: 'hr_manager', // CRITICAL FIX: Grant HR manager role for HR Dashboard access
         tenantId: DEFAULT_TENANT_ID
       });

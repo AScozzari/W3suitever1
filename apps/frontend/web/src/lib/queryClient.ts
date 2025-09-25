@@ -196,7 +196,7 @@ export const queryClient = new QueryClient({
         if (AUTH_MODE === 'development') {
           // Development mode: ONLY use X-Auth-Session headers, NEVER call OAuth methods
           headers['X-Auth-Session'] = 'authenticated';
-          headers['X-Demo-User'] = 'demo-user';
+          headers['X-Demo-User'] = 'admin-user'; // FIX: Use admin-user to match database requests
           console.log(`🔧 [DEV-AUTH] Headers aggiunti per development mode:`, headers);
         } else if (AUTH_MODE === 'oauth2') {
           // OAuth2 mode: Use Bearer tokens with proper error handling
@@ -298,7 +298,7 @@ export async function apiRequest(
   if (AUTH_MODE === 'development') {
     // Development mode: ONLY use X-Auth-Session headers
     headers['X-Auth-Session'] = 'authenticated';
-    headers['X-Demo-User'] = 'demo-user';
+    headers['X-Demo-User'] = 'admin-user'; // FIX: Use admin-user to match database requests
   } else if (AUTH_MODE === 'oauth2') {
     // OAuth2 mode: Use Bearer tokens
     const token = await oauth2Client.getAccessToken();
