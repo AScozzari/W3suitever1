@@ -391,7 +391,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   app.get("/brand-api/organizations/:id/stores", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
-    const { id: tenantId } = req.params;
+    // Clean tenantId to remove query parameters (e.g., ?tab=analytics)
+    const { id: rawTenantId } = req.params;
+    const tenantId = rawTenantId?.split('?')[0];
 
     // Role-based access control
     if (user.role !== 'super_admin' && user.role !== 'national_manager') {
@@ -436,7 +438,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   app.get("/brand-api/organizations/:id/legal-entities", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
-    const { id: tenantId } = req.params;
+    // Clean tenantId to remove query parameters (e.g., ?tab=analytics)
+    const { id: rawTenantId } = req.params;
+    const tenantId = rawTenantId?.split('?')[0];
 
     // Role-based access control
     if (user.role !== 'super_admin' && user.role !== 'national_manager') {
@@ -474,7 +478,9 @@ export async function registerBrandRoutes(app: express.Express): Promise<http.Se
   app.get("/brand-api/organizations/:id/analytics", async (req, res) => {
     const context = (req as any).brandContext;
     const user = (req as any).user;
-    const { id: tenantId } = req.params;
+    // Clean tenantId to remove query parameters (e.g., ?tab=analytics)
+    const { id: rawTenantId } = req.params;
+    const tenantId = rawTenantId?.split('?')[0];
 
     // Role-based access control
     if (user.role !== 'super_admin' && user.role !== 'national_manager' && user.role !== 'regional_manager') {
