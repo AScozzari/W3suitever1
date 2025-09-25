@@ -362,7 +362,47 @@ async function performGoogleSearch(query: string, apiKey: string, engineId: stri
 }
 */
 
-// Zod validation schemas for logs API
+// ==================== ENTERPRISE AUDIT DASHBOARD SCHEMAS ====================
+// ✅ PROFESSIONAL: Advanced filtering schema for enterprise audit trail
+
+const getEnterpriseAuditQuerySchema = z.object({
+  // Core filters  
+  level: z.enum(['DEBUG', 'INFO', 'WARN', 'ERROR']).optional(),
+  component: z.string().min(1).max(100).optional(),
+  action: z.string().min(1).max(100).optional(),
+  entityType: z.enum(['universal_request', 'user', 'tenant', 'role', 'store', 'legal_entity']).optional(),
+  entityId: z.string().uuid().optional(),
+  
+  // Date range filters
+  dateFrom: z.string().datetime().optional(), 
+  dateTo: z.string().datetime().optional(),
+  lastHours: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1).max(168)).optional(), // Last 1-168 hours
+  
+  // User and correlation filters
+  userId: z.string().uuid().optional(),
+  userEmail: z.string().email().optional(),
+  correlationId: z.string().min(1).max(50).optional(),
+  
+  // Status and category filters
+  status: z.enum(['pending', 'approved', 'rejected', 'cancelled', 'completed']).optional(),
+  category: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
+  
+  // Advanced search
+  search: z.string().min(1).max(200).optional(), // Full-text search across message, notes, changes
+  
+  // Data source and type
+  logType: z.enum(['structured', 'entity', 'all']).default('all'),
+  
+  // Pagination
+  page: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1)).default('1'),
+  limit: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1).max(200)).default('50'),
+  
+  // Sorting
+  sortBy: z.enum(['created_at', 'level', 'component', 'action', 'entity_type']).default('created_at'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc')
+});
+
+// Legacy schema for backward compatibility
 const getLogsQuerySchema = z.object({
   level: z.enum(['DEBUG', 'INFO', 'WARN', 'ERROR']).optional(),
   component: z.string().min(1).max(100).optional(),
@@ -5849,6 +5889,224 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       handleApiError(error, res, 'aggiornamento impostazioni tenant');
+    }
+  });
+
+  // ==================== ENTERPRISE AUDIT TRAIL API ====================
+  
+  // ✅ PROFESSIONAL: Get unified audit trail (structured_logs + entity_logs) with advanced filtering
+  app.get('/api/audit/enterprise', tenantMiddleware, rbacMiddleware, requirePermission('logs.read'), async (req: any, res) => {
+    const startTime = Date.now();
+    try {
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(401).json({ error: 'Authentication required - no tenant context' });
+      }
+
+      // Validate query parameters with enterprise schema
+      const validationResult = getEnterpriseAuditQuerySchema.safeParse(req.query);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Invalid query parameters',
+          details: validationResult.error.errors
+        });
+      }
+
+      const filters = validationResult.data;
+      
+      // ✅ Build dynamic date range
+      let dateConditions = [];
+      if (filters.lastHours) {
+        const hoursAgo = new Date(Date.now() - filters.lastHours * 60 * 60 * 1000);
+        dateConditions.push(sql`created_at >= ${hoursAgo}`);
+      } else {
+        if (filters.dateFrom) {
+          dateConditions.push(sql`created_at >= ${filters.dateFrom}`);
+        }
+        if (filters.dateTo) {
+          dateConditions.push(sql`created_at <= ${filters.dateTo}`);
+        }
+      }
+      
+      // ✅ STRUCTURED LOGS QUERY - Enhanced with business context
+      const structuredQuery = db
+        .select({
+          id: structuredLogs.id,
+          logType: sql`'structured'`.as('logType'),
+          createdAt: structuredLogs.createdAt,
+          level: structuredLogs.level,
+          message: structuredLogs.message,
+          component: structuredLogs.component,
+          action: structuredLogs.action,
+          entityType: structuredLogs.entityType,
+          entityId: structuredLogs.entityId,
+          correlationId: structuredLogs.correlationId,
+          userId: structuredLogs.userId,
+          userEmail: structuredLogs.userEmail,
+          duration: structuredLogs.duration,
+          metadata: structuredLogs.metadata,
+          requestId: structuredLogs.requestId,
+          // Entity logs fields (null for structured logs)
+          previousStatus: sql`NULL`.as('previousStatus'),
+          newStatus: sql`NULL`.as('newStatus'),
+          changes: sql`NULL`.as('changes'),
+          notes: sql`NULL`.as('notes')
+        })
+        .from(structuredLogs)
+        .where(and(
+          eq(structuredLogs.tenantId, tenantId),
+          ...(filters.level ? [eq(structuredLogs.level, filters.level)] : []),
+          ...(filters.component ? [sql`${structuredLogs.component} ILIKE ${`%${filters.component}%`}`] : []),
+          ...(filters.action ? [sql`${structuredLogs.action} ILIKE ${`%${filters.action}%`}`] : []),
+          ...(filters.entityType ? [eq(structuredLogs.entityType, filters.entityType)] : []),
+          ...(filters.entityId ? [eq(structuredLogs.entityId, filters.entityId)] : []),
+          ...(filters.userId ? [eq(structuredLogs.userId, filters.userId)] : []),
+          ...(filters.userEmail ? [sql`${structuredLogs.userEmail} ILIKE ${`%${filters.userEmail}%`}`] : []),
+          ...(filters.correlationId ? [eq(structuredLogs.correlationId, filters.correlationId)] : []),
+          ...(filters.search ? [sql`(${structuredLogs.message} ILIKE ${`%${filters.search}%`} OR ${structuredLogs.component} ILIKE ${`%${filters.search}%`})`] : []),
+          ...dateConditions,
+          ...(filters.logType === 'entity' ? [sql`FALSE`] : []) // Exclude if only entity logs requested
+        ));
+
+      // ✅ ENTITY LOGS QUERY - Complete audit trail  
+      const entityQuery = db
+        .select({
+          id: entityLogs.id,
+          logType: sql`'entity'`.as('logType'),
+          createdAt: entityLogs.createdAt,
+          level: sql`'INFO'`.as('level'), // Entity logs are always INFO level
+          message: sql`CONCAT('Entity ', ${entityLogs.action}, ': ', ${entityLogs.entityType})`.as('message'),
+          component: sql`'entity_engine'`.as('component'),
+          action: entityLogs.action,
+          entityType: entityLogs.entityType,
+          entityId: entityLogs.entityId,
+          correlationId: entityLogs.entityId, // Use entity ID as correlation
+          userId: entityLogs.userId,
+          userEmail: entityLogs.userEmail,
+          duration: sql`NULL`.as('duration'),
+          metadata: sql`NULL`.as('metadata'),
+          requestId: sql`NULL`.as('requestId'),
+          // Entity-specific fields
+          previousStatus: entityLogs.previousStatus,
+          newStatus: entityLogs.newStatus,
+          changes: entityLogs.changes,
+          notes: entityLogs.notes
+        })
+        .from(entityLogs)
+        .where(and(
+          eq(entityLogs.tenantId, tenantId),
+          ...(filters.action ? [sql`${entityLogs.action} ILIKE ${`%${filters.action}%`}`] : []),
+          ...(filters.entityType ? [eq(entityLogs.entityType, filters.entityType)] : []),
+          ...(filters.entityId ? [eq(entityLogs.entityId, filters.entityId)] : []),
+          ...(filters.userId ? [eq(entityLogs.userId, filters.userId)] : []),
+          ...(filters.userEmail ? [sql`${entityLogs.userEmail} ILIKE ${`%${filters.userEmail}%`}`] : []),
+          ...(filters.search ? [sql`(${entityLogs.notes} ILIKE ${`%${filters.search}%`} OR ${entityLogs.action} ILIKE ${`%${filters.search}%`})`] : []),
+          ...dateConditions,
+          ...(filters.logType === 'structured' ? [sql`FALSE`] : []) // Exclude if only structured logs requested
+        ));
+
+      // ✅ UNION QUERY - Combine both log types with sorting and pagination
+      const sortColumn = {
+        created_at: 'created_at',
+        level: 'level', 
+        component: 'component',
+        action: 'action',
+        entity_type: 'entity_type'
+      }[filters.sortBy] || 'created_at';
+      
+      const sortDirection = filters.sortOrder === 'asc' ? sql`ASC` : sql`DESC`;
+      const offset = (filters.page - 1) * filters.limit;
+
+      // Execute unified query
+      const logs = await db
+        .select()
+        .from(
+          sql`(${structuredQuery} UNION ALL ${entityQuery}) as unified_logs`
+        )
+        .orderBy(sql`${sql.identifier(sortColumn)} ${sortDirection}`)
+        .limit(filters.limit)
+        .offset(offset);
+
+      // ✅ Get total count for pagination
+      const totalCountQuery = await db
+        .select({ count: sql`count(*)` })
+        .from(
+          sql`(${structuredQuery} UNION ALL ${entityQuery}) as count_logs`
+        );
+      
+      const total = Number(totalCountQuery[0]?.count) || 0;
+      const totalPages = Math.ceil(total / filters.limit);
+      
+      // ✅ Get filter options from real database data
+      const [componentsResult, actionsResult, entityTypesResult] = await Promise.all([
+        // Available components
+        db.select({ component: structuredLogs.component })
+          .from(structuredLogs)
+          .where(eq(structuredLogs.tenantId, tenantId))
+          .groupBy(structuredLogs.component)
+          .limit(50),
+        
+        // Available actions  
+        db.select({ action: structuredLogs.action })
+          .from(structuredLogs)
+          .where(and(
+            eq(structuredLogs.tenantId, tenantId),
+            sql`${structuredLogs.action} IS NOT NULL`
+          ))
+          .groupBy(structuredLogs.action)
+          .limit(50),
+          
+        // Available entity types
+        db.select({ entityType: structuredLogs.entityType })
+          .from(structuredLogs)
+          .where(and(
+            eq(structuredLogs.tenantId, tenantId),
+            sql`${structuredLogs.entityType} IS NOT NULL`
+          ))
+          .groupBy(structuredLogs.entityType)
+          .limit(20)
+      ]);
+      
+      const duration = Date.now() - startTime;
+      
+      // ✅ Enterprise response with analytics and filter options
+      res.json({
+        logs,
+        metadata: {
+          total,
+          page: filters.page,
+          limit: filters.limit,
+          totalPages,
+          duration: `${duration}ms`,
+          filters: {
+            applied: Object.keys(req.query).length,
+            available: {
+              components: componentsResult.map(r => r.component).filter(Boolean),
+              actions: actionsResult.map(r => r.action).filter(Boolean),
+              entityTypes: entityTypesResult.map(r => r.entityType).filter(Boolean),
+              levels: ['DEBUG', 'INFO', 'WARN', 'ERROR'],
+              logTypes: ['structured', 'entity', 'all'],
+              categories: ['hr', 'operations', 'support', 'crm', 'sales', 'finance'],
+              statuses: ['pending', 'approved', 'rejected', 'cancelled', 'completed']
+            }
+          }
+        },
+        analytics: {
+          totalLogs: total,
+          averagePerDay: Math.round(total / 7), // Assuming 7 days of data
+          queryPerformance: duration,
+          dataFreshness: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching enterprise audit trail:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch enterprise audit trail",
+        duration: `${Date.now() - startTime}ms`
+      });
     }
   });
 

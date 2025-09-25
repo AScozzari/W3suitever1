@@ -391,7 +391,62 @@ interface ItalianCity {
   active: boolean;
 }
 
-// Types for structured logs
+// ==================== ENTERPRISE AUDIT TRAIL TYPES ====================
+// ✅ PROFESSIONAL: Complete types for enterprise audit dashboard
+
+interface EnterpriseAuditLog {
+  id: string;
+  logType: 'structured' | 'entity';
+  createdAt: string;
+  level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+  message: string;
+  component: string;
+  action?: string;
+  entityType?: string;
+  entityId?: string;
+  correlationId?: string;
+  userId?: string;
+  userEmail?: string;
+  duration?: number;
+  metadata?: any;
+  requestId?: string;
+  // Entity logs specific fields
+  previousStatus?: string;
+  newStatus?: string;
+  changes?: any;
+  notes?: string;
+}
+
+interface EnterpriseAuditResponse {
+  logs: EnterpriseAuditLog[];
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    duration: string;
+    filters: {
+      applied: number;
+      available: {
+        components: string[];
+        actions: string[];
+        entityTypes: string[];
+        levels: string[];
+        logTypes: string[];
+        categories: string[];
+        statuses: string[];
+      };
+    };
+  };
+  analytics: {
+    totalLogs: number;
+    averagePerDay: number;
+    queryPerformance: number;
+    dataFreshness: string;
+  };
+}
+
+// Legacy types for backward compatibility
 interface StructuredLog {
   id: string;
   timestamp: string;
@@ -481,7 +536,28 @@ export default function SettingsPage() {
     }));
   };
   
-  // Logs state variables
+  // ✅ ENTERPRISE AUDIT: Advanced state management for professional dashboard
+  const [auditSearchTerm, setAuditSearchTerm] = useState('');
+  const [auditLevelFilter, setAuditLevelFilter] = useState('');
+  const [auditComponentFilter, setAuditComponentFilter] = useState('');
+  const [auditActionFilter, setAuditActionFilter] = useState('');
+  const [auditEntityTypeFilter, setAuditEntityTypeFilter] = useState('');
+  const [auditLogTypeFilter, setAuditLogTypeFilter] = useState('all');
+  const [auditCategoryFilter, setAuditCategoryFilter] = useState('');
+  const [auditStatusFilter, setAuditStatusFilter] = useState('');
+  const [auditFromDate, setAuditFromDate] = useState('');
+  const [auditToDate, setAuditToDate] = useState('');
+  const [auditLastHours, setAuditLastHours] = useState('24'); // Default to last 24 hours
+  const [auditUserFilter, setAuditUserFilter] = useState('');
+  const [auditCorrelationIdFilter, setAuditCorrelationIdFilter] = useState('');
+  const [auditCurrentPage, setAuditCurrentPage] = useState(1);
+  const [auditPageSize] = useState(25); // Professional page size
+  const [auditSortBy, setAuditSortBy] = useState('created_at');
+  const [auditSortOrder, setAuditSortOrder] = useState('desc');
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [newLogsAvailable, setNewLogsAvailable] = useState(false);
+  
+  // Legacy logs state (for backward compatibility)
   const [logsSearchTerm, setLogsSearchTerm] = useState('');
   const [logsLevelFilter, setLogsLevelFilter] = useState('ALL');
   const [logsComponentFilter, setLogsComponentFilter] = useState('ALL');
@@ -491,8 +567,6 @@ export default function SettingsPage() {
   const [logsCorrelationIdFilter, setLogsCorrelationIdFilter] = useState('');
   const [logsCurrentPage, setLogsCurrentPage] = useState(1);
   const [logsPageSize] = useState(20);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [newLogsAvailable, setNewLogsAvailable] = useState(false);
   const autoRefreshInterval = useRef<NodeJS.Timeout | null>(null);
   const lastSeenTimestamp = useRef<string | null>(null);
   
@@ -722,7 +796,39 @@ export default function SettingsPage() {
     setNewLogsAvailable(false);
   };
   
-  // Build query params for logs API
+  // ✅ ENTERPRISE AUDIT: Professional query builder with advanced filtering
+  const buildEnterpriseAuditQueryParams = () => {
+    const params: any = {
+      page: auditCurrentPage,
+      limit: auditPageSize,
+      sortBy: auditSortBy,
+      sortOrder: auditSortOrder,
+      logType: auditLogTypeFilter
+    };
+    
+    // Advanced search and filters
+    if (auditSearchTerm) params.search = auditSearchTerm;
+    if (auditLevelFilter) params.level = auditLevelFilter;
+    if (auditComponentFilter) params.component = auditComponentFilter;
+    if (auditActionFilter) params.action = auditActionFilter;
+    if (auditEntityTypeFilter) params.entityType = auditEntityTypeFilter;
+    if (auditCategoryFilter) params.category = auditCategoryFilter;
+    if (auditStatusFilter) params.status = auditStatusFilter;
+    if (auditUserFilter) params.userEmail = auditUserFilter;
+    if (auditCorrelationIdFilter) params.correlationId = auditCorrelationIdFilter;
+    
+    // Smart date handling - either lastHours OR date range
+    if (auditLastHours && auditLastHours !== '0') {
+      params.lastHours = auditLastHours;
+    } else {
+      if (auditFromDate) params.dateFrom = auditFromDate;
+      if (auditToDate) params.dateTo = auditToDate;
+    }
+    
+    return params;
+  };
+
+  // Legacy query builder (for backward compatibility)
   const buildLogsQueryParams = () => {
     const params: any = {
       page: logsCurrentPage,
@@ -738,6 +844,25 @@ export default function SettingsPage() {
     if (logsCorrelationIdFilter) params.correlationId = logsCorrelationIdFilter;
     
     return params;
+  };
+
+  // ✅ Reset filters function for enterprise audit
+  const resetEnterpriseAuditFilters = () => {
+    setAuditSearchTerm('');
+    setAuditLevelFilter('');
+    setAuditComponentFilter('');
+    setAuditActionFilter('');
+    setAuditEntityTypeFilter('');
+    setAuditLogTypeFilter('all');
+    setAuditCategoryFilter('');
+    setAuditStatusFilter('');
+    setAuditFromDate('');
+    setAuditToDate('');
+    setAuditLastHours('24');
+    setAuditUserFilter('');
+    setAuditCorrelationIdFilter('');
+    setAuditCurrentPage(1);
+    setNewLogsAvailable(false);
   };
   
   // Get level badge color
@@ -939,13 +1064,23 @@ export default function SettingsPage() {
     staleTime: 1 * 60 * 1000, // 1 minute
   });
   
-  // Load logs data with filtering and pagination - FIXED: Proper new data detection
+  // ✅ ENTERPRISE AUDIT: Load real data from unified audit trail API
+  const enterpriseQueryParams = buildEnterpriseAuditQueryParams();
+  const { data: enterpriseAuditData, isLoading: auditLoading, error: auditError, refetch: refetchAudit } = useQuery<EnterpriseAuditResponse>({
+    queryKey: ['/api/audit/enterprise', enterpriseQueryParams],
+    enabled: activeTab === 'Logs', // Only fetch when Logs tab is active
+    refetchInterval: autoRefreshEnabled ? 30000 : false, // Auto-refetch every 30s if enabled
+    staleTime: 15 * 1000, // 15 seconds for real-time feel
+    retry: 3, // Enterprise resilience
+  });
+
+  // Legacy logs query (for backward compatibility if needed)
   const queryParams = buildLogsQueryParams();
   const { data: logsData, isLoading: logsLoading, error: logsError, refetch: refetchLogs } = useQuery<LogsResponse>({
     queryKey: ['/api/logs', queryParams],
-    enabled: activeTab === 'Logs', // Only fetch when Logs tab is active
-    refetchInterval: autoRefreshEnabled ? 30000 : false, // Auto-refetch every 30s if enabled
-    staleTime: 30 * 1000, // 30 seconds
+    enabled: false, // Disabled - using enterprise audit instead
+    refetchInterval: false,
+    staleTime: 30 * 1000,
   });
 
   // TanStack Query v5 compatible effect to handle data changes
