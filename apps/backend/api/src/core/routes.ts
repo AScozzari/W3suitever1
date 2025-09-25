@@ -135,11 +135,13 @@ import { v4 as uuidv4 } from "uuid";
 import { UnifiedOpenAIService } from "../services/unified-openai";
 import { MediaProcessorService } from "../services/media-processors";
 import { AIRegistryService } from "../services/ai-registry-service";
+import { WorkflowAIConnector } from "../services/workflow-ai-connector";
 
 const DEMO_TENANT_ID = config.DEMO_TENANT_ID;
 const hrStorage = new HRStorage();
 const openaiService = new UnifiedOpenAIService(storage);
 const aiRegistryService = new AIRegistryService(storage); // ➕ NEW: Registry-aware service
+const workflowAIConnector = new WorkflowAIConnector(aiRegistryService); // ➕ NEW: AI Workflow routing
 const mediaProcessor = new MediaProcessorService(openaiService);
 
 // ============================================================================
@@ -8191,6 +8193,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user?.email,
         duration
       });
+
+      // 🤖 AI WORKFLOW ROUTING: Automatic intelligent routing
+      try {
+        console.log(`[UNIVERSAL-REQUEST] 🎯 Triggering AI workflow routing for request ${result[0].id}`);
+        
+        // Get AI settings for tenant (use storage method)
+        const aiSettings = await storage.getAISettings(tenantId);
+        
+        // Trigger AI routing in background (non-blocking)
+        const aiResult = await workflowAIConnector.routeRequest(
+          result[0].id,
+          tenantId,
+          aiSettings
+        );
+
+        if (aiResult.success) {
+          console.log(`[UNIVERSAL-REQUEST] ✅ AI routing successful:`, {
+            requestId: result[0].id,
+            selectedTeam: aiResult.decision.selectedTeam,
+            flow: aiResult.decision.flow
+          });
+        } else {
+          console.error(`[UNIVERSAL-REQUEST] ⚠️ AI routing failed:`, aiResult.error);
+        }
+        
+      } catch (aiError) {
+        // AI routing failure should not block request creation
+        console.error(`[UNIVERSAL-REQUEST] ❌ AI routing error:`, aiError);
+        console.log(`[UNIVERSAL-REQUEST] 📝 Request ${result[0].id} created successfully, AI routing will be retried later`);
+      }
       
       res.status(201).json(result[0]);
     } catch (error) {
