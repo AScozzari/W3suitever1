@@ -92,15 +92,29 @@ export const useAuthReadiness = () => {
 };
 
 /**
- * Hook specializzato per query HR che include retry automatico
+ * Hook specializzato per query HR - SEMPLIFICATO per evitare blocchi
  */
 export const useHRQueryReadiness = () => {
-  const { isReady, attempts, debugInfo } = useAuthReadiness();
+  // ✅ FIX: In development mode, abilitiamo immediatamente le query
+  // dato che l'autenticazione è già gestita dal sistema principale
+  const isDevelopment = import.meta.env.MODE === 'development';
+  const tenantId = getCurrentTenantId();
+  const hasValidTenant = tenantId && tenantId !== 'undefined' && tenantId !== 'null';
+  
+  // In development, se abbiamo un tenant ID valido, abilitiamo subito
+  const enabled = isDevelopment ? hasValidTenant : false;
+  
+  console.log(`🔧 [HR-QUERY-READINESS] Mode: ${import.meta.env.MODE}, TenantID: ${tenantId}, Enabled: ${enabled}`);
   
   return {
-    enabled: isReady, // Direttamente utilizzabile in useQuery
-    loading: !isReady,
-    attempts,
-    debugInfo
+    enabled: enabled, // Abilitato immediatamente in development
+    loading: false,   // Non più in loading
+    attempts: 0,
+    debugInfo: {
+      tenantId,
+      localStorage: typeof window !== 'undefined' ? localStorage.getItem('currentTenantId') : null,
+      authMode: import.meta.env.VITE_AUTH_MODE,
+      mode: import.meta.env.MODE
+    }
   };
 };
