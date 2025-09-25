@@ -720,7 +720,7 @@ export default function MyPortal() {
                   </Select>
                 </div>
 
-                {/* ✅ Requests Data Table con colonne: Nome richiesta, Data, Stato, Azioni */}
+                {/* ✅ CENTRALISED REQUESTS: Tabella unificata con tutte le colonne del sistema centralizzato */}
                 <Card className="glass-card">
                   <CardContent className="p-0">
                     {requestsLoading ? (
@@ -741,6 +741,8 @@ export default function MyPortal() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Nome Richiesta</TableHead>
+                            <TableHead>Categoria Richiesta</TableHead>
+                            <TableHead>Tipologia Specifica</TableHead>
                             <TableHead>Data</TableHead>
                             <TableHead>Stato</TableHead>
                             <TableHead className="text-right">Azioni</TableHead>
@@ -756,25 +758,40 @@ export default function MyPortal() {
                                   </div>
                                   <div>
                                     <p className="font-semibold" data-testid={`text-request-name-${request.id}`}>
-                                      {request.tipo || 'Richiesta HR'}
+                                      {request.title || 'Richiesta HR'}
                                     </p>
-                                    {request.descrizione && (
+                                    {request.description && (
                                       <p className="text-sm text-gray-500 max-w-xs truncate" data-testid={`text-request-desc-${request.id}`}>
-                                        {request.descrizione}
+                                        {request.description}
                                       </p>
                                     )}
                                   </div>
                                 </div>
                               </TableCell>
+                              <TableCell data-testid={`text-request-category-${request.id}`}>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg">
+                                    {request.category && ITALIAN_HR_CATEGORIES[request.category as keyof typeof ITALIAN_HR_CATEGORIES]?.icon || '📋'}
+                                  </span>
+                                  <span className="font-medium text-sm">
+                                    {request.category && ITALIAN_HR_CATEGORIES[request.category as keyof typeof ITALIAN_HR_CATEGORIES]?.name || request.category || 'N/A'}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell data-testid={`text-request-type-${request.id}`}>
+                                <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                  {request.requestType && ITALIAN_REQUEST_TYPES[request.requestType as keyof typeof ITALIAN_REQUEST_TYPES] || request.requestType || 'N/A'}
+                                </span>
+                              </TableCell>
                               <TableCell data-testid={`text-request-date-${request.id}`}>
-                                {request.dataCreazione ? format(new Date(request.dataCreazione), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                                {request.createdAt ? format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm') : 'N/A'}
                               </TableCell>
                               <TableCell>
                                 <Badge 
-                                  className={getStatusBadgeClass(request.stato)}
+                                  className={getStatusBadgeClass(request.status)}
                                   data-testid={`badge-request-status-${request.id}`}
                                 >
-                                  {getStatusLabel(request.stato)}
+                                  {getStatusLabel(request.status)}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
@@ -784,7 +801,7 @@ export default function MyPortal() {
                                     size="sm"
                                     onClick={() => {
                                       // ✅ View/Edit request - per bozze si può modificare
-                                      if (request.stato === 'draft') {
+                                      if (request.status === 'draft') {
                                         // TODO: Open in edit mode
                                         setHrRequestModal({ open: true, data: request });
                                       } else {
@@ -793,11 +810,11 @@ export default function MyPortal() {
                                       }
                                     }}
                                     data-testid={`button-view-request-${request.id}`}
-                                    title={request.stato === 'draft' ? 'Modifica richiesta' : 'Visualizza richiesta'}
+                                    title={request.status === 'draft' ? 'Modifica richiesta' : 'Visualizza richiesta'}
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
-                                  {request.stato === 'draft' && (
+                                  {request.status === 'draft' && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -1298,6 +1315,51 @@ interface HRRequestFormProps {
   onSubmit: (data: any) => void;
   isSubmitting: boolean;
 }
+
+// 🇮🇹 Traduzione tipi di richiesta HR per sistema centralizzato
+const ITALIAN_REQUEST_TYPES = {
+  // Leave types
+  'vacation': 'Ferie Annuali',
+  'rol': 'ROL (Riduzione Orario Lavorativo)',
+  'ex_festivita': 'Ex Festività',
+  'permesso_breve': 'Permesso Breve',
+  
+  // Italian legal leaves
+  'matrimonio': 'Congedo Matrimoniale',
+  'maternita': 'Congedo di Maternità',
+  'paternita': 'Congedo di Paternità', 
+  'lutto': 'Congedo per Lutto',
+  'legge_104': 'Permessi Legge 104/92',
+  
+  // Family & assistance
+  'figli_malattia': 'Congedo per Malattia Figli',
+  'assistenza_familiari': 'Congedo Assistenza Familiari',
+  'donazione_sangue': 'Permesso Donazione Sangue',
+  
+  // Professional development  
+  'formazione': 'Formazione Professionale',
+  'corsi_esterni': 'Corsi Esterni',
+  'conferenze': 'Conferenze e Eventi',
+  
+  // Wellness & health
+  'visite_mediche': 'Visite Mediche',
+  'malattia': 'Congedo per Malattia',
+  'recupero_straordinari': 'Recupero Straordinari',
+  
+  // Remote work
+  'smart_working': 'Smart Working',
+  'lavoro_agile': 'Lavoro Agile',
+  'telelavoro': 'Telelavoro',
+  
+  // Schedule changes
+  'cambio_turno': 'Cambio Turno',
+  'orario_flessibile': 'Orario Flessibile',
+  'part_time': 'Richiesta Part-time',
+  
+  // Other
+  'altro': 'Altra Tipologia',
+  'documenti_personali': 'Documenti Personali'
+};
 
 // 🇮🇹 Complete Italian HR Request Categories based on Labor Law and Web Research
 const ITALIAN_HR_CATEGORIES = {
