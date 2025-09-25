@@ -2621,68 +2621,54 @@ export default function OrganizationDetail() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      {
-                        name: 'Milano Centro',
-                        code: 'MI001',
-                        legalEntity: 'WindTre Retail S.r.l.',
-                        address: 'Via Dante 15',
-                        city: 'Milano',
-                        status: 'active',
-                        manager: 'Marco Rossi',
-                        id: '1'
-                      },
-                      {
-                        name: 'Roma EUR',
-                        code: 'RM001',
-                        legalEntity: 'WindTre Retail S.r.l.',
-                        address: 'Via Cristoforo Colombo 112',
-                        city: 'Roma',
-                        status: 'active',
-                        manager: 'Giulia Bianchi',
-                        id: '2'
-                      },
-                      {
-                        name: 'Torino Porta Nuova',
-                        code: 'TO001',
-                        legalEntity: 'WindTre Services S.r.l.',
-                        address: 'Corso Inghilterra 23',
-                        city: 'Torino',
-                        status: 'active',
-                        manager: 'Alessandro Verdi',
-                        id: '3'
-                      },
-                      {
-                        name: 'Napoli Chiaia',
-                        code: 'NA001',
-                        legalEntity: 'WindTre Business S.p.A.',
-                        address: 'Via dei Mille 45',
-                        city: 'Napoli',
-                        status: 'maintenance',
-                        manager: 'Francesca Neri',
-                        id: '4'
-                      },
-                      {
-                        name: 'Bologna Centro',
-                        code: 'BO001',
-                        legalEntity: 'WindTre Retail S.r.l.',
-                        address: 'Via Indipendenza 8',
-                        city: 'Bologna',
-                        status: 'active',
-                        manager: 'Roberto Blu',
-                        id: '5'
-                      },
-                      {
-                        name: 'Firenze Duomo',
-                        code: 'FI001',
-                        legalEntity: 'WindTre Business S.p.A.',
-                        address: 'Piazza del Duomo 14',
-                        city: 'Firenze',
-                        status: 'inactive',
-                        manager: 'Elena Gialli',
-                        id: '6'
-                      },
-                    ].map((store, rowIndex) => (
+                    {storesLoading ? (
+                      // Loading state
+                      <tr>
+                        <td colSpan={8} style={{
+                          padding: '40px',
+                          textAlign: 'center',
+                          color: COLORS.neutral.medium,
+                          fontSize: '14px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                            Caricamento stores...
+                          </div>
+                        </td>
+                      </tr>
+                    ) : storesError ? (
+                      // Error state
+                      <tr>
+                        <td colSpan={8} style={{
+                          padding: '40px',
+                          textAlign: 'center',
+                          color: COLORS.semantic.error,
+                          fontSize: '14px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <AlertTriangle size={16} />
+                            Errore caricamento stores
+                          </div>
+                        </td>
+                      </tr>
+                    ) : stores.length === 0 ? (
+                      // Empty state
+                      <tr>
+                        <td colSpan={8} style={{
+                          padding: '40px',
+                          textAlign: 'center',
+                          color: COLORS.neutral.medium,
+                          fontSize: '14px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Store size={16} />
+                            Nessuno store trovato
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      // 🔥 DATI REALI dal database W3Suite schema
+                      stores.map((store, rowIndex) => (
                       <tr
                         key={store.id}
                         style={{
@@ -2706,7 +2692,7 @@ export default function OrganizationDetail() {
                               color: COLORS.neutral.dark,
                               margin: '0 0 2px 0',
                             }}>
-                              {store.name}
+                              {store.nome || store.name || '-'}
                             </p>
                             <p style={{
                               fontSize: '12px',
@@ -2717,7 +2703,7 @@ export default function OrganizationDetail() {
                               gap: '4px',
                             }}>
                               <Store size={12} />
-                              Aperto il 10/01/2021
+                              {store.dataApertura ? `Aperto il ${new Date(store.dataApertura).toLocaleDateString('it-IT')}` : 'Store attivo'}
                             </p>
                           </div>
                         </td>
@@ -2730,7 +2716,7 @@ export default function OrganizationDetail() {
                             fontSize: '12px',
                             fontWeight: '600',
                           }}>
-                            {store.code}
+                            {store.codice || store.code || '-'}
                           </code>
                         </td>
                         <td style={{ padding: '16px 20px' }}>
@@ -2745,15 +2731,15 @@ export default function OrganizationDetail() {
                               color: COLORS.neutral.dark,
                               fontWeight: '500',
                             }}>
-                              {store.legalEntity}
+                              {legalEntities.find(le => le.id === store.legalEntityId)?.nome || store.legalEntity || '-'}
                             </span>
                           </div>
                         </td>
                         <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
-                          {store.address}
+                          {store.indirizzo || store.address || '-'}
                         </td>
                         <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
-                          {store.city}
+                          {store.citta || store.city || '-'}
                         </td>
                         <td style={{ padding: '16px 20px' }}>
                           <span style={{
@@ -2761,19 +2747,19 @@ export default function OrganizationDetail() {
                             borderRadius: '6px',
                             fontSize: '12px',
                             fontWeight: '600',
-                            background: store.status === 'active' ? 
+                            background: (store.stato || store.status) === 'Attivo' || (store.stato || store.status) === 'active' ? 
                               `${COLORS.semantic.success}15` : 
-                              store.status === 'maintenance' ?
+                              (store.stato || store.status) === 'Manutenzione' || (store.stato || store.status) === 'maintenance' ?
                               `${COLORS.semantic.warning}15` :
                               `${COLORS.neutral.medium}15`,
-                            color: store.status === 'active' ? 
+                            color: (store.stato || store.status) === 'Attivo' || (store.stato || store.status) === 'active' ? 
                               COLORS.semantic.success : 
-                              store.status === 'maintenance' ?
+                              (store.stato || store.status) === 'Manutenzione' || (store.stato || store.status) === 'maintenance' ?
                               COLORS.semantic.warning :
                               COLORS.neutral.medium,
                           }}>
-                            {store.status === 'active' ? 'Operativo' : 
-                             store.status === 'maintenance' ? 'Manutenzione' : 'Chiuso'}
+                            {(store.stato || store.status) === 'Attivo' || (store.stato || store.status) === 'active' ? '🟢 Operativo' : 
+                             (store.stato || store.status) === 'Manutenzione' || (store.stato || store.status) === 'maintenance' ? '🟡 Manutenzione' : '🔴 Chiuso'}
                           </span>
                         </td>
                         <td style={{ padding: '16px 20px' }}>
@@ -2794,14 +2780,14 @@ export default function OrganizationDetail() {
                               fontWeight: '600',
                               color: 'white',
                             }}>
-                              {store.manager.split(' ').map(n => n[0]).join('')}
+                              {(store.responsabile || store.manager || '-').split(' ').map(n => n[0]).join('').substring(0, 2)}
                             </div>
                             <span style={{
                               fontSize: '13px',
                               color: COLORS.neutral.dark,
                               fontWeight: '500',
                             }}>
-                              {store.manager}
+                              {store.responsabile || store.manager || '-'}
                             </span>
                           </div>
                         </td>
