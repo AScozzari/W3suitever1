@@ -143,12 +143,15 @@ export default function MyPortal() {
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
   // ✅ UPDATED: Universal Requests data for employee portal (scoped to current user)
-  const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
+  const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
     queryKey: ['/api/requests', 'category', 'hr', 'mine'],
     queryFn: () => apiRequest('/api/requests?category=hr&mine=true'),
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
+  
+  // ✅ FIX: Extract requests array from response object
+  const myRequestsData = myRequestsResponse?.requests || [];
 
   // Query HR workflow templates for automatic workflow creation
   const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
