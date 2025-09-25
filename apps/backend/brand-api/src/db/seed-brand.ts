@@ -1,4 +1,4 @@
-import { db, brandTenants, brandUsers, brandRoles } from "./index.js";
+import { db, brandTenants, brandUsers, brandRoles, aiAgentsRegistry } from "./index.js";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 
@@ -130,6 +130,108 @@ async function seedBrandInterface() {
     await db.insert(brandUsers)
       .values(users)
       .onConflictDoNothing();
+
+    // ==================== AI AGENTS REGISTRY SEED ====================
+    
+    // Create AI Workflow Assistant Agent (centralizzato per tutti i tenant)
+    await db.insert(aiAgentsRegistry)
+      .values({
+        agentId: "workflow-assistant",
+        name: "AI Workflow Router",
+        description: "Assistente AI specializzato nel routing intelligente di richieste aziendali. Analizza il tipo di richiesta, il dipartimento e le business rules per determinare automaticamente il workflow di approvazione più appropriato.",
+        systemPrompt: `Sei l'AI Workflow Assistant di W3 Suite, specializzato nel routing intelligente di richieste aziendali.
+
+MISSIONE: Analizzare ogni richiesta e determinare automaticamente:
+1. Chi deve approvare (team/ruoli specifici)
+2. Quale processo seguire (sequenziale/parallelo)
+3. SLA e priorità appropriati
+4. Escalation path se necessario
+
+EXPERTISE:
+- Business process optimization
+- Organizational hierarchy analysis  
+- RBAC e team assignment
+- SLA management
+- Italian business compliance
+
+STILE DI RISPOSTA:
+- Professionale e analitico
+- Decisioni basate su logica business
+- Sempre in italiano
+- Output strutturato e parsabile
+
+FORMATO OUTPUT (JSON):
+{
+  "selectedTeam": "team_id",
+  "approvers": ["role1", "role2"],
+  "flow": "sequential|parallel", 
+  "priority": "low|normal|high|urgent",
+  "sla": "hours",
+  "reasoning": "Spiegazione decisione",
+  "autoApprove": true/false,
+  "escalationPath": ["backup_approver1"]
+}
+
+REGOLE BUSINESS:
+- Ferie >3 giorni = Manager + HR
+- Spese >€500 = Finance approval  
+- Assunzioni = HR + Manager + CEO
+- Emergenze = Skip normale flow
+- Part-time = Solo HR manager
+
+Analizza sempre: tipo richiesta, importo/durata, dipartimento utente, urgenza, policy aziendali.`,
+        personality: {
+          tone: "professional",
+          style: "analytical", 
+          expertise: "workflow_automation",
+          decision_style: "data_driven",
+          language: "italian"
+        },
+        moduleContext: "workflow",
+        baseConfiguration: {
+          default_model: "gpt-4-turbo",
+          temperature: 0.3,
+          max_tokens: 1500,
+          features: ["business_rules", "team_analysis", "sla_optimization"],
+          response_format: "structured_json"
+        },
+        version: 1,
+        status: "active",
+        isLegacy: false,
+        targetTenants: null, // Disponibile per tutti i tenant
+        brandTenantId: tenantId,
+        createdBy: "system"
+      })
+      .onConflictDoNothing();
+
+    // Create Tippy Sales Agent (legacy compatibility)
+    await db.insert(aiAgentsRegistry)
+      .values({
+        agentId: "tippy-sales", 
+        name: "Tippy - Sales Assistant",
+        description: "Assistente vendite WindTre specializzato in supporto commerciale e informazioni su offerte e piani tariffari",
+        systemPrompt: "Sei Tippy, assistente AI specializzato nel supporto vendite WindTre. Aiuti con informazioni su offerte, piani tariffari, supporto commerciale e costruzione pitch per clienti business. Rispondi sempre in italiano con tono amichevole e professionale.",
+        personality: {
+          tone: "friendly",
+          style: "professional", 
+          expertise: "sales",
+          brand: "windtre"
+        },
+        moduleContext: "sales",
+        baseConfiguration: {
+          default_model: "gpt-4-turbo",
+          temperature: 0.7,
+          max_tokens: 1000,
+          features: ["web_search", "document_analysis"]
+        },
+        version: 1,
+        status: "active",
+        isLegacy: false,
+        targetTenants: null, // Disponibile per tutti i tenant
+        brandTenantId: tenantId,
+        createdBy: "system"
+      })
+      .onConflictDoNothing();
     
     console.log("✅ Brand Interface seed data created successfully!");
     console.log("📧 Test users:");
@@ -137,6 +239,9 @@ async function seedBrandInterface() {
     console.log("  - brand.superadmin@windtre.it (password: Brand123!) - Brand Super Admin");
     console.log("  - brand.areamanager@windtre.it (password: Brand123!) - Area Manager");
     console.log("  - brand.national@windtre.it (password: Brand123!) - National Manager");
+    console.log("🤖 AI Agents Registry:");
+    console.log("  - workflow-assistant: AI Workflow Router (centralizzato)");
+    console.log("  - tippy-sales: Sales Assistant (legacy compatibility)");
     
   } catch (error) {
     console.error("❌ Error seeding Brand Interface:", error);

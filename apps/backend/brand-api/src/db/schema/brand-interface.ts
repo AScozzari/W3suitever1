@@ -214,7 +214,7 @@ export interface BulkOperationResultDTO {
 // Central registry for AI agents managed by Brand Interface
 
 export const agentModuleContextEnum = brandInterfaceSchema.enum("agent_module_context", [
-  "sales", "hr", "finance", "operations", "support", "general"
+  "sales", "hr", "finance", "operations", "support", "general", "workflow"
 ]);
 
 export const agentStatusEnum = brandInterfaceSchema.enum("agent_status", [
