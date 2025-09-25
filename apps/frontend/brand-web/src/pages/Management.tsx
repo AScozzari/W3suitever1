@@ -2360,122 +2360,13 @@ export default function Management() {
         {/* Organization Modal */}
         {renderOrganizationModal()}
 
-        {/* Simple Working Modal for Legal Entities */}
-        {legalEntityModal.isOpen && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              padding: '32px',
-              borderRadius: '12px',
-              maxWidth: '600px',
-              width: '90%',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
-                  Nuova Ragione Sociale
-                </h2>
-                <button
-                  onClick={handleCloseLegalEntityModal}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    color: '#6b7280'
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-              
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target as HTMLFormElement);
-                console.log('🎉 FORM SUBMITTED!', Object.fromEntries(formData));
-                // Here we could call the API
-                handleCloseLegalEntityModal();
-              }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Nome *</label>
-                    <input
-                      name="nome"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="Nome della ragione sociale"
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>P.IVA</label>
-                    <input
-                      name="pIva"
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                      placeholder="Partita IVA"
-                    />
-                  </div>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                  <button
-                    type="button"
-                    onClick={handleCloseLegalEntityModal}
-                    style={{
-                      padding: '12px 24px',
-                      backgroundColor: '#f3f4f6',
-                      color: '#374151',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '600'
-                    }}
-                  >
-                    Annulla
-                  </button>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '12px 24px',
-                      backgroundColor: '#FF6900',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '600'
-                    }}
-                  >
-                    Salva Ragione Sociale
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* Legal Entity Modal - Restored Original with Full Schema */}
+        <LegalEntityModal
+          isOpen={legalEntityModal.isOpen}
+          onClose={handleCloseLegalEntityModal}
+          editingEntity={legalEntityModal.editingEntity}
+          tenantId={legalEntityModal.tenantId || ''}
+        />
       </div>
     </BrandLayout>
   );
