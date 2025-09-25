@@ -695,19 +695,412 @@ export default function OrganizationDetail() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: COLORS.neutral.dark,
-              marginBottom: '16px',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Overview Metrics Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '20px',
             }}>
-              Dashboard Overview
-            </h3>
-            <p style={{ color: COLORS.neutral.medium, fontSize: '16px' }}>
-              Panoramica generale delle metriche e performance dell'organizzazione.
-              Questa sezione verrà implementata nella Task 6.
-            </p>
+              {[
+                {
+                  title: 'Total Stores',
+                  value: '18',
+                  change: '+2 questo mese',
+                  trend: 'up',
+                  icon: Store,
+                  color: COLORS.semantic.success,
+                  description: 'Punti vendita attivi'
+                },
+                {
+                  title: 'Legal Entities',
+                  value: '4',
+                  change: 'Stabile',
+                  trend: 'stable',
+                  icon: Briefcase,
+                  color: COLORS.primary.orange,
+                  description: 'Ragioni sociali registrate'
+                },
+                {
+                  title: 'Active Users',
+                  value: '12',
+                  change: '+3 questa settimana',
+                  trend: 'up',
+                  icon: Users,
+                  color: COLORS.semantic.info,
+                  description: 'Utenti con accesso attivo'
+                },
+                {
+                  title: 'System Health',
+                  value: '98.5%',
+                  change: 'Eccellente',
+                  trend: 'up',
+                  icon: Activity,
+                  color: COLORS.semantic.success,
+                  description: 'Uptime degli ultimi 30 giorni'
+                },
+              ].map((metric, index) => (
+                <div
+                  key={index}
+                  style={{
+                    ...cardStyle,
+                    padding: '20px',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    overflow: 'hidden',
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.12)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+                  }}
+                  data-testid={`metric-card-${metric.title.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {/* Gradient accent bar */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '4px',
+                    background: `linear-gradient(90deg, ${metric.color}, ${metric.color}80)`,
+                  }} />
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    marginBottom: '12px',
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: `${metric.color}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <metric.icon size={24} style={{ color: metric.color }} />
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 8px',
+                      borderRadius: '8px',
+                      background: metric.trend === 'up' ? `${COLORS.semantic.success}15` : 
+                                 metric.trend === 'down' ? `${COLORS.semantic.error}15` : 
+                                 `${COLORS.neutral.light}15`,
+                      color: metric.trend === 'up' ? COLORS.semantic.success : 
+                             metric.trend === 'down' ? COLORS.semantic.error : 
+                             COLORS.neutral.medium,
+                      fontSize: '12px',
+                      fontWeight: '600',
+                    }}>
+                      {metric.trend === 'up' && <TrendingUp size={12} />}
+                      {metric.trend === 'down' && <TrendingUp size={12} style={{ transform: 'rotate(180deg)' }} />}
+                      {metric.trend === 'stable' && <Activity size={12} />}
+                      {metric.change}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 style={{
+                      fontSize: '32px',
+                      fontWeight: '700',
+                      color: COLORS.neutral.dark,
+                      margin: '0 0 4px 0',
+                      lineHeight: '1',
+                    }}>
+                      {metric.value}
+                    </h3>
+                    <p style={{
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      color: COLORS.neutral.dark,
+                      margin: '0 0 4px 0',
+                    }}>
+                      {metric.title}
+                    </p>
+                    <p style={{
+                      fontSize: '13px',
+                      color: COLORS.neutral.medium,
+                      margin: '0',
+                    }}>
+                      {metric.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Dashboard Content Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr',
+              gap: '24px',
+            }}>
+              {/* Recent Activity Feed */}
+              <div style={{ ...cardStyle, padding: '24px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '20px',
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    margin: '0',
+                  }}>
+                    Attività Recenti
+                  </h3>
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'none',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: COLORS.neutral.medium,
+                    cursor: 'pointer',
+                  }}>
+                    Vedi Tutte
+                  </button>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {[
+                    {
+                      action: 'Nuovo store creato',
+                      details: 'Store "Milano Centro" aggiunto alla legal entity "WindTre Retail S.r.l."',
+                      timestamp: '2 ore fa',
+                      type: 'create',
+                      icon: Store
+                    },
+                    {
+                      action: 'User access granted',
+                      details: 'Accesso concesso a mario.rossi@windtre.it per gestione stores',
+                      timestamp: '4 ore fa',
+                      type: 'user',
+                      icon: Users
+                    },
+                    {
+                      action: 'Legal entity updated',
+                      details: 'Aggiornate informazioni fiscali per "WindTre Business S.p.A."',
+                      timestamp: '1 giorno fa',
+                      type: 'update',
+                      icon: Briefcase
+                    },
+                    {
+                      action: 'System backup completed',
+                      details: 'Backup automatico completato con successo (2.4 GB)',
+                      timestamp: '2 giorni fa',
+                      type: 'system',
+                      icon: Shield
+                    },
+                  ].map((activity, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        background: '#fafbfc',
+                        border: '1px solid #f0f1f3',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = '#f5f6f7';
+                        e.currentTarget.style.borderColor = COLORS.neutral.light;
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = '#fafbfc';
+                        e.currentTarget.style.borderColor = '#f0f1f3';
+                      }}
+                      data-testid={`activity-${index}`}
+                    >
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: activity.type === 'create' ? `${COLORS.semantic.success}15` :
+                                   activity.type === 'user' ? `${COLORS.semantic.info}15` :
+                                   activity.type === 'update' ? `${COLORS.primary.orange}15` :
+                                   `${COLORS.neutral.medium}15`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <activity.icon 
+                          size={16} 
+                          style={{ 
+                            color: activity.type === 'create' ? COLORS.semantic.success :
+                                   activity.type === 'user' ? COLORS.semantic.info :
+                                   activity.type === 'update' ? COLORS.primary.orange :
+                                   COLORS.neutral.medium 
+                          }} 
+                        />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: COLORS.neutral.dark,
+                          margin: '0 0 4px 0',
+                        }}>
+                          {activity.action}
+                        </p>
+                        <p style={{
+                          fontSize: '13px',
+                          color: COLORS.neutral.medium,
+                          margin: '0 0 4px 0',
+                          lineHeight: '1.4',
+                        }}>
+                          {activity.details}
+                        </p>
+                        <p style={{
+                          fontSize: '12px',
+                          color: COLORS.neutral.light,
+                          margin: '0',
+                        }}>
+                          {activity.timestamp}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Actions & Summary */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Quick Actions */}
+                <div style={{ ...cardStyle, padding: '20px' }}>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    marginBottom: '16px',
+                  }}>
+                    Azioni Rapide
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {[
+                      { label: 'Aggiungi Store', icon: Store, color: COLORS.semantic.success },
+                      { label: 'Nuova Legal Entity', icon: Briefcase, color: COLORS.primary.orange },
+                      { label: 'Invita Utente', icon: Users, color: COLORS.semantic.info },
+                      { label: 'Export Dati', icon: FileText, color: COLORS.neutral.medium },
+                    ].map((action, index) => (
+                      <button
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          background: 'none',
+                          border: `1px solid ${COLORS.neutral.lighter}`,
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          color: COLORS.neutral.dark,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          textAlign: 'left',
+                          width: '100%',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.borderColor = action.color;
+                          e.currentTarget.style.background = `${action.color}08`;
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.borderColor = COLORS.neutral.lighter;
+                          e.currentTarget.style.background = 'none';
+                        }}
+                        data-testid={`quick-action-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        <action.icon size={16} style={{ color: action.color }} />
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Organization Summary */}
+                <div style={{ ...cardStyle, padding: '20px' }}>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    marginBottom: '16px',
+                  }}>
+                    Riassunto Organizzazione
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '13px',
+                    }}>
+                      <span style={{ color: COLORS.neutral.medium }}>Status</span>
+                      <span style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: `${COLORS.semantic.success}15`,
+                        color: COLORS.semantic.success,
+                        fontWeight: '600',
+                      }}>
+                        Operativo
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '13px',
+                    }}>
+                      <span style={{ color: COLORS.neutral.medium }}>Ultima sync</span>
+                      <span style={{ color: COLORS.neutral.dark, fontWeight: '500' }}>
+                        Appena ora
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '13px',
+                    }}>
+                      <span style={{ color: COLORS.neutral.medium }}>Tipo</span>
+                      <span style={{ color: COLORS.neutral.dark, fontWeight: '500' }}>
+                        Enterprise
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '13px',
+                    }}>
+                      <span style={{ color: COLORS.neutral.medium }}>Region</span>
+                      <span style={{ color: COLORS.neutral.dark, fontWeight: '500' }}>
+                        EU-West
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         );
       
