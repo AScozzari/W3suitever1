@@ -2970,7 +2970,7 @@ export default function OrganizationDetail() {
 
       </div>
 
-      {/* Legal Entity Modal */}
+      {/* Legal Entity Modal - PROFESSIONALE COPIATO DA BRAND INTERFACE */}
       {legalEntityModal.open && (
         <div style={{
           position: 'fixed',
@@ -2978,158 +2978,537 @@ export default function OrganizationDetail() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '16px',
+            borderRadius: '12px',
             width: '90%',
-            maxWidth: '500px',
-            maxHeight: '80vh',
+            maxWidth: '600px',
+            maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            borderTop: `3px solid ${COLORS.primary.orange}`,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
-            {/* Header */}
+            {/* Header Modal */}
             <div style={{
-              padding: '24px',
-              borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
             }}>
-              <div>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: COLORS.neutral.dark,
-                  margin: '0 0 4px 0',
-                }}>
-                  {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: COLORS.neutral.medium,
-                  margin: '0',
-                }}>
-                  {legalEntityModal.data ? 'Modifica i dati della ragione sociale' : 'Inserisci i dati della nuova ragione sociale'}
-                </p>
-              </div>
-              <button
-                onClick={() => setLegalEntityModal({ open: false, data: null })}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: '8px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: COLORS.neutral.medium,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Body */}
-            <div style={{ padding: '24px' }}>
-              <div style={{ display: 'grid', gap: '16px' }}>
-                <input
-                  type="text"
-                  placeholder="Nome Ragione Sociale *"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Building2 size={20} color="white" />
+                    </div>
+                    <h2 style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                    </h2>
+                  </div>
+                  <p style={{
                     fontSize: '14px',
-                  }}
-                />
-                <select
+                    color: '#6b7280',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    fontWeight: 500
+                  }}>
+                    {legalEntityModal.data ? 'Modifica i dati dell\'entità giuridica' : 'Inserisci i dati della nuova entità giuridica'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setLegalEntityModal({ open: false, data: null })}
                   style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
                     borderRadius: '8px',
-                    fontSize: '14px',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: '#64748b',
+                    backdropFilter: 'blur(8px)'
                   }}
                 >
-                  <option>S.r.l.</option>
-                  <option>S.p.A.</option>
-                  <option>S.n.c.</option>
-                  <option>S.a.s.</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Partita IVA"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Codice Fiscale"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                  }}
-                />
+                  <X size={18} />
+                </button>
               </div>
             </div>
 
-            {/* Footer */}
-            <div style={{
-              padding: '24px',
-              borderTop: `1px solid ${COLORS.neutral.lighter}`,
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end',
-            }}>
-              <button
-                onClick={() => setLegalEntityModal({ open: false, data: null })}
-                style={{
-                  padding: '12px 24px',
-                  background: 'white',
-                  border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  color: COLORS.neutral.medium,
-                }}
-              >
-                Annulla
-              </button>
-              <button
-                style={{
-                  padding: '12px 24px',
-                  background: COLORS.gradients.orange,
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: 'white',
-                }}
-              >
-                {legalEntityModal.data ? 'Modifica' : 'Crea'} Ragione Sociale
-              </button>
+            {/* Body Modal */}
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                const data = Object.fromEntries(formData);
+                
+                // Generate code if empty
+                if (!data.codice) {
+                  data.codice = `8${String(Date.now()).slice(-6)}`;
+                }
+                
+                data.tenantId = organization?.id || '';
+                
+                console.log('📝 Creazione Legal Entity:', data);
+                
+                try {
+                  const response = await fetch('/brand-api/legal-entities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                  });
+                  
+                  if (response.ok) {
+                    console.log('✅ Ragione sociale creata');
+                    setLegalEntityModal({ open: false, data: null });
+                    window.location.reload();
+                  } else {
+                    console.error('❌ Errore creazione:', response.status);
+                  }
+                } catch (error) {
+                  console.error('❌ Errore:', error);
+                }
+              }}>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  {/* Codice */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Codice Ragione Sociale
+                    </label>
+                    <input
+                      type="text"
+                      name="codice"
+                      placeholder="8xxxxxxx (auto-generato, min. 7 cifre)"
+                      defaultValue={legalEntityModal.data?.codice || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Nome */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Nome Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="nome"
+                      required
+                      placeholder="es. Franchising Ltd"
+                      defaultValue={legalEntityModal.data?.nome || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Forma Giuridica */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Forma Giuridica <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      name="formaGiuridica"
+                      defaultValue={legalEntityModal.data?.formaGiuridica || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                    >
+                      <option value="">Seleziona...</option>
+                      <option value="SRL">SRL - Società a Responsabilità Limitata</option>
+                      <option value="SPA">SPA - Società per Azioni</option>
+                      <option value="SNC">SNC - Società in Nome Collettivo</option>
+                      <option value="SAS">SAS - Società in Accomandita Semplice</option>
+                      <option value="SAPA">SAPA - Società in Accomandita per Azioni</option>
+                      <option value="SRLS">SRLS - Società a Responsabilità Limitata Semplificata</option>
+                    </select>
+                  </div>
+
+                  {/* Partita IVA */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Partita IVA <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="pIva"
+                      placeholder="IT12345678901"
+                      defaultValue={legalEntityModal.data?.pIva || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        fontFamily: 'monospace',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Codice Fiscale */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Codice Fiscale
+                    </label>
+                    <input
+                      type="text"
+                      name="codiceFiscale"
+                      placeholder="RSSMRA80A01H501U"
+                      defaultValue={legalEntityModal.data?.codiceFiscale || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        fontFamily: 'monospace',
+                        textTransform: 'uppercase',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Indirizzo - full width */}
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Indirizzo Sede Legale <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="indirizzo"
+                      placeholder="es. Via Roma 123"
+                      defaultValue={legalEntityModal.data?.indirizzo || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Città */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Città <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="citta"
+                      placeholder="es. Milano"
+                      defaultValue={legalEntityModal.data?.citta || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* CAP */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      CAP
+                    </label>
+                    <input
+                      type="text"
+                      name="cap"
+                      placeholder="20121"
+                      defaultValue={legalEntityModal.data?.cap || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Provincia */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Provincia
+                    </label>
+                    <input
+                      type="text"
+                      name="provincia"
+                      placeholder="MI"
+                      maxLength={2}
+                      defaultValue={legalEntityModal.data?.provincia || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        textTransform: 'uppercase',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="info@azienda.it"
+                      defaultValue={legalEntityModal.data?.email || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* PEC */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      PEC <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="pec"
+                      placeholder="azienda@pec.it"
+                      defaultValue={legalEntityModal.data?.pec || ''}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  {/* Stato */}
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      Stato
+                    </label>
+                    <select
+                      name="stato"
+                      defaultValue={legalEntityModal.data?.stato || 'Attiva'}
+                      style={{
+                        width: '100%',
+                        padding: '6px 10px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: '#fafbfc',
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                    >
+                      <option value="Attiva">Attiva</option>
+                      <option value="Sospesa">Sospesa</option>
+                      <option value="Bozza">Bozza</option>
+                      <option value="Cessata">Cessata</option>
+                      <option value="Trasferita">Trasferita</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Footer Modal */}
+                <div style={{
+                  padding: '20px 0 0 0',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '12px',
+                  borderTop: '1px solid #e5e7eb',
+                  marginTop: '32px',
+                  paddingTop: '20px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setLegalEntityModal({ open: false, data: null })}
+                    style={{
+                      padding: '10px 20px',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#475569',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '10px 20px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      boxShadow: '0 4px 12px rgba(255, 105, 0, 0.3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {legalEntityModal.data ? 'Aggiorna' : 'Salva'} Ragione Sociale
+                  </button>
+                </div>
+
+              </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* Store Modal */}
+      {/* Store Modal - PROFESSIONALE COPIATO DA W3 SUITE */}
       {storeModal.open && (
         <div style={{
           position: 'fixed',
@@ -3137,165 +3516,683 @@ export default function OrganizationDetail() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
             background: 'white',
             borderRadius: '16px',
-            width: '90%',
-            maxWidth: '500px',
-            maxHeight: '80vh',
+            width: '95%',
+            maxWidth: '800px',
+            maxHeight: '95vh',
             overflow: 'auto',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            borderTop: `3px solid ${COLORS.primary.orange}`,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            borderTop: '4px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}>
-            {/* Header */}
+            {/* Header Modal */}
             <div style={{
-              padding: '24px',
-              borderBottom: `1px solid ${COLORS.neutral.lighter}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              padding: '24px 32px',
+              background: 'linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%)',
+              borderBottom: '1px solid #e5e7eb',
+              borderRadius: '16px 16px 0 0'
             }}>
-              <div>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: COLORS.neutral.dark,
-                  margin: '0 0 4px 0',
-                }}>
-                  {storeModal.data ? 'Modifica Store' : 'Nuovo Store'}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: COLORS.neutral.medium,
-                  margin: '0',
-                }}>
-                  {storeModal.data ? 'Modifica i dati del punto vendita' : 'Inserisci i dati del nuovo punto vendita'}
-                </p>
-              </div>
-              <button
-                onClick={() => setStoreModal({ open: false, data: null })}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: '8px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  color: COLORS.neutral.medium,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Body */}
-            <div style={{ padding: '24px' }}>
-              <div style={{ display: 'grid', gap: '16px' }}>
-                <input
-                  type="text"
-                  placeholder="Nome Store *"
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 8px 16px rgba(255, 105, 0, 0.3)'
+                    }}>
+                      <Store size={24} color="white" />
+                    </div>
+                    <div>
+                      <h2 style={{
+                        fontSize: '22px',
+                        fontWeight: '700',
+                        color: '#111827',
+                        margin: 0,
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                      }}>
+                        {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
+                      </h2>
+                      <p style={{
+                        fontSize: '14px',
+                        color: '#6b7280',
+                        margin: '4px 0 0 0',
+                        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                        fontWeight: 500
+                      }}>
+                        {storeModal.data ? 'Modifica le informazioni del punto vendita' : 'Inserisci le informazioni del nuovo punto vendita'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setStoreModal({ open: false, data: null })}
                   style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                  }}
-                />
-                <select
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    padding: '10px',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: '#64748b',
+                    backdropFilter: 'blur(8px)',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
                   }}
                 >
-                  <option value="">Seleziona Legal Entity</option>
-                  <option value="wtr001">WindTre Retail S.r.l.</option>
-                  <option value="wtb001">WindTre Business S.p.A.</option>
-                  <option value="wts001">WindTre Services S.r.l.</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Indirizzo"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid ${COLORS.neutral.lighter}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                  }}
-                />
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
-                  <input
-                    type="text"
-                    placeholder="Città"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: `1px solid ${COLORS.neutral.lighter}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                    }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="CAP"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: `1px solid ${COLORS.neutral.lighter}`,
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                    }}
-                  />
-                </div>
+                  <Building2 size={18} />
+                </button>
               </div>
             </div>
 
-            {/* Footer */}
-            <div style={{
-              padding: '24px',
-              borderTop: `1px solid ${COLORS.neutral.lighter}`,
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end',
-            }}>
-              <button
-                onClick={() => setStoreModal({ open: false, data: null })}
-                style={{
-                  padding: '12px 24px',
-                  background: 'white',
-                  border: `1px solid ${COLORS.neutral.lighter}`,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  color: COLORS.neutral.medium,
-                }}
-              >
-                Annulla
-              </button>
-              <button
-                style={{
-                  padding: '12px 24px',
-                  background: COLORS.gradients.orange,
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: 'white',
-                }}
-              >
-                {storeModal.data ? 'Modifica' : 'Crea'} Store
-              </button>
+            {/* Body Modal */}
+            <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                const data = Object.fromEntries(formData);
+                
+                // Generate code if empty
+                if (!data.codice) {
+                  data.codice = `ST${String(Date.now()).slice(-5)}`;
+                }
+                
+                data.tenantId = organization?.id || '';
+                
+                console.log('🏪 Creazione Store:', data);
+                
+                try {
+                  const response = await fetch('/brand-api/stores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                  });
+                  
+                  if (response.ok) {
+                    console.log('✅ Store creato');
+                    setStoreModal({ open: false, data: null });
+                    window.location.reload();
+                  } else {
+                    console.error('❌ Errore creazione store:', response.status);
+                  }
+                } catch (error) {
+                  console.error('❌ Errore:', error);
+                }
+              }}>
+
+                {/* Sezione Informazioni Base */}
+                <div style={{ marginBottom: '32px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '20px',
+                    padding: '12px 0',
+                    borderBottom: '2px solid #f1f5f9'
+                  }}>
+                    <Store size={20} color="#FF6900" />
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      margin: 0
+                    }}>
+                      Informazioni Base
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Codice Store */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Codice Store
+                      </label>
+                      <input
+                        type="text"
+                        name="codice"
+                        placeholder="ST12345 (auto-generato)"
+                        defaultValue={storeModal.data?.codice || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#fafbfc',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease',
+                          fontFamily: 'monospace'
+                        }}
+                      />
+                    </div>
+
+                    {/* Nome Store */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Nome Store <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="nome"
+                        required
+                        placeholder="es. WindTre Store Milano Centro"
+                        defaultValue={storeModal.data?.nome || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      />
+                    </div>
+
+                    {/* Tipo Store */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Tipo Store <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <select
+                        name="tipo"
+                        defaultValue={storeModal.data?.tipo || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      >
+                        <option value="">Seleziona tipo...</option>
+                        <option value="Flagship">Flagship Store</option>
+                        <option value="Standard">Store Standard</option>
+                        <option value="Express">Express Store</option>
+                        <option value="Corner">Corner Store</option>
+                        <option value="Outlet">Outlet</option>
+                        <option value="Temporaneo">Store Temporaneo</option>
+                      </select>
+                    </div>
+
+                    {/* Legal Entity */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Ragione Sociale <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <select
+                        name="legalEntityId"
+                        defaultValue={storeModal.data?.legalEntityId || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      >
+                        <option value="">Seleziona ragione sociale...</option>
+                        <option value="wtr001">WindTre Retail S.r.l.</option>
+                        <option value="wtb001">WindTre Business S.p.A.</option>
+                        <option value="wts001">WindTre Services S.r.l.</option>
+                        <option value="wtf001">WindTre Franchise S.r.l.</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sezione Indirizzo */}
+                <div style={{ marginBottom: '32px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '20px',
+                    padding: '12px 0',
+                    borderBottom: '2px solid #f1f5f9'
+                  }}>
+                    <MapPin size={20} color="#7B2CBF" />
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      margin: 0
+                    }}>
+                      Indirizzo e Localizzazione
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '20px' }}>
+                    {/* Indirizzo completo */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Indirizzo Completo <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="indirizzo"
+                        placeholder="es. Via Giuseppe Garibaldi, 45"
+                        defaultValue={storeModal.data?.indirizzo || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
+                      {/* Città */}
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: '#374151',
+                          marginBottom: '8px'
+                        }}>
+                          Città <span style={{ color: '#ef4444' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="citta"
+                          placeholder="es. Milano"
+                          defaultValue={storeModal.data?.citta || ''}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '10px',
+                            fontSize: '14px',
+                            background: '#ffffff',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
+                          }}
+                        />
+                      </div>
+
+                      {/* CAP */}
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: '#374151',
+                          marginBottom: '8px'
+                        }}>
+                          CAP
+                        </label>
+                        <input
+                          type="text"
+                          name="cap"
+                          placeholder="20121"
+                          defaultValue={storeModal.data?.cap || ''}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '10px',
+                            fontSize: '14px',
+                            background: '#ffffff',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
+                          }}
+                        />
+                      </div>
+
+                      {/* Provincia */}
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: '#374151',
+                          marginBottom: '8px'
+                        }}>
+                          Provincia
+                        </label>
+                        <input
+                          type="text"
+                          name="provincia"
+                          placeholder="MI"
+                          maxLength={2}
+                          defaultValue={storeModal.data?.provincia || ''}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '10px',
+                            fontSize: '14px',
+                            background: '#ffffff',
+                            textTransform: 'uppercase',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sezione Contatti */}
+                <div style={{ marginBottom: '32px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '20px',
+                    padding: '12px 0',
+                    borderBottom: '2px solid #f1f5f9'
+                  }}>
+                    <Phone size={20} color="#059669" />
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      margin: 0
+                    }}>
+                      Informazioni di Contatto
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Telefono */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Telefono <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        name="telefono"
+                        placeholder="+39 02 1234567"
+                        defaultValue={storeModal.data?.telefono || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="store.milano@windtre.it"
+                        defaultValue={storeModal.data?.email || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sezione Operativa */}
+                <div style={{ marginBottom: '32px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '20px',
+                    padding: '12px 0',
+                    borderBottom: '2px solid #f1f5f9'
+                  }}>
+                    <Settings size={20} color="#dc2626" />
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      margin: 0
+                    }}>
+                      Configurazione Operativa
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                    {/* Stato */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Stato Operativo
+                      </label>
+                      <select
+                        name="stato"
+                        defaultValue={storeModal.data?.stato || 'Attivo'}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          cursor: 'pointer',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      >
+                        <option value="Attivo">🟢 Attivo</option>
+                        <option value="In Preparazione">🟡 In Preparazione</option>
+                        <option value="Temporaneamente Chiuso">🟠 Temp. Chiuso</option>
+                        <option value="Manutenzione">🔧 Manutenzione</option>
+                        <option value="Chiuso">🔴 Chiuso</option>
+                      </select>
+                    </div>
+
+                    {/* Data Apertura */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Data Apertura
+                      </label>
+                      <input
+                        type="date"
+                        name="dataApertura"
+                        defaultValue={storeModal.data?.dataApertura || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      />
+                    </div>
+
+                    {/* Superficie */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        Superficie (mq)
+                      </label>
+                      <input
+                        type="number"
+                        name="superficie"
+                        placeholder="150"
+                        defaultValue={storeModal.data?.superficie || ''}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          background: '#ffffff',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Modal */}
+                <div style={{
+                  padding: '24px 0 0 0',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '16px',
+                  borderTop: '2px solid #f1f5f9',
+                  marginTop: '32px',
+                  paddingTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setStoreModal({ open: false, data: null })}
+                    style={{
+                      padding: '12px 24px',
+                      background: '#f8fafc',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#475569',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Building2 size={16} />
+                    Annulla
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '12px 24px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      boxShadow: '0 8px 16px rgba(255, 105, 0, 0.3)',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Store size={16} />
+                    {storeModal.data ? 'Aggiorna' : 'Crea'} Punto Vendita
+                  </button>
+                </div>
+
+              </form>
             </div>
           </div>
         </div>
