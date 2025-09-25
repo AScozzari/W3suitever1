@@ -146,7 +146,7 @@ export default function MyPortal() {
   const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
     queryKey: ['/api/requests', 'category', 'hr', 'all'],
     queryFn: () => apiRequest('/api/requests?category=hr&mine=false'),
-    enabled: hrQueriesEnabled, // Wait for auth readiness
+    // enabled: hrQueriesEnabled, // Temporarily disabled for testing
     staleTime: 2 * 60 * 1000,
   });
   
