@@ -2360,13 +2360,246 @@ export default function Management() {
         {/* Organization Modal */}
         {renderOrganizationModal()}
 
-        {/* Legal Entity Modal - Restored Original with Full Schema */}
-        <LegalEntityModal
-          isOpen={legalEntityModal.isOpen}
-          onClose={handleCloseLegalEntityModal}
-          editingEntity={legalEntityModal.editingEntity}
-          tenantId={legalEntityModal.tenantId || ''}
-        />
+        {/* Legal Entity Modal - Simple Working Version with All Schema Fields */}
+        {legalEntityModal.isOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '32px',
+              borderRadius: '12px',
+              maxWidth: '700px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>
+                  {legalEntityModal.editingEntity ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                </h2>
+                <button
+                  onClick={handleCloseLegalEntityModal}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    color: '#6b7280'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                const data = Object.fromEntries(formData);
+                
+                // Generate code if empty (8 + timestamp)
+                if (!data.codice) {
+                  data.codice = `8${String(Date.now()).slice(-6)}`;
+                }
+                
+                // Add tenantId
+                data.tenantId = legalEntityModal.tenantId || '';
+                
+                console.log('🎉 FORM DATA:', data);
+                
+                try {
+                  const response = await fetch('/brand-api/legal-entities', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                  });
+                  
+                  if (response.ok) {
+                    console.log('✅ Ragione sociale creata con successo!');
+                    handleCloseLegalEntityModal();
+                    // Refresh the page to show new data
+                    window.location.reload();
+                  } else {
+                    console.error('❌ Errore nella creazione:', response.status);
+                  }
+                } catch (error) {
+                  console.error('❌ Errore:', error);
+                }
+              }}>
+                {/* Row 1: Codice e Nome */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                      Codice Ragione Sociale
+                    </label>
+                    <input
+                      name="codice"
+                      defaultValue={legalEntityModal.editingEntity?.codice || ''}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                      placeholder="Auto-generato se vuoto"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                      Nome *
+                    </label>
+                    <input
+                      name="nome"
+                      required
+                      defaultValue={legalEntityModal.editingEntity?.nome || ''}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                      placeholder="Nome della ragione sociale"
+                    />
+                  </div>
+                </div>
+                
+                {/* Row 2: Forma Giuridica e P.IVA */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                      Forma Giuridica
+                    </label>
+                    <select
+                      name="formaGiuridica"
+                      defaultValue={legalEntityModal.editingEntity?.formaGiuridica || ''}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <option value="">Seleziona forma giuridica</option>
+                      <option value="SRL">SRL - Società a Responsabilità Limitata</option>
+                      <option value="SPA">SPA - Società per Azioni</option>
+                      <option value="SNCA">SNCA - Società in Nome Collettivo</option>
+                      <option value="SAS">SAS - Società in Accomandita Semplice</option>
+                      <option value="DI">Ditta Individuale</option>
+                      <option value="COOP">Cooperativa</option>
+                      <option value="ALTRO">Altro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                      Partita IVA
+                    </label>
+                    <input
+                      name="pIva"
+                      defaultValue={legalEntityModal.editingEntity?.pIva || ''}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                      placeholder="IT01234567890"
+                      pattern="[A-Z]{2}[0-9]{11}"
+                    />
+                  </div>
+                </div>
+                
+                {/* Row 3: Billing Profile e Stato */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                      Billing Profile ID
+                    </label>
+                    <input
+                      name="billingProfileId"
+                      defaultValue={legalEntityModal.editingEntity?.billingProfileId || ''}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                      placeholder="UUID del profilo di fatturazione"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                      Stato
+                    </label>
+                    <select
+                      name="stato"
+                      defaultValue={legalEntityModal.editingEntity?.stato || 'Attiva'}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <option value="Attiva">Attiva</option>
+                      <option value="Sospesa">Sospesa</option>
+                      <option value="Chiusa">Chiusa</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={handleCloseLegalEntityModal}
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#f3f4f6',
+                      color: '#374151',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: '600'
+                    }}
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#FF6900',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: '600'
+                    }}
+                  >
+                    {legalEntityModal.editingEntity ? 'Aggiorna' : 'Salva'} Ragione Sociale
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </BrandLayout>
   );
