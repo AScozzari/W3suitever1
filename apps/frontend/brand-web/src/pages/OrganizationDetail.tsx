@@ -110,6 +110,26 @@ export default function OrganizationDetail() {
     data: null 
   });
 
+  // 🔥 QUERY DATI REALI - Legal Entities dal database W3Suite
+  const { data: legalEntities = [], isLoading: legalEntitiesLoading, error: legalEntitiesError } = useQuery({
+    queryKey: ['/brand-api/organizations', orgId, 'legal-entities'],
+    queryFn: async () => {
+      const response = await apiRequest(`/brand-api/organizations/${orgId}/legal-entities`);
+      return response.json();
+    },
+    enabled: !!orgId,
+  });
+
+  // 🔥 QUERY DATI REALI - Stores dal database W3Suite  
+  const { data: stores = [], isLoading: storesLoading, error: storesError } = useQuery({
+    queryKey: ['/brand-api/organizations', orgId, 'stores'],
+    queryFn: async () => {
+      const response = await apiRequest(`/brand-api/organizations/${orgId}/stores`);
+      return response.json();
+    },
+    enabled: !!orgId,
+  });
+
   // Update URL when tab changes
   const updateTabUrl = (tabId: string) => {
     const url = new URL(window.location.href);
@@ -2001,48 +2021,54 @@ export default function OrganizationDetail() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      {
-                        name: 'WindTre Retail S.r.l.',
-                        code: 'WTR001',
-                        legalForm: 'S.r.l.',
-                        vatTax: 'IT12345678901',
-                        city: 'Milano',
-                        status: 'active',
-                        storesCount: 12,
-                        id: '1'
-                      },
-                      {
-                        name: 'WindTre Business S.p.A.',
-                        code: 'WTB001',
-                        legalForm: 'S.p.A.',
-                        vatTax: 'IT98765432109',
-                        city: 'Roma',
-                        status: 'active',
-                        storesCount: 4,
-                        id: '2'
-                      },
-                      {
-                        name: 'WindTre Services S.r.l.',
-                        code: 'WTS001',
-                        legalForm: 'S.r.l.',
-                        vatTax: 'IT11223344556',
-                        city: 'Torino',
-                        status: 'active',
-                        storesCount: 2,
-                        id: '3'
-                      },
-                      {
-                        name: 'WindTre Solutions S.n.c.',
-                        code: 'WTSOL1',
-                        legalForm: 'S.n.c.',
-                        vatTax: 'IT55667788990',
-                        city: 'Napoli',
-                        status: 'inactive',
-                        storesCount: 0,
-                        id: '4'
-                      },
-                    ].map((entity, rowIndex) => (
+                    {legalEntitiesLoading ? (
+                      // Loading state
+                      <tr>
+                        <td colSpan={8} style={{
+                          padding: '40px',
+                          textAlign: 'center',
+                          color: COLORS.neutral.medium,
+                          fontSize: '14px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                            Caricamento legal entities...
+                          </div>
+                        </td>
+                      </tr>
+                    ) : legalEntitiesError ? (
+                      // Error state
+                      <tr>
+                        <td colSpan={8} style={{
+                          padding: '40px',
+                          textAlign: 'center',
+                          color: COLORS.semantic.error,
+                          fontSize: '14px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <AlertTriangle size={16} />
+                            Errore caricamento legal entities
+                          </div>
+                        </td>
+                      </tr>
+                    ) : legalEntities.length === 0 ? (
+                      // Empty state
+                      <tr>
+                        <td colSpan={8} style={{
+                          padding: '40px',
+                          textAlign: 'center',
+                          color: COLORS.neutral.medium,
+                          fontSize: '14px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Building2 size={16} />
+                            Nessuna legal entity trovata
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      // 🔥 DATI REALI dal database W3Suite schema
+                      legalEntities.map((entity, rowIndex) => (
                       <tr
                         key={entity.id}
                         style={{
@@ -2066,14 +2092,14 @@ export default function OrganizationDetail() {
                               color: COLORS.neutral.dark,
                               margin: '0 0 2px 0',
                             }}>
-                              {entity.name}
+                              {entity.nome || entity.name || '-'}
                             </p>
                             <p style={{
                               fontSize: '12px',
                               color: COLORS.neutral.medium,
                               margin: '0',
                             }}>
-                              Registrata il 15/03/2020
+                              {entity.formaGiuridica || entity.legalForm || 'Entità giuridica'}
                             </p>
                           </div>
                         </td>
@@ -2086,11 +2112,11 @@ export default function OrganizationDetail() {
                             fontWeight: '600',
                             color: COLORS.neutral.dark,
                           }}>
-                            {entity.code}
+                            {entity.codice || entity.code || '-'}
                           </code>
                         </td>
                         <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
-                          {entity.legalForm}
+                          {entity.formaGiuridica || entity.legalForm || '-'}
                         </td>
                         <td style={{ padding: '16px 20px' }}>
                           <div>
@@ -2100,7 +2126,7 @@ export default function OrganizationDetail() {
                               margin: '0 0 2px 0',
                               fontFamily: 'monospace',
                             }}>
-                              {entity.vatTax}
+                              {entity.pIva || entity.vatTax || '-'}
                             </p>
                             <p style={{
                               fontSize: '12px',
@@ -2108,12 +2134,12 @@ export default function OrganizationDetail() {
                               margin: '0',
                               fontFamily: 'monospace',
                             }}>
-                              CF: {entity.vatTax}
+                              {(entity.codiceFiscale || entity.fiscalCode) ? `CF: ${entity.codiceFiscale || entity.fiscalCode}` : ''}
                             </p>
                           </div>
                         </td>
                         <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
-                          {entity.city}
+                          {entity.citta || entity.city || '-'}
                         </td>
                         <td style={{ padding: '16px 20px' }}>
                           <span style={{
@@ -2121,14 +2147,14 @@ export default function OrganizationDetail() {
                             borderRadius: '6px',
                             fontSize: '12px',
                             fontWeight: '600',
-                            background: entity.status === 'active' ? 
+                            background: (entity.stato || entity.status) === 'Attiva' || (entity.stato || entity.status) === 'active' ? 
                               `${COLORS.semantic.success}15` : 
                               `${COLORS.neutral.medium}15`,
-                            color: entity.status === 'active' ? 
+                            color: (entity.stato || entity.status) === 'Attiva' || (entity.stato || entity.status) === 'active' ? 
                               COLORS.semantic.success : 
                               COLORS.neutral.medium,
                           }}>
-                            {entity.status === 'active' ? 'Attiva' : 'Inattiva'}
+                            {(entity.stato || entity.status) === 'Attiva' || (entity.stato || entity.status) === 'active' ? '🟢 Attiva' : '🟠 Inattiva'}
                           </span>
                         </td>
                         <td style={{ padding: '16px 20px' }}>
@@ -2143,7 +2169,7 @@ export default function OrganizationDetail() {
                               fontWeight: '600',
                               color: COLORS.neutral.dark,
                             }}>
-                              {entity.storesCount}
+                              {entity.storesCount || stores.filter(s => s.legalEntityId === entity.id).length || 0}
                             </span>
                           </div>
                         </td>
