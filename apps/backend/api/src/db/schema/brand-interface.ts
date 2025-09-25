@@ -286,6 +286,105 @@ export const insertBrandConfigSchema = createInsertSchema(brandConfigs).omit({
 export type InsertBrandConfig = z.infer<typeof insertBrandConfigSchema>;
 export type BrandConfig = typeof brandConfigs.$inferSelect;
 
+// ==================== ORGANIZATION ANALYTICS TYPES ====================
+// Data contracts for organizational analytics - computed at runtime, not persisted
+
+export const organizationAnalyticsSchema = z.object({
+  organizationId: z.string().uuid(),
+  organizationName: z.string(),
+  structureBreakdown: z.object({
+    legalEntities: z.object({
+      total: z.number(),
+      active: z.number(),
+      inactive: z.number(),
+      breakdown: z.array(z.object({
+        id: z.string(),
+        nome: z.string(),
+        formaGiuridica: z.string().optional(),
+        status: z.string()
+      }))
+    }),
+    stores: z.object({
+      total: z.number(),
+      active: z.number(),
+      inactive: z.number(),
+      breakdown: z.array(z.object({
+        id: z.string(),
+        nome: z.string(),
+        tipo: z.string().optional(),
+        citta: z.string().optional(),
+        status: z.string()
+      }))
+    }),
+    users: z.object({
+      total: z.number(),
+      active: z.number(),
+      inactive: z.number(),
+      byRole: z.array(z.object({
+        role: z.string(),
+        count: z.number()
+      }))
+    })
+  }),
+  aiTokenStatus: z.object({
+    hasAIIntegration: z.boolean(),
+    totalTokensUsed: z.number(),
+    totalTokensAvailable: z.number().optional(),
+    lastUsage: z.string().optional(),
+    activeConnections: z.number(),
+    usageByCategory: z.array(z.object({
+      category: z.string(),
+      tokens: z.number(),
+      percentage: z.number()
+    }))
+  }),
+  systemHealth: z.object({
+    overallStatus: z.enum(['healthy', 'warning', 'critical']),
+    services: z.array(z.object({
+      name: z.string(),
+      status: z.enum(['active', 'inactive', 'error']),
+      uptime: z.string().optional(),
+      lastCheck: z.string()
+    })),
+    connections: z.object({
+      database: z.boolean(),
+      redis: z.boolean(),
+      websocket: z.boolean()
+    })
+  }),
+  databaseUsage: z.object({
+    totalSize: z.string(), // "125.4 MB"
+    categoryBreakdown: z.array(z.object({
+      category: z.string(), // "users", "stores", "products", "logs"
+      size: z.string(),
+      tableCount: z.number(),
+      recordCount: z.number(),
+      percentage: z.number()
+    })),
+    recentGrowth: z.object({
+      lastWeek: z.string(),
+      lastMonth: z.string()
+    })
+  }),
+  fileInventory: z.object({
+    totalFiles: z.number(),
+    totalSize: z.string(),
+    categoryBreakdown: z.array(z.object({
+      category: z.string(), // "images", "documents", "uploads", "cache"
+      fileCount: z.number(),
+      size: z.string(),
+      percentage: z.number()
+    })),
+    recentActivity: z.object({
+      uploadsLastWeek: z.number(),
+      uploadsLastMonth: z.number()
+    })
+  }),
+  generatedAt: z.string()
+});
+
+export type OrganizationAnalytics = z.infer<typeof organizationAnalyticsSchema>;
+
 // ==================== CROSS-TENANT KNOWLEDGE - USE W3SUITE SCHEMA ====================
 // 
 // 🎯 NOTA ARCHITETTURALE: 
