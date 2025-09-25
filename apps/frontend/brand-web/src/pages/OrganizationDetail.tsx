@@ -1179,9 +1179,9 @@ export default function OrganizationDetail() {
             {/* Key Performance Indicators */}
             {(() => {
               // Calcolo dati reali dall'organizzazione
-              const legalEntitiesTotal = currentOrg.legalEntities?.length || 3;
-              const storesTotal = currentOrg.stores?.length || 18;
-              const storesActive = currentOrg.stores?.filter(s => s.status === 'active').length || 16;
+              const legalEntitiesTotal = organization?.legalEntities?.length || 3;
+              const storesTotal = organization?.stores?.length || 18;
+              const storesActive = organization?.stores?.filter(s => s.status === 'active').length || 16;
               const compliancePerc = legalEntitiesTotal > 0 ? Math.min(95, Math.round((legalEntitiesTotal * 32))) : 87;
               const operativityPerc = storesTotal > 0 ? Math.round((storesActive / storesTotal) * 100) : 89;
               const managersActive = Math.round(storesTotal * 0.89);
@@ -1394,8 +1394,8 @@ export default function OrganizationDetail() {
                 }}>
                   {(() => {
                     // Calcolo revenue basato sui dati reali dell'organizzazione
-                    const baseRevenue = (currentOrg.stores?.length || 18) * 7.5; // base per store
-                    const legalEntityMultiplier = (currentOrg.legalEntities?.length || 3) * 1.2;
+                    const baseRevenue = (organization?.stores?.length || 18) * 7.5; // base per store
+                    const legalEntityMultiplier = (organization?.legalEntities?.length || 3) * 1.2;
                     const revenueData = Array.from({length: 12}, (_, i) => {
                       const monthVariation = Math.sin(i * 0.8) * 0.3 + 1; // andamento realistico
                       const growthTrend = 1 + (i * 0.05); // crescita graduale
@@ -1528,8 +1528,8 @@ export default function OrganizationDetail() {
                     {/* Market Share - Dati Reali */}
                     {(() => {
                       // Calcolo market share basato sui dati reali
-                      const storesCount = currentOrg.stores?.length || 18;
-                      const legalEntitiesCount = currentOrg.legalEntities?.length || 3;
+                      const storesCount = organization?.stores?.length || 18;
+                      const legalEntitiesCount = organization?.legalEntities?.length || 3;
                       
                       // Market share dinamico basato su stores e coverage
                       const windtreShare = Math.min(65, Math.round(35 + (storesCount * 1.5) + (legalEntitiesCount * 3)));
@@ -1577,8 +1577,8 @@ export default function OrganizationDetail() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {(() => {
                       // Usa stessi calcoli per legenda
-                      const storesCount = currentOrg.stores?.length || 18;
-                      const legalEntitiesCount = currentOrg.legalEntities?.length || 3;
+                      const storesCount = organization?.stores?.length || 18;
+                      const legalEntitiesCount = organization?.legalEntities?.length || 3;
                       const windtreShare = Math.min(65, Math.round(35 + (storesCount * 1.5) + (legalEntitiesCount * 3)));
                       const competitorsShare = Math.round(25 + (Math.random() * 5));
                       const othersShare = 100 - windtreShare - competitorsShare;
