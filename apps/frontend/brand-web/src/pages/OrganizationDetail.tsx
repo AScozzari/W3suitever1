@@ -1693,19 +1693,540 @@ export default function OrganizationDetail() {
       
       case 'legal-entities':
         return (
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: COLORS.neutral.dark,
-              marginBottom: '16px',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Legal Entities Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '20px 24px',
+              background: 'linear-gradient(135deg, #fff5f0, #ffffff)',
+              borderRadius: '12px',
+              border: '1px solid #f0f1f3',
             }}>
-            Legal Entities Management
-            </h3>
-            <p style={{ color: COLORS.neutral.medium, fontSize: '16px' }}>
-              Gestione completa delle ragioni sociali associate a questa organizzazione.
-              Questa sezione verrà implementata nella Task 8.
-            </p>
+              <div>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: COLORS.neutral.dark,
+                  margin: '0 0 4px 0',
+                }}>
+                  Legal Entities Management
+                </h2>
+                <p style={{
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                  margin: '0',
+                }}>
+                  Gestione completa delle ragioni sociali associate a questa organizzazione
+                </p>
+              </div>
+              <button style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                background: COLORS.gradients.orange,
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 3px 12px rgba(255, 105, 0, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 105, 0, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 3px 12px rgba(255, 105, 0, 0.3)';
+              }}
+              data-testid="button-add-legal-entity"
+              >
+                <Briefcase size={16} />
+                Nuova Legal Entity
+              </button>
+            </div>
+
+            {/* Filters and Search */}
+            <div style={{
+              ...cardStyle,
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flex: 1,
+                minWidth: '300px',
+              }}>
+                <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
+                  <input
+                    type="text"
+                    placeholder="Cerca per nome, P.IVA, codice fiscale..."
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 16px',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      color: COLORS.neutral.dark,
+                      background: 'white',
+                    }}
+                    data-testid="input-search-legal-entities"
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: COLORS.neutral.medium,
+                  }}>
+                    <Target size={16} />
+                  </div>
+                </div>
+                
+                <select style={{
+                  padding: '10px 12px',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: COLORS.neutral.dark,
+                  background: 'white',
+                  cursor: 'pointer',
+                }}>
+                  <option value="">Tutti gli stati</option>
+                  <option value="active">Attive</option>
+                  <option value="inactive">Inattive</option>
+                  <option value="suspended">Sospese</option>
+                </select>
+
+                <select style={{
+                  padding: '10px 12px',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: COLORS.neutral.dark,
+                  background: 'white',
+                  cursor: 'pointer',
+                }}>
+                  <option value="">Tutte le forme</option>
+                  <option value="srl">S.r.l.</option>
+                  <option value="spa">S.p.A.</option>
+                  <option value="snc">S.n.c.</option>
+                  <option value="sas">S.a.s.</option>
+                  <option value="ditta">Ditta Individuale</option>
+                </select>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <button style={{
+                  padding: '10px 16px',
+                  background: 'none',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <FileText size={16} />
+                  Export
+                </button>
+                <button style={{
+                  padding: '10px 12px',
+                  background: 'none',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  color: COLORS.neutral.medium,
+                  cursor: 'pointer',
+                }}>
+                  <Settings size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Legal Entities Table */}
+            <div style={{ ...cardStyle, padding: '0', overflow: 'hidden' }}>
+              <div style={{
+                padding: '20px 24px',
+                borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                background: '#fafbfc',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: COLORS.neutral.dark,
+                    margin: '0',
+                  }}>
+                    Legal Entities (4 elementi)
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                  }}>
+                    <span style={{
+                      fontSize: '13px',
+                      color: COLORS.neutral.medium,
+                    }}>
+                      Ultima sincronizzazione: 2 minuti fa
+                    </span>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: COLORS.semantic.success,
+                    }} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ overflow: 'auto' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '14px',
+                }}>
+                  <thead>
+                    <tr style={{ background: '#fafbfc' }}>
+                      {[
+                        'Ragione Sociale',
+                        'Codice',
+                        'Forma Giuridica', 
+                        'P.IVA / C.F.',
+                        'Città',
+                        'Status',
+                        'Stores',
+                        'Azioni'
+                      ].map((header, index) => (
+                        <th
+                          key={index}
+                          style={{
+                            padding: '16px 20px',
+                            textAlign: 'left',
+                            fontWeight: '600',
+                            color: COLORS.neutral.dark,
+                            borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                            position: 'sticky',
+                            top: 0,
+                            background: '#fafbfc',
+                            zIndex: 10,
+                          }}
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      {
+                        name: 'WindTre Retail S.r.l.',
+                        code: 'WTR001',
+                        legalForm: 'S.r.l.',
+                        vatTax: 'IT12345678901',
+                        city: 'Milano',
+                        status: 'active',
+                        storesCount: 12,
+                        id: '1'
+                      },
+                      {
+                        name: 'WindTre Business S.p.A.',
+                        code: 'WTB001',
+                        legalForm: 'S.p.A.',
+                        vatTax: 'IT98765432109',
+                        city: 'Roma',
+                        status: 'active',
+                        storesCount: 4,
+                        id: '2'
+                      },
+                      {
+                        name: 'WindTre Services S.r.l.',
+                        code: 'WTS001',
+                        legalForm: 'S.r.l.',
+                        vatTax: 'IT11223344556',
+                        city: 'Torino',
+                        status: 'active',
+                        storesCount: 2,
+                        id: '3'
+                      },
+                      {
+                        name: 'WindTre Solutions S.n.c.',
+                        code: 'WTSOL1',
+                        legalForm: 'S.n.c.',
+                        vatTax: 'IT55667788990',
+                        city: 'Napoli',
+                        status: 'inactive',
+                        storesCount: 0,
+                        id: '4'
+                      },
+                    ].map((entity, rowIndex) => (
+                      <tr
+                        key={entity.id}
+                        style={{
+                          borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#fafbfc';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                        data-testid={`legal-entity-row-${entity.id}`}
+                      >
+                        <td style={{ padding: '16px 20px' }}>
+                          <div>
+                            <p style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: COLORS.neutral.dark,
+                              margin: '0 0 2px 0',
+                            }}>
+                              {entity.name}
+                            </p>
+                            <p style={{
+                              fontSize: '12px',
+                              color: COLORS.neutral.medium,
+                              margin: '0',
+                            }}>
+                              Registrata il 15/03/2020
+                            </p>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <code style={{
+                            background: `${COLORS.neutral.light}15`,
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: COLORS.neutral.dark,
+                          }}>
+                            {entity.code}
+                          </code>
+                        </td>
+                        <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
+                          {entity.legalForm}
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <div>
+                            <p style={{
+                              fontSize: '13px',
+                              color: COLORS.neutral.dark,
+                              margin: '0 0 2px 0',
+                              fontFamily: 'monospace',
+                            }}>
+                              {entity.vatTax}
+                            </p>
+                            <p style={{
+                              fontSize: '12px',
+                              color: COLORS.neutral.light,
+                              margin: '0',
+                              fontFamily: 'monospace',
+                            }}>
+                              CF: {entity.vatTax}
+                            </p>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px', color: COLORS.neutral.medium }}>
+                          {entity.city}
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            background: entity.status === 'active' ? 
+                              `${COLORS.semantic.success}15` : 
+                              `${COLORS.neutral.medium}15`,
+                            color: entity.status === 'active' ? 
+                              COLORS.semantic.success : 
+                              COLORS.neutral.medium,
+                          }}>
+                            {entity.status === 'active' ? 'Attiva' : 'Inattiva'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}>
+                            <Store size={14} style={{ color: COLORS.neutral.medium }} />
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: COLORS.neutral.dark,
+                            }}>
+                              {entity.storesCount}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                          }}>
+                            <button
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                color: COLORS.semantic.info,
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.background = `${COLORS.semantic.info}15`;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'none';
+                              }}
+                              title="Visualizza dettagli"
+                              data-testid={`button-view-legal-entity-${entity.id}`}
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                color: COLORS.primary.orange,
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.background = `${COLORS.primary.orange}15`;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'none';
+                              }}
+                              title="Modifica"
+                              data-testid={`button-edit-legal-entity-${entity.id}`}
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                color: COLORS.neutral.medium,
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.background = `${COLORS.neutral.medium}15`;
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'none';
+                              }}
+                              title="Più opzioni"
+                              data-testid={`button-more-legal-entity-${entity.id}`}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Table Footer */}
+              <div style={{
+                padding: '16px 24px',
+                borderTop: `1px solid ${COLORS.neutral.lighter}`,
+                background: '#fafbfc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+                <p style={{
+                  fontSize: '13px',
+                  color: COLORS.neutral.medium,
+                  margin: '0',
+                }}>
+                  Mostrando 4 di 4 legal entities
+                </p>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'white',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: COLORS.neutral.medium,
+                    cursor: 'pointer',
+                  }}>
+                    Precedente
+                  </button>
+                  <span style={{
+                    padding: '6px 12px',
+                    background: COLORS.primary.orange,
+                    color: 'white',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                  }}>
+                    1
+                  </span>
+                  <button style={{
+                    padding: '6px 12px',
+                    background: 'white',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: COLORS.neutral.medium,
+                    cursor: 'pointer',
+                  }}>
+                    Successivo
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         );
       
