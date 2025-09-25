@@ -95,16 +95,26 @@ export default function OrganizationDetail() {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab');
     const validTabs = ['dashboard', 'analytics', 'legal-entities', 'stores'];
-    return validTabs.includes(tabFromUrl) ? tabFromUrl : 'dashboard';
+    return validTabs.includes(tabFromUrl || '') ? (tabFromUrl || 'dashboard') : 'dashboard';
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab);
 
+  // Modal state management
+  const [legalEntityModal, setLegalEntityModal] = useState<{ open: boolean; data: any }>({ 
+    open: false, 
+    data: null 
+  });
+  const [storeModal, setStoreModal] = useState<{ open: boolean; data: any }>({ 
+    open: false, 
+    data: null 
+  });
+
   // Update URL when tab changes
-  const updateTabUrl = (tabId) => {
-    const url = new URL(window.location);
+  const updateTabUrl = (tabId: string) => {
+    const url = new URL(window.location.href);
     url.searchParams.set('tab', tabId);
-    window.history.replaceState({}, '', url);
+    window.history.replaceState({}, '', url.toString());
     setActiveTab(tabId);
   };
 
@@ -114,7 +124,7 @@ export default function OrganizationDetail() {
       const urlParams = new URLSearchParams(window.location.search);
       const tabFromUrl = urlParams.get('tab');
       const validTabs = ['dashboard', 'analytics', 'legal-entities', 'stores'];
-      const validTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'dashboard';
+      const validTab = validTabs.includes(tabFromUrl || '') ? (tabFromUrl || 'dashboard') : 'dashboard';
       setActiveTab(validTab);
     };
 
@@ -1124,14 +1134,14 @@ export default function OrganizationDetail() {
                   color: COLORS.neutral.dark,
                   margin: '0 0 4px 0',
                 }}>
-                  Business Analytics
+                  Analytics Strutturali Organizzativi
                 </h2>
                 <p style={{
                   fontSize: '14px',
                   color: COLORS.neutral.medium,
                   margin: '0',
                 }}>
-                  Analisi approfondite e insights strategici per l'organizzazione
+                  Compliance, status operativo e gestione risorse organizzative
                 </p>
               </div>
               <div style={{
@@ -1174,44 +1184,44 @@ export default function OrganizationDetail() {
             }}>
               {[
                 {
-                  title: 'Total Revenue',
-                  value: '€2.4M',
-                  change: '+15.2%',
+                  title: 'Legal Entities Compliance',
+                  value: '98%',
+                  change: 'Documenti in regola',
                   trend: 'up',
-                  period: 'vs mese scorso',
-                  icon: DollarSign,
+                  period: 'compliance check',
+                  icon: Shield,
                   color: COLORS.semantic.success,
-                  chart: 'line'
+                  chart: 'gauge'
                 },
                 {
-                  title: 'Growth Rate',
-                  value: '8.7%',
-                  change: '+2.1%',
+                  title: 'Stores Operativity',
+                  value: '16/18',
+                  change: '89% operativi',
                   trend: 'up',
-                  period: 'trimestre',
-                  icon: TrendingUp,
+                  period: '2 in manutenzione',
+                  icon: Store,
                   color: COLORS.primary.orange,
-                  chart: 'area'
+                  chart: 'donut'
                 },
                 {
-                  title: 'Conversion Rate',
-                  value: '24.3%',
-                  change: '-1.2%',
-                  trend: 'down',
-                  period: 'ultimi 30gg',
-                  icon: Target,
+                  title: 'Manager Coverage',
+                  value: '16/18',
+                  change: '89% copertura',
+                  trend: 'stable',
+                  period: '2 posizioni vacanti',
+                  icon: Users,
                   color: COLORS.semantic.warning,
                   chart: 'bar'
                 },
                 {
-                  title: 'Customer Satisfaction',
-                  value: '4.8/5',
-                  change: '+0.3',
+                  title: 'Training Completion',
+                  value: '85%',
+                  change: 'Staff certificato',
                   trend: 'up',
-                  period: 'rating medio',
-                  icon: Star,
+                  period: 'programma formazione',
+                  icon: Award,
                   color: COLORS.semantic.info,
-                  chart: 'gauge'
+                  chart: 'progress'
                 },
               ].map((kpi, index) => (
                 <div
@@ -1744,10 +1754,11 @@ export default function OrganizationDetail() {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 3px 12px rgba(255, 105, 0, 0.3)';
               }}
+              onClick={() => setLegalEntityModal({ open: true, data: null })}
               data-testid="button-add-legal-entity"
               >
                 <Briefcase size={16} />
-                Nuova Legal Entity
+                Nuova Ragione Sociale
               </button>
             </div>
 
@@ -2283,6 +2294,7 @@ export default function OrganizationDetail() {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 3px 12px rgba(255, 105, 0, 0.3)';
               }}
+              onClick={() => setStoreModal({ open: true, data: null })}
               data-testid="button-add-store"
               >
                 <Store size={16} />
@@ -2904,7 +2916,342 @@ export default function OrganizationDetail() {
         
         {/* Tab Content */}
         {renderTabContent()}
+
       </div>
     </BrandLayout>
+
+    {/* Modals Layer */}
+    <>
+      {/* Legal Entity Modal */}
+      {legalEntityModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            width: '90%',
+            maxWidth: '500px',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderTop: `3px solid ${COLORS.primary.orange}`,
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '24px',
+              borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: COLORS.neutral.dark,
+                  margin: '0 0 4px 0',
+                }}>
+                  {legalEntityModal.data ? 'Modifica Ragione Sociale' : 'Nuova Ragione Sociale'}
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                  margin: '0',
+                }}>
+                  {legalEntityModal.data ? 'Modifica i dati della ragione sociale' : 'Inserisci i dati della nuova ragione sociale'}
+                </p>
+              </div>
+              <button
+                onClick={() => setLegalEntityModal({ open: false, data: null })}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  color: COLORS.neutral.medium,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <input
+                  type="text"
+                  placeholder="Nome Ragione Sociale *"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                  }}
+                />
+                <select
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                  }}
+                >
+                  <option>S.r.l.</option>
+                  <option>S.p.A.</option>
+                  <option>S.n.c.</option>
+                  <option>S.a.s.</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Partita IVA"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Codice Fiscale"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '24px',
+              borderTop: `1px solid ${COLORS.neutral.lighter}`,
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+            }}>
+              <button
+                onClick={() => setLegalEntityModal({ open: false, data: null })}
+                style={{
+                  padding: '12px 24px',
+                  background: 'white',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                style={{
+                  padding: '12px 24px',
+                  background: COLORS.gradients.orange,
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: 'white',
+                }}
+              >
+                {legalEntityModal.data ? 'Modifica' : 'Crea'} Ragione Sociale
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Store Modal */}
+      {storeModal.open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            width: '90%',
+            maxWidth: '500px',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            borderTop: `3px solid ${COLORS.primary.orange}`,
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '24px',
+              borderBottom: `1px solid ${COLORS.neutral.lighter}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: COLORS.neutral.dark,
+                  margin: '0 0 4px 0',
+                }}>
+                  {storeModal.data ? 'Modifica Store' : 'Nuovo Store'}
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                  margin: '0',
+                }}>
+                  {storeModal.data ? 'Modifica i dati del punto vendita' : 'Inserisci i dati del nuovo punto vendita'}
+                </p>
+              </div>
+              <button
+                onClick={() => setStoreModal({ open: false, data: null })}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  color: COLORS.neutral.medium,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <input
+                  type="text"
+                  placeholder="Nome Store *"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                  }}
+                />
+                <select
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                  }}
+                >
+                  <option value="">Seleziona Legal Entity</option>
+                  <option value="wtr001">WindTre Retail S.r.l.</option>
+                  <option value="wtb001">WindTre Business S.p.A.</option>
+                  <option value="wts001">WindTre Services S.r.l.</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Indirizzo"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `1px solid ${COLORS.neutral.lighter}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                  }}
+                />
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+                  <input
+                    type="text"
+                    placeholder="Città"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="CAP"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: `1px solid ${COLORS.neutral.lighter}`,
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '24px',
+              borderTop: `1px solid ${COLORS.neutral.lighter}`,
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+            }}>
+              <button
+                onClick={() => setStoreModal({ open: false, data: null })}
+                style={{
+                  padding: '12px 24px',
+                  background: 'white',
+                  border: `1px solid ${COLORS.neutral.lighter}`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: COLORS.neutral.medium,
+                }}
+              >
+                Annulla
+              </button>
+              <button
+                style={{
+                  padding: '12px 24px',
+                  background: COLORS.gradients.orange,
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: 'white',
+                }}
+              >
+                {storeModal.data ? 'Modifica' : 'Crea'} Store
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
