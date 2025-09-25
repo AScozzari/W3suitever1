@@ -41,7 +41,49 @@ import {
   calendarEventStatusEnum,
   hrRequestStatusEnum
 } from "../db/schema/w3suite";
-import { insertStructuredLogSchema, insertLegalEntitySchema, insertStoreSchema, insertSupplierSchema, insertSupplierOverrideSchema, insertUserSchema, insertUserAssignmentSchema, insertRoleSchema, insertTenantSchema, insertNotificationSchema, objectAcls, stores as w3suiteStores, stores, InsertTenant, InsertLegalEntity, InsertStore, InsertSupplier, InsertSupplierOverride, InsertUser, InsertUserAssignment, InsertRole, InsertNotification,  insertWorkflowActionSchema, insertWorkflowTemplateSchema, insertTeamSchema, insertTeamWorkflowAssignmentSchema, insertWorkflowInstanceSchema, InsertWorkflowAction, InsertWorkflowTemplate, InsertTeam, InsertTeamWorkflowAssignment, InsertWorkflowInstance, aiSettings, aiUsageLogs, aiConversations, aiTrainingSessions, insertAITrainingSessionSchema } from "../db/schema/w3suite";
+import { 
+  insertStructuredLogSchema, 
+  insertLegalEntitySchema, 
+  insertStoreSchema, 
+  insertSupplierSchema, 
+  insertSupplierOverrideSchema, 
+  insertUserSchema, 
+  insertUserAssignmentSchema, 
+  insertRoleSchema, 
+  insertTenantSchema, 
+  insertNotificationSchema, 
+  objectAcls, 
+  stores as w3suiteStores, 
+  stores, 
+  InsertTenant, 
+  InsertLegalEntity, 
+  InsertStore, 
+  InsertSupplier, 
+  InsertSupplierOverride, 
+  InsertUser, 
+  InsertUserAssignment, 
+  InsertRole, 
+  InsertNotification,  
+  insertWorkflowActionSchema, 
+  insertWorkflowTemplateSchema, 
+  insertTeamSchema, 
+  insertTeamWorkflowAssignmentSchema, 
+  insertWorkflowInstanceSchema, 
+  InsertWorkflowAction, 
+  InsertWorkflowTemplate, 
+  InsertTeam, 
+  InsertTeamWorkflowAssignment, 
+  InsertWorkflowInstance, 
+  aiSettings, 
+  aiUsageLogs, 
+  aiConversations, 
+  aiTrainingSessions, 
+  insertAITrainingSessionSchema,
+  // ✅ AUDIT TRAIL: Import logging tables for enterprise audit
+  entityLogs,
+  structuredLogs,
+  insertEntityLogSchema
+} from "../db/schema/w3suite";
 import { JWT_SECRET, config } from "./config";
 import { z } from "zod";
 import { handleApiError, validateRequestBody, validateUUIDParam } from "./error-utils";
@@ -361,6 +403,7 @@ const updateStatusBodySchema = z.object({
 
 const createUniversalRequestBodySchema = insertUniversalRequestSchema.omit({ 
   tenantId: true, 
+  requesterId: true, // ✅ SECURITY FIX: Derived from authentication
   status: true,
   currentApproverId: true,
   createdAt: true,
@@ -500,6 +543,279 @@ const gdprDeletionBodySchema = z.object({
   reason: z.string().default('GDPR_REQUEST'),
   userId: z.string().optional() // Optional user-specific deletion
 });
+
+// ==================== ENTERPRISE AUDIT TRAIL HELPERS ====================
+// ✅ AUTOMATIC LOGGING FOR UNIVERSAL REQUESTS
+
+/**
+ * Log entity changes for audit trail compliance
+ */
+async function logEntityChange(params: {
+  tenantId: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  previousStatus?: string;
+  newStatus?: string;
+  changes?: any;
+  userId: string;
+  userEmail?: string;
+  notes?: string;
+}) {
+  try {
+    await db.insert(entityLogs).values({
+      tenantId: params.tenantId,
+      entityType: params.entityType,
+      entityId: params.entityId,
+      action: params.action,
+      previousStatus: params.previousStatus,
+      newStatus: params.newStatus,
+      changes: params.changes,
+      userId: params.userId,
+      userEmail: params.userEmail,
+      notes: params.notes
+    });
+  } catch (error) {
+    logger.error('Failed to log entity change', { error, params });
+  }
+}
+
+/**
+ * Enhanced structured logging with request context
+ */
+async function logStructuredEvent(params: {
+  tenantId: string;
+  level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+  message: string;
+  component: string;
+  correlationId?: string;
+  userId?: string;
+  userEmail?: string;
+  action?: string;
+  entityType?: string;
+  entityId?: string;
+  duration?: number;
+  metadata?: any;
+  requestId?: string;
+  sessionId?: string;
+}) {
+  try {
+    await db.insert(structuredLogs).values({
+      tenantId: params.tenantId,
+      level: params.level,
+      message: params.message,
+      component: params.component,
+      correlationId: params.correlationId,
+      userId: params.userId,
+      userEmail: params.userEmail,
+      action: params.action,
+      entityType: params.entityType,
+      entityId: params.entityId,
+      duration: params.duration,
+      metadata: params.metadata,
+      requestId: params.requestId,
+      sessionId: params.sessionId
+    });
+  } catch (error) {
+    logger.error('Failed to log structured event', { error, params });
+  }
+}
+
+/**
+ * Log request creation
+ */
+async function logRequestCreated(params: {
+  tenantId: string;
+  request: any;
+  userId: string;
+  userEmail?: string;
+  duration?: number;
+}) {
+  await Promise.all([
+    logEntityChange({
+      tenantId: params.tenantId,
+      entityType: 'universal_request',
+      entityId: params.request.id,
+      action: 'created',
+      newStatus: params.request.status,
+      changes: {
+        category: params.request.category,
+        requestType: params.request.requestType,
+        title: params.request.title,
+        priority: params.request.priority
+      },
+      userId: params.userId,
+      userEmail: params.userEmail,
+      notes: 'Request created via API'
+    }),
+    logStructuredEvent({
+      tenantId: params.tenantId,
+      level: 'INFO',
+      message: 'Universal request created',
+      component: 'request_engine',
+      correlationId: params.request.id,
+      userId: params.userId,
+      userEmail: params.userEmail,
+      action: 'create_request',
+      entityType: 'universal_request',
+      entityId: params.request.id,
+      duration: params.duration,
+      metadata: {
+        category: params.request.category,
+        requestType: params.request.requestType,
+        priority: params.request.priority,
+        hasAttachments: (params.request.attachments?.length || 0) > 0
+      }
+    })
+  ]);
+}
+
+/**
+ * Log request status change
+ */
+async function logRequestStatusChanged(params: {
+  tenantId: string;
+  requestId: string;
+  previousStatus: string;
+  newStatus: string;
+  userId: string;
+  userEmail?: string;
+  reason?: string;
+  duration?: number;
+  category?: string;
+  requestType?: string;
+}) {
+  await Promise.all([
+    logEntityChange({
+      tenantId: params.tenantId,
+      entityType: 'universal_request',
+      entityId: params.requestId,
+      action: 'status_changed',
+      previousStatus: params.previousStatus,
+      newStatus: params.newStatus,
+      changes: {
+        from: params.previousStatus,
+        to: params.newStatus,
+        reason: params.reason,
+        changedBy: params.userId
+      },
+      userId: params.userId,
+      userEmail: params.userEmail,
+      notes: params.reason || 'Status changed via API'
+    }),
+    logStructuredEvent({
+      tenantId: params.tenantId,
+      level: 'INFO',
+      message: `Request status changed: ${params.previousStatus} → ${params.newStatus}`,
+      component: 'request_engine',
+      correlationId: params.requestId,
+      userId: params.userId,
+      userEmail: params.userEmail,
+      action: 'status_change',
+      entityType: 'universal_request',
+      entityId: params.requestId,
+      duration: params.duration,
+      metadata: {
+        previousStatus: params.previousStatus,
+        newStatus: params.newStatus,
+        category: params.category,
+        requestType: params.requestType,
+        isApproval: params.newStatus === 'approved',
+        isRejection: params.newStatus === 'rejected'
+      }
+    })
+  ]);
+}
+
+/**
+ * Log request update
+ */
+async function logRequestUpdated(params: {
+  tenantId: string;
+  requestId: string;
+  changes: any;
+  userId: string;
+  userEmail?: string;
+  duration?: number;
+}) {
+  await Promise.all([
+    logEntityChange({
+      tenantId: params.tenantId,
+      entityType: 'universal_request',
+      entityId: params.requestId,
+      action: 'updated',
+      changes: params.changes,
+      userId: params.userId,
+      userEmail: params.userEmail,
+      notes: 'Request data updated via API'
+    }),
+    logStructuredEvent({
+      tenantId: params.tenantId,
+      level: 'INFO',
+      message: 'Universal request updated',
+      component: 'request_engine',
+      correlationId: params.requestId,
+      userId: params.userId,
+      userEmail: params.userEmail,
+      action: 'update_request',
+      entityType: 'universal_request',
+      entityId: params.requestId,
+      duration: params.duration,
+      metadata: {
+        changedFields: Object.keys(params.changes),
+        changeCount: Object.keys(params.changes).length
+      }
+    })
+  ]);
+}
+
+/**
+ * Log request deletion
+ */
+async function logRequestDeleted(params: {
+  tenantId: string;
+  request: any;
+  userId: string;
+  userEmail?: string;
+  duration?: number;
+}) {
+  await Promise.all([
+    logEntityChange({
+      tenantId: params.tenantId,
+      entityType: 'universal_request',
+      entityId: params.request.id,
+      action: 'deleted',
+      previousStatus: params.request.status,
+      changes: {
+        category: params.request.category,
+        requestType: params.request.requestType,
+        title: params.request.title,
+        deletedBy: params.userId
+      },
+      userId: params.userId,
+      userEmail: params.userEmail,
+      notes: 'Request deleted via API'
+    }),
+    logStructuredEvent({
+      tenantId: params.tenantId,
+      level: 'WARN',
+      message: 'Universal request deleted',
+      component: 'request_engine',
+      correlationId: params.request.id,
+      userId: params.userId,
+      userEmail: params.userEmail,
+      action: 'delete_request',
+      entityType: 'universal_request',
+      entityId: params.request.id,
+      duration: params.duration,
+      metadata: {
+        category: params.request.category,
+        requestType: params.request.requestType,
+        wasStatus: params.request.status
+      }
+    })
+  ]);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
@@ -691,7 +1007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[DEV-AUTH] 👤 User: ${demoUser || 'admin@w3suite.com'}`);
         
         req.user = {
-          id: 'admin-user',
+          id: '00000000-0000-0000-0000-000000000002', // ✅ AUDIT TRAIL FIX: Valid UUID for entity_logs
           email: demoUser || 'admin@w3suite.com',
           tenantId: req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001',
           roles: ['admin', 'manager'],
@@ -7571,6 +7887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Create new universal request (supports all categories: hr, operations, support, crm, sales, finance)
   app.post('/api/requests', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    const startTime = Date.now(); // ✅ AUDIT TRAIL: Track operation duration
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
@@ -7606,6 +7923,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const result = await db.insert(universalRequests).values(requestData).returning();
+      const duration = Date.now() - startTime;
+      
+      // ✅ AUDIT TRAIL: Log request creation
+      await logRequestCreated({
+        tenantId,
+        request: result[0],
+        userId,
+        userEmail: req.user?.email,
+        duration
+      });
+      
       res.status(201).json(result[0]);
     } catch (error) {
       handleApiError(error, res);
@@ -7778,6 +8106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update universal request
   app.patch('/api/requests/:id', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    const startTime = Date.now(); // ✅ AUDIT TRAIL: Track operation duration
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
@@ -7819,6 +8148,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Request not found' });
       }
       
+      const duration = Date.now() - startTime;
+      
+      // ✅ AUDIT TRAIL: Log request update
+      await logRequestUpdated({
+        tenantId,
+        requestId,
+        changes: validatedData, // Track what fields were changed
+        userId,
+        userEmail: req.user?.email,
+        duration
+      });
+      
       res.json(result[0]);
     } catch (error) {
       handleApiError(error, res);
@@ -7827,6 +8168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update request status (approve/reject/cancel)
   app.patch('/api/requests/:id/status', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    const startTime = Date.now(); // ✅ AUDIT TRAIL: Track operation duration
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
@@ -7837,6 +8179,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { status, reason } = updateStatusBodySchema.parse(req.body);
+      
+      // ✅ AUDIT TRAIL: Get current request for logging previous status
+      const currentRequest = await db.select({
+        status: universalRequests.status,
+        category: universalRequests.category,
+        requestType: universalRequests.requestType
+      })
+      .from(universalRequests)
+      .where(and(
+        eq(universalRequests.id, requestId),
+        eq(universalRequests.tenantId, tenantId)
+      ))
+      .limit(1);
+      
+      if (currentRequest.length === 0) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      
+      const previousStatus = currentRequest[0].status;
       
       const updateData = {
         status: status as any, // Cast to enum type
@@ -7859,6 +8220,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Request not found' });
       }
       
+      const duration = Date.now() - startTime;
+      
+      // ✅ AUDIT TRAIL: Log status change
+      await logRequestStatusChanged({
+        tenantId,
+        requestId,
+        previousStatus,
+        newStatus: status,
+        userId,
+        userEmail: req.user?.email,
+        reason,
+        duration,
+        category: currentRequest[0].category,
+        requestType: currentRequest[0].requestType
+      });
+      
       res.json(result[0]);
     } catch (error) {
       handleApiError(error, res);
@@ -7867,6 +8244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Delete universal request
   app.delete('/api/requests/:id', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+    const startTime = Date.now(); // ✅ AUDIT TRAIL: Track operation duration
     try {
       const tenantId = req.user?.tenantId;
       const userId = req.user?.id;
@@ -7888,6 +8266,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (result.length === 0) {
         return res.status(404).json({ error: 'Request not found or not authorized' });
       }
+      
+      const duration = Date.now() - startTime;
+      
+      // ✅ AUDIT TRAIL: Log request deletion
+      await logRequestDeleted({
+        tenantId,
+        request: result[0], // Contains all request data before deletion
+        userId,
+        userEmail: req.user?.email,
+        duration
+      });
       
       res.json({ message: 'Request deleted successfully' });
     } catch (error) {
