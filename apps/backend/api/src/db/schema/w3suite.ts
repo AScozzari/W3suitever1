@@ -2417,6 +2417,9 @@ export const aiTrainingSessions = w3suiteSchema.table("ai_training_sessions", {
   tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
   
+  // 🎯 AGENT LINKAGE: Critical for agent-specific RAG content
+  agentId: varchar("agent_id", { length: 100 }), // Agent ID for filtering (e.g., 'tippy-sales', 'workflow-assistant')
+  
   // Session Info
   sessionType: varchar("session_type", { length: 50 }).notNull(), // validation, url_import, media_upload
   sessionStatus: varchar("session_status", { length: 50 }).default('active').notNull(), // active, completed, failed
@@ -2449,6 +2452,11 @@ export const aiTrainingSessions = w3suiteSchema.table("ai_training_sessions", {
   statusIndex: index("ai_training_sessions_status_idx").on(table.sessionStatus),
   typeIndex: index("ai_training_sessions_type_idx").on(table.sessionType),
   timestampIndex: index("ai_training_sessions_timestamp_idx").on(table.createdAt),
+  
+  // 🎯 AGENT-SPECIFIC INDEXES: Performance critical for agent RAG queries  
+  agentIndex: index("ai_training_sessions_agent_idx").on(table.agentId),
+  tenantAgentIndex: index("ai_training_sessions_tenant_agent_idx").on(table.tenantId, table.agentId),
+  agentStatusIndex: index("ai_training_sessions_agent_status_idx").on(table.agentId, table.sessionStatus),
 }));
 
 // AI System Relations
