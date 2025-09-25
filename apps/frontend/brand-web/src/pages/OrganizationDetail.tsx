@@ -124,6 +124,18 @@ export default function OrganizationDetail() {
     enabled: !!orgId,
   });
 
+  // 🔥 QUERY DATI REALI - Organizational Analytics dal nuovo endpoint
+  const { data: analyticsResponse, isLoading: analyticsLoading, error: analyticsError } = useQuery({
+    queryKey: ['/brand-api/organizations', orgId, 'analytics'],
+    queryFn: async () => {
+      const response = await apiRequest(`/brand-api/organizations/${orgId}/analytics`);
+      return response.json();
+    },
+    enabled: !!orgId,
+  });
+
+  const organizationalAnalytics = analyticsResponse?.data;
+
   const updateTabUrl = (tabId: string) => {
     const url = new URL(window.location.href);
     url.searchParams.set('tab', tabId);
@@ -1184,56 +1196,69 @@ export default function OrganizationDetail() {
               </div>
             </div>
 
-            {/* Key Performance Indicators */}
+            {/* Organizational Analytics KPIs */}
             {(() => {
-              // Calcolo dati reali dall'organizzazione
-              const legalEntitiesTotal = organization?.legalEntities?.length || 3;
-              const storesTotal = organization?.stores?.length || 18;
-              const storesActive = organization?.stores?.filter(s => s.status === 'active').length || 16;
-              const compliancePerc = legalEntitiesTotal > 0 ? Math.min(95, Math.round((legalEntitiesTotal * 32))) : 87;
-              const operativityPerc = storesTotal > 0 ? Math.round((storesActive / storesTotal) * 100) : 89;
-              const managersActive = Math.round(storesTotal * 0.89);
-              const trainingPerc = Math.round(85 + (storesTotal * 0.3));
+              // Loading state per analytics
+              if (analyticsLoading) {
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+                    <div style={{ color: COLORS.neutral.medium, fontSize: '14px' }}>
+                      Caricamento analytics organizzativi...
+                    </div>
+                  </div>
+                );
+              }
+
+              // Error state per analytics
+              if (analyticsError || !organizationalAnalytics) {
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+                    <div style={{ color: COLORS.semantic.error, fontSize: '14px' }}>
+                      Errore nel caricamento degli analytics
+                    </div>
+                  </div>
+                );
+              }
 
               const kpis = [
                 {
-                  title: 'Conformità Normativa',
-                  value: `${compliancePerc}%`,
-                  change: `${legalEntitiesTotal} ragioni sociali`,
-                  trend: compliancePerc >= 90 ? 'up' : 'down',
-                  period: 'verifica compliance',
-                  icon: Shield,
-                  color: compliancePerc >= 90 ? COLORS.semantic.success : COLORS.semantic.warning,
+                  title: 'AI Token Usage',
+                  value: `${organizationalAnalytics.aiUsage?.tokensUsed || 0}`,
+                  change: `${organizationalAnalytics.aiUsage?.activeAgents || 0} agents attivi`,
+                  trend: (organizationalAnalytics.aiUsage?.tokensUsed || 0) < (organizationalAnalytics.aiUsage?.tokenQuota || 1000000) * 0.8 ? 'up' : 'warning',
+                  period: `Quota: ${(organizationalAnalytics.aiUsage?.tokenQuota || 1000000).toLocaleString()} tokens`,
+                  icon: Target,
+                  color: (organizationalAnalytics.aiUsage?.tokensUsed || 0) < (organizationalAnalytics.aiUsage?.tokenQuota || 1000000) * 0.8 ? COLORS.semantic.success : COLORS.semantic.warning,
                   chart: 'gauge'
                 },
                 {
-                  title: 'Status Operativo',
-                  value: `${storesActive}/${storesTotal}`,
-                  change: `${operativityPerc}% operativi`,
-                  trend: operativityPerc >= 85 ? 'up' : 'down',
-                  period: `${storesTotal - storesActive} in manutenzione`,
-                  icon: Store,
+                  title: 'Database Usage',
+                  value: `${organizationalAnalytics.databaseUsage?.estimatedSizeMB || 0} MB`,
+                  change: `${organizationalAnalytics.databaseUsage?.userCount || 0} utenti, ${organizationalAnalytics.databaseUsage?.storeCount || 0} stores`,
+                  trend: (organizationalAnalytics.databaseUsage?.estimatedSizeMB || 0) < 1000 ? 'up' : 'stable',
+                  period: `${organizationalAnalytics.databaseUsage?.legalEntityCount || 0} legal entities`,
+                  icon: Activity,
                   color: COLORS.primary.orange,
                   chart: 'donut'
                 },
                 {
-                  title: 'Gestione Risorse',
-                  value: `${managersActive}/${storesTotal}`,
-                  change: `${Math.round(managersActive/storesTotal*100)}% copertura`,
-                  trend: managersActive >= storesTotal * 0.85 ? 'up' : 'stable',
-                  period: `${storesTotal - managersActive} posizioni aperte`,
-                  icon: Users,
-                  color: COLORS.semantic.warning,
+                  title: 'File Storage',
+                  value: `${(organizationalAnalytics.fileStorage?.storageUsedMB || 0)} MB`,
+                  change: `${organizationalAnalytics.fileStorage?.totalFiles || 0} files totali`,
+                  trend: (organizationalAnalytics.fileStorage?.storageUsedMB || 0) < (organizationalAnalytics.fileStorage?.storageQuotaMB || 10000) * 0.85 ? 'up' : 'warning',
+                  period: `Quota: ${(organizationalAnalytics.fileStorage?.storageQuotaMB || 10000)} MB`,
+                  icon: FileText,
+                  color: (organizationalAnalytics.fileStorage?.storageUsedMB || 0) < (organizationalAnalytics.fileStorage?.storageQuotaMB || 10000) * 0.85 ? COLORS.semantic.info : COLORS.semantic.warning,
                   chart: 'bar'
                 },
                 {
-                  title: 'Certificazione Staff',
-                  value: `${Math.min(trainingPerc, 94)}%`,
-                  change: 'Staff qualificato',
-                  trend: trainingPerc >= 80 ? 'up' : 'down',
-                  period: 'programma formativo',
-                  icon: Award,
-                  color: COLORS.semantic.info,
+                  title: 'System Activity',
+                  value: `${organizationalAnalytics.systemActivity?.uptime || '99.8%'}`,
+                  change: `${organizationalAnalytics.systemActivity?.activeWebsockets || 0} websockets attive`,
+                  trend: (organizationalAnalytics.systemActivity?.errorsLast24h || 0) < 5 ? 'up' : 'down',
+                  period: `${organizationalAnalytics.systemActivity?.apiRequestsToday || 0} API calls oggi`,
+                  icon: Globe,
+                  color: (organizationalAnalytics.systemActivity?.errorsLast24h || 0) < 5 ? COLORS.semantic.success : COLORS.semantic.error,
                   chart: 'progress'
                 },
               ];
