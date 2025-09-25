@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useBrandAuth } from '../contexts/BrandAuthContext';
 import { useBrandTenant } from '../contexts/BrandTenantContext';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../lib/queryClient';
 import { useLocation } from 'wouter';
-import { useEffect } from 'react';
 
 // Organization interface for type safety
 interface Organization {
@@ -2819,8 +2818,6 @@ export default function OrganizationDetail() {
                               title="Visualizza dettagli"
                               data-testid={`button-view-store-${store.id}`}
                               onClick={() => {
-                                // TODO: Navigate to store detail page
-                                console.log('👁️ View Store:', store.id, store.nome || store.name);
                                 alert(`Visualizzazione dettagli Store: ${store.nome || store.name}`);
                               }}
                             >
@@ -2848,8 +2845,6 @@ export default function OrganizationDetail() {
                               title="Modifica"
                               data-testid={`button-edit-store-${store.id}`}
                               onClick={() => {
-                                // TODO: Open edit modal/form
-                                console.log('✏️ Edit Store:', store.id, store.nome || store.name);
                                 setEditStoreData(store);
                                 setIsStoreModalOpen(true);
                               }}
@@ -2878,9 +2873,7 @@ export default function OrganizationDetail() {
                               title="Elimina"
                               data-testid={`button-delete-store-${store.id}`}
                               onClick={() => {
-                                // TODO: Confirm and delete with API call
                                 if (confirm(`Sei sicuro di voler eliminare lo Store "${store.nome || store.name}"?`)) {
-                                  console.log('🗑️ Delete Store:', store.id, store.nome || store.name);
                                   alert(`Store "${store.nome || store.name}" eliminato (simulazione)`);
                                 }
                               }}
@@ -3109,7 +3102,6 @@ export default function OrganizationDetail() {
                 
                 data.tenantId = organization?.id || '';
                 
-                console.log('📝 Creazione Legal Entity:', data);
                 
                 try {
                   const response = await fetch('/brand-api/legal-entities', {
@@ -3119,14 +3111,11 @@ export default function OrganizationDetail() {
                   });
                   
                   if (response.ok) {
-                    console.log('✅ Ragione sociale creata');
                     setLegalEntityModal({ open: false, data: null });
                     window.location.reload();
-                  } else {
-                    console.error('❌ Errore creazione:', response.status);
                   }
                 } catch (error) {
-                  console.error('❌ Errore:', error);
+                  // Handle error
                 }
               }}>
 
@@ -3652,7 +3641,6 @@ export default function OrganizationDetail() {
                 
                 data.tenantId = organization?.id || '';
                 
-                console.log('🏪 Creazione Store:', data);
                 
                 try {
                   const response = await fetch('/brand-api/stores', {
@@ -3662,14 +3650,11 @@ export default function OrganizationDetail() {
                   });
                   
                   if (response.ok) {
-                    console.log('✅ Store creato');
                     setStoreModal({ open: false, data: null });
                     window.location.reload();
-                  } else {
-                    console.error('❌ Errore creazione store:', response.status);
                   }
                 } catch (error) {
-                  console.error('❌ Errore:', error);
+                  // Handle error
                 }
               }}>
 
