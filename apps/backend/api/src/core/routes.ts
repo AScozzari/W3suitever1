@@ -3315,6 +3315,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== STORE LOCATION API ====================
   
+  // Get available timetracking methods for a specific store
+  app.get('/api/stores/:storeId/timetracking-methods', tenantMiddleware, rbacMiddleware, requirePermission('stores.read'), async (req: any, res) => {
+    try {
+      const { storeId } = req.params;
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId;
+
+      // Validate UUID parameter
+      if (!validateUUIDParam(storeId, 'ID negozio', res)) return;
+
+      // Query the new storesTimetrackingMethods table
+      const methods = await storage.getStoreTimetrackingMethods(storeId, tenantId);
+
+      res.json({
+        storeId,
+        methods,
+        meta: {
+          count: methods.length,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      handleApiError(error, res, 'stores.timetracking-methods.list');
+    }
+  });
+
   // Get store coordinates and geofencing info
   app.get('/api/stores/:storeId/location', async (req: any, res) => {
     try {

@@ -207,6 +207,7 @@ export interface IStorage extends IHRStorage {
   createStore(store: InsertStore): Promise<Store>;
   updateStore(id: string, store: Partial<InsertStore>): Promise<Store>;
   deleteStore(id: string): Promise<void>;
+  getStoreTimetrackingMethods(storeId: string, tenantId: string): Promise<any[]>;
   
   // Supplier Management (Brand Base + Tenant Override Pattern)
   getSuppliersByTenant(tenantId: string): Promise<Array<SupplierOverride & { country?: Country; city_name?: string; payment_method?: any }>>;
@@ -559,6 +560,31 @@ export class DatabaseStorage implements IStorage {
     if (result.rowCount === 0) {
       throw new Error(`Store with id ${id} not found`);
     }
+  }
+
+  async getStoreTimetrackingMethods(storeId: string, tenantId: string): Promise<any[]> {
+    console.log(`[STORAGE-RLS] 🕐 getStoreTimetrackingMethods: Setting tenant context for ${tenantId}`);
+    await setTenantContext(tenantId);
+
+    const result = await db.select({
+      id: storesTimetrackingMethods.id,
+      method: storesTimetrackingMethods.method,
+      enabled: storesTimetrackingMethods.enabled,
+      priority: storesTimetrackingMethods.priority,
+      config: storesTimetrackingMethods.config,
+      createdAt: storesTimetrackingMethods.createdAt,
+      updatedAt: storesTimetrackingMethods.updatedAt
+    })
+    .from(storesTimetrackingMethods)
+    .where(and(
+      eq(storesTimetrackingMethods.storeId, storeId),
+      eq(storesTimetrackingMethods.tenantId, tenantId),
+      eq(storesTimetrackingMethods.enabled, true)
+    ))
+    .orderBy(storesTimetrackingMethods.priority);
+
+    console.log(`[STORAGE-RLS] ✅ getStoreTimetrackingMethods: Found ${result.length} timetracking methods for store ${storeId}`);
+    return result;
   }
 
   // ==================== SUPPLIER OPERATIONS ====================

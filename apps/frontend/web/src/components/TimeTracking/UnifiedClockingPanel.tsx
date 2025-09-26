@@ -177,6 +177,23 @@ export default function UnifiedClockingPanel({
     }).then(res => res.json())
   });
 
+  // ✅ NEW: Hook for loading timetracking methods available for selected PDV
+  const {
+    data: availableMethodsData,
+    isLoading: isLoadingMethods,
+    error: methodsError
+  } = useQuery({
+    queryKey: ['store-timetracking-methods', selectedStoreId],
+    queryFn: () => fetch(`/api/stores/${selectedStoreId}/timetracking-methods`, {
+      headers: {
+        'X-Tenant-ID': '00000000-0000-0000-0000-000000000001',
+        'X-Auth-Session': 'authenticated',
+        'X-Demo-User': 'demo-user'
+      }
+    }).then(res => res.json()),
+    enabled: !!selectedStoreId // Only run when PDV is selected
+  });
+
   // Transform stores data into expected format
   const nearbyStores: NearbyStore[] = React.useMemo(() => {
     if (!storesData || !Array.isArray(storesData)) return [];
@@ -224,15 +241,7 @@ export default function UnifiedClockingPanel({
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-select first store if only one available
-  useEffect(() => {
-    if (nearbyStores.length === 1 && !selectedStoreId) {
-      const firstStore = nearbyStores[0];
-      setSelectedStoreId(firstStore.id);
-      setSelectedStore(firstStore);
-      selectStore(firstStore);
-    }
-  }, [nearbyStores, selectedStoreId, selectStore]);
+  // ❌ REMOVED: Auto-select first store - now requires explicit user selection for progressive disclosure
 
   // ✅ FIX: Re-prepare QR strategy when store changes or QR is selected
   useEffect(() => {
@@ -241,10 +250,24 @@ export default function UnifiedClockingPanel({
     }
   }, [strategiesState.selectedStrategy?.type, context.selectedStore?.id, strategiesActions, context]);
 
-  // Filtra strategie abilitate da HR Management
-  const availableStrategyConfigs = STRATEGY_CONFIGS.filter(config => 
-    !enabledStrategies || enabledStrategies.includes(config.type)
-  );
+  // ✅ NEW: Filter strategies based on PDV configuration + HR Management
+  const availableStrategyConfigs = React.useMemo(() => {
+    // First filter by HR Management permissions
+    let configs = STRATEGY_CONFIGS.filter(config => 
+      !enabledStrategies || enabledStrategies.includes(config.type)
+    );
+    
+    // Then filter by PDV-specific configuration if available
+    if (availableMethodsData?.methods && availableMethodsData.methods.length > 0) {
+      const enabledMethods = availableMethodsData.methods
+        .filter((method: any) => method.enabled)
+        .map((method: any) => method.method);
+      
+      configs = configs.filter(config => enabledMethods.includes(config.type));
+    }
+    
+    return configs;
+  }, [enabledStrategies, availableMethodsData]);
 
   // Configurazione strategia selezionata
   const activeStrategyConfig = STRATEGY_CONFIGS.find(s => s.type === selectedStrategyType);
@@ -513,13 +536,24 @@ export default function UnifiedClockingPanel({
                   <span className="font-semibold">Tipo Timbratura *</span>
                 </div>
 
-                <Select value={selectedStrategyType} onValueChange={handleStrategyChange} disabled={!selectedStoreId}>
+                <Select value={selectedStrategyType} onValueChange={handleStrategyChange} disabled={!selectedStoreId || isLoadingMethods}>
                   <SelectTrigger className="w-full" data-testid="select-strategy">
-                    <SelectValue placeholder={!selectedStoreId ? "Prima seleziona un PDV" : "Seleziona metodo..."} />
+                    <SelectValue placeholder={!selectedStoreId ? "Prima seleziona un PDV" : isLoadingMethods ? "Caricamento sistemi..." : availableStrategyConfigs.length === 0 ? "Nessun sistema configurato" : "Seleziona metodo..."} />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableStrategyConfigs.map((config) => {
-                      const Icon = config.icon;
+                    {isLoadingMethods ? (
+                      <div className="flex items-center justify-center p-4 text-gray-500">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Caricamento sistemi...
+                      </div>
+                    ) : availableStrategyConfigs.length === 0 && selectedStoreId ? (
+                      <div className="flex items-center justify-center p-4 text-gray-500">
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        Nessun sistema configurato per questo PDV
+                      </div>
+                    ) : (
+                      availableStrategyConfigs.map((config) => {
+                        const Icon = config.icon;
                       return (
                         <SelectItem key={config.type} value={config.type} data-testid={`option-strategy-${config.type}`}>
                           <div className="flex items-center gap-3">
