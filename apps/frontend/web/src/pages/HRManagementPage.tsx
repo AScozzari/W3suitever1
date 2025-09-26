@@ -531,14 +531,34 @@ const HRManagementPage: React.FC = () => {
   // ==================== REQUESTS SECTION ====================
 
   const RequestsSection = () => {
-    const [filter, setFilter] = useState<string>('all');
+    // Advanced Filters State
+    const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [dateFromFilter, setDateFromFilter] = useState<string>('');
+    const [dateToFilter, setDateToFilter] = useState<string>('');
 
+    // Enhanced filtering logic
     const filteredRequests = hrRequests.filter(request => {
-      const matchesFilter = filter === 'all' || request.status === filter;
-      const matchesSearch = (request.requesterName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           getRequestTypeName(request.requestType || request.type).toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesFilter && matchesSearch;
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
+      
+      // Category filter (currently all HR, but prepared for future Finance/Operations)
+      const matchesCategory = categoryFilter === 'all' || categoryFilter === 'hr';
+      
+      // Enhanced search: name, type, description
+      const matchesSearch = searchTerm === '' || (
+        (request.requesterName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getRequestTypeName(request.requestType || request.type).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (request.reason || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      // Date range filter
+      const requestDate = new Date(request.createdAt);
+      const matchesDateFrom = dateFromFilter === '' || requestDate >= new Date(dateFromFilter);
+      const matchesDateTo = dateToFilter === '' || requestDate <= new Date(dateToFilter + 'T23:59:59');
+      
+      return matchesStatus && matchesCategory && matchesSearch && matchesDateFrom && matchesDateTo;
     });
 
     return (
@@ -637,36 +657,145 @@ const HRManagementPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Filters */}
+        {/* Advanced Filters */}
         <Card className="backdrop-blur-md bg-white/10 border-white/20">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <Label>Cerca</Label>
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Filter className="w-5 h-5 text-slate-600" />
+                <h3 className="text-lg font-semibold">Filtri Avanzati</h3>
+              </div>
+              
+              {/* First Row: Search & Category */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Enhanced Search */}
+                <div>
+                  <Label className="text-sm font-medium">Ricerca Globale</Label>
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <Input 
+                      placeholder="Cerca per nome, tipo, descrizione..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-search-global"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Cerca in richiedente, tipologia e descrizione
+                  </p>
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                  <Label className="text-sm font-medium">Categoria</Label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger data-testid="select-category-filter">
+                      <SelectValue placeholder="Seleziona categoria..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutte le categorie</SelectItem>
+                      <SelectItem value="hr">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-blue-600" />
+                          HR - Risorse Umane
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="finance" disabled>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-green-600 opacity-50" />
+                          Finance (Presto disponibile)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="operations" disabled>
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-purple-600 opacity-50" />
+                          Operations (Presto disponibile)
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Second Row: Status & Date Range */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Status Filter */}
+                <div>
+                  <Label className="text-sm font-medium">Stato Richiesta</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger data-testid="select-status-filter">
+                      <SelectValue placeholder="Filtra per stato..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutti gli stati</SelectItem>
+                      <SelectItem value="pending">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-600" />
+                          Pendenti
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="approved">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          Approvate
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="rejected">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="w-4 h-4 text-red-600" />
+                          Rifiutate
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Date From Filter */}
+                <div>
+                  <Label className="text-sm font-medium">Data Inizio</Label>
                   <Input 
-                    placeholder="Cerca per nome o tipo richiesta..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-search-requests"
+                    type="date"
+                    value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                    className="w-full"
+                    data-testid="input-date-from"
+                  />
+                </div>
+
+                {/* Date To Filter */}
+                <div>
+                  <Label className="text-sm font-medium">Data Fine</Label>
+                  <Input 
+                    type="date"
+                    value={dateToFilter}
+                    onChange={(e) => setDateToFilter(e.target.value)}
+                    className="w-full"
+                    data-testid="input-date-to"
                   />
                 </div>
               </div>
-              <div>
-                <Label>Stato</Label>
-                <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger className="w-48" data-testid="select-filter-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tutti gli stati</SelectItem>
-                    <SelectItem value="pending">Pendenti</SelectItem>
-                    <SelectItem value="approved">Approvate</SelectItem>
-                    <SelectItem value="rejected">Rifiutate</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* Clear Filters Button */}
+              <div className="flex justify-between items-center pt-2">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {filteredRequests.length} richieste trovate su {hrRequests.length} totali
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setCategoryFilter('all');
+                    setStatusFilter('all');
+                    setSearchTerm('');
+                    setDateFromFilter('');
+                    setDateToFilter('');
+                  }}
+                  data-testid="button-clear-filters"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Pulisci Filtri
+                </Button>
               </div>
             </div>
           </CardContent>
