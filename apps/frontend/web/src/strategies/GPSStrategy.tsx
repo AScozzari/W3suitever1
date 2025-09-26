@@ -72,8 +72,8 @@ export class GPSStrategy extends BaseStrategy {
         return this.createPrepareError('Failed to initialize GPS');
       }
 
-      // Get initial position
-      const position = await geolocationManager.getCurrentPosition(true, 10000);
+      // Get initial position with enhanced timeout and fallback
+      const position = await geolocationManager.getCurrentPosition(true, 30000);
       if (position) {
         this.lastPosition = position;
         this.log('info', 'GPS initialized with position', position);
@@ -84,9 +84,25 @@ export class GPSStrategy extends BaseStrategy {
         position,
         accuracy: position?.accuracy || 0
       });
-    } catch (error) {
+    } catch (error: any) {
       this.log('error', 'GPS preparation failed', error);
-      return this.createPrepareError(`GPS preparation failed: ${error}`);
+      
+      // Enhanced error handling with better user messages
+      if (error.type === 'TIMEOUT') {
+        return this.createPrepareError(
+          'GPS non disponibile al momento. Verifica di essere all\'aperto o prova con una connessione Wi-Fi migliore.'
+        );
+      } else if (error.type === 'PERMISSION_DENIED') {
+        return this.createPrepareError(
+          'Permesso di localizzazione negato. Autorizza l\'accesso alla posizione nelle impostazioni del browser.'
+        );
+      } else if (error.type === 'POSITION_UNAVAILABLE') {
+        return this.createPrepareError(
+          'GPS temporaneamente non disponibile. Riprova in un momento o spostati in una zona con migliore copertura.'
+        );
+      }
+      
+      return this.createPrepareError(`Errore GPS: ${error.message || error}`);
     }
   }
 
@@ -102,10 +118,10 @@ export class GPSStrategy extends BaseStrategy {
     }
 
     try {
-      // Get current position
-      const position = this.lastPosition || await geolocationManager.getCurrentPosition(true, 15000);
+      // Get current position with enhanced timeout and fallback
+      const position = this.lastPosition || await geolocationManager.getCurrentPosition(true, 30000);
       if (!position) {
-        return this.createError('Unable to determine current location');
+        return this.createError('Impossibile determinare la posizione corrente. Assicurati che il GPS sia attivo.');
       }
 
       // Check accuracy requirements
@@ -155,9 +171,28 @@ export class GPSStrategy extends BaseStrategy {
           distance
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       this.log('error', 'GPS validation failed', error);
-      return this.createError(`GPS validation failed: ${error}`);
+      
+      // Provide specific error messages based on error type
+      if (error.type === 'TIMEOUT') {
+        return this.createError(
+          'Timeout GPS: la posizione sta richiedendo troppo tempo. Prova a spostarti all\'aperto o attendi qualche secondo.',
+          'GPS_TIMEOUT'
+        );
+      } else if (error.type === 'PERMISSION_DENIED') {
+        return this.createError(
+          'Permesso GPS negato: autorizza la localizzazione nelle impostazioni del browser.',
+          'GPS_PERMISSION'
+        );
+      } else if (error.type === 'POSITION_UNAVAILABLE') {
+        return this.createError(
+          'GPS non disponibile: verifica la connessione e riprova.',
+          'GPS_UNAVAILABLE'
+        );
+      }
+      
+      return this.createError(`Errore di validazione GPS: ${error.message || error}`);
     }
   }
 
@@ -298,14 +333,21 @@ function GPSPanel({ isActive, isLoading, context, onAction, compact, strategy }:
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const newPosition = await geolocationManager.getCurrentPosition(true, 10000);
+      const newPosition = await geolocationManager.getCurrentPosition(true, 30000);
       if (newPosition) {
         setPosition(newPosition);
         setAccuracy(newPosition.accuracy);
         onAction?.('gps_refreshed', newPosition);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('GPS refresh failed:', error);
+      
+      // Show user-friendly error message
+      if (error.type === 'TIMEOUT') {
+        console.warn('GPS refresh timeout - position may take longer in indoor environments');
+      } else if (error.type === 'PERMISSION_DENIED') {
+        console.error('GPS permission denied during refresh');
+      }
     } finally {
       setIsRefreshing(false);
     }
