@@ -142,22 +142,22 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // ✅ UPDATED: Universal Requests data for employee portal (only user's requests)
+  // 🚨 TEMPORARY FIX: Remove enabled condition to test API
   const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
     queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'],
     queryFn: () => apiRequest('/api/universal-requests?category=hr&mine=true'),
-    enabled: !!hrQueriesEnabled,
+    // enabled: !!hrQueriesEnabled, // ⚠️ TEMPORARILY DISABLED FOR DEBUGGING
     staleTime: 2 * 60 * 1000,
   });
   
   // ✅ FIX: Extract requests array from response object
   const myRequestsData = myRequestsResponse?.requests || [];
 
-  // Query HR workflow templates for automatic workflow creation
+  // 🚨 TEMPORARY FIX: Remove enabled condition to test API
   const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
     queryKey: ['/api/workflow-templates', { category: 'hr' }],
     queryFn: () => apiRequest('/api/workflow-templates?category=hr'),
-    enabled: !!hrQueriesEnabled,
+    // enabled: !!hrQueriesEnabled, // ⚠️ TEMPORARILY DISABLED FOR DEBUGGING
     staleTime: 5 * 60 * 1000,
   });
   const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
