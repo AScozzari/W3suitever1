@@ -87,12 +87,39 @@ export class GeolocationManager {
   // ==================== POSITION TRACKING ====================
   async getCurrentPosition(
     highAccuracy: boolean = true,
-    timeout: number = 10000
+    timeout: number = 25000
   ): Promise<GeoPosition | null> {
     if (!this.isSupported()) {
       throw new Error('Geolocation not supported');
     }
 
+    // First attempt with high accuracy
+    try {
+      return await this.getPositionWithOptions({
+        enableHighAccuracy: highAccuracy,
+        timeout,
+        maximumAge: 60000, // 1 minute cache for better performance
+      });
+    } catch (error: any) {
+      // If timeout with high accuracy, retry with lower accuracy
+      if (highAccuracy && this.isTimeoutError(error)) {
+        console.warn('High accuracy GPS timed out, retrying with lower accuracy');
+        try {
+          return await this.getPositionWithOptions({
+            enableHighAccuracy: false,
+            timeout: timeout + 10000, // Extra 10s for fallback
+            maximumAge: 300000, // 5 minutes cache for fallback
+          });
+        } catch (fallbackError: any) {
+          console.error('Fallback geolocation also failed:', fallbackError);
+          throw this.createDetailedError(fallbackError, 'Both high and low accuracy failed');
+        }
+      }
+      throw this.createDetailedError(error, 'Geolocation failed');
+    }
+  }
+
+  private async getPositionWithOptions(options: PositionOptions): Promise<GeoPosition> {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -100,15 +127,8 @@ export class GeolocationManager {
           this.lastPosition = geoPos;
           resolve(geoPos);
         },
-        (error) => {
-          console.error('Geolocation error:', error);
-          reject(this.handleError(error));
-        },
-        {
-          enableHighAccuracy: highAccuracy,
-          timeout,
-          maximumAge: 30000, // 30 seconds cache
-        }
+        reject,
+        options
       );
     });
   }
@@ -129,16 +149,25 @@ export class GeolocationManager {
         callback(geoPos);
       },
       (error) => {
-        const errorMsg = this.handleError(error);
-        console.error('Watch position error:', errorMsg);
+        const errorDetails = this.createDetailedError(error, 'Watch position failed');
+        console.error('Watch position error:', errorDetails.message);
         if (errorCallback) {
-          errorCallback(errorMsg);
+          errorCallback(errorDetails.message);
+        }
+        
+        // If timeout error with high accuracy, try switching to lower accuracy
+        if (highAccuracy && this.isTimeoutError(error)) {
+          console.warn('GPS watch timeout, switching to lower accuracy mode');
+          this.stopWatching();
+          setTimeout(() => {
+            this.startWatching(callback, errorCallback, false);
+          }, 1000);
         }
       },
       {
         enableHighAccuracy: highAccuracy,
-        timeout: 5000,
-        maximumAge: 0,
+        timeout: 20000, // Increased from 5s to 20s
+        maximumAge: 300000, // 5 minutes cache instead of 0
       }
     );
 
@@ -298,6 +327,46 @@ export class GeolocationManager {
     }
   }
 
+  private createDetailedError(error: GeolocationPositionError, context: string): Error {
+    const baseMessage = this.handleError(error);
+    const detailMessage = `${context}: ${baseMessage}`;
+    
+    // Create custom error with additional properties for better handling
+    const customError = new Error(detailMessage) as Error & {
+      code?: number;
+      type?: 'PERMISSION_DENIED' | 'POSITION_UNAVAILABLE' | 'TIMEOUT' | 'UNKNOWN';
+      isTimeout?: boolean;
+      canRetry?: boolean;
+    };
+    
+    customError.code = error.code;
+    customError.isTimeout = error.code === error.TIMEOUT;
+    customError.canRetry = error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE;
+    
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        customError.type = 'PERMISSION_DENIED';
+        break;
+      case error.POSITION_UNAVAILABLE:
+        customError.type = 'POSITION_UNAVAILABLE';
+        break;
+      case error.TIMEOUT:
+        customError.type = 'TIMEOUT';
+        break;
+      default:
+        customError.type = 'UNKNOWN';
+    }
+    
+    return customError;
+  }
+
+  private isTimeoutError(error: GeolocationPositionError | Error): boolean {
+    if ('code' in error) {
+      return error.code === GeolocationPositionError.prototype.TIMEOUT;
+    }
+    return error.message?.includes('timeout') || error.message?.includes('Timeout') || false;
+  }
+
   calculateDistance(
     lat1: number,
     lng1: number,
@@ -374,7 +443,7 @@ export async function requestLocationPermission(): Promise<boolean> {
   
   // Request permission by trying to get position
   try {
-    await manager.getCurrentPosition(false, 5000);
+    await manager.getCurrentPosition(false, 15000); // Increased from 5s to 15s
     return true;
   } catch (error) {
     console.error('Location permission denied:', error);
