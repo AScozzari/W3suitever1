@@ -6,6 +6,7 @@ import { TenantShell } from "./components/TenantShell";
 
 // Import pages that don't need tenant context
 import NotFound from "./pages/NotFound";
+import HRManagementPage from "./pages/HRManagementPage";
 
 /**
  * 🎯 NEW APP ARCHITECTURE - Automatic Tenant Management
@@ -51,6 +52,11 @@ function Router() {
   
   return (
     <Switch>
+      {/* 🔧 MANAGEMENT PAGES - Direct routes without tenant context */}
+      <Route path="/hr-management">
+        <HRManagementPage />
+      </Route>
+      
       {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto */}
       <Route path="/:tenant/*?">
         {(params) => {
