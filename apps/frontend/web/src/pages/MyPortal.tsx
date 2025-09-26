@@ -669,7 +669,7 @@ export default function MyPortal() {
                         <UnifiedClockingPanel
                           userId={displayUser.matricola}
                           enabledStrategies={['gps', 'nfc', 'qr', 'smart', 'web', 'badge']}
-                          defaultStrategy="gps"
+                          // ✅ PROGRESSIVE DISCLOSURE: No defaultStrategy - user must select PDV → method workflow
                           onClockIn={() => {
                             // Refresh data after clock in
                             // TODO: Invalidate queries for time tracking

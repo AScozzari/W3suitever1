@@ -115,7 +115,7 @@ export default function UnifiedClockingPanel({
   onClockIn, 
   onClockOut,
   enabledStrategies,
-  defaultStrategy = 'gps',
+  defaultStrategy = '', // ✅ PROGRESSIVE DISCLOSURE: No auto-selection, requires explicit PDV → method choice
   className 
 }: UnifiedClockingPanelProps) {
   const { toast } = useToast();
