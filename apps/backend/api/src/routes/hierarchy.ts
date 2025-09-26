@@ -190,7 +190,7 @@ router.post('/organizational-structure', requirePermission('hierarchy.write'), a
 router.get('/approval-workflows', requirePermission('workflows.read'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
-    const serviceName = req.query.service as string;
+    const category = req.query.category as string;
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
@@ -198,8 +198,8 @@ router.get('/approval-workflows', requirePermission('workflows.read'), async (re
 
     const conditions = [eq(approvalWorkflows.tenantId, tenantId)];
     
-    if (serviceName) {
-      conditions.push(eq(approvalWorkflows.serviceName, serviceName));
+    if (category) {
+      conditions.push(eq(approvalWorkflows.category, category));
     }
     
     const query = db
@@ -211,10 +211,10 @@ router.get('/approval-workflows', requirePermission('workflows.read'), async (re
 
     // Group workflows by service
     const groupedWorkflows = workflows.reduce((acc, workflow) => {
-      if (!acc[workflow.serviceName]) {
-        acc[workflow.serviceName] = [];
+      if (!acc[workflow.category]) {
+        acc[workflow.category] = [];
       }
-      acc[workflow.serviceName].push(workflow);
+      acc[workflow.category].push(workflow);
       return acc;
     }, {} as Record<string, typeof workflows>);
 
@@ -378,7 +378,7 @@ router.post('/universal-requests', requirePermission('requests.create'), async (
       .where(
         and(
           eq(approvalWorkflows.tenantId, tenantId),
-          eq(approvalWorkflows.serviceName, validatedData.serviceName),
+          eq(approvalWorkflows.category, validatedData.category),
           eq(approvalWorkflows.workflowType, validatedData.requestType),
           eq(approvalWorkflows.isActive, true)
         )
@@ -388,7 +388,7 @@ router.post('/universal-requests', requirePermission('requests.create'), async (
 
     if (workflow.length === 0) {
       return res.status(400).json({ 
-        error: `No active workflow found for ${validatedData.serviceName}/${validatedData.requestType}` 
+        error: `No active workflow found for ${validatedData.category}/${validatedData.requestType}` 
       });
     }
 
@@ -400,13 +400,11 @@ router.post('/universal-requests', requirePermission('requests.create'), async (
       validatedData.requestData
     );
 
-    // Create request with approval chain
+    // Create request
     const [newRequest] = await db
       .insert(universalRequests)
       .values({
         ...validatedData,
-        approvalChain,
-        currentLevel: 0,
         dueDate: calculateDueDate(workflow[0].rules)
       })
       .returning();

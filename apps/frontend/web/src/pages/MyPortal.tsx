@@ -1963,9 +1963,6 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
           </div>
         </form>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-};
+      </>
+    );
+  };
