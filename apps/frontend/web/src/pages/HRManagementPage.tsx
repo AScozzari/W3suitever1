@@ -543,8 +543,8 @@ const HRManagementPage: React.FC = () => {
       // Status filter
       const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
       
-      // Category filter (currently all HR, but prepared for future Finance/Operations)
-      const matchesCategory = categoryFilter === 'all' || categoryFilter === 'hr';
+      // Category filter using request types from modal
+      const matchesCategory = categoryFilter === 'all' || (request.requestType || request.type) === categoryFilter;
       
       // Enhanced search: name, type, description
       const requesterFullName = `${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim();
@@ -696,22 +696,40 @@ const HRManagementPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le categorie</SelectItem>
-                      <SelectItem value="hr">
+                      <SelectItem value="leave">
                         <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-blue-600" />
-                          HR - Risorse Umane
+                          <Plane className="w-4 h-4 text-green-600" />
+                          Ferie
                         </div>
                       </SelectItem>
-                      <SelectItem value="finance" disabled>
+                      <SelectItem value="sick_leave">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-green-600 opacity-50" />
-                          Finance (Presto disponibile)
+                          <Heart className="w-4 h-4 text-red-600" />
+                          Malattia
                         </div>
                       </SelectItem>
-                      <SelectItem value="operations" disabled>
+                      <SelectItem value="overtime">
                         <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-purple-600 opacity-50" />
-                          Operations (Presto disponibile)
+                          <Clock className="w-4 h-4 text-orange-600" />
+                          Straordinari
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="expense">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-purple-600" />
+                          Nota Spese
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="training">
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-blue-600" />
+                          Formazione
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="remote_work">
+                        <div className="flex items-center gap-2">
+                          <Home className="w-4 h-4 text-indigo-600" />
+                          Lavoro Remoto
                         </div>
                       </SelectItem>
                     </SelectContent>
