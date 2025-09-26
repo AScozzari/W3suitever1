@@ -12060,23 +12060,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[UNIVERSAL-REQUESTS] ✅ Found ${requests.length} requests (total: ${count})`);
       
-      // Temporarily return simple data to debug circular reference issue
-      const cleanedRequests = [
-        {
-          id: 'test-id-1',
-          title: 'Test Request 1', 
-          status: 'pending',
-          category: 'hr',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'test-id-2', 
-          title: 'Test Request 2',
-          status: 'approved',
-          category: 'finance',
-          createdAt: new Date().toISOString()
-        }
-      ];
+      // Map real database results to clean objects 
+      const cleanedRequests = requests.map(r => ({
+        id: r.id,
+        title: r.title,
+        status: r.status,
+        category: r.category,
+        requestType: r.requestType,
+        requestSubtype: r.requestSubtype,
+        priority: r.priority,
+        requesterId: r.requesterId,
+        description: r.description,
+        requestData: r.requestData,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        tenantId: r.tenantId,
+        storeId: r.storeId,
+        legalEntityId: r.legalEntityId
+      }));
 
       res.json({
         success: true,
