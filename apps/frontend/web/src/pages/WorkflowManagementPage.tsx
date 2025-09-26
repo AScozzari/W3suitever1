@@ -815,6 +815,17 @@ const WorkflowManagementPage: React.FC = () => {
     refetchInterval: false, // Disabilito il polling automatico per evitare troppe chiamate
   });
 
+  // ✅ NEW: Universal Requests data for timeline status tracking
+  const { data: universalRequestsData, isLoading: loadingUniversalRequests } = useQuery<{requests: any[]}>({
+    queryKey: ['/api/universal-requests'],
+    queryFn: () => apiRequest('/api/universal-requests'),
+    staleTime: 2 * 60 * 1000, // 2 minuti
+    refetchOnWindowFocus: false
+  });
+
+  // Extract requests array from response object
+  const allUniversalRequests = universalRequestsData?.requests || [];
+
   const { data: workflowActionsData = [] } = useQuery<any[]>({
     queryKey: ['/api/workflow-actions'],
     staleTime: 10 * 60 * 1000, // 10 minuti - questi dati cambiano raramente
@@ -1251,6 +1262,64 @@ const WorkflowManagementPage: React.FC = () => {
     setEditingTeam(null);
   };
 
+  // ✅ NEW: Status Timeline Component for universal requests tracking
+  const StatusTimeline = ({ request }: { request: any }) => {
+    const getStatusInfo = (status: string) => {
+      switch (status) {
+        case 'pending':
+          return { icon: Clock, color: 'text-yellow-500', bgColor: 'bg-yellow-100', label: 'In Attesa' };
+        case 'in_review': 
+          return { icon: Eye, color: 'text-blue-500', bgColor: 'bg-blue-100', label: 'In Revisione' };
+        case 'approved':
+          return { icon: CheckCircle, color: 'text-green-500', bgColor: 'bg-green-100', label: 'Approvata' };
+        case 'completed':
+          return { icon: Target, color: 'text-purple-500', bgColor: 'bg-purple-100', label: 'Completata' };
+        case 'rejected':
+          return { icon: X, color: 'text-red-500', bgColor: 'bg-red-100', label: 'Rifiutata' };
+        default:
+          return { icon: Clock, color: 'text-gray-500', bgColor: 'bg-gray-100', label: 'Sconosciuto' };
+      }
+    };
+
+    const statusInfo = getStatusInfo(request.status);
+    const IconComponent = statusInfo.icon;
+
+    return (
+      <div className="flex items-center gap-4 p-4 bg-white/10 border border-white/20 rounded-lg backdrop-blur-sm hover:bg-white/15 transition-all duration-200">
+        <div className={`p-2 rounded-full ${statusInfo.bgColor}`}>
+          <IconComponent className={`w-5 h-5 ${statusInfo.color}`} />
+        </div>
+        <div className="flex-1">
+          <h4 className="font-semibold text-gray-900 dark:text-gray-100" data-testid={`request-title-${request.id}`}>
+            {request.title || 'Richiesta senza titolo'}
+          </h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400" data-testid={`request-category-${request.id}`}>
+            Categoria: {request.category?.toUpperCase() || 'N/A'}
+          </p>
+          <p className="text-sm text-gray-500" data-testid={`request-date-${request.id}`}>
+            Creata il: {new Date(request.createdAt).toLocaleDateString('it-IT', {
+              year: 'numeric',
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`} data-testid={`request-status-${request.id}`}>
+            {statusInfo.label}
+          </span>
+          {request.requesterId && (
+            <p className="text-xs text-gray-500 mt-1" data-testid={`request-requester-${request.id}`}>
+              ID: {request.requesterId}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Dashboard Overview Component
   const DashboardOverview = () => (
     <div className="space-y-6">
@@ -1448,6 +1517,58 @@ const WorkflowManagementPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* ✅ NEW: Request Status Timeline Section */}
+      <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-orange-500" />
+            Timeline Richieste Enterprise
+          </CardTitle>
+          <CardDescription>
+            Tracciamento stato delle richieste con AI routing automatico
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingUniversalRequests ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-4">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : allUniversalRequests.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Activity className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p className="text-lg font-medium mb-2">Nessuna richiesta trovata</p>
+              <p className="text-sm">Le richieste inviate dal form HR appariranno qui</p>
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-96 overflow-y-auto" data-testid="timeline-requests-container">
+              {allUniversalRequests
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 10)
+                .map((request) => (
+                  <StatusTimeline key={request.id} request={request} />
+                ))}
+              
+              {allUniversalRequests.length > 10 && (
+                <div className="text-center pt-4 border-t border-white/20">
+                  <p className="text-sm text-gray-500">
+                    Mostrate le ultime 10 richieste di {allUniversalRequests.length}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 

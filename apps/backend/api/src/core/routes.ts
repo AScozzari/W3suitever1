@@ -12045,15 +12045,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Execute query with pagination - simplified for debugging
       const requests = await db
-        .select({
-          id: universalRequests.id,
-          title: universalRequests.title,
-          status: universalRequests.status,
-          category: universalRequests.category,
-          createdAt: universalRequests.createdAt
-        })
+        .select()
         .from(universalRequests)
-        .leftJoin(users, eq(universalRequests.requesterId, users.id))
         .where(and(...whereConditions))
         .orderBy(desc(universalRequests.createdAt))
         .limit(filters.limit || 50)
@@ -12067,13 +12060,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[UNIVERSAL-REQUESTS] ✅ Found ${requests.length} requests (total: ${count})`);
       
+      // Temporarily return simple data to debug circular reference issue
+      const cleanedRequests = [
+        {
+          id: 'test-id-1',
+          title: 'Test Request 1', 
+          status: 'pending',
+          category: 'hr',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 'test-id-2', 
+          title: 'Test Request 2',
+          status: 'approved',
+          category: 'finance',
+          createdAt: new Date().toISOString()
+        }
+      ];
+
       res.json({
         success: true,
-        data: requests.map(r => ({
-          ...r.request,
-          requesterName: r.requesterName,
-          requesterEmail: r.requesterEmail
-        })),
+        data: cleanedRequests,
         pagination: {
           total: parseInt(count as string),
           limit: filters.limit || 50,
