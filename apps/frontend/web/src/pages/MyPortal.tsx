@@ -1736,7 +1736,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
         borderRadius: '16px',
         padding: '32px',
         width: '95%',
-        maxWidth: '1200px',
+        maxWidth: '900px',
         maxHeight: '95vh',
         overflow: 'auto',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -1754,8 +1754,12 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
               fontSize: '28px',
               fontWeight: '700',
               color: '#111827',
-              margin: '0 0 8px 0'
+              margin: '0 0 8px 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}>
+              <ClipboardList size={24} style={{ color: '#FF6900' }} />
               Nuova Richiesta HR
             </h2>
             <p style={{
