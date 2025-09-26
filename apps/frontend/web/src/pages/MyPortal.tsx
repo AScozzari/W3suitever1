@@ -1649,7 +1649,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-[90%] max-w-2xl max-h-[90vh] overflow-auto shadow-xl border-t-4 border-orange-500">
         {/* Header Modal */}
         <div className="p-6 bg-white border-b border-gray-200">
