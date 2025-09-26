@@ -996,7 +996,7 @@ const HRManagementPage: React.FC = () => {
 
   const RequestModal = () => (
     <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Nuova Richiesta HR</DialogTitle>
           <DialogDescription>
@@ -1082,14 +1082,16 @@ const HRManagementPage: React.FC = () => {
             />
           </div>
 
-          {hrWorkflowTemplates.length > 0 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Questa richiesta creerà automaticamente un workflow utilizzando i template configurati in WorkflowManagement
-              </AlertDescription>
-            </Alert>
-          )}
+        </div>
+
+        {/* Info finale sui workflow automatici */}
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Questa richiesta creerà automaticamente un workflow utilizzando i template configurati in WorkflowManagement
+            </p>
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 mt-6">
