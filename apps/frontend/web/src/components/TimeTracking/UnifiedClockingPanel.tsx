@@ -565,7 +565,8 @@ export default function UnifiedClockingPanel({
                           </div>
                         </SelectItem>
                       );
-                    })}
+                    })
+                    )}
                   </SelectContent>
                 </Select>
 
