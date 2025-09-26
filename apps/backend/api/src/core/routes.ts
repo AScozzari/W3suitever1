@@ -12043,10 +12043,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         whereConditions.push(lte(universalRequests.createdAt, new Date(filters.endDate)));
       }
       
-      // Execute query with pagination - simplified for debugging
+      // Execute query with pagination - with user join for requesterName
       const requests = await db
-        .select()
+        .select({
+          id: universalRequests.id,
+          title: universalRequests.title,
+          status: universalRequests.status,
+          category: universalRequests.category,
+          requestType: universalRequests.requestType,
+          requestSubtype: universalRequests.requestSubtype,
+          priority: universalRequests.priority,
+          requesterId: universalRequests.requesterId,
+          description: universalRequests.description,
+          requestData: universalRequests.requestData,
+          createdAt: universalRequests.createdAt,
+          updatedAt: universalRequests.updatedAt,
+          tenantId: universalRequests.tenantId,
+          storeId: universalRequests.storeId,
+          legalEntityId: universalRequests.legalEntityId,
+          // Join user fields for requesterName
+          requesterFirstName: users.firstName,
+          requesterLastName: users.lastName,
+          requesterEmail: users.email
+        })
         .from(universalRequests)
+        .leftJoin(users, eq(universalRequests.requesterId, users.id))
         .where(and(...whereConditions))
         .orderBy(desc(universalRequests.createdAt))
         .limit(filters.limit || 50)
@@ -12060,7 +12081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[UNIVERSAL-REQUESTS] ✅ Found ${requests.length} requests (total: ${count})`);
       
-      // Map real database results to clean objects 
+      // Map real database results to clean objects with requesterName
       const cleanedRequests = requests.map(r => ({
         id: r.id,
         title: r.title,
@@ -12070,6 +12091,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestSubtype: r.requestSubtype,
         priority: r.priority,
         requesterId: r.requesterId,
+        // Build requesterName from firstName and lastName
+        requesterName: r.requesterFirstName && r.requesterLastName 
+          ? `${r.requesterFirstName} ${r.requesterLastName}`
+          : r.requesterEmail || 'Nome non disponibile',
         description: r.description,
         requestData: r.requestData,
         createdAt: r.createdAt,
