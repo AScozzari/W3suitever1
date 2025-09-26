@@ -52,11 +52,6 @@ function Router() {
   
   return (
     <Switch>
-      {/* 🔧 MANAGEMENT PAGES - Direct routes without tenant context */}
-      <Route path="/hr-management">
-        <HRManagementPage />
-      </Route>
-      
       {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto */}
       <Route path="/:tenant/*?">
         {(params) => {
