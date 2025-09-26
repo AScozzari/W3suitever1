@@ -385,7 +385,7 @@ export default function MyPortal() {
                 onClick={() => setTab(tab.id)}
                 style={{
                   flex: '1 1 auto',
-                  minWidth: '120px',
+                  minWidth: 'clamp(80px, 15vw, 120px)',
                   background: isActive 
                     ? 'linear-gradient(135deg, #FF6900, #ff8533)'
                     : 'transparent',
@@ -425,7 +425,7 @@ export default function MyPortal() {
               <div className="space-y-6" data-testid="section-overview">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Welcome Card - WindTre Glass */}
-                  <Card className="lg:col-span-2 glass-card hover:shadow-xl transition-all duration-300">
+                  <Card className="col-span-1 lg:col-span-2 glass-card hover:shadow-xl transition-all duration-300">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Sun className="h-5 w-5 text-orange-500" />
@@ -885,20 +885,22 @@ export default function MyPortal() {
                 />
 
                 {/* Document Grid */}
-                <DocumentGrid
-                  documents={documents}
-                  viewMode="grid"
-                  selectedDocuments={new Set<string>()}
-                  onSelectDocument={(docId: string, isSelected: boolean) => {}}
-                  onViewDocument={(doc: any) => {
-                    setDocumentViewerModal({ open: true, data: doc });
-                  }}
-                  onDeleteDocument={async (docId: string) => {}}
-                  onDocumentClick={(document: any) => {
-                    setDocumentViewerModal({ open: true, data: document });
-                  }}
-                  isLoading={documentsLoading}
-                />
+                <div className="overflow-x-auto">
+                  <DocumentGrid
+                    documents={documents}
+                    viewMode="grid"
+                    selectedDocuments={new Set<string>()}
+                    onSelectDocument={(docId: string, isSelected: boolean) => {}}
+                    onViewDocument={(doc: any) => {
+                      setDocumentViewerModal({ open: true, data: doc });
+                    }}
+                    onDeleteDocument={async (docId: string) => {}}
+                    onDocumentClick={(document: any) => {
+                      setDocumentViewerModal({ open: true, data: document });
+                    }}
+                    isLoading={documentsLoading}
+                  />
+                </div>
 
                 {/* Payslip Manager */}
                 <Card className="glass-card">
@@ -1650,7 +1652,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
 
   return (
     <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-[90%] max-w-2xl max-h-[90vh] overflow-auto shadow-xl border-t-4 border-orange-500">
+      <div className="bg-white rounded-lg w-full max-w-[min(90vw,800px)] max-h-[90vh] overflow-auto shadow-xl border-t-4 border-orange-500">
         {/* Header Modal */}
         <div className="p-6 bg-white border-b border-gray-200">
           <div className="flex justify-between items-start">
@@ -1688,9 +1690,9 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
         </div>
 
         {/* Content Area */}
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           <form onSubmit={handleSubmit} className="mt-0">
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
             {/* Category */}
               <div className="flex flex-col gap-2">
                 <label htmlFor="category" className="text-sm font-semibold text-gray-700">
@@ -1735,7 +1737,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Start Date */}
             <div className="space-y-2">
               <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700">
@@ -1813,13 +1815,13 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
             
             {/* Main Actions Row */}
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button 
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
-                className="flex-1"
+                className="w-full sm:flex-1"
                 data-testid="button-cancel"
               >
                 Annulla
@@ -1827,7 +1829,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
               <Button 
                 type="submit"
                 disabled={isSubmitting || Object.keys(validationErrors).length > 0}
-                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 flex-1"
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 w-full sm:flex-1"
                 data-testid="button-submit"
               >
                 {isSubmitting ? (
