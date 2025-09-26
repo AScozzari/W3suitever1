@@ -102,7 +102,7 @@ export const useHRQueryReadiness = () => {
   const hasValidTenant = tenantId && tenantId !== 'undefined' && tenantId !== 'null';
   
   // In development, se abbiamo un tenant ID valido, abilitiamo subito
-  const enabled = isDevelopment ? hasValidTenant : false;
+  const enabled = isDevelopment ? !!hasValidTenant : false;
   
   console.log(`🔧 [HR-QUERY-READINESS] Mode: ${import.meta.env.MODE}, TenantID: ${tenantId}, Enabled: ${enabled}`);
   

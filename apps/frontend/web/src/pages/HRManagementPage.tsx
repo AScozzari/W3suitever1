@@ -86,12 +86,24 @@ interface HRDocument {
 // ==================== MAIN COMPONENT ====================
 
 const HRManagementPage: React.FC = () => {
+  // 🚨 DEBUG: VERY FIRST LOG to see if component loads at all
+  console.log('🚨 [HR-COMPONENT] HRManagementPage IS LOADING!', new Date().toISOString());
+  
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees'>('dashboard');
   const [currentModule, setCurrentModule] = useState('hr');
   
   // ✅ NEW: HR Authentication Readiness Hook
   const { enabled: hrQueriesEnabled, loading: hrAuthLoading, attempts, debugInfo } = useHRQueryReadiness();
+  
+  // 🔍 DEBUG: Log query readiness status
+  console.log('🔍 [HR-DEBUG] Query readiness status:', {
+    hrQueriesEnabled,
+    hrAuthLoading,
+    attempts,
+    debugInfo,
+    timestamp: new Date().toISOString()
+  });
   
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
