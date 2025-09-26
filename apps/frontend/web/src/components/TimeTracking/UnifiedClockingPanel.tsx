@@ -207,13 +207,16 @@ export default function UnifiedClockingPanel({
   // Store selection state
   const [selectedStore, setSelectedStore] = React.useState<NearbyStore | null>(null);
   const [autoDetected] = React.useState(false);
-  const [gpsError] = React.useState<string | null>(null);
-  const [gpsPosition] = React.useState<any>(null);
+  
+  // GPS states - now dynamic and connected to strategies
+  const [gpsError, setGpsError] = React.useState<string | null>(null);
+  const [gpsPosition, setGpsPosition] = React.useState<any>(null);
+  const [gpsStatus, setGpsStatus] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   // Local state
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedStrategyType, setSelectedStrategyType] = useState<StrategyType>(defaultStrategy);
-  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
+  const [selectedStrategyType, setSelectedStrategyType] = useState<StrategyType>(''); // ✅ FIX: Empty by default
+  const [selectedStoreId, setSelectedStoreId] = useState<string>(''); // ✅ FIX: Empty by default
 
   // Timer per clock corrente
   useEffect(() => {
@@ -249,9 +252,34 @@ export default function UnifiedClockingPanel({
   // Handler cambio strategia
   const handleStrategyChange = async (strategyType: StrategyType) => {
     setSelectedStrategyType(strategyType);
+    
+    // Reset GPS states when changing strategy
+    if (strategyType === 'gps') {
+      setGpsStatus('loading');
+      setGpsError(null);
+      setGpsPosition(null);
+    } else {
+      setGpsStatus('idle');
+      setGpsError(null);
+    }
+    
     const success = await strategiesActions.selectStrategy(strategyType);
     if (success && context) {
-      await strategiesActions.prepareStrategy(context);
+      try {
+        await strategiesActions.prepareStrategy(context);
+        if (strategyType === 'gps' && strategiesState.prepareResult?.success) {
+          setGpsStatus('success');
+          // Extract GPS data from prepare result if available
+          if (strategiesState.prepareResult.metadata?.position) {
+            setGpsPosition(strategiesState.prepareResult.metadata.position);
+          }
+        }
+      } catch (error: any) {
+        if (strategyType === 'gps') {
+          setGpsStatus('error');
+          setGpsError(error.message || 'GPS preparation failed');
+        }
+      }
     }
   };
 
@@ -485,9 +513,9 @@ export default function UnifiedClockingPanel({
                   <span className="font-semibold">Tipo Timbratura *</span>
                 </div>
 
-                <Select value={selectedStrategyType} onValueChange={handleStrategyChange}>
+                <Select value={selectedStrategyType} onValueChange={handleStrategyChange} disabled={!selectedStoreId}>
                   <SelectTrigger className="w-full" data-testid="select-strategy">
-                    <SelectValue placeholder="Seleziona metodo..." />
+                    <SelectValue placeholder={!selectedStoreId ? "Prima seleziona un PDV" : "Seleziona metodo..."} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableStrategyConfigs.map((config) => {
