@@ -29,7 +29,7 @@ import {
   Filter, Search, Download, Upload, Eye, MoreHorizontal,
   PieChart, Activity, Target, Brain, Zap, ArrowRight,
   MapPin, Phone, Mail, Shield, Award, Briefcase,
-  Coffee, Home, Plane, Car, DollarSign, AlertTriangle
+  Coffee, Home, Plane, Car, DollarSign, AlertTriangle, Heart
 } from 'lucide-react';
 import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
 
@@ -672,16 +672,18 @@ const HRManagementPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Requests Table */}
+        {/* Enhanced Requests Table */}
         <Card className="backdrop-blur-md bg-white/10 border-white/20">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left p-4 font-medium">Dipendente</th>
-                    <th className="text-left p-4 font-medium">Tipo</th>
-                    <th className="text-left p-4 font-medium">Periodo</th>
+                    <th className="text-left p-4 font-medium">Richiedente</th>
+                    <th className="text-left p-4 font-medium">Categoria</th>
+                    <th className="text-left p-4 font-medium">Tipologia</th>
+                    <th className="text-left p-4 font-medium">Descrizione</th>
+                    <th className="text-left p-4 font-medium">Periodo/Importo</th>
                     <th className="text-left p-4 font-medium">Stato</th>
                     <th className="text-left p-4 font-medium">Workflow</th>
                     <th className="text-left p-4 font-medium">Azioni</th>
@@ -690,31 +692,79 @@ const HRManagementPage: React.FC = () => {
                 <tbody>
                   {filteredRequests.map((request) => (
                     <tr key={request.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      {/* Richiedente */}
                       <td className="p-4">
                         <div>
                           <p className="font-medium" data-testid={`requester-${request.id}`}>
                             {request.requesterName}
                           </p>
-                          <p className="text-sm text-slate-500">
-                            {new Date(request.createdAt).toLocaleDateString()}
+                          <p className="text-xs text-slate-500">
+                            {new Date(request.createdAt).toLocaleDateString('it-IT', {
+                              day: '2-digit', month: '2-digit', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            })}
                           </p>
                         </div>
                       </td>
+
+                      {/* Categoria */}
                       <td className="p-4">
-                        <Badge variant="outline">{getRequestTypeName(request.type)}</Badge>
+                        <Badge className="bg-blue-500/20 text-blue-700 border-blue-500/30">
+                          <Users className="w-3 h-3 mr-1" />
+                          HR
+                        </Badge>
                       </td>
+
+                      {/* Tipologia Specifica */}
                       <td className="p-4">
-                        <div className="text-sm">
-                          {request.startDate && (
-                            <p>{new Date(request.startDate).toLocaleDateString()}</p>
-                          )}
-                          {request.endDate && (
-                            <p className="text-slate-500">
-                              → {new Date(request.endDate).toLocaleDateString()}
-                            </p>
-                          )}
+                        <div className="flex items-center gap-2">
+                          {request.type === 'leave' && <Plane className="w-4 h-4 text-green-600" />}
+                          {request.type === 'sick_leave' && <Heart className="w-4 h-4 text-red-600" />}
+                          {request.type === 'overtime' && <Clock className="w-4 h-4 text-orange-600" />}
+                          {request.type === 'expense' && <DollarSign className="w-4 h-4 text-purple-600" />}
+                          {request.type === 'training' && <Target className="w-4 h-4 text-blue-600" />}
+                          {request.type === 'remote_work' && <Home className="w-4 h-4 text-indigo-600" />}
+                          <span className="text-sm font-medium">{getRequestTypeName(request.type)}</span>
                         </div>
                       </td>
+
+                      {/* Descrizione */}
+                      <td className="p-4 max-w-xs">
+                        <p className="text-sm text-slate-700 dark:text-slate-300 truncate" 
+                           title={request.reason}
+                           data-testid={`description-${request.id}`}>
+                          {request.reason || 'Nessuna descrizione'}
+                        </p>
+                      </td>
+
+                      {/* Periodo/Importo */}
+                      <td className="p-4">
+                        {request.amount ? (
+                          <div className="text-sm">
+                            <p className="font-semibold text-green-600">€ {request.amount.toFixed(2)}</p>
+                            {request.startDate && (
+                              <p className="text-xs text-slate-500">
+                                {new Date(request.startDate).toLocaleDateString('it-IT')}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-sm">
+                            {request.startDate && (
+                              <p className="font-medium">
+                                {new Date(request.startDate).toLocaleDateString('it-IT')}
+                              </p>
+                            )}
+                            {request.endDate && (
+                              <p className="text-xs text-slate-500">
+                                → {new Date(request.endDate).toLocaleDateString('it-IT')}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Stato */}
                       <td className="p-4">
                         <Badge 
                           className={getStatusBadgeClass(request.status)}
@@ -723,24 +773,58 @@ const HRManagementPage: React.FC = () => {
                           {getStatusLabel(request.status)}
                         </Badge>
                       </td>
+
+                      {/* Workflow */}
                       <td className="p-4">
                         {request.workflowInstanceId ? (
                           <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => window.open(`/staging/workflow-management`, '_blank')}
+                            data-testid={`workflow-${request.id}`}
                           >
                             <Eye className="w-3 h-3 mr-1" />
-                            Vedi Workflow
+                            Workflow
                           </Button>
                         ) : (
-                          <span className="text-sm text-slate-500">Non collegato</span>
+                          <span className="text-xs text-slate-500">Non collegato</span>
                         )}
                       </td>
+
+                      {/* Azioni Specifiche */}
                       <td className="p-4">
-                        <Button variant="ghost" size="sm" data-testid={`actions-${request.id}`}>
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          {request.status === 'pending' && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-green-600 hover:bg-green-500/10 hover:text-green-700"
+                                data-testid={`approve-${request.id}`}
+                                title="Approva richiesta"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                                data-testid={`reject-${request.id}`}
+                                title="Rifiuta richiesta"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            data-testid={`view-details-${request.id}`}
+                            title="Vedi dettagli"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -751,6 +835,7 @@ const HRManagementPage: React.FC = () => {
               <div className="text-center py-12 text-slate-500">
                 <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
                 <p>Nessuna richiesta trovata</p>
+                <p className="text-sm mt-2">Utilizza i filtri per cercare richieste specifiche</p>
               </div>
             )}
           </CardContent>
