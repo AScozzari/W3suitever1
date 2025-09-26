@@ -1647,97 +1647,209 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={(open) => {
-        if (!open) resetForm();
-        onOpenChange(open);
-      }}
-    >
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-modal">
-        <DialogHeader className="pb-6 border-b border-gray-200/50">
-          <DialogTitle className="flex items-center gap-3 text-xl font-semibold text-gray-900">
-            <div className="bg-orange-500 text-white p-2 rounded-lg">
-              <ClipboardList className="h-5 w-5" />
+    <>
+      {open && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '800px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            borderTop: '3px solid transparent',
+            borderImage: 'linear-gradient(90deg, #FF6900, #7B2CBF) 1',
+            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            {/* Header Modal - Clean Design */}
+            <div style={{
+              padding: '24px 32px',
+              background: '#ffffff',
+              borderBottom: '1px solid #e5e7eb'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'none'
+                    }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h2 style={{
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      color: '#111827',
+                      margin: 0,
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                      Nuova Richiesta HR
+                    </h2>
+                  </div>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#6b7280',
+                    margin: 0,
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Compila il modulo per inviare la tua richiesta al reparto HR
+                  </p>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    resetForm();
+                    onOpenChange(false);
+                  }}
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+                  }}
+                  data-testid="button-close-modal"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-            Nuova Richiesta HR
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 leading-relaxed mt-3">
-            Compila il modulo per inviare una nuova richiesta HR. Il sistema seguirà automaticamente 
-            i workflow di approvazione aziendali.
-          </DialogDescription>
-        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Content Area */}
+            <div style={{ padding: '32px' }}>
+
+        <form onSubmit={handleSubmit} style={{ marginTop: '0' }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gap: '24px',
+            marginBottom: '24px'
+          }}>
             {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category" className="text-sm font-semibold text-gray-700">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label htmlFor="category" style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                color: '#374151',
+                fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+              }}>
                 Categoria Richiesta
-              </Label>
-              <Select 
+              </label>
+              <select 
                 value={formData.category} 
-                onValueChange={(value: typeof formData.category) => {
+                onChange={(e) => {
                   // Reset type when category changes
-                  setFormData({ ...formData, category: value, type: 'vacation' });
+                  setFormData({ ...formData, category: e.target.value as any, type: 'vacation' });
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  backgroundColor: 'white'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#3b82f6';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#e5e7eb';
                 }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona categoria">
-                    {formData.category && ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES]?.name}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-w-md">
-                  {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
-                    <SelectItem key={key} value={key} className="py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl flex-shrink-0">{category.icon}</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-gray-900 text-sm">{category.name}</div>
-                          <div className="text-xs text-gray-600 leading-tight mt-0.5">{category.description}</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Seleziona categoria</option>
+                {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
+                  <option key={key} value={key}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Type */}
-            <div className="space-y-2">
-              <Label htmlFor="type" className="text-sm font-semibold text-gray-700">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label htmlFor="type" style={{ 
+                fontSize: '14px', 
+                fontWeight: '600', 
+                color: '#374151',
+                fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+              }}>
                 Tipologia Specifica
-              </Label>
-              <Select 
+              </label>
+              <select 
                 value={formData.type} 
-                onValueChange={(value: typeof formData.type) => setFormData({ ...formData, type: value })}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  backgroundColor: 'white'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#3b82f6';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona tipo">
-                    {formData.type && formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]?.[formData.type as keyof any]?.name}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-w-lg max-h-80">
-                  {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
-                    Object.entries(ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]).map(([key, type]) => (
-                      <SelectItem key={key} value={key} className="py-3">
-                        <div className="space-y-1">
-                          <div className="font-semibold text-gray-900 text-sm">{type.name}</div>
-                          <div className="text-xs text-gray-600 leading-tight">{type.desc}</div>
-                          <div className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded font-medium">{type.legal}</div>
-                        </div>
-                      </SelectItem>
-                    ))
-                  }
-                  {!formData.category && (
-                    <SelectItem value="" disabled className="py-3">
-                      <div className="text-gray-400 text-center">
-                        Seleziona prima una categoria
-                      </div>
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+                <option value="">Seleziona tipo</option>
+                {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
+                  Object.entries(ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]).map(([key, type]) => (
+                    <option key={key} value={key}>
+                      {type.name}
+                    </option>
+                  ))
+                }
+              </select>
             </div>
           </div>
 
@@ -1851,7 +1963,9 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
             </div>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
-  );
+            </div>
+          </div>
+        </div>
+      )}
+    </>
 };

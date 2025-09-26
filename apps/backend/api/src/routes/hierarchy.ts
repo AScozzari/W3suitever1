@@ -300,16 +300,16 @@ router.get('/universal-requests', requirePermission('requests.read'), async (req
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    const { service, status, requester } = req.query;
+    const { category, status, requester } = req.query;
 
     // Build query conditions
     let conditions = [eq(universalRequests.tenantId, tenantId)];
     
-    if (service) {
-      conditions.push(eq(universalRequests.serviceName, service as string));
+    if (category) {
+      conditions.push(eq(universalRequests.category, category as string));
     }
     if (status) {
-      conditions.push(eq(universalRequests.status, status as string));
+      conditions.push(eq(universalRequests.status, status as any));
     }
     if (requester) {
       conditions.push(eq(universalRequests.requesterId, requester as string));
@@ -318,15 +318,18 @@ router.get('/universal-requests', requirePermission('requests.read'), async (req
     const requests = await db
       .select({
         id: universalRequests.id,
-        serviceName: universalRequests.serviceName,
+        category: universalRequests.category,
         requestType: universalRequests.requestType,
+        requestSubtype: universalRequests.requestSubtype,
+        title: universalRequests.title,
+        description: universalRequests.description,
         requesterId: universalRequests.requesterId,
         requestData: universalRequests.requestData,
         status: universalRequests.status,
-        currentLevel: universalRequests.currentLevel,
-        approvalChain: universalRequests.approvalChain,
         priority: universalRequests.priority,
         dueDate: universalRequests.dueDate,
+        startDate: universalRequests.startDate,
+        endDate: universalRequests.endDate,
         createdAt: universalRequests.createdAt,
         // Join requester data
         requesterFirstName: users.firstName,
