@@ -362,7 +362,8 @@ export class GeolocationManager {
 
   private isTimeoutError(error: GeolocationPositionError | Error): boolean {
     if ('code' in error) {
-      return error.code === GeolocationPositionError.prototype.TIMEOUT;
+      // GeolocationPositionError.TIMEOUT is code 3
+      return error.code === 3;
     }
     return error.message?.includes('timeout') || error.message?.includes('Timeout') || false;
   }
