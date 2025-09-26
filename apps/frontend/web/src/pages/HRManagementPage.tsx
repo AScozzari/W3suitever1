@@ -536,8 +536,8 @@ const HRManagementPage: React.FC = () => {
 
     const filteredRequests = hrRequests.filter(request => {
       const matchesFilter = filter === 'all' || request.status === filter;
-      const matchesSearch = request.requesterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           getRequestTypeName(request.type).toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (request.requesterName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           getRequestTypeName(request.requestType || request.type).toLowerCase().includes(searchTerm.toLowerCase());
       return matchesFilter && matchesSearch;
     });
 
