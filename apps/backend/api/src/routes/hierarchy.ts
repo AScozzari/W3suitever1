@@ -392,6 +392,60 @@ router.post('/universal-requests', requirePermission('hr.requests.create'), asyn
   }
 });
 
+// DELETE /api/universal-requests/:id - Delete request (for drafts)
+router.delete('/universal-requests/:id', requirePermission('hr.requests.delete'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.user?.id;
+    
+    if (!tenantId || !userId) {
+      return res.status(400).json({ error: 'Tenant ID and User ID are required' });
+    }
+
+    // Check if request exists and belongs to user
+    const existingRequest = await db
+      .select()
+      .from(universalRequests)
+      .where(
+        and(
+          eq(universalRequests.id, id),
+          eq(universalRequests.tenantId, tenantId),
+          eq(universalRequests.requesterId, userId)
+        )
+      )
+      .limit(1);
+
+    if (existingRequest.length === 0) {
+      return res.status(404).json({ error: 'Request not found or access denied' });
+    }
+
+    const request = existingRequest[0];
+
+    // Only allow deleting drafts or pending requests
+    if (!['draft', 'pending'].includes(request.status)) {
+      return res.status(403).json({ error: 'Can only delete draft or pending requests' });
+    }
+
+    // Delete the request
+    await db
+      .delete(universalRequests)
+      .where(
+        and(
+          eq(universalRequests.id, id),
+          eq(universalRequests.tenantId, tenantId),
+          eq(universalRequests.requesterId, userId)
+        )
+      );
+
+    res.json({ success: true, message: 'Request deleted successfully' });
+
+  } catch (error) {
+    console.error('❌ [DELETE-REQUEST-ERROR] Error deleting request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ==================== SERVICE PERMISSIONS ENDPOINTS ====================
 
 // GET /api/service-permissions - Get permissions for user/role

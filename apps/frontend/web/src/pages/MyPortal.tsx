@@ -38,7 +38,7 @@ import {
   Globe, Palette, Key, History, Smartphone as SmartphoneIcon,
   Share2, Upload, Receipt, Loader2, X
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, startOfDay, endOfDay, subDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Link } from 'wouter';
 import { z } from 'zod';
@@ -168,6 +168,8 @@ export default function MyPortal() {
     | { open: false; data: null }
     | { open: true; data: Record<string, unknown> };
   const [hrRequestModal, setHrRequestModal] = useState<ModalState>({ open: false, data: null });
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [timeFilter, setTimeFilter] = useState<string>('all');
   const [documentViewerModal, setDocumentViewerModal] = useState<ModalState>({ open: false, data: null });
   const [profileEditModal, setProfileEditModal] = useState<ModalState>({ open: false, data: null });
   
@@ -179,9 +181,76 @@ export default function MyPortal() {
   const [isOnBreak, setIsOnBreak] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
-  // ✅ RESTORED: Use actual requests data instead of placeholder
-  const myRequests = myRequestsData || [];
+  // ✅ FILTER LOGIC: Apply status and time filters
+  const filteredRequests = React.useMemo(() => {
+    let filtered = myRequestsData || [];
+    
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((request: any) => request.status === statusFilter);
+    }
+    
+    // Time filter
+    if (timeFilter !== 'all') {
+      const now = new Date();
+      
+      switch (timeFilter) {
+        case 'today':
+          filtered = filtered.filter((request: any) => {
+            const reqDate = new Date(request.createdAt || request.submittedAt);
+            return reqDate >= startOfDay(now) && reqDate <= endOfDay(now);
+          });
+          break;
+        case 'week':
+          filtered = filtered.filter((request: any) => {
+            const reqDate = new Date(request.createdAt || request.submittedAt);
+            return reqDate >= subDays(now, 7);
+          });
+          break;
+        case '30days':
+          filtered = filtered.filter((request: any) => {
+            const reqDate = new Date(request.createdAt || request.submittedAt);
+            return reqDate >= subDays(now, 30);
+          });
+          break;
+        case '60days':
+          filtered = filtered.filter((request: any) => {
+            const reqDate = new Date(request.createdAt || request.submittedAt);
+            return reqDate >= subDays(now, 60);
+          });
+          break;
+      }
+    }
+    
+    return filtered;
+  }, [myRequestsData, statusFilter, timeFilter]);
+
+  const myRequests = filteredRequests;
   
+  // ✅ DELETE Request Mutation
+  const deleteRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest(`/api/universal-requests/${requestId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'] });
+      toast({
+        title: "Richiesta eliminata",
+        description: "La richiesta è stata eliminata con successo.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Errore eliminazione richiesta:', error);
+      toast({
+        title: "Errore",
+        description: error?.message || "Errore durante l'eliminazione della richiesta.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // ✅ STEP 2: Create Universal Request Mutation
   const createRequestMutation = useMutation({
     mutationFn: async (requestData: any) => {
@@ -707,9 +776,9 @@ export default function MyPortal() {
                   </Button>
                 </div>
 
-                {/* Request Status Filter */}
-                <div className="flex gap-4 mb-6">
-                  <Select defaultValue="all">
+                {/* Request Filters */}
+                <div className="flex gap-4 mb-6 flex-wrap">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Filtra per stato" />
                     </SelectTrigger>
@@ -719,6 +788,19 @@ export default function MyPortal() {
                       <SelectItem value="pending">In attesa</SelectItem>
                       <SelectItem value="approved">Approvate</SelectItem>
                       <SelectItem value="rejected">Rifiutate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={timeFilter} onValueChange={setTimeFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Periodo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tutto il periodo</SelectItem>
+                      <SelectItem value="today">Oggi</SelectItem>
+                      <SelectItem value="week">Ultimi 7 giorni</SelectItem>
+                      <SelectItem value="30days">Ultimi 30 giorni</SelectItem>
+                      <SelectItem value="60days">Ultimi 60 giorni</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -872,9 +954,8 @@ export default function MyPortal() {
                                     {request.status === 'draft' && (
                                       <button
                                         onClick={() => {
-                                          // TODO: Elimina bozza
                                           if (confirm('Sei sicuro di voler eliminare questa bozza?')) {
-                                            // Delete request
+                                            deleteRequestMutation.mutate(request.id);
                                           }
                                         }}
                                         data-testid={`button-delete-request-${request.id}`}
@@ -1374,6 +1455,7 @@ export default function MyPortal() {
               createRequestMutation.mutate(data);
             }}
             isSubmitting={createRequestMutation.isPending}
+            initialData={hrRequestModal.data}
           />
       </div>
     </Layout>
@@ -1386,6 +1468,7 @@ interface HRRequestFormProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => void;
   isSubmitting: boolean;
+  initialData?: any;
 }
 
 // 🇮🇹 Traduzione tipi di richiesta HR per sistema centralizzato
@@ -1576,18 +1659,43 @@ const hrRequestSchema = z.object({
 
 type HRRequestFormData = z.infer<typeof hrRequestSchema>;
 
-const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSubmit, isSubmitting }) => {
+const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSubmit, isSubmitting, initialData }) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<HRRequestFormData>({
-    type: 'vacation',
-    startDate: '',
-    endDate: '',
-    reason: '',
-    category: 'leave',
-    priority: 'normal'
-  });
+  
+  // Helper function to convert backend data to form data
+  const convertToFormData = (backendData: any): HRRequestFormData => {
+    if (!backendData || Object.keys(backendData).length === 0) {
+      return {
+        type: 'vacation',
+        startDate: '',
+        endDate: '',
+        reason: '',
+        category: 'leave',
+        priority: 'normal'
+      };
+    }
+    
+    return {
+      type: backendData.requestSubtype || backendData.type || 'vacation',
+      startDate: backendData.startDate ? new Date(backendData.startDate).toISOString().split('T')[0] : '',
+      endDate: backendData.endDate ? new Date(backendData.endDate).toISOString().split('T')[0] : '',
+      reason: backendData.description || backendData.reason || '',
+      category: backendData.requestType || backendData.category || 'leave',
+      priority: backendData.priority || 'normal'
+    };
+  };
+  
+  const [formData, setFormData] = useState<HRRequestFormData>(() => convertToFormData(initialData));
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Update form data when initialData changes (for edit mode)
+  React.useEffect(() => {
+    if (open) {
+      setFormData(convertToFormData(initialData));
+      setValidationErrors({});
+    }
+  }, [open, initialData]);
 
   // Helper function to get display name for request type
   const getTypeDisplayName = (type: string): string => {
