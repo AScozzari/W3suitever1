@@ -142,11 +142,11 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // ✅ UPDATED: Universal Requests data for employee portal (temporary: showing all HR requests)
+  // ✅ UPDATED: Universal Requests data for employee portal (only user's requests)
   const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
-    queryKey: ['/api/universal-requests', 'category', 'hr', 'all'],
-    queryFn: () => apiRequest('/api/universal-requests?category=hr&mine=false'),
-    // enabled: hrQueriesEnabled, // Temporarily disabled for testing
+    queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'],
+    queryFn: () => apiRequest('/api/universal-requests?category=hr&mine=true'),
+    enabled: hrQueriesEnabled,
     staleTime: 2 * 60 * 1000,
   });
   
@@ -194,7 +194,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'category', 'hr', 'all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'] });
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
@@ -740,106 +740,173 @@ export default function MyPortal() {
                         <p className="text-sm text-gray-400 mt-2">Crea la tua prima richiesta HR per iniziare</p>
                       </div>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Nome Richiesta</TableHead>
-                            <TableHead>Categoria Richiesta</TableHead>
-                            <TableHead>Tipologia Specifica</TableHead>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Stato</TableHead>
-                            <TableHead className="text-right">Azioni</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {myRequests.map((request) => (
-                            <TableRow key={request.id} data-testid={`row-request-${request.id}`}>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-3">
-                                  <div className="bg-gradient-to-r from-orange-500 to-purple-600 text-white p-2 rounded-lg">
-                                    <FileText className="h-4 w-4" />
+                      <div className="overflow-x-auto">
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
+                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome Richiesta</th>
+                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Categoria</th>
+                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Tipologia</th>
+                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Data</th>
+                              <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Stato</th>
+                              <th style={{ padding: '16px', textAlign: 'center', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Azioni</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {myRequests.map((request) => (
+                              <tr 
+                                key={request.id} 
+                                data-testid={`row-request-${request.id}`}
+                                style={{ 
+                                  borderBottom: '1px solid #f3f4f6',
+                                  transition: 'background 0.2s ease'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.background = '#fafbfc'}
+                                onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+                              >
+                                <td style={{ padding: '16px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                      background: 'linear-gradient(135deg, #FF6900, #ff8533)',
+                                      color: 'white',
+                                      padding: '8px',
+                                      borderRadius: '8px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}>
+                                      <FileText size={16} />
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }} data-testid={`text-request-name-${request.id}`}>
+                                        {request.title || 'Richiesta HR'}
+                                      </div>
+                                      {request.description && (
+                                        <div style={{ fontSize: '12px', color: '#6b7280', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} data-testid={`text-request-desc-${request.id}`}>
+                                          {request.description}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="font-semibold" data-testid={`text-request-name-${request.id}`}>
-                                      {request.title || 'Richiesta HR'}
-                                    </p>
-                                    {request.description && (
-                                      <p className="text-sm text-gray-500 max-w-xs truncate" data-testid={`text-request-desc-${request.id}`}>
-                                        {request.description}
-                                      </p>
-                                    )}
+                                </td>
+                                <td style={{ padding: '16px' }} data-testid={`text-request-category-${request.id}`}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '16px' }}>
+                                      {request.requestType && ITALIAN_HR_CATEGORIES[request.requestType as keyof typeof ITALIAN_HR_CATEGORIES]?.icon || '📋'}
+                                    </span>
+                                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#6b7280' }}>
+                                      {request.requestType && ITALIAN_HR_CATEGORIES[request.requestType as keyof typeof ITALIAN_HR_CATEGORIES]?.name || request.requestType || 'N/A'}
+                                    </span>
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell data-testid={`text-request-category-${request.id}`}>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg">
-                                    {request.category && ITALIAN_HR_CATEGORIES[request.category as keyof typeof ITALIAN_HR_CATEGORIES]?.icon || '📋'}
+                                </td>
+                                <td style={{ padding: '16px' }} data-testid={`text-request-type-${request.id}`}>
+                                  <span style={{
+                                    fontSize: '12px',
+                                    padding: '4px 8px',
+                                    background: '#dbeafe',
+                                    color: '#1e40af',
+                                    borderRadius: '12px',
+                                    fontWeight: '500'
+                                  }}>
+                                    {request.requestSubtype && ITALIAN_REQUEST_TYPES[request.requestSubtype as keyof typeof ITALIAN_REQUEST_TYPES] || request.requestSubtype || 'N/A'}
                                   </span>
-                                  <span className="font-medium text-sm">
-                                    {request.category && ITALIAN_HR_CATEGORIES[request.category as keyof typeof ITALIAN_HR_CATEGORIES]?.name || request.category || 'N/A'}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell data-testid={`text-request-type-${request.id}`}>
-                                <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                                  {request.requestType && ITALIAN_REQUEST_TYPES[request.requestType as keyof typeof ITALIAN_REQUEST_TYPES] || request.requestType || 'N/A'}
-                                </span>
-                              </TableCell>
-                              <TableCell data-testid={`text-request-date-${request.id}`}>
-                                {request.createdAt ? format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm') : 'N/A'}
-                              </TableCell>
-                              <TableCell>
-                                <Badge 
-                                  className={getStatusBadgeClass(request.status)}
-                                  data-testid={`badge-request-status-${request.id}`}
-                                >
-                                  {getStatusLabel(request.status)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      // ✅ View/Edit request - per bozze si può modificare
-                                      if (request.status === 'draft') {
-                                        // TODO: Open in edit mode
-                                        setHrRequestModal({ open: true, data: request });
-                                      } else {
-                                        // TODO: Open in view-only mode
-                                        setHrRequestModal({ open: true, data: request });
-                                      }
+                                </td>
+                                <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }} data-testid={`text-request-date-${request.id}`}>
+                                  {request.createdAt ? format(new Date(request.createdAt), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                                </td>
+                                <td style={{ padding: '16px' }}>
+                                  <span 
+                                    style={{
+                                      fontSize: '11px',
+                                      padding: '4px 8px',
+                                      borderRadius: '12px',
+                                      fontWeight: '600',
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.025em',
+                                      ...(request.status === 'pending' && { background: '#fef3c7', color: '#92400e' }),
+                                      ...(request.status === 'approved' && { background: '#d1fae5', color: '#065f46' }),
+                                      ...(request.status === 'rejected' && { background: '#fee2e2', color: '#991b1b' }),
+                                      ...(request.status === 'draft' && { background: '#f3f4f6', color: '#374151' }),
+                                      ...(!['pending', 'approved', 'rejected', 'draft'].includes(request.status) && { background: '#f3f4f6', color: '#6b7280' })
                                     }}
-                                    data-testid={`button-view-request-${request.id}`}
-                                    title={request.status === 'draft' ? 'Modifica richiesta' : 'Visualizza richiesta'}
+                                    data-testid={`badge-request-status-${request.id}`}
                                   >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  {request.status === 'draft' && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
+                                    {getStatusLabel(request.status)}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '16px', textAlign: 'center' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                                    <button
                                       onClick={() => {
-                                        // TODO: Elimina bozza
-                                        if (confirm('Sei sicuro di voler eliminare questa bozza?')) {
-                                          // Delete request
+                                        // ✅ View/Edit request - per bozze si può modificare
+                                        if (request.status === 'draft') {
+                                          // TODO: Open in edit mode
+                                          setHrRequestModal({ open: true, data: request });
+                                        } else {
+                                          // TODO: Open in view-only mode
+                                          setHrRequestModal({ open: true, data: request });
                                         }
                                       }}
-                                      data-testid={`button-delete-request-${request.id}`}
-                                      title="Elimina bozza"
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      data-testid={`button-view-request-${request.id}`}
+                                      title={request.status === 'draft' ? 'Modifica richiesta' : 'Visualizza richiesta'}
+                                      style={{
+                                        background: 'transparent',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: '6px',
+                                        padding: '6px',
+                                        cursor: 'pointer',
+                                        color: '#6b7280',
+                                        transition: 'all 0.2s'
+                                      }}
+                                      onMouseOver={(e) => {
+                                        e.currentTarget.style.background = '#f9fafb';
+                                        e.currentTarget.style.borderColor = '#d1d5db';
+                                      }}
+                                      onMouseOut={(e) => {
+                                        e.currentTarget.style.background = 'transparent';
+                                        e.currentTarget.style.borderColor = '#e5e7eb';
+                                      }}
                                     >
-                                      <AlertCircle className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                                      <Eye size={14} />
+                                    </button>
+                                    {request.status === 'draft' && (
+                                      <button
+                                        onClick={() => {
+                                          // TODO: Elimina bozza
+                                          if (confirm('Sei sicuro di voler eliminare questa bozza?')) {
+                                            // Delete request
+                                          }
+                                        }}
+                                        data-testid={`button-delete-request-${request.id}`}
+                                        title="Elimina bozza"
+                                        style={{
+                                          background: 'transparent',
+                                          border: '1px solid #e5e7eb',
+                                          borderRadius: '6px',
+                                          padding: '6px',
+                                          cursor: 'pointer',
+                                          color: '#ef4444',
+                                          transition: 'all 0.2s'
+                                        }}
+                                        onMouseOver={(e) => {
+                                          e.currentTarget.style.background = '#fef2f2';
+                                          e.currentTarget.style.borderColor = '#fca5a5';
+                                        }}
+                                        onMouseOut={(e) => {
+                                          e.currentTarget.style.background = 'transparent';
+                                          e.currentTarget.style.borderColor = '#e5e7eb';
+                                        }}
+                                      >
+                                        <AlertCircle size={14} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
