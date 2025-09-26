@@ -298,6 +298,20 @@ const HRManagementPage: React.FC = () => {
     return mapping[type || ''] || 'Richiesta HR';
   };
 
+  const getCategoryName = (category: string | undefined): string => {
+    const mapping: { [key: string]: string } = {
+      'assicurazione': 'Assicurazione',
+      'pensioni': 'Pensioni',
+      'sicurezza': 'Sicurezza',
+      'welfare': 'Welfare',
+      'formazione': 'Formazione',
+      'amministrativo': 'Amministrativo',
+      'tecnico': 'Tecnico',
+      'commerciale': 'Commerciale'
+    };
+    return mapping[category || ''] || 'HR';
+  };
+
   // ✅ Removed: Using centralized request status system
 
   const calculateKPIs = () => {
@@ -868,7 +882,7 @@ const HRManagementPage: React.FC = () => {
                       <td className="p-4">
                         <Badge className="bg-blue-500/20 text-blue-700 border-blue-500/30">
                           <Users className="w-3 h-3 mr-1" />
-                          {request.category?.toUpperCase() || 'HR'}
+                          {getCategoryName(request.category)}
                         </Badge>
                       </td>
 
