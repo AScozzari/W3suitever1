@@ -531,7 +531,7 @@ button:focus-visible,
 
 /* Dialog Overlay Fix */
 [data-radix-dialog-overlay] {
-  background: rgba(0, 0, 0, 0.5) !important;
+  background: rgba(0, 0, 0, 0.1) !important;
   position: fixed !important;
   inset: 0 !important;
   z-index: 50 !important;
