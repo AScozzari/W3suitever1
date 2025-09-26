@@ -25,7 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 // Icons
 import {
   Users, Plus, Settings, Calendar, FileText, BarChart3, 
-  Building, Clock, CheckCircle, AlertCircle, TrendingUp,
+  Building, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp,
   Filter, Search, Download, Upload, Eye, MoreHorizontal,
   PieChart, Activity, Target, Brain, Zap, ArrowRight,
   MapPin, Phone, Mail, Shield, Award, Briefcase,
@@ -556,6 +556,85 @@ const HRManagementPage: React.FC = () => {
             <Plus className="w-4 h-4 mr-2" />
             Nuova Richiesta
           </Button>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Requests */}
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 hover:bg-white/15 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Totale Richieste
+                  </p>
+                  <p className="text-3xl font-bold text-slate-900 dark:text-white" data-testid="stat-total">
+                    {hrRequests.length}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Requests */}
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 hover:bg-white/15 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    In Attesa
+                  </p>
+                  <p className="text-3xl font-bold text-amber-600" data-testid="stat-pending">
+                    {hrRequests.filter(r => r.status === 'pending').length}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Approved Requests */}
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 hover:bg-white/15 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Approvate
+                  </p>
+                  <p className="text-3xl font-bold text-green-600" data-testid="stat-approved">
+                    {hrRequests.filter(r => r.status === 'approved').length}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Rejected Requests */}
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 hover:bg-white/15 transition-colors">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    Rifiutate
+                  </p>
+                  <p className="text-3xl font-bold text-red-600" data-testid="stat-rejected">
+                    {hrRequests.filter(r => r.status === 'rejected').length}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters */}
