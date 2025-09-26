@@ -1656,22 +1656,15 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
     >
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-modal">
         <DialogHeader className="pb-6 border-b border-gray-200/50">
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            <div className="bg-gradient-to-r from-orange-500 to-purple-600 text-white p-2.5 rounded-xl">
-              <ClipboardList className="h-6 w-6" />
+          <DialogTitle className="flex items-center gap-3 text-xl font-semibold text-gray-900">
+            <div className="bg-orange-500 text-white p-2 rounded-lg">
+              <ClipboardList className="h-5 w-5" />
             </div>
-            <div>
-              <span className="bg-gradient-to-r from-orange-600 to-purple-700 bg-clip-text text-transparent font-bold">
-                Nuova Richiesta HR
-              </span>
-              <div className="text-sm text-gray-600 font-normal mt-1">
-                Sistema di richieste integrate WindTre
-              </div>
-            </div>
+            Nuova Richiesta HR
           </DialogTitle>
-          <DialogDescription className="text-gray-600 leading-relaxed mt-4">
+          <DialogDescription className="text-gray-600 leading-relaxed mt-3">
             Compila il modulo per inviare una nuova richiesta HR. Il sistema seguirà automaticamente 
-            i workflow di approvazione aziendali secondo la normativa italiana del lavoro.
+            i workflow di approvazione aziendali.
           </DialogDescription>
         </DialogHeader>
 
@@ -1679,8 +1672,8 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>📂</span> Categoria Richiesta
+              <Label htmlFor="category" className="text-sm font-semibold text-gray-700">
+                Categoria Richiesta
               </Label>
               <Select 
                 value={formData.category} 
@@ -1712,8 +1705,8 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
 
             {/* Type */}
             <div className="space-y-2">
-              <Label htmlFor="type" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>🎯</span> Tipologia Specifica
+              <Label htmlFor="type" className="text-sm font-semibold text-gray-700">
+                Tipologia Specifica
               </Label>
               <Select 
                 value={formData.type} 
@@ -1738,9 +1731,8 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                   }
                   {!formData.category && (
                     <SelectItem value="" disabled className="py-3">
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <span>💡</span>
-                        <span>Seleziona prima una categoria</span>
+                      <div className="text-gray-400 text-center">
+                        Seleziona prima una categoria
                       </div>
                     </SelectItem>
                   )}
@@ -1752,8 +1744,8 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Start Date */}
             <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>📅</span> Data Inizio *
+              <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700">
+                Data Inizio *
               </Label>
               <Input 
                 id="startDate"
@@ -1766,8 +1758,8 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
 
             {/* End Date */}
             <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <span>🏁</span> Data Fine (opzionale)
+              <Label htmlFor="endDate" className="text-sm font-semibold text-gray-700">
+                Data Fine (opzionale)
               </Label>
               <Input 
                 id="endDate"
@@ -1783,8 +1775,8 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
 
           {/* Reason */}
           <div className="space-y-2">
-            <Label htmlFor="reason" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <span>✍️</span> Motivazione *
+            <Label htmlFor="reason" className="text-sm font-semibold text-gray-700">
+              Motivazione *
             </Label>
             <Textarea 
               id="reason"
