@@ -440,7 +440,7 @@ router.get('/service-permissions', requirePermission('permissions.read'), async 
       conditions.push(eq(servicePermissions.roleId, roleId as string));
     }
     if (service) {
-      conditions.push(eq(servicePermissions.serviceName, service as string));
+      conditions.push(eq(servicePermissions.category, service as string));
     }
 
     const permissions = await db
@@ -450,10 +450,10 @@ router.get('/service-permissions', requirePermission('permissions.read'), async 
 
     // Group permissions by service
     const groupedPermissions = permissions.reduce((acc, perm) => {
-      if (!acc[perm.serviceName]) {
-        acc[perm.serviceName] = [];
+      if (!acc[perm.category]) {
+        acc[perm.category] = [];
       }
-      acc[perm.serviceName].push({
+      acc[perm.category].push({
         resource: perm.resource,
         action: perm.action,
         conditions: perm.conditions
