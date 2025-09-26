@@ -130,7 +130,8 @@ export const PERMISSIONS = {
       view_self: 'hr.requests.view.self',
       view_all: 'hr.requests.view.all',
       approve: 'hr.requests.approve',
-      comment: 'hr.requests.comment'
+      comment: 'hr.requests.comment',
+      delete: 'hr.requests.delete'
     }
   },
 
