@@ -1508,6 +1508,7 @@ const hrRequestSchema = z.object({
 type HRRequestFormData = z.infer<typeof hrRequestSchema>;
 
 const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSubmit, isSubmitting }) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<HRRequestFormData>({
     type: 'vacation',
     startDate: '',
@@ -1561,14 +1562,19 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
     // Submit data with proper format for backend API
     const validatedData = validationResult.data;
     onSubmit({
-      requesterId: 'admin-user', // Current user ID from auth
-      title: `${getTypeDisplayName(validatedData.type)} - ${validatedData.startDate}`, // Required field
-      type: validatedData.type,
-      startDate: `${validatedData.startDate}T00:00:00.000Z`, // Convert to datetime
-      endDate: validatedData.endDate ? `${validatedData.endDate}T23:59:59.999Z` : `${validatedData.startDate}T23:59:59.999Z`, // Convert to datetime
-      notes: validatedData.reason,
+      // Backend schema requires: category, requestType, requestSubtype, title, description
+      category: 'hr', // Fixed category for HR requests
+      requestType: validatedData.category, // Use category as requestType (leave, permission, training, etc.)
+      requestSubtype: validatedData.type, // Use type as requestSubtype (vacation, sick, etc.)
+      title: `${getTypeDisplayName(validatedData.type)} - ${validatedData.startDate}`,
+      description: validatedData.reason || '', // Use reason as description
       priority: validatedData.priority || 'normal',
-      category: validatedData.category
+      startDate: `${validatedData.startDate}T00:00:00.000Z`,
+      endDate: validatedData.endDate ? `${validatedData.endDate}T23:59:59.999Z` : `${validatedData.startDate}T23:59:59.999Z`,
+      requestData: { // Additional data in requestData field
+        originalType: validatedData.type,
+        originalCategory: validatedData.category
+      }
     });
   };
 
