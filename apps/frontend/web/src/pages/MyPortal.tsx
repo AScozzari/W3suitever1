@@ -1651,199 +1651,391 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-[min(90vw,800px)] max-h-[90vh] overflow-auto shadow-xl border-t-4 border-orange-500">
-        {/* Header Modal */}
-        <div className="p-6 bg-white border-b border-gray-200">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Nuova Richiesta HR
-                </h2>
-              </div>
-              <p className="text-sm text-gray-500">
-                Compila il modulo per inviare la tua richiesta al reparto HR
-              </p>
-            </div>
-                
-            <button
-              onClick={() => {
-                resetForm();
-                onOpenChange(false);
-              }}
-              className="bg-gray-100 hover:bg-gray-200 border-0 rounded-lg p-2 text-gray-600 transition-all duration-200"
-              data-testid="button-close-modal"
-            >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '32px',
+        width: '95%',
+        maxWidth: '800px',
+        maxHeight: '95vh',
+        overflow: 'auto',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        border: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '32px'
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#111827',
+              margin: '0 0 8px 0'
+            }}>
+              Nuova Richiesta HR
+            </h2>
+            <p style={{
+              fontSize: '15px',
+              color: '#6b7280',
+              margin: 0
+            }}>
+              Compila il modulo per inviare la tua richiesta al reparto HR
+            </p>
           </div>
+          <button
+            onClick={() => {
+              resetForm();
+              onOpenChange(false);
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px',
+              cursor: 'pointer',
+              color: '#6b7280',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#f3f4f6';
+              e.currentTarget.style.color = '#111827';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = '#6b7280';
+            }}
+          >
+            <X size={24} />
+          </button>
         </div>
 
-        {/* Content Area */}
-        <div className="p-4 sm:p-8">
-          <form onSubmit={handleSubmit} className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6">
-            {/* Category */}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="category" className="text-sm font-semibold text-gray-700">
-                  Categoria Richiesta
+        {/* Form Content */}
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'grid', gap: '24px' }}>
+            
+            {/* Sezione Categoria e Tipo */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FileText size={20} />
+                Tipologia Richiesta
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '16px'
+              }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                    Categoria *
+                  </label>
+                  <select 
+                    value={formData.category} 
+                    onChange={(e) => {
+                      setFormData({ ...formData, category: e.target.value as any, type: 'vacation' });
+                    }}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  >
+                    <option value="">Seleziona categoria</option>
+                    {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
+                      <option key={key} value={key}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  {validationErrors.category && (
+                    <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                      {validationErrors.category}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                    Tipologia *
+                  </label>
+                  <select 
+                    value={formData.type} 
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  >
+                    <option value="">Seleziona tipo</option>
+                    {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
+                      Object.entries(ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]).map(([key, type]) => (
+                        <option key={key} value={key}>
+                          {type.name}
+                        </option>
+                      ))
+                    }
+                  </select>
+                  {validationErrors.type && (
+                    <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                      {validationErrors.type}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Sezione Date */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Calendar size={20} />
+                Periodo
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '16px'
+              }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                    Data Inizio *
+                  </label>
+                  <input 
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                  {validationErrors.startDate && (
+                    <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                      {validationErrors.startDate}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                    Data Fine (opzionale)
+                  </label>
+                  <input 
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    min={formData.startDate}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sezione Motivazione */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '24px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#111827',
+                margin: '0 0 20px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Edit3 size={20} />
+                Dettagli
+              </h3>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                  Motivazione *
                 </label>
-                <select 
-                  value={formData.category} 
-                  onChange={(e) => {
-                    // Reset type when category changes
-                    setFormData({ ...formData, category: e.target.value as any, type: 'vacation' });
+                <textarea 
+                  placeholder={`Descrivi la tua richiesta per ${formData.category && ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES] ? ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES].name : 'questa tipologia'}...`}
+                  value={formData.reason}
+                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                  rows={4}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px', 
+                    border: '1px solid #d1d5db', 
+                    borderRadius: '8px', 
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
                   }}
-                  className="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                >
-                <option value="">Seleziona categoria</option>
-                {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
-                  <option key={key} value={key}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-              {/* Type */}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="type" className="text-sm font-semibold text-gray-700">
-                  Tipologia Specifica
-                </label>
-                <select 
-                  value={formData.type} 
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                  className="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:border-blue-500 focus:outline-none transition-colors duration-200"
-                >
-                <option value="">Seleziona tipo</option>
-                {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
-                  Object.entries(ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES]).map(([key, type]) => (
-                    <option key={key} value={key}>
-                      {type.name}
-                    </option>
-                  ))
-                }
-              </select>
+                />
+                {validationErrors.reason && (
+                  <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                    {validationErrors.reason}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Start Date */}
-            <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700">
-                Data Inizio *
-              </Label>
-              <Input 
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                required
-              />
-            </div>
-
-            {/* End Date */}
-            <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-sm font-semibold text-gray-700">
-                Data Fine (opzionale)
-              </Label>
-              <Input 
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                min={formData.startDate}
-              />
-            </div>
-          </div>
-
-          {/* Removed Legal Information Panel */}
-
-          {/* Reason */}
-          <div className="space-y-2">
-            <Label htmlFor="reason" className="text-sm font-semibold text-gray-700">
-              Motivazione *
-            </Label>
-            <Textarea 
-              id="reason"
-              placeholder={`Descrivi la tua richiesta per ${formData.category && ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES] ? ITALIAN_HR_CATEGORIES[formData.category as keyof typeof ITALIAN_HR_CATEGORIES].name : 'questa tipologia'}...`}
-              value={formData.reason}
-              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-              required
-              rows={4}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-4 pt-6 border-t border-gray-200/50">
-            {/* Draft Actions Row */}
-            <div className="flex gap-3">
+          {/* Footer con Azioni */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '32px',
+            paddingTop: '24px',
+            borderTop: '2px solid #e5e7eb'
+          }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
               {hasDraft() && (
-                <Button 
+                <button
                   type="button"
-                  variant="outline"
                   onClick={loadDraft}
                   disabled={isSubmitting}
-                  className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50"
-                  data-testid="button-load-draft"
+                  style={{
+                    padding: '12px 24px',
+                    border: '1px solid #3b82f6',
+                    borderRadius: '8px',
+                    background: 'white',
+                    color: '#3b82f6',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#eff6ff';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'white';
+                  }}
                 >
-                  <FileText className="h-4 w-4 mr-2" />
                   Carica Bozza
-                </Button>
+                </button>
               )}
-              <Button 
+              <button
                 type="button"
-                variant="outline"
                 onClick={saveDraft}
                 disabled={isSubmitting}
-                className="flex-1 border-green-200 text-green-700 hover:bg-green-50"
-                data-testid="button-save-draft"
+                style={{
+                  padding: '12px 24px',
+                  border: '1px solid #10b981',
+                  borderRadius: '8px',
+                  background: 'white',
+                  color: '#10b981',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#ecfdf5';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                }}
               >
-                <Save className="h-4 w-4 mr-2" />
                 Salva Bozza
-              </Button>
+              </button>
             </div>
-            
-            {/* Main Actions Row */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <Button 
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
                 type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  resetForm();
+                  onOpenChange(false);
+                }}
                 disabled={isSubmitting}
-                className="w-full sm:flex-1"
-                data-testid="button-cancel"
+                style={{
+                  padding: '12px 24px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  background: 'white',
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#f9fafb';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'white';
+                }}
               >
                 Annulla
-              </Button>
-              <Button 
+              </button>
+              <button
                 type="submit"
                 disabled={isSubmitting || Object.keys(validationErrors).length > 0}
-                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 w-full sm:flex-1"
-                data-testid="button-submit"
+                style={{
+                  padding: '12px 32px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: isSubmitting 
+                    ? 'linear-gradient(135deg, #d1d5db, #9ca3af)' 
+                    : 'linear-gradient(135deg, #FF6900, #ff8533)',
+                  color: 'white',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                  boxShadow: '0 4px 15px -3px rgba(255, 105, 0, 0.3)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseOver={(e) => {
+                  if (!isSubmitting) {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #ff7a1f, #ff9547)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(255, 105, 0, 0.4)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isSubmitting) {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #FF6900, #ff8533)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px -3px rgba(255, 105, 0, 0.3)';
+                  }
+                }}
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Invio in corso...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Invia Richiesta
-                  </>
-                )}
-              </Button>
+                {isSubmitting ? 'Invio in corso...' : 'Invia Richiesta'}
+              </button>
             </div>
           </div>
         </form>
