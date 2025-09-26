@@ -177,6 +177,10 @@ export default function UnifiedClockingPanel({
     }).then(res => res.json())
   });
 
+  // 🔥 CRITICAL FIX: Declare state variables BEFORE using them in hooks
+  const [selectedStoreId, setSelectedStoreId] = useState<string>(''); // ✅ FIX: Empty by default
+  const [selectedStrategyType, setSelectedStrategyType] = useState<StrategyType>(''); // ✅ FIX: Empty by default
+
   // ✅ NEW: Hook for loading timetracking methods available for selected PDV
   const {
     data: availableMethodsData,
@@ -230,10 +234,8 @@ export default function UnifiedClockingPanel({
   const [gpsPosition, setGpsPosition] = React.useState<any>(null);
   const [gpsStatus, setGpsStatus] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
-  // Local state
+  // Local state  
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedStrategyType, setSelectedStrategyType] = useState<StrategyType>(''); // ✅ FIX: Empty by default
-  const [selectedStoreId, setSelectedStoreId] = useState<string>(''); // ✅ FIX: Empty by default
 
   // Timer per clock corrente
   useEffect(() => {
