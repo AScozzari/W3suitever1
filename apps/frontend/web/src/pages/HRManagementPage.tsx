@@ -544,8 +544,10 @@ const HRManagementPage: React.FC = () => {
       // Status filter
       const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
       
-      // Category filter using category field from modal
-      const matchesCategory = categoryFilter === 'all' || request.category === categoryFilter;
+      // Category filter: handle both new requests (with category) and existing ones (without category)
+      const matchesCategory = categoryFilter === 'all' || 
+        (request.category && request.category === categoryFilter) ||
+        (!request.category && categoryFilter === 'all'); // Show existing requests when "all" is selected
       
       // Enhanced search: name, type, description
       const requesterFullName = `${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim();
