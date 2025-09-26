@@ -38,6 +38,7 @@ import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/req
 interface HRRequest {
   id: string;
   type: 'leave' | 'sick_leave' | 'overtime' | 'expense' | 'training' | 'remote_work';
+  category?: string; // Nuova categoria (Assicurazione, Pensioni, Sicurezza, etc.)
   requesterId: string;
   requesterName: string;
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled';
@@ -287,11 +288,11 @@ const HRManagementPage: React.FC = () => {
 
   const getRequestTypeName = (type: string | undefined): string => {
     const mapping: { [key: string]: string } = {
-      'leave': 'Richiesta Ferie',
-      'sick_leave': 'Malattia',
+      'leave': 'Ferie e Permessi',
+      'sick_leave': 'Malattie',
       'overtime': 'Straordinari',
       'expense': 'Nota Spese',
-      'training': 'Formazione',
+      'training': 'Formazione e Corsi',
       'remote_work': 'Lavoro Remoto'
     };
     return mapping[type || ''] || 'Richiesta HR';
@@ -312,10 +313,10 @@ const HRManagementPage: React.FC = () => {
   };
 
   const handleCreateRequest = () => {
-    if (!requestFormData.type || !requestFormData.startDate || !requestFormData.reason?.trim()) {
+    if (!requestFormData.type || !requestFormData.category || !requestFormData.startDate || !requestFormData.reason?.trim()) {
       toast({
         title: "Campi Obbligatori",
-        description: "Compila tutti i campi richiesti",
+        description: "Compila tutti i campi richiesti (tipologia, categoria, data inizio, motivazione)",
         variant: "destructive",
       });
       return;
@@ -543,8 +544,8 @@ const HRManagementPage: React.FC = () => {
       // Status filter
       const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
       
-      // Category filter using request types from modal
-      const matchesCategory = categoryFilter === 'all' || (request.requestType || request.type) === categoryFilter;
+      // Category filter using category field from modal
+      const matchesCategory = categoryFilter === 'all' || request.category === categoryFilter;
       
       // Enhanced search: name, type, description
       const requesterFullName = `${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim();
@@ -696,40 +697,46 @@ const HRManagementPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le categorie</SelectItem>
-                      <SelectItem value="leave">
+                      <SelectItem value="assicurazione">
                         <div className="flex items-center gap-2">
-                          <Plane className="w-4 h-4 text-green-600" />
-                          Ferie
+                          <Shield className="w-4 h-4 text-blue-600" />
+                          Assicurazione
                         </div>
                       </SelectItem>
-                      <SelectItem value="sick_leave">
+                      <SelectItem value="pensioni">
                         <div className="flex items-center gap-2">
-                          <Heart className="w-4 h-4 text-red-600" />
-                          Malattia
+                          <Award className="w-4 h-4 text-green-600" />
+                          Pensioni
                         </div>
                       </SelectItem>
-                      <SelectItem value="overtime">
+                      <SelectItem value="sicurezza">
                         <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-orange-600" />
-                          Straordinari
+                          <AlertTriangle className="w-4 h-4 text-red-600" />
+                          Sicurezza
                         </div>
                       </SelectItem>
-                      <SelectItem value="expense">
+                      <SelectItem value="formazione">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-purple-600" />
-                          Nota Spese
+                          <Target className="w-4 h-4 text-purple-600" />
+                          Formazione e Corsi
                         </div>
                       </SelectItem>
-                      <SelectItem value="training">
+                      <SelectItem value="benefit">
                         <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-blue-600" />
-                          Formazione
+                          <Heart className="w-4 h-4 text-pink-600" />
+                          Benefit e Welfare
                         </div>
                       </SelectItem>
-                      <SelectItem value="remote_work">
+                      <SelectItem value="amministrazione">
                         <div className="flex items-center gap-2">
-                          <Home className="w-4 h-4 text-indigo-600" />
-                          Lavoro Remoto
+                          <Briefcase className="w-4 h-4 text-gray-600" />
+                          Amministrazione
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="salute">
+                        <div className="flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-red-500" />
+                          Salute e Medicina
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -1007,7 +1014,7 @@ const HRManagementPage: React.FC = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Tipo Richiesta *</Label>
+              <Label>Tipologia Richiesta *</Label>
               <Select 
                 value={requestFormData.type || ''} 
                 onValueChange={(value) => setRequestFormData(prev => ({ ...prev, type: value as any }))}
@@ -1016,15 +1023,38 @@ const HRManagementPage: React.FC = () => {
                   <SelectValue placeholder="Seleziona tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="leave">Ferie</SelectItem>
-                  <SelectItem value="sick_leave">Malattia</SelectItem>
+                  <SelectItem value="leave">Ferie e Permessi</SelectItem>
+                  <SelectItem value="sick_leave">Malattie</SelectItem>
                   <SelectItem value="overtime">Straordinari</SelectItem>
                   <SelectItem value="expense">Nota Spese</SelectItem>
-                  <SelectItem value="training">Formazione</SelectItem>
+                  <SelectItem value="training">Formazione e Corsi</SelectItem>
                   <SelectItem value="remote_work">Lavoro Remoto</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Categoria *</Label>
+              <Select 
+                value={requestFormData.category || ''} 
+                onValueChange={(value) => setRequestFormData(prev => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger data-testid="select-request-category">
+                  <SelectValue placeholder="Seleziona categoria..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="assicurazione">Assicurazione</SelectItem>
+                  <SelectItem value="pensioni">Pensioni</SelectItem>
+                  <SelectItem value="sicurezza">Sicurezza</SelectItem>
+                  <SelectItem value="formazione">Formazione e Corsi</SelectItem>
+                  <SelectItem value="benefit">Benefit e Welfare</SelectItem>
+                  <SelectItem value="amministrazione">Amministrazione</SelectItem>
+                  <SelectItem value="salute">Salute e Medicina</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Nome Richiedente *</Label>
               <Input 
@@ -1034,6 +1064,7 @@ const HRManagementPage: React.FC = () => {
                 data-testid="input-requester-name"
               />
             </div>
+            <div></div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
