@@ -12001,7 +12001,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/universal-requests - Lista richieste con filtri avanzati
   app.get('/api/universal-requests', ...authWithRBAC, requirePermission('universal_requests.read'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const filters = universalRequestFiltersSchema.parse(req.query);
       
       console.log(`[UNIVERSAL-REQUESTS] 📋 Fetching requests for tenant ${tenantId}`, filters);
@@ -12042,12 +12043,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         whereConditions.push(lte(universalRequests.createdAt, new Date(filters.endDate)));
       }
       
-      // Execute query with pagination
+      // Execute query with pagination - simplified for debugging
       const requests = await db
         .select({
-          request: universalRequests,
-          requesterName: users.displayName,
-          requesterEmail: users.email
+          id: universalRequests.id,
+          title: universalRequests.title,
+          status: universalRequests.status,
+          category: universalRequests.category,
+          createdAt: universalRequests.createdAt
         })
         .from(universalRequests)
         .leftJoin(users, eq(universalRequests.requesterId, users.id))
@@ -12091,7 +12094,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/universal-requests - Crea nuova richiesta universale
   app.post('/api/universal-requests', ...authWithRBAC, requirePermission('universal_requests.create'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const userId = req.user?.id;
       const validatedData = createUniversalRequestSchema.parse(req.body);
       
@@ -12149,7 +12153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/universal-requests/:id - Dettaglio richiesta specifica
   app.get('/api/universal-requests/:id', ...authWithRBAC, requirePermission('universal_requests.read'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const requestId = validateUUIDParam(req.params.id);
       
       console.log(`[UNIVERSAL-REQUESTS] 🔍 Fetching request ${requestId} for tenant ${tenantId}`);
@@ -12160,7 +12165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [requestData] = await db
         .select({
           request: universalRequests,
-          requesterName: users.displayName,
+          requesterFirstName: users.firstName,
+          requesterLastName: users.lastName,
           requesterEmail: users.email
         })
         .from(universalRequests)
@@ -12199,7 +12205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PUT /api/universal-requests/:id - Aggiorna richiesta esistente
   app.put('/api/universal-requests/:id', ...authWithRBAC, requirePermission('universal_requests.update'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const userId = req.user?.id;
       const requestId = validateUUIDParam(req.params.id);
       const validatedData = updateUniversalRequestSchema.parse(req.body);
@@ -12270,7 +12277,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/universal-requests/:id/ai-route - Trigger AI routing intelligente
   app.post('/api/universal-requests/:id/ai-route', ...authWithRBAC, requirePermission('universal_requests.update'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const userId = req.user?.id;
       const requestId = validateUUIDParam(req.params.id);
       
@@ -12368,7 +12376,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/workflow-instances/:id/status - Status tracking workflow instance
   app.get('/api/workflow-instances/:id/status', ...authWithRBAC, requirePermission('workflows.read'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const instanceId = validateUUIDParam(req.params.id);
       
       console.log(`[WORKFLOW-INSTANCES] 📊 Fetching status for instance ${instanceId}, tenant ${tenantId}`);
@@ -12454,7 +12463,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/workflow-instances - Lista workflow instances con filtri
   app.get('/api/workflow-instances', ...authWithRBAC, requirePermission('workflows.read'), async (req: any, res) => {
     try {
-      const tenantId = req.tenantId;
+      // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
+      const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const { status, templateId, limit = '50', offset = '0' } = req.query;
       
       console.log(`[WORKFLOW-INSTANCES] 📋 Fetching instances for tenant ${tenantId}`);
