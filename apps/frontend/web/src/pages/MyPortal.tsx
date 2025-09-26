@@ -1835,7 +1835,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                     onChange={(e) => {
                       setFormData({ ...formData, category: e.target.value as any, type: 'vacation' });
                     }}
-                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#f9fafb' }}
                   >
                     <option value="">Seleziona categoria</option>
                     {Object.entries(ITALIAN_HR_CATEGORIES).map(([key, category]) => (
@@ -1857,7 +1857,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                   <select 
                     value={formData.type} 
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#f9fafb' }}
                   >
                     <option value="">Seleziona tipo</option>
                     {formData.category && ITALIAN_HR_TYPES[formData.category as keyof typeof ITALIAN_HR_TYPES] && 
@@ -1910,7 +1910,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#f9fafb' }}
                   />
                   {validationErrors.startDate && (
                     <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
@@ -1927,7 +1927,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     min={formData.startDate}
-                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', background: '#f9fafb' }}
                   />
                 </div>
               </div>
@@ -1968,6 +1968,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                     border: '1px solid #d1d5db', 
                     borderRadius: '8px', 
                     fontSize: '14px',
+                    background: '#f9fafb',
                     resize: 'vertical',
                     fontFamily: 'inherit'
                   }}
