@@ -116,7 +116,7 @@ const HRManagementPage: React.FC = () => {
 
   // ✅ UPDATED: HR Requests data with authentication readiness
   const { data: hrRequests = [], isLoading: loadingRequests } = useQuery<HRRequest[]>({
-    queryKey: ['/api/hr/requests'],
+    queryKey: ['/api/universal-requests'],
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
@@ -189,7 +189,7 @@ const HRManagementPage: React.FC = () => {
       console.log('🚀 [HR-MUTATION] Creating HR request:', requestData.type);
       
       // Step 1: Create HR request
-      const hrRequest = await apiRequest('/api/hr/requests', {
+      const hrRequest = await apiRequest('/api/universal-requests', {
         method: 'POST',
         body: JSON.stringify(requestData),
       });
@@ -223,7 +223,7 @@ const HRManagementPage: React.FC = () => {
       return { hrRequest, workflowInstance };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hr/requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/workflow-instances'] });
       toast({
         title: "Richiesta Creata",

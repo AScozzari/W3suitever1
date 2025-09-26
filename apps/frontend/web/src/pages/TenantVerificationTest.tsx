@@ -28,7 +28,7 @@ export default function TenantVerificationTest() {
     
     // Key API endpoints to test as required by architect
     const criticalEndpoints = [
-      '/api/hr/requests',
+      '/api/universal-requests',
       '/api/notifications/unread-count',
       '/api/tenants/current', 
       '/api/hr/metrics',
