@@ -451,7 +451,7 @@ const HRManagementPage: React.FC = () => {
                         <div className={`w-2 h-2 rounded-full ${getStatusColor(request.status)}`} />
                         <div>
                           <p className="font-medium text-sm" data-testid={`request-${request.id.slice(0, 8)}`}>
-                            {getRequestTypeName(request.type)} - {request.requesterName}
+                            {getRequestTypeName(request.requestType || request.type)} - {`${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim() || 'Nome non disponibile'}
                           </p>
                           <p className="text-xs text-slate-500">
                             {new Date(request.createdAt).toLocaleDateString()}
@@ -547,10 +547,11 @@ const HRManagementPage: React.FC = () => {
       const matchesCategory = categoryFilter === 'all' || categoryFilter === 'hr';
       
       // Enhanced search: name, type, description
+      const requesterFullName = `${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim();
       const matchesSearch = searchTerm === '' || (
-        (request.requesterName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        requesterFullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getRequestTypeName(request.requestType || request.type).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (request.reason || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (request.reason || request.description || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
       
       // Date range filter
@@ -825,7 +826,7 @@ const HRManagementPage: React.FC = () => {
                       <td className="p-4">
                         <div>
                           <p className="font-medium" data-testid={`requester-${request.id}`}>
-                            {request.requesterName}
+                            {`${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim() || 'Nome non disponibile'}
                           </p>
                           <p className="text-xs text-slate-500">
                             {new Date(request.createdAt).toLocaleDateString('it-IT', {
@@ -840,29 +841,29 @@ const HRManagementPage: React.FC = () => {
                       <td className="p-4">
                         <Badge className="bg-blue-500/20 text-blue-700 border-blue-500/30">
                           <Users className="w-3 h-3 mr-1" />
-                          HR
+                          {request.category?.toUpperCase() || 'HR'}
                         </Badge>
                       </td>
 
                       {/* Tipologia Specifica */}
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          {request.type === 'leave' && <Plane className="w-4 h-4 text-green-600" />}
-                          {request.type === 'sick_leave' && <Heart className="w-4 h-4 text-red-600" />}
-                          {request.type === 'overtime' && <Clock className="w-4 h-4 text-orange-600" />}
-                          {request.type === 'expense' && <DollarSign className="w-4 h-4 text-purple-600" />}
-                          {request.type === 'training' && <Target className="w-4 h-4 text-blue-600" />}
-                          {request.type === 'remote_work' && <Home className="w-4 h-4 text-indigo-600" />}
-                          <span className="text-sm font-medium">{getRequestTypeName(request.type)}</span>
+                          {(request.requestType || request.type) === 'leave' && <Plane className="w-4 h-4 text-green-600" />}
+                          {(request.requestType || request.type) === 'sick_leave' && <Heart className="w-4 h-4 text-red-600" />}
+                          {(request.requestType || request.type) === 'overtime' && <Clock className="w-4 h-4 text-orange-600" />}
+                          {(request.requestType || request.type) === 'expense' && <DollarSign className="w-4 h-4 text-purple-600" />}
+                          {(request.requestType || request.type) === 'training' && <Target className="w-4 h-4 text-blue-600" />}
+                          {(request.requestType || request.type) === 'remote_work' && <Home className="w-4 h-4 text-indigo-600" />}
+                          <span className="text-sm font-medium">{getRequestTypeName(request.requestType || request.type)}</span>
                         </div>
                       </td>
 
                       {/* Descrizione */}
                       <td className="p-4 max-w-xs">
                         <p className="text-sm text-slate-700 dark:text-slate-300 truncate" 
-                           title={request.reason}
+                           title={request.reason || request.description}
                            data-testid={`description-${request.id}`}>
-                          {request.reason || 'Nessuna descrizione'}
+                          {request.reason || request.description || request.title || 'Nessuna descrizione'}
                         </p>
                       </td>
 
