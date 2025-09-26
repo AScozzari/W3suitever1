@@ -546,8 +546,7 @@ const HRManagementPage: React.FC = () => {
   // ==================== REQUESTS SECTION ====================
 
   const RequestsSection = () => {
-    // Advanced Filters State
-    const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    // Advanced Filters State  
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFromFilter, setDateFromFilter] = useState<string>('');
