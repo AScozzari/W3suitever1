@@ -144,8 +144,8 @@ export default function MyPortal() {
   
   // ✅ UPDATED: Universal Requests data for employee portal (temporary: showing all HR requests)
   const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
-    queryKey: ['/api/requests', 'category', 'hr', 'all'],
-    queryFn: () => apiRequest('/api/requests?category=hr&mine=false'),
+    queryKey: ['/api/universal-requests', 'category', 'hr', 'all'],
+    queryFn: () => apiRequest('/api/universal-requests?category=hr&mine=false'),
     // enabled: hrQueriesEnabled, // Temporarily disabled for testing
     staleTime: 2 * 60 * 1000,
   });
@@ -185,7 +185,7 @@ export default function MyPortal() {
   // ✅ STEP 2: Create Universal Request Mutation
   const createRequestMutation = useMutation({
     mutationFn: async (requestData: any) => {
-      return await apiRequest('/api/requests', {
+      return await apiRequest('/api/universal-requests', {
         method: 'POST',
         body: JSON.stringify(requestData),
         headers: {
@@ -194,7 +194,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/requests', 'category', 'hr', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'category', 'hr', 'all'] });
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
