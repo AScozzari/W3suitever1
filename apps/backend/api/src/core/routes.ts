@@ -20,7 +20,6 @@ import {
   expenseReports,
   calendarEvents,
   shiftTemplates,
-  hrAnnouncements
 } from "../db/schema";
 import {
   // Universal Request System (PHASE 2)
@@ -38,8 +37,7 @@ import {
   // ✅ FASE 1.1: Add enums for calendar consistency
   calendarEventTypeEnum,
   calendarEventVisibilityEnum,
-  calendarEventStatusEnum,
-  hrRequestStatusEnum
+  calendarEventStatusEnum
 } from "../db/schema/w3suite";
 import { 
   insertStructuredLogSchema, 
@@ -11986,8 +11984,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const updateUniversalRequestSchema = createUniversalRequestSchema.partial();
   
   const universalRequestFiltersSchema = z.object({
-    status: z.enum(['pending', 'approved', 'rejected', 'in_review', 'cancelled']).optional(),
-    category: z.enum(['hr', 'finance', 'operations', 'crm', 'support', 'marketing']).optional(),
+    status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']).optional(),
+    category: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
     requestType: z.string().optional(),
     requestSubtype: z.string().optional(),
     priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
