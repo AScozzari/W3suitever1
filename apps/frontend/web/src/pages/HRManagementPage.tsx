@@ -557,10 +557,6 @@ const HRManagementPage: React.FC = () => {
       // Status filter
       const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
       
-      // Category filter: show all if 'all' selected, otherwise match specific category
-      const matchesCategory = categoryFilter === 'all' || 
-        (request.category && request.category === categoryFilter);
-      
       // Enhanced search: name, type, description
       const requesterFullName = `${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim();
       const matchesSearch = searchTerm === '' || (
@@ -574,7 +570,7 @@ const HRManagementPage: React.FC = () => {
       const matchesDateFrom = dateFromFilter === '' || requestDate >= new Date(dateFromFilter);
       const matchesDateTo = dateToFilter === '' || requestDate <= new Date(dateToFilter + 'T23:59:59');
       
-      return matchesStatus && matchesCategory && matchesSearch && matchesDateFrom && matchesDateTo;
+      return matchesStatus && matchesSearch && matchesDateFrom && matchesDateTo;
     });
 
     return (
@@ -682,8 +678,8 @@ const HRManagementPage: React.FC = () => {
                 <h3 className="text-lg font-semibold">Filtri Avanzati</h3>
               </div>
               
-              {/* First Row: Search & Category */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Search */}
+              <div>
                 {/* Enhanced Search */}
                 <div>
                   <Label className="text-sm font-medium">Ricerca Globale</Label>
@@ -700,61 +696,6 @@ const HRManagementPage: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1">
                     Cerca in richiedente, tipologia e descrizione
                   </p>
-                </div>
-
-                {/* Category Filter */}
-                <div>
-                  <Label className="text-sm font-medium">Categoria</Label>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger data-testid="select-category-filter">
-                      <SelectValue placeholder="Seleziona categoria..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tutte le categorie</SelectItem>
-                      <SelectItem value="assicurazione">
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-blue-600" />
-                          Assicurazione
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="pensioni">
-                        <div className="flex items-center gap-2">
-                          <Award className="w-4 h-4 text-green-600" />
-                          Pensioni
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="sicurezza">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-red-600" />
-                          Sicurezza
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="formazione">
-                        <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-purple-600" />
-                          Formazione e Corsi
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="benefit">
-                        <div className="flex items-center gap-2">
-                          <Heart className="w-4 h-4 text-pink-600" />
-                          Benefit e Welfare
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="amministrazione">
-                        <div className="flex items-center gap-2">
-                          <Briefcase className="w-4 h-4 text-gray-600" />
-                          Amministrazione
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="salute">
-                        <div className="flex items-center gap-2">
-                          <Activity className="w-4 h-4 text-red-500" />
-                          Salute e Medicina
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
 
@@ -825,7 +766,6 @@ const HRManagementPage: React.FC = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    setCategoryFilter('all');
                     setStatusFilter('all');
                     setSearchTerm('');
                     setDateFromFilter('');
