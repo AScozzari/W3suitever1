@@ -11976,6 +11976,549 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== UNIVERSAL REQUESTS & WORKFLOW API ====================
+  
+  // Universal Request validation schemas
+  const createUniversalRequestSchema = insertUniversalRequestSchema.extend({
+    requestData: z.record(z.any()).optional()
+  });
+  
+  const updateUniversalRequestSchema = createUniversalRequestSchema.partial();
+  
+  const universalRequestFiltersSchema = z.object({
+    status: z.enum(['pending', 'approved', 'rejected', 'in_review', 'cancelled']).optional(),
+    category: z.enum(['hr', 'finance', 'operations', 'crm', 'support', 'marketing']).optional(),
+    requestType: z.string().optional(),
+    requestSubtype: z.string().optional(),
+    priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+    requesterId: z.string().uuid().optional(),
+    storeId: z.string().uuid().optional(),
+    legalEntityId: z.string().uuid().optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+    limit: z.string().transform(val => parseInt(val) || 50).optional(),
+    offset: z.string().transform(val => parseInt(val) || 0).optional()
+  });
+
+  // GET /api/universal-requests - Lista richieste con filtri avanzati
+  app.get('/api/universal-requests', ...authWithRBAC, requirePermission('universal_requests.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const filters = universalRequestFiltersSchema.parse(req.query);
+      
+      console.log(`[UNIVERSAL-REQUESTS] 📋 Fetching requests for tenant ${tenantId}`, filters);
+      
+      await setTenantContext(tenantId);
+      
+      // Build where conditions
+      const whereConditions = [eq(universalRequests.tenantId, tenantId)];
+      
+      if (filters.status) {
+        whereConditions.push(eq(universalRequests.status, filters.status));
+      }
+      if (filters.category) {
+        whereConditions.push(eq(universalRequests.category, filters.category));
+      }
+      if (filters.requestType) {
+        whereConditions.push(eq(universalRequests.requestType, filters.requestType));
+      }
+      if (filters.requestSubtype) {
+        whereConditions.push(eq(universalRequests.requestSubtype, filters.requestSubtype));
+      }
+      if (filters.priority) {
+        whereConditions.push(eq(universalRequests.priority, filters.priority));
+      }
+      if (filters.requesterId) {
+        whereConditions.push(eq(universalRequests.requesterId, filters.requesterId));
+      }
+      if (filters.storeId) {
+        whereConditions.push(eq(universalRequests.storeId, filters.storeId));
+      }
+      if (filters.legalEntityId) {
+        whereConditions.push(eq(universalRequests.legalEntityId, filters.legalEntityId));
+      }
+      if (filters.startDate) {
+        whereConditions.push(gte(universalRequests.createdAt, new Date(filters.startDate)));
+      }
+      if (filters.endDate) {
+        whereConditions.push(lte(universalRequests.createdAt, new Date(filters.endDate)));
+      }
+      
+      // Execute query with pagination
+      const requests = await db
+        .select({
+          request: universalRequests,
+          requesterName: users.displayName,
+          requesterEmail: users.email
+        })
+        .from(universalRequests)
+        .leftJoin(users, eq(universalRequests.requesterId, users.id))
+        .where(and(...whereConditions))
+        .orderBy(desc(universalRequests.createdAt))
+        .limit(filters.limit || 50)
+        .offset(filters.offset || 0);
+        
+      // Get total count for pagination
+      const [{ count }] = await db
+        .select({ count: sql`count(*)` })
+        .from(universalRequests)
+        .where(and(...whereConditions));
+      
+      console.log(`[UNIVERSAL-REQUESTS] ✅ Found ${requests.length} requests (total: ${count})`);
+      
+      res.json({
+        success: true,
+        data: requests.map(r => ({
+          ...r.request,
+          requesterName: r.requesterName,
+          requesterEmail: r.requesterEmail
+        })),
+        pagination: {
+          total: parseInt(count as string),
+          limit: filters.limit || 50,
+          offset: filters.offset || 0,
+          hasMore: (filters.offset || 0) + (filters.limit || 50) < parseInt(count as string)
+        }
+      });
+      
+    } catch (error) {
+      console.error('[UNIVERSAL-REQUESTS] ❌ Error fetching requests:', error);
+      res.status(500).json({ 
+        error: 'Errore recupero richieste universali',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // POST /api/universal-requests - Crea nuova richiesta universale
+  app.post('/api/universal-requests', ...authWithRBAC, requirePermission('universal_requests.create'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user?.id;
+      const validatedData = createUniversalRequestSchema.parse(req.body);
+      
+      console.log(`[UNIVERSAL-REQUESTS] ➕ Creating new request for tenant ${tenantId}, user ${userId}`);
+      
+      await setTenantContext(tenantId);
+      
+      // Set required fields
+      const requestData = {
+        ...validatedData,
+        tenantId,
+        requesterId: validatedData.requesterId || userId,
+        status: 'pending' as const,
+        createdBy: userId,
+        updatedBy: userId
+      };
+      
+      // Insert new request
+      const [newRequest] = await db
+        .insert(universalRequests)
+        .values(requestData)
+        .returning();
+      
+      console.log(`[UNIVERSAL-REQUESTS] ✅ Created request ${newRequest.id}`);
+      
+      // Log entity creation for audit trail
+      await storage.logEntityAction({
+        tenantId,
+        entityType: 'universal_request',
+        entityId: newRequest.id,
+        action: 'create',
+        userId,
+        metadata: {
+          category: newRequest.category,
+          requestType: newRequest.requestType,
+          priority: newRequest.priority
+        }
+      });
+      
+      res.status(201).json({
+        success: true,
+        data: newRequest,
+        message: 'Richiesta universale creata con successo'
+      });
+      
+    } catch (error) {
+      console.error('[UNIVERSAL-REQUESTS] ❌ Error creating request:', error);
+      res.status(500).json({ 
+        error: 'Errore creazione richiesta universale',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // GET /api/universal-requests/:id - Dettaglio richiesta specifica
+  app.get('/api/universal-requests/:id', ...authWithRBAC, requirePermission('universal_requests.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const requestId = validateUUIDParam(req.params.id);
+      
+      console.log(`[UNIVERSAL-REQUESTS] 🔍 Fetching request ${requestId} for tenant ${tenantId}`);
+      
+      await setTenantContext(tenantId);
+      
+      // Get request with requester details
+      const [requestData] = await db
+        .select({
+          request: universalRequests,
+          requesterName: users.displayName,
+          requesterEmail: users.email
+        })
+        .from(universalRequests)
+        .leftJoin(users, eq(universalRequests.requesterId, users.id))
+        .where(and(
+          eq(universalRequests.id, requestId),
+          eq(universalRequests.tenantId, tenantId)
+        ));
+      
+      if (!requestData) {
+        return res.status(404).json({ 
+          error: 'Richiesta non trovata'
+        });
+      }
+      
+      console.log(`[UNIVERSAL-REQUESTS] ✅ Found request ${requestId}`);
+      
+      res.json({
+        success: true,
+        data: {
+          ...requestData.request,
+          requesterName: requestData.requesterName,
+          requesterEmail: requestData.requesterEmail
+        }
+      });
+      
+    } catch (error) {
+      console.error('[UNIVERSAL-REQUESTS] ❌ Error fetching request:', error);
+      res.status(500).json({ 
+        error: 'Errore recupero richiesta universale',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // PUT /api/universal-requests/:id - Aggiorna richiesta esistente
+  app.put('/api/universal-requests/:id', ...authWithRBAC, requirePermission('universal_requests.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id);
+      const validatedData = updateUniversalRequestSchema.parse(req.body);
+      
+      console.log(`[UNIVERSAL-REQUESTS] ✏️ Updating request ${requestId} for tenant ${tenantId}`);
+      
+      await setTenantContext(tenantId);
+      
+      // Check if request exists and belongs to tenant
+      const [existingRequest] = await db
+        .select()
+        .from(universalRequests)
+        .where(and(
+          eq(universalRequests.id, requestId),
+          eq(universalRequests.tenantId, tenantId)
+        ));
+      
+      if (!existingRequest) {
+        return res.status(404).json({ 
+          error: 'Richiesta non trovata'
+        });
+      }
+      
+      // Update request
+      const updateData = {
+        ...validatedData,
+        updatedBy: userId,
+        updatedAt: new Date()
+      };
+      
+      const [updatedRequest] = await db
+        .update(universalRequests)
+        .set(updateData)
+        .where(eq(universalRequests.id, requestId))
+        .returning();
+      
+      console.log(`[UNIVERSAL-REQUESTS] ✅ Updated request ${requestId}`);
+      
+      // Log entity update for audit trail
+      await storage.logEntityAction({
+        tenantId,
+        entityType: 'universal_request',
+        entityId: requestId,
+        action: 'update',
+        userId,
+        metadata: {
+          changes: Object.keys(validatedData),
+          previousStatus: existingRequest.status,
+          newStatus: updatedRequest.status
+        }
+      });
+      
+      res.json({
+        success: true,
+        data: updatedRequest,
+        message: 'Richiesta universale aggiornata con successo'
+      });
+      
+    } catch (error) {
+      console.error('[UNIVERSAL-REQUESTS] ❌ Error updating request:', error);
+      res.status(500).json({ 
+        error: 'Errore aggiornamento richiesta universale',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // POST /api/universal-requests/:id/ai-route - Trigger AI routing intelligente
+  app.post('/api/universal-requests/:id/ai-route', ...authWithRBAC, requirePermission('universal_requests.update'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const userId = req.user?.id;
+      const requestId = validateUUIDParam(req.params.id);
+      
+      console.log(`[UNIVERSAL-REQUESTS] 🤖 Triggering AI routing for request ${requestId}, tenant ${tenantId}`);
+      
+      await setTenantContext(tenantId);
+      
+      // Check if request exists and is pending
+      const [existingRequest] = await db
+        .select()
+        .from(universalRequests)
+        .where(and(
+          eq(universalRequests.id, requestId),
+          eq(universalRequests.tenantId, tenantId)
+        ));
+      
+      if (!existingRequest) {
+        return res.status(404).json({ 
+          error: 'Richiesta non trovata'
+        });
+      }
+      
+      if (existingRequest.status !== 'pending') {
+        return res.status(400).json({ 
+          error: 'La richiesta deve essere in stato pending per essere processata'
+        });
+      }
+      
+      // Get AI settings for this tenant
+      const [tenantAISettings] = await db
+        .select()
+        .from(aiSettings)
+        .where(eq(aiSettings.tenantId, tenantId))
+        .limit(1);
+      
+      if (!tenantAISettings || !tenantAISettings.enabled) {
+        return res.status(400).json({ 
+          error: 'AI non abilitata per questo tenant'
+        });
+      }
+      
+      // Trigger AI routing via WorkflowAIConnector
+      const aiResult = await workflowAIConnector.routeRequest(
+        requestId,
+        tenantId,
+        tenantAISettings
+      );
+      
+      if (!aiResult.success) {
+        console.error(`[UNIVERSAL-REQUESTS] ❌ AI routing failed for request ${requestId}:`, aiResult.error);
+        return res.status(500).json({ 
+          error: 'Errore routing AI',
+          details: aiResult.error
+        });
+      }
+      
+      console.log(`[UNIVERSAL-REQUESTS] ✅ AI routing completed for request ${requestId}`, {
+        selectedTeam: aiResult.decision.selectedTeam,
+        autoApprove: aiResult.decision.autoApprove,
+        flow: aiResult.decision.flow
+      });
+      
+      // Log AI routing action
+      await storage.logEntityAction({
+        tenantId,
+        entityType: 'universal_request',
+        entityId: requestId,
+        action: 'ai_route',
+        userId,
+        metadata: {
+          decision: aiResult.decision,
+          workflowInstanceId: aiResult.workflowInstanceId,
+          reasoning: aiResult.decision.reasoning
+        }
+      });
+      
+      res.json({
+        success: true,
+        data: {
+          decision: aiResult.decision,
+          workflowInstanceId: aiResult.workflowInstanceId
+        },
+        message: 'AI routing completato con successo'
+      });
+      
+    } catch (error) {
+      console.error('[UNIVERSAL-REQUESTS] ❌ Error in AI routing:', error);
+      res.status(500).json({ 
+        error: 'Errore routing AI richiesta universale',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // GET /api/workflow-instances/:id/status - Status tracking workflow instance
+  app.get('/api/workflow-instances/:id/status', ...authWithRBAC, requirePermission('workflows.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const instanceId = validateUUIDParam(req.params.id);
+      
+      console.log(`[WORKFLOW-INSTANCES] 📊 Fetching status for instance ${instanceId}, tenant ${tenantId}`);
+      
+      await setTenantContext(tenantId);
+      
+      // Get workflow instance with template details
+      const [instanceData] = await db
+        .select({
+          instance: workflowInstances,
+          templateName: workflowTemplates.name,
+          templateCategory: workflowTemplates.category
+        })
+        .from(workflowInstances)
+        .leftJoin(workflowTemplates, eq(workflowInstances.templateId, workflowTemplates.id))
+        .where(and(
+          eq(workflowInstances.id, instanceId),
+          eq(workflowInstances.tenantId, tenantId)
+        ));
+      
+      if (!instanceData) {
+        return res.status(404).json({ 
+          error: 'Workflow instance non trovata'
+        });
+      }
+      
+      // Get execution logs for this instance
+      const executions = await db
+        .select()
+        .from(workflowExecutions)
+        .where(and(
+          eq(workflowExecutions.instanceId, instanceId),
+          eq(workflowExecutions.tenantId, tenantId)
+        ))
+        .orderBy(desc(workflowExecutions.startedAt));
+      
+      // Calculate progress stats
+      const totalSteps = executions.length;
+      const completedSteps = executions.filter(e => e.status === 'completed').length;
+      const failedSteps = executions.filter(e => e.status === 'failed').length;
+      const pendingSteps = executions.filter(e => e.status === 'pending').length;
+      const progressPercentage = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+      
+      console.log(`[WORKFLOW-INSTANCES] ✅ Found instance ${instanceId} with ${totalSteps} steps`);
+      
+      res.json({
+        success: true,
+        data: {
+          instance: {
+            ...instanceData.instance,
+            templateName: instanceData.templateName,
+            templateCategory: instanceData.templateCategory
+          },
+          executions: executions.map(exec => ({
+            id: exec.id,
+            stepId: exec.stepId,
+            status: exec.status,
+            startedAt: exec.startedAt,
+            completedAt: exec.completedAt,
+            executorId: exec.executorId,
+            result: exec.result,
+            error: exec.error
+          })),
+          progress: {
+            total: totalSteps,
+            completed: completedSteps,
+            failed: failedSteps,
+            pending: pendingSteps,
+            percentage: progressPercentage
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('[WORKFLOW-INSTANCES] ❌ Error fetching instance status:', error);
+      res.status(500).json({ 
+        error: 'Errore recupero status workflow instance',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // GET /api/workflow-instances - Lista workflow instances con filtri
+  app.get('/api/workflow-instances', ...authWithRBAC, requirePermission('workflows.read'), async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const { status, templateId, limit = '50', offset = '0' } = req.query;
+      
+      console.log(`[WORKFLOW-INSTANCES] 📋 Fetching instances for tenant ${tenantId}`);
+      
+      await setTenantContext(tenantId);
+      
+      // Build where conditions
+      const whereConditions = [eq(workflowInstances.tenantId, tenantId)];
+      
+      if (status) {
+        whereConditions.push(eq(workflowInstances.status, status));
+      }
+      if (templateId) {
+        whereConditions.push(eq(workflowInstances.templateId, templateId));
+      }
+      
+      // Get instances with template names
+      const instances = await db
+        .select({
+          instance: workflowInstances,
+          templateName: workflowTemplates.name,
+          templateCategory: workflowTemplates.category
+        })
+        .from(workflowInstances)
+        .leftJoin(workflowTemplates, eq(workflowInstances.templateId, workflowTemplates.id))
+        .where(and(...whereConditions))
+        .orderBy(desc(workflowInstances.createdAt))
+        .limit(parseInt(limit))
+        .offset(parseInt(offset));
+      
+      // Get total count
+      const [{ count }] = await db
+        .select({ count: sql`count(*)` })
+        .from(workflowInstances)
+        .where(and(...whereConditions));
+      
+      console.log(`[WORKFLOW-INSTANCES] ✅ Found ${instances.length} instances (total: ${count})`);
+      
+      res.json({
+        success: true,
+        data: instances.map(item => ({
+          ...item.instance,
+          templateName: item.templateName,
+          templateCategory: item.templateCategory
+        })),
+        pagination: {
+          total: parseInt(count as string),
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          hasMore: parseInt(offset) + parseInt(limit) < parseInt(count as string)
+        }
+      });
+      
+    } catch (error) {
+      console.error('[WORKFLOW-INSTANCES] ❌ Error fetching instances:', error);
+      res.status(500).json({ 
+        error: 'Errore recupero workflow instances',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // ==================== UNIVERSAL HIERARCHY SYSTEM ROUTES ====================
   // Mount the hierarchy system router with authentication
   app.use('/api', tenantMiddleware, rbacMiddleware, hierarchyRouter);
