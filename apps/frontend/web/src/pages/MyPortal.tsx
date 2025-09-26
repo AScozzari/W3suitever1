@@ -146,7 +146,7 @@ export default function MyPortal() {
   const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
     queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'],
     queryFn: () => apiRequest('/api/universal-requests?category=hr&mine=true'),
-    enabled: hrQueriesEnabled,
+    enabled: !!hrQueriesEnabled,
     staleTime: 2 * 60 * 1000,
   });
   
@@ -157,7 +157,7 @@ export default function MyPortal() {
   const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
     queryKey: ['/api/workflow-templates', { category: 'hr' }],
     queryFn: () => apiRequest('/api/workflow-templates?category=hr'),
-    enabled: hrQueriesEnabled,
+    enabled: !!hrQueriesEnabled,
     staleTime: 5 * 60 * 1000,
   });
   const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
@@ -753,7 +753,7 @@ export default function MyPortal() {
                             </tr>
                           </thead>
                           <tbody>
-                            {myRequests.map((request) => (
+                            {myRequests.map((request: any) => (
                               <tr 
                                 key={request.id} 
                                 data-testid={`row-request-${request.id}`}
@@ -1729,14 +1729,14 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000
+      zIndex: 1050
     }}>
       <div style={{
         background: 'white',
         borderRadius: '16px',
         padding: '32px',
         width: '95%',
-        maxWidth: '800px',
+        maxWidth: '1200px',
         maxHeight: '95vh',
         overflow: 'auto',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -1890,7 +1890,7 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <Calendar size={20} />
+                <CalendarIcon size={20} />
                 Periodo
               </h3>
               <div style={{
