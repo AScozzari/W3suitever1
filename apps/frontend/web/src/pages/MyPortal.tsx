@@ -36,7 +36,7 @@ import {
   Bookmark, PlayCircle, Lock, Settings, Camera, Briefcase,
   ChevronRight, MessageSquare, Users2, PieChart, Calendar1,
   Globe, Palette, Key, History, Smartphone as SmartphoneIcon,
-  Share2, Upload, Receipt, Loader2
+  Share2, Upload, Receipt, Loader2, X
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
