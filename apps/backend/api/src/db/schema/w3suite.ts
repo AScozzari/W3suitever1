@@ -1009,6 +1009,47 @@ export const insertTimeTrackingSchema = createInsertSchema(timeTracking).omit({
 export type InsertTimeTracking = z.infer<typeof insertTimeTrackingSchema>;
 export type TimeTracking = typeof timeTracking.$inferSelect;
 
+// ==================== STORES TIMETRACKING METHODS ====================
+// Configuration table linking stores to available timetracking methods
+export const storesTimetrackingMethods = w3suiteSchema.table("stores_timetracking_methods", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  storeId: uuid("store_id").notNull().references(() => stores.id),
+  
+  // Method configuration
+  method: trackingMethodEnum("method").notNull(),
+  enabled: boolean("enabled").default(true),
+  priority: integer("priority").default(0), // For ordering methods in UI
+  
+  // Method-specific configuration
+  config: jsonb("config").default({}), // Store method-specific settings
+  // Examples of config content:
+  // GPS: { geofenceRadius: 200, requiresWiFi: false, accuracyThreshold: 50 }
+  // QR: { qrCodeUrl: "...", dynamicRefresh: 300, cameraRequired: true }
+  // NFC: { requiredBadgeTypes: ["employee", "temp"], timeout: 30 }
+  // Badge: { allowedBadgeFormats: ["numeric", "barcode"], length: 8 }
+  // Smart: { fallbackOrder: ["gps", "qr", "badge"], confidence: 0.8 }
+  // Web: { cookieExpiry: 2592000, fingerprintStrict: true }
+  
+  // Audit fields
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+}, (table) => [
+  // Ensure unique store-method combinations per tenant
+  uniqueIndex("stores_timetracking_methods_unique").on(table.tenantId, table.storeId, table.method),
+  index("stores_timetracking_methods_tenant_idx").on(table.tenantId),
+  index("stores_timetracking_methods_store_idx").on(table.storeId),
+  index("stores_timetracking_methods_enabled_idx").on(table.enabled),
+]);
+
+export const insertStoresTimetrackingMethodsSchema = createInsertSchema(storesTimetrackingMethods).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export type InsertStoresTimetrackingMethods = z.infer<typeof insertStoresTimetrackingMethodsSchema>;
+export type StoresTimetrackingMethods = typeof storesTimetrackingMethods.$inferSelect;
 
 // ==================== SHIFTS ====================
 export const shifts = w3suiteSchema.table("shifts", {
@@ -1325,6 +1366,7 @@ export const storesRelations = relations(stores, ({ one, many }) => ({
   calendarEvents: many(calendarEvents),
   timeTracking: many(timeTracking),
   shifts: many(shifts),
+  storesTimetrackingMethods: many(storesTimetrackingMethods),
 }));
 
 // Roles Relations
@@ -1453,6 +1495,13 @@ export const timeTrackingRelations = relations(timeTracking, ({ one }) => ({
   store: one(stores, { fields: [timeTracking.storeId], references: [stores.id] }),
   shift: one(shifts, { fields: [timeTracking.shiftId], references: [shifts.id] }),
   approvedByUser: one(users, { fields: [timeTracking.approvedBy], references: [users.id] }),
+}));
+
+// Stores Timetracking Methods Relations
+export const storesTimetrackingMethodsRelations = relations(storesTimetrackingMethods, ({ one }) => ({
+  tenant: one(tenants, { fields: [storesTimetrackingMethods.tenantId], references: [tenants.id] }),
+  store: one(stores, { fields: [storesTimetrackingMethods.storeId], references: [stores.id] }),
+  createdByUser: one(users, { fields: [storesTimetrackingMethods.createdBy], references: [users.id] }),
 }));
 
 
