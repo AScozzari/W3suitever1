@@ -142,22 +142,22 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // 🚨 TEMPORARY FIX: Remove enabled condition to test API
+  // ✅ MINE FILTER: Query for user's own HR requests with proper enablement
   const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
     queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'],
     queryFn: () => apiRequest('/api/universal-requests?category=hr&mine=true'),
-    // enabled: !!hrQueriesEnabled, // ⚠️ TEMPORARILY DISABLED FOR DEBUGGING
+    enabled: !!hrQueriesEnabled, // ✅ RE-ENABLED: Query ready when auth is ready
     staleTime: 2 * 60 * 1000,
   });
   
   // ✅ FIX: Extract requests array from response object
   const myRequestsData = myRequestsResponse?.requests || [];
 
-  // 🚨 TEMPORARY FIX: Remove enabled condition to test API
+  // ✅ WORKFLOW TEMPLATES: Query for HR workflow templates with proper enablement
   const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
     queryKey: ['/api/workflow-templates', { category: 'hr' }],
     queryFn: () => apiRequest('/api/workflow-templates?category=hr'),
-    // enabled: !!hrQueriesEnabled, // ⚠️ TEMPORARILY DISABLED FOR DEBUGGING
+    enabled: !!hrQueriesEnabled, // ✅ RE-ENABLED: Query ready when auth is ready
     staleTime: 5 * 60 * 1000,
   });
   const { session: currentSession, isLoading: sessionLoading } = useCurrentSession();
