@@ -2440,6 +2440,7 @@ const WorkflowManagementPage = () => {
                     })}
                   </div>
                 </div>
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
