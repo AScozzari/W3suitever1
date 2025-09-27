@@ -150,11 +150,11 @@ export default function MyPortal() {
   
   // 🔥 FORCE EXECUTE: Query for user's own HR requests - REMOVING enabled temporarily to debug
   const { data: myRequestsResponse, isLoading: requestsLoading, refetch: refetchMineRequests } = useQuery<{requests: any[]}>({
-    queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'],
+    queryKey: ['/api/requests', 'category', 'hr', 'mine'],
     queryFn: () => {
       console.log('🔥 [MINE-QUERY] FORCED EXECUTION - hrQueriesEnabled:', hrQueriesEnabled);
       console.log('🔥 [MINE-QUERY] About to call apiRequest for mine=true');
-      return apiRequest('/api/universal-requests?category=hr&mine=true');
+      return apiRequest('/api/requests?category=hr&mine=true');
     },
     // enabled: !!hrQueriesEnabled, // 🔥 TEMPORARILY DISABLED FOR DEBUG - FORCE EXECUTE
     staleTime: 2 * 60 * 1000,
