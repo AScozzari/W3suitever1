@@ -121,17 +121,6 @@ interface Team {
   isActive: boolean;
 }
 
-interface WorkflowTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  category: string;
-  templateType: string;
-  nodes: any[];
-  edges: any[];
-  isActive: boolean;
-  createdAt: string;
-}
 
 interface WorkflowInstance {
   id: string;
