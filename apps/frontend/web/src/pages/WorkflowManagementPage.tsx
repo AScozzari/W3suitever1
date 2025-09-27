@@ -662,6 +662,11 @@ const CATEGORIES = {
 
 const WorkflowManagementPage: React.FC = () => {
   const { toast } = useToast();
+  
+  // 🎯 TEMPLATE STATE DECLARATIONS (fixed initialization order)
+  const [templateSearchTerm, setTemplateSearchTerm] = useState('');
+  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string | null>(null);
+  
   const [currentModule, setCurrentModule] = useState('workflow');
   const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'teams' | 'analytics'>('dashboard');
   
@@ -1265,8 +1270,7 @@ const WorkflowManagementPage: React.FC = () => {
   
   // 🎨 UX/UI Enhancement states
   const [isDragOverCanvas, setIsDragOverCanvas] = useState(false);
-  const [templateSearchTerm, setTemplateSearchTerm] = useState('');
-  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string | null>(null);
+  // templateSearchTerm and selectedTemplateCategory moved above filteredTemplates
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 
@@ -3765,7 +3769,7 @@ const WorkflowManagementPage: React.FC = () => {
                 Cancel
               </Button>
               <Button 
-                onClick={handleSaveTeam} 
+                onClick={() => handleSaveTeam(teamFormData)} 
                 disabled={createTeamMutation.isPending || !teamFormData.name?.trim() || 
                         (((teamFormData.userMembers || []).length === 0 && (teamFormData.roleMembers || []).length === 0))
                 }
