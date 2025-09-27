@@ -32,10 +32,11 @@ import {
   useWorkflowNodes,
   useWorkflowEdges,
   useWorkflowViewport,
-  useWorkflowUI,
-  useWorkflowHistory,
   useWorkflowTemplates,
   useWorkflowHasHydrated,
+  useWorkflowCanUndo,
+  useWorkflowCanRedo,
+  useWorkflowHistoryLength,
   generateTemplateId
 } from '@/stores/workflowStore';
 
@@ -1022,9 +1023,9 @@ const WorkflowManagementPage = () => {
   // Templates can be loaded manually or via API calls instead
 
   // 🎯 WORKFLOW ACTIONS - now fully functional with history
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
-  const historyLength = history.length;
+  const canUndo = useWorkflowCanUndo();
+  const canRedo = useWorkflowCanRedo();
+  const historyLength = useWorkflowHistoryLength();
   
   // Enhanced actions with Zustand integration
   const undo = () => {
@@ -2195,7 +2196,7 @@ const WorkflowManagementPage = () => {
               variant="ghost" 
               size="sm"
               onClick={undo}
-              disabled={!useWorkflowHistory().canUndo}
+              disabled={!canUndo}
               className="h-8 w-8 p-0"
               title="Undo"
             >
@@ -2205,7 +2206,7 @@ const WorkflowManagementPage = () => {
               variant="ghost" 
               size="sm"
               onClick={redo}
-              disabled={!useWorkflowHistory().canRedo}
+              disabled={!canRedo}
               className="h-8 w-8 p-0"
               title="Redo"
             >

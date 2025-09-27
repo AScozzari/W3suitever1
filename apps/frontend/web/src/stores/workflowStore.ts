@@ -483,15 +483,13 @@ export const useWorkflowEdges = () => useWorkflowStore((state) => state.edges);
 export const useWorkflowViewport = () => useWorkflowStore((state) => state.viewport);
 export const useWorkflowTemplates = () => useWorkflowStore((state) => state.templates);
 export const useWorkflowHasHydrated = () => useWorkflowStore((state) => state.hasHydrated);
-export const useWorkflowUI = () => useWorkflowStore((state) => ({
-  isRunning: state.isRunning,
-  searchTerm: state.searchTerm,
-  selectedCategory: state.selectedCategory,
-  selectedNodeId: state.selectedNodeId,
-}), shallow);
-export const useWorkflowHistory = () => useWorkflowStore((state) => ({
-  canUndo: state.historyIndex > 0,
-  canRedo: state.historyIndex < state.history.length - 1,
-  historyLength: state.history.length,
-  currentAction: state.history[state.historyIndex]?.action,
-}), shallow);
+// 🛡️ INDIVIDUAL SELECTORS (prevent infinite re-renders)
+export const useWorkflowIsRunning = () => useWorkflowStore((state) => state.isRunning);
+export const useWorkflowSearchTerm = () => useWorkflowStore((state) => state.searchTerm);
+export const useWorkflowSelectedCategory = () => useWorkflowStore((state) => state.selectedCategory);
+export const useWorkflowSelectedNodeId = () => useWorkflowStore((state) => state.selectedNodeId);
+
+export const useWorkflowCanUndo = () => useWorkflowStore((state) => state.historyIndex > 0);
+export const useWorkflowCanRedo = () => useWorkflowStore((state) => state.historyIndex < state.history.length - 1);
+export const useWorkflowHistoryLength = () => useWorkflowStore((state) => state.history.length);
+export const useWorkflowCurrentAction = () => useWorkflowStore((state) => state.history[state.historyIndex]?.action);
