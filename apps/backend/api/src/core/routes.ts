@@ -8139,51 +8139,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== HR REQUEST SYSTEM API ====================
-      
-      // ✅ AUDIT TRAIL: Log request creation
-      await logRequestCreated({
-        tenantId,
-        request: result[0],
-        userId,
-        userEmail: req.user?.email,
-        duration
-      });
-
-      // 🤖 AI WORKFLOW ROUTING: Automatic intelligent routing
-      try {
-        console.log(`[UNIVERSAL-REQUEST] 🎯 Triggering AI workflow routing for request ${result[0].id}`);
-        
-        // Get AI settings for tenant (use storage method)
-        const aiSettings = await storage.getAISettings(tenantId);
-        
-        // Trigger AI routing in background (non-blocking)
-        const aiResult = await workflowAIConnector.routeRequest(
-          result[0].id,
-          tenantId,
-          aiSettings
-        );
-
-        if (aiResult.success) {
-          console.log(`[UNIVERSAL-REQUEST] ✅ AI routing successful:`, {
-            requestId: result[0].id,
-            selectedTeam: aiResult.decision.selectedTeam,
-            flow: aiResult.decision.flow
-          });
-        } else {
-          console.error(`[UNIVERSAL-REQUEST] ⚠️ AI routing failed:`, aiResult.error);
-        }
-        
-      } catch (aiError) {
-        // AI routing failure should not block request creation
-        console.error(`[UNIVERSAL-REQUEST] ❌ AI routing error:`, aiError);
-        console.log(`[UNIVERSAL-REQUEST] 📝 Request ${result[0].id} created successfully, AI routing will be retried later`);
-      }
-      
-      res.status(201).json(result[0]);
-    } catch (error) {
-      handleApiError(error, res);
-    }
-  });
 
   // Get universal requests with advanced filtering
   app.get('/api/requests', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
