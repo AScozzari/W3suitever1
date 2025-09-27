@@ -382,4 +382,7 @@ export const useWorkflowSelectedCategory = () => useWorkflowStore((state) => sta
 export const useWorkflowCanUndo = () => useWorkflowStore((state) => state.historyIndex > 0);
 export const useWorkflowCanRedo = () => useWorkflowStore((state) => state.historyIndex < state.history.length - 1);
 export const useWorkflowHistoryLength = () => useWorkflowStore((state) => state.history.length);
+
+// 🌱 HYDRATION HOOK (No persistence needed - always ready)
+export const useWorkflowHasHydrated = () => true; // Local store, always hydrated
 export const useWorkflowCurrentAction = () => useWorkflowStore((state) => state.history[state.historyIndex]?.action);
