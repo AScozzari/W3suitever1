@@ -1,0 +1,37 @@
+ined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+Layout.tsx:313 🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received: 0 events
+Layout.tsx:314 🔍 [WORKSPACE-CALENDAR] Sample raw event: undefined
+WorkflowManagementPage.tsx:736 Uncaught TypeError: templates.filter is not a function
+    at WorkflowManagementPage.tsx:736:22
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:735:29)
+WorkflowManagementPage.tsx:736 Uncaught TypeError: templates.filter is not a function
+    at WorkflowManagementPage.tsx:736:22
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:735:29)
+hook.js:608 The above error occurred in the <WorkflowManagementPage> component:
+
+    at WorkflowManagementPage (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/pages/WorkflowManagementPage.tsx:683:21)
+    at AuthenticatedRoute (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:425:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:262:17)
+    at TenantRoutes (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:186:25)
+    at TenantProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/TenantContext.tsx:35:34)
+    at TenantShell (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/components/TenantShell.tsx:33:31)
+    at Route (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:206:16)
+    at Switch (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/wouter.js?v=191b42df:262:17)
+    at Router
+    at ThemeProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/src/contexts/ThemeContext.tsx:20:33)
+    at QueryClientProvider (https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=191b42df:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-ZHRYBLGQ.js?v=191b42df:9129 Uncaught TypeError: templates.filter is not a function
+    at WorkflowManagementPage.tsx:736:22
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:735:29)
+

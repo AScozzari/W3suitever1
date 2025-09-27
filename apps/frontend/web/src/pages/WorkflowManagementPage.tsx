@@ -733,7 +733,9 @@ const WorkflowManagementPage = () => {
 
   // 🎨 UX/UI: Template filtering logic  
   const filteredTemplates = useMemo(() => {
-    return templates.filter(template => {
+    // 🛡️ SAFETY CHECK: Ensure templates is always an array
+    const safeTemplates = Array.isArray(templates) ? templates : [];
+    return safeTemplates.filter(template => {
       const matchesSearch = !templateSearchTerm || 
         template.name.toLowerCase().includes(templateSearchTerm.toLowerCase()) ||
         template.description?.toLowerCase().includes(templateSearchTerm.toLowerCase());
@@ -749,7 +751,8 @@ const WorkflowManagementPage = () => {
   
   // 📚 PROFESSIONAL TEMPLATE INITIALIZATION
   const initializeProfessionalTemplates = useCallback(() => {
-    if (templates.length === 0) {
+    const safeTemplates = Array.isArray(templates) ? templates : [];
+    if (safeTemplates.length === 0) {
       // 🏢 SALES TEAM WORKFLOW (was HR Leave Request)
       const salesLeaveTemplate = {
         name: "Sales Team Request",
@@ -1134,7 +1137,8 @@ const WorkflowManagementPage = () => {
   // ✅ DELETE TEMPLATE HANDLER
   const deleteTemplate = (templateId: string) => {
     // Remove template from Zustand store
-    const updatedTemplates = templates.filter(t => t.id !== templateId);
+    const safeTemplates = Array.isArray(templates) ? templates : [];
+    const updatedTemplates = safeTemplates.filter(t => t.id !== templateId);
     // Note: This should ideally call a Zustand action like deleteTemplate(templateId)
     // For now, we'll need to implement this in the store
     console.log('🗑️ Deleting template:', templateId);
@@ -2096,7 +2100,9 @@ const WorkflowManagementPage = () => {
 
     // 📋 FILTERED TEMPLATES BY DEPARTMENT
     const filteredTemplates = useMemo(() => {
-      return templates.filter(template => {
+      // 🛡️ SAFETY CHECK: Ensure templates is always an array  
+      const safeTemplates = Array.isArray(templates) ? templates : [];
+      return safeTemplates.filter(template => {
         const matchesCategory = !selectedCategory || template.category === selectedCategory;
         const matchesSearch = !templateSearchTerm || 
           template.name.toLowerCase().includes(templateSearchTerm.toLowerCase()) ||
