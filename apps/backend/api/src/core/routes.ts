@@ -383,9 +383,9 @@ const getEnterpriseAuditQuerySchema = z.object({
   userEmail: z.string().email().optional(),
   correlationId: z.string().min(1).max(50).optional(),
   
-  // Status and category filters
+  // Status and department filters
   status: z.enum(['pending', 'approved', 'rejected', 'cancelled', 'completed']).optional(),
-  category: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
+  department: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
   
   // Advanced search
   search: z.string().min(1).max(200).optional(), // Full-text search across message, notes, changes
@@ -452,9 +452,9 @@ const createUniversalRequestBodySchema = insertUniversalRequestSchema.omit({
   updatedBy: true
 }).extend({
   // Enhanced validation for enterprise use
-  category: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']),
-  requestType: z.string().min(1).max(100), // 'leave', 'expense', 'access', 'discount'
-  requestSubtype: z.string().max(100).optional(), // 'vacation', 'sick', 'maternity', etc.
+  department: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']),
+  category: z.string().min(1).max(100), // 'leave', 'expense', 'access', 'discount'
+  type: z.string().max(100).optional(), // 'vacation', 'sick', 'maternity', etc.
   title: z.string().min(1).max(255),
   description: z.string().optional(),
   requestData: z.record(z.any()).default({}), // Request-specific data
@@ -468,10 +468,10 @@ const createUniversalRequestBodySchema = insertUniversalRequestSchema.omit({
 
 const universalRequestFiltersSchema = z.object({
   // Core filters
-  category: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
+  department: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
   status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']).optional(),
-  requestType: z.string().optional(),
-  requestSubtype: z.string().optional(),
+  category: z.string().optional(),
+  type: z.string().optional(),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
   
   // User filters
@@ -497,7 +497,7 @@ const universalRequestFiltersSchema = z.object({
   // Pagination & sorting
   page: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1)).default('1'),
   limit: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().min(1).max(100)).default('20'),
-  sortBy: z.enum(['created', 'updated', 'priority', 'startDate', 'status', 'category']).default('created'),
+  sortBy: z.enum(['created', 'updated', 'priority', 'startDate', 'status', 'department']).default('created'),
   sortOrder: z.enum(['asc', 'desc']).default('desc')
 });
 
@@ -680,8 +680,8 @@ async function logRequestCreated(params: {
       action: 'created',
       newStatus: params.request.status,
       changes: {
+        department: params.request.department,
         category: params.request.category,
-        requestType: params.request.requestType,
         title: params.request.title,
         priority: params.request.priority
       },
@@ -702,8 +702,8 @@ async function logRequestCreated(params: {
       entityId: params.request.id,
       duration: params.duration,
       metadata: {
+        department: params.request.department,
         category: params.request.category,
-        requestType: params.request.requestType,
         priority: params.request.priority,
         hasAttachments: (params.request.attachments?.length || 0) > 0
       }
@@ -8160,9 +8160,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conditions.push(eq(universalRequests.requesterId, userId));
       }
       
-      // Category filter
-      if (filters.category) {
-        conditions.push(eq(universalRequests.category, filters.category));
+      // Department filter
+      if (filters.department) {
+        conditions.push(eq(universalRequests.department, filters.department));
       }
       
       // Status filter
@@ -8190,16 +8190,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priority: universalRequests.priority,
         startDate: universalRequests.startDate,
         status: universalRequests.status,
-        category: universalRequests.category
+        department: universalRequests.department
       }[filters.sortBy];
       
       // Get universal requests with proper data structure
       const requests = await db
         .select({
           id: universalRequests.id,
+          department: universalRequests.department,
           category: universalRequests.category,
-          requestType: universalRequests.requestType,
-          requestSubtype: universalRequests.requestSubtype,
+          type: universalRequests.type,
           title: universalRequests.title,
           description: universalRequests.description,
           status: universalRequests.status,
@@ -8236,9 +8236,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasPrev: filters.page > 1
         },
         filters: {
-          category: filters.category,
+          department: filters.department,
           status: filters.status,
-          requestType: filters.requestType,
+          category: filters.category,
           search: filters.search
         }
       });
@@ -8262,9 +8262,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .select({
           id: universalRequests.id,
           tenantId: universalRequests.tenantId,
+          department: universalRequests.department,
           category: universalRequests.category,
-          requestType: universalRequests.requestType,
-          requestSubtype: universalRequests.requestSubtype,
+          type: universalRequests.type,
           title: universalRequests.title,
           description: universalRequests.description,
           requestData: universalRequests.requestData,
@@ -8383,8 +8383,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ✅ AUDIT TRAIL: Get current request for logging previous status
       const currentRequest = await db.select({
         status: universalRequests.status,
-        category: universalRequests.category,
-        requestType: universalRequests.requestType
+        department: universalRequests.department,
+        category: universalRequests.category
       })
       .from(universalRequests)
       .where(and(
@@ -8432,8 +8432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: req.user?.email,
         reason,
         duration,
-        category: currentRequest[0].category,
-        requestType: currentRequest[0].requestType
+        department: currentRequest[0].department,
+        category: currentRequest[0].category
       });
       
       res.json(result[0]);
@@ -8484,11 +8484,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get requests by category (for dashboard widgets)
-  app.get('/api/requests/category/:category', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
+  // Get requests by department (for dashboard widgets)
+  app.get('/api/requests/department/:department', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
     try {
       const tenantId = req.user?.tenantId;
-      const { category } = req.params;
+      const { department } = req.params;
       const { status, limit = 10 } = req.query;
       
       if (!tenantId) {
@@ -8497,7 +8497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const conditions = [
         eq(universalRequests.tenantId, tenantId),
-        eq(universalRequests.category, category as any)
+        eq(universalRequests.department, department as any)
       ];
       
       if (status) {
@@ -8534,16 +8534,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Authentication required' });
       }
       
-      // Get counts by category and status
-      const categoryStats = await db
+      // Get counts by department and status
+      const departmentStats = await db
         .select({
-          category: universalRequests.category,
+          department: universalRequests.department,
           status: universalRequests.status,
           count: sql`count(*)`.as('count')
         })
         .from(universalRequests)
         .where(eq(universalRequests.tenantId, tenantId))
-        .groupBy(universalRequests.category, universalRequests.status);
+        .groupBy(universalRequests.department, universalRequests.status);
       
       // Get priority distribution
       const priorityStats = await db
@@ -8570,8 +8570,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .orderBy(sql`DATE(${universalRequests.createdAt})`);
       
       res.json({
-        categoryStats: categoryStats.map(stat => ({
-          category: stat.category,
+        departmentStats: departmentStats.map(stat => ({
+          department: stat.department,
           status: stat.status,
           count: Number(stat.count)
         })),
@@ -9671,7 +9671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(and(
           eq(universalRequests.tenantId, tenantId),
           eq(universalRequests.requesterId, userId),
-          eq(universalRequests.category, 'hr')
+          eq(universalRequests.department, 'hr')
         ));
       const nonDraftRequests = requests.filter(req => req.status !== 'draft');
       
@@ -11939,14 +11939,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (filters.status) {
         whereConditions.push(eq(universalRequests.status, filters.status));
       }
+      if (filters.department) {
+        whereConditions.push(eq(universalRequests.department, filters.department));
+      }
       if (filters.category) {
         whereConditions.push(eq(universalRequests.category, filters.category));
       }
-      if (filters.requestType) {
-        whereConditions.push(eq(universalRequests.requestType, filters.requestType));
-      }
-      if (filters.requestSubtype) {
-        whereConditions.push(eq(universalRequests.requestSubtype, filters.requestSubtype));
+      if (filters.type) {
+        whereConditions.push(eq(universalRequests.type, filters.type));
       }
       if (filters.priority) {
         whereConditions.push(eq(universalRequests.priority, filters.priority));
@@ -11973,9 +11973,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: universalRequests.id,
           title: universalRequests.title,
           status: universalRequests.status,
+          department: universalRequests.department,
           category: universalRequests.category,
-          requestType: universalRequests.requestType,
-          requestSubtype: universalRequests.requestSubtype,
+          type: universalRequests.type,
           priority: universalRequests.priority,
           requesterId: universalRequests.requesterId,
           description: universalRequests.description,
@@ -12010,9 +12010,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: r.id,
         title: r.title,
         status: r.status,
+        department: r.department,
         category: r.category,
-        requestType: r.requestType,
-        requestSubtype: r.requestSubtype,
+        type: r.type,
         priority: r.priority,
         requesterId: r.requesterId,
         // Build requesterName from firstName and lastName
@@ -12086,8 +12086,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         action: 'create',
         userId,
         metadata: {
+          department: newRequest.department,
           category: newRequest.category,
-          requestType: newRequest.requestType,
           priority: newRequest.priority
         }
       });
