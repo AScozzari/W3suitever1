@@ -12056,7 +12056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Preferisci sempre l'header X-Tenant-ID che contiene l'UUID corretto
       const tenantId = req.headers['x-tenant-id'] || req.user?.tenantId || req.tenantId;
       const userId = req.user?.id;
-      const validatedData = createUniversalRequestSchema.parse(req.body);
+      const validatedData = createUniversalRequestBodySchema.parse(req.body);
       
       console.log(`[UNIVERSAL-REQUESTS] ➕ Creating new request for tenant ${tenantId}, user ${userId}`);
       
@@ -12112,7 +12112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[UNIVERSAL-REQUESTS] ✅ Created request ${newRequest.id}`);
       
       // Log entity creation for audit trail
-      await storage.logEntityAction({
+      await storage.logEntityChange({
         tenantId,
         entityType: 'universal_request',
         entityId: newRequest.id,
