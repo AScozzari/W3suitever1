@@ -718,39 +718,7 @@ const WorkflowManagementPage = () => {
   const selectedNodeId = zustandSelectedNodeId;
   const templates = zustandTemplates;
   
-  // 🎯 MEMOIZED FILTERS FOR PERFORMANCE
-  const filteredHRActions = useMemo(() => {
-    if (selectedCategory && selectedCategory !== 'hr') return [];
-    return Object.values(ENTERPRISE_ACTIONS)
-      .filter(action => action.category === 'hr')
-      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => b.priority - a.priority);
-  }, [selectedCategory, searchTerm]);
-  
-  const filteredFinanceActions = useMemo(() => {
-    if (selectedCategory && selectedCategory !== 'finance') return [];
-    return Object.values(ENTERPRISE_ACTIONS)
-      .filter(action => action.category === 'finance')
-      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => b.priority - a.priority);
-  }, [selectedCategory, searchTerm]);
-  
-  const filteredOperationsActions = useMemo(() => {
-    if (selectedCategory && selectedCategory !== 'operations') return [];
-    return Object.values(ENTERPRISE_ACTIONS)
-      .filter(action => action.category === 'operations')
-      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => b.priority - a.priority);
-  }, [selectedCategory, searchTerm]);
-
-  // 🤖 AI ACTIONS FILTERING
-  const filteredAIActions = useMemo(() => {
-    if (selectedCategory && selectedCategory !== 'ai') return [];
-    return Object.values(ENTERPRISE_ACTIONS)
-      .filter(action => action.category === 'ai')
-      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => b.priority - a.priority);
-  }, [selectedCategory, searchTerm]);
+  // ✅ UNIFIED FILTERING SYSTEM - Removed conflicting old filters
 
   // 🎨 UX/UI: Template filtering logic  
   const filteredTemplates = useMemo(() => {
