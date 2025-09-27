@@ -1022,12 +1022,11 @@ const WorkflowManagementPage = () => {
             name: template.name,
             description: template.description,
             category: template.category,
-            workflowDefinition: {
+            definition: {
               nodes: template.nodes,
               edges: template.edges,
               viewport: { x: 0, y: 0, zoom: 1 },
             },
-            isActive: true,
           });
         } catch (error) {
           console.error(`Failed to create template ${template.name}:`, error);
@@ -1085,13 +1084,12 @@ const WorkflowManagementPage = () => {
       await createTemplateMutation.mutateAsync({
         name,
         description,
-        category,
-        workflowDefinition: {
+        category: (category as "hr" | "finance" | "operations" | "sales" | "marketing" | "support" | "it" | "legal") || "operations",
+        definition: {
           nodes: zustandNodes,
           edges: zustandEdges,
           viewport: zustandViewport,
         },
-        isActive: true,
       });
       
       // Mark current template as clean after successful save
@@ -1114,14 +1112,10 @@ const WorkflowManagementPage = () => {
 
   const handleLoadTemplate = async (templateId: string) => {
     try {
-      const template = templates.find(t => t.id === templateId);
-      if (template && template.workflowDefinition) {
+      const template = templates.find((t: any) => t.id === templateId);
+      if (template && template.definition) {
         // Load template definition into Zustand store
-        zustandLoadTemplateDefinition(
-          template.workflowDefinition.nodes,
-          template.workflowDefinition.edges,
-          template.workflowDefinition.viewport
-        );
+        zustandLoadTemplateDefinition(template.definition, templateId);
         
         // Update template context
         zustandSetCurrentTemplateId(templateId);
@@ -2020,7 +2014,6 @@ const WorkflowManagementPage = () => {
       nodes,
       edges,
       viewport,
-      templates,
       searchTerm,
       selectedCategory,
       isRunning,
@@ -2033,8 +2026,6 @@ const WorkflowManagementPage = () => {
       setSearchTerm,
       setSelectedCategory,
       setRunning,
-      saveTemplate: handleSaveTemplate,
-      loadTemplate: handleLoadTemplate,
       saveSnapshot,
       undo,
       redo,
@@ -2194,7 +2185,7 @@ const WorkflowManagementPage = () => {
           });
         }
       } else if (templateId) {
-        const template = templates.find(t => t.id === templateId);
+        const template = templates.find((t: any) => t.id === templateId);
         if (template) {
           handleLoadTemplate(templateId).catch(console.error);
         }
