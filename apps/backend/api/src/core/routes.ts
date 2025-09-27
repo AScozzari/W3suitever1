@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 // OAuth legacy system removed - using only OAuth2 enterprise
 import { setupOAuth2Server } from "./oauth2-server";
+import { workflowRoutes } from "../routes/workflows";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
@@ -1096,6 +1097,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Apply tenant middleware to all other API routes
     tenantMiddleware(req, res, next);
   });
+
+  // ==================== WORKFLOW MANAGEMENT ROUTES ====================
+  // Register workflow management API routes with authentication and tenant middleware
+  app.use('/api/workflows', workflowRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
 
