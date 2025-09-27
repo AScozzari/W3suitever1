@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { subscribeWithSelector } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
 import { Node, Edge, Viewport } from 'reactflow';
 import { nanoid } from 'nanoid';
 
@@ -487,10 +488,10 @@ export const useWorkflowUI = () => useWorkflowStore((state) => ({
   searchTerm: state.searchTerm,
   selectedCategory: state.selectedCategory,
   selectedNodeId: state.selectedNodeId,
-}));
+}), shallow);
 export const useWorkflowHistory = () => useWorkflowStore((state) => ({
   canUndo: state.historyIndex > 0,
   canRedo: state.historyIndex < state.history.length - 1,
   historyLength: state.history.length,
   currentAction: state.history[state.historyIndex]?.action,
-}));
+}), shallow);
