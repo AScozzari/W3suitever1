@@ -81,12 +81,12 @@ import 'reactflow/dist/style.css';
 // Icons
 import {
   Users, User, Plus, Settings, GitBranch, Activity, Zap, Target, 
-  BarChart3, CheckCircle, Clock, AlertCircle, AlertTriangle, TrendingUp,
+  BarChart3, CheckCircle, CheckCircle2, Clock, AlertCircle, AlertTriangle, TrendingUp,
   ArrowRight, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
   Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
   RefreshCw, Database, Mail, Undo2, Redo2, Upload, Server, Folder,
-  Download, Trash2
+  Download, Trash2, Brain, Heart
 } from 'lucide-react';
 
 // Types
