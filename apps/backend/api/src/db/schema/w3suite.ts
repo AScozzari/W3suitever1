@@ -1644,8 +1644,8 @@ export type ApprovalWorkflow = typeof approvalWorkflows.$inferSelect;
 // ==================== UNIFIED REQUESTS SYSTEM ====================
 // ✅ ENTERPRISE CENTRALIZZAZIONE: Tabella unica per tutte le richieste aziendali
 
-// Request Category Enum - Categorizzazione per moduli aziendali
-export const requestCategoryEnum = pgEnum('request_category', [
+// Settore Enum - Categorizzazione per settori/dipartimenti aziendali
+export const settoreEnum = pgEnum('settore', [
   'hr',           // Human Resources (ferie, permessi, congedi)
   'operations',   // Operazioni (manutenzione, logistics, inventory)
   'support',      // Support IT (accessi, hardware, software)
@@ -1674,10 +1674,10 @@ export const universalRequests = w3suiteSchema.table("universal_requests", {
   storeId: uuid("store_id").references(() => stores.id),
   onBehalfOf: varchar("on_behalf_of").references(() => users.id), // Richieste delegate
   
-  // ✅ CATEGORIZZAZIONE ENTERPRISE: Modulo + Tipo + Sottotipo
-  category: requestCategoryEnum("category").notNull(),
-  requestType: varchar("request_type", { length: 100 }).notNull(), // 'leave', 'expense', 'access', 'discount'
-  requestSubtype: varchar("request_subtype", { length: 100 }), // 'vacation', 'sick', 'maternity', etc.
+  // ✅ CATEGORIZZAZIONE ENTERPRISE: Settore + Categoria + Tipologia
+  settore: settoreEnum("settore").notNull(), // hr, finance, support, crm, sales, operations
+  categoria: varchar("categoria", { length: 100 }).notNull(), // leave, italian_legal, family, etc.
+  tipologia: varchar("tipologia", { length: 100 }), // vacation, marriage_leave, maternity_leave, etc.
   
   // ✅ CONTENUTO RICHIESTA
   title: varchar("title", { length: 255 }).notNull(),
@@ -1711,7 +1711,7 @@ export const universalRequests = w3suiteSchema.table("universal_requests", {
   updatedBy: varchar("updated_by").references(() => users.id),
 }, (table) => [
   // ✅ INDICI OTTIMIZZATI per performance enterprise
-  index("universal_requests_tenant_category_idx").on(table.tenantId, table.category),
+  index("universal_requests_tenant_settore_idx").on(table.tenantId, table.settore),
   index("universal_requests_tenant_status_idx").on(table.tenantId, table.status),
   index("universal_requests_requester_idx").on(table.requesterId),
   index("universal_requests_approver_idx").on(table.currentApproverId),
@@ -1720,7 +1720,7 @@ export const universalRequests = w3suiteSchema.table("universal_requests", {
   index("universal_requests_dates_idx").on(table.startDate, table.endDate),
   index("universal_requests_tenant_created_idx").on(table.tenantId, table.createdAt.desc()),
   index("universal_requests_workflow_idx").on(table.workflowInstanceId),
-  index("universal_requests_category_type_idx").on(table.category, table.requestType, table.requestSubtype),
+  index("universal_requests_settore_categoria_tipologia_idx").on(table.settore, table.categoria, table.tipologia),
 ]);
 
 export const insertUniversalRequestSchema = createInsertSchema(universalRequests).omit({ 
