@@ -142,7 +142,6 @@ export class WorkflowExecutionEngine {
         metadata: {
           triggerData,
           userContext,
-          executionLog: workflowInstance.executionLog || [],
         },
       };
 

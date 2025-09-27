@@ -2154,10 +2154,10 @@ const WorkflowManagementPage = () => {
       } else if (templateId) {
         const template = templates.find(t => t.id === templateId);
         if (template) {
-          await handleLoadTemplate(templateId);
+          handleLoadTemplate(templateId).catch(console.error);
         }
       }
-    }, [reactFlowInstance, addNode, loadTemplate, templates, toast]);
+    }, [reactFlowInstance, addNode, handleLoadTemplate, templates, toast]);
 
     // 🚀 WORKFLOW EXECUTION FUNCTIONS
     const executeWorkflow = useCallback(async () => {
@@ -2223,9 +2223,9 @@ const WorkflowManagementPage = () => {
       const templateCategory = selectedCategory || 'operations';
 
       if (templateName && templateDescription) {
-        await handleSaveTemplate(templateName, templateDescription, templateCategory as any);
+        handleSaveTemplate(templateName, templateDescription, templateCategory as any).catch(console.error);
       }
-    }, [nodes, selectedCategory, saveTemplate, toast]);
+    }, [nodes, selectedCategory, handleSaveTemplate, toast]);
 
     return (
     <div className="space-y-6">
