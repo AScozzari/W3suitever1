@@ -759,6 +759,240 @@ const WorkflowManagementPage: React.FC = () => {
   // 🌱 INITIALIZE WITH DEFAULT NODES AFTER HYDRATION
   const hasHydrated = useWorkflowHasHydrated();
   
+  // 📚 PROFESSIONAL TEMPLATE INITIALIZATION
+  const initializeProfessionalTemplates = useCallback(() => {
+    if (templates.length === 0) {
+      // 🏢 HR LEAVE REQUEST WORKFLOW
+      const hrLeaveTemplate = {
+        name: "Employee Leave Request",
+        description: "Complete leave request approval workflow with manager review and HR processing",
+        category: 'hr' as const,
+        nodes: [
+          {
+            id: 'hr-start',
+            type: 'start',
+            position: { x: 50, y: 100 },
+            data: { label: 'Leave Request Submitted', description: 'Employee submits leave request' }
+          },
+          {
+            id: 'hr-manager-review',
+            type: 'action',
+            position: { x: 300, y: 100 },
+            data: { label: 'Manager Review', description: 'Direct manager reviews and approves/rejects request' }
+          },
+          {
+            id: 'hr-department-check',
+            type: 'action',
+            position: { x: 550, y: 100 },
+            data: { label: 'HR Department Review', description: 'HR verifies policy compliance and availability' }
+          },
+          {
+            id: 'hr-approval',
+            type: 'end',
+            position: { x: 800, y: 100 },
+            data: { label: 'Leave Approved', description: 'Request approved and calendar updated' }
+          }
+        ],
+        edges: [
+          { id: 'hr-e1', source: 'hr-start', target: 'hr-manager-review' },
+          { id: 'hr-e2', source: 'hr-manager-review', target: 'hr-department-check' },
+          { id: 'hr-e3', source: 'hr-department-check', target: 'hr-approval' }
+        ]
+      };
+
+      // 💰 FINANCE BUDGET APPROVAL WORKFLOW  
+      const financeTemplate = {
+        name: "Budget Approval Process",
+        description: "Multi-tier budget approval workflow with escalation for large expenditures",
+        category: 'finance' as const,
+        nodes: [
+          {
+            id: 'fin-start',
+            type: 'start', 
+            position: { x: 50, y: 100 },
+            data: { label: 'Budget Request', description: 'Department submits budget request' }
+          },
+          {
+            id: 'fin-amount-check',
+            type: 'action',
+            position: { x: 300, y: 100 },
+            data: { label: 'Amount Validation', description: 'System validates request amount and categorization' }
+          },
+          {
+            id: 'fin-supervisor',
+            type: 'action',
+            position: { x: 550, y: 50 },
+            data: { label: 'Supervisor Approval', description: 'Department supervisor reviews request under €5000' }
+          },
+          {
+            id: 'fin-finance-director',
+            type: 'action',
+            position: { x: 550, y: 150 },
+            data: { label: 'Finance Director', description: 'Finance director approves requests over €5000' }
+          },
+          {
+            id: 'fin-approved',
+            type: 'end',
+            position: { x: 800, y: 100 },
+            data: { label: 'Budget Approved', description: 'Funds allocated and notification sent' }
+          }
+        ],
+        edges: [
+          { id: 'fin-e1', source: 'fin-start', target: 'fin-amount-check' },
+          { id: 'fin-e2', source: 'fin-amount-check', target: 'fin-supervisor' },
+          { id: 'fin-e3', source: 'fin-amount-check', target: 'fin-finance-director' },
+          { id: 'fin-e4', source: 'fin-supervisor', target: 'fin-approved' },
+          { id: 'fin-e5', source: 'fin-finance-director', target: 'fin-approved' }
+        ]
+      };
+
+      // 🔧 OPERATIONS MAINTENANCE WORKFLOW
+      const operationsTemplate = {
+        name: "Equipment Maintenance Request",
+        description: "Preventive and corrective maintenance workflow with priority escalation",
+        category: 'operations' as const,
+        nodes: [
+          {
+            id: 'ops-start',
+            type: 'start',
+            position: { x: 50, y: 100 },
+            data: { label: 'Maintenance Request', description: 'Employee reports equipment issue or schedules maintenance' }
+          },
+          {
+            id: 'ops-priority',
+            type: 'action',
+            position: { x: 300, y: 100 },
+            data: { label: 'Priority Assessment', description: 'System categorizes urgency: Critical/High/Medium/Low' }
+          },
+          {
+            id: 'ops-assign',
+            type: 'action',
+            position: { x: 550, y: 100 },
+            data: { label: 'Technician Assignment', description: 'Auto-assign to available qualified technician' }
+          },
+          {
+            id: 'ops-work',
+            type: 'action',
+            position: { x: 800, y: 100 },
+            data: { label: 'Maintenance Work', description: 'Technician performs maintenance and updates status' }
+          },
+          {
+            id: 'ops-complete',
+            type: 'end',
+            position: { x: 1050, y: 100 },
+            data: { label: 'Work Complete', description: 'Equipment verified and returned to service' }
+          }
+        ],
+        edges: [
+          { id: 'ops-e1', source: 'ops-start', target: 'ops-priority' },
+          { id: 'ops-e2', source: 'ops-priority', target: 'ops-assign' },
+          { id: 'ops-e3', source: 'ops-assign', target: 'ops-work' },
+          { id: 'ops-e4', source: 'ops-work', target: 'ops-complete' }
+        ]
+      };
+
+      // 📝 DOCUMENT APPROVAL WORKFLOW
+      const approvalTemplate = {
+        name: "Document Review & Approval",
+        description: "Multi-stakeholder document review with version control and approval tracking",
+        category: 'approval' as const,
+        nodes: [
+          {
+            id: 'doc-start',
+            type: 'start',
+            position: { x: 50, y: 100 },
+            data: { label: 'Document Submitted', description: 'Author submits document for review and approval' }
+          },
+          {
+            id: 'doc-review',
+            type: 'action',
+            position: { x: 300, y: 100 },
+            data: { label: 'Peer Review', description: 'Subject matter experts review content and provide feedback' }
+          },
+          {
+            id: 'doc-legal',
+            type: 'action',
+            position: { x: 550, y: 100 },
+            data: { label: 'Legal Compliance', description: 'Legal team verifies regulatory compliance if required' }
+          },
+          {
+            id: 'doc-final',
+            type: 'action',
+            position: { x: 800, y: 100 },
+            data: { label: 'Final Approval', description: 'Authorized approver signs off on final version' }
+          },
+          {
+            id: 'doc-publish',
+            type: 'end',
+            position: { x: 1050, y: 100 },
+            data: { label: 'Document Published', description: 'Approved document published and stakeholders notified' }
+          }
+        ],
+        edges: [
+          { id: 'doc-e1', source: 'doc-start', target: 'doc-review' },
+          { id: 'doc-e2', source: 'doc-review', target: 'doc-legal' },
+          { id: 'doc-e3', source: 'doc-legal', target: 'doc-final' },
+          { id: 'doc-e4', source: 'doc-final', target: 'doc-publish' }
+        ]
+      };
+
+      // 🔄 CUSTOMER ONBOARDING AUTOMATION
+      const automationTemplate = {
+        name: "Customer Onboarding Automation",
+        description: "Automated customer onboarding with welcome sequence and account setup",
+        category: 'automation' as const,
+        nodes: [
+          {
+            id: 'auto-start',
+            type: 'start',
+            position: { x: 50, y: 100 },
+            data: { label: 'New Customer Registration', description: 'Customer completes registration form' }
+          },
+          {
+            id: 'auto-validate',
+            type: 'action',
+            position: { x: 300, y: 100 },
+            data: { label: 'Data Validation', description: 'System validates customer information and documents' }
+          },
+          {
+            id: 'auto-account',
+            type: 'action',
+            position: { x: 550, y: 100 },
+            data: { label: 'Account Creation', description: 'Automated account setup with initial configuration' }
+          },
+          {
+            id: 'auto-welcome',
+            type: 'action',
+            position: { x: 800, y: 100 },
+            data: { label: 'Welcome Communication', description: 'Send welcome email sequence and setup instructions' }
+          },
+          {
+            id: 'auto-complete',
+            type: 'end',
+            position: { x: 1050, y: 100 },
+            data: { label: 'Onboarding Complete', description: 'Customer activated and success metrics tracked' }
+          }
+        ],
+        edges: [
+          { id: 'auto-e1', source: 'auto-start', target: 'auto-validate' },
+          { id: 'auto-e2', source: 'auto-validate', target: 'auto-account' },
+          { id: 'auto-e3', source: 'auto-account', target: 'auto-welcome' },
+          { id: 'auto-e4', source: 'auto-welcome', target: 'auto-complete' }
+        ]
+      };
+
+      // Initialize professional templates
+      [hrLeaveTemplate, financeTemplate, operationsTemplate, approvalTemplate, automationTemplate].forEach(template => {
+        zustandSaveTemplate(template.name, template.description, template.category);
+      });
+
+      toast({
+        title: '📚 Professional Templates Initialized',
+        description: 'Pre-configured workflow templates for HR, Finance, Operations, Approval & Automation are now available',
+      });
+    }
+  }, [templates.length, zustandSaveTemplate, toast]);
+
   useEffect(() => {
     if (hasHydrated && zustandNodes.length === 0 && zustandEdges.length === 0) {
       const initialNode: Node = {
@@ -774,7 +1008,14 @@ const WorkflowManagementPage: React.FC = () => {
       setZustandNodes([initialNode]);
       zustandSaveSnapshot('Initial node added');
     }
-  }, [hasHydrated, setZustandNodes, zustandSaveSnapshot]); // Include dependencies to avoid stale closures
+  }, [hasHydrated, setZustandNodes, zustandSaveSnapshot]);
+
+  // 📚 Initialize professional templates after hydration
+  useEffect(() => {
+    if (hasHydrated) {
+      initializeProfessionalTemplates();
+    }
+  }, [hasHydrated, initializeProfessionalTemplates]);
 
   // 🎯 WORKFLOW ACTIONS - now fully functional with history
   const canUndo = historyIndex > 0;
