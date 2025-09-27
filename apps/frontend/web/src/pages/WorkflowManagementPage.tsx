@@ -138,51 +138,51 @@ interface WorkflowInstance {
 
 // Custom node types for workflow actions
 const ActionNode = ({ data }: { data: any }) => (
-    <div className="bg-white border-2 border-slate-200 rounded-lg p-4 shadow-md min-w-[200px] relative">
-      {/* INPUT HANDLE - Left side for connections */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="w-3 h-3 bg-blue-500 border-2 border-white"
-        data-testid={`node-${data.id}-input`}
-      />
-      
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-3 h-3 rounded-full ${
-          data.category === 'sales' ? 'bg-green-500' :
-          data.category === 'finance' ? 'bg-blue-500' :
-          data.category === 'marketing' ? 'bg-purple-500' :
-          data.category === 'support' ? 'bg-yellow-500' :
-          data.category === 'operations' ? 'bg-orange-500' : 'bg-slate-500'
-        }`} />
-        <span className="font-medium text-sm text-slate-700">{data.category?.toUpperCase()}</span>
-      </div>
-      <div className="text-sm font-semibold text-slate-900 mb-1">
-        {data.label}
-      </div>
-      <div className="text-xs text-slate-600">
-        {data.description}
-      </div>
-      {data.approver && (
-        <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
-          <Users className="w-3 h-3" />
-          {data.approver}
-        </div>
-      )}
-      
-      {/* OUTPUT HANDLE - Right side for connections */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-3 h-3 bg-green-500 border-2 border-white"
-        data-testid={`node-${data.id}-output`}
-      />
+  <div className="bg-white border-2 border-slate-200 rounded-lg p-4 shadow-md min-w-[200px] relative">
+    {/* INPUT HANDLE - Left side for connections */}
+    <Handle
+      type="target"
+      position={Position.Left}
+      className="w-3 h-3 bg-blue-500 border-2 border-white"
+      data-testid={`node-${data.id}-input`}
+    />
+    
+    <div className="flex items-center gap-2 mb-2">
+      <div className={`w-3 h-3 rounded-full ${
+        data.category === 'sales' ? 'bg-green-500' :
+        data.category === 'finance' ? 'bg-blue-500' :
+        data.category === 'marketing' ? 'bg-purple-500' :
+        data.category === 'support' ? 'bg-yellow-500' :
+        data.category === 'operations' ? 'bg-orange-500' : 'bg-slate-500'
+      }`} />
+      <span className="font-medium text-sm text-slate-700">{data.category?.toUpperCase()}</span>
     </div>
-  );
+    <div className="text-sm font-semibold text-slate-900 mb-1">
+      {data.label}
+    </div>
+    <div className="text-xs text-slate-600">
+      {data.description}
+    </div>
+    {data.approver && (
+      <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+        <Users className="w-3 h-3" />
+        {data.approver}
+      </div>
+    )}
+    
+    {/* OUTPUT HANDLE - Right side for connections */}
+    <Handle
+      type="source"
+      position={Position.Right}
+      className="w-3 h-3 bg-green-500 border-2 border-white"
+      data-testid={`node-${data.id}-output`}
+    />
+  </div>
+);
 };
 
 const StartNode = ({ data }: { data: any }) => (
-  <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-4 shadow-md">
+  <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-4 shadow-md relative">
     <div className="flex items-center gap-2">
       <Play className="w-4 h-4" />
       <span className="font-semibold">START</span>
@@ -190,11 +190,19 @@ const StartNode = ({ data }: { data: any }) => (
     <div className="text-xs mt-1 opacity-80">
       {data.label || 'Workflow Start'}
     </div>
+    
+    {/* OUTPUT HANDLE ONLY - Start nodes only output */}
+    <Handle
+      type="source"
+      position={Position.Right}
+      className="w-3 h-3 bg-white border-2 border-green-500"
+      data-testid={`start-node-${data.id}-output`}
+    />
   </div>
 );
 
 const EndNode = ({ data }: { data: any }) => (
-  <div className="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg p-4 shadow-md">
+  <div className="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg p-4 shadow-md relative">
     <div className="flex items-center gap-2">
       <CheckCircle className="w-4 h-4" />
       <span className="font-semibold">END</span>
@@ -202,6 +210,14 @@ const EndNode = ({ data }: { data: any }) => (
     <div className="text-xs mt-1 opacity-80">
       {data.label || 'Workflow End'}
     </div>
+    
+    {/* INPUT HANDLE ONLY - End nodes only receive */}
+    <Handle
+      type="target"
+      position={Position.Left}
+      className="w-3 h-3 bg-white border-2 border-red-500"
+      data-testid={`end-node-${data.id}-input`}
+    />
   </div>
 );
 
