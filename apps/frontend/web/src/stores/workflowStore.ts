@@ -6,6 +6,13 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { Node, Edge, Viewport } from 'reactflow';
+import { nanoid } from 'nanoid';
+
+// 🔧 SAFE ID GENERATORS - Prevent collision with deterministic IDs
+export const generateTemplateId = () => `template-${nanoid()}`;
+export const generateNodeId = () => `node-${nanoid()}`;
+export const generateEdgeId = () => `edge-${nanoid()}`;
+export const generateInstanceId = () => `instance-${nanoid()}`;
 
 // 🎯 WORKFLOW STATE INTERFACE
 interface WorkflowState {
@@ -16,6 +23,7 @@ interface WorkflowState {
   
   // Hydration state
   hasHydrated: boolean;
+  hasBootstrapped: boolean; // 🛡️ Prevent duplicate template seeding
   
   // Template management
   templates: WorkflowTemplate[];
@@ -81,6 +89,7 @@ interface WorkflowActions {
   loadTemplate: (templateId: string) => void;
   deleteTemplate: (templateId: string) => void;
   duplicateTemplate: (templateId: string) => void;
+  bootstrapDefaultTemplates: (templates: WorkflowTemplate[]) => void; // 🛡️ Safe template seeding
   
   // UI state
   setRunning: (isRunning: boolean) => void;
@@ -108,6 +117,7 @@ const INITIAL_STATE: WorkflowState = {
   edges: [],
   viewport: { x: 0, y: 0, zoom: 1 },
   hasHydrated: false,
+  hasBootstrapped: false, // 🛡️ Prevent duplicate template seeding
   templates: [],
   currentTemplate: null,
   selectedNodeId: null,
@@ -202,7 +212,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         saveTemplate: (name: string, description: string, category: WorkflowTemplate['category']) => {
           const state = get();
           const template: WorkflowTemplate = {
-            id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: generateTemplateId(),
             name,
             description,
             category,
@@ -252,7 +262,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
           if (template) {
             const duplicate: WorkflowTemplate = {
               ...structuredClone(template),
-              id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              id: generateTemplateId(),
               name: `${template.name} (Copy)`,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -261,6 +271,28 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
 
             set((state) => {
               state.templates.push(duplicate);
+            });
+          }
+        },
+
+        // 🛡️ SAFE TEMPLATE BOOTSTRAP - Prevent duplicate seeding
+        bootstrapDefaultTemplates: (templates: WorkflowTemplate[]) => {
+          const state = get();
+          if (!state.hasHydrated || state.hasBootstrapped) {
+            return; // Wait for hydration or already bootstrapped
+          }
+
+          const existingIds = new Set(state.templates.map(t => t.id));
+          const newTemplates = templates.filter(t => !existingIds.has(t.id));
+          
+          if (newTemplates.length > 0) {
+            set((state) => {
+              state.templates.push(...newTemplates);
+              state.hasBootstrapped = true;
+            });
+          } else {
+            set((state) => {
+              state.hasBootstrapped = true;
             });
           }
         },

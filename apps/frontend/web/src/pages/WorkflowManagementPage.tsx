@@ -35,7 +35,8 @@ import {
   useWorkflowUI,
   useWorkflowHistory,
   useWorkflowTemplates,
-  useWorkflowHasHydrated
+  useWorkflowHasHydrated,
+  generateTemplateId
 } from '@/stores/workflowStore';
 
 // UI Components
@@ -699,6 +700,7 @@ const WorkflowManagementPage = () => {
     saveTemplate: zustandSaveTemplate,
     loadTemplate: zustandLoadTemplate,
     clearWorkflow: zustandClearWorkflow,
+    bootstrapDefaultTemplates: zustandBootstrapDefaultTemplates,
     history,
     historyIndex
   } = workflowStore;
@@ -1016,12 +1018,62 @@ const WorkflowManagementPage = () => {
     }
   }, [hasHydrated, setZustandNodes, zustandSaveSnapshot]);
 
-  // 📚 Initialize professional templates after hydration
+  // 🛡️ SAFE BOOTSTRAP: Initialize professional templates after hydration
   useEffect(() => {
     if (hasHydrated) {
-      initializeProfessionalTemplates();
+      // Use the safe bootstrap function instead of initializeProfessionalTemplates
+      const defaultTemplates = [
+        // Move all the template definitions here and call bootstrapDefaultTemplates
+        {
+          id: generateTemplateId(),
+          name: "Sales Team Request",
+          description: "Sales team approval workflow with manager review and sales processing",
+          category: 'sales' as const,
+          nodes: [
+            {
+              id: 'hr-start',
+              type: 'start',
+              position: { x: 50, y: 100 },
+              data: { label: 'Leave Request Submitted', description: 'Employee submits leave request' }
+            },
+            {
+              id: 'hr-manager-review',
+              type: 'action',
+              position: { x: 300, y: 100 },
+              data: { label: 'Manager Review', description: 'Direct manager reviews and approves/rejects request' }
+            },
+            {
+              id: 'hr-department-check',
+              type: 'action',
+              position: { x: 550, y: 100 },
+              data: { label: 'HR Department Review', description: 'HR verifies policy compliance and availability' }
+            },
+            {
+              id: 'hr-approval',
+              type: 'end',
+              position: { x: 800, y: 100 },
+              data: { label: 'Leave Approved', description: 'Request approved and calendar updated' }
+            }
+          ],
+          edges: [
+            { id: 'hr-e1', source: 'hr-start', target: 'hr-manager-review' },
+            { id: 'hr-e2', source: 'hr-manager-review', target: 'hr-department-check' },
+            { id: 'hr-e3', source: 'hr-department-check', target: 'hr-approval' }
+          ],
+          viewport: { x: 0, y: 0, zoom: 1 },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          version: 1,
+          tags: [],
+          isPublic: true,
+          createdBy: 'system'
+        }
+        // Add other templates as needed
+      ];
+      
+      zustandBootstrapDefaultTemplates(defaultTemplates);
     }
-  }, [hasHydrated, initializeProfessionalTemplates]);
+  }, [hasHydrated]); // ✅ No dependency on initializeProfessionalTemplates or templates.length
 
   // 🎯 WORKFLOW ACTIONS - now fully functional with history
   const canUndo = historyIndex > 0;
