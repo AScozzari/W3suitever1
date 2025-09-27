@@ -157,16 +157,7 @@ export default function MyPortal() {
       return apiRequest('/api/universal-requests?department=hr&mine=true');
     },
     // enabled: !!hrQueriesEnabled, // 🔥 TEMPORARILY DISABLED FOR DEBUG - FORCE EXECUTE
-    staleTime: 2 * 60 * 1000,
-    onSuccess: (data) => {
-      console.log('✅ [MINE-QUERY] SUCCESS - Received data:', data);
-    },
-    onError: (error) => {
-      console.error('❌ [MINE-QUERY] ERROR:', error);
-    },
-    onSettled: (data, error) => {
-      console.log('🏁 [MINE-QUERY] SETTLED - Data:', data, 'Error:', error);
-    }
+    staleTime: 2 * 60 * 1000
   });
   
   // ✅ FIX: Extract requests array from response object
