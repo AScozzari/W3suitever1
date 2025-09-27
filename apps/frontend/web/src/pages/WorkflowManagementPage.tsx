@@ -1946,6 +1946,7 @@ const WorkflowManagementPage = () => {
 
     // 🔧 REACT FLOW INTEGRATION
     const reactFlowInstance = useReactFlow();
+    const reactFlowWrapper = useRef<HTMLDivElement>(null);
     
     // 🚀 WORKFLOW EXECUTION ENGINE - Connect to professional execution service
     const [executionInstances, setExecutionInstances] = useState<Map<string, any>>(new Map());
@@ -2065,10 +2066,12 @@ const WorkflowManagementPage = () => {
       
       if (actionId) {
         const action = ENTERPRISE_ACTIONS[actionId as keyof typeof ENTERPRISE_ACTIONS] || AI_NODES[actionId as keyof typeof AI_NODES];
-        if (action) {
-          const position = reactFlowInstance.project({
-            x: event.clientX,
-            y: event.clientY,
+        if (action && reactFlowWrapper.current) {
+          // 🔧 FIXED: Use new React Flow v11+ API
+          const rect = reactFlowWrapper.current.getBoundingClientRect();
+          const position = reactFlowInstance.screenToFlowPosition({
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
           });
 
           const newNode = {
@@ -2434,6 +2437,7 @@ const WorkflowManagementPage = () => {
             
             <CardContent className="flex-1 min-h-0 p-0">
               <div 
+                ref={reactFlowWrapper}
                 className="w-full h-full"
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
