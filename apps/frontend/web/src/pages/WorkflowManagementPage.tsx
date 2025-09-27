@@ -1735,7 +1735,7 @@ const WorkflowManagementPage: React.FC = () => {
                                   icon: trigger.icon,
                                   category: trigger.category,
                                   triggerId: trigger.id,
-                                  ...trigger
+                                  priority: trigger.priority
                                 })} // ✅ ADDED: Professional drag & drop
                                 onClick={() => addTriggerNode(trigger.id)}
                                 className="w-full justify-start h-auto p-3 bg-purple-50/50 hover:bg-purple-100/70 border-purple-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]" 
@@ -1780,7 +1780,7 @@ const WorkflowManagementPage: React.FC = () => {
                                   icon: trigger.icon,
                                   category: trigger.category,
                                   triggerId: trigger.id,
-                                  ...trigger
+                                  priority: trigger.priority
                                 })} // ✅ ADDED: Event triggers drag & drop
                                 onClick={() => addTriggerNode(trigger.id)}
                                 className="w-full justify-start h-auto p-3 bg-cyan-50/50 hover:bg-cyan-100/70 border-cyan-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
@@ -1826,7 +1826,7 @@ const WorkflowManagementPage: React.FC = () => {
                                   icon: trigger.icon,
                                   category: trigger.category,
                                   triggerId: trigger.id,
-                                  ...trigger
+                                  priority: trigger.priority
                                 })} // ✅ ADDED: User/System triggers drag & drop
                                 onClick={() => addTriggerNode(trigger.id)}
                                 className={`w-full justify-start h-auto p-3 ${isUser ? 'bg-teal-50/50 hover:bg-teal-100/70 border-teal-200/50' : 'bg-slate-50/50 hover:bg-slate-100/70 border-slate-200/50'} text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]`}
@@ -1878,7 +1878,7 @@ const WorkflowManagementPage: React.FC = () => {
                                   icon: action.icon,
                                   category: action.category,
                                   actionId: action.id,
-                                  ...action
+                                  priority: action.priority
                                 })} // ✅ ADDED: HR actions drag & drop
                                 onClick={() => addActionNode(action.id)}
                                 className="w-full justify-start h-auto p-3 bg-green-50/50 hover:bg-green-100/70 border-green-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
@@ -1921,7 +1921,7 @@ const WorkflowManagementPage: React.FC = () => {
                                   icon: action.icon,
                                   category: action.category,
                                   actionId: action.id,
-                                  ...action
+                                  priority: action.priority
                                 })} // ✅ ADDED: Finance actions drag & drop
                                 onClick={() => addActionNode(action.id)}
                                 className="w-full justify-start h-auto p-3 bg-blue-50/50 hover:bg-blue-100/70 border-blue-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
@@ -1964,7 +1964,7 @@ const WorkflowManagementPage: React.FC = () => {
                                   icon: action.icon,
                                   category: action.category,
                                   actionId: action.id,
-                                  ...action
+                                  priority: action.priority
                                 })} // ✅ ADDED: Operations actions drag & drop
                                 onClick={() => addActionNode(action.id)}
                                 className="w-full justify-start h-auto p-3 bg-orange-50/50 hover:bg-orange-100/70 border-orange-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
@@ -2101,7 +2101,7 @@ const WorkflowManagementPage: React.FC = () => {
                   <Button 
                     size="sm" 
                     onClick={handleRunWorkflow}
-                    disabled={isRunning || (validationResult && !validationResult.isValid)}
+                    disabled={isRunning || (validationResult !== null && !validationResult?.isValid)}
                     className="bg-gradient-to-r from-green-500 to-green-600 disabled:from-gray-400 disabled:to-gray-500"
                   >
                     {isRunning ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Play className="w-4 h-4 mr-1" />}
@@ -2368,14 +2368,10 @@ const WorkflowManagementPage: React.FC = () => {
                           edges: edges,
                           viewport: { x: 0, y: 0, zoom: 1 },
                           createdAt: new Date().toISOString(),
-                          metadata: {
-                            nodeCount: nodes.length,
-                            edgeCount: edges.length,
-                            complexity: nodes.length > 15 ? 'high' : nodes.length > 5 ? 'medium' : 'low'
-                          }
+                          // Metadata handled by store internally
                         };
 
-                        saveTemplate(template);
+                        zustandSaveTemplate(templateName.trim(), templateDescription.trim(), templateCategory as 'hr' | 'finance' | 'operations' | 'approval' | 'automation');
                         
                         toast({
                           title: '✅ Template saved successfully',
@@ -2477,11 +2473,11 @@ const WorkflowManagementPage: React.FC = () => {
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Activity className="w-3 h-3" />
-                              {template.metadata?.nodeCount || 0} nodes
+                              {template.nodes?.length || 0} nodes
                             </span>
                             <span className="flex items-center gap-1">
                               <ArrowRight className="w-3 h-3" />
-                              {template.metadata?.edgeCount || 0} connections
+                              {template.edges?.length || 0} connections
                             </span>
                           </div>
                         </div>
@@ -2958,11 +2954,11 @@ const WorkflowManagementPage: React.FC = () => {
                     <TabsList className="w-full">
                       <TabsTrigger value="users" className="flex-1">
                         <Users className="h-4 w-4 mr-2" />
-                        Users ({teamFormData.userMembers.length})
+                        Users ({(teamFormData.userMembers || []).length})
                       </TabsTrigger>
                       <TabsTrigger value="roles" className="flex-1">
                         <Shield className="h-4 w-4 mr-2" />
-                        Roles ({teamFormData.roleMembers.length})
+                        Roles ({(teamFormData.roleMembers || []).length})
                       </TabsTrigger>
                     </TabsList>
 
@@ -2986,7 +2982,7 @@ const WorkflowManagementPage: React.FC = () => {
                             <div key={user.id} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
                               <Checkbox
                                 id={`user-${user.id}`}
-                                checked={teamFormData.userMembers.includes(user.id)}
+                                checked={(teamFormData.userMembers || []).includes(user.id)}
                                 onCheckedChange={() => toggleUserMember(user.id)}
                               />
                               <label 
@@ -3017,7 +3013,7 @@ const WorkflowManagementPage: React.FC = () => {
                             <div key={role.id} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded">
                               <Checkbox
                                 id={`role-${role.id}`}
-                                checked={teamFormData.roleMembers.includes(role.id)}
+                                checked={(teamFormData.roleMembers || []).includes(role.id)}
                                 onCheckedChange={() => toggleRoleMember(role.id)}
                               />
                               <label 
@@ -3091,7 +3087,7 @@ const WorkflowManagementPage: React.FC = () => {
                               <div key={user.id} className="flex items-center space-x-2 p-1">
                                 <Checkbox
                                   id={`supervisor-${user.id}`}
-                                  checked={teamFormData.secondarySupervisors.includes(user.id)}
+                                  checked={(teamFormData.secondarySupervisors || []).includes(user.id)}
                                   onCheckedChange={() => toggleSecondarySupervisor(user.id)}
                                 />
                                 <label 
@@ -3112,22 +3108,22 @@ const WorkflowManagementPage: React.FC = () => {
               {/* Summary */}
               <div className="border-t pt-4">
                 <div className="flex flex-wrap gap-2">
-                  {teamFormData.userMembers.length > 0 && (
+                  {teamFormData.userMembers || [].length > 0 && (
                     <Badge variant="secondary">
-                      {teamFormData.userMembers.length} Direct User{teamFormData.userMembers.length !== 1 ? 's' : ''}
+                      {teamFormData.userMembers || [].length} Direct User{teamFormData.userMembers || [].length !== 1 ? 's' : ''}
                     </Badge>
                   )}
-                  {teamFormData.roleMembers.length > 0 && (
+                  {teamFormData.roleMembers || [].length > 0 && (
                     <Badge variant="secondary">
-                      {teamFormData.roleMembers.length} Role{teamFormData.roleMembers.length !== 1 ? 's' : ''}
+                      {teamFormData.roleMembers || [].length} Role{teamFormData.roleMembers || [].length !== 1 ? 's' : ''}
                     </Badge>
                   )}
                   {teamFormData.primarySupervisor && (
                     <Badge variant="outline">Primary Supervisor Set</Badge>
                   )}
-                  {teamFormData.secondarySupervisors.length > 0 && (
+                  {teamFormData.secondarySupervisors || [].length > 0 && (
                     <Badge variant="outline">
-                      {teamFormData.secondarySupervisors.length} Co-Supervisor{teamFormData.secondarySupervisors.length !== 1 ? 's' : ''}
+                      {teamFormData.secondarySupervisors || [].length} Co-Supervisor{teamFormData.secondarySupervisors || [].length !== 1 ? 's' : ''}
                     </Badge>
                   )}
                   {teamFormData.isActive ? (
@@ -3147,9 +3143,9 @@ const WorkflowManagementPage: React.FC = () => {
                 Cancel
               </Button>
               <Button 
-                onClick={() => handleSaveTeam()} 
+                onClick={handleSaveTeam} 
                 disabled={createTeamMutation.isPending || !teamFormData.name?.trim() || 
-                        ((teamFormData.userMembers || []).length === 0 && (teamFormData.roleMembers || []).length === 0)}
+                        (((teamFormData.userMembers || []).length === 0 && (teamFormData.roleMembers || []).length === 0))
               >
                 {createTeamMutation.isPending ? 'Saving...' : editingTeam ? 'Update Team' : 'Create Team'}
               </Button>
