@@ -26,17 +26,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
-  Clock, FileText, GraduationCap,
-  Download, Target, Sun,
-  Home, Bell, Plus, User, CheckCircle, ClipboardList,
-  LogIn, LogOut, Play, Pause, Smartphone, MapPin, Wifi, QrCode,
-  BarChart3, Activity, Coffee, Shield, RefreshCw, AlertCircle,
-  Calendar as CalendarIcon, Edit3, Mail, Phone, Building, Save,
-  Filter, Eye, Search, Award, BookOpen, TrendingUp, Star,
-  Bookmark, PlayCircle, Lock, Settings, Camera, Briefcase,
-  ChevronRight, MessageSquare, Users2, PieChart, Calendar1,
-  Globe, Palette, Key, History, Smartphone as SmartphoneIcon,
-  Share2, Upload, Receipt, Loader2, X
+  Clock, FileText, GraduationCap, Target, Sun, Home, Bell, Plus, User, CheckCircle, ClipboardList,
+  BarChart3, Activity, Coffee, RefreshCw, AlertCircle, Edit3, Save, Filter, Eye, Star, 
+  Calendar1, Receipt, Loader2, X, Calendar as CalendarIcon, Upload, TrendingUp, Award, BookOpen, PlayCircle
 } from 'lucide-react';
 import { format, addDays, startOfDay, endOfDay, subDays } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -148,28 +140,13 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // 🚀 FINAL SOLUTION: Component mount fetch for HR requests
-  const [myRequestsData, setMyRequestsData] = React.useState([]);
-  const [requestsLoading, setRequestsLoading] = React.useState(true);
-  
-  // Fetch on component mount - guaranteed execution
-  React.useEffect(() => {
-    const fetchHRRequests = async () => {
-      try {
-        const response = await apiRequest('/api/universal-requests?department=hr&mine=true');
-        const requests = response?.requests || response?.data || [];
-        setMyRequestsData(requests);
-        console.log('✅ [HR-REQUESTS] Loaded', requests.length, 'HR requests successfully');
-      } catch (error) {
-        console.error('❌ [HR-REQUESTS] Failed to load HR requests:', error);
-        setMyRequestsData([]);
-      } finally {
-        setRequestsLoading(false);
-      }
-    };
-    
-    fetchHRRequests();
-  }, []); // Empty dependency array - runs once on mount
+  // ✅ DEFINITIVE SOLUTION: TanStack Query for HR requests with proper cache management
+  const { data: myRequestsData = [], isLoading: requestsLoading } = useQuery<any[]>({
+    queryKey: ['/api/universal-requests', { department: 'hr', mine: true }],
+    queryFn: () => apiRequest('/api/universal-requests?department=hr&mine=true').then(res => res?.requests || res?.data || []),
+    enabled: !!hrQueriesEnabled,
+    staleTime: 2 * 60 * 1000, // 2 minutes - HR requests change less frequently
+  });
 
   // ✅ WORKFLOW TEMPLATES: Query for HR workflow templates with proper enablement
   const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
@@ -191,12 +168,8 @@ export default function MyPortal() {
   const [documentViewerModal, setDocumentViewerModal] = useState<ModalState>({ open: false, data: null });
   const [profileEditModal, setProfileEditModal] = useState<ModalState>({ open: false, data: null });
   
-  // Stati principali
+  // Time display state (minimal for header display only)
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isClockedIn, setIsClockedIn] = useState(false);
-  const [clockInTime, setClockInTime] = useState<Date | null>(null);
-  const [breakTime, setBreakTime] = useState(0);
-  const [isOnBreak, setIsOnBreak] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   // ✅ FILTER LOGIC: Apply status and time filters
@@ -253,7 +226,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'department', 'hr', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', { department: 'hr', mine: true }] });
       toast({
         title: "Richiesta eliminata",
         description: "La richiesta è stata eliminata con successo.",
@@ -281,7 +254,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'department', 'hr', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', { department: 'hr', mine: true }] });
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
@@ -365,13 +338,13 @@ export default function MyPortal() {
   const performance = performanceData?.goals || [];
   const training = trainingData?.courses || [];
 
-  // Update current time - TEMPORARILY DISABLED to prevent infinite re-renders affecting TanStack Query
-  // useEffect(() => {
-  //   const timer = setInterval(() => {
-  //     setCurrentTime(new Date());
-  //   }, 1000);
-  //   return () => clearInterval(timer);
-  // }, []);
+  // Update current time every minute (not every second to prevent excessive re-renders)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
 
   // Apply loaded class to body to trigger WindTre gradient background
   useEffect(() => {
@@ -391,11 +364,6 @@ export default function MyPortal() {
     return format(date, 'HH:mm:ss');
   };
 
-  // Handle HR Request
-  const handleHRRequestSuccess = () => {
-    setHrRequestModal({ open: false as false, data: null });
-    // Refresh requests data
-  };
 
   // ✅ Removed: Using centralized request status system
 
