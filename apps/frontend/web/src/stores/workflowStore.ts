@@ -347,8 +347,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         },
       }))
     )
-  )
-);
+  );
 
 // 🎯 DERIVED STATE SELECTORS (for performance - local editor state only)
 export const useWorkflowNodes = () => useWorkflowStore((state) => state.nodes);
