@@ -179,7 +179,6 @@ const ActionNode = ({ data }: { data: any }) => (
     />
   </div>
 );
-};
 
 const StartNode = ({ data }: { data: any }) => (
   <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-4 shadow-md relative">
