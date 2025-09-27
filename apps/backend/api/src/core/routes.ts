@@ -53,6 +53,8 @@ import {
   objectAcls, 
   stores as w3suiteStores, 
   stores, 
+  userStores,
+  legalEntities,
   InsertTenant, 
   InsertLegalEntity, 
   InsertStore, 
@@ -12060,14 +12062,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await setTenantContext(tenantId);
       
-      // Set required fields
+      // ✅ POPULATE ENTERPRISE RELATIONS: Get user's primary store and legal entity
+      console.log(`[UNIVERSAL-REQUESTS] 🔍 Fetching user ${userId} primary store and legal entity`);
+      
+      const [userStoreData] = await db
+        .select({
+          storeId: userStores.storeId,
+          storeName: stores.nome,
+          legalEntityId: stores.legalEntityId,
+          legalEntityName: legalEntities.nome
+        })
+        .from(userStores)
+        .leftJoin(stores, eq(userStores.storeId, stores.id))
+        .leftJoin(legalEntities, eq(stores.legalEntityId, legalEntities.id))
+        .where(and(
+          eq(userStores.userId, userId),
+          eq(userStores.tenantId, tenantId),
+          eq(userStores.isPrimary, true)
+        ))
+        .limit(1);
+      
+      console.log(`[UNIVERSAL-REQUESTS] 📊 User ${userId} store data:`, {
+        storeId: userStoreData?.storeId,
+        storeName: userStoreData?.storeName,
+        legalEntityId: userStoreData?.legalEntityId,
+        legalEntityName: userStoreData?.legalEntityName
+      });
+      
+      // Set required fields with populated relations
       const requestData = {
         ...validatedData,
         tenantId,
         requesterId: validatedData.requesterId || userId,
         status: 'pending' as const,
         createdBy: userId,
-        updatedBy: userId
+        updatedBy: userId,
+        // ✅ ENTERPRISE RELATIONS: Auto-populate from user context
+        storeId: userStoreData?.storeId || null,
+        legalEntityId: userStoreData?.legalEntityId || null,
+        onBehalfOf: validatedData.onBehalfOf || null
       };
       
       // Insert new request
