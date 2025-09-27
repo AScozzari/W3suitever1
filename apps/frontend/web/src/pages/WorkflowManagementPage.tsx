@@ -86,7 +86,7 @@ import {
   BarChart3, CheckCircle, CheckCircle2, Clock, AlertCircle, AlertTriangle, TrendingUp,
   ArrowRight, ArrowLeft, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
-  Save, DollarSign, FileText, FileTemplate, Wrench, X, Info, Bell, Loader2,
+  Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
   RefreshCw, Database, Mail, Undo, Redo, Undo2, Redo2, Upload, Server, Folder,
   Download, Trash2, Brain, Heart, TreePine, Circle, 
   ChevronDown, FastForward, Grid, Megaphone, Headphones, Sparkles, Route
@@ -661,7 +661,7 @@ const CATEGORIES = {
   }
 };
 
-const WorkflowManagementPage: React.FC = () => {
+const WorkflowManagementPage = () => {
   const { toast } = useToast();
   
   // 🎯 TEMPLATE STATE DECLARATIONS (fixed initialization order)
@@ -2074,7 +2074,7 @@ const WorkflowManagementPage: React.FC = () => {
 
           const newNode = {
             id: `${actionId}_${Date.now()}`,
-            type: action.nodeType || 'action',
+            type: 'action',
             position,
             data: { 
               label: action.name,
@@ -2470,13 +2470,15 @@ const WorkflowManagementPage: React.FC = () => {
                     setEdges(updatedEdges);
                   }}
                   onConnect={(connection) => {
-                    const newEdge = {
-                      id: `edge-${connection.source}-${connection.target}`,
-                      source: connection.source,
-                      target: connection.target,
-                      type: 'smoothstep',
-                    };
-                    setEdges([...edges, newEdge]);
+                    if (connection.source && connection.target) {
+                      const newEdge = {
+                        id: `edge-${connection.source}-${connection.target}`,
+                        source: connection.source,
+                        target: connection.target,
+                        type: 'smoothstep',
+                      };
+                      setEdges([...edges, newEdge]);
+                    }
                   }}
                   nodeTypes={nodeTypes}
                   fitView
@@ -2496,7 +2498,7 @@ const WorkflowManagementPage: React.FC = () => {
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
             <CardHeader className="pb-3 flex-none">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileTemplate className="w-5 h-5" />
+                <FileText className="w-5 h-5" />
                 Templates Library
               </CardTitle>
               <CardDescription>Pre-built workflow templates</CardDescription>
@@ -2554,7 +2556,7 @@ const WorkflowManagementPage: React.FC = () => {
                   })
                 ) : (
                   <div className="text-center py-8 text-slate-500">
-                    <FileTemplate className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No templates found</p>
                     <p className="text-xs mt-1">Create workflows and save them as templates</p>
                   </div>
