@@ -26,19 +26,33 @@ import {
   ValidationSuggestion
 } from '@/services/workflowValidation';
 
-// 🏪 ZUSTAND STATE MANAGEMENT  
+// 🏪 STATE MANAGEMENT - Zustand for local editor + TanStack Query for server state
 import { 
   useWorkflowStore,
   useWorkflowNodes,
   useWorkflowEdges,
   useWorkflowViewport,
-  useWorkflowTemplates,
-  useWorkflowHasHydrated,
+  useWorkflowCurrentTemplateId,
+  useWorkflowIsTemplateDirty,
   useWorkflowCanUndo,
   useWorkflowCanRedo,
   useWorkflowHistoryLength,
   generateTemplateId
 } from '@/stores/workflowStore';
+
+// 🏗️ WORKFLOW TEMPLATE API HOOKS (Server State)
+import {
+  useWorkflowTemplates,
+  useWorkflowTemplate,
+  useCreateTemplate,
+  useUpdateTemplate,
+  useDeleteTemplate,
+  useDuplicateTemplate,
+  getTemplateCategories,
+  formatTemplateCategory,
+  type WorkflowTemplate,
+  type CreateTemplateData
+} from '@/hooks/useWorkflowTemplates';
 
 // UI Components
 import { Button } from '@/components/ui/button';

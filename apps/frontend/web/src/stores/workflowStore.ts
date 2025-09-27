@@ -1,8 +1,8 @@
 // 🏪 ENTERPRISE WORKFLOW STATE MANAGEMENT
-// Zustand store for professional workflow builder state persistence
+// Zustand store for local workflow editor state (no persistence)
+// Templates are now managed via TanStack Query + API
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
@@ -15,49 +15,29 @@ export const generateNodeId = () => `node-${nanoid()}`;
 export const generateEdgeId = () => `edge-${nanoid()}`;
 export const generateInstanceId = () => `instance-${nanoid()}`;
 
-// 🎯 WORKFLOW STATE INTERFACE
+// 🎯 WORKFLOW STATE INTERFACE (Local Editor State Only)
 interface WorkflowState {
-  // Core workflow data
+  // Core workflow data (current editing session)
   nodes: Node[];
   edges: Edge[];
   viewport: Viewport;
   
-  // Hydration state
-  hasHydrated: boolean;
-  hasBootstrapped: boolean; // 🛡️ Prevent duplicate template seeding
-  
-  // Template management
-  templates: WorkflowTemplate[];
-  currentTemplate: WorkflowTemplate | null;
+  // Current template being edited (template data from API)
+  currentTemplateId: string | null;
+  isTemplateDirty: boolean; // Track if current workflow has unsaved changes
   
   // UI state
   selectedNodeId: string | null;
   isRunning: boolean;
-  searchTerm: string;
-  selectedCategory: string | null;
   
-  // History for undo/redo
+  // History for undo/redo (local session only)
   history: WorkflowSnapshot[];
   historyIndex: number;
   maxHistorySize: number;
 }
 
-// 🎯 WORKFLOW TEMPLATE INTERFACE
-interface WorkflowTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: 'sales' | 'finance' | 'marketing' | 'support' | 'operations';
-  nodes: Node[];
-  edges: Edge[];
-  viewport: Viewport;
-  createdAt: string;
-  updatedAt: string;
-  version: number;
-  tags: string[];
-  isPublic: boolean;
-  createdBy: string;
-}
+// Note: WorkflowTemplate interface moved to useWorkflowTemplates.ts
+// Templates are now managed via TanStack Query instead of Zustand
 
 // 🎯 WORKFLOW SNAPSHOT FOR HISTORY
 interface WorkflowSnapshot {
@@ -68,7 +48,7 @@ interface WorkflowSnapshot {
   action: string;
 }
 
-// 🎯 WORKFLOW ACTIONS INTERFACE
+// 🎯 WORKFLOW ACTIONS INTERFACE (Local Editor Only)
 interface WorkflowActions {
   // Core state updates
   setNodes: (nodes: Node[]) => void;
@@ -85,17 +65,13 @@ interface WorkflowActions {
   addEdge: (edge: Edge) => void;
   removeEdge: (edgeId: string) => void;
   
-  // Template management
-  saveTemplate: (name: string, description: string, category: WorkflowTemplate['category']) => void;
-  loadTemplate: (templateId: string) => void;
-  deleteTemplate: (templateId: string) => void;
-  duplicateTemplate: (templateId: string) => void;
-  bootstrapDefaultTemplates: (templates: WorkflowTemplate[]) => void; // 🛡️ Safe template seeding
+  // Template context management (ID only, data comes from TanStack Query)
+  setCurrentTemplateId: (templateId: string | null) => void;
+  markTemplateDirty: (dirty: boolean) => void;
+  loadTemplateDefinition: (definition: { nodes: Node[]; edges: Edge[]; viewport: Viewport }, templateId: string) => void;
   
   // UI state
   setRunning: (isRunning: boolean) => void;
-  setSearchTerm: (term: string) => void;
-  setSelectedCategory: (category: string | null) => void;
   
   // History management
   saveSnapshot: (action: string) => void;
@@ -107,24 +83,20 @@ interface WorkflowActions {
   replaceWorkflow: (nodes: Node[], edges: Edge[], viewport?: Viewport) => void;
   clearWorkflow: () => void;
   
-  // Export/Import
+  // Export/Import (local session only)
   exportWorkflow: () => string;
   importWorkflow: (workflowData: string) => boolean;
 }
 
-// 🎯 DEFAULT INITIAL STATE
+// 🎯 DEFAULT INITIAL STATE (Local Editor Only)
 const INITIAL_STATE: WorkflowState = {
   nodes: [],
   edges: [],
   viewport: { x: 0, y: 0, zoom: 1 },
-  hasHydrated: false,
-  hasBootstrapped: false, // 🛡️ Prevent duplicate template seeding
-  templates: [],
-  currentTemplate: null,
+  currentTemplateId: null,
+  isTemplateDirty: false,
   selectedNodeId: null,
   isRunning: false,
-  searchTerm: '',
-  selectedCategory: null,
   history: [],
   historyIndex: -1,
   maxHistorySize: 50,
@@ -133,26 +105,28 @@ const INITIAL_STATE: WorkflowState = {
 // 🎯 PROFESSIONAL WORKFLOW STORE WITH ZUSTAND
 export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
   subscribeWithSelector(
-    persist(
-      immer((set, get) => ({
+    immer((set, get) => ({
         ...INITIAL_STATE,
 
         // 🔄 CORE STATE UPDATES
         setNodes: (nodes: Node[]) => {
           set((state) => {
             state.nodes = nodes;
+            state.isTemplateDirty = true;
           });
         },
 
         setEdges: (edges: Edge[]) => {
           set((state) => {
             state.edges = edges;
+            state.isTemplateDirty = true;
           });
         },
 
         setViewport: (viewport: Viewport) => {
           set((state) => {
             state.viewport = viewport;
+            state.isTemplateDirty = true;
           });
         },
 
@@ -160,6 +134,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         addNode: (node: Node) => {
           set((state) => {
             state.nodes.push(node);
+            state.isTemplateDirty = true;
           });
           get().saveSnapshot(`Add node: ${node.data?.label || node.type}`);
         },
@@ -169,6 +144,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
             const nodeIndex = state.nodes.findIndex(n => n.id === nodeId);
             if (nodeIndex !== -1) {
               state.nodes[nodeIndex] = { ...state.nodes[nodeIndex], ...updates };
+              state.isTemplateDirty = true;
             }
           });
           get().saveSnapshot(`Update node: ${nodeId}`);
@@ -181,6 +157,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
             if (state.selectedNodeId === nodeId) {
               state.selectedNodeId = null;
             }
+            state.isTemplateDirty = true;
           });
           get().saveSnapshot(`Remove node: ${nodeId}`);
         },
@@ -197,6 +174,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
             const exists = state.edges.some(e => e.id === edge.id);
             if (!exists) {
               state.edges.push(edge);
+              state.isTemplateDirty = true;
             }
           });
           get().saveSnapshot(`Add edge: ${edge.source} → ${edge.target}`);
@@ -205,115 +183,40 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         removeEdge: (edgeId: string) => {
           set((state) => {
             state.edges = state.edges.filter(e => e.id !== edgeId);
+            state.isTemplateDirty = true;
           });
           get().saveSnapshot(`Remove edge: ${edgeId}`);
         },
 
-        // 📋 TEMPLATE MANAGEMENT
-        saveTemplate: (name: string, description: string, category: WorkflowTemplate['category']) => {
-          const state = get();
-          const template: WorkflowTemplate = {
-            id: generateTemplateId(),
-            name,
-            description,
-            category,
-            nodes: structuredClone(state.nodes),
-            edges: structuredClone(state.edges),
-            viewport: structuredClone(state.viewport),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            version: 1,
-            tags: [],
-            isPublic: false,
-            createdBy: 'current-user', // TODO: Get from auth context
-          };
-
+        // 🏷️ TEMPLATE CONTEXT MANAGEMENT (ID only, data from TanStack Query)
+        setCurrentTemplateId: (templateId: string | null) => {
           set((state) => {
-            state.templates.push(template);
-            state.currentTemplate = template;
+            state.currentTemplateId = templateId;
+            state.isTemplateDirty = false;
           });
         },
 
-        loadTemplate: (templateId: string) => {
-          const state = get();
-          const template = state.templates.find(t => t.id === templateId);
-          if (template) {
-            set((state) => {
-              state.nodes = structuredClone(template.nodes);
-              state.edges = structuredClone(template.edges);
-              state.viewport = structuredClone(template.viewport);
-              state.currentTemplate = template;
-            });
-            get().saveSnapshot(`Load template: ${template.name}`);
-          }
-        },
-
-        deleteTemplate: (templateId: string) => {
+        markTemplateDirty: (dirty: boolean) => {
           set((state) => {
-            state.templates = state.templates.filter(t => t.id !== templateId);
-            if (state.currentTemplate?.id === templateId) {
-              state.currentTemplate = null;
-            }
+            state.isTemplateDirty = dirty;
           });
         },
 
-        duplicateTemplate: (templateId: string) => {
-          const state = get();
-          const template = state.templates.find(t => t.id === templateId);
-          if (template) {
-            const duplicate: WorkflowTemplate = {
-              ...structuredClone(template),
-              id: generateTemplateId(),
-              name: `${template.name} (Copy)`,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              version: 1,
-            };
-
-            set((state) => {
-              state.templates.push(duplicate);
-            });
-          }
-        },
-
-        // 🛡️ SAFE TEMPLATE BOOTSTRAP - Prevent duplicate seeding
-        bootstrapDefaultTemplates: (templates: WorkflowTemplate[]) => {
-          const state = get();
-          if (!state.hasHydrated || state.hasBootstrapped) {
-            return; // Wait for hydration or already bootstrapped
-          }
-
-          const existingIds = new Set(state.templates.map(t => t.id));
-          const newTemplates = templates.filter(t => !existingIds.has(t.id));
-          
-          if (newTemplates.length > 0) {
-            set((state) => {
-              state.templates.push(...newTemplates);
-              state.hasBootstrapped = true;
-            });
-          } else {
-            set((state) => {
-              state.hasBootstrapped = true;
-            });
-          }
+        loadTemplateDefinition: (definition: { nodes: Node[]; edges: Edge[]; viewport: Viewport }, templateId: string) => {
+          set((state) => {
+            state.nodes = structuredClone(definition.nodes);
+            state.edges = structuredClone(definition.edges);
+            state.viewport = structuredClone(definition.viewport);
+            state.currentTemplateId = templateId;
+            state.isTemplateDirty = false;
+          });
+          get().saveSnapshot(`Load template: ${templateId}`);
         },
 
         // 🎛️ UI STATE
         setRunning: (isRunning: boolean) => {
           set((state) => {
             state.isRunning = isRunning;
-          });
-        },
-
-        setSearchTerm: (term: string) => {
-          set((state) => {
-            state.searchTerm = term;
-          });
-        },
-
-        setSelectedCategory: (category: string | null) => {
-          set((state) => {
-            state.selectedCategory = category;
           });
         },
 
@@ -399,7 +302,8 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
             state.edges = [];
             state.viewport = { x: 0, y: 0, zoom: 1 };
             state.selectedNodeId = null;
-            state.currentTemplate = null;
+            state.currentTemplateId = null;
+            state.isTemplateDirty = false;
           });
           get().saveSnapshot('Clear workflow');
         },
@@ -416,7 +320,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
               viewport: state.viewport,
             },
             metadata: {
-              template: state.currentTemplate,
+              templateId: state.currentTemplateId,
               nodeCount: state.nodes.length,
               edgeCount: state.edges.length,
             },
@@ -441,52 +345,19 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
             return false;
           }
         },
-      })),
-      {
-        name: 'w3-workflow-store',
-        storage: createJSONStorage(() => localStorage),
-        partialize: (state) => ({
-          // Persist workflow data and templates
-          nodes: state.nodes,
-          edges: state.edges,
-          templates: state.templates,
-          viewport: state.viewport,
-          currentTemplate: state.currentTemplate,
-          // Don't persist: selectedNodeId, isRunning, history, etc.
-        }),
-        onRehydrateStorage: () => (state) => {
-          if (state) {
-            state.hasHydrated = true;
-          }
-        },
-        version: 1,
-        migrate: (persistedState: any, version: number) => {
-          // Handle migration between versions
-          if (version === 0) {
-            // Migration from v0 to v1
-            return {
-              ...persistedState,
-              templates: persistedState.templates || [],
-              viewport: persistedState.viewport || { x: 0, y: 0, zoom: 1 },
-            };
-          }
-          return persistedState;
-        },
-      }
+      }))
     )
   )
 );
 
-// 🎯 DERIVED STATE SELECTORS (for performance)
+// 🎯 DERIVED STATE SELECTORS (for performance - local editor state only)
 export const useWorkflowNodes = () => useWorkflowStore((state) => state.nodes);
 export const useWorkflowEdges = () => useWorkflowStore((state) => state.edges);
 export const useWorkflowViewport = () => useWorkflowStore((state) => state.viewport);
-export const useWorkflowTemplates = () => useWorkflowStore((state) => state.templates);
-export const useWorkflowHasHydrated = () => useWorkflowStore((state) => state.hasHydrated);
+export const useWorkflowCurrentTemplateId = () => useWorkflowStore((state) => state.currentTemplateId);
+export const useWorkflowIsTemplateDirty = () => useWorkflowStore((state) => state.isTemplateDirty);
 // 🛡️ INDIVIDUAL SELECTORS (prevent infinite re-renders)
 export const useWorkflowIsRunning = () => useWorkflowStore((state) => state.isRunning);
-export const useWorkflowSearchTerm = () => useWorkflowStore((state) => state.searchTerm);
-export const useWorkflowSelectedCategory = () => useWorkflowStore((state) => state.selectedCategory);
 export const useWorkflowSelectedNodeId = () => useWorkflowStore((state) => state.selectedNodeId);
 
 export const useWorkflowCanUndo = () => useWorkflowStore((state) => state.historyIndex > 0);
