@@ -93,7 +93,7 @@ export class AIRegistryService {
       console.log(`📊 Found ${activeAgents.length} active agents in database`);
 
       // Load real agents into registry
-      activeAgents.forEach(agent => {
+      activeAgents.forEach((agent: any) => {
         // Convert database agent to AgentProfile format
         const agentProfile: AgentProfile = {
           id: agent.id,
@@ -203,21 +203,21 @@ export class AIRegistryService {
   /**
    * Compatibility method - delegate to legacy service  
    */
-  async generateEmbedding(...args: any[]): Promise<any> {
-    return this.legacyService.generateEmbedding(...args);
+  async generateEmbedding(text: string, settings: any, context: any): Promise<any> {
+    return this.legacyService.generateEmbedding(text, settings, context);
   }
 
   /**
    * Compatibility method - delegate chat assistant
    */
-  async chatAssistant(...args: any[]): Promise<any> {
-    return this.legacyService.chatAssistant(...args);
+  async chatAssistant(message: string, settings: any, context: any, conversationHistory?: any[]): Promise<any> {
+    return this.legacyService.chatAssistant(message, settings, context, conversationHistory);
   }
 
   /**
    * Compatibility method - delegate document analysis
    */
-  async analyzeDocument(...args: any[]): Promise<any> {
-    return this.legacyService.analyzeDocument(...args);
+  async analyzeDocument(documentContent: string, analysisQuery: string, settings: any, context: any): Promise<any> {
+    return this.legacyService.analyzeDocument(documentContent, analysisQuery, settings, context);
   }
 }

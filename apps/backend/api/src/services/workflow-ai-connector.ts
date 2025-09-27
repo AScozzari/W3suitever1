@@ -162,7 +162,7 @@ export class WorkflowAIConnector {
         ));
 
       console.log(`[WORKFLOW-AI] 📊 Context loaded:`, {
-        requestType: requestWithUser.request.requestType,
+        requestType: requestWithUser.request.type,
         category: requestWithUser.request.category,
         eligibleTeams: eligibleTeams.length,
         teamAssignments: teamAssignments.length
@@ -210,7 +210,7 @@ export class WorkflowAIConnector {
       );
 
       // Parse della risposta AI (dovrebbe essere JSON strutturato)
-      const responseContent = aiResponse.response || aiResponse.content || aiResponse.text || JSON.stringify(aiResponse);
+      const responseContent = aiResponse.output || JSON.stringify(aiResponse);
       const decision = this.parseAIDecision(responseContent);
       
       console.log(`[WORKFLOW-AI] 💡 AI Decision:`, {
@@ -238,8 +238,8 @@ export class WorkflowAIConnector {
     
     // Estrai business data rilevanti
     const requestData = {
-      type: request.requestType,
-      subtype: request.requestSubtype,
+      type: request.type,
+      subtype: request.category,
       category: request.category,
       priority: request.priority,
       days: this.extractDaysFromRequest(request),
@@ -384,7 +384,7 @@ Rispondi SOLO con JSON valido nel formato richiesto.
     console.log(`[WORKFLOW-AI] ⚠️ Using fallback decision for request ${context.request.id}`);
     
     // Logica semplificata basata su tipo richiesta
-    const requestType = context.request.requestType;
+    const requestType = context.request.type;
     
     if (requestType === 'leave_request') {
       return {

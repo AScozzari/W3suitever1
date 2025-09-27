@@ -172,7 +172,7 @@ export class UnifiedOpenAIService {
         const toolResults: any[] = [];
         
         for (const toolCall of message.tool_calls) {
-          if (toolCall.function.name === 'search_web') {
+          if (toolCall.type === 'function' && toolCall.function.name === 'search_web') {
             try {
               const args = JSON.parse(toolCall.function.arguments);
               console.log(`[WEB-SEARCH] 🔍 Executing web search: "${args.query}"`);
@@ -304,11 +304,7 @@ export class UnifiedOpenAIService {
         tokensUsed,
         cost,
         responseTime,
-        conversationId: conversationId,
-        outputMeta: {
-          webResults,
-          webResultsFound: webResults.length
-        }
+        conversationId: conversationId
       };
 
     } catch (error: any) {
@@ -915,13 +911,15 @@ export class UnifiedOpenAIService {
     startTime: number,
     context: OpenAIRequestContext
   ): Promise<{ content: string, metadata: any }> {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    });
-
+    let browser: any = null;
+    let page: any = null;
+    
     try {
-      const page = await browser.newPage();
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      });
+      page = await browser.newPage();
       
       // Set realistic browser properties
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
@@ -934,7 +932,7 @@ export class UnifiedOpenAIService {
       });
       
       // Wait for dynamic content to load
-      await page.waitForTimeout(3000);
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Extract content using page evaluation
       const result = await page.evaluate(() => {
@@ -1112,8 +1110,9 @@ export class UnifiedOpenAIService {
     usage?: any;
     error?: string;
   }> {
+    const startTime = Date.now();
+    
     try {
-      const startTime = Date.now();
       
       // Use the existing client instance for consistency with API key
       const response = await this.client.embeddings.create({
