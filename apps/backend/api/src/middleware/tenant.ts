@@ -13,6 +13,14 @@ declare global {
         slug: string;
       };
       userPermissions?: string[];
+      user?: {
+        id: string;
+        email: string;
+        tenantId: string;
+        roles?: string[];
+        firstName?: string;
+        lastName?: string;
+      };
     }
   }
 }
