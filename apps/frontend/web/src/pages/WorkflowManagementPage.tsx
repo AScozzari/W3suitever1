@@ -1917,6 +1917,8 @@ const WorkflowManagementPage = () => {
 
   // 🏗️ ENTERPRISE WORKFLOW BUILDER - COMPLETELY REBUILT
   const WorkflowBuilderView = () => {
+    console.log('🔍 WorkflowBuilderView rendering started');
+    
     // 🎯 ZUSTAND ENTERPRISE STATE - Direct integration with professional store
     const {
       nodes,
@@ -1944,6 +1946,8 @@ const WorkflowManagementPage = () => {
       exportWorkflow,
       importWorkflow
     } = useWorkflowStore();
+    
+    console.log('🔍 WorkflowStore data loaded:', { nodes: nodes?.length, edges: edges?.length, templates: templates?.length });
 
     // 🔧 REACT FLOW INTEGRATION
     const reactFlowInstance = useReactFlow();
