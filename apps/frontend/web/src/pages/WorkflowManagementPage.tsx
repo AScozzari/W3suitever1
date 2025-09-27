@@ -1917,8 +1917,6 @@ const WorkflowManagementPage = () => {
 
   // 🏗️ ENTERPRISE WORKFLOW BUILDER - COMPLETELY REBUILT
   const WorkflowBuilderView = () => {
-    console.log('🔍 WorkflowBuilderView rendering started');
-    
     // 🎯 ZUSTAND ENTERPRISE STATE - Direct integration with professional store
     const {
       nodes,
@@ -1946,8 +1944,6 @@ const WorkflowManagementPage = () => {
       exportWorkflow,
       importWorkflow
     } = useWorkflowStore();
-    
-    console.log('🔍 WorkflowStore data loaded:', { nodes: nodes?.length, edges: edges?.length, templates: templates?.length });
 
     // 🔧 REACT FLOW INTEGRATION
     const reactFlowInstance = useReactFlow();
@@ -2446,33 +2442,8 @@ const WorkflowManagementPage = () => {
                 <ReactFlow
                   nodes={nodes}
                   edges={edges}
-                  onNodesChange={(changes) => {
-                    // Handle node changes through Zustand
-                    const updatedNodes = [...nodes];
-                    changes.forEach(change => {
-                      if (change.type === 'position' && change.position) {
-                        const nodeIndex = updatedNodes.findIndex(n => n.id === change.id);
-                        if (nodeIndex !== -1) {
-                          updatedNodes[nodeIndex] = { ...updatedNodes[nodeIndex], position: change.position };
-                        }
-                      } else if (change.type === 'remove') {
-                        removeNode(change.id);
-                      }
-                    });
-                    setNodes(updatedNodes);
-                  }}
-                  onEdgesChange={(changes) => {
-                    const updatedEdges = [...edges];
-                    changes.forEach(change => {
-                      if (change.type === 'remove') {
-                        const edgeIndex = updatedEdges.findIndex(e => e.id === change.id);
-                        if (edgeIndex !== -1) {
-                          updatedEdges.splice(edgeIndex, 1);
-                        }
-                      }
-                    });
-                    setEdges(updatedEdges);
-                  }}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
                   onConnect={(connection) => {
                     if (connection.source && connection.target) {
                       const newEdge = {
