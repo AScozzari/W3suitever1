@@ -119,12 +119,16 @@ const VALID_EMPLOYEE_TABS = ['overview', 'time-attendance', 'requests', 'documen
 const VALID_EMPLOYEE_SECTIONS = ['pending', 'approved', 'rejected']; // for requests tab
 
 export default function MyPortal() {
+  console.log('🚀 [MYPORTAL] Component rendering - start');
+  
   // Tab Router Hook with security validation - seguendo pattern Settings
   const { activeTab, setTab, getTabUrl } = useTabRouter({
     defaultTab: 'overview',
     validTabs: VALID_EMPLOYEE_TABS,
     validSections: VALID_EMPLOYEE_SECTIONS
   });
+  
+  console.log('🚀 [MYPORTAL] activeTab:', activeTab);
 
   // Use proper tenant context instead of URL parsing
   const { currentTenant } = useTenant();
@@ -137,17 +141,32 @@ export default function MyPortal() {
   const { enabled: hrQueriesEnabled, loading: hrAuthLoading, attempts, debugInfo } = useHRQueryReadiness();
   const { toast } = useToast();
   
+  console.log('🚀 [MYPORTAL] hrQueriesEnabled:', hrQueriesEnabled, 'authUser:', authUser);
+  
   // Real data queries with hierarchical cache keys - REVERTED TO STABLE VERSION
   const { data: userData, isLoading: userLoading, error: userError } = useUser(userId || '');
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // ✅ MINE FILTER: Query for user's own HR requests with proper enablement
-  const { data: myRequestsResponse, isLoading: requestsLoading } = useQuery<{requests: any[]}>({
+  // 🔥 FORCE EXECUTE: Query for user's own HR requests - REMOVING enabled temporarily to debug
+  const { data: myRequestsResponse, isLoading: requestsLoading, refetch: refetchMineRequests } = useQuery<{requests: any[]}>({
     queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'],
-    queryFn: () => apiRequest('/api/universal-requests?category=hr&mine=true'),
-    enabled: !!hrQueriesEnabled, // ✅ RE-ENABLED: Query ready when auth is ready
+    queryFn: () => {
+      console.log('🔥 [MINE-QUERY] FORCED EXECUTION - hrQueriesEnabled:', hrQueriesEnabled);
+      console.log('🔥 [MINE-QUERY] About to call apiRequest for mine=true');
+      return apiRequest('/api/universal-requests?category=hr&mine=true');
+    },
+    // enabled: !!hrQueriesEnabled, // 🔥 TEMPORARILY DISABLED FOR DEBUG - FORCE EXECUTE
     staleTime: 2 * 60 * 1000,
+    onSuccess: (data) => {
+      console.log('✅ [MINE-QUERY] SUCCESS - Received data:', data);
+    },
+    onError: (error) => {
+      console.error('❌ [MINE-QUERY] ERROR:', error);
+    },
+    onSettled: (data, error) => {
+      console.log('🏁 [MINE-QUERY] SETTLED - Data:', data, 'Error:', error);
+    }
   });
   
   // ✅ FIX: Extract requests array from response object
