@@ -6,6 +6,7 @@
  */
 
 import express from 'express';
+import { z } from 'zod';
 import { db, setTenantContext } from '../core/db';
 import { tenantMiddleware, rbacMiddleware, requirePermission } from '../middleware/tenant';
 import { correlationMiddleware, logger } from '../core/logger';
@@ -18,6 +19,7 @@ import {
   universalRequests,
   teams,
   teamWorkflowAssignments,
+  aiSettings,
   insertWorkflowTemplateSchema,
   insertWorkflowInstanceSchema,
   insertUniversalRequestSchema,
@@ -39,6 +41,10 @@ import {
   ApiErrorResponse,
   ApiPaginatedResponse,
 } from '../types/workflow-shared';
+
+// AI Services for workflow routing
+import { WorkflowAIConnector } from '../services/workflow-ai-connector';
+import { AIRegistryService } from '../services/ai-registry-service';
 
 const router = express.Router();
 
@@ -852,6 +858,138 @@ router.post('/teams', rbacMiddleware, requirePermission('team.create'), async (r
     res.status(500).json({
       success: false,
       error: 'Internal server error',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== AI WORKFLOW ROUTING ====================
+
+/**
+ * POST /api/workflows/ai-route
+ * AI-powered workflow routing for universal requests
+ */
+router.post('/ai-route', rbacMiddleware, requirePermission('workflow.create'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Validate request body
+    const aiRouteSchema = z.object({
+      requestId: z.string().uuid('Request ID must be a valid UUID'),
+      forceReRouting: z.boolean().optional().default(false)
+    });
+
+    const validation = aiRouteSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed',
+        message: validation.error.issues.map(i => i.message).join(', '),
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { requestId } = validation.data;
+
+    // Set tenant context for database operations
+    await setTenantContext(tenantId);
+
+    // Check if request exists
+    const [existingRequest] = await db
+      .select()
+      .from(universalRequests)
+      .where(and(
+        eq(universalRequests.id, requestId),
+        eq(universalRequests.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!existingRequest) {
+      return res.status(404).json({
+        success: false,
+        error: 'Request not found',
+        message: 'Universal request not found or access denied',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Get AI settings for the tenant
+    const [tenantAISettings] = await db
+      .select()
+      .from(aiSettings)
+      .where(eq(aiSettings.tenantId, tenantId))
+      .limit(1);
+
+    if (!tenantAISettings) {
+      return res.status(400).json({
+        success: false,
+        error: 'AI settings not configured',
+        message: 'AI settings must be configured before using AI routing',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    // Initialize AI services
+    const aiRegistry = new AIRegistryService();
+    const workflowAI = new WorkflowAIConnector(aiRegistry);
+
+    // Execute AI routing
+    const aiResult = await workflowAI.routeRequest(requestId, tenantId, tenantAISettings);
+
+    if (!aiResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: 'AI routing failed',
+        message: aiResult.error || 'Unknown AI routing error',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    logger.info('AI workflow routing completed', {
+      requestId,
+      tenantId,
+      selectedTeam: aiResult.decision.selectedTeam,
+      flow: aiResult.decision.flow,
+      workflowInstanceId: aiResult.workflowInstanceId,
+      userId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        workflowInstanceId: aiResult.workflowInstanceId,
+        routing: aiResult.decision,
+        requestId
+      },
+      message: 'AI workflow routing completed successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<{
+      workflowInstanceId: string | undefined;
+      routing: typeof aiResult.decision;
+      requestId: string;
+    }>);
+
+  } catch (error) {
+    logger.error('Error in AI workflow routing', { 
+      error, 
+      requestId: req.body?.requestId,
+      tenantId: req.tenantId,
+      userId: req.user?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'An unexpected error occurred during AI routing',
       timestamp: new Date().toISOString()
     } as ApiErrorResponse);
   }
