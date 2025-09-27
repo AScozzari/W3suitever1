@@ -148,20 +148,28 @@ export default function MyPortal() {
   const { data: leaveBalance, isLoading: leaveLoading } = useLeaveBalance(userId || '');
   const { data: notifications = [], isLoading: notificationsLoading } = useNotifications({ status: 'unread', limit: 3 });
   
-  // 🔥 FORCE EXECUTE: Query for user's own HR requests - REMOVING enabled temporarily to debug
-  const { data: myRequestsResponse, isLoading: requestsLoading, refetch: refetchMineRequests } = useQuery<{requests: any[]}>({
-    queryKey: ['/api/universal-requests', 'department', 'hr', 'mine'],
-    queryFn: () => {
-      console.log('🔥 [MINE-QUERY] FORCED EXECUTION - hrQueriesEnabled:', hrQueriesEnabled);
-      console.log('🔥 [MINE-QUERY] About to call apiRequest for mine=true');
-      return apiRequest('/api/universal-requests?department=hr&mine=true');
-    },
-    // enabled: !!hrQueriesEnabled, // 🔥 TEMPORARILY DISABLED FOR DEBUG - FORCE EXECUTE
-    staleTime: 2 * 60 * 1000
-  });
+  // 🚀 FINAL SOLUTION: Component mount fetch for HR requests
+  const [myRequestsData, setMyRequestsData] = React.useState([]);
+  const [requestsLoading, setRequestsLoading] = React.useState(true);
   
-  // ✅ FIX: Extract requests array from response object
-  const myRequestsData = myRequestsResponse?.requests || [];
+  // Fetch on component mount - guaranteed execution
+  React.useEffect(() => {
+    const fetchHRRequests = async () => {
+      try {
+        const response = await apiRequest('/api/universal-requests?department=hr&mine=true');
+        const requests = response?.requests || response?.data || [];
+        setMyRequestsData(requests);
+        console.log('✅ [HR-REQUESTS] Loaded', requests.length, 'HR requests successfully');
+      } catch (error) {
+        console.error('❌ [HR-REQUESTS] Failed to load HR requests:', error);
+        setMyRequestsData([]);
+      } finally {
+        setRequestsLoading(false);
+      }
+    };
+    
+    fetchHRRequests();
+  }, []); // Empty dependency array - runs once on mount
 
   // ✅ WORKFLOW TEMPLATES: Query for HR workflow templates with proper enablement
   const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
@@ -357,13 +365,13 @@ export default function MyPortal() {
   const performance = performanceData?.goals || [];
   const training = trainingData?.courses || [];
 
-  // Update current time
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // Update current time - TEMPORARILY DISABLED to prevent infinite re-renders affecting TanStack Query
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     setCurrentTime(new Date());
+  //   }, 1000);
+  //   return () => clearInterval(timer);
+  // }, []);
 
   // Apply loaded class to body to trigger WindTre gradient background
   useEffect(() => {
