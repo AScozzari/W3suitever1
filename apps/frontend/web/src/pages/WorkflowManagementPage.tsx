@@ -2679,9 +2679,9 @@ const WorkflowManagementPage = () => {
           {activeView === 'analytics' && <AnalyticsView />}
         </div>
 
-        {/* 🎯 TEAM CREATION MODAL - ERA MANCANTE! */}
+        {/* 🎯 TEAM CREATION MODAL - COMPLETO CON TUTTI I CAMPI ORIGINALI */}
         <Dialog open={showTeamModal} onOpenChange={setShowTeamModal}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingTeam ? 'Modifica Team' : 'Crea Nuovo Team'}
@@ -2689,118 +2689,224 @@ const WorkflowManagementPage = () => {
               <DialogDescription>
                 {editingTeam 
                   ? 'Modifica i dettagli del team selezionato' 
-                  : 'Inserisci i dettagli per creare un nuovo team'}
+                  : 'Configura il nuovo team con tutti i dettagli necessari'}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
-              {/* Nome Team */}
-              <div className="space-y-2">
-                <Label htmlFor="team-name">Nome Team</Label>
-                <Input
-                  id="team-name"
-                  placeholder="Inserisci il nome del team"
-                  defaultValue={editingTeam?.name || ''}
-                  data-testid="input-team-name"
-                />
-              </div>
-
-              {/* Descrizione */}
-              <div className="space-y-2">
-                <Label htmlFor="team-description">Descrizione</Label>
-                <Textarea
-                  id="team-description"
-                  placeholder="Descrizione del team (opzionale)"
-                  defaultValue={editingTeam?.description || ''}
-                  data-testid="input-team-description"
-                />
-              </div>
-
-              {/* Tabs per Utenti e Ruoli */}
-              <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'users' | 'roles')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="users">Utenti</TabsTrigger>
-                  <TabsTrigger value="roles">Ruoli</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="users" className="space-y-3">
+            <div className="space-y-6 py-4">
+              {/* Informazioni Base */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Informazioni Base</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Cerca Utenti</Label>
+                    <Label htmlFor="team-name">Nome Team *</Label>
                     <Input
-                      placeholder="Cerca per nome o email..."
-                      value={teamSearchTerm}
-                      onChange={(e) => setTeamSearchTerm(e.target.value)}
-                      data-testid="input-search-users"
+                      id="team-name"
+                      placeholder="Inserisci il nome del team"
+                      value={teamFormData.name || ''}
+                      onChange={(e) => setTeamFormData(prev => ({ ...prev, name: e.target.value }))}
+                      data-testid="input-team-name"
                     />
                   </div>
-                  
-                  <ScrollArea className="h-[200px] border rounded p-2">
-                    {loadingUsers ? (
-                      <div className="text-center py-4">
-                        <span className="text-sm text-slate-500">Caricamento utenti...</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {filteredUsers.map((user: any) => (
-                          <div key={user.id} className="flex items-center space-x-2 p-2 hover:bg-slate-50 rounded">
-                            <Checkbox id={`user-${user.id}`} />
-                            <Label htmlFor={`user-${user.id}`} className="flex-1 cursor-pointer">
-                              <div>
-                                <p className="font-medium">{user.firstName} {user.lastName}</p>
-                                <p className="text-sm text-slate-500">{user.email}</p>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
-                        {filteredUsers.length === 0 && (
-                          <div className="text-center py-4">
-                            <span className="text-sm text-slate-500">Nessun utente trovato</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </TabsContent>
 
-                <TabsContent value="roles" className="space-y-3">
                   <div className="space-y-2">
-                    <Label>Cerca Ruoli</Label>
+                    <Label htmlFor="team-type">Tipo Team</Label>
+                    <Select 
+                      value={teamFormData.teamType || 'functional'} 
+                      onValueChange={(value) => setTeamFormData(prev => ({ ...prev, teamType: value as any }))}
+                    >
+                      <SelectTrigger data-testid="select-team-type">
+                        <SelectValue placeholder="Seleziona tipo team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="functional">Funzionale</SelectItem>
+                        <SelectItem value="cross-functional">Cross-Funzionale</SelectItem>
+                        <SelectItem value="project">Progetto</SelectItem>
+                        <SelectItem value="temporary">Temporaneo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="team-description">Descrizione</Label>
+                  <Textarea
+                    id="team-description"
+                    placeholder="Descrizione e obiettivi del team"
+                    value={teamFormData.description || ''}
+                    onChange={(e) => setTeamFormData(prev => ({ ...prev, description: e.target.value }))}
+                    data-testid="input-team-description"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="team-active"
+                    checked={teamFormData.isActive}
+                    onCheckedChange={(checked) => setTeamFormData(prev => ({ ...prev, isActive: checked as boolean }))}
+                    data-testid="checkbox-team-active"
+                  />
+                  <Label htmlFor="team-active">Team attivo</Label>
+                </div>
+              </div>
+
+              {/* Supervisori */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Gestione Supervisori</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Supervisore Primario</Label>
+                    <Select 
+                      value={teamFormData.primarySupervisor || ''} 
+                      onValueChange={(value) => setTeamFormData(prev => ({ ...prev, primarySupervisor: value }))}
+                    >
+                      <SelectTrigger data-testid="select-primary-supervisor">
+                        <SelectValue placeholder="Seleziona supervisore primario" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {usersData.map((user: any) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.firstName} {user.lastName} - {user.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Supervisori Secondari</Label>
                     <Input
-                      placeholder="Cerca ruoli..."
-                      value={teamSearchTerm}
-                      onChange={(e) => setTeamSearchTerm(e.target.value)}
-                      data-testid="input-search-roles"
+                      placeholder="Supervisori aggiuntivi (opzionale)"
+                      data-testid="input-secondary-supervisors"
                     />
                   </div>
-                  
-                  <ScrollArea className="h-[200px] border rounded p-2">
-                    {loadingRoles ? (
-                      <div className="text-center py-4">
-                        <span className="text-sm text-slate-500">Caricamento ruoli...</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {filteredRoles.map((role: any) => (
-                          <div key={role.id} className="flex items-center space-x-2 p-2 hover:bg-slate-50 rounded">
-                            <Checkbox id={`role-${role.id}`} />
-                            <Label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer">
-                              <div>
-                                <p className="font-medium">{role.name}</p>
-                                <p className="text-sm text-slate-500">{role.description}</p>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
-                        {filteredRoles.length === 0 && (
-                          <div className="text-center py-4">
-                            <span className="text-sm text-slate-500">Nessun ruolo trovato</span>
-                          </div>
-                        )}
+                </div>
+              </div>
+
+              {/* Gestione Membri */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Membri del Team</h3>
+                
+                <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'users' | 'roles')}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="users">Utenti Membri</TabsTrigger>
+                    <TabsTrigger value="roles">Ruoli Membri</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="users" className="space-y-3">
+                    <div className="space-y-2">
+                      <Label>Cerca Utenti</Label>
+                      <Input
+                        placeholder="Cerca per nome o email..."
+                        value={teamSearchTerm}
+                        onChange={(e) => setTeamSearchTerm(e.target.value)}
+                        data-testid="input-search-users"
+                      />
+                    </div>
+                    
+                    <ScrollArea className="h-[200px] border rounded p-2">
+                      {loadingUsers ? (
+                        <div className="text-center py-4">
+                          <span className="text-sm text-slate-500">Caricamento utenti...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {filteredUsers.map((user: any) => (
+                            <div key={user.id} className="flex items-center space-x-2 p-2 hover:bg-slate-50 rounded">
+                              <Checkbox 
+                                id={`user-${user.id}`}
+                                checked={teamFormData.userMembers?.includes(user.id)}
+                                onCheckedChange={(checked) => {
+                                  const currentMembers = teamFormData.userMembers || [];
+                                  const newMembers = checked 
+                                    ? [...currentMembers, user.id]
+                                    : currentMembers.filter(id => id !== user.id);
+                                  setTeamFormData(prev => ({ ...prev, userMembers: newMembers }));
+                                }}
+                              />
+                              <Label htmlFor={`user-${user.id}`} className="flex-1 cursor-pointer">
+                                <div>
+                                  <p className="font-medium">{user.firstName} {user.lastName}</p>
+                                  <p className="text-sm text-slate-500">{user.email}</p>
+                                </div>
+                              </Label>
+                            </div>
+                          ))}
+                          {filteredUsers.length === 0 && (
+                            <div className="text-center py-4">
+                              <span className="text-sm text-slate-500">Nessun utente trovato</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </ScrollArea>
+                    
+                    {teamFormData.userMembers && teamFormData.userMembers.length > 0 && (
+                      <div className="text-sm text-green-600">
+                        {teamFormData.userMembers.length} utenti selezionati
                       </div>
                     )}
-                  </ScrollArea>
-                </TabsContent>
-              </Tabs>
+                  </TabsContent>
+
+                  <TabsContent value="roles" className="space-y-3">
+                    <div className="space-y-2">
+                      <Label>Cerca Ruoli</Label>
+                      <Input
+                        placeholder="Cerca ruoli..."
+                        value={teamSearchTerm}
+                        onChange={(e) => setTeamSearchTerm(e.target.value)}
+                        data-testid="input-search-roles"
+                      />
+                    </div>
+                    
+                    <ScrollArea className="h-[200px] border rounded p-2">
+                      {loadingRoles ? (
+                        <div className="text-center py-4">
+                          <span className="text-sm text-slate-500">Caricamento ruoli...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {filteredRoles.map((role: any) => (
+                            <div key={role.id} className="flex items-center space-x-2 p-2 hover:bg-slate-50 rounded">
+                              <Checkbox 
+                                id={`role-${role.id}`}
+                                checked={teamFormData.roleMembers?.includes(role.id)}
+                                onCheckedChange={(checked) => {
+                                  const currentRoles = teamFormData.roleMembers || [];
+                                  const newRoles = checked 
+                                    ? [...currentRoles, role.id]
+                                    : currentRoles.filter(id => id !== role.id);
+                                  setTeamFormData(prev => ({ ...prev, roleMembers: newRoles }));
+                                }}
+                              />
+                              <Label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer">
+                                <div>
+                                  <p className="font-medium">{role.name}</p>
+                                  <p className="text-sm text-slate-500">{role.description}</p>
+                                </div>
+                              </Label>
+                            </div>
+                          ))}
+                          {filteredRoles.length === 0 && (
+                            <div className="text-center py-4">
+                              <span className="text-sm text-slate-500">Nessun ruolo trovato</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </ScrollArea>
+                    
+                    {teamFormData.roleMembers && teamFormData.roleMembers.length > 0 && (
+                      <div className="text-sm text-green-600">
+                        {teamFormData.roleMembers.length} ruoli selezionati
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
 
             <DialogFooter>
@@ -2810,6 +2916,16 @@ const WorkflowManagementPage = () => {
                   setShowTeamModal(false);
                   setEditingTeam(null);
                   setTeamSearchTerm('');
+                  setTeamFormData({
+                    name: '',
+                    description: '',
+                    teamType: 'functional',
+                    userMembers: [],
+                    roleMembers: [],
+                    primarySupervisor: undefined,
+                    secondarySupervisors: [],
+                    isActive: true
+                  });
                 }}
                 data-testid="button-cancel-team"
               >
@@ -2817,13 +2933,17 @@ const WorkflowManagementPage = () => {
               </Button>
               <Button 
                 onClick={() => {
-                  // Simula salvataggio team
-                  const teamData = {
-                    name: (document.getElementById('team-name') as HTMLInputElement)?.value || '',
-                    description: (document.getElementById('team-description') as HTMLTextAreaElement)?.value || '',
-                  };
-                  handleSaveTeam(teamData);
+                  if (!teamFormData.name?.trim()) {
+                    toast({
+                      title: "Errore",
+                      description: "Il nome del team è obbligatorio",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  handleSaveTeam(teamFormData);
                 }}
+                disabled={!teamFormData.name?.trim()}
                 className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                 data-testid="button-save-team"
               >
