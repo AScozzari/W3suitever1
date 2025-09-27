@@ -8138,47 +8138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ==================== UNIVERSAL REQUEST SYSTEM API (PHASE 2) ====================
-  
-  // Create new universal request (supports all categories: hr, operations, support, crm, sales, finance)
-  app.post('/api/requests', tenantMiddleware, rbacMiddleware, async (req: any, res) => {
-    const startTime = Date.now(); // ✅ AUDIT TRAIL: Track operation duration
-    try {
-      const tenantId = req.user?.tenantId;
-      const userId = req.user?.id;
-      
-      if (!tenantId || !userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-      }
-      
-      // RESTORED: Proper validation and universal schema
-      const validatedData = createUniversalRequestBodySchema.parse(req.body);
-      
-      const requestData = {
-        tenantId,
-        requesterId: userId, // SECURITY: Derived from auth, not body
-        category: validatedData.category,
-        requestType: validatedData.requestType,
-        requestSubtype: validatedData.requestSubtype,
-        title: validatedData.title,
-        description: validatedData.description,
-        requestData: validatedData.requestData,
-        priority: validatedData.priority || 'medium',
-        startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
-        endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
-        attachments: validatedData.attachments,
-        tags: validatedData.tags,
-        metadata: validatedData.metadata,
-        legalEntityId: validatedData.legalEntityId,
-        storeId: validatedData.storeId,
-        onBehalfOf: validatedData.onBehalfOf,
-        status: 'pending',
-        createdBy: userId,
-        updatedBy: userId
-      };
-      
-      const result = await db.insert(universalRequests).values(requestData).returning();
-      const duration = Date.now() - startTime;
+  // ==================== HR REQUEST SYSTEM API ====================
       
       // ✅ AUDIT TRAIL: Log request creation
       await logRequestCreated({
@@ -11989,6 +11949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requestType: z.string().optional(),
     requestSubtype: z.string().optional(),
     priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+    mine: z.union([z.literal('true'), z.literal('false'), z.boolean()]).optional(), // ✅ FIX: Add mine filter
     requesterId: z.string().uuid().optional(),
     storeId: z.string().uuid().optional(),
     legalEntityId: z.string().uuid().optional(),
@@ -12011,6 +11972,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Build where conditions
       const whereConditions = [eq(universalRequests.tenantId, tenantId)];
+      
+      // ✅ FIX: Add mine filter - only show current user's requests
+      if (filters.mine === 'true' || filters.mine === true) {
+        const userId = req.user?.id;
+        if (userId) {
+          whereConditions.push(eq(universalRequests.requesterId, userId));
+        }
+      }
       
       if (filters.status) {
         whereConditions.push(eq(universalRequests.status, filters.status));
