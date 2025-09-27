@@ -69,6 +69,7 @@ import {
   getConnectedEdges,
   Controls,
   Background,
+  MiniMap,
   Node,
   Edge,
   Connection,
@@ -79,16 +80,16 @@ import {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-// Icons
+// Icons - COMPLETE ENTERPRISE SET
 import {
   Users, User, Plus, Settings, GitBranch, Activity, Zap, Target, 
   BarChart3, CheckCircle, CheckCircle2, Clock, AlertCircle, AlertTriangle, TrendingUp,
-  ArrowRight, Filter, Search, Layers, Play, Pause,
+  ArrowRight, ArrowLeft, Filter, Search, Layers, Play, Pause,
   Building, Shield, UserCog, Eye, MoreHorizontal, Workflow,
-  Save, DollarSign, FileText, Wrench, X, Info, Bell, Loader2,
-  RefreshCw, Database, Mail, Undo2, Redo2, Upload, Server, Folder,
+  Save, DollarSign, FileText, FileTemplate, Wrench, X, Info, Bell, Loader2,
+  RefreshCw, Database, Mail, Undo, Redo, Undo2, Redo2, Upload, Server, Folder,
   Download, Trash2, Brain, Heart, TreePine, Circle, 
-  ChevronDown, FastForward, Grid
+  ChevronDown, FastForward, Grid, Megaphone, Headphones, Sparkles, Route
 } from 'lucide-react';
 
 // Types
@@ -2565,140 +2566,147 @@ const WorkflowManagementPage: React.FC = () => {
       </div>
     </div>
     );
+
+  // 🏢 TEAM MANAGEMENT VIEW
+  const TeamManagementView = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Visual Workflow Builder</h2>
-          <p className="text-slate-600 dark:text-slate-400">Design and create custom approval workflows</p>
+          <h2 className="text-2xl font-bold">Team Management</h2>
+          <p className="text-slate-600 dark:text-slate-400">Manage teams and supervision hierarchy</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => {
+              setEditingTeam(null);
+              setShowTeamModal(true);
+            }}
+            className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+            data-testid="button-create-team"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Team
+          </Button>
+          <Button 
+            onClick={() => setActiveView('dashboard')} 
+            variant="outline"
+            className="backdrop-blur-sm bg-white/10 border-white/30 hover:bg-white/20"
+            data-testid="button-back-dashboard-teams"
+          >
+            <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+
+      {/* Rest of TeamManagementView content will be here */}
+      <div className="text-center py-8 text-slate-500">
+        <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <p className="text-sm">Team management interface</p>
+        <p className="text-xs mt-1">Full implementation coming soon</p>
+      </div>
+    </div>
+  );
+
+  // 🎯 ANALYTICS DASHBOARD VIEW  
+  const AnalyticsView = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Workflow Analytics</h2>
+          <p className="text-slate-600 dark:text-slate-400">Performance metrics and insights</p>
         </div>
         <Button 
           onClick={() => setActiveView('dashboard')} 
           variant="outline"
           className="backdrop-blur-sm bg-white/10 border-white/30 hover:bg-white/20"
-          data-testid="button-back-dashboard"
+          data-testid="button-back-dashboard-analytics"
         >
           <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
           Back to Dashboard
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)] min-h-0">
-        {/* ✅ ENTERPRISE ACTION LIBRARY PALETTE */}
-        <div className="lg:col-span-1 h-full min-h-0">
-          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
-            <CardHeader className="flex-none">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Layers className="w-5 h-5" />
-                Workflow Library
-              </CardTitle>
-              <CardDescription>Triggers, Actions & Control Flow</CardDescription>
+      {/* Analytics content placeholder */}
+      <div className="text-center py-8 text-slate-500">
+        <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <p className="text-sm">Analytics dashboard</p>
+        <p className="text-xs mt-1">Performance metrics and insights coming soon</p>
+      </div>
+    </div>
+  );
+
+  // 🎯 MAIN COMPONENT RETURN
+  return (
+    <ReactFlowProvider>
+      <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+        <div className="p-6 space-y-6">
+          {/* Modern Navigation Bar */}
+          <div className="backdrop-blur-md bg-gradient-to-r from-white/20 via-white/10 to-transparent border border-white/30 rounded-2xl p-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-purple-600">
+                  <Workflow className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-xl">Workflow Hub</h1>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Enterprise Approval System</p>
+                </div>
+              </div>
               
-              {/* Search Actions */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input
-                  placeholder="Search actions..."
-                  value={searchTerm}
-                  onChange={(e) => setZustandSearchTerm(e.target.value)} // ✅ UPDATED: Uses Zustand store action
-                  className="pl-10 bg-white/5 border-white/20"
-                />
-              </div>
-
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  size="sm"
-                  variant={selectedCategory === null ? "default" : "outline"}
-                  onClick={() => setZustandSelectedCategory(null)} // ✅ UPDATED: Uses Zustand store action
-                  className="h-7 px-2 text-xs"
-                >
-                  All
-                </Button>
-                {Object.entries(CATEGORIES).map(([key, category]) => {
-                  const Icon = category.icon;
-                  return (
-                    <Button
-                      key={key}
-                      size="sm"
-                      variant={selectedCategory === key ? "default" : "outline"}
-                      onClick={() => setZustandSelectedCategory(key)} // ✅ UPDATED: Uses Zustand store action
-                      className={`h-7 px-2 text-xs ${selectedCategory === key ? category.bgClass : ''}`}
+              <div className="flex items-center gap-4">
+                <Tabs value={activeView} onValueChange={(value: any) => setActiveView(value)} className="w-auto">
+                  <TabsList className="backdrop-blur-sm bg-white/10 border border-white/20">
+                    <TabsTrigger 
+                      value="dashboard" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-dashboard"
                     >
-                      <Icon className="w-3 h-3 mr-1" />
-                      {category.label}
-                    </Button>
-                  );
-                })}
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="builder" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-builder"
+                    >
+                      <GitBranch className="w-4 h-4 mr-2" />
+                      Builder
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="teams" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-teams"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Teams
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="analytics" 
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+                      data-testid="tab-analytics"
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      Analytics
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
-            </CardHeader>
-            
-            <CardContent className="p-4 flex-1 min-h-0 overflow-hidden">
-              <div className="h-full overflow-y-auto pr-2">
-                <div className="space-y-4">
-                  {/* ✅ ENTERPRISE TRIGGER LIBRARY */}
-                  <div>
-                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
-                      <Play className="w-5 h-5 text-purple-600" />
-                      Workflow Triggers (10)
-                    </h3>
-                    
-                    {/* Schedule Triggers */}
-                    <div className="mb-3">
-                      <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2 flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Schedule Triggers ({Object.values(ENTERPRISE_TRIGGERS).filter(t => t.category === 'schedule').length})
-                      </h4>
-                      <div className="space-y-1">
-                        {Object.values(ENTERPRISE_TRIGGERS)
-                          .filter(trigger => trigger.category === 'schedule')
-                          .filter(trigger => !searchTerm || trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) || trigger.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                          .sort((a, b) => b.priority - a.priority)
-                          .map(trigger => {
-                            const Icon = trigger.icon;
-                            return (
-                              <Button
-                                key={trigger.id}
-                                variant="outline"
-                                size="sm"
-                                draggable // ✅ ADDED: Make draggable
-                                onDragStart={(e) => handleDragStart(e, 'start', { 
-                                  label: trigger.name,
-                                  type: 'start',
-                                  description: trigger.description,
-                                  icon: trigger.icon,
-                                  category: trigger.category,
-                                  triggerId: trigger.id,
-                                  priority: trigger.priority
-                                })} // ✅ ADDED: Professional drag & drop
-                                onClick={() => addTriggerNode(trigger.id)}
-                                className="w-full justify-start h-auto p-3 bg-purple-50/50 hover:bg-purple-100/70 border-purple-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]" 
-                                data-testid={`trigger-${trigger.id}`}
-                              >
-                                <div className="flex items-start gap-2 w-full">
-                                  <Icon className="w-4 h-4 mt-0.5 text-purple-600 flex-shrink-0" />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-medium text-sm text-purple-800">{trigger.name}</div>
-                                    <div className="text-xs text-purple-600 mt-0.5 truncate">{trigger.description}</div>
-                                  </div>
-                                </div>
-                              </Button>
-                            );
-                          })}
-                      </div>
-                    </div>
+            </div>
+          </div>
 
-                    {/* Event Triggers */}
-                    <div className="mb-3">
-                      <h4 className="text-sm font-medium text-cyan-700 dark:text-cyan-300 mb-2 flex items-center gap-2">
-                        <Zap className="w-4 h-4" />
-                        Event Triggers ({Object.values(ENTERPRISE_TRIGGERS).filter(t => t.category === 'event').length})
-                      </h4>
-                      <div className="space-y-1">
-                        {Object.values(ENTERPRISE_TRIGGERS)
-                          .filter(trigger => trigger.category === 'event')
-                          .filter(trigger => !searchTerm || trigger.name.toLowerCase().includes(searchTerm.toLowerCase()) || trigger.description.toLowerCase().includes(searchTerm.toLowerCase()))
-                          .sort((a, b) => b.priority - a.priority)
-                          .map(trigger => {
-                            const Icon = trigger.icon;
-                            return (
+          {/* Dynamic Content Based on Active View */}
+          {activeView === 'dashboard' && <DashboardOverview />}
+          {activeView === 'builder' && <WorkflowBuilderView />}
+          {activeView === 'teams' && <TeamManagementView />}
+          {activeView === 'analytics' && <AnalyticsView />}
+        </div>
+      </Layout>
+    </ReactFlowProvider>
+  );
+};
+
+export default WorkflowManagementPage;
                               <Button
                                 key={trigger.id}
                                 variant="outline"
