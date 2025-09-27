@@ -53,6 +53,9 @@ export const userStatusEnum = pgEnum('user_status', ['attivo', 'sospeso', 'off-b
 export const notificationTypeEnum = pgEnum('notification_type', ['system', 'security', 'data', 'custom']);
 export const notificationPriorityEnum = pgEnum('notification_priority', ['low', 'medium', 'high', 'critical']);
 export const notificationStatusEnum = pgEnum('notification_status', ['unread', 'read']);
+
+// ✅ STORES CATEGORY: Enum for store types (sales_point=9xxx, office=6xxx, warehouse=5xxx)
+export const storeCategoryEnum = pgEnum('store_category', ['sales_point', 'office', 'warehouse']);
 export const notificationCategoryEnum = pgEnum('notification_category', ['crm', 'finance', 'hr', 'sales', 'support', 'operations', 'marketing']);
 
 // Object Storage Enums
@@ -260,6 +263,7 @@ export const stores = w3suiteSchema.table("stores", {
   cap: varchar("cap", { length: 10 }),
   region: varchar("region", { length: 100 }),
   status: varchar("status", { length: 50 }).default("active"),
+  category: storeCategoryEnum("category").default("sales_point").notNull(),
   openedAt: date("opened_at"),
   closedAt: date("closed_at"),
   billingOverrideId: uuid("billing_override_id"),
