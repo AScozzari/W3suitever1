@@ -2265,7 +2265,8 @@ export default function SettingsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'linear-gradient(135deg, #f9fafb, #f3f4f6)' }}>
-                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice PDV</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Codice</th>
+                <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Categoria</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Nome</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Indirizzo</th>
                 <th style={{ padding: '16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#374151', borderBottom: '2px solid #e5e7eb' }}>Area</th>
@@ -2284,6 +2285,43 @@ export default function SettingsPage() {
                 onMouseOut={(e) => e.currentTarget.style.background = 'white'}>
                   <td style={{ padding: '16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
                     {item.code}
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 12px',
+                      background: item.category === 'sales_point' 
+                        ? '#fef3f0'   // Orange for sales
+                        : item.category === 'office'
+                        ? '#f0f9ff'   // Blue for office
+                        : item.category === 'warehouse'
+                        ? '#f0fdf4'   // Green for warehouse
+                        : '#f1f5f9',  // Default gray
+                      color: item.category === 'sales_point' 
+                        ? '#ea580c' 
+                        : item.category === 'office'
+                        ? '#0369a1'
+                        : item.category === 'warehouse'
+                        ? '#047857'
+                        : '#475569',
+                      border: `1px solid ${item.category === 'sales_point' 
+                        ? '#fed7aa' 
+                        : item.category === 'office'
+                        ? '#e0f2fe'
+                        : item.category === 'warehouse'
+                        ? '#bbf7d0'
+                        : '#e2e8f0'}`,
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: '600'
+                    }}>
+                      {item.category === 'sales_point' && '🏪 Vendita'}
+                      {item.category === 'office' && '🏢 Ufficio'}
+                      {item.category === 'warehouse' && '📦 Magazzino'}
+                      {!item.category && '🏪 Vendita'} {/* Default fallback */}
+                    </span>
                   </td>
                   <td style={{ padding: '16px' }}>
                     <div style={{ fontSize: '14px', color: '#111827', fontWeight: '600' }}>{item.nome}</div>
