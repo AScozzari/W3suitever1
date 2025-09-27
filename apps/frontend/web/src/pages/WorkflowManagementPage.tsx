@@ -1457,7 +1457,7 @@ const WorkflowManagementPage = () => {
     }
 
     const newNode = {
-      id: `node-${Date.now()}`,
+      id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'action',
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: { 
@@ -1482,7 +1482,7 @@ const WorkflowManagementPage = () => {
 
   const addDecisionNode = () => {
     const newNode = {
-      id: `decision-${Date.now()}`,
+      id: `decision-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'decision', // ✅ FIXED: Usa custom type invece di 'default'
       position: { x: Math.random() * 400, y: Math.random() * 400 },
       data: { 
@@ -1527,7 +1527,7 @@ const WorkflowManagementPage = () => {
     }
 
     const newNode = {
-      id: `trigger-${Date.now()}`,
+      id: `trigger-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type: 'start', // Trigger nodes sono start nodes
       position: { x: 50, y: 50 }, // Posizione fissa per start node
       data: { 
@@ -2073,7 +2073,7 @@ const WorkflowManagementPage = () => {
           });
 
           const newNode = {
-            id: `${actionId}_${Date.now()}`,
+            id: `${actionId}_${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             type: 'action',
             position,
             data: { 

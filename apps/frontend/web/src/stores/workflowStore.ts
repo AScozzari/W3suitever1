@@ -202,7 +202,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         saveTemplate: (name: string, description: string, category: WorkflowTemplate['category']) => {
           const state = get();
           const template: WorkflowTemplate = {
-            id: `template-${Date.now()}`,
+            id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name,
             description,
             category,
@@ -252,7 +252,7 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
           if (template) {
             const duplicate: WorkflowTemplate = {
               ...structuredClone(template),
-              id: `template-${Date.now()}`,
+              id: `template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               name: `${template.name} (Copy)`,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
