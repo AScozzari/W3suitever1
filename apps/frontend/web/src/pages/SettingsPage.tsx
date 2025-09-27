@@ -1194,7 +1194,7 @@ export default function SettingsPage() {
           <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', margin: '0 0 12px 0' }}>
             Dashboard Enterprise in Sviluppo
           </h3>
-          <p style={{ fontSize: '16px', color: '#6b7280', margin: '0 0 24px 0', maxWidth: '600px', margin: '0 auto 24px auto', lineHeight: '1.6' }}>
+          <p style={{ fontSize: '16px', color: '#6b7280', maxWidth: '600px', margin: '0 auto 24px auto', lineHeight: '1.6' }}>
             Il backend enterprise è <strong>operativo</strong> e l'API <code>/api/audit/enterprise</code> funziona correttamente. 
             La dashboard professionale con filtri avanzati è in fase di completamento finale.
           </p>
@@ -6426,6 +6426,12 @@ export default function SettingsPage() {
         return;
       }
       
+      // ✅ VALIDAZIONE CONDIZIONALE BRANDS (obbligatorio solo per sales_point)
+      if (newStore.category === 'sales_point' && (!newStore.brand_ids || newStore.brand_ids.length === 0)) {
+        alert('Errore: Brand è obbligatorio per i punti vendita.');
+        return;
+      }
+      
       const isEdit = Boolean(storeModal.data);
       
       // ✅ AUTO-GENERAZIONE CODICE BASATA SU CATEGORIA (5xxx=magazzino, 6xxx=ufficio, 9xxx=sales)
@@ -8496,8 +8502,19 @@ export default function SettingsPage() {
                     marginBottom: '8px',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
-                    Brand Gestiti <span style={{ color: '#ef4444' }}>*</span>
+                    Brand Gestiti {newStore.category === 'sales_point' && <span style={{ color: '#ef4444' }}>*</span>}
                   </label>
+                  <p style={{
+                    fontSize: '12px',
+                    color: newStore.category === 'sales_point' ? '#ef4444' : '#6b7280',
+                    margin: '0 0 12px 0',
+                    fontStyle: 'italic'
+                  }}>
+                    {newStore.category === 'sales_point' 
+                      ? '⚠️ Obbligatorio per i punti vendita'
+                      : 'ℹ️ Opzionale per uffici e magazzini'
+                    }
+                  </p>
                   <div style={{ display: 'flex', gap: '20px' }}>
                     <label style={{ 
                       display: 'flex', 
