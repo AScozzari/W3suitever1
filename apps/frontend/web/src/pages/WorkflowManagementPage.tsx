@@ -131,12 +131,11 @@ const ActionNode = ({ data }: { data: any }) => (
   <div className="bg-white border-2 border-slate-200 rounded-lg p-4 shadow-md min-w-[200px]">
     <div className="flex items-center gap-2 mb-2">
       <div className={`w-3 h-3 rounded-full ${
-        data.category === 'hr' ? 'bg-green-500' :
+        data.category === 'sales' ? 'bg-green-500' :
         data.category === 'finance' ? 'bg-blue-500' :
-        data.category === 'operations' ? 'bg-orange-500' :
-        data.category === 'it' ? 'bg-purple-500' :
-        data.category === 'crm' ? 'bg-pink-500' :
-        data.category === 'support' ? 'bg-yellow-500' : 'bg-slate-500'
+        data.category === 'marketing' ? 'bg-purple-500' :
+        data.category === 'support' ? 'bg-yellow-500' :
+        data.category === 'operations' ? 'bg-orange-500' : 'bg-slate-500'
       }`} />
       <span className="font-medium text-sm text-slate-700">{data.category?.toUpperCase()}</span>
     </div>
@@ -762,11 +761,11 @@ const WorkflowManagementPage: React.FC = () => {
   // 📚 PROFESSIONAL TEMPLATE INITIALIZATION
   const initializeProfessionalTemplates = useCallback(() => {
     if (templates.length === 0) {
-      // 🏢 HR LEAVE REQUEST WORKFLOW
-      const hrLeaveTemplate = {
-        name: "Employee Leave Request",
-        description: "Complete leave request approval workflow with manager review and HR processing",
-        category: 'hr' as const,
+      // 🏢 SALES TEAM WORKFLOW (was HR Leave Request)
+      const salesLeaveTemplate = {
+        name: "Sales Team Request",
+        description: "Sales team approval workflow with manager review and sales processing",
+        category: 'sales' as const,
         nodes: [
           {
             id: 'hr-start',
@@ -891,11 +890,11 @@ const WorkflowManagementPage: React.FC = () => {
         ]
       };
 
-      // 📝 DOCUMENT APPROVAL WORKFLOW
-      const approvalTemplate = {
-        name: "Document Review & Approval",
-        description: "Multi-stakeholder document review with version control and approval tracking",
-        category: 'approval' as const,
+      // 🎯 MARKETING CAMPAIGN WORKFLOW
+      const marketingTemplate = {
+        name: "Marketing Campaign Approval",
+        description: "Marketing campaign review with content approval and budget tracking",
+        category: 'marketing' as const,
         nodes: [
           {
             id: 'doc-start',
@@ -936,11 +935,11 @@ const WorkflowManagementPage: React.FC = () => {
         ]
       };
 
-      // 🔄 CUSTOMER ONBOARDING AUTOMATION
-      const automationTemplate = {
-        name: "Customer Onboarding Automation",
-        description: "Automated customer onboarding with welcome sequence and account setup",
-        category: 'automation' as const,
+      // 📞 SUPPORT TICKET WORKFLOW  
+      const supportTemplate = {
+        name: "Support Ticket Resolution",
+        description: "Customer support ticket workflow with escalation and resolution tracking",
+        category: 'support' as const,
         nodes: [
           {
             id: 'auto-start',
@@ -982,13 +981,13 @@ const WorkflowManagementPage: React.FC = () => {
       };
 
       // Initialize professional templates
-      [hrLeaveTemplate, financeTemplate, operationsTemplate, approvalTemplate, automationTemplate].forEach(template => {
+      [salesLeaveTemplate, financeTemplate, operationsTemplate, marketingTemplate, supportTemplate].forEach(template => {
         zustandSaveTemplate(template.name, template.description, template.category);
       });
 
       toast({
-        title: '📚 Professional Templates Initialized',
-        description: 'Pre-configured workflow templates for HR, Finance, Operations, Approval & Automation are now available',
+        title: '📚 Professional Templates Initialized',  
+        description: 'Pre-configured workflow templates for Sales, Finance, Operations, Marketing & Support are now available',
       });
     }
   }, [templates.length, zustandSaveTemplate, toast]);

@@ -56,7 +56,7 @@ export const notificationStatusEnum = pgEnum('notification_status', ['unread', '
 
 // ✅ STORES CATEGORY: Enum for store types (sales_point=9xxx, office=6xxx, warehouse=5xxx)
 export const storeCategoryEnum = pgEnum('store_category', ['sales_point', 'office', 'warehouse']);
-export const notificationCategoryEnum = pgEnum('notification_category', ['crm', 'finance', 'hr', 'sales', 'support', 'operations', 'marketing']);
+export const notificationCategoryEnum = pgEnum('notification_category', ['sales', 'finance', 'marketing', 'support', 'operations']);
 
 // Object Storage Enums
 export const objectVisibilityEnum = pgEnum('object_visibility', ['public', 'private']);
@@ -559,7 +559,7 @@ export const notifications = w3suiteSchema.table("notifications", {
   status: notificationStatusEnum("status").notNull().default("unread"),
   
   // ==================== BUSINESS CATEGORY EXTENSION ====================
-  category: notificationCategoryEnum("category").default("hr"), // Business category
+  category: notificationCategoryEnum("category").default("support"), // Business category
   sourceModule: varchar("source_module", { length: 50 }), // Module that generated notification
   
   // Content

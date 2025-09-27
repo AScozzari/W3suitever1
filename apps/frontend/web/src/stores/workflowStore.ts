@@ -38,7 +38,7 @@ interface WorkflowTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'hr' | 'finance' | 'operations' | 'approval' | 'automation';
+  category: 'sales' | 'finance' | 'marketing' | 'support' | 'operations';
   nodes: Node[];
   edges: Edge[];
   viewport: Viewport;
