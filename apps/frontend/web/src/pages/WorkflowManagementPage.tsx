@@ -1914,57 +1914,657 @@ const WorkflowManagementPage: React.FC = () => {
     </div>
   );
 
-  // Visual Workflow Builder Component
+  // 🏗️ ENTERPRISE WORKFLOW BUILDER - COMPLETELY REBUILT
   const WorkflowBuilderView = () => {
-    const reactFlowInstance = useReactFlow(); // Get React Flow instance for coordinate conversion
+    // 🎯 ZUSTAND ENTERPRISE STATE - Direct integration with professional store
+    const {
+      nodes,
+      edges,
+      viewport,
+      templates,
+      searchTerm,
+      selectedCategory,
+      isRunning,
+      selectedNodeId,
+      setNodes,
+      setEdges,
+      addNode,
+      removeNode,
+      selectNode,
+      setSearchTerm,
+      setSelectedCategory,
+      setRunning,
+      saveTemplate,
+      loadTemplate,
+      saveSnapshot,
+      undo,
+      redo,
+      clearWorkflow,
+      exportWorkflow,
+      importWorkflow
+    } = useWorkflowStore();
 
-    // Handle drag over event - allows dropping
+    // 🔧 REACT FLOW INTEGRATION
+    const reactFlowInstance = useReactFlow();
+    
+    // 🚀 WORKFLOW EXECUTION ENGINE - Connect to professional execution service
+    const [executionInstances, setExecutionInstances] = useState<Map<string, any>>(new Map());
+    const [currentExecution, setCurrentExecution] = useState<string | null>(null);
+
+    // 🎯 ENTERPRISE DEPARTMENT CATEGORIES (5 standardized departments)
+    const ENTERPRISE_DEPARTMENTS = {
+      sales: {
+        label: 'Sales',
+        icon: TrendingUp,
+        color: 'bg-green-500',
+        bgClass: 'bg-green-100 dark:bg-green-900',
+        textClass: 'text-green-700 dark:text-green-300',
+        description: 'Customer acquisition and revenue workflows'
+      },
+      finance: {
+        label: 'Finance',
+        icon: DollarSign,
+        color: 'bg-blue-500',
+        bgClass: 'bg-blue-100 dark:bg-blue-900',
+        textClass: 'text-blue-700 dark:text-blue-300',
+        description: 'Financial approvals and budget management'
+      },
+      marketing: {
+        label: 'Marketing',
+        icon: Megaphone,
+        color: 'bg-purple-500',
+        bgClass: 'bg-purple-100 dark:bg-purple-900',
+        textClass: 'text-purple-700 dark:text-purple-300',
+        description: 'Campaign and content approval processes'
+      },
+      support: {
+        label: 'Support',
+        icon: Headphones,
+        color: 'bg-yellow-500',
+        bgClass: 'bg-yellow-100 dark:bg-yellow-900',
+        textClass: 'text-yellow-700 dark:text-yellow-300',
+        description: 'Customer support and ticket escalation'
+      },
+      operations: {
+        label: 'Operations',
+        icon: Settings,
+        color: 'bg-orange-500',
+        bgClass: 'bg-orange-100 dark:bg-orange-900',
+        textClass: 'text-orange-700 dark:text-orange-300',
+        description: 'Operational processes and resource management'
+      }
+    };
+
+    // 🤖 AI WORKFLOW ASSISTANT INTEGRATION
+    const AI_NODES = {
+      'ai-classifier': {
+        id: 'ai-classifier',
+        name: 'AI Content Classifier',
+        description: 'Automatically classify and route content using AI',
+        category: 'ai',
+        icon: Brain,
+        nodeType: 'ai-action',
+        priority: 100
+      },
+      'ai-approval': {
+        id: 'ai-approval',
+        name: 'AI Decision Assistant',
+        description: 'AI-powered approval recommendations',
+        category: 'ai',
+        icon: Sparkles,
+        nodeType: 'ai-action',
+        priority: 95
+      },
+      'ai-routing': {
+        id: 'ai-routing',
+        name: 'Smart Routing',
+        description: 'AI-based workflow path determination',
+        category: 'ai',
+        icon: Route,
+        nodeType: 'ai-decision',
+        priority: 90
+      }
+    };
+
+    // 📊 FILTERED ACTIONS BY DEPARTMENT - Using existing ENTERPRISE_ACTIONS
+    const filteredActionsByDepartment = useMemo(() => {
+      if (!selectedCategory) {
+        return Object.values(ENTERPRISE_ACTIONS);
+      }
+      
+      return Object.values(ENTERPRISE_ACTIONS).filter(action => {
+        const matchesCategory = action.category === selectedCategory;
+        const matchesSearch = !searchTerm || 
+          action.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          action.description.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+    }, [selectedCategory, searchTerm]);
+
+    // 📋 FILTERED TEMPLATES BY DEPARTMENT
+    const filteredTemplates = useMemo(() => {
+      return templates.filter(template => {
+        const matchesCategory = !selectedCategory || template.category === selectedCategory;
+        const matchesSearch = !templateSearchTerm || 
+          template.name.toLowerCase().includes(templateSearchTerm.toLowerCase()) ||
+          template.description.toLowerCase().includes(templateSearchTerm.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+    }, [templates, selectedCategory, templateSearchTerm]);
+
+    // 🎯 DRAG & DROP ENTERPRISE HANDLERS
     const handleDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
     }, []);
 
-    // Handle drop event - creates new node at drop position
-    const handleDrop = useCallback(
-      (event: React.DragEvent) => {
-        event.preventDefault();
+    const handleDrop = useCallback((event: React.DragEvent) => {
+      event.preventDefault();
+      const actionId = event.dataTransfer.getData('application/workflow-action');
+      const templateId = event.dataTransfer.getData('application/workflow-template');
+      
+      if (actionId) {
+        const action = ENTERPRISE_ACTIONS[actionId as keyof typeof ENTERPRISE_ACTIONS] || AI_NODES[actionId as keyof typeof AI_NODES];
+        if (action) {
+          const position = reactFlowInstance.project({
+            x: event.clientX,
+            y: event.clientY,
+          });
 
-        const type = event.dataTransfer.getData('application/reactflow');
-        
-        if (typeof type === 'undefined' || !type) {
-          return;
+          const newNode = {
+            id: `${actionId}_${Date.now()}`,
+            type: action.nodeType || 'action',
+            position,
+            data: { 
+              label: action.name,
+              actionId: action.id,
+              category: action.category,
+              description: action.description
+            },
+          };
+
+          addNode(newNode);
+          toast({
+            title: 'Action Added',
+            description: `Added ${action.name} to workflow`,
+          });
         }
+      } else if (templateId) {
+        const template = templates.find(t => t.id === templateId);
+        if (template) {
+          loadTemplate(templateId);
+          toast({
+            title: 'Template Loaded',
+            description: `Loaded ${template.name} template`,
+          });
+        }
+      }
+    }, [reactFlowInstance, addNode, loadTemplate, templates, toast]);
 
-        // Get the position where the element was dropped
-        const position = reactFlowInstance.project({
-          x: event.clientX,
-          y: event.clientY,
-        });
-
-        const newNode = {
-          id: `${type}_${Date.now()}`,
-          type,
-          position,
-          data: { label: `${type} node` },
-        };
-
-        // Add the new node to the flow
-        const updatedNodes = [...zustandNodes, newNode];
-        setZustandNodes(updatedNodes);
-        zustandSaveSnapshot('Node added from drag');
-
-        // Show success feedback
+    // 🚀 WORKFLOW EXECUTION FUNCTIONS
+    const executeWorkflow = useCallback(async () => {
+      if (nodes.length === 0) {
         toast({
-          title: 'Node added',
-          description: `Added ${type} node to the workflow`,
+          title: 'No Workflow to Execute',
+          description: 'Please add nodes to create a workflow',
+          variant: 'destructive'
         });
-      },
-      [reactFlowInstance, setZustandNodes, toast]
-    );
+        return;
+      }
+
+      const startNodes = nodes.filter(n => n.type === 'start');
+      if (startNodes.length === 0) {
+        toast({
+          title: 'Missing Start Node',
+          description: 'Add a start trigger to execute the workflow',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      try {
+        setRunning(true);
+        // Import and use the professional execution engine
+        const { executeWorkflow } = await import('@/services/workflowExecution');
+        const instanceId = await executeWorkflow(
+          `workflow-${Date.now()}`,
+          nodes,
+          edges,
+          { trigger: 'manual', timestamp: new Date() },
+          { userId: 'admin', tenantId: 'staging' }
+        );
+        
+        setCurrentExecution(instanceId);
+        toast({
+          title: 'Workflow Execution Started',
+          description: `Execution ID: ${instanceId}`,
+        });
+      } catch (error) {
+        setRunning(false);
+        toast({
+          title: 'Execution Failed',
+          description: 'Failed to start workflow execution',
+          variant: 'destructive'
+        });
+      }
+    }, [nodes, edges, setRunning, toast]);
+
+    // 💾 TEMPLATE MANAGEMENT FUNCTIONS
+    const saveCurrentAsTemplate = useCallback(() => {
+      if (nodes.length === 0) {
+        toast({
+          title: 'Empty Workflow',
+          description: 'Add nodes before saving as template',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const templateName = prompt('Enter template name:');
+      const templateDescription = prompt('Enter template description:');
+      const templateCategory = selectedCategory || 'operations';
+
+      if (templateName && templateDescription) {
+        saveTemplate(templateName, templateDescription, templateCategory as any);
+        toast({
+          title: 'Template Saved',
+          description: `Saved as "${templateName}" template`,
+        });
+      }
+    }, [nodes, selectedCategory, saveTemplate, toast]);
 
     return (
     <div className="space-y-6">
+      {/* 🎯 ENTERPRISE BUILDER HEADER */}
       <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Enterprise Workflow Builder</h2>
+          <p className="text-slate-600 dark:text-slate-400">Design automated workflows with AI-powered intelligence</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* 📊 EXECUTION STATUS INDICATOR */}
+          {isRunning && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-green-700 dark:text-green-300">Executing...</span>
+            </div>
+          )}
+          
+          {/* 🔄 HISTORY CONTROLS */}
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={undo}
+              disabled={!useWorkflowHistory().canUndo}
+              className="h-8 w-8 p-0"
+              title="Undo"
+            >
+              <Undo className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={redo}
+              disabled={!useWorkflowHistory().canRedo}
+              className="h-8 w-8 p-0"
+              title="Redo"
+            >
+              <Redo className="w-4 h-4" />
+            </Button>
+          </div>
+          
+          <Button 
+            onClick={() => setActiveView('dashboard')} 
+            variant="outline"
+            className="backdrop-blur-sm bg-white/10 border-white/30 hover:bg-white/20"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+
+      {/* 🏗️ MAIN BUILDER LAYOUT - 3 Column Professional Layout */}
+      <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)] min-h-0">
+        
+        {/* 📚 LEFT SIDEBAR - DEPARTMENT FILTERS & ACTIONS LIBRARY */}
+        <div className="col-span-3 h-full min-h-0 space-y-4">
+          
+          {/* 🎯 DEPARTMENT FILTER PANEL */}
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Building className="w-5 h-5" />
+                Enterprise Departments
+              </CardTitle>
+              <CardDescription>Filter actions by business department</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                size="sm"
+                variant={selectedCategory === null ? "default" : "outline"}
+                onClick={() => setSelectedCategory(null)}
+                className="w-full justify-start"
+              >
+                <Grid className="w-4 h-4 mr-2" />
+                All Departments
+              </Button>
+              
+              {Object.entries(ENTERPRISE_DEPARTMENTS).map(([key, dept]) => {
+                const Icon = dept.icon;
+                const isSelected = selectedCategory === key;
+                return (
+                  <Button
+                    key={key}
+                    size="sm"
+                    variant={isSelected ? "default" : "outline"}
+                    onClick={() => setSelectedCategory(key)}
+                    className={`w-full justify-start ${isSelected ? dept.bgClass : ''}`}
+                  >
+                    <Icon className="w-4 h-4 mr-2" />
+                    {dept.label}
+                    <Badge variant="secondary" className="ml-auto">
+                      {Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === key).length}
+                    </Badge>
+                  </Button>
+                );
+              })}
+            </CardContent>
+          </Card>
+          
+          {/* 🔍 ACTIONS LIBRARY */}
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg flex-1 min-h-0">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Actions Library
+              </CardTitle>
+              
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  placeholder="Search actions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-white/5 border-white/20"
+                />
+              </div>
+            </CardHeader>
+            
+            <CardContent className="flex-1 min-h-0 overflow-hidden">
+              <div className="h-full overflow-y-auto space-y-3">
+                
+                {/* 🤖 AI NODES SECTION */}
+                <div>
+                  <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2 flex items-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    AI-Powered Nodes ({Object.keys(AI_NODES).length})
+                  </h4>
+                  <div className="space-y-1">
+                    {Object.values(AI_NODES).map(aiNode => {
+                      const Icon = aiNode.icon;
+                      return (
+                        <div
+                          key={aiNode.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('application/workflow-action', aiNode.id);
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 cursor-grab hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+                        >
+                          <Icon className="w-4 h-4 text-purple-600" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-purple-900 dark:text-purple-100 truncate">
+                              {aiNode.name}
+                            </p>
+                            <p className="text-xs text-purple-600 dark:text-purple-400 truncate">
+                              {aiNode.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* 📊 DEPARTMENT ACTIONS */}
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    {selectedCategory ? 
+                      `${ENTERPRISE_DEPARTMENTS[selectedCategory as keyof typeof ENTERPRISE_DEPARTMENTS]?.label} Actions` : 
+                      'All Actions'
+                    } ({filteredActionsByDepartment.length})
+                  </h4>
+                  <div className="space-y-1">
+                    {filteredActionsByDepartment.map(action => {
+                      const Icon = action.icon;
+                      const categoryConfig = ENTERPRISE_DEPARTMENTS[action.category as keyof typeof ENTERPRISE_DEPARTMENTS];
+                      return (
+                        <div
+                          key={action.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('application/workflow-action', action.id);
+                          }}
+                          className={`flex items-center gap-2 p-2 rounded-lg border ${categoryConfig?.bgClass || 'bg-slate-50 dark:bg-slate-900'} cursor-grab hover:bg-opacity-80 transition-colors`}
+                        >
+                          <Icon className={`w-4 h-4 ${categoryConfig?.textClass || 'text-slate-600'}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                              {action.name}
+                            </p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                              {action.description}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {action.category}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 🎨 CENTER - WORKFLOW CANVAS */}
+        <div className="col-span-6 h-full min-h-0">
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
+            <CardHeader className="pb-3 flex-none">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <GitBranch className="w-5 h-5" />
+                  Workflow Canvas
+                </CardTitle>
+                
+                {/* 🎛️ CANVAS CONTROLS */}
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={clearWorkflow}
+                    className="h-8 px-2 text-xs hover:bg-red-100 dark:hover:bg-red-900/20"
+                    title="Clear all nodes"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Clear
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={saveCurrentAsTemplate}
+                    disabled={nodes.length === 0}
+                    className="h-8 px-2 text-xs hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                    title="Save as template"
+                  >
+                    <Save className="w-3 h-3 mr-1" />
+                    Save
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={executeWorkflow}
+                    disabled={nodes.length === 0 || isRunning}
+                    className="h-8 px-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/20"
+                    title="Execute workflow"
+                  >
+                    <Play className="w-3 h-3 mr-1" />
+                    {isRunning ? 'Running...' : 'Execute'}
+                  </Button>
+                </div>
+              </div>
+              
+              {/* 📊 WORKFLOW STATS */}
+              <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
+                <span>Nodes: {nodes.length}</span>
+                <span>Connections: {edges.length}</span>
+                {selectedCategory && (
+                  <span>Department: {ENTERPRISE_DEPARTMENTS[selectedCategory as keyof typeof ENTERPRISE_DEPARTMENTS]?.label}</span>
+                )}
+              </div>
+            </CardHeader>
+            
+            <CardContent className="flex-1 min-h-0 p-0">
+              <div 
+                className="w-full h-full"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={(changes) => {
+                    // Handle node changes through Zustand
+                    const updatedNodes = [...nodes];
+                    changes.forEach(change => {
+                      if (change.type === 'position' && change.position) {
+                        const nodeIndex = updatedNodes.findIndex(n => n.id === change.id);
+                        if (nodeIndex !== -1) {
+                          updatedNodes[nodeIndex] = { ...updatedNodes[nodeIndex], position: change.position };
+                        }
+                      } else if (change.type === 'remove') {
+                        removeNode(change.id);
+                      }
+                    });
+                    setNodes(updatedNodes);
+                  }}
+                  onEdgesChange={(changes) => {
+                    const updatedEdges = [...edges];
+                    changes.forEach(change => {
+                      if (change.type === 'remove') {
+                        const edgeIndex = updatedEdges.findIndex(e => e.id === change.id);
+                        if (edgeIndex !== -1) {
+                          updatedEdges.splice(edgeIndex, 1);
+                        }
+                      }
+                    });
+                    setEdges(updatedEdges);
+                  }}
+                  onConnect={(connection) => {
+                    const newEdge = {
+                      id: `edge-${connection.source}-${connection.target}`,
+                      source: connection.source,
+                      target: connection.target,
+                      type: 'smoothstep',
+                    };
+                    setEdges([...edges, newEdge]);
+                  }}
+                  nodeTypes={nodeTypes}
+                  fitView
+                  className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800"
+                >
+                  <Background />
+                  <Controls />
+                  <MiniMap />
+                </ReactFlow>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 📋 RIGHT SIDEBAR - TEMPLATES LIBRARY */}
+        <div className="col-span-3 h-full min-h-0">
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
+            <CardHeader className="pb-3 flex-none">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileTemplate className="w-5 h-5" />
+                Templates Library
+              </CardTitle>
+              <CardDescription>Pre-built workflow templates</CardDescription>
+              
+              {/* Template Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  placeholder="Search templates..."
+                  value={templateSearchTerm}
+                  onChange={(e) => setTemplateSearchTerm(e.target.value)}
+                  className="pl-10 bg-white/5 border-white/20"
+                />
+              </div>
+            </CardHeader>
+            
+            <CardContent className="flex-1 min-h-0 overflow-hidden">
+              <div className="h-full overflow-y-auto space-y-3">
+                {filteredTemplates.length > 0 ? (
+                  filteredTemplates.map(template => {
+                    const categoryConfig = ENTERPRISE_DEPARTMENTS[template.category as keyof typeof ENTERPRISE_DEPARTMENTS];
+                    return (
+                      <div
+                        key={template.id}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('application/workflow-template', template.id);
+                        }}
+                        className={`p-3 rounded-lg border ${categoryConfig?.bgClass || 'bg-slate-50 dark:bg-slate-900'} cursor-grab hover:bg-opacity-80 transition-colors`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                            {template.name}
+                          </h4>
+                          <Badge variant="outline" className="text-xs ml-2">
+                            {template.category}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                          {template.description}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <span>{template.nodes.length} nodes</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => loadTemplate(template.id)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Load
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <FileTemplate className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No templates found</p>
+                    <p className="text-xs mt-1">Create workflows and save them as templates</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+    );
         <div>
           <h2 className="text-2xl font-bold">Visual Workflow Builder</h2>
           <p className="text-slate-600 dark:text-slate-400">Design and create custom approval workflows</p>
