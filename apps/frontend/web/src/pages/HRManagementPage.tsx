@@ -29,7 +29,7 @@ import {
   Filter, Search, Download, Upload, Eye, MoreHorizontal,
   PieChart, Activity, Target, Brain, Zap, ArrowRight,
   MapPin, Phone, Mail, Shield, Award, Briefcase,
-  Coffee, Home, Plane, Car, DollarSign, AlertTriangle, Heart
+  Coffee, Home, Plane, Car, DollarSign, AlertTriangle, Heart, UserCog
 } from 'lucide-react';
 import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/request-status';
 
@@ -711,6 +711,12 @@ const HRManagementPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le categorie</SelectItem>
+                      <SelectItem value="hr">
+                        <div className="flex items-center gap-2">
+                          <UserCog className="w-4 h-4 text-indigo-600" />
+                          HR - Risorse Umane
+                        </div>
+                      </SelectItem>
                       <SelectItem value="support">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-blue-600" />

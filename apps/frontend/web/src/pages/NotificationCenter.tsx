@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, type Notification } from '@/hooks/useNotifications';
 import { 
   Bell, Filter, Check, CheckCheck, Clock, AlertTriangle, Info, 
-  ExternalLink, ChevronDown, Search, ArrowLeft, Calendar
+  ExternalLink, ChevronDown, Search, ArrowLeft, Calendar, UserCog
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -39,7 +39,7 @@ export default function NotificationCenter() {
   const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'support_request' | 'system' | 'custom'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'hr_request' | 'support_request' | 'system' | 'custom'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high' | 'critical'>('all');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -68,6 +68,9 @@ export default function NotificationCenter() {
   const getNotificationIcon = (notification: Notification) => {
     if (notification.priority === 'critical') {
       return <AlertTriangle size={20} style={{ color: COLORS.semantic.error }} />;
+    }
+    if (notification.type === 'hr_request') {
+      return <UserCog size={20} style={{ color: COLORS.primary.purple }} />;
     }
     if (notification.type === 'support_request') {
       return <Clock size={20} style={{ color: COLORS.primary.orange }} />;
@@ -361,6 +364,7 @@ export default function NotificationCenter() {
                   data-testid="type-filter"
                 >
                   <option value="all">Tutti i tipi</option>
+                  <option value="hr_request">Richieste HR</option>
                   <option value="support_request">Richieste Support</option>
                   <option value="system">Sistema</option>
                   <option value="custom">Personalizzato</option>
