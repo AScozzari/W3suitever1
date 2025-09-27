@@ -2568,6 +2568,7 @@ const WorkflowManagementPage = () => {
       </div>
     </div>
     );
+  };
 
   // 🏢 TEAM MANAGEMENT VIEW
   const TeamManagementView = () => (
@@ -2707,7 +2708,5 @@ const WorkflowManagementPage = () => {
     </ReactFlowProvider>
   );
 };
-
-}; // ← CLOSE MAIN COMPONENT WorkflowManagementPage
 
 export default WorkflowManagementPage;
