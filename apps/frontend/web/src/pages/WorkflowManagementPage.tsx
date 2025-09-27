@@ -356,6 +356,62 @@ const ENTERPRISE_ACTIONS = {
     priority: 70
   },
 
+  // 🤖 AI SMART ACTIONS (6 azioni)  
+  'ai-smart-routing': {
+    id: 'ai-smart-routing',
+    name: 'AI Smart Routing',
+    description: 'Automatic intelligent request routing',
+    category: 'ai',
+    icon: Brain,
+    requiredPermission: 'ai.routing.use',
+    priority: 95
+  },
+  'ai-auto-approval': {
+    id: 'ai-auto-approval', 
+    name: 'AI Auto Approval',
+    description: 'Automatic approval based on AI analysis',
+    category: 'ai',
+    icon: CheckCircle2,
+    requiredPermission: 'ai.approval.use',
+    priority: 90
+  },
+  'ai-document-analysis': {
+    id: 'ai-document-analysis',
+    name: 'AI Document Analysis', 
+    description: 'Extract and analyze document content',
+    category: 'ai',
+    icon: FileText,
+    requiredPermission: 'ai.documents.analyze',
+    priority: 85
+  },
+  'ai-sentiment-analysis': {
+    id: 'ai-sentiment-analysis',
+    name: 'AI Sentiment Analysis',
+    description: 'Analyze text sentiment and tone',
+    category: 'ai', 
+    icon: Heart,
+    requiredPermission: 'ai.sentiment.analyze',
+    priority: 80
+  },
+  'ai-risk-assessment': {
+    id: 'ai-risk-assessment',
+    name: 'AI Risk Assessment',
+    description: 'Evaluate request risk level automatically',
+    category: 'ai',
+    icon: AlertTriangle,
+    requiredPermission: 'ai.risk.assess',
+    priority: 75
+  },
+  'ai-compliance-check': {
+    id: 'ai-compliance-check',
+    name: 'AI Compliance Check',
+    description: 'Automatic compliance validation',
+    category: 'ai',
+    icon: Shield,
+    requiredPermission: 'ai.compliance.check',
+    priority: 70
+  },
+
   // OPERATIONS ACTIONS (7 azioni)
   'email-notification': {
     id: 'email-notification',
@@ -677,6 +733,28 @@ const WorkflowManagementPage: React.FC = () => {
       .sort((a, b) => b.priority - a.priority);
   }, [selectedCategory, searchTerm]);
 
+  // 🤖 AI ACTIONS FILTERING
+  const filteredAIActions = useMemo(() => {
+    if (selectedCategory && selectedCategory !== 'ai') return [];
+    return Object.values(ENTERPRISE_ACTIONS)
+      .filter(action => action.category === 'ai')
+      .filter(action => !searchTerm || action.name.toLowerCase().includes(searchTerm.toLowerCase()) || action.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => b.priority - a.priority);
+  }, [selectedCategory, searchTerm]);
+
+  // 🎨 UX/UI: Template filtering logic  
+  const filteredTemplates = useMemo(() => {
+    return templates.filter(template => {
+      const matchesSearch = !templateSearchTerm || 
+        template.name.toLowerCase().includes(templateSearchTerm.toLowerCase()) ||
+        template.description?.toLowerCase().includes(templateSearchTerm.toLowerCase());
+      
+      const matchesCategory = !selectedTemplateCategory || template.category === selectedTemplateCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [templates, templateSearchTerm, selectedTemplateCategory]);
+
   // 🌱 INITIALIZE WITH DEFAULT NODES AFTER HYDRATION
   const hasHydrated = useWorkflowHasHydrated();
   
@@ -942,6 +1020,13 @@ const WorkflowManagementPage: React.FC = () => {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showValidation, setShowValidation] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  
+  // 🎨 UX/UI Enhancement states
+  const [isDragOverCanvas, setIsDragOverCanvas] = useState(false);
+  const [templateSearchTerm, setTemplateSearchTerm] = useState('');
+  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string | null>(null);
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 
   // 📋 TEMPLATE MANAGEMENT SYSTEM INTEGRATION
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
@@ -1984,6 +2069,49 @@ const WorkflowManagementPage: React.FC = () => {
                     </div>
                   )}
 
+                  {/* 🤖 AI Smart Actions */}
+                  {(!selectedCategory || selectedCategory === 'ai') && (
+                    <div>
+                      <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2 flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        AI Smart Actions ({Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === 'ai').length})
+                      </h4>
+                      <div className="space-y-1">
+                        {filteredAIActions.map(action => {
+                            const Icon = action.icon;
+                            return (
+                              <Button
+                                key={action.id}
+                                variant="outline"
+                                size="sm"
+                                draggable 
+                                onDragStart={(e) => handleDragStart(e, 'action', { 
+                                  label: action.name,
+                                  type: 'action',
+                                  description: action.description,
+                                  icon: action.icon,
+                                  category: action.category,
+                                  actionId: action.id,
+                                  priority: action.priority
+                                })} 
+                                onClick={() => addActionNode(action.id)}
+                                className="w-full justify-start h-auto p-3 bg-purple-50/50 hover:bg-purple-100/70 border-purple-200/50 text-left cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02]"
+                                data-testid={`action-${action.id}`}
+                              >
+                                <div className="flex items-start gap-2 w-full">
+                                  <Icon className="w-4 h-4 mt-0.5 text-purple-600 flex-shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-medium text-sm text-purple-800 dark:text-purple-200">{action.name}</div>
+                                    <div className="text-xs text-purple-600 mt-0.5 truncate">{action.description}</div>
+                                  </div>
+                                </div>
+                              </Button>
+                            );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Decision Node */}
                   <div>
                     <h4 className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2 flex items-center gap-2">
@@ -2400,7 +2528,7 @@ const WorkflowManagementPage: React.FC = () => {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-medium flex items-center gap-2">
                       <Folder className="w-4 h-4" />
-                      Template Library ({templates.length})
+                      Template Library ({filteredTemplates.length} of {templates.length})
                     </h3>
                     <Button
                       variant="ghost"
@@ -2410,6 +2538,42 @@ const WorkflowManagementPage: React.FC = () => {
                     >
                       <X className="w-3 h-3" />
                     </Button>
+                  </div>
+                  
+                  {/* 🔍 TEMPLATE SEARCH & FILTER */}
+                  <div className="space-y-3 mb-4">
+                    <Input
+                      placeholder="Search templates..."
+                      value={templateSearchTerm}
+                      onChange={(e) => setTemplateSearchTerm(e.target.value)}
+                      className="h-8"
+                      data-testid="template-search"
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant={selectedTemplateCategory === null ? "default" : "outline"}
+                        onClick={() => setSelectedTemplateCategory(null)}
+                        className="h-6 px-2 text-xs"
+                      >
+                        All ({templates.length})
+                      </Button>
+                      {['hr', 'finance', 'operations', 'approval', 'automation'].map(category => {
+                        const count = templates.filter(t => t.category === category).length;
+                        if (count === 0) return null;
+                        return (
+                          <Button
+                            key={category}
+                            size="sm"
+                            variant={selectedTemplateCategory === category ? "default" : "outline"}
+                            onClick={() => setSelectedTemplateCategory(category)}
+                            className="h-6 px-2 text-xs capitalize"
+                          >
+                            {category} ({count})
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {templates.length === 0 ? (
@@ -2495,9 +2659,20 @@ const WorkflowManagementPage: React.FC = () => {
                 onConnect={onConnect}
                 onNodesDelete={onNodesDelete}
                 nodeTypes={nodeTypes}
-                onDrop={handleDrop} // ✅ ADDED: Professional drag & drop support
-                onDragOver={handleDragOver} // ✅ ADDED: Drag over handling
-                className="workflow-canvas h-[600px] min-h-[500px] rounded-lg border drop-zone" 
+                onDrop={(e) => {
+                  handleDrop(e);
+                  setIsDragOverCanvas(false); // Reset drag state
+                }}
+                onDragOver={(e) => {
+                  handleDragOver(e);
+                  setIsDragOverCanvas(true); // Show visual feedback
+                }}
+                onDragLeave={() => setIsDragOverCanvas(false)} // Reset when leaving
+                className={`workflow-canvas h-[600px] min-h-[500px] rounded-lg border transition-all duration-200 ${
+                  isDragOverCanvas 
+                    ? 'border-blue-400 border-2 bg-blue-50/20 shadow-lg drop-zone-active' 
+                    : 'border-gray-200 drop-zone'
+                }`} 
                 deleteKeyCode={['Backspace', 'Delete']}
                 multiSelectionKeyCode={['Meta', 'Ctrl']}
                 defaultViewport={viewport}
