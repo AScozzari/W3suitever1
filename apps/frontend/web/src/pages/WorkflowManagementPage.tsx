@@ -2381,8 +2381,9 @@ const WorkflowManagementPage = () => {
               </div>
             </CardHeader>
             
-            <CardContent className="flex-1 min-h-0 overflow-hidden">
-              <div className="h-full overflow-y-auto space-y-2">
+            <CardContent className="flex-1 min-h-0 p-4">
+              <ScrollArea className="h-full">
+                <div className="space-y-4">
                 
                 {/* 🤖 AI NODES - SIMPLIFIED */}
                 <div>
@@ -2439,7 +2440,7 @@ const WorkflowManagementPage = () => {
                     })}
                   </div>
                 </div>
-              </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
