@@ -131,11 +131,11 @@ localPort = 34777
 localPort = 35003
 
 [[ports]]
-localPort = 35525
-externalPort = 5000
+localPort = 35825
 
 [[ports]]
-localPort = 35825
+localPort = 36125
+externalPort = 5000
 
 [[ports]]
 localPort = 36179

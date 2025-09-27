@@ -2278,11 +2278,11 @@ const WorkflowManagementPage = () => {
         </div>
       </div>
 
-      {/* 🏗️ MAIN BUILDER LAYOUT - 3 Column Professional Layout */}
-      <div className="grid grid-cols-12 gap-6 h-[calc(100vh-200px)] min-h-0">
+      {/* 🏗️ MAIN BUILDER LAYOUT - 3 Column Responsive Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-[calc(100vh-140px)] min-h-[600px] max-h-[calc(100vh-140px)] overflow-hidden">
         
         {/* 📚 LEFT SIDEBAR - DEPARTMENT FILTERS & ACTIONS LIBRARY */}
-        <div className="col-span-3 h-full min-h-0 space-y-4">
+        <div className="lg:col-span-3 h-full min-h-0 space-y-4 order-1 lg:order-1">
           
           {/* 🎯 SIMPLIFIED DEPARTMENT FILTER */}
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
@@ -2401,8 +2401,8 @@ const WorkflowManagementPage = () => {
           </Card>
         </div>
 
-        {/* 🎨 CENTER - WORKFLOW CANVAS */}
-        <div className="col-span-6 h-full min-h-0">
+        {/* 🎨 CENTER - WORKFLOW CANVAS (DYNAMIC & RESPONSIVE) */}
+        <div className="lg:col-span-6 h-full min-h-0 order-2 lg:order-2">
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
             <CardHeader className="pb-3 flex-none">
               <div className="flex items-center justify-between">
@@ -2457,10 +2457,10 @@ const WorkflowManagementPage = () => {
               </div>
             </CardHeader>
             
-            <CardContent className="flex-1 min-h-0 p-0">
+            <CardContent className="flex-1 min-h-0 p-0 relative">
               <div 
                 ref={reactFlowWrapper}
-                className="w-full h-full"
+                className="absolute inset-0 w-full h-full"
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
@@ -2494,7 +2494,7 @@ const WorkflowManagementPage = () => {
         </div>
 
         {/* 📋 RIGHT SIDEBAR - TEMPLATES LIBRARY */}
-        <div className="col-span-3 h-full min-h-0">
+        <div className="lg:col-span-3 h-full min-h-0 order-3 lg:order-3">
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg h-full flex flex-col">
             <CardHeader className="pb-3 flex-none">
               <CardTitle className="text-lg flex items-center gap-2">
