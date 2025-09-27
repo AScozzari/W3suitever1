@@ -54,7 +54,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -2678,6 +2678,160 @@ const WorkflowManagementPage = () => {
           {activeView === 'teams' && <TeamManagementView />}
           {activeView === 'analytics' && <AnalyticsView />}
         </div>
+
+        {/* 🎯 TEAM CREATION MODAL - ERA MANCANTE! */}
+        <Dialog open={showTeamModal} onOpenChange={setShowTeamModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingTeam ? 'Modifica Team' : 'Crea Nuovo Team'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingTeam 
+                  ? 'Modifica i dettagli del team selezionato' 
+                  : 'Inserisci i dettagli per creare un nuovo team'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Nome Team */}
+              <div className="space-y-2">
+                <Label htmlFor="team-name">Nome Team</Label>
+                <Input
+                  id="team-name"
+                  placeholder="Inserisci il nome del team"
+                  defaultValue={editingTeam?.name || ''}
+                  data-testid="input-team-name"
+                />
+              </div>
+
+              {/* Descrizione */}
+              <div className="space-y-2">
+                <Label htmlFor="team-description">Descrizione</Label>
+                <Textarea
+                  id="team-description"
+                  placeholder="Descrizione del team (opzionale)"
+                  defaultValue={editingTeam?.description || ''}
+                  data-testid="input-team-description"
+                />
+              </div>
+
+              {/* Tabs per Utenti e Ruoli */}
+              <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'users' | 'roles')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="users">Utenti</TabsTrigger>
+                  <TabsTrigger value="roles">Ruoli</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="users" className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Cerca Utenti</Label>
+                    <Input
+                      placeholder="Cerca per nome o email..."
+                      value={teamSearchTerm}
+                      onChange={(e) => setTeamSearchTerm(e.target.value)}
+                      data-testid="input-search-users"
+                    />
+                  </div>
+                  
+                  <ScrollArea className="h-[200px] border rounded p-2">
+                    {loadingUsers ? (
+                      <div className="text-center py-4">
+                        <span className="text-sm text-slate-500">Caricamento utenti...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredUsers.map((user: any) => (
+                          <div key={user.id} className="flex items-center space-x-2 p-2 hover:bg-slate-50 rounded">
+                            <Checkbox id={`user-${user.id}`} />
+                            <Label htmlFor={`user-${user.id}`} className="flex-1 cursor-pointer">
+                              <div>
+                                <p className="font-medium">{user.firstName} {user.lastName}</p>
+                                <p className="text-sm text-slate-500">{user.email}</p>
+                              </div>
+                            </Label>
+                          </div>
+                        ))}
+                        {filteredUsers.length === 0 && (
+                          <div className="text-center py-4">
+                            <span className="text-sm text-slate-500">Nessun utente trovato</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="roles" className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Cerca Ruoli</Label>
+                    <Input
+                      placeholder="Cerca ruoli..."
+                      value={teamSearchTerm}
+                      onChange={(e) => setTeamSearchTerm(e.target.value)}
+                      data-testid="input-search-roles"
+                    />
+                  </div>
+                  
+                  <ScrollArea className="h-[200px] border rounded p-2">
+                    {loadingRoles ? (
+                      <div className="text-center py-4">
+                        <span className="text-sm text-slate-500">Caricamento ruoli...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredRoles.map((role: any) => (
+                          <div key={role.id} className="flex items-center space-x-2 p-2 hover:bg-slate-50 rounded">
+                            <Checkbox id={`role-${role.id}`} />
+                            <Label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer">
+                              <div>
+                                <p className="font-medium">{role.name}</p>
+                                <p className="text-sm text-slate-500">{role.description}</p>
+                              </div>
+                            </Label>
+                          </div>
+                        ))}
+                        {filteredRoles.length === 0 && (
+                          <div className="text-center py-4">
+                            <span className="text-sm text-slate-500">Nessun ruolo trovato</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowTeamModal(false);
+                  setEditingTeam(null);
+                  setTeamSearchTerm('');
+                }}
+                data-testid="button-cancel-team"
+              >
+                Annulla
+              </Button>
+              <Button 
+                onClick={() => {
+                  // Simula salvataggio team
+                  const teamData = {
+                    name: (document.getElementById('team-name') as HTMLInputElement)?.value || '',
+                    description: (document.getElementById('team-description') as HTMLTextAreaElement)?.value || '',
+                  };
+                  handleSaveTeam(teamData);
+                }}
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                data-testid="button-save-team"
+              >
+                {editingTeam ? 'Aggiorna Team' : 'Crea Team'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Layout>
     </ReactFlowProvider>
   );
