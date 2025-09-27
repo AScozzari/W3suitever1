@@ -11902,7 +11902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   const universalRequestFiltersSchema = z.object({
     status: z.enum(['draft', 'pending', 'approved', 'rejected', 'cancelled']).optional(),
-    category: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']).optional(),
+    category: z.enum(['sales', 'finance', 'hr', 'crm', 'support', 'operations', 'marketing']).optional(),
     requestType: z.string().optional(),
     requestSubtype: z.string().optional(),
     priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),

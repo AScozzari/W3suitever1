@@ -48,6 +48,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -2691,13 +2692,11 @@ const WorkflowManagementPage: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="general">General</SelectItem>
-                          <SelectItem value="hr">Human Resources</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
                           <SelectItem value="finance">Finance</SelectItem>
                           <SelectItem value="operations">Operations</SelectItem>
                           <SelectItem value="sales">Sales</SelectItem>
-                          <SelectItem value="support">Customer Support</SelectItem>
-                          <SelectItem value="approval">Approval Workflows</SelectItem>
-                          <SelectItem value="automation">Process Automation</SelectItem>
+                          <SelectItem value="support">Support</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -2740,7 +2739,7 @@ const WorkflowManagementPage: React.FC = () => {
                           // Metadata handled by store internally
                         };
 
-                        zustandSaveTemplate(templateName.trim(), templateDescription.trim(), templateCategory as 'hr' | 'finance' | 'operations' | 'approval' | 'automation');
+                        zustandSaveTemplate(templateName.trim(), templateDescription.trim(), templateCategory as 'sales' | 'finance' | 'marketing' | 'support' | 'operations');
                         
                         toast({
                           title: '✅ Template saved successfully',

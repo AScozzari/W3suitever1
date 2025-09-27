@@ -180,11 +180,12 @@ export class AIRegistryService {
    */
   private mapAgentToModule(agentModule: string): string {
     const moduleMap: Record<string, string> = {
-      'sales': 'general', // Map to existing enum
-      'hr': 'hr',
+      'sales': 'sales',
+      'hr': 'hr', 
       'finance': 'finance',
-      'operations': 'general',
-      'support': 'general',
+      'marketing': 'marketing',
+      'support': 'support',
+      'operations': 'operations', 
       'general': 'general'
     };
 

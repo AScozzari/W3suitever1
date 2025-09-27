@@ -711,22 +711,34 @@ const HRManagementPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tutte le categorie</SelectItem>
-                      <SelectItem value="hr">
+                      <SelectItem value="support">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-blue-600" />
-                          HR - Risorse Umane
+                          Support - Assistenza
                         </div>
                       </SelectItem>
-                      <SelectItem value="finance" disabled>
+                      <SelectItem value="finance">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-green-600 opacity-50" />
-                          Finance (Presto disponibile)
+                          <DollarSign className="w-4 h-4 text-green-600" />
+                          Finance
                         </div>
                       </SelectItem>
-                      <SelectItem value="operations" disabled>
+                      <SelectItem value="operations">
                         <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-purple-600 opacity-50" />
-                          Operations (Presto disponibile)
+                          <Target className="w-4 h-4 text-purple-600" />
+                          Operations
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="sales">
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-orange-600" />
+                          Sales
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="marketing">
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-purple-600" />
+                          Marketing
                         </div>
                       </SelectItem>
                     </SelectContent>
