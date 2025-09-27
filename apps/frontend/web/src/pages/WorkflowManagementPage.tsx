@@ -712,10 +712,7 @@ const WorkflowManagementPage = () => {
     saveSnapshot: zustandSaveSnapshot,
     undo: zustandUndo,
     redo: zustandRedo,
-    saveTemplate: zustandSaveTemplate,
-    loadTemplate: zustandLoadTemplate,
     clearWorkflow: zustandClearWorkflow,
-    bootstrapDefaultTemplates: zustandBootstrapDefaultTemplates,
     history,
     historyIndex
   } = workflowStore;
@@ -725,12 +722,19 @@ const WorkflowManagementPage = () => {
   const edges = zustandEdges;
   const viewport = zustandViewport;
   
-  // 🔄 UI STATE - direct Zustand bindings (no local state needed)
-  const searchTerm = zustandSearchTerm;
-  const selectedCategory = zustandSelectedCategory;
+  // 🔄 TEMPLATE DATA FROM SERVER (TanStack Query)
+  const {
+    data: templates = [],
+    isLoading: templatesLoading,
+    error: templatesError,
+    refetch: refetchTemplates
+  } = useWorkflowTemplates();
+
+  // 🔄 UI STATE - direct Zustand bindings (no local state needed)  
   const isRunning = zustandIsRunning;
   const selectedNodeId = zustandSelectedNodeId;
-  const templates = zustandTemplates;
+  const currentTemplateId = useWorkflowCurrentTemplateId();
+  const isTemplateDirty = useWorkflowIsTemplateDirty();
   
   // ✅ UNIFIED FILTERING SYSTEM - Removed conflicting old filters
 
@@ -973,8 +977,22 @@ const WorkflowManagementPage = () => {
       };
 
       // Initialize professional templates
-      [salesLeaveTemplate, financeTemplate, operationsTemplate, marketingTemplate, supportTemplate].forEach(template => {
-        zustandSaveTemplate(template.name, template.description, template.category);
+      [salesLeaveTemplate, financeTemplate, operationsTemplate, marketingTemplate, supportTemplate].forEach(async (template) => {
+        try {
+          await createTemplateMutation.mutateAsync({
+            name: template.name,
+            description: template.description,
+            category: template.category,
+            workflowDefinition: {
+              nodes: template.nodes,
+              edges: template.edges,
+              viewport: { x: 0, y: 0, zoom: 1 },
+            },
+            isActive: true,
+          });
+        } catch (error) {
+          console.error(`Failed to create template ${template.name}:`, error);
+        }
       });
 
       toast({
@@ -1021,9 +1039,68 @@ const WorkflowManagementPage = () => {
   };
 
   const saveSnapshot = (action: string) => zustandSaveSnapshot(action);
-  const saveTemplate = zustandSaveTemplate;
-  const loadTemplate = (templateId: string) => {
-    zustandLoadTemplate(templateId);
+  
+  // 🏗️ TEMPLATE OPERATIONS WITH BACKEND API
+  const handleSaveTemplate = async (name: string, description: string, category: string) => {
+    try {
+      await createTemplateMutation.mutateAsync({
+        name,
+        description,
+        category,
+        workflowDefinition: {
+          nodes: zustandNodes,
+          edges: zustandEdges,
+          viewport: zustandViewport,
+        },
+        isActive: true,
+      });
+      
+      // Mark current template as clean after successful save
+      zustandSetCurrentTemplateId(name); // Use name as temporary ID until backend returns real ID
+      zustandMarkTemplateDirty(false);
+      
+      toast({
+        title: 'Template Saved',
+        description: `Template "${name}" saved successfully`,
+      });
+    } catch (error) {
+      console.error('Failed to save template:', error);
+      toast({
+        title: 'Save Failed',
+        description: 'Failed to save template. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleLoadTemplate = async (templateId: string) => {
+    try {
+      const template = templates.find(t => t.id === templateId);
+      if (template && template.workflowDefinition) {
+        // Load template definition into Zustand store
+        zustandLoadTemplateDefinition(
+          template.workflowDefinition.nodes,
+          template.workflowDefinition.edges,
+          template.workflowDefinition.viewport
+        );
+        
+        // Update template context
+        zustandSetCurrentTemplateId(templateId);
+        zustandMarkTemplateDirty(false);
+        
+        toast({
+          title: 'Template Loaded',
+          description: `Loaded "${template.name}" template`,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load template:', error);
+      toast({
+        title: 'Load Failed',
+        description: 'Failed to load template. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
   
   const clearWorkflow = () => {
@@ -1916,8 +1993,8 @@ const WorkflowManagementPage = () => {
       setSearchTerm,
       setSelectedCategory,
       setRunning,
-      saveTemplate,
-      loadTemplate,
+      saveTemplate: handleSaveTemplate,
+      loadTemplate: handleLoadTemplate,
       saveSnapshot,
       undo,
       redo,
@@ -2077,11 +2154,7 @@ const WorkflowManagementPage = () => {
       } else if (templateId) {
         const template = templates.find(t => t.id === templateId);
         if (template) {
-          loadTemplate(templateId);
-          toast({
-            title: 'Template Loaded',
-            description: `Loaded ${template.name} template`,
-          });
+          await handleLoadTemplate(templateId);
         }
       }
     }, [reactFlowInstance, addNode, loadTemplate, templates, toast]);
@@ -2150,11 +2223,7 @@ const WorkflowManagementPage = () => {
       const templateCategory = selectedCategory || 'operations';
 
       if (templateName && templateDescription) {
-        saveTemplate(templateName, templateDescription, templateCategory as any);
-        toast({
-          title: 'Template Saved',
-          description: `Saved as "${templateName}" template`,
-        });
+        await handleSaveTemplate(templateName, templateDescription, templateCategory as any);
       }
     }, [nodes, selectedCategory, saveTemplate, toast]);
 
@@ -2477,7 +2546,7 @@ const WorkflowManagementPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => loadTemplate(template.id)}
+                            onClick={() => handleLoadTemplate(template.id)}
                             className="h-6 px-2 text-xs"
                           >
                             Load
