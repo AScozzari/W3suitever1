@@ -26,9 +26,11 @@ interface WorkflowState {
   currentTemplateId: string | null;
   isTemplateDirty: boolean; // Track if current workflow has unsaved changes
   
-  // UI state
+  // UI state - Local filters and search (NOT persisted)
   selectedNodeId: string | null;
   isRunning: boolean;
+  searchTerm: string; // For filtering actions/templates in UI
+  selectedCategory: string | null; // For department filtering
   
   // History for undo/redo (local session only)
   history: WorkflowSnapshot[];
@@ -72,6 +74,8 @@ interface WorkflowActions {
   
   // UI state
   setRunning: (isRunning: boolean) => void;
+  setSearchTerm: (searchTerm: string) => void;
+  setSelectedCategory: (category: string | null) => void;
   
   // History management
   saveSnapshot: (action: string) => void;
@@ -97,6 +101,8 @@ const INITIAL_STATE: WorkflowState = {
   isTemplateDirty: false,
   selectedNodeId: null,
   isRunning: false,
+  searchTerm: '', // Initialize empty search
+  selectedCategory: null, // Initialize no category filter
   history: [],
   historyIndex: -1,
   maxHistorySize: 50,
@@ -217,6 +223,18 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         setRunning: (isRunning: boolean) => {
           set((state) => {
             state.isRunning = isRunning;
+          });
+        },
+
+        setSearchTerm: (searchTerm: string) => {
+          set((state) => {
+            state.searchTerm = searchTerm;
+          });
+        },
+
+        setSelectedCategory: (category: string | null) => {
+          set((state) => {
+            state.selectedCategory = category;
           });
         },
 
@@ -358,6 +376,8 @@ export const useWorkflowIsTemplateDirty = () => useWorkflowStore((state) => stat
 // 🛡️ INDIVIDUAL SELECTORS (prevent infinite re-renders)
 export const useWorkflowIsRunning = () => useWorkflowStore((state) => state.isRunning);
 export const useWorkflowSelectedNodeId = () => useWorkflowStore((state) => state.selectedNodeId);
+export const useWorkflowSearchTerm = () => useWorkflowStore((state) => state.searchTerm);
+export const useWorkflowSelectedCategory = () => useWorkflowStore((state) => state.selectedCategory);
 
 export const useWorkflowCanUndo = () => useWorkflowStore((state) => state.historyIndex > 0);
 export const useWorkflowCanRedo = () => useWorkflowStore((state) => state.historyIndex < state.history.length - 1);
