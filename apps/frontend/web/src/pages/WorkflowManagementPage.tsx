@@ -2202,45 +2202,37 @@ const WorkflowManagementPage = () => {
         {/* 📚 LEFT SIDEBAR - DEPARTMENT FILTERS & ACTIONS LIBRARY */}
         <div className="col-span-3 h-full min-h-0 space-y-4">
           
-          {/* 🎯 DEPARTMENT FILTER PANEL */}
+          {/* 🎯 SIMPLIFIED DEPARTMENT FILTER */}
           <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Enterprise Departments
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Building className="w-4 h-4" />
+                Department Filter
               </CardTitle>
-              <CardDescription>Filter actions by business department</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                size="sm"
-                variant={selectedCategory === null ? "default" : "outline"}
-                onClick={() => setSelectedCategory(null)}
-                className="w-full justify-start"
+            <CardContent>
+              <Select 
+                value={selectedCategory || "all"} 
+                onValueChange={(value) => setSelectedCategory(value === "all" ? null : value)}
               >
-                <Grid className="w-4 h-4 mr-2" />
-                All Departments
-              </Button>
-              
-              {Object.entries(ENTERPRISE_DEPARTMENTS).map(([key, dept]) => {
-                const Icon = dept.icon;
-                const isSelected = selectedCategory === key;
-                return (
-                  <Button
-                    key={key}
-                    size="sm"
-                    variant={isSelected ? "default" : "outline"}
-                    onClick={() => setSelectedCategory(key)}
-                    className={`w-full justify-start ${isSelected ? dept.bgClass : ''}`}
-                  >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {dept.label}
-                    <Badge variant="secondary" className="ml-auto">
-                      {Object.values(ENTERPRISE_ACTIONS).filter(a => a.category === key).length}
-                    </Badge>
-                  </Button>
-                );
-              })}
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {Object.entries(ENTERPRISE_DEPARTMENTS).map(([key, dept]) => {
+                    const Icon = dept.icon;
+                    return (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4" />
+                          {dept.label}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
           
@@ -2265,13 +2257,13 @@ const WorkflowManagementPage = () => {
             </CardHeader>
             
             <CardContent className="flex-1 min-h-0 overflow-hidden">
-              <div className="h-full overflow-y-auto space-y-3">
+              <div className="h-full overflow-y-auto space-y-2">
                 
-                {/* 🤖 AI NODES SECTION */}
+                {/* 🤖 AI NODES - SIMPLIFIED */}
                 <div>
-                  <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2 flex items-center gap-2">
-                    <Brain className="w-4 h-4" />
-                    AI-Powered Nodes ({Object.keys(AI_NODES).length})
+                  <h4 className="text-xs font-medium text-purple-600 mb-1 flex items-center gap-1">
+                    <Brain className="w-3 h-3" />
+                    AI Nodes ({Object.keys(AI_NODES).length})
                   </h4>
                   <div className="space-y-1">
                     {Object.values(AI_NODES).map(aiNode => {
@@ -2283,36 +2275,27 @@ const WorkflowManagementPage = () => {
                           onDragStart={(e) => {
                             e.dataTransfer.setData('application/workflow-action', aiNode.id);
                           }}
-                          className="flex items-center gap-2 p-2 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 cursor-grab hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+                          className="flex items-center gap-2 p-1.5 rounded border border-purple-200 bg-purple-50 cursor-grab hover:bg-purple-100 transition-colors"
                         >
-                          <Icon className="w-4 h-4 text-purple-600" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-purple-900 dark:text-purple-100 truncate">
-                              {aiNode.name}
-                            </p>
-                            <p className="text-xs text-purple-600 dark:text-purple-400 truncate">
-                              {aiNode.description}
-                            </p>
-                          </div>
+                          <Icon className="w-3 h-3 text-purple-600" />
+                          <span className="text-xs font-medium text-purple-900 truncate">
+                            {aiNode.name}
+                          </span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
                 
-                {/* 📊 DEPARTMENT ACTIONS */}
+                {/* 📊 ACTIONS - SIMPLIFIED */}
                 <div>
-                  <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                    <Layers className="w-4 h-4" />
-                    {selectedCategory ? 
-                      `${ENTERPRISE_DEPARTMENTS[selectedCategory as keyof typeof ENTERPRISE_DEPARTMENTS]?.label} Actions` : 
-                      'All Actions'
-                    } ({filteredActionsByDepartment.length})
+                  <h4 className="text-xs font-medium text-slate-600 mb-1 flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    Actions ({filteredActionsByDepartment.length})
                   </h4>
                   <div className="space-y-1">
                     {filteredActionsByDepartment.map(action => {
                       const Icon = action.icon;
-                      const categoryConfig = ENTERPRISE_DEPARTMENTS[action.category as keyof typeof ENTERPRISE_DEPARTMENTS];
                       return (
                         <div
                           key={action.id}
@@ -2320,20 +2303,12 @@ const WorkflowManagementPage = () => {
                           onDragStart={(e) => {
                             e.dataTransfer.setData('application/workflow-action', action.id);
                           }}
-                          className={`flex items-center gap-2 p-2 rounded-lg border ${categoryConfig?.bgClass || 'bg-slate-50 dark:bg-slate-900'} cursor-grab hover:bg-opacity-80 transition-colors`}
+                          className="flex items-center gap-2 p-1.5 rounded border border-slate-200 bg-slate-50 cursor-grab hover:bg-slate-100 transition-colors"
                         >
-                          <Icon className={`w-4 h-4 ${categoryConfig?.textClass || 'text-slate-600'}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                              {action.name}
-                            </p>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                              {action.description}
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {action.category}
-                          </Badge>
+                          <Icon className="w-3 h-3 text-slate-600" />
+                          <span className="text-xs font-medium text-slate-900 truncate">
+                            {action.name}
+                          </span>
                         </div>
                       );
                     })}
@@ -2393,13 +2368,10 @@ const WorkflowManagementPage = () => {
                 </div>
               </div>
               
-              {/* 📊 WORKFLOW STATS */}
-              <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-                <span>Nodes: {nodes.length}</span>
-                <span>Connections: {edges.length}</span>
-                {selectedCategory && (
-                  <span>Department: {ENTERPRISE_DEPARTMENTS[selectedCategory as keyof typeof ENTERPRISE_DEPARTMENTS]?.label}</span>
-                )}
+              {/* 📊 MINIMAL STATS */}
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <span>{nodes.length} nodes</span>
+                <span>{edges.length} connections</span>
               </div>
             </CardHeader>
             
