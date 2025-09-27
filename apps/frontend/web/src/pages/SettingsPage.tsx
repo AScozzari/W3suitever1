@@ -5655,6 +5655,7 @@ export default function SettingsPage() {
   // State per il nuovo modal punto vendita
   const [newStore, setNewStore] = useState({
     // ⭐ CAMPI ALLINEATI AL DATABASE SCHEMA
+    category: 'sales_point',               // Database: category (enum) - ✅ FIRST FIELD
     code: '',                              // Database: code
     nome: '',                              // Database: nome  
     address: '',                           // Database: address
@@ -6389,12 +6390,30 @@ export default function SettingsPage() {
       
       const isEdit = Boolean(storeModal.data);
       
-      // Genera codice PDV: inizia con 9, almeno 7 cifre totali (solo per creazione)
-      const newCode = newStore.code || (isEdit ? storeModal.data.code : `9${String(Date.now()).slice(-6)}`);
+      // ✅ AUTO-GENERAZIONE CODICE BASATA SU CATEGORIA (5xxx=magazzino, 6xxx=ufficio, 9xxx=sales)
+      let newCode = newStore.code;
+      if (!newCode && !isEdit) {
+        const timestamp = String(Date.now()).slice(-6);
+        switch (newStore.category) {
+          case 'warehouse':
+            newCode = `5${timestamp}`; // 5xxxxxxx per magazzini
+            break;
+          case 'office':
+            newCode = `6${timestamp}`; // 6xxxxxxx per uffici
+            break;
+          case 'sales_point':
+          default:
+            newCode = `9${timestamp}`; // 9xxxxxxx per punti vendita
+            break;
+        }
+      } else if (!newCode && isEdit) {
+        newCode = storeModal.data.code;
+      }
       
       const storeData = {
         tenantId: currentTenantId,
         legalEntityId: newStore.legal_entity_id,
+        category: newStore.category,              // ✅ Category field added
         code: newCode,                        
         nome: newStore.nome || 'Nuovo Punto Vendita',
         address: newStore.address || 'Via Nuova 1',
@@ -8101,6 +8120,63 @@ export default function SettingsPage() {
             {/* Body Modal */}
             <div style={{ padding: '32px', background: '#ffffff', flex: 1, overflowY: 'auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {/* ✅ CATEGORIA - PRIMO CAMPO (span 2 colonne) */}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+                  }}>
+                    Tipologia Sede <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={newStore.category}
+                    onChange={(e) => {
+                      const newCategory = e.target.value as 'sales_point' | 'office' | 'warehouse';
+                      setNewStore({ ...newStore, category: newCategory, code: '' }); // Reset code on category change
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      background: '#fafbfc',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      color: '#1f2937'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="sales_point">🏪 Punto Vendita</option>
+                    <option value="office">🏢 Ufficio</option>
+                    <option value="warehouse">📦 Magazzino</option>
+                  </select>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    marginTop: '4px',
+                    fontStyle: 'italic'
+                  }}>
+                    {newStore.category === 'sales_point' && 'Codice auto: 9xxxxxxx'}
+                    {newStore.category === 'office' && 'Codice auto: 6xxxxxxx'}
+                    {newStore.category === 'warehouse' && 'Codice auto: 5xxxxxxx'}
+                  </div>
+                </div>
+
                 {/* Codice */}
                 <div>
                   <label style={{
@@ -8115,7 +8191,11 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="9xxxxxxx (auto-generato, min. 7 cifre)"
+                    placeholder={
+                      newStore.category === 'warehouse' ? '5xxxxxxx (auto-generato)' :
+                      newStore.category === 'office' ? '6xxxxxxx (auto-generato)' :
+                      '9xxxxxxx (auto-generato)'
+                    }
                     value={newStore.code}
                     onChange={(e) => setNewStore({ ...newStore, code: e.target.value })}
                     style={{
