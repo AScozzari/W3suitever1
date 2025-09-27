@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
+import { useAuthReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
 
 // UI Components
@@ -37,7 +37,9 @@ import { getStatusColor, getStatusLabel, getStatusBadgeClass } from '@/utils/req
 
 interface HRRequest {
   id: string;
-  type: 'leave' | 'sick_leave' | 'overtime' | 'expense' | 'training' | 'remote_work';
+  department: string;
+  category: string;
+  type: string;
   requesterId: string;
   requesterName: string;
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'cancelled';
@@ -45,6 +47,8 @@ interface HRRequest {
   endDate?: string;
   amount?: number;
   reason: string;
+  title?: string;
+  description?: string;
   workflowInstanceId?: string;
   createdAt: string;
 }
@@ -94,12 +98,11 @@ const HRManagementPage: React.FC = () => {
   const [currentModule, setCurrentModule] = useState('hr');
   
   // ✅ NEW: HR Authentication Readiness Hook
-  const { enabled: hrQueriesEnabled, loading: hrAuthLoading, attempts, debugInfo } = useHRQueryReadiness();
+  const { isReady: hrQueriesEnabled, attempts, debugInfo } = useAuthReadiness();
   
   // 🔍 DEBUG: Log query readiness status
   console.log('🔍 [HR-DEBUG] Query readiness status:', {
     hrQueriesEnabled,
-    hrAuthLoading,
     attempts,
     debugInfo,
     timestamp: new Date().toISOString()
@@ -122,13 +125,13 @@ const HRManagementPage: React.FC = () => {
   
   // HR Templates inherited from WorkflowManagementPage
   const { data: hrWorkflowTemplates = [], isLoading: loadingTemplates } = useQuery<any[]>({
-    queryKey: ['/api/workflow-templates', { category: 'hr' }],
+    queryKey: ['/api/workflow-templates', { department: 'hr' }],
     staleTime: 5 * 60 * 1000,
   });
 
   // ✅ UPDATED: HR Requests data with authentication readiness
   const { data: hrRequestsResponse, isLoading: loadingRequests } = useQuery<{success: boolean, data: HRRequest[], pagination: any}>({
-    queryKey: ['/api/universal-requests'],
+    queryKey: ['/api/universal-requests', { department: 'hr' }],
     enabled: hrQueriesEnabled, // Wait for auth readiness
     staleTime: 2 * 60 * 1000,
   });
@@ -463,7 +466,7 @@ const HRManagementPage: React.FC = () => {
                         <div className={`w-2 h-2 rounded-full ${getStatusColor(request.status)}`} />
                         <div>
                           <p className="font-medium text-sm" data-testid={`request-${request.id.slice(0, 8)}`}>
-                            {getRequestTypeName(request.requestType || request.type)} - {`${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim() || 'Nome non disponibile'}
+                            {getRequestTypeName(request.type)} - {request.requesterName || 'Nome non disponibile'}
                           </p>
                           <p className="text-xs text-slate-500">
                             {new Date(request.createdAt).toLocaleDateString()}
@@ -559,10 +562,10 @@ const HRManagementPage: React.FC = () => {
       const matchesCategory = categoryFilter === 'all' || categoryFilter === 'hr';
       
       // Enhanced search: name, type, description
-      const requesterFullName = `${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim();
+      const requesterFullName = request.requesterName || '';
       const matchesSearch = searchTerm === '' || (
         requesterFullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getRequestTypeName(request.requestType || request.type).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getRequestTypeName(request.type).toLowerCase().includes(searchTerm.toLowerCase()) ||
         (request.reason || request.description || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
       
@@ -838,7 +841,7 @@ const HRManagementPage: React.FC = () => {
                       <td className="p-4">
                         <div>
                           <p className="font-medium" data-testid={`requester-${request.id}`}>
-                            {`${request.requesterFirstName || ''} ${request.requesterLastName || ''}`.trim() || 'Nome non disponibile'}
+                            {request.requesterName || 'Nome non disponibile'}
                           </p>
                           <p className="text-xs text-slate-500">
                             {new Date(request.createdAt).toLocaleDateString('it-IT', {
@@ -860,13 +863,13 @@ const HRManagementPage: React.FC = () => {
                       {/* Tipologia Specifica */}
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          {(request.requestType || request.type) === 'leave' && <Plane className="w-4 h-4 text-green-600" />}
-                          {(request.requestType || request.type) === 'sick_leave' && <Heart className="w-4 h-4 text-red-600" />}
-                          {(request.requestType || request.type) === 'overtime' && <Clock className="w-4 h-4 text-orange-600" />}
-                          {(request.requestType || request.type) === 'expense' && <DollarSign className="w-4 h-4 text-purple-600" />}
-                          {(request.requestType || request.type) === 'training' && <Target className="w-4 h-4 text-blue-600" />}
-                          {(request.requestType || request.type) === 'remote_work' && <Home className="w-4 h-4 text-indigo-600" />}
-                          <span className="text-sm font-medium">{getRequestTypeName(request.requestType || request.type)}</span>
+                          {request.type === 'leave' && <Plane className="w-4 h-4 text-green-600" />}
+                          {request.type === 'sick_leave' && <Heart className="w-4 h-4 text-red-600" />}
+                          {request.type === 'overtime' && <Clock className="w-4 h-4 text-orange-600" />}
+                          {request.type === 'expense' && <DollarSign className="w-4 h-4 text-purple-600" />}
+                          {request.type === 'training' && <Target className="w-4 h-4 text-blue-600" />}
+                          {request.type === 'remote_work' && <Home className="w-4 h-4 text-indigo-600" />}
+                          <span className="text-sm font-medium">{getRequestTypeName(request.type)}</span>
                         </div>
                       </td>
 
