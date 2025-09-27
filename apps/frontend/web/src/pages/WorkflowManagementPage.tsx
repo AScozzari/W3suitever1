@@ -720,6 +720,9 @@ const WorkflowManagementPage = () => {
     refetch: refetchTemplates
   } = useWorkflowTemplates();
 
+  // 🔄 TEMPLATE MUTATIONS
+  const createTemplateMutation = useCreateTemplate();
+
   // 🔄 UI STATE - direct Zustand bindings (no local state needed)  
   const isRunning = zustandIsRunning;
   const selectedNodeId = zustandSelectedNodeId;
@@ -990,7 +993,7 @@ const WorkflowManagementPage = () => {
         description: 'Pre-configured workflow templates for Sales, Finance, Operations, Marketing & Support are now available',
       });
     }
-  }, [templates.length, zustandSaveTemplate, toast]);
+  }, [templates.length, createTemplateMutation, toast]);
 
   useEffect(() => {
     if (hasHydrated && zustandNodes.length === 0 && zustandEdges.length === 0) {
