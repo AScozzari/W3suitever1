@@ -1,1 +1,1 @@
-localStorage.clear(); console.log('✅ Storage cleared');
+localStorage.clear(); console.log('🗑️ Cleared all localStorage');
