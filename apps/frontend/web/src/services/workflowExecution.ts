@@ -2,6 +2,7 @@
 // Professional workflow runtime system for W3 Suite
 
 import { Node, Edge } from 'reactflow';
+import { workflowApiClient, WorkflowInstanceResponse } from './workflowApiClient';
 
 // 🎯 EXECUTION CONTEXT INTERFACE
 export interface ExecutionContext {
@@ -66,6 +67,7 @@ export class WorkflowExecutionEngine {
   private executionHandlers: Map<string, NodeExecutionHandler> = new Map();
   private runningExecutions: Map<string, ExecutionContext> = new Map();
   private executionListeners: Map<string, Function[]> = new Map();
+  private workflowInstances: Map<string, WorkflowInstanceResponse> = new Map();
 
   constructor() {
     this.registerBuiltInHandlers();
@@ -102,40 +104,60 @@ export class WorkflowExecutionEngine {
     triggerData?: any,
     userContext?: any
   ): Promise<string> {
-    const instanceId = `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Find start nodes (triggers)
-    const startNodes = nodes.filter(node => node.type === 'start');
-    
-    if (startNodes.length === 0) {
-      throw new Error('No start node found in workflow');
-    }
-
-    // Create execution context
-    const context: ExecutionContext = {
-      workflowId,
-      instanceId,
-      nodes,
-      edges,
-      variables: {},
-      currentNodeId: null,
-      executionStack: [],
-      completedNodes: [],
-      errorNodes: [],
-      startTime: new Date(),
-      status: ExecutionStatus.STARTING,
-      metadata: {
+    try {
+      // 🏗️ CREATE WORKFLOW INSTANCE IN BACKEND
+      const workflowInstance = await workflowApiClient.createWorkflowInstance({
+        templateId: workflowId,
+        workflowDefinition: { nodes, edges },
         triggerData,
-        userContext,
-      },
-    };
+        metadata: {
+          triggerType: triggerData?.type || 'manual',
+          userContext,
+          requestData: triggerData,
+        },
+      });
 
-    this.runningExecutions.set(instanceId, context);
-    
-    // Start execution from the first start node
-    await this.executeNode(startNodes[0].id, context);
-    
-    return instanceId;
+      const instanceId = workflowInstance.id;
+      
+      // Find start nodes (triggers)
+      const startNodes = nodes.filter(node => node.type === 'start');
+      
+      if (startNodes.length === 0) {
+        throw new Error('No start node found in workflow');
+      }
+
+      // Create execution context
+      const context: ExecutionContext = {
+        workflowId,
+        instanceId,
+        nodes,
+        edges,
+        variables: workflowInstance.variables || {},
+        currentNodeId: null,
+        executionStack: [],
+        completedNodes: [],
+        errorNodes: [],
+        startTime: new Date(workflowInstance.createdAt),
+        status: ExecutionStatus.STARTING,
+        metadata: {
+          triggerData,
+          userContext,
+          executionLog: workflowInstance.executionLog || [],
+        },
+      };
+
+      // Store both execution context and workflow instance
+      this.runningExecutions.set(instanceId, context);
+      this.workflowInstances.set(instanceId, workflowInstance);
+      
+      // Start execution from the first start node
+      await this.executeNode(startNodes[0].id, context);
+      
+      return instanceId;
+    } catch (error) {
+      console.error('❌ Failed to start workflow execution:', error);
+      throw error;
+    }
   }
 
   // ⚡ EXECUTE INDIVIDUAL NODE
@@ -247,7 +269,7 @@ export class WorkflowExecutionEngine {
     }
   }
 
-  // ⚡ ACTION NODE EXECUTION
+  // ⚡ ACTION NODE EXECUTION (Backend Integration)
   private async executeActionNode(node: Node, context: ExecutionContext): Promise<ExecutionResult> {
     const actionData = node.data;
     
@@ -256,66 +278,48 @@ export class WorkflowExecutionEngine {
       actionData
     });
 
-    // Simulate action execution with realistic timing
-    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1500));
+    try {
+      // 🎯 USE BACKEND API FOR ACTION EXECUTION
+      const result = await workflowApiClient.executeWorkflowAction(
+        context.instanceId,
+        node.id,
+        actionData.actionId || actionData.type || 'generic-action',
+        actionData,
+        context
+      );
 
-    // Different action logic based on action type
-    switch (actionData.actionId) {
-      case 'hr-approval':
-        return {
-          success: true,
-          message: 'HR approval request sent',
-          waitForApproval: {
-            approverRole: 'hr-manager',
-            message: 'Please review and approve this request',
-            data: context.variables
+      // Handle special cases that require approval
+      if (actionData.actionId === 'hr-approval' || actionData.actionId === 'expense-approval') {
+        const approvalData = {
+          approverRole: actionData.approverRole || 'manager',
+          message: actionData.message || `Please approve: ${actionData.label}`,
+          data: {
+            ...context.variables,
+            actionData,
+            requestId: `${context.instanceId}-${node.id}`,
           }
         };
-        
-      case 'send-email':
-        return {
-          success: true,
-          message: 'Email sent successfully',
-          data: { emailId: `email-${Date.now()}` }
-        };
-        
-      case 'update-database':
-        return {
-          success: true,
-          message: 'Database updated successfully',
-          data: { recordsUpdated: 1 }
-        };
-        
-      case 'expense-approval':
-        const amount = context.variables.amount || 1000;
-        if (amount > 5000) {
-          return {
-            success: true,
-            message: 'High-value expense requires manager approval',
-            waitForApproval: {
-              approverRole: 'finance-manager',
-              message: `Expense approval required for $${amount}`,
-              data: { amount, requester: context.metadata.userContext?.userId }
-            }
-          };
-        } else {
-          return {
-            success: true,
-            message: 'Expense auto-approved',
-            data: { approved: true, amount }
-          };
-        }
-        
-      default:
-        return {
-          success: true,
-          message: `Action completed: ${actionData.label}`,
-          data: { nodeId: node.id, timestamp: new Date() }
-        };
+
+        return await workflowApiClient.requestApproval(
+          context.instanceId,
+          node.id,
+          approvalData,
+          context
+        );
+      }
+
+      return result;
+    } catch (error) {
+      console.error('❌ Action node execution failed:', error);
+      return {
+        success: false,
+        message: 'Action execution failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
-  // 🔀 DECISION NODE EXECUTION
+  // 🔀 DECISION NODE EXECUTION (AI-Powered)
   private async executeDecisionNode(node: Node, context: ExecutionContext): Promise<ExecutionResult> {
     const decisionData = node.data;
     
@@ -324,35 +328,46 @@ export class WorkflowExecutionEngine {
       variables: context.variables
     });
 
-    // Simulate decision logic
-    const condition = context.variables.condition || 'default';
-    
-    // Get outgoing edges to determine paths
-    const outgoingEdges = context.edges.filter(edge => edge.source === node.id);
-    
-    // Simple decision logic - can be enhanced with complex conditions
-    let chosenPath: string | null = null;
-    
-    if (outgoingEdges.length >= 2) {
-      // Binary decision based on conditions
-      if (condition === 'approved' || Math.random() > 0.3) {
-        chosenPath = outgoingEdges[0].target; // First path (usually "yes")
-      } else {
-        chosenPath = outgoingEdges[1].target; // Second path (usually "no")
-      }
-    } else if (outgoingEdges.length === 1) {
-      chosenPath = outgoingEdges[0].target;
-    }
+    try {
+      // Get outgoing edges to determine available paths
+      const outgoingEdges = context.edges.filter(edge => edge.source === node.id);
+      const availablePaths = outgoingEdges.map(edge => edge.target);
 
-    return {
-      success: true,
-      message: `Decision made: ${condition}`,
-      data: { condition, chosenPath },
-      nextNodeIds: chosenPath ? [chosenPath] : []
-    };
+      if (availablePaths.length === 0) {
+        return {
+          success: false,
+          message: 'No outgoing paths found for decision node',
+          error: 'Decision node has no connected paths'
+        };
+      }
+
+      // 🤖 USE AI FOR DECISION MAKING
+      const result = await workflowApiClient.makeDecision(
+        context.instanceId,
+        node.id,
+        decisionData,
+        context,
+        availablePaths
+      );
+
+      return result;
+    } catch (error) {
+      console.error('❌ Decision node execution failed:', error);
+      
+      // Fallback to first available path
+      const outgoingEdges = context.edges.filter(edge => edge.source === node.id);
+      const fallbackPath = outgoingEdges[0]?.target;
+      
+      return {
+        success: true,
+        message: 'Decision made with fallback logic (AI unavailable)',
+        data: { chosenPath: fallbackPath, fallback: true },
+        nextNodeIds: fallbackPath ? [fallbackPath] : []
+      };
+    }
   }
 
-  // 👥 APPROVAL NODE EXECUTION
+  // 👥 APPROVAL NODE EXECUTION (Backend Integration)
   private async executeApprovalNode(node: Node, context: ExecutionContext): Promise<ExecutionResult> {
     const approvalData = node.data;
     
@@ -361,19 +376,35 @@ export class WorkflowExecutionEngine {
       approvalData
     });
 
-    return {
-      success: true,
-      message: 'Approval request created',
-      waitForApproval: {
+    try {
+      // 🤝 USE BACKEND API FOR APPROVAL REQUEST
+      const approvalRequest = {
         approverRole: approvalData.approverRole || 'manager',
         message: approvalData.message || 'Please review and approve',
         data: {
-          requestId: `approval-${Date.now()}`,
+          requestId: `approval-${context.instanceId}-${node.id}`,
           requester: context.metadata.userContext?.userId,
-          ...context.variables
+          workflowInstanceId: context.instanceId,
+          nodeId: node.id,
+          ...context.variables,
+          ...approvalData
         }
-      }
-    };
+      };
+
+      return await workflowApiClient.requestApproval(
+        context.instanceId,
+        node.id,
+        approvalRequest,
+        context
+      );
+    } catch (error) {
+      console.error('❌ Approval node execution failed:', error);
+      return {
+        success: false,
+        message: 'Approval request failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   // 🏁 END NODE EXECUTION
