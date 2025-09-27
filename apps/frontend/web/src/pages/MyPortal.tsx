@@ -150,11 +150,11 @@ export default function MyPortal() {
   
   // 🔥 FORCE EXECUTE: Query for user's own HR requests - REMOVING enabled temporarily to debug
   const { data: myRequestsResponse, isLoading: requestsLoading, refetch: refetchMineRequests } = useQuery<{requests: any[]}>({
-    queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'],
+    queryKey: ['/api/universal-requests', 'department', 'hr', 'mine'],
     queryFn: () => {
       console.log('🔥 [MINE-QUERY] FORCED EXECUTION - hrQueriesEnabled:', hrQueriesEnabled);
       console.log('🔥 [MINE-QUERY] About to call apiRequest for mine=true');
-      return apiRequest('/api/universal-requests?category=hr&mine=true');
+      return apiRequest('/api/universal-requests?department=hr&mine=true');
     },
     // enabled: !!hrQueriesEnabled, // 🔥 TEMPORARILY DISABLED FOR DEBUG - FORCE EXECUTE
     staleTime: 2 * 60 * 1000,
@@ -174,8 +174,8 @@ export default function MyPortal() {
 
   // ✅ WORKFLOW TEMPLATES: Query for HR workflow templates with proper enablement
   const { data: hrWorkflowTemplates = [] } = useQuery<any[]>({
-    queryKey: ['/api/workflow-templates', { category: 'hr' }],
-    queryFn: () => apiRequest('/api/workflow-templates?category=hr'),
+    queryKey: ['/api/workflow-templates', { department: 'hr' }],
+    queryFn: () => apiRequest('/api/workflow-templates?department=hr'),
     enabled: !!hrQueriesEnabled, // ✅ RE-ENABLED: Query ready when auth is ready
     staleTime: 5 * 60 * 1000,
   });
@@ -254,7 +254,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'department', 'hr', 'mine'] });
       toast({
         title: "Richiesta eliminata",
         description: "La richiesta è stata eliminata con successo.",
@@ -282,7 +282,7 @@ export default function MyPortal() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'category', 'hr', 'mine'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/universal-requests', 'department', 'hr', 'mine'] });
       toast({
         title: "Richiesta inviata",
         description: "La tua richiesta è stata inviata con successo e sarà esaminata dal manager.",
@@ -893,10 +893,10 @@ export default function MyPortal() {
                                 <td style={{ padding: '16px' }} data-testid={`text-request-category-${request.id}`}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '16px' }}>
-                                      {request.requestType && ITALIAN_HR_CATEGORIES[request.requestType as keyof typeof ITALIAN_HR_CATEGORIES]?.icon || '📋'}
+                                      {request.category && ITALIAN_HR_CATEGORIES[request.category as keyof typeof ITALIAN_HR_CATEGORIES]?.icon || '📋'}
                                     </span>
                                     <span style={{ fontSize: '13px', fontWeight: '500', color: '#6b7280' }}>
-                                      {request.requestType && ITALIAN_HR_CATEGORIES[request.requestType as keyof typeof ITALIAN_HR_CATEGORIES]?.name || request.requestType || 'N/A'}
+                                      {request.category && ITALIAN_HR_CATEGORIES[request.category as keyof typeof ITALIAN_HR_CATEGORIES]?.name || request.category || 'N/A'}
                                     </span>
                                   </div>
                                 </td>
@@ -909,7 +909,7 @@ export default function MyPortal() {
                                     borderRadius: '12px',
                                     fontWeight: '500'
                                   }}>
-                                    {request.requestSubtype && ITALIAN_REQUEST_TYPES[request.requestSubtype as keyof typeof ITALIAN_REQUEST_TYPES] || request.requestSubtype || 'N/A'}
+                                    {request.type && ITALIAN_REQUEST_TYPES[request.type as keyof typeof ITALIAN_REQUEST_TYPES] || request.type || 'N/A'}
                                   </span>
                                 </td>
                                 <td style={{ padding: '16px', fontSize: '13px', color: '#6b7280' }} data-testid={`text-request-date-${request.id}`}>
@@ -1695,11 +1695,11 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
     }
     
     return {
-      type: backendData.requestSubtype || backendData.type || 'vacation',
+      type: backendData.type || backendData.requestSubtype || 'vacation',
       startDate: backendData.startDate ? new Date(backendData.startDate).toISOString().split('T')[0] : '',
       endDate: backendData.endDate ? new Date(backendData.endDate).toISOString().split('T')[0] : '',
       reason: backendData.description || backendData.reason || '',
-      category: backendData.requestType || backendData.category || 'leave',
+      category: backendData.category || backendData.requestType || 'leave',
       priority: backendData.priority || 'normal'
     };
   };
@@ -1758,10 +1758,10 @@ const HRRequestForm: React.FC<HRRequestFormProps> = ({ open, onOpenChange, onSub
     // Submit data with proper format for backend API
     const validatedData = validationResult.data;
     onSubmit({
-      // Backend schema requires: category, requestType, requestSubtype, title, description
-      category: 'hr', // Fixed category for HR requests
-      requestType: validatedData.category, // Use category as requestType (leave, permission, training, etc.)
-      requestSubtype: validatedData.type, // Use type as requestSubtype (vacation, sick, etc.)
+      // Backend schema requires: department, category, type, title, description
+      department: 'hr', // Fixed department for HR requests
+      category: validatedData.category, // Use category as category (leave, permission, training, etc.)
+      type: validatedData.type, // Use type as type (vacation, sick, etc.)
       title: `${getTypeDisplayName(validatedData.type)} - ${validatedData.startDate}`,
       description: validatedData.reason || '', // Use reason as description
       priority: validatedData.priority || 'normal',
