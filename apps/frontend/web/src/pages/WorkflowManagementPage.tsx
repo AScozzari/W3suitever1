@@ -37,6 +37,7 @@ import {
   useWorkflowCanUndo,
   useWorkflowCanRedo,
   useWorkflowHistoryLength,
+  useWorkflowHasHydrated,
   generateTemplateId
 } from '@/stores/workflowStore';
 
