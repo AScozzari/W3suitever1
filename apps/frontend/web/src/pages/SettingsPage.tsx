@@ -1410,11 +1410,11 @@ export default function SettingsPage() {
         await reloadStoreData();
       } else {
         console.error('❌ Error deleting store:', result.error);
-        alert('Errore nell\'eliminazione del punto vendita. Riprova.');
+        alert('Errore nell\'eliminazione della sede operativa. Riprova.');
       }
     } catch (error) {
       console.error('❌ Error deleting store:', error);
-      alert('Errore nell\'eliminazione del punto vendita. Riprova.');
+      alert('Errore nell\'eliminazione della sede operativa. Riprova.');
     }
   };
 
@@ -1932,7 +1932,7 @@ export default function SettingsPage() {
         }}>
           {[
             { id: 'ragione-sociale', icon: Building2, label: 'Ragione Sociale', color: '#FF6900' },
-            { id: 'punti-vendita', icon: Store, label: 'Punti Vendita', color: '#7B2CBF' },
+            { id: 'punti-vendita', icon: Store, label: 'Sedi Operative', color: '#7B2CBF' },
             { id: 'utenti', icon: Users, label: 'Utenti', color: '#3b82f6' },
             { id: 'gestione-ruoli', icon: UserCog, label: 'Gestione Ruoli', color: '#8339ff' },
             { id: 'fornitori', icon: Truck, label: 'Fornitori', color: '#10b981' }
@@ -2217,7 +2217,7 @@ export default function SettingsPage() {
       </div>
       )}
 
-      {/* Punti Vendita Section */}
+      {/* Sedi Operative Section */}
       {selectedEntity === 'punti-vendita' && (
         <div>
             <div style={{
@@ -2232,7 +2232,7 @@ export default function SettingsPage() {
                 color: '#111827',
                 margin: 0
               }}>
-                Punti Vendita
+                Sedi Operative
               </h3>
               <button style={{
                 background: 'linear-gradient(135deg, #7B2CBF, #9333ea)',
@@ -2251,7 +2251,7 @@ export default function SettingsPage() {
               }}
               onClick={() => setStoreModal({ open: true, data: null })}>
                 <Plus size={16} />
-                Nuovo Punto Vendita
+                Nuova Sede Operativa
               </button>
             </div>
 
@@ -5690,7 +5690,7 @@ export default function SettingsPage() {
     }
   };
 
-  // State per il nuovo modal punto vendita
+  // State per il nuovo modal sede operativa
   const [newStore, setNewStore] = useState({
     // ⭐ CAMPI ALLINEATI AL DATABASE SCHEMA
     category: 'sales_point',               // Database: category (enum) - ✅ FIRST FIELD
@@ -6412,17 +6412,17 @@ export default function SettingsPage() {
       
       // ✅ VALIDAZIONE RELAZIONI 1:1 OBBLIGATORIE
       if (!newStore.legal_entity_id) {
-        alert('Errore: Ragione Sociale è obbligatoria per creare un punto vendita.');
+        alert('Errore: Ragione Sociale è obbligatoria per creare una sede operativa.');
         return;
       }
       
       if (!newStore.channel_id) {
-        alert('Errore: Canale di vendita è obbligatorio per creare un punto vendita.');
+        alert('Errore: Canale di vendita è obbligatorio per creare una sede operativa.');
         return;
       }
       
       if (!newStore.commercial_area_id) {
-        alert('Errore: Area commerciale è obbligatoria per creare un punto vendita.');
+        alert('Errore: Area commerciale è obbligatoria per creare una sede operativa.');
         return;
       }
       
@@ -6453,7 +6453,7 @@ export default function SettingsPage() {
         legalEntityId: newStore.legal_entity_id,
         category: newStore.category,              // ✅ Category field added
         code: newCode,                        
-        nome: newStore.nome || 'Nuovo Punto Vendita',
+        nome: newStore.nome || 'Nuova Sede Operativa',
         address: newStore.address || 'Via Nuova 1',
         citta: newStore.citta || 'Milano',
         provincia: newStore.provincia,
@@ -6520,11 +6520,11 @@ export default function SettingsPage() {
         
       } else {
         console.error(`❌ Error ${isEdit ? 'updating' : 'creating'} store:`, result.error);
-        alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
+        alert(`Errore nella ${isEdit ? 'modifica' : 'creazione'} della sede operativa. Riprova.`);
       }
     } catch (error) {
-      console.error(`❌ Error ${storeModal.data ? 'updating' : 'creating'} store:`, error);
-      alert(`Errore nella ${storeModal.data ? 'modifica' : 'creazione'} del punto vendita. Riprova.`);
+      console.error(`❌ Error ${storeModal.data ? 'updating' : 'creating'} sede operativa:`, error);
+      alert(`Errore nella ${storeModal.data ? 'modifica' : 'creazione'} della sede operativa. Riprova.`);
     }
   };
 
@@ -8043,7 +8043,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Modal Punto Vendita */}
+      {/* Modal Sede Operativa */}
       {storeModal.open && (
         <div style={{
           position: 'fixed',
@@ -8114,7 +8114,7 @@ export default function SettingsPage() {
                       zIndex: 1,
                       textShadow: 'none'
                     }}>
-                      {storeModal.data ? 'Modifica Punto Vendita' : 'Nuovo Punto Vendita'}
+                      {storeModal.data ? 'Modifica Sede Operativa' : 'Nuova Sede Operativa'}
                     </h2>
                   </div>
                   <p style={{
@@ -8124,7 +8124,7 @@ export default function SettingsPage() {
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                     fontWeight: 500
                   }}>
-                    {storeModal.data ? 'Modifica i dati del punto vendita' : 'Configura i dettagli del nuovo punto vendita'}
+                    {storeModal.data ? 'Modifica i dati della sede operativa' : 'Configura i dettagli della nuova sede operativa'}
                   </p>
                 </div>
                 <button
@@ -8225,7 +8225,7 @@ export default function SettingsPage() {
                     marginBottom: '8px',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
-                    Codice Punto Vendita
+                    Codice Sede Operativa
                   </label>
                   <input
                     type="text"
@@ -8273,7 +8273,7 @@ export default function SettingsPage() {
                     marginBottom: '8px',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
-                    Nome Punto Vendita <span style={{ color: '#ef4444' }}>*</span>
+                    Nome Sede Operativa <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
                     type="text"
