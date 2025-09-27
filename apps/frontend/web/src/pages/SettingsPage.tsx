@@ -6416,8 +6416,9 @@ export default function SettingsPage() {
         return;
       }
       
-      if (!newStore.channel_id) {
-        alert('Errore: Canale di vendita è obbligatorio per creare una sede operativa.');
+      // ✅ VALIDAZIONE CONDIZIONALE CANALE (obbligatorio solo per sales_point)
+      if (newStore.category === 'sales_point' && !newStore.channel_id) {
+        alert('Errore: Canale di vendita è obbligatorio per i punti vendita.');
         return;
       }
       
@@ -6427,7 +6428,7 @@ export default function SettingsPage() {
       }
       
       // ✅ VALIDAZIONE CONDIZIONALE BRANDS (obbligatorio solo per sales_point)
-      if (newStore.category === 'sales_point' && (!newStore.brand_ids || newStore.brand_ids.length === 0)) {
+      if (newStore.category === 'sales_point' && (!newStore.brands || newStore.brands.length === 0)) {
         alert('Errore: Brand è obbligatorio per i punti vendita.');
         return;
       }
@@ -8367,8 +8368,19 @@ export default function SettingsPage() {
                     marginBottom: '8px',
                     fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
                   }}>
-                    Canale <span style={{ color: '#ef4444' }}>*</span>
+                    Canale {newStore.category === 'sales_point' && <span style={{ color: '#ef4444' }}>*</span>}
                   </label>
+                  <p style={{
+                    fontSize: '12px',
+                    color: newStore.category === 'sales_point' ? '#ef4444' : '#6b7280',
+                    margin: '0 0 8px 0',
+                    fontStyle: 'italic'
+                  }}>
+                    {newStore.category === 'sales_point' 
+                      ? '⚠️ Obbligatorio per i punti vendita'
+                      : 'ℹ️ Opzionale per uffici e magazzini'
+                    }
+                  </p>
                   <select
                     value={newStore.channel_id || ''}
                     onChange={(e) => setNewStore({ ...newStore, channel_id: e.target.value || null })}
