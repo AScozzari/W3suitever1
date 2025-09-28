@@ -109,39 +109,39 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
       };
       setEdges(addEdge(newEdge, edges));
     },
-    [setEdges]
+    [setEdges, edges]
   );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes((nds: Node[]) => {
-        return nds.map((node: Node) => {
-          const change = changes.find((c) => c.id === node.id);
-          if (change) {
-            if (change.type === 'position' && 'position' in change && change.position) {
-              return { ...node, position: change.position };
-            }
-            if (change.type === 'select' && 'selected' in change) {
-              return { ...node, selected: change.selected };
-            }
+      const currentNodes = nodes || [];
+      const updatedNodes = currentNodes.map((node: Node) => {
+        const change = changes.find((c) => 'id' in c && c.id === node.id);
+        if (change) {
+          if (change.type === 'position' && 'position' in change && change.position) {
+            return { ...node, position: change.position };
           }
-          return node;
-        });
+          if (change.type === 'select' && 'selected' in change) {
+            return { ...node, selected: change.selected };
+          }
+        }
+        return node;
       });
+      setNodes(updatedNodes);
     },
-    [setNodes]
+    [setNodes, nodes]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      setEdges((eds: Edge[]) => {
-        return eds.filter((edge: Edge) => {
-          const change = changes.find((c) => c.id === edge.id);
-          return !(change && change.type === 'remove');
-        });
+      const currentEdges = edges || [];
+      const updatedEdges = currentEdges.filter((edge: Edge) => {
+        const change = changes.find((c) => 'id' in c && c.id === edge.id);
+        return !(change && change.type === 'remove');
       });
+      setEdges(updatedEdges);
     },
-    [setEdges]
+    [setEdges, edges]
   );
 
   const onNodeClick = useCallback(
@@ -264,176 +264,178 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
         </div>
 
         {isNodePaletteOpen && (
-          <ScrollArea className="flex-1 p-4 h-[calc(100vh-200px)]">
-            {/* Search and Filters */}
-            <div className="space-y-4 mb-6">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search nodes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search-nodes"
-                />
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4">
+              {/* Search and Filters */}
+              <div className="space-y-4 mb-6">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search nodes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-search-nodes"
+                  />
+                </div>
+                
+                {/* Category Filter */}
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="action">Actions</SelectItem>
+                    <SelectItem value="trigger">Triggers</SelectItem>
+                    <SelectItem value="ai">AI Nodes</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              {/* Category Filter */}
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="action">Actions</SelectItem>
-                  <SelectItem value="trigger">Triggers</SelectItem>
-                  <SelectItem value="ai">AI Nodes</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-6">
+                {/* Action Nodes */}
+                {(selectedCategory === 'all' || selectedCategory === 'action') && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-3 h-3 bg-windtre-orange rounded-full" />
+                    Actions ({getNodesByCategory('action').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getNodesByCategory('action')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-xs">A</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
+                            <p className="text-xs text-gray-600 truncate">{node.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                )}
+
+                {(selectedCategory === 'all' || selectedCategory === 'trigger') && (
+                <>
+                <Separator />
+
+                {/* Trigger Nodes */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-3 h-3 bg-windtre-purple rounded-full" />
+                    Triggers ({getNodesByCategory('trigger').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getNodesByCategory('trigger')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                            style={{ backgroundColor: node.color }}
+                          >
+                            <span className="text-xs">T</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
+                            <p className="text-xs text-gray-600 truncate">{node.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+
+                {(selectedCategory === 'all' || selectedCategory === 'ai') && (
+                <>
+                <Separator />
+
+                {/* AI Nodes */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gradient-to-r from-windtre-orange to-windtre-purple rounded-full" />
+                    AI Nodes ({getNodesByCategory('ai').filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length})
+                  </h4>
+                  <div className="space-y-2">
+                    {getNodesByCategory('ai')
+                      .filter(node => 
+                        !searchTerm || 
+                        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((node) => (
+                      <div
+                        key={node.id}
+                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
+                        data-testid={`node-palette-${node.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-gradient-to-r from-windtre-orange to-windtre-purple"
+                          >
+                            <span className="text-xs">AI</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
+                            <p className="text-xs text-gray-600 truncate">{node.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                </>
+                )}
+              </div>
             </div>
-            
-            <div className="space-y-6">
-              {/* Action Nodes */}
-              {(selectedCategory === 'all' || selectedCategory === 'action') && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-windtre-orange rounded-full" />
-                  Actions ({getNodesByCategory('action').filter(node => 
-                    !searchTerm || 
-                    node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div className="space-y-2">
-                  {getNodesByCategory('action')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <div
-                      key={node.id}
-                      className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
-                      draggable
-                      onDragStart={(e) => onDragStart(e, node.id)}
-                      data-testid={`node-palette-${node.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                          style={{ backgroundColor: node.color }}
-                        >
-                          <span className="text-xs">A</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
-                          <p className="text-xs text-gray-600 truncate">{node.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              )}
-
-              {(selectedCategory === 'all' || selectedCategory === 'trigger') && (
-              <>
-              <Separator />
-
-              {/* Trigger Nodes */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-windtre-purple rounded-full" />
-                  Triggers ({getNodesByCategory('trigger').filter(node => 
-                    !searchTerm || 
-                    node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div className="space-y-2">
-                  {getNodesByCategory('trigger')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <div
-                      key={node.id}
-                      className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
-                      draggable
-                      onDragStart={(e) => onDragStart(e, node.id)}
-                      data-testid={`node-palette-${node.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                          style={{ backgroundColor: node.color }}
-                        >
-                          <span className="text-xs">T</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
-                          <p className="text-xs text-gray-600 truncate">{node.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              </>
-              )}
-
-              {(selectedCategory === 'all' || selectedCategory === 'ai') && (
-              <>
-              <Separator />
-
-              {/* AI Nodes */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gradient-to-r from-windtre-orange to-windtre-purple rounded-full" />
-                  AI Nodes ({getNodesByCategory('ai').filter(node => 
-                    !searchTerm || 
-                    node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                  ).length})
-                </h4>
-                <div className="space-y-2">
-                  {getNodesByCategory('ai')
-                    .filter(node => 
-                      !searchTerm || 
-                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map((node) => (
-                    <div
-                      key={node.id}
-                      className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
-                      draggable
-                      onDragStart={(e) => onDragStart(e, node.id)}
-                      data-testid={`node-palette-${node.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-gradient-to-r from-windtre-orange to-windtre-purple"
-                        >
-                          <span className="text-xs">AI</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h5 className="text-sm font-medium text-gray-900 truncate">{node.name}</h5>
-                          <p className="text-xs text-gray-600 truncate">{node.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              </>
-              )}
-            </div>
-          </ScrollArea>
+          </div>
         )}
       </div>
 
@@ -474,56 +476,20 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleExportWorkflow}
-                data-testid="button-export"
+                onClick={handleSaveWorkflow}
+                data-testid="button-save"
               >
-                <Download className="h-4 w-4" />
+                <Save className="h-4 w-4 mr-2" />
+                Save
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById('import-file')?.click()}
-                data-testid="button-import"
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-              <input
-                id="import-file"
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={handleImportWorkflow}
-              />
-              
-              <Separator orientation="vertical" className="h-6" />
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearWorkflow}
-                data-testid="button-clear"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              
               <Button
                 variant={isRunning ? "destructive" : "default"}
                 size="sm"
                 onClick={handleRunWorkflow}
-                data-testid="button-run-workflow"
+                data-testid="button-run"
               >
-                {isRunning ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                {isRunning ? <Square className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
                 {isRunning ? 'Stop' : 'Run'}
-              </Button>
-              
-              <Button
-                onClick={handleSaveWorkflow}
-                size="sm"
-                className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-                data-testid="button-save-workflow"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
               </Button>
             </div>
           </div>
@@ -564,28 +530,17 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             
             {/* Canvas Instructions */}
             {nodes.length === 0 && (
-              <Panel position={"top-center" as any}>
-                <div className="windtre-glass-panel p-8 rounded-lg border-2 border-dashed border-windtre-orange/30 text-center max-w-md">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Start Building Your Workflow</h3>
-                  <p className="text-gray-600 mb-4">
-                    Drag nodes from the sidebar to create your workflow. Connect them to define the flow.
-                  </p>
-                  <div className="text-sm text-gray-500">
-                    <div className="flex items-center justify-center gap-4 mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-windtre-orange rounded-full" />
-                        <span>Actions</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-windtre-purple rounded-full" />
-                        <span>Triggers</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-gradient-to-r from-windtre-orange to-windtre-purple rounded-full" />
-                        <span>AI</span>
-                      </div>
-                    </div>
+              <Panel position="top-center" className="pointer-events-none">
+                <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-6 max-w-md text-center shadow-lg">
+                  <div className="text-gray-500 mb-2">
+                    <Palette className="h-8 w-8 mx-auto" />
                   </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Start Building Your Workflow
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Drag nodes from the library on the left to begin creating your workflow. Connect nodes to define the flow logic.
+                  </p>
                 </div>
               </Panel>
             )}

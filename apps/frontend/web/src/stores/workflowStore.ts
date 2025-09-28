@@ -241,10 +241,40 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
         // 📚 HISTORY MANAGEMENT
         saveSnapshot: (action: string) => {
           const state = get();
+          
+          // Safe clone that removes non-serializable properties
+          const safeCloneNodes = (nodes: Node[]) => {
+            return nodes.map(node => ({
+              id: node.id,
+              type: node.type,
+              position: { ...node.position },
+              data: node.data ? { ...node.data } : {},
+              selected: node.selected,
+              dragging: false,
+              draggable: node.draggable,
+              selectable: node.selectable,
+              connectable: node.connectable,
+              deletable: node.deletable
+            }));
+          };
+          
+          const safeCloneEdges = (edges: Edge[]) => {
+            return edges.map(edge => ({
+              id: edge.id,
+              source: edge.source,
+              target: edge.target,
+              type: edge.type,
+              animated: edge.animated,
+              style: edge.style ? { ...edge.style } : undefined,
+              sourceHandle: edge.sourceHandle,
+              targetHandle: edge.targetHandle
+            }));
+          };
+          
           const snapshot: WorkflowSnapshot = {
-            nodes: structuredClone(state.nodes),
-            edges: structuredClone(state.edges),
-            viewport: structuredClone(state.viewport),
+            nodes: safeCloneNodes(state.nodes),
+            edges: safeCloneEdges(state.edges),
+            viewport: { ...state.viewport },
             timestamp: new Date().toISOString(),
             action,
           };
