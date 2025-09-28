@@ -6,6 +6,8 @@
  */
 
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import WorkflowBuilder from '../components/WorkflowBuilder';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import CreateTeamModal from '../components/CreateTeamModal';
 import '../styles/workflow-builder.css';
 import { 
   Play, 
@@ -35,7 +38,13 @@ import {
   Edit,
   Trash2,
   MoreHorizontal,
-  ArrowLeft
+  ArrowLeft,
+  Archive,
+  UserPlus,
+  Shield,
+  Calendar,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
@@ -47,6 +56,35 @@ const DEPARTMENTS = {
   'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
   'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' }
 };
+
+// 🎯 Team types mapping
+const TEAM_TYPES = {
+  'functional': { label: 'Functional', color: 'bg-blue-100 text-blue-800' },
+  'cross_functional': { label: 'Cross-Functional', color: 'bg-green-100 text-green-800' },
+  'project': { label: 'Project', color: 'bg-purple-100 text-purple-800' },
+  'temporary': { label: 'Temporary', color: 'bg-yellow-100 text-yellow-800' },
+  'specialized': { label: 'Specialized', color: 'bg-orange-100 text-orange-800' }
+};
+
+// 🎯 TypeScript interfaces for teams
+interface Team {
+  id: string;
+  tenantId: string;
+  name: string;
+  description?: string;
+  teamType: keyof typeof TEAM_TYPES;
+  userMembers: string[];
+  roleMembers: string[];
+  primarySupervisor?: string;
+  secondarySupervisors: string[];
+  assignedDepartments: (keyof typeof DEPARTMENTS)[];
+  isActive: boolean;
+  metadata: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+}
 
 // 🎯 Sample workflow actions for Action Library
 const WORKFLOW_ACTIONS = [
@@ -70,6 +108,7 @@ const WORKFLOW_ACTIONS = [
 
 export default function WorkflowManagementPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
@@ -79,10 +118,88 @@ export default function WorkflowManagementPage() {
   const [builderView, setBuilderView] = useState<'dashboard' | 'editor'>('dashboard'); // NEW: Builder sub-view
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   
+  // 🎯 Teams state management  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTeamDepartment, setSelectedTeamDepartment] = useState<string>('all');
+  const [selectedTeamType, setSelectedTeamType] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
+  
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
   const createTemplateMutation = useCreateTemplate();
 
+  // 🎯 Teams API hooks
+  const { 
+    data: teams = [], 
+    isLoading: teamsLoading, 
+    error: teamsError 
+  } = useQuery<Team[]>({
+    queryKey: ['/api/teams']
+  });
+
+  // 🎯 Archive team mutation
+  const archiveTeamMutation = useMutation({
+    mutationFn: async ({ teamId, isActive }: { teamId: string; isActive: boolean }) => {
+      return await apiRequest(`/api/teams/${teamId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
+      toast({
+        title: 'Team Updated',
+        description: 'Team status updated successfully',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update team status',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 🎯 Teams helper functions
+  const filteredTeams = teams.filter(team => {
+    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         team.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDepartment = selectedTeamDepartment === 'all' || 
+                             team.assignedDepartments.includes(selectedTeamDepartment as keyof typeof DEPARTMENTS);
+    
+    const matchesTeamType = selectedTeamType === 'all' || team.teamType === selectedTeamType;
+    
+    const matchesStatus = selectedStatus === 'all' || 
+                         (selectedStatus === 'active' && team.isActive) ||
+                         (selectedStatus === 'inactive' && !team.isActive);
+
+    return matchesSearch && matchesDepartment && matchesTeamType && matchesStatus;
+  });
+
+  const handleArchiveTeam = (team: Team) => {
+    archiveTeamMutation.mutate({ 
+      teamId: team.id, 
+      isActive: !team.isActive 
+    });
+  };
+
+  const handleEditTeam = (team: Team) => {
+    toast({
+      title: 'Edit Team',
+      description: 'Team editing modal coming soon...',
+    });
+  };
+
+  const handleCreateTeam = () => {
+    setShowCreateTeamDialog(true);
+  };
+
+  const formatTeamMembersCount = (team: Team) => {
+    return team.userMembers.length + team.roleMembers.length;
+  };
 
   // 🎯 Create new template with department selection
   const handleCreateTemplate = () => {
@@ -701,19 +818,275 @@ export default function WorkflowManagementPage() {
 
           {activeView === 'teams' && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <Users className="h-6 w-6 text-windtre-purple" />
-                Team Management
-              </h2>
-              <Card className="windtre-glass-panel border-white/20">
-                <CardContent className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <Users className="h-12 w-12 text-windtre-purple mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">Team Management</h3>
-                    <p className="text-gray-600">Manage workflow teams and permissions</p>
+              {/* 🎯 Teams Page Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="h-6 w-6 text-windtre-purple" />
+                    Team Management
+                  </h2>
+                  <p className="text-gray-600 mt-1">Manage enterprise teams and workflow assignments</p>
+                </div>
+                
+                <Button 
+                  onClick={handleCreateTeam}
+                  className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                  data-testid="button-create-team"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Team
+                </Button>
+              </div>
+
+              {/* 🎯 Teams Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <Users className="h-4 w-4 text-windtre-purple" />
+                      Total Teams
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-windtre-purple" data-testid="stat-total-teams">
+                      {teamsLoading ? '...' : teams.length}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      Active Teams
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600" data-testid="stat-active-teams">
+                      {teamsLoading ? '...' : teams.filter(t => t.isActive).length}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-windtre-orange" />
+                      Total Members
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-windtre-orange" data-testid="stat-total-members">
+                      {teamsLoading ? '...' : teams.reduce((acc, team) => acc + formatTeamMembersCount(team), 0)}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-windtre-purple" />
+                      Departments
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-windtre-purple" data-testid="stat-departments">
+                      {Object.keys(DEPARTMENTS).length}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 🎯 Teams Filters */}
+              <Card className="windtre-glass-panel border-white/20 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-4">
+                    {/* Search */}
+                    <div className="flex-1 min-w-64">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          placeholder="Search teams by name or description..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-search-teams"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Department Filter */}
+                    <Select value={selectedTeamDepartment} onValueChange={setSelectedTeamDepartment}>
+                      <SelectTrigger className="w-48" data-testid="select-department-filter">
+                        <SelectValue placeholder="All Departments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Departments</SelectItem>
+                        {Object.entries(DEPARTMENTS).map(([key, dept]) => (
+                          <SelectItem key={key} value={key}>
+                            {dept.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {/* Team Type Filter */}
+                    <Select value={selectedTeamType} onValueChange={setSelectedTeamType}>
+                      <SelectTrigger className="w-48" data-testid="select-team-type-filter">
+                        <SelectValue placeholder="All Types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        {Object.entries(TEAM_TYPES).map(([key, type]) => (
+                          <SelectItem key={key} value={key}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {/* Status Filter */}
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="w-32" data-testid="select-status-filter">
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* 🎯 Teams Data Table */}
+              <Card className="windtre-glass-panel border-white/20">
+                <CardContent className="p-0">
+                  {teamsLoading ? (
+                    <div className="flex items-center justify-center h-48">
+                      <div className="text-gray-500">Loading teams...</div>
+                    </div>
+                  ) : teams.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-48">
+                      <Users className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No teams yet</h3>
+                      <p className="text-gray-600 mb-4">Create your first team to get started</p>
+                      <Button 
+                        onClick={handleCreateTeam}
+                        className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create First Team
+                      </Button>
+                    </div>
+                  ) : filteredTeams.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-48">
+                      <Filter className="h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No teams match your filters</h3>
+                      <p className="text-gray-600">Try adjusting your search criteria</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-gray-200">
+                          <TableHead className="font-semibold text-gray-900">Team</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Type</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Departments</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Members</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Supervisor</TableHead>
+                          <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                          <TableHead className="font-semibold text-gray-900 w-24">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredTeams.map((team) => (
+                          <TableRow key={team.id} className="border-gray-100 hover:bg-gray-50/50" data-testid={`team-row-${team.id}`}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium text-gray-900">{team.name}</div>
+                                <div className="text-sm text-gray-600">{team.description}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={TEAM_TYPES[team.teamType]?.color}>
+                                {TEAM_TYPES[team.teamType]?.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {team.assignedDepartments.map((dept) => {
+                                  const deptInfo = DEPARTMENTS[dept];
+                                  return (
+                                    <Badge 
+                                      key={dept} 
+                                      variant="outline" 
+                                      className={`text-xs ${deptInfo?.textColor} border-current`}
+                                    >
+                                      {deptInfo?.label}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <UserPlus className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm text-gray-600">
+                                  {formatTeamMembersCount(team)} members
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {team.primarySupervisor ? (
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-4 w-4 text-windtre-purple" />
+                                  <span className="text-sm text-gray-600">
+                                    {team.primarySupervisor}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">No supervisor</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={team.isActive ? 'default' : 'secondary'}>
+                                {team.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditTeam(team)}
+                                  data-testid={`button-edit-team-${team.id}`}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleArchiveTeam(team)}
+                                  data-testid={`button-archive-team-${team.id}`}
+                                >
+                                  <Archive className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* 🎯 Create Team Modal */}
+              <CreateTeamModal 
+                open={showCreateTeamDialog}
+                onOpenChange={setShowCreateTeamDialog}
+              />
             </div>
           )}
 

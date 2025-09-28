@@ -7,7 +7,6 @@ import { TenantProvider } from '../contexts/TenantContext';
 import DashboardPage from '../pages/DashboardPage';
 import SettingsPage from '../pages/SettingsPage';
 import WorkflowManagementPage from '../pages/WorkflowManagementPage';
-import TeamManagementPage from '../pages/TeamManagementPage';
 import StandardFieldsDemo from '../pages/StandardFieldsDemo';
 import MyPortal from '../pages/MyPortal';
 import HRManagementPage from '../pages/HRManagementPage';
@@ -240,11 +239,6 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
-      <Route path={`/${tenantSlug}/teams`}>
-        <AuthenticatedRoute>
-          <TeamManagementPage />
-        </AuthenticatedRoute>
-      </Route>
       
       <Route path={`/${tenantSlug}/demo-fields`}>
         <AuthenticatedRoute>
