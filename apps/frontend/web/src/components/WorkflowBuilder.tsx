@@ -487,9 +487,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             <p className="text-xs text-gray-600 truncate">{node.description}</p>
                           </div>
                         </div>
-                        <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1 text-center">
-                          🖱️ Trascina nel canvas
-                        </div>
+
                       </div>
                     ))}
                   </div>
@@ -537,9 +535,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             <p className="text-xs text-gray-600 truncate">{node.description}</p>
                           </div>
                         </div>
-                        <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1 text-center">
-                          🖱️ Trascina nel canvas
-                        </div>
+
                       </div>
                     ))}
                   </div>
@@ -587,9 +583,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             <p className="text-xs text-gray-600 truncate">{node.description}</p>
                           </div>
                         </div>
-                        <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1 text-center">
-                          🖱️ Trascina nel canvas
-                        </div>
+
                       </div>
                     ))}
                   </div>
