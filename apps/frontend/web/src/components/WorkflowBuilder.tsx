@@ -51,6 +51,7 @@ import { WorkflowActionNode } from './workflow-nodes/WorkflowActionNode';
 import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useWorkflowTemplate, useCreateTemplate, useUpdateTemplate } from '../hooks/useWorkflowTemplates';
 
 // ✅ REAL PROFESSIONAL NODE COMPONENTS - DEFINED OUTSIDE TO PREVENT RE-RENDERS
 const nodeTypes: NodeTypes = {
@@ -86,23 +87,41 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     importWorkflow
   } = useWorkflowStore();
   
-  // 🎯 Initialize workflow based on mode - empty for new, populated if editing
+  // 🎯 TEMPLATE MANAGEMENT HOOKS
+  const { data: templateData, isLoading: templateLoading } = useWorkflowTemplate(templateId);
+  const createTemplateMutation = useCreateTemplate();
+  const updateTemplateMutation = useUpdateTemplate();
+  
+  // 🎯 TEMPLATE LOADING LOGIC
   React.useEffect(() => {
-    if (templateId) {
-      // TODO: Load the specific workflow template
-      // For now, keep existing nodes if any
-    } else {
-      // No templateId means NEW workflow - ensure completely clean canvas
+    if (templateId && templateData && !templateLoading) {
+      // ✅ LOAD EXISTING TEMPLATE
+      console.log('📂 Loading template data:', templateData);
+      
+      const definition = templateData.definition;
+      if (definition?.nodes && definition?.edges) {
+        // Add onConfigClick to all loaded nodes
+        const nodesWithConfig = definition.nodes.map(node => ({
+          ...node,
+          data: {
+            ...node.data,
+            onConfigClick: handleConfigClick
+          }
+        }));
+        
+        setNodes(nodesWithConfig);
+        setEdges(definition.edges);
+        
+        console.log('✅ Template loaded successfully:', {
+          nodeCount: nodesWithConfig.length,
+          edgeCount: definition.edges.length
+        });
+      }
+    } else if (!templateId) {
+      // 🆕 NEW WORKFLOW - ensure clean canvas
       clearWorkflow();
     }
-  }, [templateId, clearWorkflow]);
-
-  // 🎯 Force clear on component initialization for new workflows
-  React.useEffect(() => {
-    if (!templateId) {
-      clearWorkflow();
-    }
-  }, []); // Run only once on mount
+  }, [templateId, templateData, templateLoading, setNodes, setEdges, clearWorkflow]);
   
   
 
@@ -257,29 +276,71 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     console.log('🎛️ Opening config panel for node:', nodeId);
   }, []);
 
-  // ✅ IMPROVED SAVE WORKFLOW WITH VALIDATION
+  // 💾 SMART SAVE: CREATE vs UPDATE TEMPLATE
   const handleSaveWorkflow = () => {
     if (nodes.length === 0) {
       alert('⚠️ Il workflow è vuoto. Aggiungi almeno un nodo prima di salvare.');
       return;
     }
     
-    const workflow = { 
-      nodes, 
-      edges,
-      metadata: {
-        nodeCount: nodes.length,
-        edgeCount: edges.length,
-        createdAt: new Date().toISOString(),
-        category: initialCategory || 'general'
+    // Clean nodes data before saving (remove onConfigClick function)
+    const cleanNodes = nodes.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        onConfigClick: undefined // Remove function reference
       }
+    }));
+    
+    const workflowDefinition = {
+      nodes: cleanNodes,
+      edges,
+      viewport: { x: 0, y: 0, zoom: 1 } // Default viewport
     };
     
-    console.log('💾 Salvando template workflow:', workflow);
-    onSave?.(workflow);
+    if (templateId && templateData) {
+      // 📝 UPDATE EXISTING TEMPLATE
+      console.log('📝 Updating template:', templateId);
+      updateTemplateMutation.mutate({
+        id: templateId,
+        name: templateData.name,
+        description: templateData.description,
+        category: templateData.category,
+        definition: workflowDefinition,
+        tags: templateData.tags,
+        metadata: {
+          ...templateData.metadata,
+          nodeCount: cleanNodes.length,
+          edgeCount: edges.length,
+          lastModified: new Date().toISOString()
+        }
+      });
+    } else {
+      // 🆕 CREATE NEW TEMPLATE
+      console.log('🆕 Creating new template');
+      const templateName = prompt('📝 Nome del template:', 'Nuovo Workflow');
+      if (!templateName) return;
+      
+      createTemplateMutation.mutate({
+        name: templateName,
+        description: 'Template workflow creato dal builder',
+        category: (initialCategory as any) || 'operations',
+        definition: workflowDefinition,
+        tags: [],
+        metadata: {
+          nodeCount: cleanNodes.length,
+          edgeCount: edges.length,
+          createdVia: 'workflow-builder'
+        }
+      });
+    }
     
-    // Show success feedback
-    alert('✅ Template salvato con successo!');
+    // Also call onSave prop if provided (backward compatibility)
+    onSave?.({
+      nodes: cleanNodes,
+      edges,
+      metadata: { nodeCount: cleanNodes.length, edgeCount: edges.length }
+    });
   };
 
 
