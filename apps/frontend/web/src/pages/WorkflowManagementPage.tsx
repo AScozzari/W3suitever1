@@ -702,10 +702,6 @@ const CATEGORIES = {
 };
 
 const WorkflowManagementPage = () => {
-  console.error('🔥🔥🔥 WORKFLOW PAGE LOADED!!! FIX APPLICATO! 🔥🔥🔥');
-  console.error('🔥 URL:', window.location.href);
-  console.error('🔥 TIMESTAMP:', new Date().toISOString());
-  alert('🔥 WorkflowManagementPage si sta caricando! I fix sono applicati!');
   
   const { toast } = useToast();
   
@@ -2270,7 +2266,7 @@ const WorkflowManagementPage = () => {
       {/* 🎯 ENTERPRISE BUILDER HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Enterprise Workflow Builder</h2>
+          <h2 className="text-2xl font-bold text-green-600">🚀 FIX APPLICATO! Enterprise Workflow Builder</h2>
           <p className="text-slate-600 dark:text-slate-400">Design automated workflows with AI-powered intelligence</p>
         </div>
         <div className="flex items-center gap-3">
