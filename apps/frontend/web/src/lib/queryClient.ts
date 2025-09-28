@@ -23,8 +23,6 @@ export const setCurrentTenantId = (tenantId: string) => {
  * Previene race conditions nell'inizializzazione
  */
 const validateHRPrerequisites = async (url: string): Promise<void> => {
-  console.log(`🔍 [HR-VALIDATION] Validating prerequisites for: ${url}`);
-  
   // Verifica tenant ID
   let tenantId: string;
   try {
@@ -49,37 +47,22 @@ const validateHRPrerequisites = async (url: string): Promise<void> => {
   // Verifica che localStorage sia sincronizzato
   const localTenant = localStorage.getItem('currentTenantId');
   if (!localTenant || localTenant !== tenantId) {
-    console.warn(`⚠️ [HR-VALIDATION] localStorage desync detected - fixing`);
-    console.warn(`⚠️ [HR-VALIDATION] Memory: "${tenantId}", localStorage: "${localTenant}"`);
     localStorage.setItem('currentTenantId', tenantId);
-    
     // Piccola pausa per permettere la sincronizzazione
     await new Promise(resolve => setTimeout(resolve, 50));
   }
-  
-  // Verifica che gli header di development siano disponibili
-  if (authMode === 'development') {
-    // In development mode, verifichiamo che i valori siano settati
-    const requiredHeaders = ['X-Auth-Session', 'X-Demo-User'];
-    console.log(`🔧 [HR-VALIDATION] Development mode - checking required headers`);
-  }
-  
-  console.log(`✅ [HR-VALIDATION] All prerequisites validated for: ${url}`);
-  console.log(`✅ [HR-VALIDATION] Tenant: ${tenantId}, Auth: ${authMode}`);
 };
 
 // Helper per ottenere il tenant ID corrente - SECURITY FIX: Dynamic tenant resolution
 export const getCurrentTenantId = (): string => {
   // Try current in-memory first
   if (currentTenantId) {
-    console.log(`[TENANT-ID] ✅ Using in-memory tenant ID: ${currentTenantId}`);
     return currentTenantId;
   }
   
   // Try localStorage (consistent with TenantProvider)
   const stored = localStorage.getItem('currentTenantId');
   if (stored && stored !== 'undefined' && stored !== 'null' && stored !== '') {
-    console.log(`[TENANT-ID] ✅ Using localStorage tenant ID: ${stored}`);
     return stored;
   }
   
@@ -87,7 +70,6 @@ export const getCurrentTenantId = (): string => {
   if (import.meta.env.MODE === 'development') {
     // Final fallback to env (development only) - ALWAYS use UUID
     const envFallback = import.meta.env.VITE_DEFAULT_TENANT_ID || '00000000-0000-0000-0000-000000000001';
-    console.log(`[TENANT-ID] 🔧 Development: Using fallback tenant ID: ${envFallback}`);
     return envFallback;
   }
   
@@ -164,10 +146,7 @@ export const queryClient = new QueryClient({
         
         const tenantId = getCurrentTenantId();
         
-        // SECURITY VERIFICATION: Log tenant ID for audit trail
-        console.log(`[QUERY-CLIENT] 📡 Making API request to: ${finalUrl}`);
-        console.log(`[TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "${tenantId}"`);
-        console.log(`[TENANT-VERIFICATION] 🆔 Tenant ID type: ${typeof tenantId}, length: ${tenantId?.length}`);
+        // Making API request (verbose logs removed for performance)
         
         // CRITICAL SECURITY CHECK: Block API calls with undefined/invalid tenant IDs  
         if (!tenantId || tenantId === 'undefined' || tenantId === 'null' || tenantId === '') {
@@ -182,8 +161,6 @@ export const queryClient = new QueryClient({
         if (!uuidRegex.test(tenantId)) {
           console.error(`[TENANT-ERROR] ❌ Invalid tenant ID format! Expected UUID, got: "${tenantId}"`);
           console.error(`[TENANT-ERROR] ❌ This could cause cross-tenant data leakage!`);
-        } else {
-          console.log(`[TENANT-VERIFICATION] ✅ Valid UUID format confirmed`);
         }
         
         let headers: Record<string, string> = {
@@ -191,13 +168,10 @@ export const queryClient = new QueryClient({
         };
         
         // Mode-based authentication - clean separation  
-        console.log(`🔍 [API-DEBUG] AUTH_MODE: ${AUTH_MODE}`);
-        console.log(`🔍 [API-DEBUG] Making request to: ${finalUrl}`);
         if (AUTH_MODE === 'development') {
           // Development mode: ONLY use X-Auth-Session headers, NEVER call OAuth methods
           headers['X-Auth-Session'] = 'authenticated';
           headers['X-Demo-User'] = 'admin-user'; // FIX: Use admin-user to match database requests
-          console.log(`🔧 [DEV-AUTH] Headers aggiunti per development mode:`, headers);
         } else if (AUTH_MODE === 'oauth2') {
           // OAuth2 mode: Use Bearer tokens with proper error handling
           const token = await oauth2Client.getAccessToken();
@@ -292,7 +266,7 @@ export async function apiRequest(
     'X-Tenant-ID': tenantId, // Header per il tenant ID
   };
   
-  console.log(`[API-REQUEST] 📡 Making API request to: ${finalUrl} with tenant: ${tenantId}`);
+  // Making API request (debug logs reduced for performance)
   
   // Mode-based authentication for API requests
   if (AUTH_MODE === 'development') {
@@ -338,7 +312,7 @@ export async function apiRequest(
     if (!isSpecialBody) {
       // If body is an object (including arrays), serialize it
       if (typeof processedOptions.body === 'object') {
-        console.log('[API-REQUEST] 🔄 Serializing object body to JSON');
+        // Serializing object body to JSON
         processedOptions.body = JSON.stringify(processedOptions.body);
         // Set Content-Type for JSON if not already set
         const existingHeaders = options?.headers as Record<string, string> | undefined;
