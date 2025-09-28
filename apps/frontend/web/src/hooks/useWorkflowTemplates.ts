@@ -8,7 +8,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { Node, Edge, Viewport } from 'reactflow';
+import { Node, Edge, Viewport } from '@xyflow/react';
 
 // 🎯 TEMPLATE TYPES (matches backend schema)
 export interface WorkflowTemplate {

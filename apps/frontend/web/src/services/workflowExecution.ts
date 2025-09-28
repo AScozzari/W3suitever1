@@ -1,7 +1,7 @@
 // 🚀 ENTERPRISE WORKFLOW EXECUTION ENGINE
 // Professional workflow runtime system for W3 Suite
 
-import { Node, Edge } from 'reactflow';
+import { Node, Edge } from '@xyflow/react';
 import { workflowApiClient, WorkflowInstanceResponse } from './workflowApiClient';
 
 // 🎯 EXECUTION CONTEXT INTERFACE

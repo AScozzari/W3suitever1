@@ -1,7 +1,7 @@
 // 🏗️ WORKFLOW API CLIENT SERVICE
 // Connects frontend workflow execution engine to backend APIs
 
-import { Node, Edge } from 'reactflow';
+import { Node, Edge } from '@xyflow/react';
 import { ExecutionContext, ExecutionResult } from './workflowExecution';
 
 // 🎯 API CLIENT CONFIGURATION

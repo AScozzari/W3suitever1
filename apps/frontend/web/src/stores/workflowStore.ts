@@ -6,7 +6,7 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
-import { Node, Edge, Viewport } from 'reactflow';
+import { Node, Edge, Viewport } from '@xyflow/react';
 import { nanoid } from 'nanoid';
 
 // 🔧 SAFE ID GENERATORS - Prevent collision with deterministic IDs

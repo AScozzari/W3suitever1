@@ -1,7 +1,7 @@
 // 🔍 ENTERPRISE WORKFLOW VALIDATION SYSTEM
 // Professional validation for W3 Suite workflow builder
 
-import { Node, Edge } from 'reactflow';
+import { Node, Edge } from '@xyflow/react';
 
 // 🎯 VALIDATION RESULT INTERFACES
 export interface ValidationResult {
