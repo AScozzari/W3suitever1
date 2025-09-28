@@ -79,7 +79,11 @@ export function useWorkflowTemplates(params?: {
       if (params?.limit) searchParams.set('limit', params.limit.toString());
       
       const url = `/api/workflows/templates${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-      return apiRequest(url);
+      const response = await apiRequest(url);
+      
+      // API returns { success: true, data: [...], pagination: {...} }
+      // Extract just the templates array
+      return response?.data || [];
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
