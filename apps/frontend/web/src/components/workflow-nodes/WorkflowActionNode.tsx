@@ -20,7 +20,6 @@ interface ActionNodeData {
 }
 
 export function WorkflowActionNode({ data, selected }: NodeProps<ActionNodeData>) {
-  console.log('🔍 DEBUG STEP 2: WorkflowActionNode rendering with data:', data);
   return (
     <div style={{
       width: '200px',

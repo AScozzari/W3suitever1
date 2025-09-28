@@ -1,0 +1,16 @@
+actFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:128 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowActionNode.tsx:23 🔍 DEBUG STEP 2: WorkflowActionNode rendering with data: {name: 'HARDCODED TEST 1', description: 'This should always appear', color: '#FF6900'}
+WorkflowActionNode.tsx:23 🔍 DEBUG STEP 2: WorkflowActionNode rendering with data: {name: 'HARDCODED TEST 1', description: 'This should always appear', color: '#FF6900'}
+WorkflowTriggerNode.tsx:23 🔍 DEBUG STEP 2: WorkflowTriggerNode rendering with data: {name: 'HARDCODED TEST 2', description: 'This should also appear', color: '#7B2CBF'}
+WorkflowTriggerNode.tsx:23 🔍 DEBUG STEP 2: WorkflowTriggerNode rendering with data: {name: 'HARDCODED TEST 2', description: 'This should also appear', color: '#7B2CBF'}
+WorkflowActionNode.tsx:23 🔍 DEBUG STEP 2: WorkflowActionNode rendering with data: {name: 'HARDCODED TEST 1', description: 'This should always appear', color: '#FF6900'}
+WorkflowActionNode.tsx:23 🔍 DEBUG STEP 2: WorkflowActionNode rendering with data: {name: 'HARDCODED TEST 1', description: 'This should always appear', color: '#FF6900'}
+WorkflowTriggerNode.tsx:23 🔍 DEBUG STEP 2: WorkflowTriggerNode rendering with data: {name: 'HARDCODED TEST 2', description: 'This should also appear', color: '#7B2CBF'}
+WorkflowTriggerNode.tsx:23 🔍 DEBUG STEP 2: WorkflowTriggerNode rendering with data: {name: 'HARDCODED TEST 2', description: 'This should also appear', color: '#7B2CBF'}
+WorkflowBuilder.tsx:127 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:128 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowBuilder.tsx:127 🔍 DEBUG STEP 1: testNodes going to ReactFlow: (2) [{…}, {…}]
+WorkflowBuilder.tsx:128 🔍 DEBUG STEP 1: nodeTypes registration: {action: ƒ, trigger: ƒ, ai: ƒ, condition: ƒ, flow: ƒ}
+WorkflowActionNode.tsx:23 🔍 DEBUG STEP 2: WorkflowActionNode rendering with data: {name: 'HARDCODED TEST 1', description: 'This should always appear', color: '#FF6900'}
+WorkflowActionNode.tsx:23 🔍 DEBUG STEP 2: WorkflowActionNode rendering with data: {name: 'HARDCODED TEST 1', description: 'This should always appear', color: '#FF6900'}

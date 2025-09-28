@@ -53,11 +53,6 @@ import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// ✅ IMPORT CHECK FIRST
-console.log('🔍 IMPORT CHECK: WorkflowActionNode:', WorkflowActionNode);
-console.log('🔍 IMPORT CHECK: WorkflowTriggerNode:', WorkflowTriggerNode);  
-console.log('🔍 IMPORT CHECK: WorkflowAiNode:', WorkflowAiNode);
-
 // ✅ REAL PROFESSIONAL NODE COMPONENTS
 const nodeTypes: NodeTypes = {
   action: WorkflowActionNode,
@@ -66,9 +61,6 @@ const nodeTypes: NodeTypes = {
   condition: WorkflowActionNode, // Reuse action node for conditions
   flow: WorkflowActionNode, // Reuse action node for flow control
 };
-
-console.log('🔍 NODEYPES BUILD: After creating nodeTypes object:', nodeTypes);
-console.log('🔍 NODEYPES BUILD: Object.keys(nodeTypes):', Object.keys(nodeTypes));
 
 interface WorkflowBuilderProps {
   templateId?: string;
@@ -124,8 +116,6 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
   
   const testEdges = [];
   
-  console.log('🔍 DEBUG STEP 1: testNodes going to ReactFlow:', testNodes);
-  console.log('🔍 DEBUG STEP 1: nodeTypes registration:', nodeTypes);
 
   // Local state
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
@@ -570,9 +560,12 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
             onInit={(instance) => {
-              console.log('🎯 ReactFlow initialized:', instance);
               setReactFlowInstance(instance);
-              console.log('🔍 DEBUG STEP 3: Disabling auto fitView to check node visibility');
+              // Force fit view to show test nodes immediately
+              setTimeout(() => {
+                console.log('🎯 Fitting view to nodes:', testNodes);
+                instance.fitView({ padding: 100, includeHiddenNodes: true });
+              }, 200);
             }}
             onDrop={onDrop}
             onDragOver={onDragOver}
@@ -580,7 +573,7 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             nodesDraggable={true}
             nodesConnectable={true}
             elementsSelectable={true}
-            fitView={false}
+            fitView={true}
             attributionPosition="bottom-left"
             className="bg-gray-50"
             data-testid="reactflow-canvas"

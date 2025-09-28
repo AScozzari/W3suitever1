@@ -20,7 +20,6 @@ interface TriggerNodeData {
 }
 
 export function WorkflowTriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
-  console.log('🔍 DEBUG STEP 2: WorkflowTriggerNode rendering with data:', data);
   return (
     <div style={{
       width: '200px',
