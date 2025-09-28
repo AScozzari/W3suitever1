@@ -18,7 +18,9 @@ import ReactFlow, {
   ReactFlowProvider,
   ReactFlowInstance,
   useReactFlow,
-  Panel
+  Panel,
+  NodeChange,
+  EdgeChange
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -105,25 +107,41 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
         animated: true,
         style: { stroke: '#FF6900', strokeWidth: 2 }
       };
-      setEdges((eds: Edge[]) => addEdge(newEdge, eds));
+      setEdges(addEdge(newEdge, edges));
     },
     [setEdges]
   );
 
   const onNodesChange = useCallback(
-    (changes: any) => {
-      // Handle node changes (position, selection, etc.)
-      console.log('Nodes changed:', changes);
+    (changes: NodeChange[]) => {
+      setNodes((nds: Node[]) => {
+        return nds.map((node: Node) => {
+          const change = changes.find((c) => c.id === node.id);
+          if (change) {
+            if (change.type === 'position' && 'position' in change && change.position) {
+              return { ...node, position: change.position };
+            }
+            if (change.type === 'select' && 'selected' in change) {
+              return { ...node, selected: change.selected };
+            }
+          }
+          return node;
+        });
+      });
     },
-    []
+    [setNodes]
   );
 
   const onEdgesChange = useCallback(
-    (changes: any) => {
-      // Handle edge changes (deletion, etc.)
-      console.log('Edges changed:', changes);
+    (changes: EdgeChange[]) => {
+      setEdges((eds: Edge[]) => {
+        return eds.filter((edge: Edge) => {
+          const change = changes.find((c) => c.id === edge.id);
+          return !(change && change.type === 'remove');
+        });
+      });
     },
-    []
+    [setEdges]
   );
 
   const onNodeClick = useCallback(
@@ -165,6 +183,10 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
           ...nodeDefinition,
           config: { ...nodeDefinition.defaultConfig }
         },
+        draggable: true,
+        connectable: true,
+        deletable: true,
+        selectable: true,
         dragHandle: '.drag-handle',
       };
 
@@ -242,7 +264,7 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
         </div>
 
         {isNodePaletteOpen && (
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-4 h-[calc(100vh-200px)]">
             {/* Search and Filters */}
             <div className="space-y-4 mb-6">
               {/* Search */}
@@ -521,6 +543,9 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
+            nodesDraggable={true}
+            nodesConnectable={true}
+            elementsSelectable={true}
             fitView
             attributionPosition="bottom-left"
             className="bg-gray-50"
