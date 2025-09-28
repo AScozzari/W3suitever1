@@ -201,7 +201,7 @@ export class ReactFlowBridgeParser {
     }
 
     // Default to action
-    return { type: 'action', executorId: 'generic-action' };
+    return { type: 'action', executorId: 'generic-action-executor' };
   }
 
   /**

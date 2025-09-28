@@ -616,6 +616,17 @@ export class ActionExecutorsRegistry {
   }
 
   /**
+   * Execute step using registered executor (wrapper for executeAction)
+   */
+  async executeStep(
+    step: any,
+    inputData?: Record<string, any>,
+    context?: ExecutionContext
+  ): Promise<ActionExecutionResult> {
+    return await this.executeAction(step.executorId, step, inputData, context);
+  }
+
+  /**
    * List all registered executors
    */
   listExecutors(): Array<{ id: string; description: string }> {
