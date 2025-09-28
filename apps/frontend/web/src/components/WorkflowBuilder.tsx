@@ -53,6 +53,11 @@ import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+// ✅ IMPORT CHECK FIRST
+console.log('🔍 IMPORT CHECK: WorkflowActionNode:', WorkflowActionNode);
+console.log('🔍 IMPORT CHECK: WorkflowTriggerNode:', WorkflowTriggerNode);  
+console.log('🔍 IMPORT CHECK: WorkflowAiNode:', WorkflowAiNode);
+
 // ✅ REAL PROFESSIONAL NODE COMPONENTS
 const nodeTypes: NodeTypes = {
   action: WorkflowActionNode,
@@ -61,6 +66,9 @@ const nodeTypes: NodeTypes = {
   condition: WorkflowActionNode, // Reuse action node for conditions
   flow: WorkflowActionNode, // Reuse action node for flow control
 };
+
+console.log('🔍 NODEYPES BUILD: After creating nodeTypes object:', nodeTypes);
+console.log('🔍 NODEYPES BUILD: Object.keys(nodeTypes):', Object.keys(nodeTypes));
 
 interface WorkflowBuilderProps {
   templateId?: string;
