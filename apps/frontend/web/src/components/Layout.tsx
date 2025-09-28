@@ -1012,19 +1012,10 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <button
                   key={item.id}
                   onClick={() => {
-                    // Navigation pulita usando path unificati
-                    const segments = location.split('/').filter(Boolean);
-                    const tenant = segments[0] || 'staging';
-                    
-                    // Fix specifico per workflow-management
-                    if (item.id === 'workflow-management') {
-                      console.log(`🎯 WORKFLOW NAVIGATION: forcing /staging/workflow-management`);
-                      navigate('/staging/workflow-management');
-                      return;
-                    }
-                    
-                    console.log(`🎯 NAVIGATION: current location="${location}", segments=`, segments, `tenant="${tenant}", navigating to: /${tenant}${item.path}`);
-                    navigate(`/${tenant}${item.path}`);
+                    // Navigation pulita usando tenant dal localStorage (più affidabile)
+                    const currentTenantId = localStorage.getItem('currentTenantId');
+                    const tenantSlug = currentTenantId === '00000000-0000-0000-0000-000000000001' ? 'staging' : 'staging'; // Default a staging per ora
+                    navigate(`/${tenantSlug}${item.path}`);
                   }}
                   className={`
                     w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200
