@@ -167,10 +167,43 @@ export class ReactFlowBridgeParser {
 
   /**
    * Determine what type and executor this node should use
+   * 🎯 PRIORITÀ AI TIPI SPECIFICI DEL FRONTEND PULITO
    */
   private determineNodeExecutor(node: ReactFlowNode): { type: ParsedWorkflowStep['type']; executorId: string } {
-    // Check explicit type first
+    // ✅ PRIORITY 1: Check for specific node types first (frontend cleaned types)
     if (node.type) {
+      // 📧 Email actions
+      if (node.type === 'send-email') {
+        return { type: 'action', executorId: 'email-action-executor' };
+      }
+      
+      // ✅ Approval actions
+      if (node.type === 'approve-request') {
+        return { type: 'action', executorId: 'approval-action-executor' };
+      }
+      if (node.type === 'auto-approval') {
+        return { type: 'action', executorId: 'auto-approval-executor' };
+      }
+      
+      // 🎯 Decision & Logic
+      if (node.type === 'decision-evaluator') {
+        return { type: 'decision', executorId: 'decision-evaluator' };
+      }
+      if (node.type === 'generic-action') {
+        return { type: 'action', executorId: 'generic-action-executor' };
+      }
+      
+      // ⚡ Triggers
+      if (node.type === 'form-trigger') {
+        return { type: 'trigger', executorId: 'form-trigger-executor' };
+      }
+      
+      // 🤖 AI
+      if (node.type === 'ai-decision') {
+        return { type: 'ai', executorId: 'ai-decision-executor' };
+      }
+      
+      // ✅ PRIORITY 2: Generic types (backward compatibility)
       switch (node.type) {
         case 'trigger':
           return { type: 'trigger', executorId: this.mapTriggerExecutor(node) };
@@ -179,13 +212,13 @@ export class ReactFlowBridgeParser {
         case 'decision':
           return { type: 'decision', executorId: 'decision-evaluator' };
         case 'approval':
-          return { type: 'approval', executorId: 'approval-handler' };
+          return { type: 'approval', executorId: 'approval-action-executor' };
         case 'ai':
           return { type: 'ai', executorId: this.mapAiExecutor(node) };
       }
     }
 
-    // Fallback: analyze node.data for clues
+    // ✅ PRIORITY 3: Fallback analysis of node.data for clues
     const data = node.data || {};
     
     if (data.triggerType) {
@@ -200,96 +233,120 @@ export class ReactFlowBridgeParser {
       return { type: 'decision', executorId: 'decision-evaluator' };
     }
 
-    // Default to action
+    // ✅ DEFAULT: Generic action fallback
     return { type: 'action', executorId: 'generic-action-executor' };
   }
 
   /**
    * Map trigger nodes to specific executors
+   * 🎯 ALLINEATO AI 7 EXECUTORS BACKEND REALI
    */
   private mapTriggerExecutor(node: ReactFlowNode): string {
-    const triggerType = node.data?.triggerType;
+    // Check ReactFlow node ID first (primary mapping)
+    if (node.id.includes('form-trigger') || node.type === 'form-trigger') {
+      return 'form-trigger-executor';
+    }
     
+    // Check legacy triggerType for backward compatibility
+    const triggerType = node.data?.triggerType;
     switch (triggerType) {
       case 'form_submitted':
       case 'form_trigger':
+      case 'form_submission':
         return 'form-trigger-executor';
-      case 'time_trigger':
-      case 'cron':
-        return 'time-trigger-executor';
-      case 'webhook':
-        return 'webhook-trigger-executor';
-      case 'event':
-        return 'event-trigger-executor';
       default:
-        return 'generic-trigger-executor';
+        // All other triggers fallback to generic
+        return 'generic-action-executor';
     }
   }
 
   /**
    * Map action nodes to specific executors
+   * 🎯 ALLINEATO AI 7 EXECUTORS BACKEND REALI
    */
   private mapActionExecutor(node: ReactFlowNode): string {
     const data = node.data || {};
     
-    // Check for specific action identifiers
+    // ✅ PRIMARY MAPPING: ReactFlow Node ID → Backend Executor
+    if (node.id.includes('send-email') || node.type === 'send-email') {
+      return 'email-action-executor';
+    }
+    if (node.id.includes('approve-request') || node.type === 'approve-request') {
+      return 'approval-action-executor';
+    }
+    if (node.id.includes('auto-approval') || node.type === 'auto-approval') {
+      return 'auto-approval-executor';
+    }
+    if (node.id.includes('decision-evaluator') || node.type === 'decision-evaluator') {
+      return 'decision-evaluator';
+    }
+    if (node.id.includes('generic-action') || node.type === 'generic-action') {
+      return 'generic-action-executor';
+    }
+    
+    // ✅ LEGACY MAPPING: For backward compatibility with old actionType
     if (data.actionType) {
       switch (data.actionType) {
         case 'auto_approve':
+        case 'auto-approval':
           return 'auto-approval-executor';
         case 'send_email':
         case 'send-email':
           return 'email-action-executor';
-        case 'send_sms':
-        case 'send-sms':
-          return 'sms-action-executor';
         case 'ai-decision':
         case 'ai_decision':
           return 'ai-decision-executor';
-        case 'create_ticket':
-        case 'create-ticket':
-          return 'ticket-action-executor';
-        case 'process_payment':
-        case 'process-payment':
-          return 'payment-action-executor';
+        case 'decision':
+        case 'evaluate':
+          return 'decision-evaluator';
         default:
           return 'generic-action-executor';
       }
     }
     
-    // Check for approval-related nodes
+    // ✅ APPROVAL DETECTION: Check for approval-related data
     if (data.approverRole || data.approverType) {
+      // Smart detection: auto vs manual approval
+      if (data.approverType === 'automatic' || data.rules) {
+        return 'auto-approval-executor';
+      }
       return 'approval-action-executor';
     }
     
-    // Check label for hints
+    // ✅ LABEL HINTS: Last resort fallback
     const label = (data.label || '').toLowerCase();
     if (label.includes('email')) return 'email-action-executor';
-    if (label.includes('sms')) return 'sms-action-executor';
-    if (label.includes('approve')) return 'approval-action-executor';
-    if (label.includes('ticket')) return 'ticket-action-executor';
-    if (label.includes('payment')) return 'payment-action-executor';
+    if (label.includes('approval') || label.includes('approve')) {
+      return label.includes('auto') ? 'auto-approval-executor' : 'approval-action-executor';
+    }
+    if (label.includes('decision') || label.includes('evaluate')) return 'decision-evaluator';
     
+    // ✅ DEFAULT: Generic executor for unknown actions
     return 'generic-action-executor';
   }
 
   /**
    * Map AI nodes to specific executors
+   * 🎯 ALLINEATO AI 7 EXECUTORS BACKEND REALI
    */
   private mapAiExecutor(node: ReactFlowNode): string {
-    const aiType = node.data?.aiType;
+    // ✅ PRIMARY MAPPING: ReactFlow Node ID → Backend Executor
+    if (node.id.includes('ai-decision') || node.type === 'ai-decision') {
+      return 'ai-decision-executor';
+    }
     
+    // ✅ LEGACY MAPPING: For backward compatibility
+    const aiType = node.data?.aiType;
     switch (aiType) {
       case 'decision':
-        return 'ai-decision-executor';
-      case 'classification':
-        return 'ai-classification-executor';
-      case 'content':
-        return 'ai-content-executor';
       case 'routing':
-        return 'ai-routing-executor';
+      case 'classification':
+      case 'content':
+        // All AI functionality routed through the single AI executor
+        return 'ai-decision-executor';
       default:
-        return 'ai-generic-executor';
+        // Default AI processing
+        return 'ai-decision-executor';
     }
   }
 
