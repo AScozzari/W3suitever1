@@ -91,36 +91,26 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     importWorkflow
   } = useWorkflowStore();
   
-  // FORCE TEST NODES - CENTRO SCHERMO
-  const testNodes = [
-    {
-      id: 'test-1',
-      type: 'action',
-      position: { x: 0, y: 0 }, // CENTRO ASSOLUTO
-      data: { 
-        name: 'ROSSO VISIBLE',
-        description: 'This should always appear',
-        color: '#FF6900'
-      }
-    },
-    {
-      id: 'test-2',
-      type: 'trigger', 
-      position: { x: 250, y: 0 }, // AFFIANCO AL PRIMO
-      data: { 
-        name: 'BLU VISIBLE',
-        description: 'This should also appear',
-        color: '#7B2CBF'
-      }
-    }
-  ];
-
-  // Inizializza store con testNodes se vuoto
+  // 🎯 Initialize workflow based on mode - empty for new, populated if editing
   React.useEffect(() => {
-    if (nodes.length === 0) {
-      testNodes.forEach(node => addNode(node));
+    // If templateId is provided, we're editing an existing workflow
+    if (templateId) {
+      // TODO: Load the specific workflow template
+      console.log('📁 Loading workflow template:', templateId);
+      // For now, keep existing nodes if any
+    } else {
+      // No templateId means NEW workflow - ensure completely clean canvas
+      console.log('✨ Creating new workflow - resetting to empty canvas');
+      clearWorkflow(); // Always clear for new workflows
     }
-  }, []);
+  }, [templateId, clearWorkflow]);
+
+  // 🎯 Additional safety: Force clear on component mount for new workflows
+  React.useEffect(() => {
+    if (!templateId) {
+      clearWorkflow();
+    }
+  }, []); // Run only once on mount
   
   const testEdges: Edge[] = [];
   
