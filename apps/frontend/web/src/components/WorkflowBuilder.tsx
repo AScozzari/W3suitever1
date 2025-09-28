@@ -688,6 +688,37 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               // 🤖 AI DECISION SPECIFIC CONFIGURATION
               if (currentNode.data.id === 'ai-decision') {
                 const config = currentNode.data.config || {};
+                const [prompt, setPrompt] = useState(config.prompt || 'Analizza i seguenti dati e prendi una decisione: {{input}}');
+                const [outputs, setOutputs] = useState(config.outputs || [
+                  { condition: 'approve', path: 'approve' },
+                  { condition: 'reject', path: 'reject' },
+                  { condition: 'escalate', path: 'escalate' }
+                ]);
+                const [timeout, setTimeout] = useState(config.fallback?.timeout || 30000);
+                const [defaultPath, setDefaultPath] = useState(config.fallback?.defaultPath || 'manual_review');
+                
+                const handleSaveAiConfig = () => {
+                  const updatedConfig = {
+                    prompt,
+                    outputs,
+                    fallback: {
+                      timeout: Number(timeout),
+                      defaultPath
+                    }
+                  };
+                  
+                  // 💾 Update node data with new configuration
+                  setNodes(prevNodes => 
+                    prevNodes.map(node => 
+                      node.id === configNodeId 
+                        ? { ...node, data: { ...node.data, config: updatedConfig } }
+                        : node
+                    )
+                  );
+                  
+                  console.log('🤖 AI Decision config saved:', updatedConfig);
+                  setShowConfigPanel(false);
+                };
                 
                 return (
                   <div className="space-y-4">
@@ -696,7 +727,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                         📝 Prompt AI
                       </label>
                       <textarea 
-                        value={config.prompt || 'Analizza i seguenti dati e prendi una decisione: {{input}}'} 
+                        value={prompt} 
+                        onChange={(e) => setPrompt(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-windtre-orange"
                         rows={4}
                         placeholder="Scrivi il prompt per l'AI..."
@@ -710,15 +742,18 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                         🔀 Percorsi Decisione
                       </label>
                       <div className="space-y-2">
-                        {['approve', 'reject', 'escalate'].map((path) => (
-                          <div key={path} className="flex items-center gap-2">
-                            <span className="text-sm w-16 capitalize">{path}:</span>
+                        {outputs.map((output, index) => (
+                          <div key={output.condition} className="flex items-center gap-2">
+                            <span className="text-sm w-16 capitalize">{output.condition}:</span>
                             <input 
                               type="text" 
-                              value={config.outputs?.find(o => o.condition === path)?.path || path}
+                              value={output.path}
+                              onChange={(e) => setOutputs(prev => 
+                                prev.map((o, i) => i === index ? { ...o, path: e.target.value } : o)
+                              )}
                               className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
-                              placeholder={`Percorso per ${path}`}
-                              data-testid={`input-output-${path}`}
+                              placeholder={`Percorso per ${output.condition}`}
+                              data-testid={`input-output-${output.condition}`}
                             />
                           </div>
                         ))}
@@ -734,7 +769,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                           <span className="text-sm w-20">Timeout:</span>
                           <input 
                             type="number" 
-                            value={config.fallback?.timeout || 30000}
+                            value={timeout}
+                            onChange={(e) => setTimeout(Number(e.target.value))}
                             className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
                             placeholder="30000"
                             data-testid="input-fallback-timeout"
@@ -745,7 +781,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                           <span className="text-sm w-20">Default:</span>
                           <input 
                             type="text" 
-                            value={config.fallback?.defaultPath || 'manual_review'}
+                            value={defaultPath}
+                            onChange={(e) => setDefaultPath(e.target.value)}
                             className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
                             placeholder="manual_review"
                             data-testid="input-fallback-default"
@@ -763,10 +800,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                         Annulla
                       </Button>
                       <Button 
-                        onClick={() => {
-                          console.log('🤖 Saving AI Decision config for:', configNodeId);
-                          setShowConfigPanel(false);
-                        }}
+                        onClick={handleSaveAiConfig}
                         data-testid="button-save-ai-config"
                       >
                         Salva AI Config
