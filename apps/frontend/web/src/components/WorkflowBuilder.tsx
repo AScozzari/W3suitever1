@@ -53,33 +53,13 @@ import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// SIMPLIFIED node types for debugging
-const SimpleNode = ({ data }: any) => {
-  console.log('🎭 SimpleNode rendering with data:', data);
-  return (
-    <div 
-      style={{ 
-        background: '#FF6900', 
-        color: 'white', 
-        padding: '20px', 
-        borderRadius: '8px',
-        border: '2px solid #000',
-        minWidth: '150px'
-      }}
-    >
-      <div style={{ fontWeight: 'bold' }}>{data?.name || 'Test Node'}</div>
-      <div style={{ fontSize: '12px' }}>{data?.description || 'Debug node'}</div>
-    </div>
-  );
-};
-
-// Custom node types for ReactFlow  
+// ✅ REAL PROFESSIONAL NODE COMPONENTS
 const nodeTypes: NodeTypes = {
-  action: SimpleNode,
-  trigger: SimpleNode,
-  ai: SimpleNode,
-  condition: SimpleNode,
-  flow: SimpleNode,
+  action: WorkflowActionNode,
+  trigger: WorkflowTriggerNode,
+  ai: WorkflowAiNode,
+  condition: WorkflowActionNode, // Reuse action node for conditions
+  flow: WorkflowActionNode, // Reuse action node for flow control
 };
 
 interface WorkflowBuilderProps {
@@ -92,46 +72,25 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { project } = useReactFlow();
   
-  // DEBUG: HARDCODED NODES FOR TESTING
-  const hardcodedNodes = [
-    {
-      id: 'test-1',
-      type: 'action',
-      position: { x: 100, y: 100 },
-      data: { name: 'Hardcoded Node 1', description: 'Fixed test node' }
-    },
-    {
-      id: 'test-2', 
-      type: 'action',
-      position: { x: 300, y: 200 },
-      data: { name: 'Hardcoded Node 2', description: 'Another fixed node' }
-    }
-  ];
-
-  const hardcodedEdges = [
-    {
-      id: 'edge-1',
-      source: 'test-1',
-      target: 'test-2',
-      type: 'default'
-    }
-  ];
-
-  // Use hardcoded for debugging
-  const nodes = hardcodedNodes;
-  const edges = hardcodedEdges;
+  // ✅ REAL WORKFLOW STORE (debug successful!)
+  const {
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    addNode,
+    selectNode,
+    selectedNodeId,
+    isRunning,
+    setRunning,
+    undo,
+    redo,
+    clearWorkflow,
+    exportWorkflow,
+    importWorkflow
+  } = useWorkflowStore();
   
-  // Mock store functions for debugging
-  const addNode = (node: any) => console.log('➕ addNode mock:', node);
-  const setRunning = (running: boolean) => console.log('▶️ setRunning mock:', running);
-  const isRunning = false;
-  const clearWorkflow = () => console.log('🗑️ clearWorkflow mock');
-  const exportWorkflow = () => console.log('📤 exportWorkflow mock');
-  const importWorkflow = (data: string) => console.log('📥 importWorkflow mock:', data);
-  const undo = () => console.log('↩️ undo mock');
-  const redo = () => console.log('↪️ redo mock');
-  
-  console.log('🔥 HARDCODED TEST - nodes:', nodes.length, 'edges:', edges.length);
+  console.log('🔥 REAL STORE - nodes:', nodes?.length || 0, 'edges:', edges?.length || 0);
 
   // Local state
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
@@ -140,29 +99,65 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // SIMPLIFIED event handlers for debugging
-  const onConnect = useCallback((params: Connection) => {
-    console.log('🔗 Connection attempted:', params);
-  }, []);
-  
-  const setNodes = (nodes: any) => console.log('📝 setNodes called:', nodes);
-  const setEdges = (edges: any) => console.log('📝 setEdges called:', edges);
+  // ✅ REAL REACTFLOW EVENT HANDLERS
+  const onConnect = useCallback(
+    (params: Connection) => {
+      const newEdge = {
+        ...params,
+        id: `edge-${params.source}-${params.target}`,
+        type: 'default',
+        animated: true,
+        style: { stroke: '#FF6900', strokeWidth: 2 }
+      };
+      setEdges([...edges, newEdge]);
+      console.log('🔗 Real connection made:', newEdge);
+    },
+    [setEdges, edges]
+  );
 
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    console.log('📍 Node changes:', changes);
-  }, []);
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      const currentNodes = nodes || [];
+      const updatedNodes = currentNodes.map((node: Node) => {
+        const change = changes.find((c) => 'id' in c && c.id === node.id);
+        if (change) {
+          if (change.type === 'position' && 'position' in change && change.position) {
+            return { ...node, position: change.position };
+          }
+          if (change.type === 'select' && 'selected' in change) {
+            return { ...node, selected: change.selected };
+          }
+        }
+        return node;
+      });
+      setNodes(updatedNodes);
+    },
+    [setNodes, nodes]
+  );
 
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    console.log('🔗 Edge changes:', changes);
-  }, []);
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      const currentEdges = edges || [];
+      const updatedEdges = currentEdges.filter((edge: Edge) => {
+        const change = changes.find((c) => 'id' in c && c.id === edge.id);
+        return !(change && change.type === 'remove');
+      });
+      setEdges(updatedEdges);
+    },
+    [setEdges, edges]
+  );
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    console.log('🖱️ Node clicked:', node.id);
-  }, []);
+  const onNodeClick = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      selectNode(node.id);
+      console.log('🖱️ Node selected:', node.id);
+    },
+    [selectNode]
+  );
 
   const onPaneClick = useCallback(() => {
-    console.log('🖱️ Pane clicked');
-  }, []);
+    selectNode(null);
+  }, [selectNode]);
 
   // Drag and drop functionality
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -231,32 +226,9 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // TEST: Add test node function
-  const handleTestAddNode = () => {
-    console.log('🧪 TEST: Adding test node manually');
-    
-    const testNode: Node = {
-      id: `test-node-${Date.now()}`,
-      type: 'action',
-      position: { x: 100, y: 100 },
-      data: {
-        id: 'test-send-email',
-        name: 'Test Email Node',
-        description: 'Test node for debugging',
-        category: 'action',
-        color: '#FF6900',
-        defaultConfig: { recipient: '', subject: '', body: '' }
-      },
-      draggable: true,
-      connectable: true,
-      deletable: true,
-      selectable: true,
-    };
-    
-    console.log('🧪 TEST: Created test node:', testNode);
-    addNode(testNode);
-    console.log('🧪 TEST: Node should be added now');
-  };
+  // ✅ NODE CONFIGURATION PANEL (will be implemented)
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [configNodeId, setConfigNodeId] = useState<string | null>(null);
 
   // Workflow actions
   const handleSaveWorkflow = () => {
@@ -508,17 +480,6 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             </div>
             
             <div className="flex items-center gap-2">
-              {/* DEBUG: Test add node button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleTestAddNode}
-                className="bg-red-100 border-red-300"
-                data-testid="button-test-add"
-              >
-                🧪 TEST ADD
-              </Button>
-              
               <Button
                 variant="outline"
                 size="sm"
