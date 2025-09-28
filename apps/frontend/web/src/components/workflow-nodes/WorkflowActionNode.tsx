@@ -20,6 +20,7 @@ interface ActionNodeData {
 }
 
 export function WorkflowActionNode({ data, selected }: NodeProps<ActionNodeData>) {
+  console.log('🔍 DEBUG STEP 2: WorkflowActionNode rendering with data:', data);
   return (
     <div className={`workflow-node ${selected ? 'selected' : ''}`}>
       <Handle 

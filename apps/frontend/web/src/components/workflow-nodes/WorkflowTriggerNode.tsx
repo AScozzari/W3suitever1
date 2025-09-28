@@ -20,6 +20,7 @@ interface TriggerNodeData {
 }
 
 export function WorkflowTriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
+  console.log('🔍 DEBUG STEP 2: WorkflowTriggerNode rendering with data:', data);
   return (
     <div className={`workflow-node ${selected ? 'selected' : ''}`}>
       <Card className={`min-w-[200px] windtre-glass-panel border-2 transition-all ${
