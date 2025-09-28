@@ -40,7 +40,8 @@ import {
   Settings,
   Palette,
   Eye,
-  Trash2
+  Trash2,
+  Search
 } from 'lucide-react';
 
 import { useWorkflowStore } from '../stores/workflowStore';
