@@ -810,57 +810,6 @@ router.post('/workflow-templates', requirePermission('workflow.create'), async (
   }
 });
 
-// GET /api/team-workflow-assignments - Get assignments
-router.get('/team-workflow-assignments', requirePermission('workflow.read'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.headers['x-tenant-id'] as string;
-    
-    if (!tenantId) {
-      return res.status(400).json({ error: 'Tenant ID is required' });
-    }
-
-    const result = await db
-      .select()
-      .from(teamWorkflowAssignments)
-      .where(eq(teamWorkflowAssignments.tenantId, tenantId))
-      .orderBy(desc(teamWorkflowAssignments.createdAt));
-
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching team workflow assignments:', error);
-    res.status(500).json({ error: 'Failed to fetch team workflow assignments' });
-  }
-});
-
-// POST /api/team-workflow-assignments - Create assignment
-router.post('/team-workflow-assignments', requirePermission('workflow.create'), async (req: Request, res: Response) => {
-  try {
-    const tenantId = req.headers['x-tenant-id'] as string;
-    const userId = (req as any).user?.id;
-    
-    if (!tenantId) {
-      return res.status(400).json({ error: 'Tenant ID is required' });
-    }
-
-    const assignmentData = {
-      ...req.body,
-      tenantId,
-      createdBy: userId
-    };
-
-    const validated = insertTeamWorkflowAssignmentSchema.parse(assignmentData);
-    
-    const result = await db
-      .insert(teamWorkflowAssignments)
-      .values(validated)
-      .returning();
-
-    res.json(result[0]);
-  } catch (error) {
-    console.error('Error creating team workflow assignment:', error);
-    res.status(500).json({ error: 'Failed to create team workflow assignment' });
-  }
-});
 
 // GET /api/workflow-instances - Get workflow instances
 router.get('/workflow-instances', requirePermission('workflow.read'), async (req: Request, res: Response) => {
