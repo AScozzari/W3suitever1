@@ -157,6 +157,8 @@ export const TeamSchema = z.object({
   roleMembers: z.array(z.string()).default([]),
   primarySupervisor: z.string().optional(),
   secondarySupervisors: z.array(z.string()).default([]),
+  // 🎯 DEPARTMENT ASSIGNMENT: Team può gestire multipli dipartimenti
+  assignedDepartments: z.array(z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance'])).default([]),
   isActive: z.boolean().default(true),
   metadata: z.record(z.any()).default({})
 });
@@ -166,6 +168,33 @@ export const CreateTeamSchema = TeamSchema.omit({
 });
 
 export const UpdateTeamSchema = TeamSchema.partial().omit({
+  id: true,
+  tenantId: true
+});
+
+// ==================== TEAM WORKFLOW ASSIGNMENTS ====================
+
+export const TeamWorkflowAssignmentSchema = z.object({
+  id: z.string().uuid().optional(),
+  tenantId: z.string().uuid(),
+  teamId: z.string().uuid(),
+  templateId: z.string().uuid(),
+  // 🎯 DEPARTMENT-SPECIFIC ASSIGNMENT: Workflow assignato per specifico dipartimento
+  forDepartment: z.enum(['hr', 'operations', 'support', 'crm', 'sales', 'finance']),
+  autoAssign: z.boolean().default(true),
+  priority: z.number().int().default(100),
+  conditions: z.record(z.any()).default({}),
+  overrides: z.record(z.any()).default({}),
+  isActive: z.boolean().default(true),
+  validFrom: z.string().datetime().optional(),
+  validTo: z.string().datetime().optional()
+});
+
+export const CreateTeamWorkflowAssignmentSchema = TeamWorkflowAssignmentSchema.omit({
+  id: true
+});
+
+export const UpdateTeamWorkflowAssignmentSchema = TeamWorkflowAssignmentSchema.partial().omit({
   id: true,
   tenantId: true
 });
@@ -256,6 +285,10 @@ export type UpdateUniversalRequest = z.infer<typeof UpdateUniversalRequestSchema
 export type Team = z.infer<typeof TeamSchema>;
 export type CreateTeam = z.infer<typeof CreateTeamSchema>;
 export type UpdateTeam = z.infer<typeof UpdateTeamSchema>;
+
+export type TeamWorkflowAssignment = z.infer<typeof TeamWorkflowAssignmentSchema>;
+export type CreateTeamWorkflowAssignment = z.infer<typeof CreateTeamWorkflowAssignmentSchema>;
+export type UpdateTeamWorkflowAssignment = z.infer<typeof UpdateTeamWorkflowAssignmentSchema>;
 
 export type WorkflowRoutingDecision = z.infer<typeof WorkflowRoutingDecisionSchema>;
 export type AIWorkflowRoutingRequest = z.infer<typeof AIWorkflowRoutingRequestSchema>;

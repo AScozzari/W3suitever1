@@ -1139,16 +1139,27 @@ router.post('/teams', requirePermission('teams.write'), async (req: Request, res
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
+    // 🎯 ENHANCED VALIDATION: Include assignedDepartments in team creation
     const validatedData = insertTeamSchema.parse({
       ...req.body,
       tenantId,
-      createdBy: userId || 'system'
+      createdBy: userId || 'system',
+      updatedBy: userId || 'system'
     });
 
+    await setTenantContext(tenantId);
     const [newTeam] = await db
       .insert(teams)
       .values(validatedData)
       .returning();
+
+    logger.info('Team created with department assignments', { 
+      teamId: newTeam.id, 
+      teamName: newTeam.name,
+      assignedDepartments: newTeam.assignedDepartments,
+      tenantId, 
+      userId 
+    });
 
     res.status(201).json(newTeam);
   } catch (error: any) {
@@ -1166,16 +1177,20 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const teamId = req.params.id;
+    const userId = (req as any).user?.id;
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
+    // 🎯 ENHANCED UPDATE: Support assignedDepartments updates
+    await setTenantContext(tenantId);
     const [updatedTeam] = await db
       .update(teams)
       .set({
         ...req.body,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        updatedBy: userId || 'system'
       })
       .where(and(
         eq(teams.id, teamId),
@@ -1186,6 +1201,14 @@ router.patch('/teams/:id', requirePermission('teams.write'), async (req: Request
     if (!updatedTeam) {
       return res.status(404).json({ error: 'Team not found' });
     }
+
+    logger.info('Team updated with department assignments', { 
+      teamId: updatedTeam.id, 
+      teamName: updatedTeam.name,
+      assignedDepartments: updatedTeam.assignedDepartments,
+      tenantId, 
+      userId 
+    });
 
     res.json(updatedTeam);
   } catch (error) {
