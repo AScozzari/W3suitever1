@@ -77,6 +77,11 @@
   --brand-glass-purple: linear-gradient(135deg, rgba(123, 44, 191, 0.1), rgba(123, 44, 191, 0.05));
   --brand-glass-gradient: linear-gradient(135deg, rgba(255, 105, 0, 0.1), rgba(123, 44, 191, 0.1));
   
+  /* Modal positioning fix */
+  --modal-z-index: 50;
+  --select-content-z-index: 60;
+  --tooltip-z-index: 70;
+  
   /* Professional Glass Cards */
   --glass-card-bg: rgba(255, 255, 255, 0.12);
   --glass-card-border: rgba(255, 255, 255, 0.18);
@@ -118,6 +123,61 @@
   --duration-base: 250ms;
   --duration-slow: 350ms;
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🚀 MODAL POSITION FIX - Stabilizza modal e select */
+[data-radix-portal] {
+  position: fixed !important;
+  z-index: var(--modal-z-index) !important;
+}
+
+/* Stabilizza Select Content per evitare che si muova */
+[data-radix-select-content] {
+  position: fixed !important;
+  z-index: var(--select-content-z-index) !important;
+  pointer-events: auto !important;
+  transform-origin: center !important;
+  will-change: transform !important;
+}
+
+/* Stabilizza Dialog Overlay */
+[data-radix-dialog-overlay] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: var(--modal-z-index) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Stabilizza Dialog Content */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: calc(var(--modal-z-index) + 1) !important;
+  pointer-events: auto !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  will-change: transform !important;
+}
+
+/* Dipartimenti selection modal specific fix */
+.department-selection-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  will-change: transform !important;
+}
+
+/* Teams filter select stabilization */
+[data-testid="select-department-filter"] [data-radix-select-content] {
+  position: fixed !important;
+  z-index: 70 !important;
+  will-change: transform !important;
 }
 
 * {
@@ -527,6 +587,13 @@ button:focus-visible,
     0 10px 30px rgba(0, 0, 0, 0.1),
     0 1px 8px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  will-change: transform !important;
 }
 
 /* Dialog Overlay Fix */
