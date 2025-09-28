@@ -462,7 +462,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase, path: '/magazzino' },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building, path: '/amministrazione' },
     { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' },
-    { id: 'teams', label: 'Team Management', icon: Users, path: '/teams' },
+    { id: 'workflow-management', label: 'Workflow & Teams', icon: Users, path: '/workflow-management' },
     { id: 'listini', label: 'Listini', icon: FileText, path: '/listini' },
     { id: 'cassa', label: 'Cassa', icon: ShoppingBag, path: '/cassa' },
     { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
@@ -478,6 +478,9 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     
     // Per settings, può essere sia /settings che /impostazioni  
     if (section === 'settings') return 'impostazioni';
+    
+    // Per workflow-management 
+    if (section === 'workflow-management') return 'workflow-management';
     
     // Trova item corrispondente al path
     const matchedItem = menuItems.find(item => 
@@ -1012,6 +1015,15 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                     // Navigation pulita usando path unificati
                     const segments = location.split('/').filter(Boolean);
                     const tenant = segments[0] || 'staging';
+                    
+                    // Fix specifico per workflow-management
+                    if (item.id === 'workflow-management') {
+                      console.log(`🎯 WORKFLOW NAVIGATION: forcing /staging/workflow-management`);
+                      navigate('/staging/workflow-management');
+                      return;
+                    }
+                    
+                    console.log(`🎯 NAVIGATION: current location="${location}", segments=`, segments, `tenant="${tenant}", navigating to: /${tenant}${item.path}`);
                     navigate(`/${tenant}${item.path}`);
                   }}
                   className={`

@@ -5658,25 +5658,6 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'Entity Management':
         return renderEntityManagement();
-      case 'Hierarchy Management':
-        // Redirect to new WorkflowManagementPage instead of showing old inline content
-        const currentTenant = localStorage.getItem('currentTenant') || 'staging';
-        setLocation(`/${currentTenant}/workflow-management`);
-        return (
-          <div style={{
-            textAlign: 'center',
-            padding: '40px',
-            background: 'hsla(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(24px) saturate(140%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(140%)',
-            border: '1px solid hsla(255, 255, 255, 0.12)',
-            borderRadius: '16px'
-          }}>
-            <Users size={48} style={{ color: '#6b7280', marginBottom: '16px' }} />
-            <h3 style={{ color: '#111827', marginBottom: '8px' }}>Reindirizzamento...</h3>
-            <p style={{ color: '#6b7280' }}>Stai per essere reindirizzato alla nuova pagina Workflow Management.</p>
-          </div>
-        );
       case 'AI Assistant':
         return renderAIAssistant();
       case 'Channel Settings':
