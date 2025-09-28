@@ -89,6 +89,10 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
     exportWorkflow,
     importWorkflow
   } = useWorkflowStore();
+  
+  // DEBUG: Log store state
+  console.log('🔍 WorkflowBuilder render - nodes from store:', nodes?.length || 0);
+  console.log('🔍 WorkflowBuilder render - edges from store:', edges?.length || 0);
 
   // Local state
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
@@ -164,16 +168,34 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+      
+      console.log('🎯 DROP EVENT TRIGGERED');
+      console.log('reactFlowInstance:', reactFlowInstance);
+      console.log('draggedNodeType:', draggedNodeType);
 
-      if (!reactFlowInstance || !draggedNodeType) return;
+      if (!reactFlowInstance) {
+        console.error('❌ No reactFlowInstance');
+        return;
+      }
+      
+      if (!draggedNodeType) {
+        console.error('❌ No draggedNodeType');
+        return;
+      }
 
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
+      console.log('📍 Position calculated:', position);
 
       const nodeDefinition = ALL_WORKFLOW_NODES.find(n => n.id === draggedNodeType);
-      if (!nodeDefinition) return;
+      console.log('🔍 Node definition found:', nodeDefinition);
+      
+      if (!nodeDefinition) {
+        console.error('❌ No nodeDefinition found for:', draggedNodeType);
+        return;
+      }
 
       const newNode: Node = {
         id: `${nodeDefinition.id}-${Date.now()}`,
@@ -187,10 +209,11 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
         connectable: true,
         deletable: true,
         selectable: true,
-        dragHandle: '.drag-handle',
       };
-
+      
+      console.log('✨ New node created:', newNode);
       addNode(newNode);
+      console.log('✅ Node added to store');
       setDraggedNodeType(null);
     },
     [reactFlowInstance, addNode, draggedNodeType]
@@ -198,8 +221,36 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
 
   // Node palette drag start
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
+    console.log('🚀 DRAG START:', nodeType);
     setDraggedNodeType(nodeType);
     event.dataTransfer.effectAllowed = 'move';
+  };
+
+  // TEST: Add test node function
+  const handleTestAddNode = () => {
+    console.log('🧪 TEST: Adding test node manually');
+    
+    const testNode: Node = {
+      id: `test-node-${Date.now()}`,
+      type: 'action',
+      position: { x: 100, y: 100 },
+      data: {
+        id: 'test-send-email',
+        name: 'Test Email Node',
+        description: 'Test node for debugging',
+        category: 'action',
+        color: '#FF6900',
+        defaultConfig: { recipient: '', subject: '', body: '' }
+      },
+      draggable: true,
+      connectable: true,
+      deletable: true,
+      selectable: true,
+    };
+    
+    console.log('🧪 TEST: Created test node:', testNode);
+    addNode(testNode);
+    console.log('🧪 TEST: Node should be added now');
   };
 
   // Workflow actions
@@ -452,6 +503,17 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             </div>
             
             <div className="flex items-center gap-2">
+              {/* DEBUG: Test add node button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestAddNode}
+                className="bg-red-100 border-red-300"
+                data-testid="button-test-add"
+              >
+                🧪 TEST ADD
+              </Button>
+              
               <Button
                 variant="outline"
                 size="sm"
