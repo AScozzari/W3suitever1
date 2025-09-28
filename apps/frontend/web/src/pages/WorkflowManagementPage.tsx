@@ -702,6 +702,10 @@ const CATEGORIES = {
 };
 
 const WorkflowManagementPage = () => {
+  console.log('🚨🚨🚨 [WORKFLOW-PAGE] COMPONENT RENDERING!!! 🚨🚨🚨');
+  console.log('[WORKFLOW-PAGE] 📍 Current URL:', window.location.href);
+  console.log('[WORKFLOW-PAGE] ⏰ Timestamp:', new Date().toISOString());
+  
   const { toast } = useToast();
   
   // 🎯 TEMPLATE STATE DECLARATIONS (fixed initialization order)
