@@ -73,7 +73,7 @@ export const WorkflowTemplateSchema = z.object({
   nodes: z.array(WorkflowNodeSchema),
   edges: z.array(WorkflowEdgeSchema),
   isActive: z.boolean().default(true),
-  version: z.string().default('1.0.0'),
+  version: z.number().int().default(1),
   metadata: z.record(z.any()).default({})
 });
 

@@ -84,7 +84,7 @@ router.get('/templates', async (req, res) => {
     const limitNum = parseInt(limit as string);
     const offset = (pageNum - 1) * limitNum;
 
-    // Build where conditions
+    // Build where conditions  
     let whereConditions = [eq(workflowTemplates.tenantId, tenantId)];
     
     if (isActive !== 'all') {
@@ -100,7 +100,7 @@ router.get('/templates', async (req, res) => {
         or(
           like(workflowTemplates.name, `%${search}%`),
           like(workflowTemplates.description, `%${search}%`)
-        )
+        )!
       );
     }
 
@@ -114,14 +114,30 @@ router.get('/templates', async (req, res) => {
     const totalPages = Math.ceil(total / limitNum);
 
     // Get templates with sorting
-    const orderBy = sortOrder === 'desc' ? desc : asc;
-    const sortField = workflowTemplates[sortBy as keyof typeof workflowTemplates] || workflowTemplates.updatedAt;
+    // Get templates with sorting
+    const orderDirection = sortOrder === 'desc' ? desc : asc;
+    let sortColumn;
+    switch (sortBy) {
+      case 'name':
+        sortColumn = workflowTemplates.name;
+        break;
+      case 'category':
+        sortColumn = workflowTemplates.category;
+        break;
+      case 'createdAt':
+        sortColumn = workflowTemplates.createdAt;
+        break;
+      case 'updatedAt':
+      default:
+        sortColumn = workflowTemplates.updatedAt;
+        break;
+    }
 
     const templates = await db
       .select()
       .from(workflowTemplates)
       .where(and(...whereConditions))
-      .orderBy(orderBy(sortField))
+      .orderBy(orderDirection(sortColumn))
       .limit(limitNum)
       .offset(offset);
 
@@ -138,7 +154,7 @@ router.get('/templates', async (req, res) => {
     } as ApiPaginatedResponse<typeof templates[0]>);
 
   } catch (error) {
-    logger.error('Error fetching workflow templates', { error, tenantId: req.tenantId });
+    logger.error('Error fetching workflow templates', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -155,6 +171,14 @@ router.get('/templates/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
 
     const [template] = await db
       .select()
@@ -197,6 +221,14 @@ router.post('/templates', rbacMiddleware, requirePermission('workflow.create_tem
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
     const userId = req.user?.id;
 
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
     // Validate request body
     const validation = CreateWorkflowTemplateSchema.safeParse({
       ...req.body,
@@ -238,7 +270,7 @@ router.post('/templates', rbacMiddleware, requirePermission('workflow.create_tem
     } as ApiSuccessResponse<typeof newTemplate>);
 
   } catch (error) {
-    logger.error('Error creating workflow template', { error, tenantId: req.tenantId });
+    logger.error('Error creating workflow template', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -256,6 +288,14 @@ router.put('/templates/:id', rbacMiddleware, requirePermission('workflow.edit_te
     const { id } = req.params;
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
     const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
 
     // Validate request body
     const validation = UpdateWorkflowTemplateSchema.safeParse(req.body);
@@ -334,6 +374,14 @@ router.delete('/templates/:id', rbacMiddleware, requirePermission('workflow.dele
     const { id } = req.params;
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
     const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
 
     // Check if template exists and belongs to tenant
     const [existingTemplate] = await db
@@ -416,6 +464,15 @@ router.delete('/templates/:id', rbacMiddleware, requirePermission('workflow.dele
 router.get('/instances', async (req, res) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+    
     const { 
       page = '1', 
       limit = '10', 
@@ -455,12 +512,42 @@ router.get('/instances', async (req, res) => {
     const totalPages = Math.ceil(total / limitNum);
 
     // Get instances with template info
-    const orderBy = sortOrder === 'desc' ? desc : asc;
-    const sortField = workflowInstances[sortBy as keyof typeof workflowInstances] || workflowInstances.createdAt;
+    const orderDirection = sortOrder === 'desc' ? desc : asc;
+    let sortColumn;
+    switch (sortBy) {
+      case 'instanceName':
+        sortColumn = workflowInstances.instanceName;
+        break;
+      case 'currentStatus':
+        sortColumn = workflowInstances.currentStatus;
+        break;
+      case 'updatedAt':
+        sortColumn = workflowInstances.updatedAt;
+        break;
+      case 'createdAt':
+      default:
+        sortColumn = workflowInstances.createdAt;
+        break;
+    }
 
     const instances = await db
       .select({
-        ...workflowInstances,
+        id: workflowInstances.id,
+        tenantId: workflowInstances.tenantId,
+        templateId: workflowInstances.templateId,
+        referenceId: workflowInstances.referenceId,
+        instanceType: workflowInstances.instanceType,
+        instanceName: workflowInstances.instanceName,
+        currentStatus: workflowInstances.currentStatus,
+        currentStepId: workflowInstances.currentStepId,
+        currentNodeId: workflowInstances.currentNodeId,
+        currentAssignee: workflowInstances.currentAssignee,
+        metadata: workflowInstances.metadata,
+        context: workflowInstances.context,
+        createdAt: workflowInstances.createdAt,
+        updatedAt: workflowInstances.updatedAt,
+        createdBy: workflowInstances.createdBy,
+        updatedBy: workflowInstances.updatedBy,
         template: {
           id: workflowTemplates.id,
           name: workflowTemplates.name,
@@ -470,7 +557,7 @@ router.get('/instances', async (req, res) => {
       .from(workflowInstances)
       .leftJoin(workflowTemplates, eq(workflowInstances.templateId, workflowTemplates.id))
       .where(and(...whereConditions))
-      .orderBy(orderBy(sortField))
+      .orderBy(orderDirection(sortColumn))
       .limit(limitNum)
       .offset(offset);
 
@@ -487,7 +574,7 @@ router.get('/instances', async (req, res) => {
     } as ApiPaginatedResponse<typeof instances[0]>);
 
   } catch (error) {
-    logger.error('Error fetching workflow instances', { error, tenantId: req.tenantId });
+    logger.error('Error fetching workflow instances', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -504,6 +591,14 @@ router.post('/instances', rbacMiddleware, requirePermission('workflow.create_ins
   try {
     const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
     const userId = req.user?.id;
+
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
 
     // Validate request body
     const validation = CreateWorkflowInstanceSchema.safeParse({
@@ -565,7 +660,7 @@ router.post('/instances', rbacMiddleware, requirePermission('workflow.create_ins
     } as ApiSuccessResponse<typeof newInstance>);
 
   } catch (error) {
-    logger.error('Error creating workflow instance', { error, tenantId: req.tenantId });
+    logger.error('Error creating workflow instance', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -627,14 +722,35 @@ router.get('/requests', async (req, res) => {
     const totalPages = Math.ceil(total / limitNum);
 
     // Get requests
-    const orderBy = sortOrder === 'desc' ? desc : asc;
-    const sortField = universalRequests[sortBy as keyof typeof universalRequests] || universalRequests.createdAt;
+    const orderDirection = sortOrder === 'desc' ? desc : asc;
+    let sortColumn;
+    switch (sortBy) {
+      case 'title':
+        sortColumn = universalRequests.title;
+        break;
+      case 'status':
+        sortColumn = universalRequests.status;
+        break;
+      case 'priority':
+        sortColumn = universalRequests.priority;
+        break;
+      case 'department':
+        sortColumn = universalRequests.department;
+        break;
+      case 'updatedAt':
+        sortColumn = universalRequests.updatedAt;
+        break;
+      case 'createdAt':
+      default:
+        sortColumn = universalRequests.createdAt;
+        break;
+    }
 
     const requests = await db
       .select()
       .from(universalRequests)
       .where(and(...whereConditions))
-      .orderBy(orderBy(sortField))
+      .orderBy(orderDirection(sortColumn))
       .limit(limitNum)
       .offset(offset);
 
@@ -651,7 +767,7 @@ router.get('/requests', async (req, res) => {
     } as ApiPaginatedResponse<typeof requests[0]>);
 
   } catch (error) {
-    logger.error('Error fetching universal requests', { error, tenantId: req.tenantId });
+    logger.error('Error fetching universal requests', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -713,7 +829,7 @@ router.post('/requests', rbacMiddleware, async (req, res) => {
     } as ApiSuccessResponse<typeof newRequest>);
 
   } catch (error) {
-    logger.error('Error creating universal request', { error, tenantId: req.tenantId });
+    logger.error('Error creating universal request', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -759,7 +875,7 @@ router.get('/teams', async (req, res) => {
         or(
           like(teams.name, `%${search}%`),
           like(teams.description, `%${search}%`)
-        )
+        )!
       );
     }
 
@@ -794,7 +910,7 @@ router.get('/teams', async (req, res) => {
     } as ApiPaginatedResponse<typeof teamsList[0]>);
 
   } catch (error) {
-    logger.error('Error fetching teams', { error, tenantId: req.tenantId });
+    logger.error('Error fetching teams', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -854,7 +970,7 @@ router.post('/teams', rbacMiddleware, requirePermission('team.create'), async (r
     } as ApiSuccessResponse<typeof newTeam>);
 
   } catch (error) {
-    logger.error('Error creating team', { error, tenantId: req.tenantId });
+    logger.error('Error creating team', { error, tenantId: req.user?.tenantId });
     res.status(500).json({
       success: false,
       error: 'Internal server error',
@@ -982,7 +1098,7 @@ router.post('/ai-route', rbacMiddleware, requirePermission('workflow.create'), a
     logger.error('Error in AI workflow routing', { 
       error, 
       requestId: req.body?.requestId,
-      tenantId: req.tenantId,
+      tenantId: req.user?.tenantId,
       userId: req.user?.id
     });
     
