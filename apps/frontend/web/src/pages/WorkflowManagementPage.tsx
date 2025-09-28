@@ -769,8 +769,9 @@ const WorkflowManagementPage = () => {
   const selectedCategory = zustandSelectedCategory; 
   const setSearchTerm = setZustandSearchTerm;
   const setSelectedCategory = setZustandSelectedCategory;
-  const currentTemplateId = useWorkflowCurrentTemplateId();
-  const isTemplateDirty = useWorkflowIsTemplateDirty();
+  // ✅ FIX: Use Zustand store directly instead of non-existent hooks
+  const currentTemplateId = workflowStore.currentTemplateId;
+  const isTemplateDirty = workflowStore.isTemplateDirty;
   
   // ✅ UNIFIED FILTERING SYSTEM - Removed conflicting old filters
 
