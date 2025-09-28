@@ -98,24 +98,17 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       // For now, keep existing nodes if any
     } else {
       // No templateId means NEW workflow - ensure completely clean canvas
-      console.log('🧹 Clearing workflow for new template - nodes before:', nodes.length);
       clearWorkflow();
-      console.log('✨ Workflow cleared - nodes after:', nodes.length);
     }
-  }, [templateId, clearWorkflow, nodes.length]);
+  }, [templateId, clearWorkflow]);
 
   // 🎯 Force clear on component initialization for new workflows
   React.useEffect(() => {
     if (!templateId) {
-      console.log('🚀 Component mounted - forcing clear for new workflow');
-      setTimeout(() => {
-        clearWorkflow();
-        console.log('⚡ Delayed clear executed');
-      }, 100);
+      clearWorkflow();
     }
   }, []); // Run only once on mount
   
-  const testEdges: Edge[] = [];
   
 
   // Local state
@@ -594,8 +587,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         {/* ReactFlow Canvas */}
         <div className="flex-1" ref={reactFlowWrapper}>
           <ReactFlow
-            nodes={nodes.length > 0 ? nodes : testNodes}
-            edges={edges.length > 0 ? edges : testEdges}
+            nodes={nodes}
+            edges={edges}
             key="reactflow-debug"
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
@@ -604,7 +597,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             onPaneClick={onPaneClick}
             onInit={(instance) => {
               setReactFlowInstance(instance);
-              // Force fit view to show test nodes immediately
+              // Force fit view after initialization
               setTimeout(() => {
                 instance.fitView({ padding: 100, includeHiddenNodes: true });
               }, 200);
