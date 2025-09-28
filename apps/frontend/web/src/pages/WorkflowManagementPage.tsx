@@ -341,9 +341,7 @@ export default function WorkflowManagementPage() {
                 key={tab.id}
                 variant={activeView === tab.id ? 'default' : 'ghost'}
                 onClick={() => {
-                  console.log(`🔍 DEBUG: Clicking tab "${tab.id}", current activeView: "${activeView}"`);
                   setActiveView(tab.id as any);
-                  console.log(`🔍 DEBUG: After click, activeView should be: "${tab.id}"`);
                 }}
                 className="flex items-center gap-2"
                 data-testid={`button-tab-${tab.id}`}

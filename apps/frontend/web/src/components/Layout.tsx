@@ -324,10 +324,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
 
   // 🔄 MAPPING: Database → Placeholder Structure 
   const eventiCalendario = React.useMemo(() => {
-    console.log('🔍 [WORKSPACE-CALENDAR] eventiCalendarioRaw received:', eventiCalendarioRaw?.length || 0, 'events');
-    console.log('🔍 [WORKSPACE-CALENDAR] Sample raw event:', eventiCalendarioRaw?.[0]);
-    
-    if (!eventiCalendarioRaw.length) return [];
+    if (!Array.isArray(eventiCalendarioRaw) || !eventiCalendarioRaw.length) return [];
     
     const mapped = eventiCalendarioRaw.map((event: any) => ({
       id: event.id,
@@ -341,8 +338,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
       descrizione: event.description || 'Nessuna descrizione disponibile'
     }));
     
-    console.log('🔍 [WORKSPACE-CALENDAR] Mapped events:', mapped.length);
-    console.log('🔍 [WORKSPACE-CALENDAR] Sample mapped event:', mapped[0]);
     return mapped;
   }, [eventiCalendarioRaw]);
   
@@ -2043,7 +2038,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             ⚠️ Errore nel caricamento eventi
                           </div>
                         ) : eventiCalendario.length === 0 ? (
-                          /* 🔍 DEBUG STATE */
+                          /* 📅 EMPTY STATE */
                           <div style={{
                             background: 'rgba(156, 163, 175, 0.1)',
                             border: '1px solid rgba(156, 163, 175, 0.2)',
@@ -2053,7 +2048,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                             fontSize: '11px',
                             textAlign: 'center'
                           }}>
-                            🔍 DEBUG: Raw={eventiCalendarioRaw?.length || 0}, Mapped={eventiCalendario.length}, Loading={calendarLoading ? 'YES' : 'NO'}
+                            📅 Nessun evento programmato oggi
                           </div>
                         ) : (
                           /* ✅ EVENTI REALI DAL BACKEND */

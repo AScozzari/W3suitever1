@@ -119,7 +119,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   React.useEffect(() => {
     if (nodes.length === 0) {
       testNodes.forEach(node => addNode(node));
-      console.log('🎯 Store inizializzato con testNodes:', testNodes);
     }
   }, []);
   
@@ -146,7 +145,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   // Use initialCategory from props
   React.useEffect(() => {
     if (initialCategory) {
-      console.log('🎯 Department pre-selected:', initialCategory);
       // Keep all categories visible but show department context
     }
   }, [initialCategory]);
@@ -206,7 +204,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
       selectNode(node.id);
-      console.log('🖱️ Node selected:', node.id);
     },
     [selectNode]
   );
@@ -225,17 +222,11 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     (event: React.DragEvent) => {
       event.preventDefault();
       
-      console.log('🎯 DROP EVENT TRIGGERED');
-      console.log('reactFlowInstance:', reactFlowInstance);
-      console.log('draggedNodeType:', draggedNodeType);
-
       if (!reactFlowInstance) {
-        console.error('❌ No reactFlowInstance');
         return;
       }
       
       if (!draggedNodeType) {
-        console.error('❌ No draggedNodeType');
         return;
       }
 
@@ -243,13 +234,10 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         x: event.clientX,
         y: event.clientY,
       });
-      console.log('📍 Position calculated:', position);
 
       const nodeDefinition = ALL_WORKFLOW_NODES.find(n => n.id === draggedNodeType);
-      console.log('🔍 Node definition found:', nodeDefinition);
       
       if (!nodeDefinition) {
-        console.error('❌ No nodeDefinition found for:', draggedNodeType);
         return;
       }
 
@@ -625,7 +613,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               setReactFlowInstance(instance);
               // Force fit view to show test nodes immediately
               setTimeout(() => {
-                console.log('🎯 Fitting view to nodes:', testNodes);
                 instance.fitView({ padding: 100, includeHiddenNodes: true });
               }, 200);
             }}
