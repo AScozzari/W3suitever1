@@ -6,15 +6,21 @@
 import { db, withTenantContext } from '../../core/db';
 import { 
   tenants, 
-  ragioni_sociali, 
-  punti_vendita, 
-  risorse,
-  italian_cities,
-  legal_forms
+  legalEntities, 
+  stores, 
+  users,
+  italianCities,
+  legalForms
 } from '../schema';
 
 // Definizione tenant e dati seed
 const TENANTS_DATA = {
+  settings: {
+    id: '00000000-0000-0000-0000-000000000000',
+    name: 'Settings Environment',
+    code: 'SETTINGS',
+    description: 'Ambiente di configurazione e sviluppo'
+  },
   staging: {
     id: '00000000-0000-0000-0000-000000000001',
     name: 'Staging Environment',
@@ -41,99 +47,91 @@ const TENANTS_DATA = {
   }
 };
 
-// Dati sample per ragioni sociali
-const RAGIONI_SOCIALI_SAMPLES = [
+// Dati sample per legal entities
+const LEGAL_ENTITIES_SAMPLES = [
   {
-    codice: '800001',
+    codice: 'LE001',
     nome: 'TechSoft Solutions SRL',
-    forma_giuridica_id: '1',
-    citta_id: '3173', // Milano
+    formaGiuridica: 'SRL',
     indirizzo: 'Via Roma 123',
-    cap: '20121',
-    partita_iva: 'IT12345670901',
-    codice_fiscale: '12345670901',
+    cap: '20121', 
+    citta: 'Milano',
+    provincia: 'MI',
+    pIva: 'IT12345670901',
+    codiceFiscale: '12345670901',
     telefono: '+39 02 1234567',
     email: 'info@techsoft.it',
-    attiva: true
+    stato: 'Attiva'
   },
   {
-    codice: '800002', 
-    nome: 'Digital Marketing Plus SRL',
-    forma_giuridica_id: '1',
-    citta_id: '5419', // Torino
+    codice: 'LE002',
+    nome: 'Digital Marketing Plus SRL', 
+    formaGiuridica: 'SRL',
     indirizzo: 'Corso Francia 45',
     cap: '10138',
-    partita_iva: 'IT98765432109',
-    codice_fiscale: '98765432109',
+    citta: 'Torino',
+    provincia: 'TO',
+    pIva: 'IT98765432109',
+    codiceFiscale: '98765432109',
     telefono: '+39 011 9876543',
     email: 'contact@digitalplus.it',
-    attiva: true
+    stato: 'Attiva'
   }
 ];
 
-// Dati sample per punti vendita  
-const PUNTI_VENDITA_SAMPLES = [
+// Dati sample per stores
+const STORES_SAMPLES = [
   {
-    codice: '90001001',
+    code: 'ST001',
     nome: 'Store Milano Centro',
-    ragione_sociale_id: '', // Sarà popolato dinamicamente
-    indirizzo: 'Via Torino 15',
-    citta_id: '3173', // Milano
+    legalEntityId: '', // Sarà popolato dinamicamente
+    address: 'Via Torino 15',
     cap: '20123',
-    telefono: '+39 02 5551234',
-    email: 'milano.centro@store.it',
-    manager: 'Marco Rossi',
-    tipo_canale: 'franchising',
-    brand_association: ['windtre'],
-    attivo: true
+    citta: 'Milano',
+    provincia: 'MI',
+    channelId: 'e3b0c442-98fc-1c14-9afb-4266c03f0000', // Default channel ID
+    commercialAreaId: 'e3b0c442-98fc-1c14-9afb-4266c03f0001', // Default area ID
+    status: 'active'
   },
   {
-    codice: '90001002',
-    nome: 'Store Torino Nord', 
-    ragione_sociale_id: '',
-    indirizzo: 'Via Po 67',
-    citta_id: '5419', // Torino
-    cap: '10124',
-    telefono: '+39 011 5559876',
-    email: 'torino.nord@store.it',
-    manager: 'Laura Bianchi',
-    tipo_canale: 'dealer',
-    brand_association: ['windtre', 'verymobile'],
-    attivo: true
+    code: 'ST002',
+    nome: 'Store Torino Nord',
+    legalEntityId: '', // Sarà popolato dinamicamente
+    address: 'Via Po 67',
+    cap: '10124', 
+    citta: 'Torino',
+    provincia: 'TO',
+    channelId: 'e3b0c442-98fc-1c14-9afb-4266c03f0000', // Default channel ID
+    commercialAreaId: 'e3b0c442-98fc-1c14-9afb-4266c03f0001', // Default area ID
+    status: 'active'
   }
 ];
 
-// Dati sample per risorse
-const RISORSE_SAMPLES = [
+// Dati sample per users
+const USERS_SAMPLES = [
   {
-    nome: 'Mario',
-    cognome: 'Rossi',
+    id: 'mario.rossi',
+    firstName: 'Mario',
+    lastName: 'Rossi',
     email: 'mario.rossi@w3suite.com',
-    telefono: '+39 333 1234567',
-    ruolo: 'Store Manager',
-    punto_vendita_id: '', // Sarà popolato dinamicamente
-    data_assunzione: new Date('2023-01-15'),
-    attivo: true
+    role: 'store_manager',
+    status: 'attivo'
   },
   {
-    nome: 'Laura', 
-    cognome: 'Bianchi',
+    id: 'laura.bianchi',
+    firstName: 'Laura', 
+    lastName: 'Bianchi',
     email: 'laura.bianchi@w3suite.com',
-    telefono: '+39 333 9876543',
-    ruolo: 'Sales Representative',
-    punto_vendita_id: '',
-    data_assunzione: new Date('2023-03-20'),
-    attivo: true
+    role: 'sales',
+    status: 'attivo'
   },
   {
-    nome: 'Giuseppe',
-    cognome: 'Verdi',
+    id: 'giuseppe.verdi',
+    firstName: 'Giuseppe',
+    lastName: 'Verdi',
     email: 'giuseppe.verdi@w3suite.com', 
-    telefono: '+39 333 5556789',
-    ruolo: 'Technical Support',
-    punto_vendita_id: '',
-    data_assunzione: new Date('2023-05-10'),
-    attivo: true
+    role: 'technical_support',
+    status: 'attivo'
   }
 ];
 
@@ -161,43 +159,41 @@ async function seedTenantData(tenantKey: string, tenantData: typeof TENANTS_DATA
         console.log(`  ✅ Tenant ${tenantData.name} created`);
       }
 
-      // 2. Inserisci ragioni sociali
-      const ragioni_inserted = [];
-      for (const rs of RAGIONI_SOCIALI_SAMPLES) {
-        const [ragione] = await db.insert(ragioni_sociali).values({
-          ...rs,
-          tenant_id: tenantData.id
+      // 2. Inserisci legal entities
+      const entities_inserted = [];
+      for (const le of LEGAL_ENTITIES_SAMPLES) {
+        const [entity] = await db.insert(legalEntities).values({
+          ...le,
+          tenantId: tenantData.id
         }).returning();
-        ragioni_inserted.push(ragione);
-        console.log(`  ✅ Ragione Sociale ${ragione.nome} created`);
+        entities_inserted.push(entity);
+        console.log(`  ✅ Legal Entity ${entity.name} created`);
       }
 
-      // 3. Inserisci punti vendita
-      const punti_inserted = [];
-      for (let i = 0; i < PUNTI_VENDITA_SAMPLES.length; i++) {
-        const pv = PUNTI_VENDITA_SAMPLES[i];
-        const ragione = ragioni_inserted[i % ragioni_inserted.length];
+      // 3. Inserisci stores
+      const stores_inserted = [];
+      for (let i = 0; i < STORES_SAMPLES.length; i++) {
+        const st = STORES_SAMPLES[i];
+        const entity = entities_inserted[i % entities_inserted.length];
         
-        const [punto] = await db.insert(punti_vendita).values({
-          ...pv,
-          tenant_id: tenantData.id,
-          ragione_sociale_id: ragione.id
+        const [store] = await db.insert(stores).values({
+          ...st,
+          tenantId: tenantData.id,
+          legalEntityId: entity.id
         }).returning();
-        punti_inserted.push(punto);
-        console.log(`  ✅ Punto Vendita ${punto.nome} created`);
+        stores_inserted.push(store);
+        console.log(`  ✅ Store ${store.name} created`);
       }
 
-      // 4. Inserisci risorse
-      for (let i = 0; i < RISORSE_SAMPLES.length; i++) {
-        const risorsa = RISORSE_SAMPLES[i];
-        const punto = punti_inserted[i % punti_inserted.length];
+      // 4. Inserisci users
+      for (let i = 0; i < USERS_SAMPLES.length; i++) {
+        const user = USERS_SAMPLES[i];
         
-        await db.insert(risorse).values({
-          ...risorsa,
-          tenant_id: tenantData.id,
-          punto_vendita_id: punto.id
+        await db.insert(users).values({
+          ...user,
+          tenantId: tenantData.id
         });
-        console.log(`  ✅ Risorsa ${risorsa.nome} ${risorsa.cognome} created`);
+        console.log(`  ✅ User ${user.firstName} ${user.lastName} created`);
       }
 
       console.log(`✅ Tenant ${tenantData.name} seeding completed!\n`);
@@ -217,8 +213,8 @@ async function seedReferenceData() {
   
   try {
     // Verifica se le tabelle di riferimento sono già popolate
-    const citiesCount = await db.$count(italian_cities);
-    const legalFormsCount = await db.$count(legal_forms);
+    const citiesCount = await db.$count(italianCities);
+    const legalFormsCount = await db.$count(legalForms);
     
     if (citiesCount === 0 || legalFormsCount === 0) {
       console.log('⚠️  Reference data tables are empty. Please run city and legal forms seed first.');
@@ -262,7 +258,7 @@ export async function runMultitenantSeed() {
 }
 
 // Esegui se chiamato direttamente
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   runMultitenantSeed().then(() => {
     console.log('✨ Done!');
     process.exit(0);

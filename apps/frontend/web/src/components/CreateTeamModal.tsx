@@ -94,7 +94,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
       assignedDepartments: editTeam.assignedDepartments || [],
       userMembers: editTeam.userMembers || [],
       roleMembers: editTeam.roleMembers || [],
-      primarySupervisor: editTeam.primarySupervisor || '',
+      primarySupervisor: editTeam.primarySupervisor || 'none',
       secondarySupervisors: editTeam.secondarySupervisors || [],
       isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
     } : {
@@ -104,7 +104,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
       assignedDepartments: [],
       userMembers: [],
       roleMembers: [],
-      primarySupervisor: '',
+      primarySupervisor: 'none',
       secondarySupervisors: [],
       isActive: true
     }
@@ -177,10 +177,16 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   // 🎯 Handle form submission - create or update based on mode
   const onSubmit = (data: CreateTeamData) => {
+    // Handle "none" supervisor value
+    const processedData = {
+      ...data,
+      primarySupervisor: data.primarySupervisor === 'none' ? undefined : data.primarySupervisor
+    };
+    
     if (editTeam) {
-      updateTeamMutation.mutate(data);
+      updateTeamMutation.mutate(processedData);
     } else {
-      createTeamMutation.mutate(data);
+      createTeamMutation.mutate(processedData);
     }
   };
 
@@ -245,10 +251,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-windtre-orange" />
-            Create New Team
+            {editTeam ? 'Edit Team' : 'Create New Team'}
           </DialogTitle>
           <DialogDescription>
-            Create a new team and assign it to departments for workflow management
+            {editTeam ? 'Edit team details and update assignments' : 'Create a new team and assign it to departments for workflow management'}
           </DialogDescription>
         </DialogHeader>
 
@@ -468,7 +474,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                 <div className="text-sm text-gray-500">{user.email}</div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline">{DEPARTMENTS[user.department as keyof typeof DEPARTMENTS]?.label}</Badge>
+                                <Badge variant="outline">{user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}</Badge>
                                 {isSelected && <UserCheck className="w-4 h-4 text-green-600" />}
                               </div>
                             </div>
@@ -538,7 +544,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                   <div className="flex items-center justify-between w-full">
                                     <span>{user.name}</span>
                                     <Badge variant="outline" className="ml-2">
-                                      {DEPARTMENTS[user.department as keyof typeof DEPARTMENTS]?.label}
+                                      {user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}
                                     </Badge>
                                   </div>
                                 </SelectItem>
@@ -592,7 +598,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                                 <div className="text-sm text-gray-500">{user.email}</div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline">{DEPARTMENTS[user.department as keyof typeof DEPARTMENTS]?.label}</Badge>
+                                <Badge variant="outline">{user.department && DEPARTMENTS[user.department as keyof typeof DEPARTMENTS] ? DEPARTMENTS[user.department as keyof typeof DEPARTMENTS].label : 'No Dept'}</Badge>
                                 {isPrimary && <Badge className="bg-blue-100 text-blue-800">Primary</Badge>}
                                 {isSelected && !isPrimary && <Shield className="w-4 h-4 text-green-600" />}
                               </div>
@@ -633,19 +639,19 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 ) : (
                   <Button
                     type="submit"
-                    disabled={createTeamMutation.isPending}
+                    disabled={createTeamMutation.isPending || updateTeamMutation.isPending}
                     className="bg-green-600 hover:bg-green-700"
                     data-testid="button-create-team"
                   >
-                    {createTeamMutation.isPending ? (
+                    {(createTeamMutation.isPending || updateTeamMutation.isPending) ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating...
+                        {editTeam ? 'Updating...' : 'Creating...'}
                       </>
                     ) : (
                       <>
                         <Save className="w-4 h-4 mr-2" />
-                        Create Team
+                        {editTeam ? 'Update Team' : 'Create Team'}
                       </>
                     )}
                   </Button>
