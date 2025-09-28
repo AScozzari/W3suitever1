@@ -26,23 +26,18 @@ import {
   Workflow,
   Building2,
   DollarSign,
-  Megaphone,
   HeadphonesIcon,
-  Wrench,
-  Shield,
   FileText
 } from 'lucide-react';
 
-// 🎯 WindTre department mapping with brand colors
+// 🎯 WindTre department mapping - VERI dipartimenti dal sistema
 const DEPARTMENTS = {
-  'sales': { icon: Building2, label: 'Sales', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
-  'finance': { icon: DollarSign, label: 'Finance', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
-  'marketing': { icon: Megaphone, label: 'Marketing', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
-  'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
-  'operations': { icon: Settings, label: 'Operations', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
   'hr': { icon: Users, label: 'HR', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
-  'it': { icon: Wrench, label: 'IT', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
-  'legal': { icon: Shield, label: 'Legal', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' }
+  'finance': { icon: DollarSign, label: 'Finance', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
+  'sales': { icon: Building2, label: 'Sales', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
+  'operations': { icon: Settings, label: 'Operations', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
+  'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
+  'crm': { icon: Users, label: 'CRM', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' }
 };
 
 // 🎯 Sample workflow actions for Action Library
@@ -51,17 +46,17 @@ const WORKFLOW_ACTIONS = [
   { id: 'approve-request', name: 'Approve Request', description: 'Approve pending request', department: 'hr' },
   { id: 'create-ticket', name: 'Create Ticket', description: 'Create support ticket', department: 'support' },
   { id: 'assign-task', name: 'Assign Task', description: 'Assign task to user', department: 'operations' },
-  { id: 'send-sms', name: 'Send SMS', description: 'Send SMS notification', department: 'marketing' },
+  { id: 'send-sms', name: 'Send SMS', description: 'Send SMS notification', department: 'support' },
   { id: 'calculate-commission', name: 'Calculate Commission', description: 'Calculate sales commission', department: 'finance' },
   { id: 'schedule-meeting', name: 'Schedule Meeting', description: 'Schedule calendar meeting', department: 'hr' },
   { id: 'generate-report', name: 'Generate Report', description: 'Generate analytics report', department: 'operations' },
   { id: 'update-inventory', name: 'Update Inventory', description: 'Update stock levels', department: 'operations' },
   { id: 'process-payment', name: 'Process Payment', description: 'Process financial transaction', department: 'finance' },
-  { id: 'validate-data', name: 'Validate Data', description: 'Validate input data', department: 'it' },
-  { id: 'backup-system', name: 'Backup System', description: 'Create system backup', department: 'it' },
-  { id: 'review-contract', name: 'Review Contract', description: 'Legal contract review', department: 'legal' },
-  { id: 'compliance-check', name: 'Compliance Check', description: 'Verify regulatory compliance', department: 'legal' },
-  { id: 'launch-campaign', name: 'Launch Campaign', description: 'Start marketing campaign', department: 'marketing' },
+  { id: 'validate-data', name: 'Validate Data', description: 'Validate input data', department: 'operations' },
+  { id: 'backup-system', name: 'Backup System', description: 'Create system backup', department: 'operations' },
+  { id: 'manage-leads', name: 'Manage Leads', description: 'Lead qualification process', department: 'crm' },
+  { id: 'update-customer', name: 'Update Customer', description: 'Update customer information', department: 'crm' },
+  { id: 'launch-campaign', name: 'Launch Campaign', description: 'Start marketing campaign', department: 'sales' },
   { id: 'analyze-performance', name: 'Analyze Performance', description: 'Performance analytics', department: 'sales' }
 ];
 
@@ -197,31 +192,34 @@ export default function WorkflowManagementPage() {
               />
             </div>
             
-            {/* 🎯 Department Filters */}
+            {/* 🎯 Department Filter - Professional Select */}
             <div className="mb-4">
               <h4 className="text-sm font-medium text-gray-700 mb-2">Filter by Department</h4>
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  variant={selectedDepartment === null ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedDepartment(null)}
-                  data-testid="filter-all-departments"
-                >
-                  All
-                </Button>
-                {Object.entries(DEPARTMENTS).map(([key, dept]) => (
-                  <Button
-                    key={key}
-                    variant={selectedDepartment === key ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedDepartment(key)}
-                    data-testid={`filter-department-${key}`}
-                  >
-                    <dept.icon className="h-3 w-3 mr-1" />
-                    {dept.label}
-                  </Button>
-                ))}
-              </div>
+              <Select 
+                value={selectedDepartment || 'all'} 
+                onValueChange={(value) => setSelectedDepartment(value === 'all' ? null : value)}
+              >
+                <SelectTrigger className="w-full windtre-glass-panel border-white/20" data-testid="select-department-filter">
+                  <SelectValue placeholder="Select department..." />
+                </SelectTrigger>
+                <SelectContent className="windtre-glass-panel border-white/20">
+                  <SelectItem value="all" data-testid="option-all-departments">
+                    All Departments
+                  </SelectItem>
+                  {Object.entries(DEPARTMENTS).map(([key, dept]) => (
+                    <SelectItem 
+                      key={key} 
+                      value={key}
+                      data-testid={`option-department-${key}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <dept.icon className={`h-4 w-4 ${dept.textColor}`} />
+                        {dept.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {/* 🎯 Actions List with ScrollArea */}
