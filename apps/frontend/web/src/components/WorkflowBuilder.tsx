@@ -681,10 +681,102 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               </Button>
             </div>
             
-            {(() => {
+{(() => {
               const currentNode = nodes.find(n => n.id === configNodeId);
               if (!currentNode) return <p>Nodo non trovato</p>;
               
+              // 🤖 AI DECISION SPECIFIC CONFIGURATION
+              if (currentNode.data.id === 'ai-decision') {
+                const config = currentNode.data.config || {};
+                
+                return (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        📝 Prompt AI
+                      </label>
+                      <textarea 
+                        value={config.prompt || 'Analizza i seguenti dati e prendi una decisione: {{input}}'} 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-windtre-orange"
+                        rows={4}
+                        placeholder="Scrivi il prompt per l'AI..."
+                        data-testid="textarea-ai-prompt"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Usa {{input}} per riferimenti ai dati del workflow</p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        🔀 Percorsi Decisione
+                      </label>
+                      <div className="space-y-2">
+                        {['approve', 'reject', 'escalate'].map((path) => (
+                          <div key={path} className="flex items-center gap-2">
+                            <span className="text-sm w-16 capitalize">{path}:</span>
+                            <input 
+                              type="text" 
+                              value={config.outputs?.find(o => o.condition === path)?.path || path}
+                              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
+                              placeholder={`Percorso per ${path}`}
+                              data-testid={`input-output-${path}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        🛡️ Fallback Logic
+                      </label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm w-20">Timeout:</span>
+                          <input 
+                            type="number" 
+                            value={config.fallback?.timeout || 30000}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
+                            placeholder="30000"
+                            data-testid="input-fallback-timeout"
+                          />
+                          <span className="text-xs text-gray-500">ms</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm w-20">Default:</span>
+                          <input 
+                            type="text" 
+                            value={config.fallback?.defaultPath || 'manual_review'}
+                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
+                            placeholder="manual_review"
+                            data-testid="input-fallback-default"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowConfigPanel(false)}
+                        data-testid="button-cancel-config"
+                      >
+                        Annulla
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          console.log('🤖 Saving AI Decision config for:', configNodeId);
+                          setShowConfigPanel(false);
+                        }}
+                        data-testid="button-save-ai-config"
+                      >
+                        Salva AI Config
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // 🔧 GENERIC NODE CONFIGURATION (for other node types)
               return (
                 <div className="space-y-4">
                   <div>
