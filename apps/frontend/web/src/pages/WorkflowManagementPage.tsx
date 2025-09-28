@@ -295,7 +295,7 @@ export default function WorkflowManagementPage() {
                       Create Workflow
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="windtre-glass-panel border-white/20 max-w-lg bg-white/95">
+                <DialogContent className="department-selection-modal windtre-glass-panel border-white/20 max-w-lg">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-gray-900">
                       <Workflow className="h-5 w-5 text-windtre-orange" />
@@ -315,7 +315,11 @@ export default function WorkflowManagementPage() {
                           key={key}
                           variant="outline"
                           onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
-                          className="h-20 flex flex-col items-center gap-2 border-white/20 bg-white/50 hover:border-windtre-orange/50 hover:bg-white/80 transition-all duration-200 pointer-events-auto"
+                          className={`h-20 flex flex-col items-center gap-2 transition-all duration-200 pointer-events-auto ${
+                            key === 'hr' || key === 'sales' || key === 'support'
+                              ? 'bg-windtre-purple/10 border-windtre-purple/30 hover:bg-windtre-purple/20 hover:border-windtre-purple/50'
+                              : 'bg-windtre-orange/10 border-windtre-orange/30 hover:bg-windtre-orange/20 hover:border-windtre-orange/50'
+                          }`}
                           data-testid={`button-department-${key}`}
                         >
                           <Icon className={`h-6 w-6 ${dept.textColor}`} />
@@ -639,7 +643,7 @@ export default function WorkflowManagementPage() {
                           Create New Workflow
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="windtre-glass-panel border-white/20 max-w-lg bg-white/95">
+                      <DialogContent className="department-selection-modal windtre-glass-panel border-white/20 max-w-lg">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2 text-gray-900">
                             <Workflow className="h-5 w-5 text-windtre-orange" />
@@ -659,7 +663,11 @@ export default function WorkflowManagementPage() {
                                 key={key}
                                 variant="outline"
                                 onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
-                                className="h-20 flex flex-col items-center gap-2 border-white/20 bg-white/50 hover:border-windtre-orange/50 hover:bg-white/80 transition-all duration-200 pointer-events-auto"
+                                className={`h-20 flex flex-col items-center gap-2 transition-all duration-200 pointer-events-auto ${
+                            key === 'hr' || key === 'sales' || key === 'support'
+                              ? 'bg-windtre-purple/10 border-windtre-purple/30 hover:bg-windtre-purple/20 hover:border-windtre-purple/50'
+                              : 'bg-windtre-orange/10 border-windtre-orange/30 hover:bg-windtre-orange/20 hover:border-windtre-orange/50'
+                          }`}
                                 data-testid={`button-department-${key}`}
                               >
                                 <Icon className={`h-6 w-6 ${dept.textColor}`} />
