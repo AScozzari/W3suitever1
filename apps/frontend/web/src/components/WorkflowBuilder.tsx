@@ -584,76 +584,33 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
         </div>
 
-        {/* ReactFlow Canvas - FIXED VERSION */}
+        {/* Canvas Zone - Fixed Size */}
         <div 
-          className="flex-1" 
           ref={reactFlowWrapper}
           style={{ 
-            position: 'relative',
-            minHeight: '600px',
-            height: 'calc(100vh - 300px)',
-            width: '100%'
+            width: '800px',
+            height: '600px',
+            border: '2px solid #E5E7EB',
+            backgroundColor: '#F9FAFB'
           }}
         >
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            key="reactflow-debug"
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
-            onInit={(instance) => {
-              setReactFlowInstance(instance);
-              // Force fit view after initialization
-              setTimeout(() => {
-                instance.fitView({ padding: 100, includeHiddenNodes: true });
-              }, 200);
-            }}
+            onInit={setReactFlowInstance}
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
-            nodesDraggable={true}
-            nodesConnectable={true}
-            elementsSelectable={true}
-            fitView={true}
-            attributionPosition="bottom-left"
-            className="bg-gray-50"
+            style={{ width: '800px', height: '600px' }}
             data-testid="reactflow-canvas"
-            style={{ 
-              width: '100%', 
-              height: '100%',
-              minHeight: '600px'
-            }}
           >
-            <Controls 
-              position="bottom-right"
-              className="bg-white border border-gray-200 rounded-lg shadow-sm"
-            />
-            <Background 
-              color="#E5E7EB" 
-              gap={20} 
-              size={1}
-              variant={"dots" as any}
-            />
-            
-            {/* Canvas Instructions */}
-            {nodes.length === 0 && (
-              <Panel position="top-center" className="pointer-events-none">
-                <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-6 max-w-md text-center shadow-lg">
-                  <div className="text-gray-500 mb-2">
-                    <Palette className="h-8 w-8 mx-auto" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Start Building Your Workflow
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Drag nodes from the library on the left to begin creating your workflow. Connect nodes to define the flow logic.
-                  </p>
-                </div>
-              </Panel>
-            )}
+            <Controls />
+            <Background color="#E5E7EB" gap={20} />
           </ReactFlow>
         </div>
       </div>
