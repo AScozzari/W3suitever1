@@ -702,9 +702,10 @@ const CATEGORIES = {
 };
 
 const WorkflowManagementPage = () => {
-  console.log('🚨🚨🚨 [WORKFLOW-PAGE] COMPONENT RENDERING!!! 🚨🚨🚨');
-  console.log('[WORKFLOW-PAGE] 📍 Current URL:', window.location.href);
-  console.log('[WORKFLOW-PAGE] ⏰ Timestamp:', new Date().toISOString());
+  console.error('🔥🔥🔥 WORKFLOW PAGE LOADED!!! FIX APPLICATO! 🔥🔥🔥');
+  console.error('🔥 URL:', window.location.href);
+  console.error('🔥 TIMESTAMP:', new Date().toISOString());
+  alert('🔥 WorkflowManagementPage si sta caricando! I fix sono applicati!');
   
   const { toast } = useToast();
   
