@@ -1,18 +1,19 @@
 /**
- * 🏗️ SIMPLIFIED WORKFLOW MANAGEMENT PAGE
+ * 🏗️ WORKFLOW MANAGEMENT PAGE - WindTre Design System
  * 
- * Clean implementation that WORKS GUARANTEED
- * Gradual feature addition approach for 100% reliability
+ * Enterprise workflow automation with WindTre glassmorphism design
+ * Follows project design standards and UI consistency
  */
 
 import { useState } from 'react';
+import Layout from '../components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-// Temporarily remove API hooks to fix component crash
+// API hooks temporarily disabled for stability
 // import { useWorkflowTemplates, useCreateTemplate } from '../hooks/useWorkflowTemplates';
 import { 
   Play, 
@@ -32,16 +33,16 @@ import {
   FileText
 } from 'lucide-react';
 
-// 🎯 Simple department mapping
+// 🎯 WindTre department mapping with brand colors
 const DEPARTMENTS = {
-  'sales': { icon: Building2, label: 'Sales', color: 'bg-blue-500' },
-  'finance': { icon: DollarSign, label: 'Finance', color: 'bg-green-500' },
-  'marketing': { icon: Megaphone, label: 'Marketing', color: 'bg-purple-500' },
-  'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-yellow-500' },
-  'operations': { icon: Settings, label: 'Operations', color: 'bg-orange-500' },
-  'hr': { icon: Users, label: 'HR', color: 'bg-pink-500' },
-  'it': { icon: Wrench, label: 'IT', color: 'bg-cyan-500' },
-  'legal': { icon: Shield, label: 'Legal', color: 'bg-indigo-500' }
+  'sales': { icon: Building2, label: 'Sales', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
+  'finance': { icon: DollarSign, label: 'Finance', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
+  'marketing': { icon: Megaphone, label: 'Marketing', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
+  'support': { icon: HeadphonesIcon, label: 'Support', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
+  'operations': { icon: Settings, label: 'Operations', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
+  'hr': { icon: Users, label: 'HR', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' },
+  'it': { icon: Wrench, label: 'IT', color: 'bg-windtre-orange', textColor: 'text-windtre-orange' },
+  'legal': { icon: Shield, label: 'Legal', color: 'bg-windtre-purple', textColor: 'text-windtre-purple' }
 };
 
 // 🎯 Sample workflow actions for Action Library
@@ -67,7 +68,8 @@ const WORKFLOW_ACTIONS = [
 export default function WorkflowManagementPage() {
   const { toast } = useToast();
   
-  // 🎯 Simple state management
+  // 🎯 State management
+  const [currentModule, setCurrentModule] = useState('workflow');
   const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'teams' | 'analytics'>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
@@ -125,14 +127,15 @@ export default function WorkflowManagementPage() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* 🎯 Header */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="px-6 py-4">
+    <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
+      <div className="h-full flex flex-col">
+        {/* 🎯 WindTre Glassmorphism Header */}
+        <div className="windtre-glass-panel border-b border-white/20 mb-6">
+          <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Workflow className="h-6 w-6 text-blue-600" />
+                <Workflow className="h-6 w-6 text-windtre-orange" />
                 Workflow Management
               </h1>
               <p className="text-gray-600 mt-1">Enterprise workflow automation and management</p>
@@ -142,7 +145,7 @@ export default function WorkflowManagementPage() {
               <Button 
                 onClick={handleCreateTemplate}
                 disabled={createTemplateMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
                 data-testid="button-create-template"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -172,12 +175,12 @@ export default function WorkflowManagementPage() {
             ))}
           </div>
         </div>
-      </div>
+        </div>
 
       {/* 🎯 Main Content */}
       <div className="flex-1 flex">
-        {/* 🎯 Action Library Sidebar */}
-        <div className="w-80 border-r border-gray-200 bg-gray-50">
+        {/* 🎯 WindTre Action Library Sidebar */}
+        <div className="w-80 border-r border-white/20 windtre-glass-panel">
           <div className="p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Action Library</h3>
             
@@ -228,7 +231,7 @@ export default function WorkflowManagementPage() {
                   return (
                     <Card 
                       key={action.id} 
-                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      className="windtre-glass-panel cursor-pointer hover:bg-white/20 transition-all duration-200 border-white/20"
                       data-testid={`action-card-${action.id}`}
                     >
                       <CardContent className="p-3">
@@ -237,11 +240,11 @@ export default function WorkflowManagementPage() {
                             <h4 className="font-medium text-sm text-gray-900">{action.name}</h4>
                             <p className="text-xs text-gray-600 mt-1">{action.description}</p>
                           </div>
-                          <dept.icon className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
+                          <dept.icon className={`h-4 w-4 ml-2 flex-shrink-0 ${dept.textColor}`} />
                         </div>
                         <Badge 
                           variant="secondary" 
-                          className={`mt-2 text-xs ${dept.color} text-white`}
+                          className={`mt-2 text-xs ${dept.color} text-white border-0`}
                         >
                           {dept.label}
                         </Badge>
@@ -260,44 +263,56 @@ export default function WorkflowManagementPage() {
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Workflow Dashboard</h2>
               
-              {/* 🎯 Stats Grid */}
+              {/* 🎯 WindTre Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card>
+                <Card className="windtre-glass-panel border-white/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Total Templates</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-windtre-orange" />
+                      Total Templates
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-gray-900" data-testid="stat-total-templates">
+                    <div className="text-2xl font-bold text-windtre-orange" data-testid="stat-total-templates">
                       {templatesLoading ? '...' : templates.length}
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="windtre-glass-panel border-white/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Active Workflows</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <Play className="h-4 w-4 text-windtre-purple" />
+                      Active Workflows
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-gray-900" data-testid="stat-active-workflows">24</div>
+                    <div className="text-2xl font-bold text-windtre-purple" data-testid="stat-active-workflows">24</div>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="windtre-glass-panel border-white/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Available Actions</CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-windtre-orange" />
+                      Available Actions
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-gray-900" data-testid="stat-available-actions">
+                    <div className="text-2xl font-bold text-windtre-orange" data-testid="stat-available-actions">
                       {WORKFLOW_ACTIONS.length}
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* 🎯 Recent Templates */}
-              <Card>
+              {/* 🎯 WindTre Recent Templates */}
+              <Card className="windtre-glass-panel border-white/20">
                 <CardHeader>
-                  <CardTitle>Recent Templates</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                    <Workflow className="h-5 w-5" />
+                    Recent Templates
+                  </CardTitle>
                   <CardDescription>Your recently created workflow templates</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -310,7 +325,7 @@ export default function WorkflowManagementPage() {
                       <div className="text-gray-500">No templates created yet</div>
                       <Button 
                         onClick={handleCreateTemplate}
-                        className="mt-4"
+                        className="mt-4 bg-windtre-orange hover:bg-windtre-orange-dark text-white"
                         data-testid="button-create-first-template"
                       >
                         Create Your First Template
@@ -321,7 +336,7 @@ export default function WorkflowManagementPage() {
                       {templates.slice(0, 5).map((template: any) => (
                         <div 
                           key={template.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                          className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
                           data-testid={`template-item-${template.id}`}
                         >
                           <div>
@@ -342,19 +357,22 @@ export default function WorkflowManagementPage() {
 
           {activeView === 'builder' && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Workflow Builder</h2>
-              <Card className="h-96">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Workflow className="h-6 w-6 text-windtre-orange" />
+                Workflow Builder
+              </h2>
+              <Card className="h-96 windtre-glass-panel border-white/20">
                 <CardContent className="h-full flex items-center justify-center">
                   <div className="text-center">
-                    <Workflow className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <Workflow className="h-12 w-12 text-windtre-orange mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">React Flow Canvas</h3>
                     <p className="text-gray-600 mb-4">Drag actions from the sidebar to build workflows</p>
-                    <div className="bg-gray-100 p-4 rounded-lg border-2 border-dashed border-gray-300">
+                    <div className="windtre-glass-panel p-4 rounded-lg border-2 border-dashed border-windtre-orange/30">
                       <p className="text-sm text-gray-500">
-                        ✅ React Flow will be integrated here<br/>
-                        ✅ Drag & drop from Action Library<br/>
-                        ✅ Connect nodes with edges<br/>
-                        ✅ Save workflow definitions
+                        ✅ <span className="text-windtre-orange">React Flow</span> will be integrated here<br/>
+                        ✅ <span className="text-windtre-purple">Drag & drop</span> from Action Library<br/>
+                        ✅ <span className="text-windtre-orange">Connect nodes</span> with edges<br/>
+                        ✅ <span className="text-windtre-purple">Save workflow</span> definitions
                       </p>
                     </div>
                   </div>
@@ -365,11 +383,14 @@ export default function WorkflowManagementPage() {
 
           {activeView === 'teams' && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Team Management</h2>
-              <Card>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <Users className="h-6 w-6 text-windtre-purple" />
+                Team Management
+              </h2>
+              <Card className="windtre-glass-panel border-white/20">
                 <CardContent className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <Users className="h-12 w-12 text-windtre-purple mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900">Team Management</h3>
                     <p className="text-gray-600">Manage workflow teams and permissions</p>
                   </div>
@@ -380,11 +401,14 @@ export default function WorkflowManagementPage() {
 
           {activeView === 'analytics' && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Workflow Analytics</h2>
-              <Card>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-windtre-orange" />
+                Workflow Analytics
+              </h2>
+              <Card className="windtre-glass-panel border-white/20">
                 <CardContent className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <BarChart3 className="h-12 w-12 text-windtre-orange mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900">Analytics Dashboard</h3>
                     <p className="text-gray-600">View workflow performance metrics</p>
                   </div>
@@ -394,6 +418,7 @@ export default function WorkflowManagementPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }
