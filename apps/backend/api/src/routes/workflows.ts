@@ -1168,4 +1168,387 @@ router.post('/ai-route', rbacMiddleware, requirePermission('workflow.create'), a
   }
 });
 
+// ==================== DASHBOARD METRICS ====================
+
+/**
+ * GET /api/workflows/dashboard/metrics
+ * Get workflow dashboard metrics and statistics
+ * 🎯 Dashboard completa con dati reali dal database
+ */
+router.get('/dashboard/metrics', rbacMiddleware, requirePermission('workflow.read_dashboard'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    await setTenantContext(tenantId);
+
+    // 📊 Templates Summary
+    const templatesStats = await db
+      .select({
+        total: count(),
+        active: sql<number>`COUNT(CASE WHEN is_active = true THEN 1 END)`,
+        category: workflowTemplates.category
+      })
+      .from(workflowTemplates)
+      .where(eq(workflowTemplates.tenantId, tenantId))
+      .groupBy(workflowTemplates.category);
+
+    // 📈 Instances Summary  
+    const instancesStats = await db
+      .select({
+        total: count(),
+        running: sql<number>`COUNT(CASE WHEN current_status = 'running' THEN 1 END)`,
+        completed: sql<number>`COUNT(CASE WHEN current_status = 'completed' THEN 1 END)`,
+        pending: sql<number>`COUNT(CASE WHEN current_status = 'pending' THEN 1 END)`,
+        failed: sql<number>`COUNT(CASE WHEN current_status = 'failed' THEN 1 END)`
+      })
+      .from(workflowInstances)
+      .where(eq(workflowInstances.tenantId, tenantId));
+
+    // 🎯 Top Templates by Usage
+    const topTemplates = await db
+      .select({
+        id: workflowTemplates.id,
+        name: workflowTemplates.name,
+        category: workflowTemplates.category,
+        usageCount: workflowTemplates.usageCount,
+        instanceCount: count(workflowInstances.id)
+      })
+      .from(workflowTemplates)
+      .leftJoin(workflowInstances, eq(workflowInstances.templateId, workflowTemplates.id))
+      .where(eq(workflowTemplates.tenantId, tenantId))
+      .groupBy(workflowTemplates.id, workflowTemplates.name, workflowTemplates.category, workflowTemplates.usageCount)
+      .orderBy(desc(workflowTemplates.usageCount))
+      .limit(5);
+
+    // 📅 Recent Activity (last 7 days)
+    const recentActivity = await db
+      .select({
+        date: sql<string>`DATE(created_at)`,
+        templatesCreated: sql<number>`COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END)`,
+        instancesStarted: count(workflowInstances.id)
+      })
+      .from(workflowInstances)
+      .where(
+        and(
+          eq(workflowInstances.tenantId, tenantId),
+          sql`created_at >= NOW() - INTERVAL '7 days'`
+        )
+      )
+      .groupBy(sql`DATE(created_at)`)
+      .orderBy(sql`DATE(created_at)`);
+
+    const dashboardData = {
+      summary: {
+        totalTemplates: templatesStats.reduce((sum, stat) => sum + Number(stat.total ?? 0), 0),
+        activeTemplates: templatesStats.reduce((sum, stat) => sum + Number(stat.active ?? 0), 0),
+        totalInstances: instancesStats[0]?.total || 0,
+        runningInstances: instancesStats[0]?.running || 0,
+        completedInstances: instancesStats[0]?.completed || 0,
+        pendingInstances: instancesStats[0]?.pending || 0,
+        failedInstances: instancesStats[0]?.failed || 0
+      },
+      templatesByCategory: templatesStats,
+      instancesStatus: instancesStats[0] || { total: 0, running: 0, completed: 0, pending: 0, failed: 0 },
+      topTemplates,
+      recentActivity
+    };
+
+    logger.info('📊 Dashboard metrics retrieved', {
+      tenantId,
+      totalTemplates: dashboardData.summary.totalTemplates,
+      totalInstances: dashboardData.summary.totalInstances,
+      userId: req.user?.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: dashboardData,
+      message: 'Dashboard metrics retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof dashboardData>);
+
+  } catch (error) {
+    logger.error('Error retrieving dashboard metrics', { 
+      error, 
+      tenantId: req.user?.tenantId,
+      userId: req.user?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while retrieving dashboard metrics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== TIMELINE ====================
+
+/**
+ * GET /api/workflows/timeline
+ * Get workflow execution timeline and history
+ * 🕒 Timeline completa con dati reali
+ */
+router.get('/timeline', rbacMiddleware, requirePermission('workflow.read_history'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { 
+      page = '1', 
+      limit = '20',
+      dateFrom,
+      dateTo,
+      status,
+      category
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
+
+    await setTenantContext(tenantId);
+
+    // Build where conditions
+    let whereConditions = [eq(workflowInstances.tenantId, tenantId)];
+    
+    if (status) {
+      whereConditions.push(eq(workflowInstances.currentStatus, status as string));
+    }
+    
+    if (dateFrom) {
+      whereConditions.push(sql`started_at >= ${dateFrom}`);
+    }
+    
+    if (dateTo) {
+      whereConditions.push(sql`started_at <= ${dateTo}`);
+    }
+
+    // 🕒 Get workflow timeline with template details
+    const timelineEntries = await db
+      .select({
+        instanceId: workflowInstances.id,
+        instanceName: workflowInstances.instanceName,
+        templateName: workflowTemplates.name,
+        templateCategory: workflowTemplates.category,
+        status: workflowInstances.currentStatus,
+        currentStep: workflowInstances.currentNodeId,
+        assignee: workflowInstances.currentAssignee,
+        startedAt: workflowInstances.startedAt,
+        completedAt: workflowInstances.completedAt,
+        lastActivityAt: workflowInstances.lastActivityAt,
+        escalationLevel: workflowInstances.escalationLevel,
+        referenceId: workflowInstances.referenceId
+      })
+      .from(workflowInstances)
+      .innerJoin(workflowTemplates, eq(workflowTemplates.id, workflowInstances.templateId))
+      .where(and(...whereConditions))
+      .orderBy(desc(workflowInstances.lastActivityAt))
+      .limit(limitNum)
+      .offset(offset);
+
+    // Get total count for pagination
+    const totalCount = await db
+      .select({ count: count() })
+      .from(workflowInstances)
+      .innerJoin(workflowTemplates, eq(workflowTemplates.id, workflowInstances.templateId))
+      .where(and(...whereConditions));
+
+    const total = totalCount[0]?.count || 0;
+    const totalPages = Math.ceil(total / limitNum);
+
+    logger.info('🕒 Timeline retrieved', {
+      tenantId,
+      entriesCount: timelineEntries.length,
+      page: pageNum,
+      totalPages,
+      userId: req.user?.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        entries: timelineEntries,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages,
+          hasNext: pageNum < totalPages,
+          hasPrev: pageNum > 1
+        }
+      },
+      message: 'Timeline retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<{
+      entries: typeof timelineEntries;
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+      };
+    }>);
+
+  } catch (error) {
+    logger.error('Error retrieving timeline', { 
+      error, 
+      tenantId: req.user?.tenantId,
+      userId: req.user?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while retrieving timeline',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
+// ==================== ANALYTICS ====================
+
+/**
+ * GET /api/workflows/analytics
+ * Get workflow analytics and performance statistics  
+ * 📊 Analytics complete con dati reali
+ */
+router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analytics'), async (req, res) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string || req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing tenant context',
+        timestamp: new Date().toISOString()
+      } as ApiErrorResponse);
+    }
+
+    const { 
+      period = '30', // days
+      category 
+    } = req.query;
+
+    await setTenantContext(tenantId);
+
+    // 📈 Performance Analytics
+    const performanceStats = await db.execute(sql`
+      SELECT 
+        DATE_TRUNC('day', we.started_at) as date,
+        COUNT(*) as executions,
+        AVG(we.duration) as avg_duration,
+        MIN(we.duration) as min_duration,
+        MAX(we.duration) as max_duration,
+        COUNT(CASE WHEN we.status = 'completed' THEN 1 END) as successful,
+        COUNT(CASE WHEN we.status = 'failed' THEN 1 END) as failed
+      FROM workflow_executions we
+      JOIN workflow_instances wi ON wi.id = we.instance_id
+      WHERE wi.tenant_id = ${tenantId}
+        AND we.started_at >= NOW() - INTERVAL '${period} days'
+      GROUP BY DATE_TRUNC('day', we.started_at)
+      ORDER BY date DESC
+    `);
+
+    // 🎯 Category Performance
+    const categoryStats = await db.execute(sql`
+      SELECT 
+        wt.category,
+        COUNT(wi.id) as total_instances,
+        COUNT(CASE WHEN wi.current_status = 'completed' THEN 1 END) as completed,
+        COUNT(CASE WHEN wi.current_status = 'running' THEN 1 END) as running,
+        COUNT(CASE WHEN wi.current_status = 'failed' THEN 1 END) as failed,
+        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_completion_time
+      FROM workflow_templates wt
+      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
+      WHERE wt.tenant_id = ${tenantId}
+        AND (wi.created_at >= NOW() - INTERVAL '${period} days' OR wi.created_at IS NULL)
+      GROUP BY wt.category
+      ORDER BY total_instances DESC
+    `);
+
+    // ⚡ Most Active Templates
+    const activeTemplates = await db.execute(sql`
+      SELECT 
+        wt.name,
+        wt.category,
+        COUNT(wi.id) as instances_count,
+        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_duration,
+        MAX(wi.last_activity_at) as last_used
+      FROM workflow_templates wt
+      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
+      WHERE wt.tenant_id = ${tenantId}
+        AND (wi.created_at >= NOW() - INTERVAL '${period} days' OR wi.created_at IS NULL)
+      GROUP BY wt.id, wt.name, wt.category
+      ORDER BY instances_count DESC
+      LIMIT 10
+    `);
+
+    // 🕒 Hourly Distribution
+    const hourlyDistribution = await db.execute(sql`
+      SELECT 
+        EXTRACT(HOUR FROM wi.started_at) as hour,
+        COUNT(*) as instances_started
+      FROM workflow_instances wi
+      WHERE wi.tenant_id = ${tenantId}
+        AND wi.started_at >= NOW() - INTERVAL '${period} days'
+      GROUP BY EXTRACT(HOUR FROM wi.started_at)
+      ORDER BY hour
+    `);
+
+    const analyticsData = {
+      performance: performanceStats.rows,
+      categoryStats: categoryStats.rows,
+      activeTemplates: activeTemplates.rows,
+      hourlyDistribution: hourlyDistribution.rows,
+      period: parseInt(period as string),
+      generatedAt: new Date().toISOString()
+    };
+
+    logger.info('📊 Analytics retrieved', {
+      tenantId,
+      period,
+      performanceDataPoints: performanceStats.rows.length,
+      categoriesAnalyzed: categoryStats.rows.length,
+      userId: req.user?.id
+    });
+
+    res.status(200).json({
+      success: true,
+      data: analyticsData,
+      message: 'Analytics retrieved successfully',
+      timestamp: new Date().toISOString()
+    } as ApiSuccessResponse<typeof analyticsData>);
+
+  } catch (error) {
+    logger.error('Error retrieving analytics', { 
+      error, 
+      tenantId: req.user?.tenantId,
+      userId: req.user?.id
+    });
+    
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while retrieving analytics',
+      timestamp: new Date().toISOString()
+    } as ApiErrorResponse);
+  }
+});
+
 export { router as workflowRoutes };

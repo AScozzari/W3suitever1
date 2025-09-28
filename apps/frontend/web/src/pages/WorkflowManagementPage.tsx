@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
+import { useWorkflowDashboardMetrics, useWorkflowTimeline, useWorkflowAnalytics } from '../hooks/useWorkflowDashboard';
 import WorkflowBuilder from '../components/WorkflowBuilder';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import CreateTeamModal from '../components/CreateTeamModal';
@@ -129,6 +130,11 @@ export default function WorkflowManagementPage() {
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
   const createTemplateMutation = useCreateTemplate();
+
+  // 🎯 Dashboard, Timeline & Analytics hooks - DATI REALI
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useWorkflowDashboardMetrics();
+  const { data: timelineData, isLoading: timelineLoading, error: timelineError } = useWorkflowTimeline({ limit: 20 });
+  const { data: analyticsData, isLoading: analyticsLoading, error: analyticsError } = useWorkflowAnalytics({ period: 30 });
 
   // 🎯 Teams API hooks
   const { 
@@ -360,21 +366,34 @@ export default function WorkflowManagementPage() {
         <div className="flex-1 p-6">
           {activeView === 'dashboard' && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Workflow Dashboard</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Dashboard Workflow</h2>
               
-              {/* 🎯 WindTre Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {dashboardError && (
+                <Card className="mb-6 border-red-200 bg-red-50">
+                  <CardContent className="pt-6">
+                    <div className="text-red-800">
+                      Errore nel caricamento dei dati dashboard. Verifica la connessione al server.
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* 🎯 Metriche Principali - Dati Reali dal Database */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <Card className="windtre-glass-panel border-white/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-windtre-orange" />
-                      Total Templates
+                      Templates Totali
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-windtre-orange" data-testid="stat-total-templates">
-                      {templatesLoading ? '...' : templates.length}
+                      {dashboardLoading ? '...' : dashboardData?.summary.totalTemplates || 0}
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Attivi: {dashboardLoading ? '...' : dashboardData?.summary.activeTemplates || 0}
+                    </p>
                   </CardContent>
                 </Card>
                 
@@ -382,73 +401,212 @@ export default function WorkflowManagementPage() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                       <Play className="h-4 w-4 text-windtre-purple" />
-                      Active Workflows
+                      Istanze Totali
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-windtre-purple" data-testid="stat-active-workflows">
-                      {templatesLoading ? '...' : templates.filter((t: WorkflowTemplate) => t.isActive).length}
+                    <div className="text-2xl font-bold text-windtre-purple" data-testid="stat-total-instances">
+                      {dashboardLoading ? '...' : dashboardData?.summary.totalInstances || 0}
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      In esecuzione: {dashboardLoading ? '...' : dashboardData?.summary.runningInstances || 0}
+                    </p>
                   </CardContent>
                 </Card>
                 
                 <Card className="windtre-glass-panel border-white/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-windtre-orange" />
-                      Available Actions
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      Completate
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-windtre-orange" data-testid="stat-available-actions">
-                      {WORKFLOW_ACTIONS.length}
+                    <div className="text-2xl font-bold text-green-600" data-testid="stat-completed-instances">
+                      {dashboardLoading ? '...' : dashboardData?.summary.completedInstances || 0}
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Successi workflow
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-red-600" />
+                      Fallite
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600" data-testid="stat-failed-instances">
+                      {dashboardLoading ? '...' : dashboardData?.summary.failedInstances || 0}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Errori da risolvere
+                    </p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* 🎯 WindTre Recent Templates */}
+              {/* 🎯 Templates per Categoria e Top Templates */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                
+                {/* Templates per Categoria */}
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                      <BarChart3 className="h-5 w-5" />
+                      Templates per Dipartimento
+                    </CardTitle>
+                    <CardDescription>Distribuzione per categoria aziendale</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboardLoading ? (
+                      <div className="text-center py-8">
+                        <div className="text-gray-500">Caricamento statistiche...</div>
+                      </div>
+                    ) : dashboardData?.templatesByCategory && dashboardData.templatesByCategory.length > 0 ? (
+                      <div className="space-y-3">
+                        {dashboardData.templatesByCategory.map((categoryData, index) => (
+                          <div 
+                            key={categoryData.category}
+                            className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
+                            data-testid={`category-stat-${categoryData.category}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {DEPARTMENTS[categoryData.category as keyof typeof DEPARTMENTS] && (() => {
+                                const dept = DEPARTMENTS[categoryData.category as keyof typeof DEPARTMENTS];
+                                const Icon = dept.icon;
+                                return (
+                                  <div className={`p-2 rounded-lg ${dept.color} opacity-20`}>
+                                    <Icon className={`h-4 w-4 ${dept.textColor}`} />
+                                  </div>
+                                );
+                              })()}
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  {DEPARTMENTS[categoryData.category as keyof typeof DEPARTMENTS]?.label || categoryData.category}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {categoryData.active} attivi di {categoryData.total} totali
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="font-bold">
+                              {categoryData.total}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-gray-500">Nessun template per categoria trovato</div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Top Templates */}
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-windtre-purple">
+                      <Workflow className="h-5 w-5" />
+                      Templates Più Utilizzati
+                    </CardTitle>
+                    <CardDescription>Ordinati per numero di istanze create</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {dashboardLoading ? (
+                      <div className="text-center py-8">
+                        <div className="text-gray-500">Caricamento templates...</div>
+                      </div>
+                    ) : dashboardData?.topTemplates && dashboardData.topTemplates.length > 0 ? (
+                      <div className="space-y-3">
+                        {dashboardData.topTemplates.slice(0, 5).map((template, index) => (
+                          <div 
+                            key={template.id}
+                            className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
+                            data-testid={`top-template-${template.id}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-center w-8 h-8 bg-windtre-orange bg-opacity-20 rounded-full">
+                                <span className="text-sm font-bold text-windtre-orange">#{index + 1}</span>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">{template.name}</h4>
+                                <p className="text-sm text-gray-600">
+                                  {template.instanceCount} istanze • {DEPARTMENTS[template.category as keyof typeof DEPARTMENTS]?.label || template.category}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="outline">
+                              {template.usageCount} usi
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-gray-500">Nessun template utilizzato ancora</div>
+                        <Button 
+                          onClick={handleCreateTemplate}
+                          className="mt-4 bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                          data-testid="button-create-first-template"
+                        >
+                          Crea il Primo Template
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 🎯 Attività Recente */}
               <Card className="windtre-glass-panel border-white/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-windtre-orange">
-                    <Workflow className="h-5 w-5" />
-                    Recent Templates
+                    <Calendar className="h-5 w-5" />
+                    Attività Recente (Ultimi 7 giorni)
                   </CardTitle>
-                  <CardDescription>Your recently created workflow templates</CardDescription>
+                  <CardDescription>Istanze di workflow avviate recentemente</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {templatesLoading ? (
+                  {dashboardLoading ? (
                     <div className="text-center py-8">
-                      <div className="text-gray-500">Loading templates...</div>
+                      <div className="text-gray-500">Caricamento attività...</div>
                     </div>
-                  ) : templates.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="text-gray-500">No templates created yet</div>
-                      <Button 
-                        onClick={handleCreateTemplate}
-                        className="mt-4 bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-                        data-testid="button-create-first-template"
-                      >
-                        Create Your First Template
-                      </Button>
-                    </div>
-                  ) : (
+                  ) : dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 ? (
                     <div className="space-y-3">
-                      {templates.slice(0, 5).map((template: any) => (
+                      {dashboardData.recentActivity.map((activity, index) => (
                         <div 
-                          key={template.id}
+                          key={activity.date}
                           className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
-                          data-testid={`template-item-${template.id}`}
+                          data-testid={`recent-activity-${activity.date}`}
                         >
                           <div>
-                            <h4 className="font-medium text-gray-900">{template.name}</h4>
-                            <p className="text-sm text-gray-600">{template.description}</p>
+                            <h4 className="font-medium text-gray-900">
+                              {new Date(activity.date).toLocaleDateString('it-IT', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              })}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {activity.instancesStarted} istanze avviate
+                            </p>
                           </div>
                           <Badge variant="outline">
-                            {DEPARTMENTS[template.category as keyof typeof DEPARTMENTS]?.label || template.category}
+                            {activity.instancesStarted}
                           </Badge>
                         </div>
                       ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="text-gray-500">Nessuna attività recente</div>
+                      <p className="text-sm text-gray-400 mt-1">Le nuove istanze di workflow appariranno qui</p>
                     </div>
                   )}
                 </CardContent>
@@ -672,8 +830,18 @@ export default function WorkflowManagementPage() {
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 <FileText className="h-6 w-6 text-windtre-orange" />
-                Workflow Timeline
+                Cronologia Workflow
               </h2>
+              
+              {timelineError && (
+                <Card className="mb-6 border-red-200 bg-red-50">
+                  <CardContent className="pt-6">
+                    <div className="text-red-800">
+                      Errore nel caricamento della cronologia. Verifica la connessione al server.
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               
               {/* Timeline with real workflow execution history */}
               <div className="space-y-6">
@@ -683,106 +851,175 @@ export default function WorkflowManagementPage() {
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-windtre-orange" />
-                        Execution History
+                        Cronologia Esecuzioni
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm">
-                          Filter
+                          <Filter className="h-4 w-4 mr-2" />
+                          Filtra
                         </Button>
                         <Button variant="outline" size="sm">
-                          Export
+                          <Archive className="h-4 w-4 mr-2" />
+                          Esporta
                         </Button>
                       </div>
                     </CardTitle>
-                    <CardDescription>Real-time workflow execution timeline and activity feed</CardDescription>
+                    <CardDescription>Cronologia in tempo reale delle esecuzioni workflow e feed attività</CardDescription>
                   </CardHeader>
                 </Card>
 
-                {/* Timeline Content */}
+                {/* Timeline Content - DATI REALI DAL DATABASE */}
                 <Card className="windtre-glass-panel border-white/20">
                   <CardContent className="p-6">
-                    <div className="space-y-6">
-                      {/* Sample timeline entries - Connect to real data later */}
-                      {[
-                        {
-                          id: '1',
-                          time: '2 hours ago',
-                          type: 'template_created',
-                          title: 'New Template Created',
-                          description: 'Sales approval workflow template created by Admin User',
-                          department: 'sales',
-                          status: 'completed'
-                        },
-                        {
-                          id: '2', 
-                          time: '4 hours ago',
-                          type: 'workflow_executed',
-                          title: 'Workflow Execution Started',
-                          description: 'Employee onboarding workflow triggered for new hire',
-                          department: 'hr',
-                          status: 'running'
-                        },
-                        {
-                          id: '3',
-                          time: '6 hours ago', 
-                          type: 'approval_pending',
-                          title: 'Approval Required',
-                          description: 'Purchase order exceeds threshold, requires manager approval',
-                          department: 'finance',
-                          status: 'pending'
-                        },
-                        {
-                          id: '4',
-                          time: '1 day ago',
-                          type: 'workflow_completed',
-                          title: 'Workflow Completed',
-                          description: 'Customer support ticket resolution workflow finished',
-                          department: 'support',
-                          status: 'completed'
-                        }
-                      ].map((entry) => {
-                        const dept = DEPARTMENTS[entry.department as keyof typeof DEPARTMENTS];
-                        return (
-                          <div key={entry.id} className="flex gap-4" data-testid={`timeline-entry-${entry.id}`}>
-                            {/* Timeline dot */}
-                            <div className="flex flex-col items-center">
-                              <div className={`w-3 h-3 rounded-full ${
-                                entry.status === 'completed' ? 'bg-green-500' :
-                                entry.status === 'running' ? 'bg-windtre-orange' :
-                                entry.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-300'
-                              }`} />
-                              <div className="w-0.5 h-12 bg-gray-200" />
-                            </div>
+                    {timelineLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="text-gray-500">Caricamento cronologia...</div>
+                      </div>
+                    ) : timelineData?.entries && timelineData.entries.length > 0 ? (
+                      <>
+                        <div className="space-y-6">
+                          {timelineData.entries.map((entry, index) => {
+                            const dept = DEPARTMENTS[entry.templateCategory as keyof typeof DEPARTMENTS];
+                            const isLast = index === timelineData.entries.length - 1;
                             
-                            {/* Timeline content */}
-                            <div className="flex-1 windtre-glass-panel p-4 rounded-lg border-white/20">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="font-medium text-gray-900">{entry.title}</h4>
-                                    <Badge variant="outline" className={`text-xs ${dept.textColor}`}>
-                                      {dept.label}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-gray-600 mb-2">{entry.description}</p>
-                                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                                    <span>{entry.time}</span>
-                                    <span className={`font-medium ${
-                                      entry.status === 'completed' ? 'text-green-600' :
-                                      entry.status === 'running' ? 'text-windtre-orange' :
-                                      entry.status === 'pending' ? 'text-yellow-600' : 'text-gray-500'
-                                    }`}>
-                                      {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
-                                    </span>
+                            // Calcola tempo relativo
+                            const getRelativeTime = (dateString: string | null) => {
+                              if (!dateString) return 'Data non disponibile';
+                              const date = new Date(dateString);
+                              const now = new Date();
+                              const diffMs = now.getTime() - date.getTime();
+                              const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                              const diffHours = Math.floor(diffMinutes / 60);
+                              const diffDays = Math.floor(diffHours / 24);
+                              
+                              if (diffMinutes < 60) return `${diffMinutes} minuti fa`;
+                              if (diffHours < 24) return `${diffHours} ore fa`;
+                              return `${diffDays} giorni fa`;
+                            };
+
+                            return (
+                              <div key={entry.instanceId} className="flex gap-4" data-testid={`timeline-entry-${entry.instanceId}`}>
+                                {/* Timeline dot */}
+                                <div className="flex flex-col items-center">
+                                  <div className={`w-3 h-3 rounded-full ${
+                                    entry.status === 'completed' ? 'bg-green-500' :
+                                    entry.status === 'running' ? 'bg-windtre-orange' :
+                                    entry.status === 'pending' ? 'bg-yellow-500' :
+                                    entry.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
+                                  }`} />
+                                  {!isLast && <div className="w-0.5 h-12 bg-gray-200" />}
+                                </div>
+                                
+                                {/* Timeline content */}
+                                <div className="flex-1 windtre-glass-panel p-4 rounded-lg border-white/20">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-medium text-gray-900">
+                                          {entry.instanceName || entry.templateName}
+                                        </h4>
+                                        {dept && (
+                                          <Badge variant="outline" className={`text-xs ${dept.textColor}`}>
+                                            {dept.label}
+                                          </Badge>
+                                        )}
+                                        <Badge variant="outline" className={`text-xs ${
+                                          entry.status === 'completed' ? 'text-green-600' :
+                                          entry.status === 'running' ? 'text-windtre-orange' :
+                                          entry.status === 'pending' ? 'text-yellow-600' :
+                                          entry.status === 'failed' ? 'text-red-600' : 'text-gray-500'
+                                        }`}>
+                                          {entry.status === 'running' ? 'In Esecuzione' :
+                                           entry.status === 'completed' ? 'Completato' :
+                                           entry.status === 'pending' ? 'In Attesa' :
+                                           entry.status === 'failed' ? 'Fallito' : entry.status}
+                                        </Badge>
+                                      </div>
+                                      
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Template: <span className="font-medium">{entry.templateName}</span>
+                                        {entry.referenceId && (
+                                          <span className="ml-2 text-gray-500">• ID Riferimento: {entry.referenceId}</span>
+                                        )}
+                                      </p>
+                                      
+                                      {entry.currentStep && (
+                                        <p className="text-xs text-gray-500 mb-2">
+                                          Step Corrente: <span className="font-medium">{entry.currentStep}</span>
+                                          {entry.assignee && (
+                                            <span className="ml-2">• Assegnato a: {entry.assignee}</span>
+                                          )}
+                                        </p>
+                                      )}
+                                      
+                                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                                        <span>
+                                          Avviato: {getRelativeTime(entry.startedAt)}
+                                        </span>
+                                        {entry.completedAt && (
+                                          <span>
+                                            Completato: {getRelativeTime(entry.completedAt)}
+                                          </span>
+                                        )}
+                                        {entry.escalationLevel > 0 && (
+                                          <span className="text-orange-600 font-medium">
+                                            Escalation Livello {entry.escalationLevel}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {dept && <dept.icon className={`h-5 w-5 ${dept.textColor}`} />}
                                   </div>
                                 </div>
-                                <dept.icon className={`h-5 w-5 ${dept.textColor}`} />
                               </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Pagination */}
+                        {timelineData.pagination && timelineData.pagination.totalPages > 1 && (
+                          <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+                            <div className="text-sm text-gray-600">
+                              Mostra {timelineData.entries.length} di {timelineData.pagination.total} risultati
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                disabled={!timelineData.pagination.hasPrev}
+                                data-testid="button-timeline-prev"
+                              >
+                                Precedente
+                              </Button>
+                              <span className="flex items-center px-3 text-sm text-gray-600">
+                                Pagina {timelineData.pagination.page} di {timelineData.pagination.totalPages}
+                              </span>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                disabled={!timelineData.pagination.hasNext}
+                                data-testid="button-timeline-next"
+                              >
+                                Successiva
+                              </Button>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Nessuna Attività</h3>
+                        <p className="text-gray-600 mb-4">Non ci sono esecuzioni workflow da mostrare</p>
+                        <Button 
+                          onClick={() => setActiveView('builder')}
+                          className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          Avvia Primo Workflow
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -1100,17 +1337,303 @@ export default function WorkflowManagementPage() {
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 <BarChart3 className="h-6 w-6 text-windtre-orange" />
-                Workflow Analytics
+                Analytics Workflow
               </h2>
-              <Card className="windtre-glass-panel border-white/20">
-                <CardContent className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-windtre-orange mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">Analytics Dashboard</h3>
-                    <p className="text-gray-600">View workflow performance metrics</p>
+              
+              {analyticsError && (
+                <Card className="mb-6 border-red-200 bg-red-50">
+                  <CardContent className="pt-6">
+                    <div className="text-red-800">
+                      Errore nel caricamento dei dati analytics. Verifica la connessione al server.
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-gray-500">Caricamento analytics...</div>
+                </div>
+              ) : analyticsData ? (
+                <div className="space-y-6">
+                  
+                  {/* Performance Analytics */}
+                  <Card className="windtre-glass-panel border-white/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                        <BarChart3 className="h-5 w-5" />
+                        Performance Ultimi {analyticsData.period} Giorni
+                      </CardTitle>
+                      <CardDescription>Statistiche di esecuzione e performance nel tempo</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {analyticsData.performance && analyticsData.performance.length > 0 ? (
+                        <div className="space-y-4">
+                          {analyticsData.performance.slice(0, 7).map((perfData, index) => (
+                            <div 
+                              key={perfData.date}
+                              className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
+                              data-testid={`performance-entry-${perfData.date}`}
+                            >
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  {new Date(perfData.date).toLocaleDateString('it-IT', { 
+                                    weekday: 'long', 
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                  })}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {perfData.executions} esecuzioni • 
+                                  <span className="text-green-600 ml-1">{perfData.successful} successi</span> • 
+                                  <span className="text-red-600 ml-1">{perfData.failed} fallimenti</span>
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <Badge variant="outline">
+                                  {perfData.avg_duration ? `${Math.round(perfData.avg_duration / 1000)}s` : 'N/A'}
+                                </Badge>
+                                <p className="text-xs text-gray-500 mt-1">Durata media</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500">Nessun dato di performance disponibile per il periodo selezionato</div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Category Performance & Active Templates */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    {/* Category Performance */}
+                    <Card className="windtre-glass-panel border-white/20">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-windtre-purple">
+                          <Users className="h-5 w-5" />
+                          Performance per Categoria
+                        </CardTitle>
+                        <CardDescription>Statistiche per dipartimento aziendale</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {analyticsData.categoryStats && analyticsData.categoryStats.length > 0 ? (
+                          <div className="space-y-3">
+                            {analyticsData.categoryStats.map((categoryData, index) => {
+                              const dept = DEPARTMENTS[categoryData.category as keyof typeof DEPARTMENTS];
+                              const completionRate = categoryData.total_instances > 0 
+                                ? Math.round((categoryData.completed / categoryData.total_instances) * 100) 
+                                : 0;
+                              
+                              return (
+                                <div 
+                                  key={categoryData.category}
+                                  className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
+                                  data-testid={`category-performance-${categoryData.category}`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    {dept && (
+                                      <div className={`p-2 rounded-lg ${dept.color} opacity-20`}>
+                                        <dept.icon className={`h-4 w-4 ${dept.textColor}`} />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <h4 className="font-medium text-gray-900">
+                                        {dept?.label || categoryData.category}
+                                      </h4>
+                                      <p className="text-sm text-gray-600">
+                                        {categoryData.total_instances} istanze • {completionRate}% completate
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="flex gap-1">
+                                      <Badge variant="outline" className="text-green-600">
+                                        {categoryData.completed}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-windtre-orange">
+                                        {categoryData.running}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-red-600">
+                                        {categoryData.failed}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">C/R/F</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="text-gray-500">Nessun dato per categoria disponibile</div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Active Templates */}
+                    <Card className="windtre-glass-panel border-white/20">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                          <Workflow className="h-5 w-5" />
+                          Templates Più Attivi
+                        </CardTitle>
+                        <CardDescription>Ordinati per numero di istanze</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {analyticsData.activeTemplates && analyticsData.activeTemplates.length > 0 ? (
+                          <div className="space-y-3">
+                            {analyticsData.activeTemplates.slice(0, 5).map((template, index) => {
+                              const dept = DEPARTMENTS[template.category as keyof typeof DEPARTMENTS];
+                              
+                              return (
+                                <div 
+                                  key={template.name}
+                                  className="flex items-center justify-between p-3 windtre-glass-panel rounded-lg border-white/20"
+                                  data-testid={`active-template-${index}`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-center w-8 h-8 bg-windtre-orange bg-opacity-20 rounded-full">
+                                      <span className="text-sm font-bold text-windtre-orange">#{index + 1}</span>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-gray-900 truncate max-w-[150px]">
+                                        {template.name}
+                                      </h4>
+                                      <p className="text-sm text-gray-600">
+                                        {dept?.label || template.category} • 
+                                        {template.last_used && (
+                                          <span className="ml-1">
+                                            Ultimo uso: {new Date(template.last_used).toLocaleDateString('it-IT')}
+                                          </span>
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <Badge variant="outline" className="font-bold">
+                                      {template.instances_count} istanze
+                                    </Badge>
+                                    {template.avg_duration && (
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Durata: {Math.round(template.avg_duration / 1000)}s
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="text-gray-500">Nessun template attivo trovato</div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Hourly Distribution */}
+                  <Card className="windtre-glass-panel border-white/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-windtre-purple">
+                        <Calendar className="h-5 w-5" />
+                        Distribuzione Oraria Esecuzioni
+                      </CardTitle>
+                      <CardDescription>Quando vengono avviati più workflow durante la giornata</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {analyticsData.hourlyDistribution && analyticsData.hourlyDistribution.length > 0 ? (
+                        <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
+                          {Array.from({ length: 24 }, (_, hour) => {
+                            const hourData = analyticsData.hourlyDistribution.find(h => h.hour === hour);
+                            const instancesStarted = hourData?.instances_started || 0;
+                            const maxInstances = Math.max(...analyticsData.hourlyDistribution.map(h => h.instances_started));
+                            const intensity = maxInstances > 0 ? instancesStarted / maxInstances : 0;
+                            
+                            return (
+                              <div 
+                                key={hour}
+                                className="text-center"
+                                data-testid={`hourly-distribution-${hour}`}
+                              >
+                                <div 
+                                  className={`h-16 rounded mb-1 ${
+                                    intensity > 0.7 ? 'bg-windtre-orange' :
+                                    intensity > 0.4 ? 'bg-windtre-orange bg-opacity-60' :
+                                    intensity > 0.2 ? 'bg-windtre-orange bg-opacity-30' :
+                                    intensity > 0 ? 'bg-windtre-orange bg-opacity-10' : 'bg-gray-100'
+                                  }`}
+                                  title={`${hour}:00 - ${instancesStarted} istanze avviate`}
+                                />
+                                <div className="text-xs text-gray-600">{hour}</div>
+                                <div className="text-xs text-gray-500">{instancesStarted}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-gray-500">Nessun dato di distribuzione oraria disponibile</div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Analytics Summary */}
+                  <Card className="windtre-glass-panel border-white/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-windtre-orange">
+                        <Settings className="h-5 w-5" />
+                        Riepilogo Analytics
+                      </CardTitle>
+                      <CardDescription>Informazioni generali sui dati analytics</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-4 windtre-glass-panel rounded-lg border-white/20">
+                          <div className="text-lg font-bold text-windtre-orange">
+                            {analyticsData.period}
+                          </div>
+                          <div className="text-sm text-gray-600">Giorni analizzati</div>
+                        </div>
+                        <div className="text-center p-4 windtre-glass-panel rounded-lg border-white/20">
+                          <div className="text-lg font-bold text-windtre-purple">
+                            {analyticsData.performance?.length || 0}
+                          </div>
+                          <div className="text-sm text-gray-600">Giorni con attività</div>
+                        </div>
+                        <div className="text-center p-4 windtre-glass-panel rounded-lg border-white/20">
+                          <div className="text-lg font-bold text-windtre-orange">
+                            {new Date(analyticsData.generatedAt).toLocaleTimeString('it-IT')}
+                          </div>
+                          <div className="text-sm text-gray-600">Ultimo aggiornamento</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="windtre-glass-panel border-white/20">
+                  <CardContent className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                      <BarChart3 className="h-12 w-12 text-windtre-orange mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900">Nessun Dato Analytics</h3>
+                      <p className="text-gray-600 mb-4">Non ci sono ancora dati sufficienti per generare analytics</p>
+                      <Button 
+                        onClick={() => setActiveView('builder')}
+                        className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                      >
+                        <Workflow className="h-4 w-4 mr-2" />
+                        Crea il Primo Workflow
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </div>
