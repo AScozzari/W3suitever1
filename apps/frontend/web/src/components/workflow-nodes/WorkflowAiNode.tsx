@@ -17,6 +17,7 @@ interface AiNodeData {
   category: string;
   color: string;
   config?: Record<string, any>;
+  onConfigClick?: (nodeId: string) => void;
 }
 
 export function WorkflowAiNode({ data, selected }: NodeProps<AiNodeData>) {
@@ -48,7 +49,13 @@ export function WorkflowAiNode({ data, selected }: NodeProps<AiNodeData>) {
               AI
             </Badge>
             <div className="flex gap-1">
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0" 
+                onClick={() => data.onConfigClick?.(data.id)}
+                data-testid="button-settings-ai"
+              >
                 <Settings className="h-3 w-3" />
               </Button>
               <Button variant="ghost" size="sm" className="h-6 w-6 p-0">

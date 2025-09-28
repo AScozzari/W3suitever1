@@ -45,7 +45,8 @@ import {
   Palette,
   Eye,
   Trash2,
-  Search
+  Search,
+  X
 } from 'lucide-react';
 
 import { useWorkflowStore } from '../stores/workflowStore';
@@ -238,7 +239,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         position,
         data: {
           ...nodeDefinition,
-          config: { ...nodeDefinition.defaultConfig }
+          config: { ...nodeDefinition.defaultConfig },
+          onConfigClick: handleConfigClick
         },
         draggable: true,
         connectable: true,
@@ -253,9 +255,15 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     [reactFlowInstance, addNode]
   );
 
-  // ✅ NODE CONFIGURATION PANEL (will be implemented)
+  // ✅ NODE CONFIGURATION PANEL
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
+
+  const handleConfigClick = useCallback((nodeId: string) => {
+    setConfigNodeId(nodeId);
+    setShowConfigPanel(true);
+    console.log('🎛️ Opening config panel for node:', nodeId);
+  }, []);
 
   // Workflow actions
   const handleSaveWorkflow = () => {
@@ -620,6 +628,83 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </ReactFlow>
         </div>
       </div>
+
+      {/* ✅ NODE CONFIGURATION PANEL */}
+      {showConfigPanel && configNodeId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="config-panel-overlay">
+          <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto windtre-glass-panel">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Configurazione Nodo</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowConfigPanel(false)}
+                data-testid="button-close-config"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {(() => {
+              const currentNode = nodes.find(n => n.id === configNodeId);
+              if (!currentNode) return <p>Nodo non trovato</p>;
+              
+              return (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nome Nodo
+                    </label>
+                    <input 
+                      type="text" 
+                      value={currentNode.data.name || ''} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-windtre-orange"
+                      data-testid="input-node-name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Descrizione
+                    </label>
+                    <textarea 
+                      value={currentNode.data.description || ''} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-windtre-orange"
+                      rows={3}
+                      data-testid="textarea-node-description"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo: <span className="font-normal text-gray-500">{currentNode.data.category}</span>
+                    </label>
+                  </div>
+                  
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowConfigPanel(false)}
+                      data-testid="button-cancel-config"
+                    >
+                      Annulla
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        console.log('💾 Saving node config for:', configNodeId);
+                        setShowConfigPanel(false);
+                      }}
+                      data-testid="button-save-config"
+                    >
+                      Salva
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,35 +17,56 @@ interface TriggerNodeData {
   category: string;
   color: string;
   config?: Record<string, any>;
+  onConfigClick?: (nodeId: string) => void;
 }
 
 export function WorkflowTriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
   return (
-    <div className="workflow-node" style={{
-      width: 180,
-      height: 80,
-      background: 'white',
-      border: '2px solid #7B2CBF',
-      borderRadius: '8px',
-      padding: '12px',
-      fontSize: '14px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      position: 'relative'
-    }}>
-      <Handle
-        type="target"
-        position={Position.Top}
+    <div className={`workflow-node ${selected ? 'selected' : ''}`}>
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        className="handle-target"
         style={{ background: '#7B2CBF' }}
       />
-      <div style={{ fontWeight: 600, color: '#374151' }}>
-        {data.name || 'Trigger Node'}
-      </div>
-      <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
-        {data.description || 'Workflow trigger'}
-      </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
+      
+      <Card className={`min-w-[200px] windtre-glass-panel border-2 transition-all ${
+        selected ? 'border-windtre-purple shadow-lg' : 'border-white/20 hover:border-windtre-purple/50'
+      }`}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-semibold drag-handle cursor-move bg-windtre-purple">
+              <Zap className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-gray-900 text-sm truncate">{data.name}</h4>
+              <p className="text-xs text-gray-600 truncate">{data.description}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <Badge variant="outline" className="text-xs bg-windtre-purple/10">
+              Trigger
+            </Badge>
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0" 
+                onClick={() => data.onConfigClick?.(data.id)}
+                data-testid="button-settings-trigger"
+              >
+                <Settings className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        className="handle-source"
         style={{ background: '#7B2CBF' }}
       />
     </div>
