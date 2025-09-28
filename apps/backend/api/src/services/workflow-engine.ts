@@ -91,7 +91,7 @@ export class WorkflowEngine {
           instanceName: context.instanceName || `${template.name} - ${new Date().toISOString()}`,
           currentStatus: 'running',
           currentStepId: firstStep.id,
-          instanceData: {
+          workflowData: {
             currentAssigneeId: assigneeId,
             templateName: template.name,
             templateCategory: template.category,
@@ -163,7 +163,7 @@ export class WorkflowEngine {
       }
 
       // Verify approver is authorized
-      const currentAssigneeId = (instance.instanceData as any)?.currentAssigneeId;
+      const currentAssigneeId = (instance.workflowData as any)?.currentAssigneeId;
       if (currentAssigneeId && currentAssigneeId !== decision.approverId) {
         const isAuthorized = await this.verifyApprover(
           decision.instanceId,
@@ -240,7 +240,7 @@ export class WorkflowEngine {
         { 
           tenantId: instance.tenantId, 
           requesterId: instance.requesterId,
-          metadata: instance.instanceData 
+          metadata: instance.workflowData 
         }
       );
 
@@ -250,8 +250,8 @@ export class WorkflowEngine {
         .set({
           currentStatus: 'running',
           currentStepId: nextStep.id,
-          instanceData: {
-            ...(instance.instanceData as any),
+          workflowData: {
+            ...(instance.workflowData as any),
             currentAssigneeId: assigneeId,
             currentStepIndex: currentIndex + 2,
             previousStepId: instance.currentStepId
@@ -288,8 +288,8 @@ export class WorkflowEngine {
         .set({
           currentStatus: 'completed',
           completedAt: new Date(),
-          instanceData: {
-            ...(instance.instanceData as any),
+          workflowData: {
+            ...(instance.workflowData as any),
             completedSteps: steps.length
           },
           lastActivity: new Date()
@@ -320,8 +320,8 @@ export class WorkflowEngine {
       .set({
         currentStatus: 'failed',
         completedAt: new Date(),
-        instanceData: {
-          ...(instance.instanceData as any),
+        workflowData: {
+          ...(instance.workflowData as any),
           rejectionReason: reason,
           rejectedAtStep: instance.currentStepId
         },
@@ -350,13 +350,13 @@ export class WorkflowEngine {
     delegateToId: string,
     comment?: string
   ): Promise<any> {
-    const currentAssigneeId = (instance.instanceData as any)?.currentAssigneeId;
+    const currentAssigneeId = (instance.workflowData as any)?.currentAssigneeId;
     
     const [updated] = await db
       .update(workflowInstances)
       .set({
-        instanceData: {
-          ...(instance.instanceData as any),
+        workflowData: {
+          ...(instance.workflowData as any),
           currentAssigneeId: delegateToId,
           delegatedFrom: currentAssigneeId,
           delegationComment: comment,
@@ -574,7 +574,7 @@ export class WorkflowEngine {
       }
 
       // Check 5: Delegation check
-      const delegatedAuth = (instance.instanceData as any)?.delegations?.find(
+      const delegatedAuth = (instance.workflowData as any)?.delegations?.find(
         (d: any) => d.stepId === stepId && d.delegateToId === approverId
       );
       
@@ -761,13 +761,13 @@ export class WorkflowEngine {
       await db
         .update(workflowInstances)
         .set({
-          instanceData: {
-            ...(instance.instanceData as any),
+          workflowData: {
+            ...(instance.workflowData as any),
             currentAssigneeId: step.escalationTarget,
             escalatedAt: new Date(),
-            originalAssignee: (instance.instanceData as any)?.currentAssigneeId
+            originalAssignee: (instance.workflowData as any)?.currentAssigneeId
           },
-          escalationCount: (instance.escalationCount || 0) + 1,
+          escalationLevel: (instance.escalationLevel || 0) + 1,
           lastActivity: new Date()
         })
         .where(eq(workflowInstances.id, instanceId));
