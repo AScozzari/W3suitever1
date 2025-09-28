@@ -14,6 +14,7 @@ import ReactFlow, {
   useEdgesState,
   Controls,
   Background,
+  BackgroundVariant,
   NodeTypes,
   ReactFlowProvider,
   ReactFlowInstance,
@@ -604,7 +605,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             data-testid="reactflow-canvas"
           >
             <Controls />
-            <Background variant="dots" color="#E5E7EB" gap={20} />
+            <Background variant={BackgroundVariant.Dots} color="#E5E7EB" gap={20} />
           </ReactFlow>
         </div>
       </div>
