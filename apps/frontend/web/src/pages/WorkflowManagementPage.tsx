@@ -198,7 +198,7 @@ export default function WorkflowManagementPage() {
   };
 
   const formatTeamMembersCount = (team: Team) => {
-    return team.userMembers.length + team.roleMembers.length;
+    return (team.userMembers || []).length + (team.roleMembers || []).length;
   };
 
   // 🎯 Create new template with department selection
@@ -1015,7 +1015,7 @@ export default function WorkflowManagementPage() {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
-                                {team.assignedDepartments.map((dept) => {
+                                {(team.assignedDepartments || []).map((dept) => {
                                   const deptInfo = DEPARTMENTS[dept];
                                   return (
                                     <Badge 

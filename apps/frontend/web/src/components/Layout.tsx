@@ -15,6 +15,8 @@ import {
   LogOut, HelpCircle, MapPin, UserCircle, Store
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useTenant } from '../contexts/TenantContext';
+import { useAuth } from '../hooks/useAuth';
 import LoginModal from './LoginModal';
 import NotificationBell from './Notifications/NotificationBell';
 import ChatWidget from './ChatWidget';
@@ -79,25 +81,37 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
   
   const { data: user } = useQuery<UserData | null>({ queryKey: ["/api/auth/session"] });
   const [location, navigate] = useLocation();
-
-  // Estrai tenant dal path URL per il context
-  useEffect(() => {
+  
+  // ✅ Sicuro: Ottieni e valida tenant dal path URL con fallback robusto
+  const getTenantFromUrl = () => {
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
-    const tenantSlug = pathSegments[0]; // primo segmento (staging, demo, etc.)
+    const tenantSlug = pathSegments[0];
     
-    if (tenantSlug) {
-      // Map slug to tenant ID
-      const tenantMap: Record<string, string> = {
-        'staging': '00000000-0000-0000-0000-000000000001',
-        'demo': '99999999-9999-9999-9999-999999999999',
-        'acme': '11111111-1111-1111-1111-111111111111',
-        'tech': '22222222-2222-2222-2222-222222222222'
-      };
-      
-      const tenantId = tenantMap[tenantSlug];
-      if (tenantId) {
-        localStorage.setItem('currentTenantId', tenantId);
-      }
+    // Valida contro tenant conosciuti
+    const validTenants = ['staging', 'demo', 'acme', 'tech'];
+    if (tenantSlug && validTenants.includes(tenantSlug)) {
+      return tenantSlug;
+    }
+    
+    return 'staging'; // fallback sicuro
+  };
+
+  // ✅ Ripristina mappatura slug → UUID per localStorage (necessaria per API headers)
+  useEffect(() => {
+    const tenantSlug = getTenantFromUrl();
+    
+    // Map slug to tenant ID per compatibilità con sistema esistente
+    const tenantMap: Record<string, string> = {
+      'staging': '00000000-0000-0000-0000-000000000001',
+      'demo': '99999999-9999-9999-9999-999999999999',
+      'acme': '11111111-1111-1111-1111-111111111111',
+      'tech': '22222222-2222-2222-2222-222222222222'
+    };
+    
+    const tenantId = tenantMap[tenantSlug];
+    if (tenantId) {
+      localStorage.setItem('currentTenantId', tenantId);
+      console.log(`[LAYOUT] 🎯 Tenant mapping: ${tenantSlug} → ${tenantId}`);
     }
   }, [location]);
 
@@ -1012,9 +1026,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                 <button
                   key={item.id}
                   onClick={() => {
-                    // Navigation pulita usando tenant dal localStorage (più affidabile)
-                    const currentTenantId = localStorage.getItem('currentTenantId');
-                    const tenantSlug = currentTenantId === '00000000-0000-0000-0000-000000000001' ? 'staging' : 'staging'; // Default a staging per ora
+                    // ✅ Navigation sicura usando tenant dall'URL (sempre funzionante)
+                    const tenantSlug = getTenantFromUrl();
                     navigate(`/${tenantSlug}${item.path}`);
                   }}
                   className={`

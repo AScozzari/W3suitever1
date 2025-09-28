@@ -1,0 +1,57 @@
+string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/payment-methods
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: Object
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/suppliers with tenant: 00000000-0000-0000-0000-000000000001
+SettingsPage.tsx:667 🆕 SettingsPage: useEffect triggered - loading data...
+SettingsPage.tsx:670 🌎 SettingsPage: Calling apiService.loadSettingsData()...
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/legal-entities with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/users with tenant: 00000000-0000-0000-0000-000000000001
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/stores with tenant: 00000000-0000-0000-0000-000000000001
+/api/team-workflow-assignments:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/team-workflow-assignments
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/team-workflow-assignments
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: Object
+SettingsPage.tsx:672 📦 SettingsPage: loadSettingsData result: Object
+SettingsPage.tsx:685 📝 Setting state with data: Object
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/roles with tenant: 00000000-0000-0000-0000-000000000001
+/api/team-workflow-assignments:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/team-workflow-assignments
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/team-workflow-assignments
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: Object
+SettingsPage.tsx:672 📦 SettingsPage: loadSettingsData result: Object
+SettingsPage.tsx:685 📝 Setting state with data: Object
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:295 [API-REQUEST] 📡 Making API request to: /api/roles with tenant: 00000000-0000-0000-0000-000000000001
+SettingsPage.tsx:699 📋 Suppliers will be loaded via TanStack Query automatically
+/api/team-workflow-assignments:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+SettingsPage.tsx:699 📋 Suppliers will be loaded via TanStack Query automatically
+client:536 WebSocket connection to 'wss://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev:24678/?token=cA9LFsaeQzmT' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this error
+client:560 [vite] server connection lost. Polling for restart...
+queryClient.ts:75 [TENANT-ID] ✅ Using in-memory tenant ID: 00000000-0000-0000-0000-000000000001
+queryClient.ts:168 [QUERY-CLIENT] 📡 Making API request to: /api/team-workflow-assignments
+queryClient.ts:169 [TENANT-VERIFICATION] 🔒 Sending X-Tenant-ID: "00000000-0000-0000-0000-000000000001"
+queryClient.ts:170 [TENANT-VERIFICATION] 🆔 Tenant ID type: string, length: 36
+queryClient.ts:186 [TENANT-VERIFICATION] ✅ Valid UUID format confirmed
+queryClient.ts:194 🔍 [API-DEBUG] AUTH_MODE: development
+queryClient.ts:195 🔍 [API-DEBUG] Making request to: /api/team-workflow-assignments
+queryClient.ts:200 🔧 [DEV-AUTH] Headers aggiunti per development mode: Object
+/api/team-workflow-assignments:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
