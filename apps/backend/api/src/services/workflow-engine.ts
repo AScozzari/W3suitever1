@@ -13,6 +13,8 @@ import {
   notifications
 } from '../db/schema/w3suite';
 import { nanoid } from 'nanoid';
+import { reactFlowBridgeParser, type ParsedWorkflow, type ReactFlowWorkflowData } from './reactflow-bridge-parser';
+import { logger } from '../core/logger';
 
 export interface WorkflowExecutionContext {
   tenantId: string;
@@ -34,7 +36,138 @@ export interface ApprovalDecision {
 export class WorkflowEngine {
   
   /**
-   * Create a new workflow instance from a template
+   * 🌉 NEW: Create workflow instance from ReactFlow template
+   * Uses the bridge parser to convert ReactFlow nodes into executable steps
+   */
+  async createInstanceFromReactFlow(
+    templateId: string,
+    context: WorkflowExecutionContext
+  ): Promise<any> {
+    try {
+      logger.info('🚀 [ENGINE] Creating instance from ReactFlow template', {
+        templateId,
+        tenantId: context.tenantId,
+        requesterId: context.requesterId
+      });
+
+      // Get the ReactFlow template
+      const [template] = await db
+        .select()
+        .from(workflowTemplates)
+        .where(and(
+          eq(workflowTemplates.id, templateId),
+          eq(workflowTemplates.tenantId, context.tenantId),
+          eq(workflowTemplates.isActive, true)
+        ))
+        .limit(1);
+
+      if (!template) {
+        throw new Error('ReactFlow workflow template not found or inactive');
+      }
+
+      // Parse ReactFlow data using bridge parser
+      const reactFlowData: ReactFlowWorkflowData = {
+        nodes: template.nodes as any[] || [],
+        edges: template.edges as any[] || [],
+        viewport: template.viewport as any || { x: 0, y: 0, zoom: 1 }
+      };
+
+      const parsedWorkflow = await reactFlowBridgeParser.parseWorkflow(reactFlowData, {
+        templateId: template.id,
+        templateName: template.name,
+        department: template.for_department || undefined
+      });
+
+      // Validate parsed workflow
+      const validation = reactFlowBridgeParser.validateWorkflow(parsedWorkflow);
+      if (!validation.isValid) {
+        throw new Error(`Invalid workflow structure: ${validation.errors.join(', ')}`);
+      }
+
+      // Find assignee for start step
+      const startStep = parsedWorkflow.steps.get(parsedWorkflow.startNodeId);
+      if (!startStep) {
+        throw new Error('Start step not found in parsed workflow');
+      }
+
+      const assigneeId = await this.findAssigneeForReactFlowStep(
+        templateId,
+        startStep,
+        context
+      );
+
+      // 🔄 Serialize parsed workflow for JSON storage
+      const serializedWorkflow = reactFlowBridgeParser.serializeWorkflow(parsedWorkflow);
+
+      // Create workflow instance with ReactFlow data
+      const [instance] = await db
+        .insert(workflowInstances)
+        .values({
+          tenantId: context.tenantId,
+          templateId,
+          referenceId: context.requestId,
+          instanceType: 'reactflow', // NEW: Mark as ReactFlow type
+          instanceName: context.instanceName || `${template.name} - ${new Date().toISOString()}`,
+          currentStatus: 'running',
+          currentStepId: startStep.nodeId, // Use ReactFlow node ID
+          workflowData: {
+            currentAssigneeId: assigneeId,
+            templateName: template.name,
+            templateCategory: template.category,
+            totalSteps: parsedWorkflow.totalSteps,
+            currentStepIndex: 1,
+            parsedWorkflow: serializedWorkflow, // 🔄 Store SERIALIZED workflow (Map → Array)
+            currentStepExecutorId: startStep.executorId
+          },
+          context: context.metadata || {},
+          priority: 'normal',
+          startedAt: new Date()
+        })
+        .returning();
+
+      // Create first execution record for ReactFlow step
+      await db.insert(workflowExecutions).values({
+        tenantId: context.tenantId,
+        instanceId: instance.id,
+        stepId: startStep.nodeId, // Use ReactFlow node ID
+        executionType: startStep.type,
+        executorId: assigneeId || 'system',
+        status: 'pending',
+        inputData: {
+          ...context.metadata || {},
+          stepConfig: startStep.config,
+          executorId: startStep.executorId
+        },
+        startedAt: new Date()
+      });
+
+      logger.info('✅ [ENGINE] ReactFlow instance created successfully', {
+        instanceId: instance.id,
+        startStepId: startStep.nodeId,
+        executorId: startStep.executorId,
+        assigneeId
+      });
+
+      // Execute start step if it's not a manual trigger
+      if (startStep.type === 'trigger' && startStep.executorId !== 'manual-trigger') {
+        await this.executeReactFlowStep(instance.id, startStep, context);
+      }
+
+      return instance;
+
+    } catch (error) {
+      logger.error('❌ [ENGINE] Failed to create ReactFlow instance', {
+        error: error instanceof Error ? error.message : String(error),
+        templateId,
+        tenantId: context.tenantId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new workflow instance from a template (LEGACY METHOD)
+   * Supports old workflow_steps based templates
    */
   async createInstance(
     templateId: string,
@@ -840,6 +973,389 @@ export class WorkflowEngine {
       console.error('Error getting instance details:', error);
       throw error;
     }
+  }
+
+  /**
+   * 🌉 NEW: Find assignee for ReactFlow step
+   */
+  async findAssigneeForReactFlowStep(
+    templateId: string,
+    step: any, // ParsedWorkflowStep from bridge parser
+    context: WorkflowExecutionContext
+  ): Promise<string | null> {
+    try {
+      logger.info('🔍 [ENGINE] Finding assignee for ReactFlow step', {
+        stepId: step.nodeId,
+        executorId: step.executorId,
+        stepType: step.type
+      });
+
+      // For trigger steps, usually system handles them
+      if (step.type === 'trigger') {
+        return 'system';
+      }
+
+      // For approval steps, find appropriate approver
+      if (step.type === 'approval' || step.executorId === 'approval-action-executor') {
+        return await this.findApprovalAssignee(templateId, step, context);
+      }
+
+      // For AI steps, usually system handles them
+      if (step.type === 'ai') {
+        return 'system';
+      }
+
+      // For action steps, check if manual assignment needed
+      if (step.type === 'action') {
+        // Check if step requires human intervention
+        const config = step.config || {};
+        if (config.approverRole || config.approverType) {
+          return await this.findApprovalAssignee(templateId, step, context);
+        }
+        
+        // Otherwise system can handle it
+        return 'system';
+      }
+
+      // Default: try to find team-based assignment
+      return await this.findTeamAssignee(templateId, context);
+
+    } catch (error) {
+      logger.error('❌ [ENGINE] Failed to find ReactFlow step assignee', {
+        error: error instanceof Error ? error.message : String(error),
+        stepId: step.nodeId
+      });
+      return null;
+    }
+  }
+
+  /**
+   * 🌉 NEW: Execute a ReactFlow step
+   */
+  async executeReactFlowStep(
+    instanceId: string,
+    step: any, // ParsedWorkflowStep
+    context: WorkflowExecutionContext,
+    inputData?: Record<string, any>
+  ): Promise<any> {
+    try {
+      logger.info('⚡ [ENGINE] Executing ReactFlow step', {
+        instanceId,
+        stepId: step.nodeId,
+        executorId: step.executorId,
+        stepType: step.type
+      });
+
+      // Update execution record to running
+      await db
+        .update(workflowExecutions)
+        .set({
+          status: 'running',
+          startedAt: new Date()
+        })
+        .where(and(
+          eq(workflowExecutions.instanceId, instanceId),
+          eq(workflowExecutions.stepId, step.nodeId)
+        ));
+
+      let executionResult;
+
+      // Route to appropriate executor based on step type and executor ID
+      switch (step.executorId) {
+        case 'email-action-executor':
+          executionResult = await this.executeEmailAction(step, inputData);
+          break;
+        
+        case 'approval-action-executor':
+          executionResult = await this.executeApprovalAction(step, inputData, context);
+          break;
+        
+        case 'auto-approval-executor':
+          executionResult = await this.executeAutoApproval(step, inputData, context);
+          break;
+        
+        case 'decision-evaluator':
+          executionResult = await this.executeDecision(step, inputData);
+          break;
+        
+        case 'ai-decision-executor':
+          executionResult = await this.executeAiDecision(step, inputData, context);
+          break;
+
+        case 'form-trigger-executor':
+          executionResult = await this.executeFormTrigger(step, inputData);
+          break;
+
+        case 'generic-action-executor':
+        default:
+          executionResult = await this.executeGenericAction(step, inputData);
+          break;
+      }
+
+      // Update execution record with result
+      await db
+        .update(workflowExecutions)
+        .set({
+          status: executionResult.success ? 'completed' : 'failed',
+          outputData: executionResult.data || {},
+          completedAt: new Date(),
+          notes: executionResult.message || ''
+        })
+        .where(and(
+          eq(workflowExecutions.instanceId, instanceId),
+          eq(workflowExecutions.stepId, step.nodeId)
+        ));
+
+      // If execution successful, advance to next step
+      if (executionResult.success && step.nextSteps.length > 0) {
+        await this.advanceToNextReactFlowStep(instanceId, step, executionResult, context);
+      }
+
+      logger.info('✅ [ENGINE] ReactFlow step executed successfully', {
+        instanceId,
+        stepId: step.nodeId,
+        success: executionResult.success
+      });
+
+      return executionResult;
+
+    } catch (error) {
+      logger.error('❌ [ENGINE] Failed to execute ReactFlow step', {
+        error: error instanceof Error ? error.message : String(error),
+        instanceId,
+        stepId: step.nodeId
+      });
+
+      // Mark execution as failed
+      await db
+        .update(workflowExecutions)
+        .set({
+          status: 'failed',
+          completedAt: new Date(),
+          notes: error instanceof Error ? error.message : 'Unknown error'
+        })
+        .where(and(
+          eq(workflowExecutions.instanceId, instanceId),
+          eq(workflowExecutions.stepId, step.nodeId)
+        ));
+
+      throw error;
+    }
+  }
+
+  /**
+   * 🌉 HELPER: Find approval assignee for ReactFlow step
+   */
+  private async findApprovalAssignee(
+    templateId: string,
+    step: any,
+    context: WorkflowExecutionContext
+  ): Promise<string | null> {
+    const config = step.config || {};
+    
+    // Check for specific approver role in step config
+    if (config.approverRole) {
+      // TODO: Implement role-based assignment
+      // For now, return requester's manager or system
+      return context.requesterId; // Fallback
+    }
+
+    // Use existing team-based assignment logic
+    return await this.findTeamAssignee(templateId, context);
+  }
+
+  /**
+   * 🌉 HELPER: Find team-based assignee
+   */
+  private async findTeamAssignee(
+    templateId: string,
+    context: WorkflowExecutionContext
+  ): Promise<string | null> {
+    // Get team assignments for this template
+    const teamAssignments = await db
+      .select({
+        teamId: teamWorkflowAssignments.teamId,
+        teamName: teams.name,
+        primarySupervisor: teams.primarySupervisor
+      })
+      .from(teamWorkflowAssignments)
+      .innerJoin(teams, eq(teams.id, teamWorkflowAssignments.teamId))
+      .where(and(
+        eq(teamWorkflowAssignments.templateId, templateId),
+        eq(teams.tenantId, context.tenantId),
+        eq(teams.isActive, true)
+      ))
+      .limit(1);
+
+    if (teamAssignments.length > 0) {
+      const assignment = teamAssignments[0];
+      return assignment.primarySupervisor || context.requesterId;
+    }
+
+    return context.requesterId; // Fallback to requester
+  }
+
+  /**
+   * 🌉 HELPER: Advance to next ReactFlow step
+   */
+  private async advanceToNextReactFlowStep(
+    instanceId: string,
+    currentStep: any,
+    executionResult: any,
+    context: WorkflowExecutionContext
+  ): Promise<void> {
+    try {
+      // Get instance to access parsed workflow
+      const [instance] = await db
+        .select()
+        .from(workflowInstances)
+        .where(eq(workflowInstances.id, instanceId))
+        .limit(1);
+
+      if (!instance) {
+        throw new Error('Workflow instance not found');
+      }
+
+      // 🔄 Extract and deserialize workflow from instance data
+      const workflowData = instance.workflowData as any;
+      const parsedWorkflow = reactFlowBridgeParser.extractWorkflowFromInstanceData(workflowData);
+
+      if (!parsedWorkflow) {
+        throw new Error('Parsed workflow not found or could not be deserialized from instance data');
+      }
+
+      // Determine next step based on execution result and conditions
+      let nextStepId: string | null = null;
+
+      if (currentStep.type === 'decision' && executionResult.decision) {
+        // For decision nodes, use the decision result to choose path
+        const conditions = currentStep.conditions || {};
+        nextStepId = Object.keys(conditions).find(targetId => 
+          conditions[targetId].toLowerCase() === executionResult.decision.toLowerCase()
+        ) || null;
+      } else if (currentStep.nextSteps.length === 1) {
+        // Single path - go to next step
+        nextStepId = currentStep.nextSteps[0];
+      } else if (currentStep.nextSteps.length > 1) {
+        // Multiple paths - use first one for now (TODO: improve logic)
+        nextStepId = currentStep.nextSteps[0];
+      }
+
+      if (!nextStepId) {
+        // No next step - workflow completed
+        await db
+          .update(workflowInstances)
+          .set({
+            currentStatus: 'completed',
+            completedAt: new Date()
+          })
+          .where(eq(workflowInstances.id, instanceId));
+        
+        logger.info('🏁 [ENGINE] ReactFlow workflow completed', { instanceId });
+        return;
+      }
+
+      const nextStep = parsedWorkflow.steps.get(nextStepId);
+      if (!nextStep) {
+        throw new Error(`Next step ${nextStepId} not found in parsed workflow`);
+      }
+
+      // Find assignee for next step
+      const nextAssigneeId = await this.findAssigneeForReactFlowStep(
+        instance.templateId,
+        nextStep,
+        context
+      );
+
+      // 🔄 Re-serialize workflow for storage (preserve serialized format)
+      const serializedWorkflow = reactFlowBridgeParser.serializeWorkflow(parsedWorkflow);
+
+      // Update instance to point to next step
+      await db
+        .update(workflowInstances)
+        .set({
+          currentStepId: nextStepId,
+          workflowData: {
+            ...workflowData,
+            currentAssigneeId: nextAssigneeId,
+            currentStepExecutorId: nextStep.executorId,
+            parsedWorkflow: serializedWorkflow // 🔄 Keep serialized format
+          }
+        })
+        .where(eq(workflowInstances.id, instanceId));
+
+      // Create execution record for next step
+      await db.insert(workflowExecutions).values({
+        tenantId: context.tenantId,
+        instanceId,
+        stepId: nextStepId,
+        executionType: nextStep.type,
+        executorId: nextAssigneeId || 'system',
+        status: 'pending',
+        inputData: executionResult.data || {}
+      });
+
+      logger.info('↪️ [ENGINE] Advanced to next ReactFlow step', {
+        instanceId,
+        fromStep: currentStep.nodeId,
+        toStep: nextStepId,
+        assigneeId: nextAssigneeId
+      });
+
+      // Auto-execute if it's a system step
+      if (nextStep.type === 'action' && nextAssigneeId === 'system') {
+        await this.executeReactFlowStep(instanceId, nextStep, context, executionResult.data);
+      }
+
+    } catch (error) {
+      logger.error('❌ [ENGINE] Failed to advance to next ReactFlow step', {
+        error: error instanceof Error ? error.message : String(error),
+        instanceId,
+        currentStepId: currentStep.nodeId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 🌉 PLACEHOLDER: Basic action executors (to be expanded)
+   */
+  private async executeEmailAction(step: any, inputData?: any): Promise<any> {
+    logger.info('📧 [EXECUTOR] Email action placeholder', { stepId: step.nodeId });
+    return { success: true, message: 'Email action executed (placeholder)', data: {} };
+  }
+
+  private async executeApprovalAction(step: any, inputData?: any, context?: any): Promise<any> {
+    logger.info('✅ [EXECUTOR] Approval action placeholder', { stepId: step.nodeId });
+    return { success: true, message: 'Approval action executed (placeholder)', data: {} };
+  }
+
+  private async executeAutoApproval(step: any, inputData?: any, context?: any): Promise<any> {
+    logger.info('🤖 [EXECUTOR] Auto approval placeholder', { stepId: step.nodeId });
+    return { success: true, message: 'Auto approval executed', data: { approved: true } };
+  }
+
+  private async executeDecision(step: any, inputData?: any): Promise<any> {
+    logger.info('🤔 [EXECUTOR] Decision placeholder', { stepId: step.nodeId });
+    // Placeholder: always return first condition
+    const config = step.config || {};
+    const condition = config.condition || 'true';
+    return { success: true, message: 'Decision evaluated', data: {}, decision: 'approve' };
+  }
+
+  private async executeAiDecision(step: any, inputData?: any, context?: any): Promise<any> {
+    logger.info('🧠 [EXECUTOR] AI decision placeholder', { stepId: step.nodeId });
+    return { success: true, message: 'AI decision executed (placeholder)', data: {}, decision: 'approve' };
+  }
+
+  private async executeFormTrigger(step: any, inputData?: any): Promise<any> {
+    logger.info('📝 [EXECUTOR] Form trigger placeholder', { stepId: step.nodeId });
+    return { success: true, message: 'Form trigger executed', data: inputData || {} };
+  }
+
+  private async executeGenericAction(step: any, inputData?: any): Promise<any> {
+    logger.info('⚙️ [EXECUTOR] Generic action placeholder', { stepId: step.nodeId });
+    return { success: true, message: 'Generic action executed', data: {} };
   }
 }
 
