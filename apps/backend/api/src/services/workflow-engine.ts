@@ -14,6 +14,7 @@ import {
 } from '../db/schema/w3suite';
 import { nanoid } from 'nanoid';
 import { reactFlowBridgeParser, type ParsedWorkflow, type ReactFlowWorkflowData } from './reactflow-bridge-parser';
+import { actionExecutorsRegistry, type ExecutionContext } from './action-executors-registry';
 import { logger } from '../core/logger';
 
 export interface WorkflowExecutionContext {
@@ -1058,39 +1059,26 @@ export class WorkflowEngine {
           eq(workflowExecutions.stepId, step.nodeId)
         ));
 
-      let executionResult;
+      // 🎯 Use Action Executors Registry for standardized execution
+      const executionContext: ExecutionContext = {
+        tenantId: context.tenantId,
+        requesterId: context.requesterId,
+        instanceId,
+        templateId: context.templateId || 'unknown',
+        metadata: {
+          currentAssigneeId: inputData?.currentAssigneeId,
+          requesterRole: context.requesterRole,
+          requesterEmail: context.requesterEmail,
+          ...context.metadata
+        }
+      };
 
-      // Route to appropriate executor based on step type and executor ID
-      switch (step.executorId) {
-        case 'email-action-executor':
-          executionResult = await this.executeEmailAction(step, inputData);
-          break;
-        
-        case 'approval-action-executor':
-          executionResult = await this.executeApprovalAction(step, inputData, context);
-          break;
-        
-        case 'auto-approval-executor':
-          executionResult = await this.executeAutoApproval(step, inputData, context);
-          break;
-        
-        case 'decision-evaluator':
-          executionResult = await this.executeDecision(step, inputData);
-          break;
-        
-        case 'ai-decision-executor':
-          executionResult = await this.executeAiDecision(step, inputData, context);
-          break;
-
-        case 'form-trigger-executor':
-          executionResult = await this.executeFormTrigger(step, inputData);
-          break;
-
-        case 'generic-action-executor':
-        default:
-          executionResult = await this.executeGenericAction(step, inputData);
-          break;
-      }
+      const executionResult = await actionExecutorsRegistry.executeAction(
+        step.executorId,
+        step,
+        inputData,
+        executionContext
+      );
 
       // Update execution record with result
       await db
@@ -1317,46 +1305,6 @@ export class WorkflowEngine {
     }
   }
 
-  /**
-   * 🌉 PLACEHOLDER: Basic action executors (to be expanded)
-   */
-  private async executeEmailAction(step: any, inputData?: any): Promise<any> {
-    logger.info('📧 [EXECUTOR] Email action placeholder', { stepId: step.nodeId });
-    return { success: true, message: 'Email action executed (placeholder)', data: {} };
-  }
-
-  private async executeApprovalAction(step: any, inputData?: any, context?: any): Promise<any> {
-    logger.info('✅ [EXECUTOR] Approval action placeholder', { stepId: step.nodeId });
-    return { success: true, message: 'Approval action executed (placeholder)', data: {} };
-  }
-
-  private async executeAutoApproval(step: any, inputData?: any, context?: any): Promise<any> {
-    logger.info('🤖 [EXECUTOR] Auto approval placeholder', { stepId: step.nodeId });
-    return { success: true, message: 'Auto approval executed', data: { approved: true } };
-  }
-
-  private async executeDecision(step: any, inputData?: any): Promise<any> {
-    logger.info('🤔 [EXECUTOR] Decision placeholder', { stepId: step.nodeId });
-    // Placeholder: always return first condition
-    const config = step.config || {};
-    const condition = config.condition || 'true';
-    return { success: true, message: 'Decision evaluated', data: {}, decision: 'approve' };
-  }
-
-  private async executeAiDecision(step: any, inputData?: any, context?: any): Promise<any> {
-    logger.info('🧠 [EXECUTOR] AI decision placeholder', { stepId: step.nodeId });
-    return { success: true, message: 'AI decision executed (placeholder)', data: {}, decision: 'approve' };
-  }
-
-  private async executeFormTrigger(step: any, inputData?: any): Promise<any> {
-    logger.info('📝 [EXECUTOR] Form trigger placeholder', { stepId: step.nodeId });
-    return { success: true, message: 'Form trigger executed', data: inputData || {} };
-  }
-
-  private async executeGenericAction(step: any, inputData?: any): Promise<any> {
-    logger.info('⚙️ [EXECUTOR] Generic action placeholder', { stepId: step.nodeId });
-    return { success: true, message: 'Generic action executed', data: {} };
-  }
 }
 
 export const workflowEngine = new WorkflowEngine();
