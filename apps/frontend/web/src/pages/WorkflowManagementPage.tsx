@@ -179,8 +179,9 @@ export default function WorkflowManagementPage() {
 
       {/* 🎯 Main Content */}
       <div className="flex-1 flex">
-        {/* 🎯 WindTre Action Library Sidebar */}
-        <div className="w-80 border-r border-white/20 windtre-glass-panel">
+        {/* 🎯 WindTre Action Library Sidebar - ONLY for Builder */}
+        {activeView === 'builder' && (
+          <div className="w-80 border-r border-white/20 windtre-glass-panel">
           <div className="p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Action Library</h3>
             
@@ -255,9 +256,10 @@ export default function WorkflowManagementPage() {
               </div>
             </ScrollArea>
           </div>
-        </div>
+          </div>
+        )}
 
-        {/* 🎯 Main Content Area */}
+        {/* 🎯 Main Content Area - Full width when no sidebar */}
         <div className="flex-1 p-6">
           {activeView === 'dashboard' && (
             <div>
