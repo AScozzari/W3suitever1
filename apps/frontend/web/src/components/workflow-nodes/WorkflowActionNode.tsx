@@ -20,23 +20,26 @@ interface ActionNodeData {
 }
 
 export function WorkflowActionNode({ data, selected }: NodeProps<ActionNodeData>) {
+  console.log('🎯 ACTION NODE RENDERING:', data.name);
   return (
     <div style={{
-      width: '200px',
-      height: '100px',
-      backgroundColor: 'red',
-      border: '3px solid black',
+      width: '300px',
+      height: '150px',
+      backgroundColor: '#FF0000',
+      border: '5px solid #000000',
       borderRadius: '8px',
-      padding: '10px',
-      color: 'white',
+      padding: '20px',
+      color: '#FFFFFF',
       fontWeight: 'bold',
+      fontSize: '16px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      zIndex: 10
+      zIndex: 1000,
+      boxShadow: '0px 10px 30px rgba(0,0,0,0.5)'
     }}>
-      <div>ACTION: {data.name}</div>
+      <div>🔴 ACTION: {data.name}</div>
     </div>
   );
 }

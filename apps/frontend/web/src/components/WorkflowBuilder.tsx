@@ -90,14 +90,14 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
     importWorkflow
   } = useWorkflowStore();
   
-  // FORCE TEST NODES
+  // FORCE TEST NODES - CENTRO SCHERMO
   const testNodes = [
     {
       id: 'test-1',
       type: 'action',
-      position: { x: 100, y: 100 },
+      position: { x: 0, y: 0 }, // CENTRO ASSOLUTO
       data: { 
-        name: 'HARDCODED TEST 1',
+        name: 'ROSSO VISIBLE',
         description: 'This should always appear',
         color: '#FF6900'
       }
@@ -105,16 +105,16 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
     {
       id: 'test-2',
       type: 'trigger', 
-      position: { x: 300, y: 200 },
+      position: { x: 250, y: 0 }, // AFFIANCO AL PRIMO
       data: { 
-        name: 'HARDCODED TEST 2',
+        name: 'BLU VISIBLE',
         description: 'This should also appear',
         color: '#7B2CBF'
       }
     }
   ];
   
-  const testEdges = [];
+  const testEdges: Edge[] = [];
   
 
   // Local state
@@ -127,9 +127,13 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
   // ✅ REAL REACTFLOW EVENT HANDLERS
   const onConnect = useCallback(
     (params: Connection) => {
-      const newEdge = {
-        ...params,
+      // Controllo che source e target non siano null
+      if (!params.source || !params.target) return;
+      
+      const newEdge: Edge = {
         id: `edge-${params.source}-${params.target}`,
+        source: params.source,
+        target: params.target,
         type: 'default',
         animated: true,
         style: { stroke: '#FF6900', strokeWidth: 2 }

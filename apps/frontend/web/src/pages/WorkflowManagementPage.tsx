@@ -141,7 +141,11 @@ export default function WorkflowManagementPage() {
               <Button
                 key={tab.id}
                 variant={activeView === tab.id ? 'default' : 'ghost'}
-                onClick={() => setActiveView(tab.id as any)}
+                onClick={() => {
+                  console.log(`🔍 DEBUG: Clicking tab "${tab.id}", current activeView: "${activeView}"`);
+                  setActiveView(tab.id as any);
+                  console.log(`🔍 DEBUG: After click, activeView should be: "${tab.id}"`);
+                }}
                 className="flex items-center gap-2"
                 data-testid={`button-tab-${tab.id}`}
               >
@@ -257,6 +261,7 @@ export default function WorkflowManagementPage() {
 
           {activeView === 'builder' && (
             <div className="h-[calc(100vh-200px)]">
+{/* DEBUG: WorkflowBuilder section rendering */}
               <WorkflowBuilder
                 onSave={(workflow) => {
                   console.log('Workflow saved:', workflow);
