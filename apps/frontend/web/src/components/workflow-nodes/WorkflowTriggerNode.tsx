@@ -21,24 +21,33 @@ interface TriggerNodeData {
 
 export function WorkflowTriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
   return (
-    <div style={{
-      width: '300px',
-      height: '150px',
-      backgroundColor: '#0000FF',
-      border: '5px solid #000000',
+    <div className="workflow-node" style={{
+      width: 180,
+      height: 80,
+      background: 'white',
+      border: '2px solid #7B2CBF',
       borderRadius: '8px',
-      padding: '20px',
-      color: '#FFFFFF',
-      fontWeight: 'bold',
-      fontSize: '16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      zIndex: 1000,
-      boxShadow: '0px 10px 30px rgba(0,0,0,0.5)'
+      padding: '12px',
+      fontSize: '14px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      position: 'relative'
     }}>
-      <div>🔵 TRIGGER: {data.name}</div>
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: '#7B2CBF' }}
+      />
+      <div style={{ fontWeight: 600, color: '#374151' }}>
+        {data.name || 'Trigger Node'}
+      </div>
+      <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+        {data.description || 'Workflow trigger'}
+      </div>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: '#7B2CBF' }}
+      />
     </div>
   );
 }
