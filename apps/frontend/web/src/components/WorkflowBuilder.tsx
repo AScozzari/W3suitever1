@@ -604,7 +604,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             data-testid="reactflow-canvas"
           >
             <Controls />
-            <Background color="#E5E7EB" gap={20} />
+            <Background variant="dots" color="#E5E7EB" gap={20} />
           </ReactFlow>
         </div>
       </div>
