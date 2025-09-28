@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import WorkflowBuilder from '../components/WorkflowBuilder';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import '../styles/workflow-builder.css';
 import { 
   Play, 
@@ -30,7 +31,11 @@ import {
   Building2,
   DollarSign,
   HeadphonesIcon,
-  FileText
+  FileText,
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  ArrowLeft
 } from 'lucide-react';
 
 // 🎯 WindTre department mapping - VERI dipartimenti dal sistema
@@ -71,6 +76,8 @@ export default function WorkflowManagementPage() {
   const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics'>('dashboard');
   const [showDepartmentDialog, setShowDepartmentDialog] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENTS | null>(null);
+  const [builderView, setBuilderView] = useState<'dashboard' | 'editor'>('dashboard'); // NEW: Builder sub-view
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
@@ -87,12 +94,45 @@ export default function WorkflowManagementPage() {
     setSelectedDepartment(department);
     setShowDepartmentDialog(false);
     
-    // Switch to builder view with pre-selected category
+    // Switch to builder view with editor mode and pre-selected category
     setActiveView('builder');
+    setBuilderView('editor');
+    setEditingTemplateId(null); // New workflow
     
     toast({
       title: 'Department Selected',
       description: `Creating ${DEPARTMENTS[department].label} workflow template`,
+    });
+  };
+  
+  // 🎯 Handle editing existing workflow
+  const handleEditWorkflow = (templateId: string) => {
+    setEditingTemplateId(templateId);
+    setActiveView('builder');
+    setBuilderView('editor');
+    
+    toast({
+      title: 'Opening Workflow',
+      description: 'Loading workflow for editing...',
+    });
+  };
+  
+  // 🎯 Handle deleting workflow
+  const handleDeleteWorkflow = (templateId: string) => {
+    // TODO: Implement delete mutation
+    toast({
+      title: 'Delete Workflow',
+      description: 'Delete functionality coming soon...',
+      variant: 'destructive'
+    });
+  };
+  
+  // 🎯 Handle running workflow
+  const handleRunWorkflow = (templateId: string) => {
+    // TODO: Implement run workflow
+    toast({
+      title: 'Run Workflow',
+      description: 'Workflow execution coming soon...',
     });
   };
 
@@ -111,18 +151,20 @@ export default function WorkflowManagementPage() {
               <p className="text-gray-600 mt-1">Enterprise workflow automation and management</p>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Dialog open={showDepartmentDialog} onOpenChange={setShowDepartmentDialog}>
-                <DialogTrigger asChild>
-                  <Button 
-                    onClick={handleCreateTemplate}
-                    className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-                    data-testid="button-create-template"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Workflow
-                  </Button>
-                </DialogTrigger>
+            {/* Actions only for main dashboard, builder has its own header */}
+            {activeView !== 'builder' && (
+              <div className="flex items-center gap-3">
+                <Dialog open={showDepartmentDialog} onOpenChange={setShowDepartmentDialog}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      onClick={handleCreateTemplate}
+                      className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                      data-testid="button-create-template"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Workflow
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="windtre-glass-panel border-white/20 max-w-lg">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-gray-900">
@@ -157,8 +199,9 @@ export default function WorkflowManagementPage() {
                     💡 You can change the department and customize actions later in the workflow builder
                   </div>
                 </DialogContent>
-              </Dialog>
-            </div>
+                </Dialog>
+              </div>
+            )}
           </div>
           
           {/* 🎯 Navigation Tabs */}
@@ -293,21 +336,213 @@ export default function WorkflowManagementPage() {
 
           {activeView === 'builder' && (
             <div className="h-[calc(100vh-200px)]">
-{/* DEBUG: WorkflowBuilder section rendering */}
-              <WorkflowBuilder
-                initialCategory={selectedDepartment || undefined}
-                onSave={(workflow) => {
-                  console.log('Workflow saved:', workflow);
-                  toast({
-                    title: 'Workflow Saved',
-                    description: `Workflow with ${workflow.nodes.length} nodes saved successfully.`,
-                  });
-                }}
-                onClose={() => {
-                  setActiveView('dashboard');
-                  setSelectedDepartment(null); // Reset selection when closing
-                }}
-              />
+              {builderView === 'dashboard' ? (
+                // 🎯 NEW: Workflow Builder Dashboard
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                        <Workflow className="h-6 w-6 text-windtre-orange" />
+                        Workflow Templates
+                      </h2>
+                      <p className="text-gray-600 mt-1">Manage and edit your workflow automation templates</p>
+                    </div>
+                    
+                    <Dialog open={showDepartmentDialog} onOpenChange={setShowDepartmentDialog}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          onClick={handleCreateTemplate}
+                          className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                          data-testid="button-create-new-workflow"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create New Workflow
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="windtre-glass-panel border-white/20 max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2 text-gray-900">
+                            <Workflow className="h-5 w-5 text-windtre-orange" />
+                            Select Department
+                          </DialogTitle>
+                          <DialogDescription className="text-gray-600">
+                            Choose the department for your new workflow template. This will pre-configure the appropriate actions and triggers.
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        {/* Department Selection Grid */}
+                        <div className="grid grid-cols-2 gap-3 mt-4">
+                          {Object.entries(DEPARTMENTS).map(([key, dept]) => {
+                            const Icon = dept.icon;
+                            return (
+                              <Button
+                                key={key}
+                                variant="outline"
+                                onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
+                                className={`h-20 flex flex-col items-center gap-2 border-white/20 hover:border-windtre-orange/50 hover:bg-white/10 transition-all duration-200`}
+                                data-testid={`button-department-${key}`}
+                              >
+                                <Icon className={`h-6 w-6 ${dept.textColor}`} />
+                                <span className="text-sm font-medium text-gray-900">{dept.label}</span>
+                              </Button>
+                            );
+                          })}
+                        </div>
+                        
+                        <div className="mt-4 text-xs text-gray-500 text-center">
+                          💡 You can change the department and customize actions later in the workflow builder
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
+                  {/* 🎯 Workflow Templates Data Table */}
+                  <Card className="windtre-glass-panel border-white/20">
+                    <CardContent className="p-0">
+                      {templatesLoading ? (
+                        <div className="flex items-center justify-center h-48">
+                          <div className="text-gray-500">Loading workflows...</div>
+                        </div>
+                      ) : templates.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-48">
+                          <Workflow className="h-12 w-12 text-gray-400 mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">No workflows yet</h3>
+                          <p className="text-gray-600 mb-4">Create your first workflow to get started</p>
+                          <Button 
+                            onClick={handleCreateTemplate}
+                            className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create First Workflow
+                          </Button>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-gray-200">
+                              <TableHead className="font-semibold text-gray-900">Name</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Department</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Created By</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Created Date</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                              <TableHead className="font-semibold text-gray-900 w-24">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {templates.map((template: any) => {
+                              const dept = DEPARTMENTS[template.category as keyof typeof DEPARTMENTS];
+                              return (
+                                <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50">
+                                  <TableCell>
+                                    <div>
+                                      <div className="font-medium text-gray-900">{template.name}</div>
+                                      <div className="text-sm text-gray-600">{template.description}</div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`${dept?.textColor} border-current`}
+                                    >
+                                      {dept?.label || template.category}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-gray-600">
+                                    {template.createdBy || 'System'}
+                                  </TableCell>
+                                  <TableCell className="text-gray-600">
+                                    {new Date(template.createdAt || Date.now()).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={template.isActive ? 'default' : 'secondary'}>
+                                      {template.isActive ? 'Active' : 'Draft'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEditWorkflow(template.id)}
+                                        data-testid={`button-edit-${template.id}`}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRunWorkflow(template.id)}
+                                        data-testid={`button-run-${template.id}`}
+                                      >
+                                        <Play className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteWorkflow(template.id)}
+                                        data-testid={`button-delete-${template.id}`}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                // 🎯 EXISTING: Workflow Builder Editor
+                <div className="h-full">
+                  {/* Editor Header */}
+                  <div className="flex items-center justify-between mb-4 px-6 py-3 bg-white border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setBuilderView('dashboard');
+                          setEditingTemplateId(null);
+                          setSelectedDepartment(null);
+                        }}
+                        data-testid="button-back-to-dashboard"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Workflows
+                      </Button>
+                      <div className="h-4 w-px bg-gray-300" />
+                      <h3 className="font-semibold text-gray-900">
+                        {editingTemplateId ? 'Edit Workflow' : 'New Workflow'}
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  <WorkflowBuilder
+                    templateId={editingTemplateId || undefined}
+                    initialCategory={selectedDepartment || undefined}
+                    onSave={(workflow) => {
+                      console.log('Workflow saved:', workflow);
+                      toast({
+                        title: 'Workflow Saved',
+                        description: `Workflow with ${workflow.nodes.length} nodes saved successfully.`,
+                      });
+                      // Return to dashboard after save
+                      setBuilderView('dashboard');
+                      setEditingTemplateId(null);
+                      setSelectedDepartment(null);
+                    }}
+                    onClose={() => {
+                      setBuilderView('dashboard');
+                      setEditingTemplateId(null);
+                      setSelectedDepartment(null);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
