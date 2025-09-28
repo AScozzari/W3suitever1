@@ -200,38 +200,58 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     selectNode(null);
   }, [selectNode]);
 
-  // Simple add node functionality
-  const addNodeToCanvas = useCallback((nodeType: string) => {
-    const nodeDefinition = ALL_WORKFLOW_NODES.find(n => n.id === nodeType);
-    
-    if (!nodeDefinition) {
-      return;
-    }
+  // ✅ DRAG AND DROP IMPLEMENTATION
+  const onDragStart = useCallback((event: React.DragEvent, nodeType: string) => {
+    setDraggedNodeType(nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('application/reactflow', nodeType);
+  }, []);
 
-    // Generate random position in the canvas
-    const position = {
-      x: Math.random() * 400 + 50, // Random x between 50-450
-      y: Math.random() * 300 + 50  // Random y between 50-350
-    };
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
 
-    const newNode: Node = {
-      id: `${nodeDefinition.id}-${Date.now()}`,
-      type: nodeDefinition.category,
-      position,
-      data: {
-        ...nodeDefinition,
-        config: { ...nodeDefinition.defaultConfig }
-      },
-      draggable: true,
-      connectable: true,
-      deletable: true,
-      selectable: true,
-    };
-    
-    console.log('✨ New node created:', newNode);
-    addNode(newNode);
-    console.log('✅ Node added to store');
-  }, [addNode]);
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      
+      const type = event.dataTransfer.getData('application/reactflow');
+      
+      if (!type || !reactFlowInstance) {
+        return;
+      }
+      
+      const nodeDefinition = ALL_WORKFLOW_NODES.find(n => n.id === type);
+      if (!nodeDefinition) {
+        return;
+      }
+      
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      
+      const newNode: Node = {
+        id: `${nodeDefinition.id}-${Date.now()}`,
+        type: nodeDefinition.category,
+        position,
+        data: {
+          ...nodeDefinition,
+          config: { ...nodeDefinition.defaultConfig }
+        },
+        draggable: true,
+        connectable: true,
+        deletable: true,
+        selectable: true,
+      };
+      
+      console.log('✨ Node dropped at position:', position);
+      addNode(newNode);
+      setDraggedNodeType(null);
+    },
+    [reactFlowInstance, addNode]
+  );
 
   // ✅ NODE CONFIGURATION PANEL (will be implemented)
   const [showConfigPanel, setShowConfigPanel] = useState(false);
@@ -373,7 +393,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                       .map((node) => (
                       <div
                         key={node.id}
-                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all"
+                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
                         data-testid={`node-palette-${node.id}`}
                       >
                         <div className="flex items-center gap-3 mb-2">
@@ -388,15 +410,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             <p className="text-xs text-gray-600 truncate">{node.description}</p>
                           </div>
                         </div>
-                        <Button 
-                          size="sm"
-                          variant="outline"
-                          onClick={() => addNodeToCanvas(node.id)}
-                          className="w-full h-7 text-xs"
-                          data-testid={`button-add-${node.id}`}
-                        >
-                          Aggiungi al Canvas
-                        </Button>
+                        <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1 text-center">
+                          🖱️ Trascina nel canvas
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -427,7 +443,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                       .map((node) => (
                       <div
                         key={node.id}
-                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all"
+                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
                         data-testid={`node-palette-${node.id}`}
                       >
                         <div className="flex items-center gap-3 mb-2">
@@ -442,15 +460,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             <p className="text-xs text-gray-600 truncate">{node.description}</p>
                           </div>
                         </div>
-                        <Button 
-                          size="sm"
-                          variant="outline"
-                          onClick={() => addNodeToCanvas(node.id)}
-                          className="w-full h-7 text-xs"
-                          data-testid={`button-add-${node.id}`}
-                        >
-                          Aggiungi al Canvas
-                        </Button>
+                        <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1 text-center">
+                          🖱️ Trascina nel canvas
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -482,7 +494,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                       .map((node) => (
                       <div
                         key={node.id}
-                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all"
+                        className="p-3 windtre-glass-panel rounded-lg border border-gray-200 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, node.id)}
                         data-testid={`node-palette-${node.id}`}
                       >
                         <div className="flex items-center gap-3 mb-2">
@@ -496,15 +510,9 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                             <p className="text-xs text-gray-600 truncate">{node.description}</p>
                           </div>
                         </div>
-                        <Button 
-                          size="sm"
-                          variant="outline"
-                          onClick={() => addNodeToCanvas(node.id)}
-                          className="w-full h-7 text-xs"
-                          data-testid={`button-add-${node.id}`}
-                        >
-                          Aggiungi al Canvas
-                        </Button>
+                        <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1 text-center">
+                          🖱️ Trascina nel canvas
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -601,6 +609,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
             onInit={setReactFlowInstance}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
             nodeTypes={nodeTypes}
             style={{ width: '800px', height: '600px' }}
             data-testid="reactflow-canvas"
