@@ -563,6 +563,10 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             onInit={(instance) => {
               console.log('🎯 ReactFlow initialized:', instance);
               setReactFlowInstance(instance);
+              // Auto-center on nodes after initialization
+              setTimeout(() => {
+                instance.fitView({ padding: 0.1, includeHiddenNodes: true });
+              }, 100);
             }}
             onDrop={onDrop}
             onDragOver={onDragOver}
