@@ -1,0 +1,141 @@
+/**
+ * 🎯 WORKFLOW BUILDER STYLES
+ * CSS custom per ReactFlow e nodi workflow
+ */
+
+/* ReactFlow custom styles */
+.react-flow__handle-connecting {
+  background: #FF6900 !important;
+}
+
+.react-flow__handle-valid {
+  background: #10B981 !important;
+}
+
+.react-flow__handle-invalid {
+  background: #EF4444 !important;
+}
+
+.react-flow__edge-path {
+  stroke: #FF6900;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #7B2CBF;
+  stroke-width: 3;
+}
+
+.react-flow__edge-text {
+  font-size: 12px;
+  fill: #374151;
+}
+
+/* Custom node styles */
+.workflow-node {
+  position: relative;
+}
+
+.workflow-node.selected {
+  filter: drop-shadow(0 8px 25px rgba(255, 105, 0, 0.25));
+}
+
+.workflow-node .react-flow__handle {
+  width: 8px;
+  height: 8px;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.workflow-node .handle-target {
+  top: -6px;
+}
+
+.workflow-node .handle-source {
+  bottom: -6px;
+}
+
+/* Drag handle */
+.drag-handle {
+  cursor: move;
+}
+
+.drag-handle:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+/* Node palette animations */
+.node-palette-item {
+  transition: all 0.2s ease;
+}
+
+.node-palette-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ReactFlow controls styling */
+.react-flow__controls {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.react-flow__controls-button {
+  background: white;
+  border: none;
+  border-bottom: 1px solid #E5E7EB;
+  color: #374151;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.react-flow__controls-button:hover {
+  background: #F9FAFB;
+  color: #FF6900;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+/* Background pattern */
+.react-flow__background {
+  background-color: #F9FAFB;
+}
+
+/* Edge animations */
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 5, 5;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Selection box */
+.react-flow__selection {
+  background: rgba(255, 105, 0, 0.1);
+  border: 1px solid #FF6900;
+}
+
+/* Minimap */
+.react-flow__minimap {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+}
+
+/* Panel positioning */
+.react-flow__panel.react-flow__panel-center {
+  pointer-events: none;
+}
+
+.react-flow__panel.react-flow__panel-center > * {
+  pointer-events: all;
+}

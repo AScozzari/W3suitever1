@@ -15,6 +15,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
+import WorkflowBuilder from '../components/WorkflowBuilder';
+import '../styles/workflow-builder.css';
 import { 
   Play, 
   Plus, 
@@ -349,28 +351,17 @@ export default function WorkflowManagementPage() {
           )}
 
           {activeView === 'builder' && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <Workflow className="h-6 w-6 text-windtre-orange" />
-                Workflow Builder
-              </h2>
-              <Card className="h-96 windtre-glass-panel border-white/20">
-                <CardContent className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <Workflow className="h-12 w-12 text-windtre-orange mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">React Flow Canvas</h3>
-                    <p className="text-gray-600 mb-4">Drag actions from the sidebar to build workflows</p>
-                    <div className="windtre-glass-panel p-4 rounded-lg border-2 border-dashed border-windtre-orange/30">
-                      <p className="text-sm text-gray-500">
-                        ✅ <span className="text-windtre-orange">React Flow</span> will be integrated here<br/>
-                        ✅ <span className="text-windtre-purple">Drag & drop</span> from Action Library<br/>
-                        ✅ <span className="text-windtre-orange">Connect nodes</span> with edges<br/>
-                        ✅ <span className="text-windtre-purple">Save workflow</span> definitions
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="h-[calc(100vh-200px)]">
+              <WorkflowBuilder
+                onSave={(workflow) => {
+                  console.log('Workflow saved:', workflow);
+                  toast({
+                    title: 'Workflow Saved',
+                    description: `Workflow with ${workflow.nodes.length} nodes saved successfully.`,
+                  });
+                }}
+                onClose={() => setActiveView('dashboard')}
+              />
             </div>
           )}
 
