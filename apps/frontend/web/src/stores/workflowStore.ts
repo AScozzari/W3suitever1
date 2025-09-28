@@ -138,10 +138,14 @@ export const useWorkflowStore = create<WorkflowState & WorkflowActions>()(
 
         // 🎯 NODE OPERATIONS
         addNode: (node: Node) => {
+          console.log('🏪 STORE: Adding node:', node);
           set((state) => {
+            console.log('🏪 BEFORE ADD: nodes count =', state.nodes.length);
             state.nodes.push(node);
+            console.log('🏪 AFTER ADD: nodes count =', state.nodes.length);
             state.isTemplateDirty = true;
           });
+          console.log('🏪 FINAL STATE: nodes =', get().nodes);
           get().saveSnapshot(`Add node: ${node.data?.label || node.type}`);
         },
 

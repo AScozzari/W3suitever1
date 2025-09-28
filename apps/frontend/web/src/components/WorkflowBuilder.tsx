@@ -90,7 +90,8 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
     importWorkflow
   } = useWorkflowStore();
   
-  console.log('🔥 REAL STORE - nodes:', nodes?.length || 0, 'edges:', edges?.length || 0);
+  console.log('🔥 BUILDER RENDER - nodes:', nodes?.length || 0, 'edges:', edges?.length || 0);
+  console.log('🔥 NODES DETAIL:', nodes);
 
   // Local state
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
