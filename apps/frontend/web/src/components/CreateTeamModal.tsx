@@ -5,7 +5,7 @@
  * membri ibridi, supervisori e validation enterprise
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -84,41 +84,56 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
 
-  // 🎯 Form setup - populate with editTeam data if editing
+  // 🎯 Fixed form setup - prevent re-initialization issues
+  const defaultValues: CreateTeamData = {
+    name: '',
+    description: '',
+    teamType: 'functional',
+    assignedDepartments: [],
+    userMembers: [],
+    roleMembers: [],
+    primarySupervisor: 'none',
+    secondarySupervisors: [],
+    isActive: true
+  };
+
   const form = useForm<CreateTeamData>({
     resolver: zodResolver(createTeamSchema),
-    defaultValues: editTeam ? {
-      name: editTeam.name || '',
-      description: editTeam.description || '',
-      teamType: editTeam.teamType || 'functional',
-      assignedDepartments: editTeam.assignedDepartments || [],
-      userMembers: editTeam.userMembers || [],
-      roleMembers: editTeam.roleMembers || [],
-      primarySupervisor: editTeam.primarySupervisor || 'none',
-      secondarySupervisors: editTeam.secondarySupervisors || [],
-      isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
-    } : {
-      name: '',
-      description: '',
-      teamType: 'functional',
-      assignedDepartments: [],
-      userMembers: [],
-      roleMembers: [],
-      primarySupervisor: 'none',
-      secondarySupervisors: [],
-      isActive: true
-    }
+    defaultValues,
+    mode: 'onChange' // Enable real-time validation
   });
 
-  // 🎯 Load real data from API with proper typing
+  // 🎯 Reset form when editTeam changes or modal opens
+  React.useEffect(() => {
+    if (open) {
+      if (editTeam) {
+        form.reset({
+          name: editTeam.name || '',
+          description: editTeam.description || '',
+          teamType: editTeam.teamType || 'functional',
+          assignedDepartments: editTeam.assignedDepartments || [],
+          userMembers: editTeam.userMembers || [],
+          roleMembers: editTeam.roleMembers || [],
+          primarySupervisor: editTeam.primarySupervisor || 'none',
+          secondarySupervisors: editTeam.secondarySupervisors || [],
+          isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
+        });
+      } else {
+        form.reset(defaultValues);
+      }
+      setCurrentStep(1);
+    }
+  }, [open, editTeam, form]);
+
+  // 🎯 Load real data from API with proper typing - prevent query refresh issues
   const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({ 
     queryKey: ['/api/users'],
-    enabled: open 
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
   
   const { data: roles = [], isLoading: rolesLoading } = useQuery<any[]>({ 
     queryKey: ['/api/roles'],
-    enabled: open 
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
 
   // 🎯 Create team mutation
@@ -175,8 +190,11 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     }
   });
 
-  // 🎯 Handle form submission - create or update based on mode
+  // 🎯 Handle form submission with validation debugging
   const onSubmit = (data: CreateTeamData) => {
+    console.log('📝 Form submitted with data:', data);
+    console.log('✅ Form validation passed');
+    
     // Handle "none" supervisor value
     const processedData = {
       ...data,
@@ -184,10 +202,22 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     };
     
     if (editTeam) {
+      console.log('🔄 Updating existing team:', editTeam.id);
       updateTeamMutation.mutate(processedData);
     } else {
+      console.log('✨ Creating new team');
       createTeamMutation.mutate(processedData);
     }
+  };
+
+  // 🎯 Handle form errors
+  const onFormError = (errors: any) => {
+    console.error('❌ Form validation failed:', errors);
+    toast({
+      title: 'Validation Error',
+      description: 'Please check all required fields',
+      variant: 'destructive'
+    });
   };
 
   // 🎯 Department selection helpers
@@ -283,7 +313,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="space-y-6">
             <ScrollArea className="max-h-[60vh] pr-4">
               
               {/* 🎯 STEP 1: Basic Information */}
