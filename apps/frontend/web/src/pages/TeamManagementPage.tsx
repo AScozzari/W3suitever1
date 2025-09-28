@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import Layout from '../components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -86,37 +87,22 @@ export default function TeamManagementPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // 🎯 API hooks for teams data
+  // 🎯 API hooks for teams data - FIXED AUTH
   const { 
     data: teams = [], 
     isLoading: teamsLoading, 
     error: teamsError 
   } = useQuery<Team[]>({
-    queryKey: ['/api/teams'],
-    queryFn: async () => {
-      const response = await fetch('/api/teams', {
-        headers: {
-          'x-tenant-id': localStorage.getItem('tenantId') || ''
-        }
-      });
-      if (!response.ok) throw new Error('Failed to fetch teams');
-      return response.json();
-    }
+    queryKey: ['/api/teams']
   });
 
-  // 🎯 Archive team mutation
+  // 🎯 Archive team mutation - FIXED AUTH
   const archiveTeamMutation = useMutation({
     mutationFn: async ({ teamId, isActive }: { teamId: string; isActive: boolean }) => {
-      const response = await fetch(`/api/teams/${teamId}`, {
+      return await apiRequest(`/api/teams/${teamId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': localStorage.getItem('tenantId') || ''
-        },
         body: JSON.stringify({ isActive })
       });
-      if (!response.ok) throw new Error('Failed to update team');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });

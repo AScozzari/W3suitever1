@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,22 +71,7 @@ const createTeamSchema = z.object({
 
 type CreateTeamData = z.infer<typeof createTeamSchema>;
 
-// 🎯 Mock data for demo - TODO: Replace with real API calls
-const MOCK_USERS = [
-  { id: 'user-1', name: 'Mario Rossi', email: 'mario.rossi@windtre.it', department: 'hr' },
-  { id: 'user-2', name: 'Laura Bianchi', email: 'laura.bianchi@windtre.it', department: 'finance' },
-  { id: 'user-3', name: 'Giuseppe Verdi', email: 'giuseppe.verdi@windtre.it', department: 'sales' },
-  { id: 'user-4', name: 'Anna Nero', email: 'anna.nero@windtre.it', department: 'operations' },
-  { id: 'user-5', name: 'Marco Gialli', email: 'marco.gialli@windtre.it', department: 'support' },
-  { id: 'user-6', name: 'Francesca Blu', email: 'francesca.blu@windtre.it', department: 'crm' }
-];
-
-const MOCK_ROLES = [
-  { id: 'role-1', name: 'Team Lead', description: 'Leadership role' },
-  { id: 'role-2', name: 'Senior Specialist', description: 'Senior technical role' },
-  { id: 'role-3', name: 'Coordinator', description: 'Coordination role' },
-  { id: 'role-4', name: 'Analyst', description: 'Analysis role' }
-];
+// 🎯 Real data loaded via useQuery - no more mock data!
 
 interface CreateTeamModalProps {
   open: boolean;
@@ -113,19 +99,24 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
     }
   });
 
+  // 🎯 Load real data from API with proper typing
+  const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({ 
+    queryKey: ['/api/users'],
+    enabled: open 
+  });
+  
+  const { data: roles = [], isLoading: rolesLoading } = useQuery<any[]>({ 
+    queryKey: ['/api/roles'],
+    enabled: open 
+  });
+
   // 🎯 Create team mutation
   const createTeamMutation = useMutation({
     mutationFn: async (teamData: CreateTeamData) => {
-      const response = await fetch('/api/teams', {
+      return await apiRequest('/api/teams', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': localStorage.getItem('tenantId') || ''
-        },
         body: JSON.stringify(teamData)
       });
-      if (!response.ok) throw new Error('Failed to create team');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
@@ -416,7 +407,7 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                   <div>
                     <h4 className="text-md font-medium mb-3">Individual Users</h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {MOCK_USERS.map((user) => {
+                      {users.map((user: any) => {
                         const isSelected = selectedUserMembers.includes(user.id);
                         return (
                           <div
@@ -451,7 +442,7 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                   <div>
                     <h4 className="text-md font-medium mb-3">Role-Based Members</h4>
                     <div className="space-y-2">
-                      {MOCK_ROLES.map((role) => {
+                      {roles.map((role: any) => {
                         const isSelected = selectedRoleMembers.includes(role.id);
                         return (
                           <div
@@ -499,8 +490,8 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                               <SelectValue placeholder="Select primary supervisor" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">No supervisor</SelectItem>
-                              {MOCK_USERS.map((user) => (
+                              <SelectItem value="none">No supervisor</SelectItem>
+                              {users.map((user: any) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   <div className="flex items-center justify-between w-full">
                                     <span>{user.name}</span>
@@ -527,7 +518,7 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                       Additional supervisors who can support team management
                     </p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {MOCK_USERS.map((user) => {
+                      {users.map((user: any) => {
                         const secondarySupervisors = form.watch('secondarySupervisors');
                         const isSelected = secondarySupervisors.includes(user.id);
                         const isPrimary = form.watch('primarySupervisor') === user.id;
