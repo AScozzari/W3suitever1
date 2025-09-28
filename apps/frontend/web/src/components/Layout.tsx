@@ -462,6 +462,7 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     { id: 'magazzino', label: 'Magazzino', icon: Briefcase, path: '/magazzino' },
     { id: 'amministrazione', label: 'Amministrazione', icon: Building, path: '/amministrazione' },
     { id: 'hr-management', label: 'HR Management', icon: UserPlus, path: '/hr-management' },
+    { id: 'teams', label: 'Team Management', icon: Users, path: '/teams' },
     { id: 'listini', label: 'Listini', icon: FileText, path: '/listini' },
     { id: 'cassa', label: 'Cassa', icon: ShoppingBag, path: '/cassa' },
     { id: 'impostazioni', label: 'Impostazioni', icon: Settings, path: '/settings' }
