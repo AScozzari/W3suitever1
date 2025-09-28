@@ -700,17 +700,38 @@ export default function WorkflowManagementPage() {
                         <Table>
                           <TableHeader>
                             <TableRow className="border-gray-200">
-                              <TableHead className="font-semibold text-gray-900">Name</TableHead>
-                              <TableHead className="font-semibold text-gray-900">Department</TableHead>
-                              <TableHead className="font-semibold text-gray-900">Created By</TableHead>
-                              <TableHead className="font-semibold text-gray-900">Created Date</TableHead>
-                              <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                              <TableHead className="font-semibold text-gray-900 w-24">Actions</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Nome</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Categoria</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Dipartimento</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Creato Da</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Data Creazione</TableHead>
+                              <TableHead className="font-semibold text-gray-900">Stato</TableHead>
+                              <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {templates.map((template: any) => {
-                              const dept = DEPARTMENTS[template.category as keyof typeof DEPARTMENTS];
+                              // 🎯 Map categoria a colore
+                              const getCategoryColor = (category: string) => {
+                                const colors = {
+                                  'approval': 'text-blue-600 bg-blue-50 border-blue-200',
+                                  'automation': 'text-green-600 bg-green-50 border-green-200',
+                                  'hr': 'text-purple-600 bg-purple-50 border-purple-200',
+                                  'sales': 'text-orange-600 bg-orange-50 border-orange-200',
+                                  'support': 'text-red-600 bg-red-50 border-red-200',
+                                  'test': 'text-gray-600 bg-gray-50 border-gray-200'
+                                };
+                                return colors[category as keyof typeof colors] || 'text-gray-600 bg-gray-50 border-gray-200';
+                              };
+                              
+                              // 🎯 Map dipartimento reale dal database (for_department o fallback)
+                              const getDepartmentLabel = (forDepartment: string, category: string) => {
+                                if (forDepartment) return forDepartment;
+                                // Fallback ai dipartimenti mappati dalle categorie
+                                const dept = DEPARTMENTS[category as keyof typeof DEPARTMENTS];
+                                return dept?.label || 'Non Assegnato';
+                              };
+                              
                               return (
                                 <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50">
                                   <TableCell>
@@ -721,21 +742,29 @@ export default function WorkflowManagementPage() {
                                   </TableCell>
                                   <TableCell>
                                     <Badge 
-                                      variant="outline" 
-                                      className={`${dept?.textColor} border-current`}
+                                      variant="outline"
+                                      className={getCategoryColor(template.category)}
                                     >
-                                      {dept?.label || template.category}
+                                      {template.category.toUpperCase()}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-windtre-orange border-windtre-orange/30 bg-windtre-orange/5"
+                                    >
+                                      {getDepartmentLabel(template.forDepartment, template.category)}
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-gray-600">
-                                    {template.createdBy || 'System'}
+                                    {template.createdBy || 'Sistema'}
                                   </TableCell>
                                   <TableCell className="text-gray-600">
-                                    {new Date(template.createdAt || Date.now()).toLocaleDateString()}
+                                    {new Date(template.createdAt || Date.now()).toLocaleDateString('it-IT')}
                                   </TableCell>
                                   <TableCell>
                                     <Badge variant={template.isActive ? 'default' : 'secondary'}>
-                                      {template.isActive ? 'Active' : 'Draft'}
+                                      {template.isActive ? 'Attivo' : 'Bozza'}
                                     </Badge>
                                   </TableCell>
                                   <TableCell>
