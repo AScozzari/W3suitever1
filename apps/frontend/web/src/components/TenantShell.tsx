@@ -37,8 +37,6 @@ interface TenantShellProps {
  * ✅ Sicurezza: nessun accesso senza tenant valido
  */
 export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
-  console.log(`[TENANT-SHELL] 🎯 Component rendered with slug: "${tenantSlug}"`);
-  
   const [tenantValid, setTenantValid] = useState<boolean | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [tenantData, setTenantData] = useState<any>(null);
@@ -46,28 +44,20 @@ export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
   useEffect(() => {
     const resolveTenant = async () => {
       if (!tenantSlug) {
-        console.error('[TENANT-SHELL] ❌ No tenant slug provided');
         setTenantValid(false);
         return;
       }
       
       try {
-        console.log(`[TENANT-SHELL] 🔍 Resolving tenant slug "${tenantSlug}" to UUID`);
-        
         // Save tenant slug for reference
         localStorage.setItem('currentTenant', tenantSlug);
         
         // Call API to resolve tenant slug to UUID
         const response = await fetch(`/api/tenants/resolve?slug=${tenantSlug}`);
         
-        console.log(`[TENANT-SHELL] 📡 API response status: ${response.status}`);
-        
         if (!response.ok) {
-          console.error(`[TENANT-SHELL] ❌ Tenant resolution failed: ${response.status}`);
-          
           // Development fallback for known tenants
           if (import.meta.env.DEV) {
-            console.warn('[TENANT-SHELL] ⚠️ Using fallback tenant mapping (development only)');
             const fallbackMapping: Record<string, any> = {
               'staging': { 
                 id: '00000000-0000-0000-0000-000000000001',
@@ -97,7 +87,6 @@ export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
               setTenantData(fallbackData);
               localStorage.setItem('currentTenantId', fallbackData.id);
               setCurrentTenantId(fallbackData.id);
-              console.warn(`[TENANT-SHELL] ⚠️ Using fallback: ${fallbackData.name} (${fallbackData.id})`);
               setTenantValid(true);
               return;
             }
@@ -109,17 +98,12 @@ export const TenantShell: React.FC<TenantShellProps> = ({ tenantSlug }) => {
         }
         
         const data = await response.json();
-        console.log('[TENANT-SHELL] ✅ Tenant resolution successful:', data);
         
         // Set resolved tenant data
         setTenantId(data.tenantId);
         setTenantData(data);
         localStorage.setItem('currentTenantId', data.tenantId);
         setCurrentTenantId(data.tenantId);
-        
-        console.log(`[TENANT-SHELL] 🔒 Tenant UUID resolved: "${data.tenantId}"`);
-        console.log(`[TENANT-SHELL] 📋 Tenant name: "${data.name}"`);
-        console.log(`[TENANT-SHELL] ✅ Ready for authenticated operations`);
         
         setTenantValid(true);
         
@@ -205,7 +189,7 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
   const subPath = segments.slice(1).join('/'); // Remove tenant segment
   const currentPath = subPath || 'dashboard'; // Default to dashboard
   
-  console.log(`[TENANT-ROUTES] 🛣️ Location: ${location}, SubPath: ${subPath}, CurrentPath: ${currentPath}`);
+  // Route handling managed by TenantShell
   
   return (
     <Switch>

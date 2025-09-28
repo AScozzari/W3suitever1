@@ -93,14 +93,11 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   
   // 🎯 Initialize workflow based on mode - empty for new, populated if editing
   React.useEffect(() => {
-    // If templateId is provided, we're editing an existing workflow
     if (templateId) {
       // TODO: Load the specific workflow template
-      console.log('📁 Loading workflow template:', templateId);
       // For now, keep existing nodes if any
     } else {
       // No templateId means NEW workflow - ensure completely clean canvas
-      console.log('✨ Creating new workflow - resetting to empty canvas');
       clearWorkflow(); // Always clear for new workflows
     }
   }, [templateId, clearWorkflow]);

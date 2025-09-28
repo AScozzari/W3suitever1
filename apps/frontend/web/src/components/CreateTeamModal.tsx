@@ -103,13 +103,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     mode: 'onChange' // Enable real-time validation
   });
 
-  // 🎯 Reset form when editTeam changes or modal opens - with debugging
+  // 🎯 Reset form when editTeam changes or modal opens
   React.useEffect(() => {
-    console.log('🔄 CreateTeamModal useEffect triggered:', { open, editTeam: !!editTeam });
-    
     if (open) {
       if (editTeam) {
-        console.log('✏️ Editing team mode - populating form with:', editTeam);
         const formData = {
           name: editTeam.name || '',
           description: editTeam.description || '',
@@ -121,15 +118,13 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           secondarySupervisors: editTeam.secondarySupervisors || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
         };
-        console.log('📝 Form data being set:', formData);
         form.reset(formData);
       } else {
-        console.log('✨ New team mode - resetting to defaults');
         form.reset(defaultValues);
       }
       setCurrentStep(1);
     }
-  }, [open, editTeam]); // Removed form dependency to prevent infinite loops
+  }, [open, editTeam]);
 
   // 🎯 Load real data from API with proper typing - prevent query refresh issues
   const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({ 
@@ -196,11 +191,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     }
   });
 
-  // 🎯 Handle form submission with validation debugging
+  // 🎯 Handle form submission
   const onSubmit = (data: CreateTeamData) => {
-    console.log('📝 Form submitted with data:', data);
-    console.log('✅ Form validation passed');
-    
     // Handle "none" supervisor value
     const processedData = {
       ...data,
@@ -208,17 +200,14 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     };
     
     if (editTeam) {
-      console.log('🔄 Updating existing team:', editTeam.id);
       updateTeamMutation.mutate(processedData);
     } else {
-      console.log('✨ Creating new team');
       createTeamMutation.mutate(processedData);
     }
   };
 
   // 🎯 Handle form errors
   const onFormError = (errors: any) => {
-    console.error('❌ Form validation failed:', errors);
     toast({
       title: 'Validation Error',
       description: 'Please check all required fields',

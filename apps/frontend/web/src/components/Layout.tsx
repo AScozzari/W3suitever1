@@ -111,7 +111,6 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
     const tenantId = tenantMap[tenantSlug];
     if (tenantId) {
       localStorage.setItem('currentTenantId', tenantId);
-      console.log(`[LAYOUT] 🎯 Tenant mapping: ${tenantSlug} → ${tenantId}`);
     }
   }, [location]);
 
