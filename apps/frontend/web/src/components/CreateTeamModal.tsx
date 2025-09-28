@@ -103,11 +103,14 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     mode: 'onChange' // Enable real-time validation
   });
 
-  // 🎯 Reset form when editTeam changes or modal opens
+  // 🎯 Reset form when editTeam changes or modal opens - with debugging
   React.useEffect(() => {
+    console.log('🔄 CreateTeamModal useEffect triggered:', { open, editTeam: !!editTeam });
+    
     if (open) {
       if (editTeam) {
-        form.reset({
+        console.log('✏️ Editing team mode - populating form with:', editTeam);
+        const formData = {
           name: editTeam.name || '',
           description: editTeam.description || '',
           teamType: editTeam.teamType || 'functional',
@@ -117,13 +120,16 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           primarySupervisor: editTeam.primarySupervisor || 'none',
           secondarySupervisors: editTeam.secondarySupervisors || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
-        });
+        };
+        console.log('📝 Form data being set:', formData);
+        form.reset(formData);
       } else {
+        console.log('✨ New team mode - resetting to defaults');
         form.reset(defaultValues);
       }
       setCurrentStep(1);
     }
-  }, [open, editTeam, form]);
+  }, [open, editTeam]); // Removed form dependency to prevent infinite loops
 
   // 🎯 Load real data from API with proper typing - prevent query refresh issues
   const { data: users = [], isLoading: usersLoading } = useQuery<any[]>({ 
