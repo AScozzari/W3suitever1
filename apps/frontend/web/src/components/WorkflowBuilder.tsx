@@ -132,6 +132,24 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  // Department mapping for context
+  const departmentInfo = {
+    hr: { name: 'Human Resources', color: '#7B2CBF', icon: '👥' },
+    finance: { name: 'Finance', color: '#FF6900', icon: '💰' },
+    sales: { name: 'Sales', color: '#7B2CBF', icon: '🏢' },
+    operations: { name: 'Operations', color: '#FF6900', icon: '⚙️' },
+    support: { name: 'Support', color: '#7B2CBF', icon: '🎧' },
+    crm: { name: 'CRM', color: '#FF6900', icon: '📊' }
+  };
+  
+  // Use initialCategory from props
+  React.useEffect(() => {
+    if (initialCategory) {
+      console.log('🎯 Department pre-selected:', initialCategory);
+      // Keep all categories visible but show department context
+    }
+  }, [initialCategory]);
 
   // ✅ REAL REACTFLOW EVENT HANDLERS
   const onConnect = useCallback(
@@ -316,7 +334,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       {/* Node Palette Sidebar */}
       <div className={`${isNodePaletteOpen ? 'w-80' : 'w-12'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col`}>
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">Node Library</h3>
             <Button
               variant="ghost"
@@ -327,6 +345,28 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               {isNodePaletteOpen ? <Eye className="h-4 w-4" /> : <Palette className="h-4 w-4" />}
             </Button>
           </div>
+          
+          {/* Department Context Display */}
+          {initialCategory && departmentInfo[initialCategory as keyof typeof departmentInfo] && (
+            <div className="windtre-glass-panel rounded-lg p-3 border border-white/20">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
+                  style={{ backgroundColor: departmentInfo[initialCategory as keyof typeof departmentInfo].color }}
+                >
+                  {departmentInfo[initialCategory as keyof typeof departmentInfo].icon}
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {departmentInfo[initialCategory as keyof typeof departmentInfo].name} Workflow
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Creating workflow for {initialCategory} department
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {isNodePaletteOpen && (
