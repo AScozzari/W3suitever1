@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkflowTemplates, useCreateTemplate, WorkflowTemplate } from '../hooks/useWorkflowTemplates';
 import WorkflowBuilder from '../components/WorkflowBuilder';
@@ -68,37 +69,31 @@ export default function WorkflowManagementPage() {
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
   const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics'>('dashboard');
+  const [showDepartmentDialog, setShowDepartmentDialog] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENTS | null>(null);
   
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
   const createTemplateMutation = useCreateTemplate();
 
 
-  // 🎯 Create new template
-  const handleCreateTemplate = async () => {
-    try {
-      await createTemplateMutation.mutateAsync({
-        name: 'New Workflow Template',
-        description: 'Custom workflow template',
-        category: 'operations',
-        definition: {
-          nodes: [],
-          edges: [],
-          viewport: { x: 0, y: 0, zoom: 1 }
-        }
-      });
-      
-      toast({
-        title: 'Template Created (Mock)',
-        description: 'Mock template creation - API integration coming soon.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create template. Please try again.',
-        variant: 'destructive',
-      });
-    }
+  // 🎯 Create new template with department selection
+  const handleCreateTemplate = () => {
+    setShowDepartmentDialog(true);
+  };
+
+  // 🎯 Handle department selection and proceed to builder
+  const handleDepartmentSelected = async (department: keyof typeof DEPARTMENTS) => {
+    setSelectedDepartment(department);
+    setShowDepartmentDialog(false);
+    
+    // Switch to builder view with pre-selected category
+    setActiveView('builder');
+    
+    toast({
+      title: 'Department Selected',
+      description: `Creating ${DEPARTMENTS[department].label} workflow template`,
+    });
   };
 
   return (
@@ -117,15 +112,52 @@ export default function WorkflowManagementPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button 
-                onClick={handleCreateTemplate}
-                disabled={createTemplateMutation.isPending}
-                className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
-                data-testid="button-create-template"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {createTemplateMutation.isPending ? 'Creating...' : 'Create Template'}
-              </Button>
+              <Dialog open={showDepartmentDialog} onOpenChange={setShowDepartmentDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    onClick={handleCreateTemplate}
+                    className="bg-windtre-orange hover:bg-windtre-orange-dark text-white"
+                    data-testid="button-create-template"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Workflow
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="windtre-glass-panel border-white/20 max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-gray-900">
+                      <Workflow className="h-5 w-5 text-windtre-orange" />
+                      Select Department
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-600">
+                      Choose the department for your new workflow template. This will pre-configure the appropriate actions and triggers.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  {/* Department Selection Grid */}
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    {Object.entries(DEPARTMENTS).map(([key, dept]) => {
+                      const Icon = dept.icon;
+                      return (
+                        <Button
+                          key={key}
+                          variant="outline"
+                          onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
+                          className={`h-20 flex flex-col items-center gap-2 border-white/20 hover:border-windtre-orange/50 hover:bg-white/10 transition-all duration-200`}
+                          data-testid={`button-department-${key}`}
+                        >
+                          <Icon className={`h-6 w-6 ${dept.textColor}`} />
+                          <span className="text-sm font-medium text-gray-900">{dept.label}</span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="mt-4 text-xs text-gray-500 text-center">
+                    💡 You can change the department and customize actions later in the workflow builder
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
           
@@ -263,6 +295,7 @@ export default function WorkflowManagementPage() {
             <div className="h-[calc(100vh-200px)]">
 {/* DEBUG: WorkflowBuilder section rendering */}
               <WorkflowBuilder
+                initialCategory={selectedDepartment || undefined}
                 onSave={(workflow) => {
                   console.log('Workflow saved:', workflow);
                   toast({
@@ -270,7 +303,10 @@ export default function WorkflowManagementPage() {
                     description: `Workflow with ${workflow.nodes.length} nodes saved successfully.`,
                   });
                 }}
-                onClose={() => setActiveView('dashboard')}
+                onClose={() => {
+                  setActiveView('dashboard');
+                  setSelectedDepartment(null); // Reset selection when closing
+                }}
               />
             </div>
           )}

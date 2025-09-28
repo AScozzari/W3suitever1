@@ -64,11 +64,12 @@ const nodeTypes: NodeTypes = {
 
 interface WorkflowBuilderProps {
   templateId?: string;
+  initialCategory?: string;
   onSave?: (workflow: { nodes: Node[]; edges: Edge[] }) => void;
   onClose?: () => void;
 }
 
-function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilderProps) {
+function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }: WorkflowBuilderProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { project } = useReactFlow();
   
