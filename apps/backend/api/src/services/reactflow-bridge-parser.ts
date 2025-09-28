@@ -15,6 +15,7 @@ export interface ParsedWorkflowStep {
   nodeId: string; // ReactFlow node ID
   type: 'trigger' | 'action' | 'decision' | 'approval' | 'ai';
   executorId: string; // Which executor to use (send-email, approve-request, etc.)
+  actionType?: string; // Original actionType from ReactFlow node data (for backward compatibility)
   config: Record<string, any>; // Configuration from ReactFlow node.data
   position: { x: number; y: number };
   nextSteps: string[]; // Node IDs this step leads to
@@ -148,11 +149,15 @@ export class ReactFlowBridgeParser {
     // Extract configuration from node.data
     const config = this.extractNodeConfig(node);
 
+    // Extract actionType from node data for backward compatibility
+    const actionType = node.data?.actionType as string | undefined;
+
     return {
       id: `step-${node.id}`,
       nodeId: node.id,
       type,
       executorId,
+      actionType,
       config,
       position: node.position,
       nextSteps: [], // Will be populated later
@@ -233,12 +238,19 @@ export class ReactFlowBridgeParser {
         case 'auto_approve':
           return 'auto-approval-executor';
         case 'send_email':
+        case 'send-email':
           return 'email-action-executor';
         case 'send_sms':
+        case 'send-sms':
           return 'sms-action-executor';
+        case 'ai-decision':
+        case 'ai_decision':
+          return 'ai-decision-executor';
         case 'create_ticket':
+        case 'create-ticket':
           return 'ticket-action-executor';
         case 'process_payment':
+        case 'process-payment':
           return 'payment-action-executor';
         default:
           return 'generic-action-executor';
