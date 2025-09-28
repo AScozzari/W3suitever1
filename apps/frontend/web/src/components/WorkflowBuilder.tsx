@@ -53,13 +53,33 @@ import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Custom node types for ReactFlow
+// SIMPLIFIED node types for debugging
+const SimpleNode = ({ data }: any) => {
+  console.log('🎭 SimpleNode rendering with data:', data);
+  return (
+    <div 
+      style={{ 
+        background: '#FF6900', 
+        color: 'white', 
+        padding: '20px', 
+        borderRadius: '8px',
+        border: '2px solid #000',
+        minWidth: '150px'
+      }}
+    >
+      <div style={{ fontWeight: 'bold' }}>{data?.name || 'Test Node'}</div>
+      <div style={{ fontSize: '12px' }}>{data?.description || 'Debug node'}</div>
+    </div>
+  );
+};
+
+// Custom node types for ReactFlow  
 const nodeTypes: NodeTypes = {
-  action: WorkflowActionNode,
-  trigger: WorkflowTriggerNode,
-  ai: WorkflowAiNode,
-  condition: WorkflowActionNode, // Reuse action node for conditions
-  flow: WorkflowActionNode, // Reuse action node for flow control
+  action: SimpleNode,
+  trigger: SimpleNode,
+  ai: SimpleNode,
+  condition: SimpleNode,
+  flow: SimpleNode,
 };
 
 interface WorkflowBuilderProps {
@@ -567,7 +587,10 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             onConnect={onConnect}
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
-            onInit={setReactFlowInstance}
+            onInit={(instance) => {
+              console.log('🎯 ReactFlow initialized:', instance);
+              setReactFlowInstance(instance);
+            }}
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
@@ -578,6 +601,7 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             attributionPosition="bottom-left"
             className="bg-gray-50"
             data-testid="reactflow-canvas"
+            style={{ width: '100%', height: '100%' }}
           >
             <Controls 
               position="bottom-right"
