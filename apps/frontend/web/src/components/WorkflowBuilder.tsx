@@ -113,6 +113,14 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
       }
     }
   ];
+
+  // Inizializza store con testNodes se vuoto
+  React.useEffect(() => {
+    if (nodes.length === 0) {
+      testNodes.forEach(node => addNode(node));
+      console.log('🎯 Store inizializzato con testNodes:', testNodes);
+    }
+  }, []);
   
   const testEdges: Edge[] = [];
   
@@ -555,8 +563,8 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
         {/* ReactFlow Canvas */}
         <div className="flex-1" ref={reactFlowWrapper}>
           <ReactFlow
-            nodes={testNodes}
-            edges={testEdges}
+            nodes={nodes.length > 0 ? nodes : testNodes}
+            edges={edges.length > 0 ? edges : testEdges}
             key="reactflow-debug"
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
