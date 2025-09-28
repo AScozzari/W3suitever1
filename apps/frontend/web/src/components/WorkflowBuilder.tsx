@@ -48,6 +48,7 @@ import { ALL_WORKFLOW_NODES, getNodesByCategory } from '../lib/workflow-node-def
 import { WorkflowActionNode } from './workflow-nodes/WorkflowActionNode';
 import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Custom node types for ReactFlow
 const nodeTypes: NodeTypes = {
@@ -90,6 +91,8 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [isNodePaletteOpen, setIsNodePaletteOpen] = useState(true);
   const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // ReactFlow event handlers
   const onConnect = useCallback(
@@ -239,15 +242,54 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
 
         {isNodePaletteOpen && (
           <ScrollArea className="flex-1 p-4">
+            {/* Search and Filters */}
+            <div className="space-y-4 mb-6">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search nodes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-nodes"
+                />
+              </div>
+              
+              {/* Category Filter */}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="action">Actions</SelectItem>
+                  <SelectItem value="trigger">Triggers</SelectItem>
+                  <SelectItem value="ai">AI Nodes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div className="space-y-6">
               {/* Action Nodes */}
+              {(selectedCategory === 'all' || selectedCategory === 'action') && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-windtre-orange rounded-full" />
-                  Actions ({getNodesByCategory('action').length})
+                  Actions ({getNodesByCategory('action').filter(node => 
+                    !searchTerm || 
+                    node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('action').map((node) => (
+                  {getNodesByCategory('action')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <div
                       key={node.id}
                       className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
@@ -271,17 +313,30 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
                   ))}
                 </div>
               </div>
+              )}
 
+              {(selectedCategory === 'all' || selectedCategory === 'trigger') && (
+              <>
               <Separator />
 
               {/* Trigger Nodes */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-windtre-purple rounded-full" />
-                  Triggers ({getNodesByCategory('trigger').length})
+                  Triggers ({getNodesByCategory('trigger').filter(node => 
+                    !searchTerm || 
+                    node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('trigger').map((node) => (
+                  {getNodesByCategory('trigger')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <div
                       key={node.id}
                       className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
@@ -305,17 +360,31 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
                   ))}
                 </div>
               </div>
+              </>
+              )}
 
+              {(selectedCategory === 'all' || selectedCategory === 'ai') && (
+              <>
               <Separator />
 
               {/* AI Nodes */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-3 h-3 bg-gradient-to-r from-windtre-orange to-windtre-purple rounded-full" />
-                  AI Nodes ({getNodesByCategory('ai').length})
+                  AI Nodes ({getNodesByCategory('ai').filter(node => 
+                    !searchTerm || 
+                    node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length})
                 </h4>
                 <div className="space-y-2">
-                  {getNodesByCategory('ai').map((node) => (
+                  {getNodesByCategory('ai')
+                    .filter(node => 
+                      !searchTerm || 
+                      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((node) => (
                     <div
                       key={node.id}
                       className="p-3 windtre-glass-panel rounded-lg border border-gray-200 cursor-move hover:shadow-md transition-all"
@@ -338,6 +407,8 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
                   ))}
                 </div>
               </div>
+              </>
+              )}
             </div>
           </ScrollArea>
         )}

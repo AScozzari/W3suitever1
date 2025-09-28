@@ -68,23 +68,11 @@ export default function WorkflowManagementPage() {
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
   const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics'>('dashboard');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
   const createTemplateMutation = useCreateTemplate();
 
-  // 🎯 Filter actions by search and department
-  const filteredActions = WORKFLOW_ACTIONS.filter(action => {
-    const matchesSearch = !searchTerm || 
-      action.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      action.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesDepartment = !selectedDepartment || action.department === selectedDepartment;
-    
-    return matchesSearch && matchesDepartment;
-  });
 
   // 🎯 Create new template
   const handleCreateTemplate = async () => {
@@ -167,90 +155,7 @@ export default function WorkflowManagementPage() {
 
       {/* 🎯 Main Content */}
       <div className="flex-1 flex">
-        {/* 🎯 WindTre Action Library Sidebar - ONLY for Builder */}
-        {activeView === 'builder' && (
-          <div className="w-80 border-r border-white/20 windtre-glass-panel">
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Action Library</h3>
-            
-            {/* 🎯 Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search actions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-                data-testid="input-search-actions"
-              />
-            </div>
-            
-            {/* 🎯 Department Filter - Professional Select */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Filter by Department</h4>
-              <Select 
-                value={selectedDepartment || 'all'} 
-                onValueChange={(value) => setSelectedDepartment(value === 'all' ? null : value)}
-              >
-                <SelectTrigger className="w-full windtre-glass-panel border-white/20" data-testid="select-department-filter">
-                  <SelectValue placeholder="Select department..." />
-                </SelectTrigger>
-                <SelectContent className="windtre-glass-panel border-white/20">
-                  <SelectItem value="all" data-testid="option-all-departments">
-                    All Departments
-                  </SelectItem>
-                  {Object.entries(DEPARTMENTS).map(([key, dept]) => (
-                    <SelectItem 
-                      key={key} 
-                      value={key}
-                      data-testid={`option-department-${key}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <dept.icon className={`h-4 w-4 ${dept.textColor}`} />
-                        {dept.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* 🎯 Actions List with ScrollArea */}
-            <ScrollArea className="h-[calc(100vh-320px)]">
-              <div className="space-y-2">
-                {filteredActions.map((action) => {
-                  const dept = DEPARTMENTS[action.department as keyof typeof DEPARTMENTS];
-                  return (
-                    <Card 
-                      key={action.id} 
-                      className="windtre-glass-panel cursor-pointer hover:bg-white/20 transition-all duration-200 border-white/20"
-                      data-testid={`action-card-${action.id}`}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm text-gray-900">{action.name}</h4>
-                            <p className="text-xs text-gray-600 mt-1">{action.description}</p>
-                          </div>
-                          <dept.icon className={`h-4 w-4 ml-2 flex-shrink-0 ${dept.textColor}`} />
-                        </div>
-                        <Badge 
-                          variant="secondary" 
-                          className={`mt-2 text-xs ${dept.color} text-white border-0`}
-                        >
-                          {dept.label}
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </div>
-          </div>
-        )}
-
-        {/* 🎯 Main Content Area - Full width when no sidebar */}
+        {/* 🎯 Main Content Area - Full width */}
         <div className="flex-1 p-6">
           {activeView === 'dashboard' && (
             <div>
