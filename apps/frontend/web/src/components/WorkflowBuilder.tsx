@@ -584,8 +584,17 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
         </div>
 
-        {/* ReactFlow Canvas */}
-        <div className="flex-1" ref={reactFlowWrapper}>
+        {/* ReactFlow Canvas - FIXED VERSION */}
+        <div 
+          className="flex-1" 
+          ref={reactFlowWrapper}
+          style={{ 
+            position: 'relative',
+            minHeight: '600px',
+            height: 'calc(100vh - 300px)',
+            width: '100%'
+          }}
+        >
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -612,7 +621,11 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             attributionPosition="bottom-left"
             className="bg-gray-50"
             data-testid="reactflow-canvas"
-            style={{ width: '100%', height: '100%' }}
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              minHeight: '600px'
+            }}
           >
             <Controls 
               position="bottom-right"

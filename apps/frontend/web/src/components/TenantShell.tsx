@@ -281,7 +281,7 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       </Route>
       
       {/* Root tenant path - redirect to dashboard */}
-      <Route path="/">
+      <Route path={`/${tenantSlug}`}>
         <Redirect to={`/${tenantSlug}/dashboard`} replace />
       </Route>
       
