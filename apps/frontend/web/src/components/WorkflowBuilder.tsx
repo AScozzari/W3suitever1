@@ -37,10 +37,6 @@ import {
   Save, 
   Download, 
   Upload, 
-  Play, 
-  Square, 
-  RotateCcw, 
-  RotateCw,
   Settings,
   Palette,
   Eye,
@@ -85,10 +81,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     addNode,
     selectNode,
     selectedNodeId,
-    isRunning,
-    setRunning,
-    undo,
-    redo,
     clearWorkflow,
     exportWorkflow,
     importWorkflow
@@ -265,15 +257,31 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     console.log('🎛️ Opening config panel for node:', nodeId);
   }, []);
 
-  // Workflow actions
+  // ✅ IMPROVED SAVE WORKFLOW WITH VALIDATION
   const handleSaveWorkflow = () => {
-    const workflow = { nodes, edges };
+    if (nodes.length === 0) {
+      alert('⚠️ Il workflow è vuoto. Aggiungi almeno un nodo prima di salvare.');
+      return;
+    }
+    
+    const workflow = { 
+      nodes, 
+      edges,
+      metadata: {
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+        createdAt: new Date().toISOString(),
+        category: initialCategory || 'general'
+      }
+    };
+    
+    console.log('💾 Salvando template workflow:', workflow);
     onSave?.(workflow);
+    
+    // Show success feedback
+    alert('✅ Template salvato con successo!');
   };
 
-  const handleRunWorkflow = () => {
-    setRunning(!isRunning);
-  };
 
   const handleClearWorkflow = () => {
     if (confirm('Are you sure you want to clear the entire workflow?')) {
@@ -549,24 +557,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               <Button
                 variant="outline"
                 size="sm"
-                onClick={undo}
-                disabled={false}
-                data-testid="button-undo"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={redo}
-                disabled={false}
-                data-testid="button-redo"
-              >
-                <RotateCw className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={clearWorkflow}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 data-testid="button-reset"
@@ -584,15 +574,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               >
                 <Save className="h-4 w-4 mr-2" />
                 Save
-              </Button>
-              <Button
-                variant={isRunning ? "destructive" : "default"}
-                size="sm"
-                onClick={handleRunWorkflow}
-                data-testid="button-run"
-              >
-                {isRunning ? <Square className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                {isRunning ? 'Stop' : 'Run'}
               </Button>
             </div>
           </div>
