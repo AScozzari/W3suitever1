@@ -1263,11 +1263,20 @@ const WorkflowManagementPage = () => {
   });
 
   // Users and Roles for Team Modal
-  // Temporarily disabled problematic queries that cause "Failed to fetch"
-  const usersData: any[] = [];
-  const loadingUsers = false;
-  const rolesData: any[] = [];
-  const loadingRoles = false;
+  // Users and Roles for Team Modal - Fixed with proper error handling
+  const { data: usersData = [], isLoading: loadingUsers, error: usersError } = useQuery<any[]>({
+    queryKey: ['/api/users'],
+    enabled: showTeamModal,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: rolesData = [], isLoading: loadingRoles, error: rolesError } = useQuery<any[]>({
+    queryKey: ['/api/roles'], 
+    enabled: showTeamModal,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Filter functions for Team Modal
   const filteredUsers = usersData.filter((user: any) => 
@@ -2261,7 +2270,7 @@ const WorkflowManagementPage = () => {
       {/* 🎯 ENTERPRISE BUILDER HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-green-600">🚀 FIX APPLICATO! Enterprise Workflow Builder</h2>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Enterprise Workflow Builder</h2>
           <p className="text-slate-600 dark:text-slate-400">Design automated workflows with AI-powered intelligence</p>
         </div>
         <div className="flex items-center gap-3">

@@ -6,7 +6,7 @@ import { TenantProvider } from '../contexts/TenantContext';
 // Import all pages
 import DashboardPage from '../pages/DashboardPage';
 import SettingsPage from '../pages/SettingsPage';
-import WorkflowManagementPageSimple from '../pages/WorkflowManagementPage-SIMPLE';
+import WorkflowManagementPage from '../pages/WorkflowManagementPage';
 import StandardFieldsDemo from '../pages/StandardFieldsDemo';
 import MyPortal from '../pages/MyPortal';
 import HRManagementPage from '../pages/HRManagementPage';
@@ -235,7 +235,7 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
       
       <Route path={`/${tenantSlug}/workflow-management`}>
         <AuthenticatedRoute>
-          <WorkflowManagementPageSimple />
+          <WorkflowManagementPage />
         </AuthenticatedRoute>
       </Route>
       
