@@ -635,11 +635,12 @@ router.post('/instances', rbacMiddleware, requirePermission('workflow.create_ins
       } as ApiErrorResponse);
     }
 
-    // Create workflow instance
+    // Create workflow instance with category propagated from template
     const [newInstance] = await db
       .insert(workflowInstances)
       .values({
         ...instanceData,
+        category: template.category, // 🎯 PROPAGATE category from template to instance
         createdBy: userId,
         updatedBy: userId
       })

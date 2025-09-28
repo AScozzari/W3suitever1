@@ -2019,6 +2019,9 @@ export const workflowInstances = w3suiteSchema.table("workflow_instances", {
   // ✅ FIXED: Match existing database structure - use reference_id instead of request_id
   referenceId: varchar("reference_id"), // Collegato a richiesta (existing column)
   
+  // 🎯 NEW: Propagate category from template for department isolation
+  category: varchar("category", { length: 50 }).notNull(), // Inherited from workflowTemplates.category
+  
   // ✅ FIXED: Match existing database columns exactly
   instanceType: varchar("instance_type").notNull(), // existing column
   instanceName: varchar("instance_name").notNull(), // existing column
