@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import CreateTeamModal from '../components/CreateTeamModal';
 import { 
   Users, 
   Plus, 
@@ -90,7 +91,7 @@ export default function TeamManagementPage() {
     data: teams = [], 
     isLoading: teamsLoading, 
     error: teamsError 
-  } = useQuery({
+  } = useQuery<Team[]>({
     queryKey: ['/api/teams'],
     queryFn: async () => {
       const response = await fetch('/api/teams', {
@@ -99,7 +100,7 @@ export default function TeamManagementPage() {
         }
       });
       if (!response.ok) throw new Error('Failed to fetch teams');
-      return response.json() as Team[];
+      return response.json();
     }
   });
 
@@ -177,7 +178,7 @@ export default function TeamManagementPage() {
   };
 
   return (
-    <Layout>
+    <Layout currentModule="teams" setCurrentModule={() => {}}>
       <div className="space-y-6 p-6">
         {/* 🎯 Header Section */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -459,23 +460,11 @@ export default function TeamManagementPage() {
           </CardContent>
         </Card>
 
-        {/* 🎯 Create Team Dialog - Placeholder */}
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="glass-modal max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-windtre-orange" />
-                Create New Team
-              </DialogTitle>
-              <DialogDescription>
-                Create a new team and assign it to departments for workflow management
-              </DialogDescription>
-            </DialogHeader>
-            <div className="p-6 text-center text-gray-500">
-              🚧 Team creation modal will be implemented in the next task
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* 🎯 Create Team Modal - Enterprise Complete */}
+        <CreateTeamModal 
+          open={showCreateDialog} 
+          onOpenChange={setShowCreateDialog}
+        />
       </div>
     </Layout>
   );
