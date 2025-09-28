@@ -124,6 +124,7 @@ export default function WorkflowManagementPage() {
   const [selectedTeamType, setSelectedTeamType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
@@ -187,14 +188,20 @@ export default function WorkflowManagementPage() {
   };
 
   const handleEditTeam = (team: Team) => {
-    toast({
-      title: 'Edit Team',
-      description: 'Team editing modal coming soon...',
-    });
+    setEditingTeam(team);
+    setShowCreateTeamDialog(true);
   };
 
   const handleCreateTeam = () => {
+    setEditingTeam(null); // Reset editing state for create mode
     setShowCreateTeamDialog(true);
+  };
+
+  const handleCloseTeamModal = (open: boolean) => {
+    setShowCreateTeamDialog(open);
+    if (!open) {
+      setEditingTeam(null); // Reset editing state when closing
+    }
   };
 
   const formatTeamMembersCount = (team: Team) => {
@@ -1082,10 +1089,11 @@ export default function WorkflowManagementPage() {
                 </CardContent>
               </Card>
 
-              {/* 🎯 Create Team Modal */}
+              {/* 🎯 Create/Edit Team Modal */}
               <CreateTeamModal 
                 open={showCreateTeamDialog}
-                onOpenChange={setShowCreateTeamDialog}
+                onOpenChange={handleCloseTeamModal}
+                editTeam={editingTeam}
               />
             </div>
           )}

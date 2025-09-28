@@ -76,17 +76,28 @@ type CreateTeamData = z.infer<typeof createTeamSchema>;
 interface CreateTeamModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editTeam?: any; // Team to edit, if provided
 }
 
-export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
+export default function CreateTeamModal({ open, onOpenChange, editTeam }: CreateTeamModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
 
-  // 🎯 Form setup
+  // 🎯 Form setup - populate with editTeam data if editing
   const form = useForm<CreateTeamData>({
     resolver: zodResolver(createTeamSchema),
-    defaultValues: {
+    defaultValues: editTeam ? {
+      name: editTeam.name || '',
+      description: editTeam.description || '',
+      teamType: editTeam.teamType || 'functional',
+      assignedDepartments: editTeam.assignedDepartments || [],
+      userMembers: editTeam.userMembers || [],
+      roleMembers: editTeam.roleMembers || [],
+      primarySupervisor: editTeam.primarySupervisor || '',
+      secondarySupervisors: editTeam.secondarySupervisors || [],
+      isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
+    } : {
       name: '',
       description: '',
       teamType: 'functional',
@@ -137,9 +148,40 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
     }
   });
 
-  // 🎯 Handle form submission
+  // 🎯 Update team mutation
+  const updateTeamMutation = useMutation({
+    mutationFn: async (teamData: CreateTeamData) => {
+      return await apiRequest(`/api/teams/${editTeam.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(teamData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
+      toast({
+        title: 'Team Updated',
+        description: 'Team updated successfully',
+      });
+      onOpenChange(false);
+      form.reset();
+      setCurrentStep(1);
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update team',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 🎯 Handle form submission - create or update based on mode
   const onSubmit = (data: CreateTeamData) => {
-    createTeamMutation.mutate(data);
+    if (editTeam) {
+      updateTeamMutation.mutate(data);
+    } else {
+      createTeamMutation.mutate(data);
+    }
   };
 
   // 🎯 Department selection helpers
