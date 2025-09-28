@@ -1962,6 +1962,9 @@ export const teams = w3suiteSchema.table("teams", {
   scope: jsonb("scope").default({}), // Scope ereditato o personalizzato
   permissions: jsonb("permissions").default({}), // Permessi team-specific
   
+  // 🎯 DEPARTMENT ASSIGNMENT: Team può gestire multipli dipartimenti
+  assignedDepartments: text("assigned_departments").array().default([]), // Array of department enum values ['hr', 'finance', 'sales']
+  
   // Configuration
   isActive: boolean("is_active").default(true),
   autoAssignWorkflows: boolean("auto_assign_workflows").default(true), // Auto-assign workflow ai membri
@@ -1983,6 +1986,9 @@ export const teamWorkflowAssignments = w3suiteSchema.table("team_workflow_assign
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   teamId: uuid("team_id").notNull().references(() => teams.id, { onDelete: 'cascade' }),
   templateId: uuid("template_id").notNull().references(() => workflowTemplates.id, { onDelete: 'cascade' }),
+  
+  // 🎯 DEPARTMENT-SPECIFIC ASSIGNMENT: Workflow assignato per specifico dipartimento
+  forDepartment: departmentEnum("for_department").notNull(), // Quale dipartimento usa questo workflow
   
   // Assignment configuration
   autoAssign: boolean("auto_assign").default(true), // Auto-assign a richieste membri team
@@ -2008,7 +2014,8 @@ export const teamWorkflowAssignments = w3suiteSchema.table("team_workflow_assign
   index("team_workflow_assignments_team_idx").on(table.teamId),
   index("team_workflow_assignments_template_idx").on(table.templateId),
   index("team_workflow_assignments_active_idx").on(table.isActive),
-  uniqueIndex("team_workflow_assignments_unique").on(table.teamId, table.templateId),
+  // 🎯 UNIQUE PER DIPARTIMENTO: Stesso team può avere stesso workflow per dipartimenti diversi
+  uniqueIndex("team_workflow_assignments_unique").on(table.teamId, table.templateId, table.forDepartment),
 ]);
 
 // Workflow Instances - Istanze runtime di workflow in esecuzione
