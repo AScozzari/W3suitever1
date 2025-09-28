@@ -564,10 +564,7 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             onInit={(instance) => {
               console.log('🎯 ReactFlow initialized:', instance);
               setReactFlowInstance(instance);
-              // Auto-center on nodes after initialization
-              setTimeout(() => {
-                instance.fitView({ padding: 0.1, includeHiddenNodes: true });
-              }, 100);
+              console.log('🔍 DEBUG STEP 3: Disabling auto fitView to check node visibility');
             }}
             onDrop={onDrop}
             onDragOver={onDragOver}
@@ -575,7 +572,7 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
             nodesDraggable={true}
             nodesConnectable={true}
             elementsSelectable={true}
-            fitView
+            fitView={false}
             attributionPosition="bottom-left"
             className="bg-gray-50"
             data-testid="reactflow-canvas"
