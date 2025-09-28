@@ -1465,57 +1465,69 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       ORDER BY date DESC
     `);
 
-    // 🎯 Category Performance
-    const categoryStats = await db.execute(sql`
-      SELECT 
-        wt.category,
-        COUNT(wi.id) as total_instances,
-        COUNT(CASE WHEN wi.current_status = 'completed' THEN 1 END) as completed,
-        COUNT(CASE WHEN wi.current_status = 'running' THEN 1 END) as running,
-        COUNT(CASE WHEN wi.current_status = 'failed' THEN 1 END) as failed,
-        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_completion_time
-      FROM workflow_templates wt
-      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
-      WHERE wt.tenant_id = ${tenantId}
-        AND (wi.created_at >= NOW() - INTERVAL '${period} days' OR wi.created_at IS NULL)
-      GROUP BY wt.category
-      ORDER BY total_instances DESC
-    `);
+    // 🎯 Category Performance - Fixed SQL syntax
+    const categoryStats = await db
+      .select({
+        category: workflowTemplates.category,
+        totalInstances: count(workflowInstances.id),
+        completed: sql<number>`COUNT(CASE WHEN ${workflowInstances.currentStatus} = 'completed' THEN 1 END)`,
+        running: sql<number>`COUNT(CASE WHEN ${workflowInstances.currentStatus} = 'in_progress' THEN 1 END)`,
+        failed: sql<number>`COUNT(CASE WHEN ${workflowInstances.currentStatus} = 'failed' THEN 1 END)`,
+        avgCompletionTime: sql<number>`AVG(EXTRACT(EPOCH FROM (${workflowInstances.completedAt} - ${workflowInstances.startedAt})))`
+      })
+      .from(workflowTemplates)
+      .leftJoin(workflowInstances, eq(workflowInstances.templateId, workflowTemplates.id))
+      .where(and(
+        eq(workflowTemplates.tenantId, tenantId),
+        or(
+          sql`${workflowInstances.createdAt} >= NOW() - INTERVAL '${sql.raw(period as string)} days'`,
+          sql`${workflowInstances.createdAt} IS NULL`
+        )
+      ))
+      .groupBy(workflowTemplates.category)
+      .orderBy(sql`total_instances DESC`);
 
-    // ⚡ Most Active Templates
-    const activeTemplates = await db.execute(sql`
-      SELECT 
-        wt.name,
-        wt.category,
-        COUNT(wi.id) as instances_count,
-        AVG(EXTRACT(EPOCH FROM (wi.completed_at - wi.started_at))) as avg_duration,
-        MAX(wi.last_activity_at) as last_used
-      FROM workflow_templates wt
-      LEFT JOIN workflow_instances wi ON wi.template_id = wt.id
-      WHERE wt.tenant_id = ${tenantId}
-        AND (wi.created_at >= NOW() - INTERVAL '${period} days' OR wi.created_at IS NULL)
-      GROUP BY wt.id, wt.name, wt.category
-      ORDER BY instances_count DESC
-      LIMIT 10
-    `);
+    // ⚡ Most Active Templates - Fixed SQL syntax  
+    const activeTemplates = await db
+      .select({
+        name: workflowTemplates.name,
+        category: workflowTemplates.category,
+        instancesCount: count(workflowInstances.id),
+        avgDuration: sql<number>`AVG(EXTRACT(EPOCH FROM (${workflowInstances.completedAt} - ${workflowInstances.startedAt})))`,
+        lastUsed: sql<Date>`MAX(${workflowInstances.lastActivityAt})`
+      })
+      .from(workflowTemplates)
+      .leftJoin(workflowInstances, eq(workflowInstances.templateId, workflowTemplates.id))
+      .where(and(
+        eq(workflowTemplates.tenantId, tenantId),
+        or(
+          sql`${workflowInstances.createdAt} >= NOW() - INTERVAL '${sql.raw(period as string)} days'`,
+          sql`${workflowInstances.createdAt} IS NULL`
+        )
+      ))
+      .groupBy(workflowTemplates.id, workflowTemplates.name, workflowTemplates.category)
+      .orderBy(sql`instances_count DESC`)
+      .limit(10);
 
-    // 🕒 Hourly Distribution
-    const hourlyDistribution = await db.execute(sql`
-      SELECT 
-        EXTRACT(HOUR FROM wi.started_at) as hour,
-        COUNT(*) as instances_started
-      FROM workflow_instances wi
-      WHERE wi.tenant_id = ${tenantId}
-        AND wi.started_at >= NOW() - INTERVAL '${period} days'
-      GROUP BY EXTRACT(HOUR FROM wi.started_at)
-      ORDER BY hour
-    `);
+    // 🕒 Hourly Distribution - Fixed SQL syntax
+    const hourlyDistribution = await db
+      .select({
+        hour: sql<number>`EXTRACT(HOUR FROM ${workflowInstances.startedAt})`,
+        instancesStarted: count()
+      })
+      .from(workflowInstances)
+      .where(and(
+        eq(workflowInstances.tenantId, tenantId),
+        sql`${workflowInstances.startedAt} >= NOW() - INTERVAL '${sql.raw(period as string)} days'`
+      ))
+      .groupBy(sql`EXTRACT(HOUR FROM ${workflowInstances.startedAt})`)
+      .orderBy(sql`hour`);
 
     const analyticsData = {
       performance: performanceStats.rows,
-      categoryStats: categoryStats.rows,
-      activeTemplates: activeTemplates.rows,
-      hourlyDistribution: hourlyDistribution.rows,
+      categoryStats: categoryStats,
+      activeTemplates: activeTemplates,
+      hourlyDistribution: hourlyDistribution,
       period: parseInt(period as string),
       generatedAt: new Date().toISOString()
     };
@@ -1524,7 +1536,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
       tenantId,
       period,
       performanceDataPoints: performanceStats.rows.length,
-      categoriesAnalyzed: categoryStats.rows.length,
+      categoriesAnalyzed: categoryStats.length,
       userId: req.user?.id
     });
 
