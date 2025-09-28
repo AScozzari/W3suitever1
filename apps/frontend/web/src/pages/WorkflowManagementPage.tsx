@@ -295,38 +295,38 @@ export default function WorkflowManagementPage() {
                       Create Workflow
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="glass-modal max-w-lg">
+                <DialogContent className="windtre-glass-panel border-white/20 max-w-lg bg-white/95">
                   <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+                    <DialogTitle className="flex items-center gap-2 text-gray-900">
                       <Workflow className="h-5 w-5 text-windtre-orange" />
-                      Select Department
+                      Seleziona Dipartimento
                     </DialogTitle>
-                    <DialogDescription>
-                      Choose the department for your new workflow template. This will pre-configure the appropriate actions and triggers.
+                    <DialogDescription className="text-gray-600">
+                      Scegli il dipartimento per il tuo nuovo template workflow. Questo preconfigurerà le azioni e trigger appropriati.
                     </DialogDescription>
                   </DialogHeader>
                   
                   {/* Department Selection Grid */}
-                  <div className="grid grid-cols-2 gap-3 mt-6">
+                  <div className="grid grid-cols-2 gap-3 mt-4">
                     {Object.entries(DEPARTMENTS).map(([key, dept]) => {
                       const Icon = dept.icon;
                       return (
                         <Button
                           key={key}
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
-                          className="h-20 flex flex-col items-center gap-2 glass-card hover:bg-white/20 border border-white/10 hover:border-windtre-orange/50 transition-all duration-200"
+                          className="h-20 flex flex-col items-center gap-2 border-white/20 bg-white/50 hover:border-windtre-orange/50 hover:bg-white/80 transition-all duration-200 pointer-events-auto"
                           data-testid={`button-department-${key}`}
                         >
                           <Icon className={`h-6 w-6 ${dept.textColor}`} />
-                          <span className="text-sm font-medium">{dept.label}</span>
+                          <span className="text-sm font-medium text-gray-900">{dept.label}</span>
                         </Button>
                       );
                     })}
                   </div>
                   
-                  <div className="mt-6 text-xs text-gray-500 text-center">
-                    💡 You can change the department and customize actions later in the workflow builder
+                  <div className="mt-4 text-xs text-gray-500 text-center">
+                    💡 Puoi cambiare il dipartimento e personalizzare le azioni successivamente nel workflow builder
                   </div>
                 </DialogContent>
                 </Dialog>
@@ -639,14 +639,14 @@ export default function WorkflowManagementPage() {
                           Create New Workflow
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="windtre-glass-panel border-white/20 max-w-lg">
+                      <DialogContent className="windtre-glass-panel border-white/20 max-w-lg bg-white/95">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2 text-gray-900">
                             <Workflow className="h-5 w-5 text-windtre-orange" />
-                            Select Department
+                            Seleziona Dipartimento
                           </DialogTitle>
                           <DialogDescription className="text-gray-600">
-                            Choose the department for your new workflow template. This will pre-configure the appropriate actions and triggers.
+                            Scegli il dipartimento per il tuo nuovo template workflow. Questo preconfigurerà le azioni e trigger appropriati.
                           </DialogDescription>
                         </DialogHeader>
                         
@@ -659,7 +659,7 @@ export default function WorkflowManagementPage() {
                                 key={key}
                                 variant="outline"
                                 onClick={() => handleDepartmentSelected(key as keyof typeof DEPARTMENTS)}
-                                className={`h-20 flex flex-col items-center gap-2 border-white/20 hover:border-windtre-orange/50 hover:bg-white/10 transition-all duration-200`}
+                                className="h-20 flex flex-col items-center gap-2 border-white/20 bg-white/50 hover:border-windtre-orange/50 hover:bg-white/80 transition-all duration-200 pointer-events-auto"
                                 data-testid={`button-department-${key}`}
                               >
                                 <Icon className={`h-6 w-6 ${dept.textColor}`} />
@@ -670,7 +670,7 @@ export default function WorkflowManagementPage() {
                         </div>
                         
                         <div className="mt-4 text-xs text-gray-500 text-center">
-                          💡 You can change the department and customize actions later in the workflow builder
+                          💡 Puoi cambiare il dipartimento e personalizzare le azioni successivamente nel workflow builder
                         </div>
                       </DialogContent>
                     </Dialog>

@@ -531,13 +531,14 @@ button:focus-visible,
 
 /* Dialog Overlay Fix */
 [data-radix-dialog-overlay] {
-  background: rgba(0, 0, 0, 0.1) !important;
+  background: rgba(0, 0, 0, 0.15) !important;
   position: fixed !important;
   inset: 0 !important;
   z-index: 50 !important;
+  pointer-events: auto !important;
 }
 
-/* Dialog Content Positioning - Scoped to dialog content only */
+/* Dialog Content Positioning - Fixed mouse escape behavior */
 [data-radix-dialog-content] {
   position: fixed !important;
   top: 50% !important;
@@ -548,10 +549,14 @@ button:focus-visible,
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 12px !important;
   box-shadow: 
-    0 10px 30px rgba(0, 0, 0, 0.1),
+    0 10px 30px rgba(0, 0, 0, 0.15),
     0 1px 8px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  pointer-events: auto !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
 }
 
 /* HR Information Panel with Animation */
