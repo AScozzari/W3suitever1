@@ -90,6 +90,32 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
     importWorkflow
   } = useWorkflowStore();
   
+  // FORCE TEST NODES
+  const testNodes = [
+    {
+      id: 'test-1',
+      type: 'action',
+      position: { x: 100, y: 100 },
+      data: { 
+        name: 'HARDCODED TEST 1',
+        description: 'This should always appear',
+        color: '#FF6900'
+      }
+    },
+    {
+      id: 'test-2',
+      type: 'trigger',
+      position: { x: 300, y: 200 },
+      data: { 
+        name: 'HARDCODED TEST 2',
+        description: 'This should also appear',
+        color: '#7B2CBF'
+      }
+    }
+  ];
+  
+  const testEdges = [];
+  
   console.log('🔥 BUILDER RENDER - nodes:', nodes?.length || 0, 'edges:', edges?.length || 0);
   console.log('🔥 NODES DETAIL:', nodes);
 
@@ -527,8 +553,8 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
         {/* ReactFlow Canvas */}
         <div className="flex-1" ref={reactFlowWrapper}>
           <ReactFlow
-            nodes={nodes}
-            edges={edges}
+            nodes={testNodes}
+            edges={testEdges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
