@@ -104,7 +104,7 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
     },
     {
       id: 'test-2',
-      type: 'trigger',
+      type: 'trigger', 
       position: { x: 300, y: 200 },
       data: { 
         name: 'HARDCODED TEST 2',
@@ -116,8 +116,8 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
   
   const testEdges = [];
   
-  console.log('🔥 BUILDER RENDER - nodes:', nodes?.length || 0, 'edges:', edges?.length || 0);
-  console.log('🔥 NODES DETAIL:', nodes);
+  console.log('🔍 DEBUG STEP 1: testNodes going to ReactFlow:', testNodes);
+  console.log('🔍 DEBUG STEP 1: nodeTypes registration:', nodeTypes);
 
   // Local state
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
@@ -555,6 +555,7 @@ function WorkflowBuilderContent({ templateId, onSave, onClose }: WorkflowBuilder
           <ReactFlow
             nodes={testNodes}
             edges={testEdges}
+            key="reactflow-debug"
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
