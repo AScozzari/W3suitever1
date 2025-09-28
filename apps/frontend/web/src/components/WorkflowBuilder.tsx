@@ -98,14 +98,20 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       // For now, keep existing nodes if any
     } else {
       // No templateId means NEW workflow - ensure completely clean canvas
-      clearWorkflow(); // Always clear for new workflows
+      console.log('🧹 Clearing workflow for new template - nodes before:', nodes.length);
+      clearWorkflow();
+      console.log('✨ Workflow cleared - nodes after:', nodes.length);
     }
-  }, [templateId, clearWorkflow]);
+  }, [templateId, clearWorkflow, nodes.length]);
 
-  // 🎯 Additional safety: Force clear on component mount for new workflows
+  // 🎯 Force clear on component initialization for new workflows
   React.useEffect(() => {
     if (!templateId) {
-      clearWorkflow();
+      console.log('🚀 Component mounted - forcing clear for new workflow');
+      setTimeout(() => {
+        clearWorkflow();
+        console.log('⚡ Delayed clear executed');
+      }, 100);
     }
   }, []); // Run only once on mount
   
