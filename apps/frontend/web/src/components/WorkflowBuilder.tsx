@@ -75,7 +75,6 @@ interface WorkflowBuilderProps {
 
 function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }: WorkflowBuilderProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const reactFlowInstance = useReactFlow();
   
   // ✅ REAL WORKFLOW STORE (debug successful!)
   const {
