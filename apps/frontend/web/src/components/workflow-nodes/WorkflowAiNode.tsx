@@ -8,7 +8,7 @@ import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, Brain } from 'lucide-react';
+import { Brain } from 'lucide-react';
 
 interface AiNodeData {
   id: string;
@@ -17,7 +17,6 @@ interface AiNodeData {
   category: string;
   color: string;
   config?: Record<string, any>;
-  onConfigClick?: (nodeId: string) => void;
 }
 
 export function WorkflowAiNode({ data, selected, id }: NodeProps<AiNodeData>) {
@@ -48,20 +47,9 @@ export function WorkflowAiNode({ data, selected, id }: NodeProps<AiNodeData>) {
             <Badge variant="outline" className="text-xs bg-gradient-to-r from-windtre-orange/10 to-windtre-purple/10">
               AI
             </Badge>
-            <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 w-6 p-0" 
-                onClick={() => data.onConfigClick?.(id)}
-                data-testid="button-settings-ai"
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <Brain className="h-3 w-3" />
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Brain className="h-3 w-3" />
+            </Button>
           </div>
         </CardContent>
       </Card>

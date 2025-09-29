@@ -8,7 +8,7 @@ import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 
 interface ActionNodeData {
   id: string;
@@ -17,7 +17,6 @@ interface ActionNodeData {
   category: string;
   color: string;
   config?: Record<string, any>;
-  onConfigClick?: (nodeId: string) => void;
 }
 
 export function WorkflowActionNode({ data, selected, id }: NodeProps<ActionNodeData>) {
@@ -48,17 +47,6 @@ export function WorkflowActionNode({ data, selected, id }: NodeProps<ActionNodeD
             <Badge variant="outline" className="text-xs bg-windtre-orange/10">
               Action
             </Badge>
-            <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 w-6 p-0" 
-                onClick={() => data.onConfigClick?.(id)}
-                data-testid="button-settings-action"
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>

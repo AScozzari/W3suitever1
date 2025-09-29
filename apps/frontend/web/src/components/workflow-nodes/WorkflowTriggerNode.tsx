@@ -8,7 +8,7 @@ import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Settings, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 interface TriggerNodeData {
   id: string;
@@ -17,7 +17,6 @@ interface TriggerNodeData {
   category: string;
   color: string;
   config?: Record<string, any>;
-  onConfigClick?: (nodeId: string) => void;
 }
 
 export function WorkflowTriggerNode({ data, selected, id }: NodeProps<TriggerNodeData>) {
@@ -48,17 +47,6 @@ export function WorkflowTriggerNode({ data, selected, id }: NodeProps<TriggerNod
             <Badge variant="outline" className="text-xs bg-windtre-purple/10">
               Trigger
             </Badge>
-            <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 w-6 p-0" 
-                onClick={() => data.onConfigClick?.(id)}
-                data-testid="button-settings-trigger"
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
