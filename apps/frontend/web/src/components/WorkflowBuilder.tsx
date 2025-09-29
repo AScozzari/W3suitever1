@@ -43,6 +43,7 @@ import {
   RotateCcw,
   Search,
   X,
+  Brain,
   Undo2,
   Redo2
 } from 'lucide-react';
@@ -592,7 +593,11 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                           <div 
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-gradient-to-r from-windtre-orange to-windtre-purple"
                           >
-                            <span className="text-xs">AI</span>
+                            {node.name === "AI Decision" ? (
+                              <Brain className="h-4 w-4" />
+                            ) : (
+                              <span className="text-xs">AI</span>
+                            )}
                           </div>
                           <div className="flex-1">
                             <h5 className="text-sm font-medium text-gray-900 leading-tight">{node.name}</h5>
