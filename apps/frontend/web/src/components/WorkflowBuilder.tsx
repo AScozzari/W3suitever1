@@ -54,6 +54,7 @@ import { WorkflowTriggerNode } from './workflow-nodes/WorkflowTriggerNode';
 import { WorkflowAiNode } from './workflow-nodes/WorkflowAiNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWorkflowTemplate, useCreateTemplate, useUpdateTemplate } from '../hooks/useWorkflowTemplates';
+import NodeConfigPanel from './NodeConfigPanel';
 
 // ✅ REAL PROFESSIONAL NODE COMPONENTS - DEFINED OUTSIDE TO PREVENT RE-RENDERS
 const nodeTypes: NodeTypes = {
@@ -721,208 +722,25 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         </div>
       </div>
 
-      {/* ✅ NODE CONFIGURATION PANEL */}
-      {showConfigPanel && configNodeId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="config-panel-overlay">
-          <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto windtre-glass-panel">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Configurazione Nodo</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowConfigPanel(false)}
-                data-testid="button-close-config"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-{(() => {
-              const currentNode = nodes.find(n => n.id === configNodeId);
-              if (!currentNode) return <p>Nodo non trovato</p>;
-              
-              // 🤖 AI DECISION SPECIFIC CONFIGURATION
-              if (currentNode.data.id === 'ai-decision') {
-                const config = currentNode.data.config || {};
-                const [prompt, setPrompt] = useState(config.prompt || 'Analizza i seguenti dati e prendi una decisione: {{input}}');
-                const [outputs, setOutputs] = useState(config.outputs || [
-                  { condition: 'approve', path: 'approve' },
-                  { condition: 'reject', path: 'reject' },
-                  { condition: 'escalate', path: 'escalate' }
-                ]);
-                const [timeout, setTimeout] = useState(config.fallback?.timeout || 30000);
-                const [defaultPath, setDefaultPath] = useState(config.fallback?.defaultPath || 'manual_review');
-                
-                const handleSaveAiConfig = () => {
-                  const updatedConfig = {
-                    prompt,
-                    outputs,
-                    fallback: {
-                      timeout: Number(timeout),
-                      defaultPath
-                    }
-                  };
-                  
-                  // 💾 Update node data with new configuration
-                  setNodes(prevNodes => 
-                    prevNodes.map(node => 
-                      node.id === configNodeId 
-                        ? { ...node, data: { ...node.data, config: updatedConfig } }
-                        : node
-                    )
-                  );
-                  
-                  console.log('🤖 AI Decision config saved:', updatedConfig);
-                  setShowConfigPanel(false);
-                };
-                
-                return (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        📝 Prompt AI
-                      </label>
-                      <textarea 
-                        value={prompt} 
-                        onChange={(e) => setPrompt(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-windtre-orange"
-                        rows={4}
-                        placeholder="Scrivi il prompt per l'AI..."
-                        data-testid="textarea-ai-prompt"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Usa {{input}} per riferimenti ai dati del workflow</p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        🔀 Percorsi Decisione
-                      </label>
-                      <div className="space-y-2">
-                        {outputs.map((output, index) => (
-                          <div key={output.condition} className="flex items-center gap-2">
-                            <span className="text-sm w-16 capitalize">{output.condition}:</span>
-                            <input 
-                              type="text" 
-                              value={output.path}
-                              onChange={(e) => setOutputs(prev => 
-                                prev.map((o, i) => i === index ? { ...o, path: e.target.value } : o)
-                              )}
-                              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
-                              placeholder={`Percorso per ${output.condition}`}
-                              data-testid={`input-output-${output.condition}`}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        🛡️ Fallback Logic
-                      </label>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm w-20">Timeout:</span>
-                          <input 
-                            type="number" 
-                            value={timeout}
-                            onChange={(e) => setTimeout(Number(e.target.value))}
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
-                            placeholder="30000"
-                            data-testid="input-fallback-timeout"
-                          />
-                          <span className="text-xs text-gray-500">ms</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm w-20">Default:</span>
-                          <input 
-                            type="text" 
-                            value={defaultPath}
-                            onChange={(e) => setDefaultPath(e.target.value)}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-windtre-orange"
-                            placeholder="manual_review"
-                            data-testid="input-fallback-default"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setShowConfigPanel(false)}
-                        data-testid="button-cancel-config"
-                      >
-                        Annulla
-                      </Button>
-                      <Button 
-                        onClick={handleSaveAiConfig}
-                        data-testid="button-save-ai-config"
-                      >
-                        Salva AI Config
-                      </Button>
-                    </div>
-                  </div>
-                );
-              }
-              
-              // 🔧 GENERIC NODE CONFIGURATION (for other node types)
-              return (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nome Nodo
-                    </label>
-                    <input 
-                      type="text" 
-                      value={currentNode.data.name || ''} 
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-windtre-orange"
-                      data-testid="input-node-name"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Descrizione
-                    </label>
-                    <textarea 
-                      value={currentNode.data.description || ''} 
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-windtre-orange"
-                      rows={3}
-                      data-testid="textarea-node-description"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tipo: <span className="font-normal text-gray-500">{currentNode.data.category}</span>
-                    </label>
-                  </div>
-                  
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowConfigPanel(false)}
-                      data-testid="button-cancel-config"
-                    >
-                      Annulla
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        console.log('💾 Saving node config for:', configNodeId);
-                        setShowConfigPanel(false);
-                      }}
-                      data-testid="button-save-config"
-                    >
-                      Salva
-                    </Button>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
+      {/* ✅ NODE CONFIGURATION PANEL - Fixed hook order violations */}
+      <NodeConfigPanel 
+        node={showConfigPanel && configNodeId ? nodes.find(n => n.id === configNodeId) || null : null}
+        isOpen={showConfigPanel}
+        onClose={() => setShowConfigPanel(false)}
+        onSave={(nodeId: string, config: any) => {
+          // 💾 Update node data with new configuration
+          setNodes(prevNodes => 
+            prevNodes.map(node => 
+              node.id === nodeId 
+                ? { ...node, data: { ...node.data, config } }
+                : node
+            )
+          );
+          
+          console.log('🎛️ Node config saved:', { nodeId, config });
+        }}
+      />
+
     </div>
   );
 }
