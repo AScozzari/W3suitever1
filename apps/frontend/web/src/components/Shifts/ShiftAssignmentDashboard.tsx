@@ -98,8 +98,18 @@ const CONFLICT_COLORS = {
   overlap: 'bg-red-100 border-red-300 text-red-800',
   overtime: 'bg-orange-100 border-orange-300 text-orange-800', 
   skill_mismatch: 'bg-yellow-100 border-yellow-300 text-yellow-800',
-  availability: 'bg-blue-100 border-blue-300 text-blue-800'
+  availability: 'bg-blue-100 border-blue-300 text-blue-800',
+  rest_period: 'bg-purple-100 border-purple-300 text-purple-800',
+  double_shift: 'bg-pink-100 border-pink-300 text-pink-800'
 };
+
+const CONFLICT_SEVERITY_ICONS = {
+  high: '🔴',
+  medium: '🟡', 
+  low: '🟢'
+};
+
+const MIN_REST_HOURS = 11; // Minimum rest period between shifts in hours
 
 const SHIFT_STATUS_COLORS = {
   understaffed: 'bg-red-500',
@@ -180,29 +190,193 @@ export default function ShiftAssignmentDashboard({
   const conflictDetection = useMemo(() => {
     const conflicts: ConflictDetection[] = [];
     
-    // Detect overlapping shifts for same employee
-    assignments.forEach(assignment => {
-      const overlapping = assignments.filter(other => 
-        other.employeeId === assignment.employeeId &&
-        other.id !== assignment.id &&
-        other.date === assignment.date &&
-        ((other.startTime >= assignment.startTime && other.startTime < assignment.endTime) ||
-         (other.endTime > assignment.startTime && other.endTime <= assignment.endTime))
+    // Helper function to parse time
+    const parseTime = (time: string): number => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours + minutes / 60;
+    };
+
+    // Helper function to get date difference in hours
+    const getHoursDifference = (date1: string, time1: string, date2: string, time2: string): number => {
+      const d1 = new Date(`${date1}T${time1}`);
+      const d2 = new Date(`${date2}T${time2}`);
+      return Math.abs(d2.getTime() - d1.getTime()) / (1000 * 60 * 60);
+    };
+
+    // Group assignments by employee for easier processing
+    const assignmentsByEmployee = assignments.reduce((acc, assignment) => {
+      if (!acc[assignment.employeeId]) acc[assignment.employeeId] = [];
+      acc[assignment.employeeId].push(assignment);
+      return acc;
+    }, {} as Record<string, ShiftAssignment[]>);
+
+    Object.entries(assignmentsByEmployee).forEach(([employeeId, employeeAssignments]) => {
+      const employee = filteredStaff.find(e => e.id === employeeId);
+      if (!employee) return;
+
+      // 1. Check for time overlaps
+      employeeAssignments.forEach(assignment => {
+        const overlapping = employeeAssignments.filter(other => 
+          other.id !== assignment.id &&
+          other.date === assignment.date &&
+          (parseTime(assignment.startTime) < parseTime(other.endTime) && 
+           parseTime(assignment.endTime) > parseTime(other.startTime))
+        );
+        
+        if (overlapping.length > 0) {
+          conflicts.push({
+            type: 'overlap',
+            severity: 'high',
+            message: `⚠️ Sovrapposizione turni il ${format(parseISO(assignment.date), 'd MMM', { locale: it })} per ${employee.firstName} ${employee.lastName}`,
+            affectedShifts: [assignment.shiftId, ...overlapping.map(o => o.shiftId)],
+            affectedEmployees: [employeeId]
+          });
+        }
+      });
+
+      // 2. Check for insufficient rest periods
+      const sortedAssignments = [...employeeAssignments].sort((a, b) => 
+        new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime()
       );
-      
-      if (overlapping.length > 0) {
+
+      for (let i = 0; i < sortedAssignments.length - 1; i++) {
+        const current = sortedAssignments[i];
+        const next = sortedAssignments[i + 1];
+        
+        const restHours = getHoursDifference(current.date, current.endTime, next.date, next.startTime);
+        
+        if (restHours < MIN_REST_HOURS) {
+          conflicts.push({
+            type: 'rest_period',
+            severity: restHours < 8 ? 'high' : 'medium',
+            message: `⏰ Riposo insufficiente (${restHours.toFixed(1)}h < ${MIN_REST_HOURS}h) per ${employee.firstName} ${employee.lastName}`,
+            affectedShifts: [current.shiftId, next.shiftId],
+            affectedEmployees: [employeeId]
+          });
+        }
+      }
+
+      // 3. Check weekly overtime
+      const weeklyHours = employeeAssignments.reduce((total, assignment) => {
+        const shift = shifts.find(s => s.id === assignment.shiftId);
+        if (!shift) return total;
+        return total + calculateShiftHours(assignment.startTime, assignment.endTime);
+      }, 0);
+
+      if (weeklyHours > employee.maxWeeklyHours) {
+        const overtime = weeklyHours - employee.maxWeeklyHours;
         conflicts.push({
-          type: 'overlap',
-          severity: 'high',
-          message: `Sovrapposizione turni per dipendente ${assignment.employeeId}`,
-          affectedShifts: [assignment.shiftId, ...overlapping.map(o => o.shiftId)],
-          affectedEmployees: [assignment.employeeId]
+          type: 'overtime',
+          severity: overtime > 10 ? 'high' : 'medium',
+          message: `📊 Straordinario eccessivo: ${overtime.toFixed(1)}h oltre il limite per ${employee.firstName} ${employee.lastName}`,
+          affectedShifts: employeeAssignments.map(a => a.shiftId),
+          affectedEmployees: [employeeId]
+        });
+      }
+
+      // 4. Check skill requirements
+      employeeAssignments.forEach(assignment => {
+        const shift = shifts.find(s => s.id === assignment.shiftId);
+        if (!shift || !shift.requiredSkills || shift.requiredSkills.length === 0) return;
+
+        const missingSkills = shift.requiredSkills.filter(skill => 
+          !employee.skills.includes(skill)
+        );
+
+        if (missingSkills.length > 0) {
+          conflicts.push({
+            type: 'skill_mismatch',
+            severity: 'medium',
+            message: `🎯 Skills mancanti per ${employee.firstName} ${employee.lastName}: ${missingSkills.join(', ')}`,
+            affectedShifts: [assignment.shiftId],
+            affectedEmployees: [employeeId]
+          });
+        }
+      });
+
+      // 5. Check employee availability
+      employeeAssignments.forEach(assignment => {
+        if (employee.availability !== 'available') {
+          let severity: 'high' | 'medium' | 'low' = 'medium';
+          let message = '';
+
+          switch (employee.availability) {
+            case 'leave':
+              severity = 'high';
+              message = `🏖️ ${employee.firstName} ${employee.lastName} in ferie il ${format(parseISO(assignment.date), 'd MMM', { locale: it })}`;
+              break;
+            case 'training':
+              severity = 'medium';
+              message = `📚 ${employee.firstName} ${employee.lastName} in formazione il ${format(parseISO(assignment.date), 'd MMM', { locale: it })}`;
+              break;
+            case 'busy':
+              severity = 'low';
+              message = `⏳ ${employee.firstName} ${employee.lastName} occupato il ${format(parseISO(assignment.date), 'd MMM', { locale: it })}`;
+              break;
+          }
+
+          conflicts.push({
+            type: 'availability',
+            severity,
+            message,
+            affectedShifts: [assignment.shiftId],
+            affectedEmployees: [employeeId]
+          });
+        }
+      });
+
+      // 6. Check for double shifts (same day, different shifts)
+      const assignmentsByDate = employeeAssignments.reduce((acc, assignment) => {
+        if (!acc[assignment.date]) acc[assignment.date] = [];
+        acc[assignment.date].push(assignment);
+        return acc;
+      }, {} as Record<string, ShiftAssignment[]>);
+
+      Object.entries(assignmentsByDate).forEach(([date, dayAssignments]) => {
+        if (dayAssignments.length > 1) {
+          const totalHours = dayAssignments.reduce((total, assignment) => {
+            return total + calculateShiftHours(assignment.startTime, assignment.endTime);
+          }, 0);
+
+          if (totalHours > 12) {
+            conflicts.push({
+              type: 'double_shift',
+              severity: totalHours > 16 ? 'high' : 'medium',
+              message: `🔄 Doppio turno eccessivo (${totalHours.toFixed(1)}h) per ${employee.firstName} ${employee.lastName} il ${format(parseISO(date), 'd MMM', { locale: it })}`,
+              affectedShifts: dayAssignments.map(a => a.shiftId),
+              affectedEmployees: [employeeId]
+            });
+          }
+        }
+      });
+    });
+
+    // 7. Check shift staffing conflicts
+    shifts.forEach(shift => {
+      const shiftAssignments = assignments.filter(a => a.shiftId === shift.id);
+      
+      if (shiftAssignments.length > shift.requiredStaff) {
+        conflicts.push({
+          type: 'overstaffing',
+          severity: 'low',
+          message: `👥 Sovraffollamento turno "${shift.title}": ${shiftAssignments.length}/${shift.requiredStaff} staff`,
+          affectedShifts: [shift.id],
+          affectedEmployees: shiftAssignments.map(a => a.employeeId)
+        });
+      } else if (shiftAssignments.length < shift.requiredStaff) {
+        const deficit = shift.requiredStaff - shiftAssignments.length;
+        conflicts.push({
+          type: 'understaffing',
+          severity: deficit > 2 ? 'high' : 'medium',
+          message: `📉 Sottodimensionamento turno "${shift.title}": mancano ${deficit} persone`,
+          affectedShifts: [shift.id],
+          affectedEmployees: []
         });
       }
     });
     
     return conflicts;
-  }, [assignments]);
+  }, [assignments, filteredStaff, shifts, calculateShiftHours]);
 
   // ==================== EVENT HANDLERS ====================
 
@@ -1193,33 +1367,139 @@ export default function ShiftAssignmentDashboard({
           </div>
         )}
 
-        {/* Conflicts Alert */}
+        {/* Enhanced Conflicts Panel */}
         {showConflicts && conflictDetection.length > 0 && (
-          <Alert className="mb-4 border-orange-200 bg-orange-50">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <span className="font-medium">
-                {conflictDetection.length} conflitto/i rilevato/i:
-              </span>
-              <ul className="mt-1 text-sm">
-                {conflictDetection.slice(0, 3).map((conflict, index) => (
-                  <li key={index} className="flex items-center">
-                    <span className={cn(
-                      "w-2 h-2 rounded-full mr-2",
-                      conflict.severity === 'high' ? 'bg-red-500' :
-                      conflict.severity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500'
-                    )} />
-                    {conflict.message}
-                  </li>
-                ))}
-                {conflictDetection.length > 3 && (
-                  <li className="text-gray-500">
-                    ... e altri {conflictDetection.length - 3} conflitti
-                  </li>
-                )}
-              </ul>
-            </AlertDescription>
-          </Alert>
+          <Card className="mb-4 border-orange-200 bg-orange-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center text-orange-800">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                Sistema Rilevamento Conflitti
+                <Badge variant="secondary" className="ml-2">
+                  {conflictDetection.length} conflitto/i
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {/* Conflict Summary by Severity */}
+                <div className="flex gap-4 text-sm">
+                  {['high', 'medium', 'low'].map(severity => {
+                    const count = conflictDetection.filter(c => c.severity === severity).length;
+                    if (count === 0) return null;
+                    
+                    return (
+                      <div key={severity} className="flex items-center">
+                        <span className={cn(
+                          "w-3 h-3 rounded-full mr-2",
+                          severity === 'high' ? 'bg-red-500' :
+                          severity === 'medium' ? 'bg-orange-500' : 'bg-green-500'
+                        )} />
+                        <span className="font-medium">
+                          {CONFLICT_SEVERITY_ICONS[severity as keyof typeof CONFLICT_SEVERITY_ICONS]} 
+                          {severity === 'high' ? 'Critici' : 
+                           severity === 'medium' ? 'Moderati' : 'Minori'}: {count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Conflict Categories */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {Object.entries(
+                    conflictDetection.reduce((acc, conflict) => {
+                      if (!acc[conflict.type]) acc[conflict.type] = [];
+                      acc[conflict.type].push(conflict);
+                      return acc;
+                    }, {} as Record<string, ConflictDetection[]>)
+                  ).map(([type, conflicts]) => (
+                    <div key={type} className={cn(
+                      "p-3 rounded-lg border",
+                      CONFLICT_COLORS[type as keyof typeof CONFLICT_COLORS]
+                    )}>
+                      <div className="font-semibold text-sm mb-1">
+                        {type === 'overlap' ? '⚠️ Sovrapposizioni' :
+                         type === 'overtime' ? '📊 Straordinari' :
+                         type === 'skill_mismatch' ? '🎯 Skills Mancanti' :
+                         type === 'availability' ? '📅 Disponibilità' :
+                         type === 'rest_period' ? '⏰ Riposi' :
+                         type === 'double_shift' ? '🔄 Doppi Turni' :
+                         type === 'overstaffing' ? '👥 Sovraffollamento' :
+                         type === 'understaffing' ? '📉 Sottodimensionamento' : type}
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {conflicts.length}
+                        </Badge>
+                      </div>
+                      <div className="text-xs space-y-1">
+                        {conflicts.slice(0, 2).map((conflict, index) => (
+                          <div key={index} className="truncate">
+                            {conflict.message}
+                          </div>
+                        ))}
+                        {conflicts.length > 2 && (
+                          <div className="text-xs opacity-75">
+                            +{conflicts.length - 2} altri...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      // Auto-resolve conflicts where possible
+                      toast({
+                        title: "Risoluzione Automatica",
+                        description: "Funzionalità in sviluppo - risoluzione automatica dei conflitti",
+                      });
+                    }}
+                    data-testid="button-auto-resolve-conflicts"
+                  >
+                    <Zap className="w-4 h-4 mr-1" />
+                    Risoluzione Automatica
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      // Export conflict report
+                      const report = conflictDetection.map(c => ({
+                        severity: c.severity,
+                        type: c.type,
+                        message: c.message,
+                        affectedShifts: c.affectedShifts,
+                        affectedEmployees: c.affectedEmployees
+                      }));
+                      
+                      const blob = new Blob([JSON.stringify(report, null, 2)], {
+                        type: 'application/json'
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `conflict-report-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Report Esportato",
+                        description: "Report dei conflitti scaricato con successo",
+                      });
+                    }}
+                    data-testid="button-export-conflicts"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    Esporta Report
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </CardContent>
     </Card>
