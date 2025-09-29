@@ -158,8 +158,8 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
       
       const method = template?.id ? 'PUT' : 'POST';
       
-      // Map new format to legacy backend format (remove timeSlots to avoid validation errors)
-      const legacyData = {
+      // Enterprise format with multiple timeSlots support
+      const enterpriseData = {
         name: data.name,
         description: data.description,
         pattern: 'weekly', // Default pattern
@@ -172,13 +172,13 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
         },
         isActive: data.isActive,
         notes: data.notes,
-        color: data.color
-        // Note: timeSlots removed to maintain backend compatibility
+        color: data.color,
+        timeSlots: data.timeSlots // ✅ Now sending full timeSlots array to backend
       };
       
       return await apiRequest(endpoint, {
         method,
-        body: JSON.stringify(legacyData)
+        body: JSON.stringify(enterpriseData)
       });
     },
     onSuccess: () => {

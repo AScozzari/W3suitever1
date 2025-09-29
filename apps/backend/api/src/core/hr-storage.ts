@@ -6,6 +6,7 @@ import {
   universalRequests,
   shifts,
   shiftTemplates,
+  shiftTimeSlots,
   timeTracking,
   hrDocuments,
   expenseReports,
@@ -15,10 +16,12 @@ import {
   CalendarEvent,
   Shift,
   ShiftTemplate,
+  ShiftTimeSlot,
   TimeTracking,
   InsertCalendarEvent,
   InsertShift,
   InsertShiftTemplate,
+  InsertShiftTimeSlot,
   InsertTimeTracking,
 } from "../db/schema";
 
@@ -144,9 +147,9 @@ export interface IHRStorage {
   getUserCalendarPermissions(userId: string, userRole: string): CalendarPermissions;
   
   // Shift Templates
-  getShiftTemplates(tenantId: string, isActive?: boolean): Promise<ShiftTemplate[]>;
-  createShiftTemplate(data: InsertShiftTemplate): Promise<ShiftTemplate>;
-  updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate>, tenantId: string): Promise<ShiftTemplate>;
+  getShiftTemplates(tenantId: string, isActive?: boolean): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]>;
+  createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
+  updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }>;
   deleteShiftTemplate(id: string, tenantId: string): Promise<void>;
   applyShiftTemplate(templateId: string, storeId: string, startDate: Date, endDate: Date, tenantId: string): Promise<Shift[]>;
   
@@ -710,38 +713,122 @@ export class HRStorage implements IHRStorage {
   }
   
   // ==================== SHIFT TEMPLATES ====================
-  async getShiftTemplates(tenantId: string, isActive?: boolean): Promise<ShiftTemplate[]> {
+  async getShiftTemplates(tenantId: string, isActive?: boolean): Promise<(ShiftTemplate & { timeSlots?: ShiftTimeSlot[] })[]> {
     const conditions = [eq(shiftTemplates.tenantId, tenantId)];
     if (isActive !== undefined) {
       conditions.push(eq(shiftTemplates.isActive, isActive));
     }
     
-    return db
+    // Get templates
+    const templates = await db
       .select()
       .from(shiftTemplates)
       .where(and(...conditions));
+    
+    // Get time slots for each template
+    const templatesWithSlots = await Promise.all(
+      templates.map(async (template) => {
+        const timeSlots = await db
+          .select()
+          .from(shiftTimeSlots)
+          .where(eq(shiftTimeSlots.templateId, template.id))
+          .orderBy(shiftTimeSlots.slotOrder);
+        
+        return {
+          ...template,
+          timeSlots
+        };
+      })
+    );
+    
+    return templatesWithSlots;
   }
   
-  async createShiftTemplate(data: InsertShiftTemplate): Promise<ShiftTemplate> {
-    const [template] = await db
-      .insert(shiftTemplates)
-      .values(data)
-      .returning();
-    
-    return template;
+  async createShiftTemplate(data: InsertShiftTemplate & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
+    return await db.transaction(async (tx) => {
+      // Create the template
+      const { timeSlots, ...templateData } = data;
+      const [template] = await tx
+        .insert(shiftTemplates)
+        .values(templateData)
+        .returning();
+      
+      // Create time slots if provided
+      let createdTimeSlots: ShiftTimeSlot[] = [];
+      if (timeSlots && timeSlots.length > 0) {
+        const timeSlotData = timeSlots.map((slot, index) => ({
+          templateId: template.id,
+          tenantId: template.tenantId,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          breakMinutes: slot.breakMinutes || 30,
+          slotOrder: index + 1
+        }));
+        
+        createdTimeSlots = await tx
+          .insert(shiftTimeSlots)
+          .values(timeSlotData)
+          .returning();
+      }
+      
+      return {
+        ...template,
+        timeSlots: createdTimeSlots
+      };
+    });
   }
   
-  async updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate>, tenantId: string): Promise<ShiftTemplate> {
-    const [updated] = await db
-      .update(shiftTemplates)
-      .set({ ...data, updatedAt: new Date() })
-      .where(and(
-        eq(shiftTemplates.id, id),
-        eq(shiftTemplates.tenantId, tenantId)
-      ))
-      .returning();
-    
-    return updated;
+  async updateShiftTemplate(id: string, data: Partial<InsertShiftTemplate> & { timeSlots?: Array<{ startTime: string; endTime: string; breakMinutes?: number }> }, tenantId: string): Promise<ShiftTemplate & { timeSlots?: ShiftTimeSlot[] }> {
+    return await db.transaction(async (tx) => {
+      // Update the template
+      const { timeSlots, ...templateData } = data;
+      const [updated] = await tx
+        .update(shiftTemplates)
+        .set({ ...templateData, updatedAt: new Date() })
+        .where(and(
+          eq(shiftTemplates.id, id),
+          eq(shiftTemplates.tenantId, tenantId)
+        ))
+        .returning();
+      
+      // Update time slots if provided
+      let updatedTimeSlots: ShiftTimeSlot[] = [];
+      if (timeSlots !== undefined) {
+        // Delete existing time slots
+        await tx
+          .delete(shiftTimeSlots)
+          .where(eq(shiftTimeSlots.templateId, id));
+        
+        // Create new time slots
+        if (timeSlots.length > 0) {
+          const timeSlotData = timeSlots.map((slot, index) => ({
+            templateId: id,
+            tenantId: updated.tenantId,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            breakMinutes: slot.breakMinutes || 30,
+            slotOrder: index + 1
+          }));
+          
+          updatedTimeSlots = await tx
+            .insert(shiftTimeSlots)
+            .values(timeSlotData)
+            .returning();
+        }
+      } else {
+        // If timeSlots not provided, get existing ones
+        updatedTimeSlots = await tx
+          .select()
+          .from(shiftTimeSlots)
+          .where(eq(shiftTimeSlots.templateId, id))
+          .orderBy(shiftTimeSlots.slotOrder);
+      }
+      
+      return {
+        ...updated,
+        timeSlots: updatedTimeSlots
+      };
+    });
   }
   
   async deleteShiftTemplate(id: string, tenantId: string): Promise<void> {
