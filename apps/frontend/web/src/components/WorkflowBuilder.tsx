@@ -58,13 +58,13 @@ import { useWorkflowTemplate, useCreateTemplate, useUpdateTemplate } from '../ho
 import NodeConfigPanel from './NodeConfigPanel';
 
 // ✅ REAL PROFESSIONAL NODE COMPONENTS - DEFINED OUTSIDE TO PREVENT RE-RENDERS
-const nodeTypes: NodeTypes = {
+const nodeTypes = {
   action: WorkflowActionNode,
   trigger: WorkflowTriggerNode,
   ai: WorkflowAiNode,
   condition: WorkflowActionNode, // Reuse action node for conditions
   flow: WorkflowActionNode, // Reuse action node for flow control
-};
+} as const;
 
 interface WorkflowBuilderProps {
   templateId?: string;
@@ -75,7 +75,7 @@ interface WorkflowBuilderProps {
 
 function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }: WorkflowBuilderProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { project } = useReactFlow();
+  const reactFlowInstance = useReactFlow();
   
   // ✅ REAL WORKFLOW STORE (debug successful!)
   const {
@@ -92,7 +92,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   } = useWorkflowStore();
   
   // 🎯 TEMPLATE MANAGEMENT HOOKS
-  const { data: templateData, isLoading: templateLoading } = useWorkflowTemplate(templateId);
+  const { data: templateData, isLoading: templateLoading } = useWorkflowTemplate(templateId || null);
   const createTemplateMutation = useCreateTemplate();
   const updateTemplateMutation = useUpdateTemplate();
   
@@ -105,7 +105,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
       const definition = templateData.definition;
       if (definition?.nodes && definition?.edges) {
         // Add onConfigClick to all loaded nodes
-        const nodesWithConfig = definition.nodes.map(node => ({
+        const nodesWithConfig = definition.nodes.map((node: Node) => ({
           ...node,
           data: {
             ...node.data,
@@ -351,8 +351,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     // Also call onSave prop if provided (backward compatibility)
     onSave?.({
       nodes: cleanNodes,
-      edges,
-      metadata: { nodeCount: cleanNodes.length, edgeCount: edges.length }
+      edges
     });
   };
 
@@ -593,7 +592,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                           <div 
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-gradient-to-r from-windtre-orange to-windtre-purple"
                           >
-                            {node.name === "AI Decision" ? (
+                            {node.name.includes("Decision") ? (
                               <Brain className="h-4 w-4" />
                             ) : (
                               <span className="text-xs">AI</span>
@@ -734,8 +733,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
         onClose={() => setShowConfigPanel(false)}
         onSave={(nodeId: string, config: any) => {
           // 💾 Update node data with new configuration
-          setNodes(prevNodes => 
-            prevNodes.map(node => 
+          setNodes((prevNodes: Node[]) => 
+            prevNodes.map((node: Node) => 
               node.id === nodeId 
                 ? { ...node, data: { ...node.data, config } }
                 : node

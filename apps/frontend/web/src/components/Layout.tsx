@@ -1926,8 +1926,8 @@ export default function Layout({ children, currentModule, setCurrentModule }: La
                         gap: '2px',
                         marginBottom: '4px'
                       }}>
-                        {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map(day => (
-                          <div key={day} style={{
+                        {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((day, index) => (
+                          <div key={`day-${index}`} style={{
                             fontSize: '8px',
                             color: '#6b7280',
                             textAlign: 'center',
