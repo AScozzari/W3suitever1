@@ -598,7 +598,7 @@ router.post('/shift-templates', requirePermission('hr.shifts.manage'), async (re
     };
 
     // Create shift template using existing storage function
-    const template = await hrStorage.createShiftTemplate(tenantId, templateData);
+    const template = await hrStorage.createShiftTemplate(templateData);
 
     res.json(template);
   } catch (error) {
@@ -625,7 +625,7 @@ router.put('/shift-templates/:id', requirePermission('hr.shifts.manage'), async 
     };
 
     // Update shift template using existing storage function
-    const template = await hrStorage.updateShiftTemplate(tenantId, templateId, updateData);
+    const template = await hrStorage.updateShiftTemplate(templateId, updateData, tenantId);
 
     res.json(template);
   } catch (error) {

@@ -7,7 +7,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 // UI Components
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -261,6 +261,12 @@ export default function ShiftTemplateModal({ isOpen, onClose, template }: Props)
             <Clock className="w-5 h-5 text-orange-500" />
             {template?.id ? 'Modifica Template Turni' : 'Nuovo Template Turni'}
           </DialogTitle>
+          <DialogDescription>
+            {template?.id 
+              ? 'Modifica le impostazioni del template turno esistente'
+              : 'Crea un nuovo template per organizzare i turni del tuo team'
+            }
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
