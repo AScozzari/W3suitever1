@@ -40,9 +40,11 @@ import {
   Settings,
   Palette,
   Eye,
-  Trash2,
+  RotateCcw,
   Search,
-  X
+  X,
+  Undo2,
+  Redo2
 } from 'lucide-react';
 
 import { useWorkflowStore } from '../stores/workflowStore';
@@ -612,11 +614,34 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => console.log('🔄 Undo action')}
+                title="Annulla ultima azione"
+                data-testid="button-undo"
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => console.log('🔄 Redo action')}
+                title="Ripeti azione"
+                data-testid="button-redo"
+              >
+                <Redo2 className="h-4 w-4" />
+              </Button>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={clearWorkflow}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                title="Reset workflow"
                 data-testid="button-reset"
               >
-                <Trash2 className="h-4 w-4" />
+                <RotateCcw className="h-4 w-4" />
               </Button>
               
               <Separator orientation="vertical" className="h-6" />
@@ -634,15 +659,11 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
         </div>
 
-        {/* Canvas Zone - Fixed Size */}
+        {/* Canvas Zone - Responsive & Centered */}
         <div 
           ref={reactFlowWrapper}
-          style={{ 
-            width: '800px',
-            height: '600px',
-            border: '2px solid #E5E7EB',
-            backgroundColor: '#F9FAFB'
-          }}
+          className="flex-1 mx-auto my-4 border-2 border-gray-300 rounded-lg bg-gray-50 min-h-[600px] max-w-[1200px]"
+          style={{ backgroundColor: '#F9FAFB' }}
         >
           <ReactFlow
             nodes={nodes}
@@ -656,7 +677,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
-            style={{ width: '800px', height: '600px' }}
+            className="w-full h-full"
             data-testid="reactflow-canvas"
           >
             <Controls />
