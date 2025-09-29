@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Calendar, Clock, Users, AlertTriangle, CheckCircle, X, Search, 
   Filter, Download, Settings, Eye, EyeOff, MoreHorizontal,
-  DragHandleDots2, UserCheck, UserX, Zap
+  DragHandleDots2, UserCheck, UserX, Zap, ZoomIn, ZoomOut
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -81,7 +82,17 @@ interface Props {
 // ==================== CONSTANTS ====================
 
 const DAYS_OF_WEEK = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
-const TIME_SLOTS = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+const TIME_SLOTS_24H = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+const TIME_SLOTS_QUARTER = Array.from({ length: 96 }, (_, i) => {
+  const hour = Math.floor(i / 4);
+  const minute = (i % 4) * 15;
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+});
+const TIME_SLOTS_HALF = Array.from({ length: 48 }, (_, i) => {
+  const hour = Math.floor(i / 2);
+  const minute = (i % 2) * 30;
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+});
 
 const CONFLICT_COLORS = {
   overlap: 'bg-red-100 border-red-300 text-red-800',
@@ -118,6 +129,9 @@ export default function ShiftAssignmentDashboard({
   const [draggedData, setDraggedData] = useState<any>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'gantt' | 'grid'>('gantt');
+  const [timelineZoom, setTimelineZoom] = useState<'hours' | 'quarter' | 'half'>('hours');
+  const [timelineStartHour, setTimelineStartHour] = useState(6); // Start from 6 AM
+  const [timelineEndHour, setTimelineEndHour] = useState(22); // End at 10 PM
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -465,148 +479,298 @@ export default function ShiftAssignmentDashboard({
     );
   };
 
-  const renderGanttTimeline = () => (
-    <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden">
-      {/* Header with time slots */}
-      <div className="flex border-b bg-gray-50">
-        <div className="w-48 p-3 font-semibold border-r">Dipendenti</div>
-        <div className="flex-1 grid grid-cols-24 text-xs">
-          {TIME_SLOTS.map(time => (
-            <div key={time} className="p-1 text-center border-r border-gray-100">
-              {time}
-            </div>
-          ))}
-        </div>
-      </div>
+  // Gantt Timeline utilities
+  const getTimeSlots = useCallback(() => {
+    switch (timelineZoom) {
+      case 'quarter':
+        return TIME_SLOTS_QUARTER.slice(timelineStartHour * 4, timelineEndHour * 4);
+      case 'half':
+        return TIME_SLOTS_HALF.slice(timelineStartHour * 2, timelineEndHour * 2);
+      default:
+        return TIME_SLOTS_24H.slice(timelineStartHour, timelineEndHour);
+    }
+  }, [timelineZoom, timelineStartHour, timelineEndHour]);
 
-      {/* Header with days */}
-      <div className="flex border-b bg-gray-100">
-        <div className="w-48 p-3 font-semibold border-r">Dipendenti</div>
-        {weekDays.map(day => (
-          <div key={day.toISOString()} className="flex-1 text-center p-2 border-r font-medium">
-            <div className="text-sm">{format(day, 'EEE', { locale: it })}</div>
-            <div className="text-xs text-gray-500">{format(day, 'd MMM', { locale: it })}</div>
-          </div>
-        ))}
-      </div>
+  const getShiftPosition = useCallback((startTime: string, endTime: string): { left: number; width: number } => {
+    const parseTime = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours + minutes / 60;
+    };
+
+    const startHour = parseTime(startTime);
+    const endHour = parseTime(endTime);
+    const totalHours = timelineEndHour - timelineStartHour;
+    
+    const left = ((startHour - timelineStartHour) / totalHours) * 100;
+    const width = ((endHour - startHour) / totalHours) * 100;
+    
+    return {
+      left: Math.max(0, Math.min(100, left)),
+      width: Math.max(1, Math.min(100 - left, width))
+    };
+  }, [timelineStartHour, timelineEndHour]);
+
+  const handleTimelineShiftDrop = useCallback(async (e: React.DragEvent, employeeId: string, day: Date, timeSlot: string) => {
+    e.preventDefault();
+    
+    try {
+      const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
       
-      {/* Staff rows with shift visualization */}
-      <ScrollArea className="h-96">
-        {filteredStaff.map(employee => (
-          <div key={employee.id} className="flex border-b hover:bg-gray-50">
-            {/* Employee info */}
-            <div className="w-48 p-3 border-r flex items-center space-x-3">
-              <Checkbox
-                checked={selectedEmployees.has(employee.id)}
-                onCheckedChange={(checked) => 
-                  handleEmployeeSelection(employee.id, !!checked)
-                }
-                data-testid={`checkbox-employee-${employee.id}`}
-              />
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={employee.avatar} />
-                <AvatarFallback>
-                  {employee.firstName[0]}{employee.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div 
-                className="flex-1 cursor-move"
-                draggable
-                onDragStart={(e) => handleDragStart(e, employee.id)}
-                data-testid={`draggable-employee-${employee.id}`}
-              >
-                <div className="font-medium text-sm">
-                  {employee.firstName} {employee.lastName}
+      if (dragData.type === 'shift') {
+        await onAssignShift(dragData.shiftId, [employeeId]);
+        toast({
+          title: "Turno Assegnato",
+          description: `Turno assegnato a ${timeSlot} per ${format(day, 'd MMM', { locale: it })}`
+        });
+      } else if (dragData.type === 'assignment') {
+        if (dragData.employeeId !== employeeId) {
+          await onUnassignShift(dragData.shiftId, [dragData.employeeId]);
+          await onAssignShift(dragData.shiftId, [employeeId]);
+          toast({
+            title: "Assegnazione Spostata",
+            description: "Assegnazione spostata con successo nella timeline"
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Timeline drop error:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile completare l'operazione",
+        variant: "destructive"
+      });
+    }
+  }, [onAssignShift, onUnassignShift, toast]);
+
+  const renderGanttTimeline = () => {
+    const timeSlots = getTimeSlots();
+    const colWidth = 100 / timeSlots.length;
+
+    return (
+      <div className="space-y-4">
+        {/* Timeline Controls */}
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium">Zoom:</label>
+              <Select value={timelineZoom} onValueChange={(value) => setTimelineZoom(value as any)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hours">Ore</SelectItem>
+                  <SelectItem value="half">30 min</SelectItem>
+                  <SelectItem value="quarter">15 min</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium">Orario:</label>
+              <Select value={timelineStartHour.toString()} onValueChange={(value) => setTimelineStartHour(Number(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}:00</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-sm">-</span>
+              <Select value={timelineEndHour.toString()} onValueChange={(value) => setTimelineEndHour(Number(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}:00</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTimelineStartHour(Math.max(0, timelineStartHour - 2));
+                setTimelineEndHour(Math.max(timelineStartHour + 4, timelineEndHour - 2));
+              }}
+              data-testid="button-timeline-zoom-out"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTimelineStartHour(Math.min(20, timelineStartHour + 1));
+                setTimelineEndHour(Math.min(24, timelineEndHour + 1));
+              }}
+              data-testid="button-timeline-zoom-in"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Gantt Chart */}
+        <div className="relative bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {/* Timeline Header */}
+          <div className="sticky top-0 z-10 bg-white border-b">
+            {/* Days Header */}
+            <div className="flex border-b bg-gray-100">
+              <div className="w-48 p-3 font-semibold border-r bg-white">Dipendenti</div>
+              {weekDays.map(day => (
+                <div key={day.toISOString()} className="flex-1 text-center p-2 border-r font-medium min-w-0">
+                  <div className="text-sm">{format(day, 'EEE', { locale: it })}</div>
+                  <div className="text-xs text-gray-500">{format(day, 'd MMM', { locale: it })}</div>
                 </div>
-                <div className="text-xs text-gray-500">{employee.role}</div>
-              </div>
+              ))}
             </div>
 
-            {/* Days grid */}
-            <div className="flex-1 grid grid-cols-7 relative">
-              {weekDays.map((day, dayIndex) => (
-                <div 
-                  key={day.toISOString()} 
-                  className="border-r border-gray-100 h-16 relative p-1"
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => {
-                    // Find available shifts for this day to assign to
-                    const dayShifts = shifts.filter(shift => 
-                      isSameDay(parseISO(shift.date), day)
-                    );
-                    if (dayShifts.length > 0) {
-                      handleDrop(e, dayShifts[0].id); // Drop on first available shift for now
-                    }
-                  }}
-                >
-                  {/* Render shift bars for this employee and day */}
-                  {assignments
-                    .filter(assignment => 
-                      assignment.employeeId === employee.id &&
-                      isSameDay(parseISO(assignment.date), day)
-                    )
-                    .map(assignment => {
-                      const shift = shifts.find(s => s.id === assignment.shiftId);
-                      if (!shift) return null;
-
-                      const status = getShiftStatus(shift);
-                      const conflicts = getShiftConflicts(shift.id);
-                      
-                      return (
-                        <Tooltip key={assignment.id}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className={cn(
-                                "w-full h-12 rounded text-xs font-medium text-white cursor-pointer flex items-center justify-center mb-1",
-                                SHIFT_STATUS_COLORS[status],
-                                conflicts.length > 0 && "ring-1 ring-red-500",
-                                selectedShifts.has(shift.id) && "ring-1 ring-blue-500"
-                              )}
-                              onClick={() => handleShiftSelection(shift.id, !selectedShifts.has(shift.id))}
-                              data-testid={`shift-bar-${shift.id}`}
-                            >
-                              <div className="text-center">
-                                <div className="font-semibold truncate">{shift.title}</div>
-                                <div className="text-xs">{assignment.startTime.slice(0,5)}-{assignment.endTime.slice(0,5)}</div>
-                                {conflicts.length > 0 && (
-                                  <AlertTriangle className="w-3 h-3 mx-auto" />
-                                )}
-                              </div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="text-sm">
-                              <div className="font-semibold">{shift.title}</div>
-                              <div>{format(day, 'd MMM yyyy', { locale: it })}</div>
-                              <div>{assignment.startTime} - {assignment.endTime}</div>
-                              <div>Staff: {shift.assignedStaff}/{shift.requiredStaff}</div>
-                              {conflicts.length > 0 && (
-                                <div className="text-red-400 mt-1">
-                                  ⚠️ {conflicts.length} conflitto/i rilevato/i
-                                </div>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                  {/* Drop zone for unassigned shifts on this day */}
-                  {!assignments.some(assignment => 
-                    assignment.employeeId === employee.id &&
-                    isSameDay(parseISO(assignment.date), day)
-                  ) && (
-                    <div className="w-full h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-xs text-gray-500">
-                      Trascina qui per assegnare
-                    </div>
-                  )}
+            {/* Time Slots Header */}
+            <div className="flex border-b bg-gray-50">
+              <div className="w-48 border-r bg-white"></div>
+              {weekDays.map(day => (
+                <div key={day.toISOString()} className="flex-1 border-r min-w-0">
+                  <div className="flex text-xs">
+                    {timeSlots.map((time, index) => (
+                      <div 
+                        key={`${day.toISOString()}-${time}`} 
+                        className="border-r border-gray-100 text-center py-1 px-1"
+                        style={{ width: `${colWidth}%` }}
+                      >
+                        {timelineZoom === 'hours' ? time.slice(0, 2) : time}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        ))}
-      </ScrollArea>
-    </div>
-  );
+
+          {/* Staff Rows */}
+          <ScrollArea className="h-96">
+            {filteredStaff.map(employee => (
+              <div key={employee.id} className="flex border-b hover:bg-gray-50 h-16">
+                {/* Employee Info */}
+                <div className="w-48 p-3 border-r flex items-center space-x-3 bg-white sticky left-0 z-5">
+                  <Checkbox
+                    checked={selectedEmployees.has(employee.id)}
+                    onCheckedChange={(checked) => handleEmployeeSelection(employee.id, !!checked)}
+                    data-testid={`checkbox-employee-${employee.id}`}
+                  />
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={employee.avatar} />
+                    <AvatarFallback>
+                      {employee.firstName[0]}{employee.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm truncate">
+                      {employee.firstName} {employee.lastName}
+                    </div>
+                    <div className="text-xs text-gray-500 truncate">{employee.role}</div>
+                  </div>
+                </div>
+
+                {/* Timeline Days */}
+                {weekDays.map(day => (
+                  <div key={day.toISOString()} className="flex-1 border-r relative min-w-0">
+                    {/* Time Grid Background */}
+                    <div className="absolute inset-0 flex">
+                      {timeSlots.map((time, index) => (
+                        <div 
+                          key={`${day.toISOString()}-${time}-grid`}
+                          className="border-r border-gray-100 h-full"
+                          style={{ width: `${colWidth}%` }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => handleTimelineShiftDrop(e, employee.id, day, time)}
+                          data-testid={`timeline-slot-${employee.id}-${format(day, 'yyyy-MM-dd')}-${time}`}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Shift Bars */}
+                    <div className="absolute inset-0 p-1">
+                      {assignments
+                        .filter(assignment => 
+                          assignment.employeeId === employee.id &&
+                          isSameDay(parseISO(assignment.date), day)
+                        )
+                        .map(assignment => {
+                          const shift = shifts.find(s => s.id === assignment.shiftId);
+                          if (!shift) return null;
+
+                          const status = getShiftStatus(shift);
+                          const conflicts = getShiftConflicts(shift.id);
+                          const position = getShiftPosition(assignment.startTime, assignment.endTime);
+                          
+                          return (
+                            <Tooltip key={assignment.id}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, assignment)}
+                                  onDragEnd={handleDragEnd}
+                                  className={cn(
+                                    "absolute top-1 bottom-1 rounded cursor-move text-xs font-medium text-white flex items-center justify-center",
+                                    "hover:shadow-lg transition-all duration-200",
+                                    SHIFT_STATUS_COLORS[status],
+                                    conflicts.length > 0 && "ring-1 ring-red-400",
+                                    selectedShifts.has(shift.id) && "ring-2 ring-blue-400"
+                                  )}
+                                  style={{
+                                    left: `${position.left}%`,
+                                    width: `${position.width}%`
+                                  }}
+                                  onClick={() => handleShiftSelection(shift.id, !selectedShifts.has(shift.id))}
+                                  data-testid={`gantt-shift-${shift.id}`}
+                                >
+                                  <div className="text-center truncate px-1">
+                                    <div className="font-semibold text-xs truncate">{shift.title}</div>
+                                    {position.width > 15 && (
+                                      <div className="text-xs opacity-90">
+                                        {assignment.startTime.slice(0,5)}-{assignment.endTime.slice(0,5)}
+                                      </div>
+                                    )}
+                                    {conflicts.length > 0 && position.width > 10 && (
+                                      <AlertTriangle className="w-3 h-3 mx-auto" />
+                                    )}
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="text-sm">
+                                  <div className="font-semibold">{shift.title}</div>
+                                  <div>{format(day, 'd MMM yyyy', { locale: it })}</div>
+                                  <div>{assignment.startTime} - {assignment.endTime}</div>
+                                  <div>Durata: {calculateShiftHours(assignment.startTime, assignment.endTime).toFixed(1)}h</div>
+                                  <div>Staff: {shift.assignedStaff}/{shift.requiredStaff}</div>
+                                  {conflicts.length > 0 && (
+                                    <div className="text-red-400 mt-1">
+                                      ⚠️ {conflicts.length} conflitto/i rilevato/i
+                                    </div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </ScrollArea>
+        </div>
+      </div>
+    );
+  };
 
   const renderGridView = () => {
     const weekDays = Array.from({ length: 7 }, (_, i) => 
