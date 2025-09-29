@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
+import ShiftAssignmentDashboard from '@/components/Shifts/ShiftAssignmentDashboard';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -1326,13 +1327,73 @@ const HRManagementPage: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="aspect-[16/6] bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-            <div className="text-center text-slate-500">
-              <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p>Assignment Timeline</p>
-              <p className="text-sm">Vista assegnazioni turni per store e periodo</p>
-            </div>
-          </div>
+          <ShiftAssignmentDashboard
+            storeId={selectedStore || ''}
+            selectedWeek={new Date()}
+            onAssignShift={async (shiftId: string, employeeIds: string[]) => {
+              try {
+                // TODO: Implement actual API call
+                const response = await apiRequest(`/api/hr/shifts/${shiftId}/assign`, {
+                  method: 'POST',
+                  body: JSON.stringify({ employeeIds })
+                });
+                
+                // Refresh queries
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+                
+                toast({
+                  title: "Assegnazione Completata",
+                  description: `${employeeIds.length} dipendente/i assegnato/i al turno`
+                });
+              } catch (error) {
+                console.error('Error assigning shift:', error);
+                throw error;
+              }
+            }}
+            onUnassignShift={async (shiftId: string, employeeIds: string[]) => {
+              try {
+                // TODO: Implement actual API call
+                const response = await apiRequest(`/api/hr/shifts/${shiftId}/unassign`, {
+                  method: 'POST',
+                  body: JSON.stringify({ employeeIds })
+                });
+                
+                // Refresh queries
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+                
+                toast({
+                  title: "Rimozione Completata",
+                  description: `${employeeIds.length} dipendente/i rimosso/i dal turno`
+                });
+              } catch (error) {
+                console.error('Error unassigning shift:', error);
+                throw error;
+              }
+            }}
+            onBulkAssign={async (assignments: { shiftId: string; employeeId: string }[]) => {
+              try {
+                // TODO: Implement actual bulk API call
+                const response = await apiRequest('/api/hr/shifts/bulk-assign', {
+                  method: 'POST',
+                  body: JSON.stringify({ assignments })
+                });
+                
+                // Refresh queries
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shifts'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/hr/shift-assignments'] });
+                
+                toast({
+                  title: "Bulk Assignment Completato",
+                  description: `${assignments.length} assegnazioni create con successo`
+                });
+              } catch (error) {
+                console.error('Error bulk assigning shifts:', error);
+                throw error;
+              }
+            }}
+          />
         </CardContent>
       </Card>
     </div>
