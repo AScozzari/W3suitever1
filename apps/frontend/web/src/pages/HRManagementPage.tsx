@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -96,7 +96,7 @@ const HRManagementPage: React.FC = () => {
   console.log('🚨 [HR-COMPONENT] HRManagementPage IS LOADING!', new Date().toISOString());
   
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'requests' | 'shifts' | 'documents' | 'analytics' | 'employees' | 'monitoring'>('dashboard');
   const [currentModule, setCurrentModule] = useState('hr');
   
   // ✅ NEW: HR Authentication Readiness Hook
@@ -1726,6 +1726,337 @@ const HRManagementPage: React.FC = () => {
     </div>
   );
 
+  // ==================== MONITORING SECTION ====================
+
+  const MonitoringSection = () => {
+    const [monitoringFilters, setMonitoringFilters] = useState({
+      storeId: 'all',
+      dateRange: 'today',
+      employeeId: 'all',
+      shiftStatus: 'all'
+    });
+
+    // Real-time shift coverage data with proper auth and filters
+    const { data: shiftCoverage = [], isLoading: loadingCoverage } = useQuery({
+      queryKey: ['/api/hr/shifts', 'coverage', monitoringFilters],
+      enabled: hrQueriesEnabled, // Wait for auth readiness
+      staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+      refetchInterval: 30000, // Auto-refresh every 30 seconds
+    });
+
+    // Live shift status calculation
+    const calculateShiftStatus = (shift: any) => {
+      const staffRatio = shift.assignedStaff / shift.requiredStaff;
+      if (staffRatio === 0) return 'vacant';
+      if (staffRatio < 0.7) return 'understaffed';
+      if (staffRatio >= 0.7 && staffRatio < 1) return 'partial';
+      if (staffRatio === 1) return 'fully_staffed';
+      return 'overstaffed';
+    };
+
+    const getCoverageStatusColor = (status: string) => {
+      switch (status) {
+        case 'vacant': return 'bg-red-100 text-red-800 border-red-200';
+        case 'understaffed': return 'bg-orange-100 text-orange-800 border-orange-200';
+        case 'partial': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        case 'fully_staffed': return 'bg-green-100 text-green-800 border-green-200';
+        case 'overstaffed': return 'bg-blue-100 text-blue-800 border-blue-200';
+        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      }
+    };
+
+    const getCoverageStatusLabel = (status: string) => {
+      switch (status) {
+        case 'vacant': return 'Vacante';
+        case 'understaffed': return 'Sottorganico';
+        case 'partial': return 'Parziale';
+        case 'fully_staffed': return 'Completo';
+        case 'overstaffed': return 'Sovraorganico';
+        default: return 'Sconosciuto';
+      }
+    };
+
+    // Coverage statistics
+    const coverageStats = useMemo(() => {
+      const total = shiftCoverage.length;
+      const vacant = shiftCoverage.filter(s => calculateShiftStatus(s) === 'vacant').length;
+      const understaffed = shiftCoverage.filter(s => calculateShiftStatus(s) === 'understaffed').length;
+      const fullyStaffed = shiftCoverage.filter(s => calculateShiftStatus(s) === 'fully_staffed').length;
+      const overstaffed = shiftCoverage.filter(s => calculateShiftStatus(s) === 'overstaffed').length;
+      
+      return { total, vacant, understaffed, fullyStaffed, overstaffed };
+    }, [shiftCoverage]);
+
+    return (
+      <div className="space-y-6">
+        {/* Real-Time Header */}
+        <div className="backdrop-blur-md bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+                Real-Time Monitoring
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400">
+                Copertura turni live con aggiornamento automatico
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-green-600 font-medium">Live</span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.reload()}
+                className="backdrop-blur-sm bg-white/10 border-white/30 hover:bg-white/20"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Aggiorna
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Turni Totali</p>
+                  <p className="text-2xl font-bold text-slate-700" data-testid="stat-total-shifts">
+                    {coverageStats.total}
+                  </p>
+                </div>
+                <Calendar className="w-6 h-6 text-slate-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Vacanti</p>
+                  <p className="text-2xl font-bold text-red-600" data-testid="stat-vacant">
+                    {coverageStats.vacant}
+                  </p>
+                </div>
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Sottorganico</p>
+                  <p className="text-2xl font-bold text-orange-600" data-testid="stat-understaffed">
+                    {coverageStats.understaffed}
+                  </p>
+                </div>
+                <Users className="w-6 h-6 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Completi</p>
+                  <p className="text-2xl font-bold text-green-600" data-testid="stat-fully-staffed">
+                    {coverageStats.fullyStaffed}
+                  </p>
+                </div>
+                <CheckCircle className="w-6 h-6 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Sovraorganico</p>
+                  <p className="text-2xl font-bold text-blue-600" data-testid="stat-overstaffed">
+                    {coverageStats.overstaffed}
+                  </p>
+                </div>
+                <Zap className="w-6 h-6 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Advanced Filters */}
+        <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Filter className="w-5 h-5 mr-2" />
+              Filtri Avanzati Real-Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="store-filter">Punto Vendita</Label>
+                <Select 
+                  value={monitoringFilters.storeId} 
+                  onValueChange={(value) => setMonitoringFilters(prev => ({ ...prev, storeId: value }))}
+                >
+                  <SelectTrigger data-testid="select-store-filter">
+                    <SelectValue placeholder="Seleziona store" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i Store</SelectItem>
+                    {stores?.map((store: any) => (
+                      <SelectItem key={store.id} value={store.id}>
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="date-filter">Periodo</Label>
+                <Select 
+                  value={monitoringFilters.dateRange} 
+                  onValueChange={(value) => setMonitoringFilters(prev => ({ ...prev, dateRange: value }))}
+                >
+                  <SelectTrigger data-testid="select-date-filter">
+                    <SelectValue placeholder="Seleziona periodo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Oggi</SelectItem>
+                    <SelectItem value="tomorrow">Domani</SelectItem>
+                    <SelectItem value="week">Questa Settimana</SelectItem>
+                    <SelectItem value="month">Questo Mese</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="employee-filter">Dipendente</Label>
+                <Select 
+                  value={monitoringFilters.employeeId} 
+                  onValueChange={(value) => setMonitoringFilters(prev => ({ ...prev, employeeId: value }))}
+                >
+                  <SelectTrigger data-testid="select-employee-filter">
+                    <SelectValue placeholder="Seleziona dipendente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti i Dipendenti</SelectItem>
+                    {employees?.map((emp: any) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="status-filter">Stato Copertura</Label>
+                <Select 
+                  value={monitoringFilters.shiftStatus} 
+                  onValueChange={(value) => setMonitoringFilters(prev => ({ ...prev, shiftStatus: value }))}
+                >
+                  <SelectTrigger data-testid="select-status-filter">
+                    <SelectValue placeholder="Seleziona stato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tutti gli Stati</SelectItem>
+                    <SelectItem value="vacant">Vacanti</SelectItem>
+                    <SelectItem value="understaffed">Sottorganico</SelectItem>
+                    <SelectItem value="fully_staffed">Completi</SelectItem>
+                    <SelectItem value="overstaffed">Sovraorganico</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Live Shift Coverage Table */}
+        <Card className="backdrop-blur-md bg-white/10 border-white/20 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Activity className="w-5 h-5 mr-2" />
+                Copertura Turni Live
+              </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                Aggiornato ogni 30s
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingCoverage ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+                <span>Caricamento monitoring real-time...</span>
+              </div>
+            ) : (
+              <ScrollArea className="h-96">
+                <div className="space-y-2">
+                  {shiftCoverage.map((shift: any) => {
+                    const status = calculateShiftStatus(shift);
+                    return (
+                      <div 
+                        key={shift.id} 
+                        className="flex items-center justify-between p-4 rounded-lg bg-white/50 hover:bg-white/70 transition-all"
+                        data-testid={`shift-coverage-${shift.id}`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <p className="font-medium">{shift.title}</p>
+                            <p className="text-sm text-slate-600">
+                              {format(new Date(shift.date), 'EEE d MMM', { locale: it })} • {shift.startTime} - {shift.endTime}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {shift.assignedStaff}/{shift.requiredStaff} staff
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {shift.storeName || 'Store sconosciuto'}
+                            </p>
+                          </div>
+                          
+                          <Badge 
+                            className={cn(
+                              "px-3 py-1 text-xs font-medium border rounded-full",
+                              getCoverageStatusColor(status)
+                            )}
+                            data-testid={`status-badge-${shift.id}`}
+                          >
+                            {getCoverageStatusLabel(status)}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {shiftCoverage.length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                      <p>Nessun turno trovato per i filtri selezionati</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   // ==================== MAIN RENDER ====================
 
   // HR Tabs Configuration
@@ -1733,6 +2064,7 @@ const HRManagementPage: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'requests', label: 'Richieste', icon: FileText },
     { id: 'shifts', label: 'Turni', icon: Calendar },
+    { id: 'monitoring', label: 'Monitoring', icon: Activity },
     { id: 'documents', label: 'Documenti', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: Brain },
     { id: 'employees', label: 'Dipendenti', icon: Users }
@@ -1746,6 +2078,8 @@ const HRManagementPage: React.FC = () => {
         return <RequestsSection />;
       case 'shifts':
         return <ShiftsSection />;
+      case 'monitoring':
+        return <MonitoringSection />;
       case 'documents':
         return <DocumentsSection />;
       case 'analytics':
