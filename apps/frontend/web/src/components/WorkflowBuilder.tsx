@@ -461,10 +461,11 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               </div>
             </div>
             
-            {/* Node List - Scrollable Area */}
-            <ScrollArea className="flex-1 h-full">
-              <div className="p-4 pb-8">
-                <div className="space-y-6">
+            {/* Node List - Scrollable Area with Fixed Height */}
+            <div className="flex-1 max-h-[calc(100vh-400px)] overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="p-4 pb-8">
+                  <div className="space-y-6">
                 {/* Action Nodes */}
                 {(selectedCategory === 'all' || selectedCategory === 'action') && (
                 <div>
@@ -609,6 +610,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
                 </div>
               </div>
             </ScrollArea>
+            </div>
           </div>
         )}
       </div>
