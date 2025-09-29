@@ -249,7 +249,7 @@ Come posso aiutarti oggi?`,
         </button>
         
         {/* CSS for pulse animation */}
-        <style jsx>{`
+        <style jsx="true">{`
           @keyframes pulse {
             0% {
               box-shadow: 0 8px 25px rgba(255, 105, 0, 0.3);

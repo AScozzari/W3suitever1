@@ -1,0 +1,47 @@
+[APP-ROUTER] 🎯 Routing to tenant: "staging"
+App.tsx:79 [APP-ROUTER] 📍 Route matched with params: {0: 'staging', 1: 'workflow-management', tenant: 'staging', *: 'workflow-management'}
+App.tsx:88 [APP-ROUTER] ✅ Valid tenant slug: "staging"
+App.tsx:89 [APP-ROUTER] 🎯 Routing to tenant: "staging"
+hook.js:608 Warning: Received `true` for a non-boolean attribute `jsx`.
+
+If you want to write it to the DOM, pass a string instead: jsx="true" or jsx={value.toString()}. Error Component Stack
+    at style (<anonymous>)
+    at div (<anonymous>)
+    at ChatWidget (ChatWidget.tsx:83:38)
+    at div (<anonymous>)
+    at Layout (Layout.tsx:68:34)
+    at WorkflowManagementPage (WorkflowManagementPage.tsx:114:50)
+    at AuthenticatedRoute (TenantShell.tsx:338:72)
+    at Route (wouter.js?v=ae4c037d:206:16)
+    at Switch (wouter.js?v=ae4c037d:262:17)
+    at TenantRoutes (TenantShell.tsx:184:59)
+    at TenantProvider (TenantContext.tsx:53:65)
+    at TenantShell (TenantShell.tsx:39:59)
+    at Route (wouter.js?v=ae4c037d:206:16)
+    at Switch (wouter.js?v=ae4c037d:262:17)
+    at Router (<anonymous>)
+    at ThemeProvider (ThemeContext.tsx:13:33)
+    at QueryClientProvider (@tanstack_react-query.js?v=ae4c037d:3081:3)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+printWarning @ chunk-ZHRYBLGQ.js?v=ae4c037d:521
+error @ chunk-ZHRYBLGQ.js?v=ae4c037d:505
+validateProperty$1 @ chunk-ZHRYBLGQ.js?v=ae4c037d:3433
+warnUnknownProperties @ chunk-ZHRYBLGQ.js?v=ae4c037d:3459
+validateProperties$2 @ chunk-ZHRYBLGQ.js?v=ae4c037d:3478
+validatePropertiesInDevelopment @ chunk-ZHRYBLGQ.js?v=ae4c037d:7346
+setInitialProperties @ chunk-ZHRYBLGQ.js?v=ae4c037d:7535
+finalizeInitialChildren @ chunk-ZHRYBLGQ.js?v=ae4c037d:8345
+completeWork @ chunk-ZHRYBLGQ.js?v=ae4c037d:16293
+completeUnitOfWork @ chunk-ZHRYBLGQ.js?v=ae4c037d:19224
+performUnitOfWork @ chunk-ZHRYBLGQ.js?v=ae4c037d:19206
+workLoopSync @ chunk-ZHRYBLGQ.js?v=ae4c037d:19137
+renderRootSync @ chunk-ZHRYBLGQ.js?v=ae4c037d:19116
+performConcurrentWorkOnRoot @ chunk-ZHRYBLGQ.js?v=ae4c037d:18678
+workLoop @ chunk-ZHRYBLGQ.js?v=ae4c037d:197
+flushWork @ chunk-ZHRYBLGQ.js?v=ae4c037d:176
+performWorkUntilDeadline @ chunk-ZHRYBLGQ.js?v=ae4c037d:384Understand this error
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:89 [TENANT-PROVIDER] 📋 Tenant set from storage: {id: '00000000-0000-0000-0000-000000000001', name: 'Staging', code: 'staging', plan: 'enterprise', isActive: true}
+TenantContext.tsx:95 [TENANT-PROVIDER] 👤 User session loaded: admin@w3suite.com
