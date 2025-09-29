@@ -618,6 +618,61 @@ export class HRStorage implements IHRStorage {
       .where(and(...conditions))
       .orderBy(shifts.date, shifts.startTime);
   }
+
+  // ==================== EMPLOYEE SHIFT QUERIES ====================
+  
+  /**
+   * Get shifts assigned to a specific employee
+   * @param tenantId - Tenant identifier
+   * @param userId - Employee user ID
+   * @param dateRange - Optional date range filter (defaults to next 30 days)
+   * @returns Array of shifts assigned to the employee
+   */
+  async getEmployeeShifts(tenantId: string, userId: string, dateRange?: DateRange): Promise<any[]> {
+    console.log('[HR-STORAGE] 🎯 getEmployeeShifts called for user:', userId);
+    
+    // Default date range: today to +30 days
+    const startDate = dateRange?.start || new Date();
+    const endDate = dateRange?.end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    
+    // Query shifts where user is in assignedUsers array
+    const results = await db.select({
+      id: shifts.id,
+      name: shifts.name,
+      date: shifts.date,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      status: shifts.status,
+      shiftType: shifts.shiftType,
+      storeId: shifts.storeId,
+      notes: shifts.notes,
+      color: shifts.color
+    })
+      .from(shifts)
+      .where(and(
+        eq(shifts.tenantId, tenantId),
+        sql`${shifts.assignedUsers} @> ${JSON.stringify([userId])}`, // PostgreSQL JSONB contains operator
+        between(shifts.date, 
+          startDate.toISOString().split('T')[0], 
+          endDate.toISOString().split('T')[0]
+        )
+      ))
+      .orderBy(shifts.date, shifts.startTime);
+    
+    // Transform to frontend format
+    return results.map(shift => ({
+      id: shift.id,
+      title: shift.name,
+      date: new Date(shift.date),
+      startTime: shift.startTime.toISOString().slice(11, 16), // HH:MM format
+      endTime: shift.endTime.toISOString().slice(11, 16),
+      status: shift.status,
+      type: shift.shiftType,
+      storeId: shift.storeId,
+      notes: shift.notes,
+      color: shift.color
+    }));
+  }
   
   async createShift(data: InsertShift): Promise<Shift> {
     const result = await db.insert(shifts)
