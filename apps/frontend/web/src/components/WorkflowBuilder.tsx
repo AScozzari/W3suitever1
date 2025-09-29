@@ -666,7 +666,8 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             width: '800px',
             height: '600px',
             border: '2px solid #E5E7EB',
-            backgroundColor: '#F9FAFB'
+            backgroundColor: '#F9FAFB',
+            margin: '0 auto'
           }}
         >
           <ReactFlow
