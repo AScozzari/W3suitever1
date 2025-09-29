@@ -508,14 +508,24 @@ export class HRStorage implements IHRStorage {
   
   // Shifts
   async getShifts(tenantId: string, storeId: string, dateRange: DateRange): Promise<Shift[]> {
+    console.log('[HR-STORAGE-DEBUG] getShifts called with:', {
+      tenantId,
+      storeId,
+      dateRange
+    });
+    
     // Fix: Handle undefined dateRange values with sensible defaults
     const startDate = dateRange?.start || new Date();
     const endDate = dateRange?.end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 days
     
     const conditions = [
-      eq(shifts.tenantId, tenantId),
-      eq(shifts.storeId, storeId)
+      eq(shifts.tenantId, tenantId)
     ];
+    
+    // Only filter by storeId if provided and not empty
+    if (storeId && storeId.trim() !== '') {
+      conditions.push(eq(shifts.storeId, storeId));
+    }
     
     // Only add date filtering if we have valid dates
     if (startDate || endDate) {

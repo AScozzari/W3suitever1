@@ -265,11 +265,17 @@ router.get('/shifts', requirePermission('hr.shifts.read'), async (req: Request, 
     }
 
     // Get shifts using existing storage function
-    const shifts = await hrStorage.getShifts(tenantId, {
-      storeId: storeId as string,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined
-    });
+    const dateRange = {
+      start: startDate ? new Date(startDate as string) : undefined,
+      end: endDate ? new Date(endDate as string) : undefined
+    };
+    
+    // Call getShifts with correct parameters: tenantId, storeId, dateRange
+    const shifts = await hrStorage.getShifts(
+      tenantId, 
+      storeId as string, // Pass undefined if not provided
+      dateRange
+    );
 
     res.json(shifts);
   } catch (error) {
