@@ -1,4 +1,4 @@
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import { db } from '../core/db.js';
 import { 
   universalRequests, 
@@ -40,11 +40,11 @@ export class RequestTriggerService {
         tenantId
       });
 
-      // STEP 1: Find active team for this department
-      const eligibleTeam = await this.findTeamForDepartment(request.department, tenantId);
+      // STEP 1: Find active team for this department (with fallback logic)
+      const eligibleTeam = await this.findTeamForDepartmentWithFallback(request.department, tenantId);
       
       if (!eligibleTeam) {
-        logger.warn('⚠️ No active team found for department', {
+        logger.warn('⚠️ No active team found even after fallback attempts', {
           department: request.department,
           tenantId,
           requestId: request.id
@@ -52,7 +52,7 @@ export class RequestTriggerService {
         
         return {
           success: false,
-          message: `No active team configured for department: ${request.department}`
+          message: `No active team configured for department "${request.department}" and no fallback teams available`
         };
       }
 
@@ -123,42 +123,241 @@ export class RequestTriggerService {
   }
 
   /**
-   * 🔍 STEP 1: Find active team for department
-   * Looks for teams that can handle requests for this department
+   * 🔄 STEP 1A: Find Team with Fallback Logic
+   * Tries original department first, then fallback departments if no team found
+   */
+  private static async findTeamForDepartmentWithFallback(
+    department: string, 
+    tenantId: string
+  ) {
+    // 🎯 PRIMARY ATTEMPT: Try to find team for original department
+    let eligibleTeam = await this.findTeamForDepartment(department, tenantId);
+    
+    if (eligibleTeam) {
+      return eligibleTeam;
+    }
+
+    // 🔄 FALLBACK LOGIC: Define department fallback hierarchy
+    const departmentFallbacks: Record<string, string[]> = {
+      'hr': ['operations', 'support'],           // HR → Operations → Support
+      'finance': ['hr', 'operations'],           // Finance → HR → Operations  
+      'sales': ['support', 'operations'],        // Sales → Support → Operations
+      'crm': ['sales', 'support'],              // CRM → Sales → Support
+      'support': ['operations', 'hr'],          // Support → Operations → HR
+      'operations': ['hr', 'support']           // Operations → HR → Support
+    };
+
+    const fallbackDepartments = departmentFallbacks[department] || [];
+
+    // 🔍 TRY FALLBACK DEPARTMENTS in order
+    for (const fallbackDept of fallbackDepartments) {
+      logger.info('🔄 Trying fallback department', {
+        originalDepartment: department,
+        fallbackDepartment: fallbackDept,
+        tenantId
+      });
+
+      eligibleTeam = await this.findTeamForDepartment(fallbackDept, tenantId);
+      
+      if (eligibleTeam) {
+        logger.info('✅ Found team via fallback department', {
+          originalDepartment: department,
+          fallbackDepartment: fallbackDept,
+          teamId: eligibleTeam.id,
+          teamName: eligibleTeam.name
+        });
+        return eligibleTeam;
+      }
+    }
+
+    // 🆘 LAST RESORT: Try to find any active team with auto-assign enabled
+    const anyEligibleTeam = await this.findAnyAvailableTeam(tenantId);
+    
+    if (anyEligibleTeam) {
+      logger.warn('⚠️ Using last resort team assignment', {
+        originalDepartment: department,
+        assignedTeamId: anyEligibleTeam.id,
+        assignedTeamName: anyEligibleTeam.name,
+        reason: 'No teams found for department or fallbacks'
+      });
+      return anyEligibleTeam;
+    }
+
+    // 🚫 NO TEAMS AVAILABLE
+    logger.error('❌ No teams available for department or any fallbacks', {
+      department,
+      triedFallbacks: fallbackDepartments,
+      tenantId
+    });
+
+    return null;
+  }
+
+  /**
+   * 🆘 LAST RESORT: Find any available team when no department-specific teams exist
+   */
+  private static async findAnyAvailableTeam(tenantId: string) {
+    const availableTeams = await db
+      .select({
+        teamId: teams.id,
+        teamName: teams.name,
+        teamType: teams.teamType,
+        assignedDepartments: teams.assignedDepartments,
+        workflowPriority: teamWorkflowAssignments.priority,
+        templateId: teamWorkflowAssignments.templateId
+      })
+      .from(teams)
+      .innerJoin(teamWorkflowAssignments, eq(teams.id, teamWorkflowAssignments.teamId))
+      .where(and(
+        eq(teams.tenantId, tenantId),
+        eq(teams.isActive, true),
+        eq(teamWorkflowAssignments.tenantId, tenantId),
+        eq(teamWorkflowAssignments.autoAssign, true),
+        eq(teamWorkflowAssignments.isActive, true)
+      ))
+      .orderBy(desc(teamWorkflowAssignments.priority))
+      .limit(1);
+
+    if (availableTeams.length > 0) {
+      const team = availableTeams[0];
+      return {
+        id: team.teamId,
+        name: team.teamName,
+        teamType: team.teamType,
+        assignedDepartments: team.assignedDepartments
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 🔍 STEP 1B: Smart Team Selection with Priority Logic
+   * Finds the BEST team for department using workflow assignment priorities
    */
   private static async findTeamForDepartment(
     department: string, 
     tenantId: string
   ) {
-    const eligibleTeams = await db
+    // 🎯 ENHANCED QUERY: Join teams with their workflow assignments to get priority info
+    const teamsWithWorkflowPriority = await db
       .select({
-        id: teams.id,
-        name: teams.name,
+        teamId: teams.id,
+        teamName: teams.name,
         teamType: teams.teamType,
-        assignedDepartments: teams.assignedDepartments
+        assignedDepartments: teams.assignedDepartments,
+        workflowPriority: teamWorkflowAssignments.priority,
+        templateId: teamWorkflowAssignments.templateId,
+        autoAssign: teamWorkflowAssignments.autoAssign
       })
       .from(teams)
+      .innerJoin(teamWorkflowAssignments, eq(teams.id, teamWorkflowAssignments.teamId))
       .where(and(
         eq(teams.tenantId, tenantId),
-        eq(teams.isActive, true)
+        eq(teams.isActive, true),
+        eq(teamWorkflowAssignments.tenantId, tenantId),
+        eq(teamWorkflowAssignments.forDepartment, department as any),
+        eq(teamWorkflowAssignments.autoAssign, true),
+        eq(teamWorkflowAssignments.isActive, true)
       ))
-      .orderBy(desc(teams.createdAt));
+      .orderBy(
+        desc(teamWorkflowAssignments.priority), // Highest priority first
+        desc(teams.createdAt) // Newest team as tiebreaker
+      );
 
-    // Find team that handles this department
-    for (const team of eligibleTeams) {
-      const departments = team.assignedDepartments || [];
-      if (departments.includes(department)) {
-        logger.info('📋 Found eligible team for department', {
-          teamId: team.id,
-          teamName: team.name,
-          department,
-          assignedDepartments: departments
-        });
-        return team;
-      }
+    if (teamsWithWorkflowPriority.length === 0) {
+      logger.warn('⚠️ No teams with workflow assignments found for department', {
+        department,
+        tenantId
+      });
+      return null;
     }
 
-    return null;
+    // 🎯 PRIORITY LOGIC: Group teams by priority and apply load balancing within same priority
+    const teamsByPriority = teamsWithWorkflowPriority.reduce((acc, team) => {
+      const priority = team.workflowPriority || 100;
+      if (!acc[priority]) acc[priority] = [];
+      acc[priority].push(team);
+      return acc;
+    }, {} as Record<number, typeof teamsWithWorkflowPriority>);
+
+    // Get highest priority teams
+    const priorities = Object.keys(teamsByPriority).map(Number).sort((a, b) => b - a);
+    const highestPriority = priorities[0];
+    const highestPriorityTeams = teamsByPriority[highestPriority];
+
+    // 🔄 LOAD BALANCING: If multiple teams have same priority, use round-robin selection
+    const selectedTeam = await this.selectTeamWithLoadBalancing(highestPriorityTeams, department, tenantId);
+
+    logger.info('🎯 Smart team selection completed', {
+      selectedTeamId: selectedTeam.teamId,
+      selectedTeamName: selectedTeam.teamName,
+      priority: selectedTeam.workflowPriority,
+      department,
+      totalEligibleTeams: teamsWithWorkflowPriority.length,
+      priorityGroups: Object.keys(teamsByPriority).length
+    });
+
+    return {
+      id: selectedTeam.teamId,
+      name: selectedTeam.teamName,
+      teamType: selectedTeam.teamType,
+      assignedDepartments: selectedTeam.assignedDepartments
+    };
+  }
+
+  /**
+   * 🔄 LOAD BALANCING: Round-robin selection among teams with same priority
+   */
+  private static async selectTeamWithLoadBalancing(
+    teams: any[],
+    department: string,
+    tenantId: string
+  ) {
+    if (teams.length === 1) {
+      return teams[0];
+    }
+
+    // 📊 Get request counts for each team in the last 24 hours to balance load
+    const teamRequestCounts = await db
+      .select({
+        teamId: teamWorkflowAssignments.teamId,
+        requestCount: count(universalRequests.id)
+      })
+      .from(teamWorkflowAssignments)
+      .leftJoin(workflowInstances, eq(teamWorkflowAssignments.templateId, workflowInstances.templateId))
+      .leftJoin(universalRequests, eq(workflowInstances.referenceId, universalRequests.id))
+      .where(and(
+        eq(teamWorkflowAssignments.tenantId, tenantId),
+        eq(teamWorkflowAssignments.forDepartment, department as any),
+        inArray(teamWorkflowAssignments.teamId, teams.map(t => t.teamId))
+      ))
+      .groupBy(teamWorkflowAssignments.teamId);
+
+    // Create map for quick lookup
+    const requestCountMap = teamRequestCounts.reduce((acc, item) => {
+      acc[item.teamId] = item.requestCount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // 🎯 SELECT TEAM: Choose team with lowest request count (load balancing)
+    const teamWithLowestLoad = teams.reduce((bestTeam, currentTeam) => {
+      const currentLoad = requestCountMap[currentTeam.teamId] || 0;
+      const bestLoad = requestCountMap[bestTeam.teamId] || 0;
+      
+      return currentLoad < bestLoad ? currentTeam : bestTeam;
+    });
+
+    logger.info('⚖️ Load balancing applied', {
+      selectedTeam: teamWithLowestLoad.teamName,
+      teamLoads: teams.map(t => ({
+        team: t.teamName,
+        load: requestCountMap[t.teamId] || 0
+      })),
+      department
+    });
+
+    return teamWithLowestLoad;
   }
 
   /**
@@ -220,7 +419,6 @@ export class RequestTriggerService {
       instanceName: `Auto-generated for request ${referenceId}`,
       category: 'request',
       currentStepId: '0',
-      stepHistory: [],
       variables: {},
       metadata: {
         triggeredBy: 'request-trigger-service',
