@@ -20,7 +20,7 @@ interface AiNodeData {
   onConfigClick?: (nodeId: string) => void;
 }
 
-export function WorkflowAiNode({ data, selected }: NodeProps<AiNodeData>) {
+export function WorkflowAiNode({ data, selected, id }: NodeProps<AiNodeData>) {
   return (
     <div className={`workflow-node ${selected ? 'selected' : ''}`}>
       <Handle 
@@ -53,7 +53,7 @@ export function WorkflowAiNode({ data, selected }: NodeProps<AiNodeData>) {
                 variant="ghost" 
                 size="sm" 
                 className="h-6 w-6 p-0" 
-                onClick={() => data.onConfigClick?.(data.id)}
+                onClick={() => data.onConfigClick?.(id)}
                 data-testid="button-settings-ai"
               >
                 <Settings className="h-3 w-3" />

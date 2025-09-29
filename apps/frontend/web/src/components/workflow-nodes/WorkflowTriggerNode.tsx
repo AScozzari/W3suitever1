@@ -20,7 +20,7 @@ interface TriggerNodeData {
   onConfigClick?: (nodeId: string) => void;
 }
 
-export function WorkflowTriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
+export function WorkflowTriggerNode({ data, selected, id }: NodeProps<TriggerNodeData>) {
   return (
     <div className={`workflow-node ${selected ? 'selected' : ''}`}>
       <Handle 
@@ -53,7 +53,7 @@ export function WorkflowTriggerNode({ data, selected }: NodeProps<TriggerNodeDat
                 variant="ghost" 
                 size="sm" 
                 className="h-6 w-6 p-0" 
-                onClick={() => data.onConfigClick?.(data.id)}
+                onClick={() => data.onConfigClick?.(id)}
                 data-testid="button-settings-trigger"
               >
                 <Settings className="h-3 w-3" />

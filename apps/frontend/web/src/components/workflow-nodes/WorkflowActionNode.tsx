@@ -20,7 +20,7 @@ interface ActionNodeData {
   onConfigClick?: (nodeId: string) => void;
 }
 
-export function WorkflowActionNode({ data, selected }: NodeProps<ActionNodeData>) {
+export function WorkflowActionNode({ data, selected, id }: NodeProps<ActionNodeData>) {
   return (
     <div className={`workflow-node ${selected ? 'selected' : ''}`}>
       <Handle 
@@ -53,7 +53,7 @@ export function WorkflowActionNode({ data, selected }: NodeProps<ActionNodeData>
                 variant="ghost" 
                 size="sm" 
                 className="h-6 w-6 p-0" 
-                onClick={() => data.onConfigClick?.(data.id)}
+                onClick={() => data.onConfigClick?.(id)}
                 data-testid="button-settings-action"
               >
                 <Settings className="h-3 w-3" />
