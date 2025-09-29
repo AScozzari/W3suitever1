@@ -64,8 +64,13 @@ const createTeamSchema = z.object({
   assignedDepartments: z.array(z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm'])).min(1, 'At least one department is required'),
   userMembers: z.array(z.string()).default([]),
   roleMembers: z.array(z.string()).default([]),
-  primarySupervisor: z.string().optional(),
+  primarySupervisor: z.string().nullable().optional(),
   secondarySupervisors: z.array(z.string()).default([]),
+  workflowAssignments: z.array(z.object({
+    department: z.enum(['hr', 'finance', 'sales', 'operations', 'support', 'crm']),
+    templateId: z.string(),
+    autoAssign: z.boolean().default(true)
+  })).default([]),
   isActive: z.boolean().default(true)
 });
 
@@ -92,8 +97,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     assignedDepartments: [],
     userMembers: [],
     roleMembers: [],
-    primarySupervisor: 'none',
+    primarySupervisor: null,
     secondarySupervisors: [],
+    workflowAssignments: [],
     isActive: true
   };
 
@@ -114,8 +120,9 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
           assignedDepartments: editTeam.assignedDepartments || [],
           userMembers: editTeam.userMembers || [],
           roleMembers: editTeam.roleMembers || [],
-          primarySupervisor: editTeam.primarySupervisor || 'none',
+          primarySupervisor: editTeam.primarySupervisor || null,
           secondarySupervisors: editTeam.secondarySupervisors || [],
+          workflowAssignments: editTeam.workflowAssignments || [],
           isActive: editTeam.isActive !== undefined ? editTeam.isActive : true
         };
         form.reset(formData);
@@ -134,6 +141,12 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
   
   const { data: roles = [], isLoading: rolesLoading } = useQuery<any[]>({ 
     queryKey: ['/api/roles'],
+    staleTime: 5 * 60 * 1000 // Cache for 5 minutes
+  });
+
+  // 🎯 Load workflow templates for department assignment
+  const { data: workflowTemplates = [], isLoading: templatesLoading } = useQuery<any[]>({ 
+    queryKey: ['/api/workflow-templates'],
     staleTime: 5 * 60 * 1000 // Cache for 5 minutes
   });
 
@@ -193,10 +206,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
   // 🎯 Handle form submission
   const onSubmit = (data: CreateTeamData) => {
-    // Handle "none" supervisor value
+    // Clean data for backend - convert null to undefined for optional fields
     const processedData = {
       ...data,
-      primarySupervisor: data.primarySupervisor === 'none' ? undefined : data.primarySupervisor
+      primarySupervisor: data.primarySupervisor || undefined
     };
     
     if (editTeam) {
@@ -245,9 +258,37 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
     form.setValue('roleMembers', updated);
   };
 
+  // 🎯 Workflow assignment helpers
+  const selectedAssignments = form.watch('workflowAssignments');
+  
+  const addWorkflowAssignment = (department: string, templateId: string) => {
+    const current = selectedAssignments;
+    const exists = current.find(a => a.department === department && a.templateId === templateId);
+    if (!exists) {
+      const updated = [...current, { department, templateId, autoAssign: true }];
+      form.setValue('workflowAssignments', updated);
+    }
+  };
+
+  const removeWorkflowAssignment = (department: string, templateId: string) => {
+    const current = selectedAssignments;
+    const updated = current.filter(a => !(a.department === department && a.templateId === templateId));
+    form.setValue('workflowAssignments', updated);
+  };
+
+  const toggleAutoAssign = (department: string, templateId: string) => {
+    const current = selectedAssignments;
+    const updated = current.map(a => 
+      a.department === department && a.templateId === templateId
+        ? { ...a, autoAssign: !a.autoAssign }
+        : a
+    );
+    form.setValue('workflowAssignments', updated);
+  };
+
   // 🎯 Step navigation
   const nextStep = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -264,6 +305,8 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
       case 3:
         return true; // Optional step
       case 4:
+        return true; // Optional step
+      case 5:
         return true; // Final step
       default:
         return false;
@@ -286,7 +329,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
         {/* 🎯 Step Indicator */}
         <div className="flex items-center justify-center mb-6">
           <div className="flex items-center space-x-4">
-            {[1, 2, 3, 4].map((step) => (
+            {[1, 2, 3, 4, 5].map((step) => (
               <div key={step} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   step === currentStep 
@@ -297,7 +340,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 }`}>
                   {step < currentStep ? '✓' : step}
                 </div>
-                {step < 4 && (
+                {step < 5 && (
                   <div className={`w-12 h-0.5 mx-2 ${
                     step < currentStep ? 'bg-green-500' : 'bg-gray-200'
                   }`} />
@@ -476,9 +519,46 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                     <h3 className="text-lg font-semibold">Team Members</h3>
                   </div>
 
+                  {/* 🎯 Effective Members Preview */}
+                  {(selectedUserMembers.length > 0 || selectedRoleMembers.length > 0) && (
+                    <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                      <h4 className="text-sm font-medium text-windtre-purple mb-2">👥 Effective Team Members</h4>
+                      <p className="text-xs text-gray-600 mb-3">
+                        This team includes <strong>{selectedUserMembers.length} direct users</strong> + all users with <strong>{selectedRoleMembers.length} selected roles</strong>
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedUserMembers.slice(0, 3).map(userId => {
+                          const user = users.find(u => u.id === userId);
+                          return user ? (
+                            <Badge key={userId} variant="outline" className="text-xs bg-windtre-purple/10">
+                              👤 {user.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                        {selectedUserMembers.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{selectedUserMembers.length - 3} more users</Badge>
+                        )}
+                        {selectedRoleMembers.slice(0, 2).map(roleId => {
+                          const role = roles.find(r => r.id === roleId);
+                          return role ? (
+                            <Badge key={roleId} variant="outline" className="text-xs bg-windtre-orange/10">
+                              🛡️ All {role.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                        {selectedRoleMembers.length > 2 && (
+                          <Badge variant="outline" className="text-xs">+{selectedRoleMembers.length - 2} more roles</Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* User Members */}
                   <div>
-                    <h4 className="text-md font-medium mb-3">Individual Users</h4>
+                    <h4 className="text-md font-medium mb-1">Individual Users</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Add specific users to the team. These users will always be team members regardless of role changes.
+                    </p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {users.map((user: any) => {
                         const isSelected = selectedUserMembers.includes(user.id);
@@ -513,7 +593,10 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
 
                   {/* Role Members */}
                   <div>
-                    <h4 className="text-md font-medium mb-3">Role-Based Members</h4>
+                    <h4 className="text-md font-medium mb-1">Role-Based Members</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Add users by role. All current and future users with these roles will automatically be team members.
+                    </p>
                     <div className="space-y-2">
                       {roles.map((role: any) => {
                         const isSelected = selectedRoleMembers.includes(role.id);
@@ -558,12 +641,12 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                       <FormItem>
                         <FormLabel>Primary Supervisor</FormLabel>
                         <FormControl>
-                          <Select value={field.value} onValueChange={field.onChange}>
+                          <Select value={field.value || ""} onValueChange={(value) => field.onChange(value === "" ? null : value)}>
                             <SelectTrigger data-testid="select-primary-supervisor">
                               <SelectValue placeholder="Select primary supervisor" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">No supervisor</SelectItem>
+                              <SelectItem value="">No supervisor</SelectItem>
                               {users.map((user: any) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   <div className="flex items-center justify-between w-full">
@@ -636,6 +719,143 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
                 </div>
               )}
 
+              {/* 🎯 STEP 5: Workflow Template Assignment */}
+              {currentStep === 5 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Settings className="w-5 h-5 text-windtre-orange" />
+                    <h3 className="text-lg font-semibold">Workflow Template Assignment</h3>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                    <h4 className="text-sm font-medium text-windtre-purple mb-2">🎯 Department-Specific Workflows</h4>
+                    <p className="text-xs text-gray-600">
+                      Assign workflow templates to each department. When a request comes from these departments, the team will automatically handle it using the assigned templates.
+                    </p>
+                  </div>
+
+                  {selectedDepartments.length === 0 ? (
+                    <div className="text-center p-8 bg-gray-50 rounded-lg">
+                      <Building2 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                      <p className="text-gray-500">Please select departments in Step 2 first</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {selectedDepartments.map((department) => {
+                        const departmentTemplates = workflowTemplates.filter(
+                          (template: any) => template.category === department || !template.category
+                        );
+                        const assignedTemplates = selectedAssignments.filter(a => a.department === department);
+                        
+                        return (
+                          <div key={department} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center gap-3 mb-4">
+                              {React.createElement(DEPARTMENTS[department].icon, { 
+                                className: `w-6 h-6 ${DEPARTMENTS[department].textColor}` 
+                              })}
+                              <h4 className="text-lg font-semibold">{DEPARTMENTS[department].label} Department</h4>
+                              <Badge className={`${DEPARTMENTS[department].color} ${DEPARTMENTS[department].textColor}`}>
+                                {assignedTemplates.length} templates assigned
+                              </Badge>
+                            </div>
+
+                            {/* Template Selection */}
+                            <div className="space-y-3">
+                              <h5 className="text-md font-medium">Available Workflow Templates</h5>
+                              {departmentTemplates.length === 0 ? (
+                                <p className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
+                                  No templates available for {DEPARTMENTS[department].label} department
+                                </p>
+                              ) : (
+                                <div className="grid grid-cols-1 gap-3">
+                                  {departmentTemplates.map((template: any) => {
+                                    const isAssigned = assignedTemplates.some(a => a.templateId === template.id);
+                                    const assignment = assignedTemplates.find(a => a.templateId === template.id);
+                                    
+                                    return (
+                                      <div
+                                        key={template.id}
+                                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                          isAssigned
+                                            ? 'bg-green-50 border-green-200'
+                                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                        }`}
+                                        onClick={() => {
+                                          if (isAssigned) {
+                                            removeWorkflowAssignment(department, template.id);
+                                          } else {
+                                            addWorkflowAssignment(department, template.id);
+                                          }
+                                        }}
+                                        data-testid={`template-${department}-${template.id}`}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex-1">
+                                            <div className="font-medium">{template.name}</div>
+                                            <div className="text-sm text-gray-600">{template.description}</div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Badge variant="outline" className="text-xs">
+                                                {template.templateType || 'workflow'}
+                                              </Badge>
+                                              {template.category && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  {template.category}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            {isAssigned && assignment && (
+                                              <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1">
+                                                  <Checkbox
+                                                    checked={assignment.autoAssign}
+                                                    onCheckedChange={() => toggleAutoAssign(department, template.id)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                  />
+                                                  <span className="text-xs text-gray-600">Auto-assign</span>
+                                                </div>
+                                              </div>
+                                            )}
+                                            <div className={`w-4 h-4 rounded-full ${
+                                              isAssigned ? 'bg-green-500' : 'bg-gray-300'
+                                            }`} />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Assignment Summary */}
+                            {assignedTemplates.length > 0 && (
+                              <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                                <h6 className="text-sm font-medium text-green-800 mb-2">Assigned Templates</h6>
+                                <div className="space-y-1">
+                                  {assignedTemplates.map((assignment) => {
+                                    const template = workflowTemplates.find((t: any) => t.id === assignment.templateId);
+                                    return template ? (
+                                      <div key={assignment.templateId} className="flex items-center justify-between text-sm">
+                                        <span className="text-green-700">✓ {template.name}</span>
+                                        <Badge variant={assignment.autoAssign ? 'default' : 'secondary'} className="text-xs">
+                                          {assignment.autoAssign ? 'Auto-assign' : 'Manual'}
+                                        </Badge>
+                                      </div>
+                                    ) : null;
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
             </ScrollArea>
 
             {/* 🎯 Footer Actions */}
@@ -651,7 +871,7 @@ export default function CreateTeamModal({ open, onOpenChange, editTeam }: Create
               </Button>
 
               <div className="flex items-center gap-2">
-                {currentStep < 4 ? (
+                {currentStep < 5 ? (
                   <Button
                     type="button"
                     onClick={nextStep}
