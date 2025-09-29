@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
 import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
-import AssignmentEngineModal from '@/components/Shifts/AssignmentEngineModal';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -113,7 +112,6 @@ const HRManagementPage: React.FC = () => {
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
   // Removed showShiftModal - ShiftTemplateManager has its own modal
-  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
@@ -1318,12 +1316,12 @@ const HRManagementPage: React.FC = () => {
               <CardDescription>Assegna turni alle risorse con controllo conflitti</CardDescription>
             </div>
             <Button 
-              onClick={() => setShowAssignmentModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white"
-              data-testid="button-assign-shifts"
+              disabled
+              className="bg-gradient-to-r from-slate-400 to-slate-500 text-white cursor-not-allowed"
+              data-testid="button-assign-shifts-deprecated"
             >
               <Users className="w-4 h-4 mr-2" />
-              Assegna Turni
+              Funzionalità in Aggiornamento
             </Button>
           </div>
         </CardHeader>
@@ -1703,10 +1701,6 @@ const HRManagementPage: React.FC = () => {
       {/* Modals */}
       <RequestModal />
       <PushDocumentModal />
-      <AssignmentEngineModal 
-        isOpen={showAssignmentModal}
-        onClose={() => setShowAssignmentModal(false)}
-      />
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header */}

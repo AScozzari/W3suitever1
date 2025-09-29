@@ -391,22 +391,22 @@ export default function ShiftReports({
           <div className="space-y-3">
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm">Mattina</span>
+                <span className="text-sm">Standard Full-Time</span>
                 <span className="text-sm font-medium">
-                  {coverageMetrics.shiftTypeDistribution.morning}
+                  {coverageMetrics.shiftTypeDistribution.morning || 0}
                 </span>
               </div>
               <Progress 
                 value={(coverageMetrics.shiftTypeDistribution.morning / coverageMetrics.totalShifts) * 100} 
-                className="h-2 [&>div]:bg-orange-500"
+                className="h-2 [&>div]:bg-emerald-500"
               />
             </div>
             
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm">Pomeriggio</span>
+                <span className="text-sm">Part-Time</span>
                 <span className="text-sm font-medium">
-                  {coverageMetrics.shiftTypeDistribution.afternoon}
+                  {coverageMetrics.shiftTypeDistribution.afternoon || 0}
                 </span>
               </div>
               <Progress 
@@ -417,9 +417,9 @@ export default function ShiftReports({
             
             <div>
               <div className="flex justify-between mb-1">
-                <span className="text-sm">Notte</span>
+                <span className="text-sm">Flessibile/Straordinario</span>
                 <span className="text-sm font-medium">
-                  {coverageMetrics.shiftTypeDistribution.night}
+                  {coverageMetrics.shiftTypeDistribution.night || 0}
                 </span>
               </div>
               <Progress 

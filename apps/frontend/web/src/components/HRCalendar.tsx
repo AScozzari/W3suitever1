@@ -28,7 +28,7 @@ const shiftEventSchema = z.object({
   start: z.string(),
   end: z.string(),
   employeeId: z.string().min(1, 'Dipendente richiesto'),
-  shiftType: z.enum(['mattina', 'pomeriggio', 'notte', 'spezzato']),
+  shiftType: z.enum(['full_time', 'part_time_4h', 'part_time_6h', 'flexible', 'overtime', 'custom']),
   notes: z.string().optional(),
 });
 
@@ -58,7 +58,7 @@ export default function HRCalendar({ className }: HRCalendarProps) {
       start: '',
       end: '',
       employeeId: '',
-      shiftType: 'mattina',
+      shiftType: 'full_time',
       notes: '',
     },
   });
@@ -213,7 +213,7 @@ export default function HRCalendar({ className }: HRCalendarProps) {
       form.setValue('start', event.start.toISOString().slice(0, 16));
       form.setValue('end', event.end.toISOString().slice(0, 16));
       form.setValue('employeeId', event.extendedProps.metadata?.employeeId || '');
-      form.setValue('shiftType', event.extendedProps.metadata?.shiftType || 'mattina');
+      form.setValue('shiftType', event.extendedProps.metadata?.shiftType || 'full_time');
       form.setValue('notes', event.extendedProps.description || '');
       
       setSelectedEvent(event);
@@ -383,12 +383,12 @@ export default function HRCalendar({ className }: HRCalendarProps) {
               </div>
             </div>
 
-            {/* Legenda */}
+            {/* Professional Shift Legend */}
             <div className="flex items-center space-x-3">
-              <Badge className="bg-green-500 text-white hover:bg-green-600">Mattina</Badge>
-              <Badge className="bg-orange-500 text-white hover:bg-orange-600">Pomeriggio</Badge>
-              <Badge className="bg-blue-500 text-white hover:bg-blue-600">Notte</Badge>
-              <Badge className="bg-red-500 text-white hover:bg-red-600">Spezzato</Badge>
+              <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700">Standard</Badge>
+              <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700">Flessibile</Badge>
+              <Badge className="bg-gradient-to-r from-purple-500 to-violet-600 text-white hover:from-purple-600 hover:to-violet-700">Part-Time</Badge>
+              <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700">Straordinario</Badge>
             </div>
           </div>
 
@@ -566,10 +566,12 @@ export default function HRCalendar({ className }: HRCalendarProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="mattina">Mattina (06:00-14:00)</SelectItem>
-                        <SelectItem value="pomeriggio">Pomeriggio (14:00-22:00)</SelectItem>
-                        <SelectItem value="notte">Notte (22:00-06:00)</SelectItem>
-                        <SelectItem value="spezzato">Spezzato</SelectItem>
+                        <SelectItem value="full_time">Standard Full-Time (8h)</SelectItem>
+                        <SelectItem value="part_time_4h">Part-Time (4h)</SelectItem>
+                        <SelectItem value="part_time_6h">Part-Time (6h)</SelectItem>
+                        <SelectItem value="flexible">Flessibile</SelectItem>
+                        <SelectItem value="overtime">Straordinario</SelectItem>
+                        <SelectItem value="custom">Personalizzato</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

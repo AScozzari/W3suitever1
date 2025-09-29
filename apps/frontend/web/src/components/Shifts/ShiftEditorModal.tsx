@@ -221,7 +221,7 @@ export default function ShiftEditorModal({
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="es. Turno Mattina Casse"
+                  placeholder="es. Turno Standard Store"
                   className={errors.name ? 'border-red-500' : ''}
                 />
                 {errors.name && (
@@ -307,9 +307,11 @@ export default function ShiftEditorModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="morning">Mattina (06:00-14:00)</SelectItem>
-                    <SelectItem value="afternoon">Pomeriggio (14:00-22:00)</SelectItem>
-                    <SelectItem value="night">Notte (22:00-06:00)</SelectItem>
+                    <SelectItem value="full_time">Standard Full-Time</SelectItem>
+                    <SelectItem value="part_time">Part-Time</SelectItem>
+                    <SelectItem value="flexible">Flessibile</SelectItem>
+                    <SelectItem value="overtime">Straordinario</SelectItem>
+                    <SelectItem value="custom">Personalizzato</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

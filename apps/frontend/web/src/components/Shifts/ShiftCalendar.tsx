@@ -234,17 +234,21 @@ export default function ShiftCalendar({
         </div>
         
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-orange-100">
-            <div className="w-2 h-2 rounded-full bg-orange-500 mr-1" />
-            Mattina
+          <Badge variant="outline" className="bg-emerald-100">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-1" />
+            Standard
           </Badge>
           <Badge variant="outline" className="bg-blue-100">
             <div className="w-2 h-2 rounded-full bg-blue-500 mr-1" />
-            Pomeriggio
+            Part-Time
           </Badge>
           <Badge variant="outline" className="bg-purple-100">
             <div className="w-2 h-2 rounded-full bg-purple-500 mr-1" />
-            Notte
+            Flessibile
+          </Badge>
+          <Badge variant="outline" className="bg-orange-100">
+            <div className="w-2 h-2 rounded-full bg-orange-500 mr-1" />
+            Straordinario
           </Badge>
         </div>
       </div>
