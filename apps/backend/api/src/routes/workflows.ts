@@ -45,6 +45,7 @@ import {
 // AI Services for workflow routing
 import { WorkflowAIConnector } from '../services/workflow-ai-connector';
 import { AIRegistryService } from '../services/ai-registry-service';
+import { RequestTriggerService } from '../services/request-trigger-service';
 
 const router = express.Router();
 
@@ -877,12 +878,54 @@ router.post('/requests', rbacMiddleware, async (req, res) => {
       userId 
     });
 
+    // 🚀 AUTOMATION: Auto-trigger workflow for request if team/template exist
+    let automationResult = null;
+    if (!requestData.workflowInstanceId) { // Only auto-trigger if no workflow manually specified
+      try {
+        automationResult = await RequestTriggerService.triggerWorkflowForRequest(newRequest, tenantId);
+        
+        if (automationResult.success) {
+          logger.info('✅ Request automation successful', {
+            requestId: newRequest.id,
+            workflowInstanceId: automationResult.workflowInstanceId,
+            message: automationResult.message
+          });
+        } else {
+          logger.warn('⚠️ Request automation skipped', {
+            requestId: newRequest.id,
+            reason: automationResult.message || automationResult.error
+          });
+        }
+      } catch (autoError) {
+        logger.error('❌ Request automation failed', {
+          requestId: newRequest.id,
+          error: autoError instanceof Error ? autoError.message : 'Unknown automation error'
+        });
+        // Don't fail the request creation if automation fails
+      }
+    }
+
+    // Include automation info in response
+    const responseData = {
+      ...newRequest,
+      automation: automationResult ? {
+        triggered: automationResult.success,
+        workflowInstanceId: automationResult.workflowInstanceId,
+        message: automationResult.message || automationResult.error
+      } : {
+        triggered: false,
+        reason: 'Manual workflow specified or automation disabled'
+      }
+    };
+
     res.status(201).json({
       success: true,
-      data: newRequest,
-      message: 'Universal request created successfully',
+      data: responseData,
+      message: automationResult?.success 
+        ? `Universal request created and ${automationResult.message}`
+        : 'Universal request created successfully',
       timestamp: new Date().toISOString()
-    } as ApiSuccessResponse<typeof newRequest>);
+    } as ApiSuccessResponse<typeof responseData>);
 
   } catch (error) {
     logger.error('Error creating universal request', { error, tenantId: req.user?.tenantId });
