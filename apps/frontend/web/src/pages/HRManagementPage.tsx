@@ -117,6 +117,8 @@ const HRManagementPage: React.FC = () => {
   const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedStore, setSelectedStore] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [pushDocumentData, setPushDocumentData] = useState<{
     documentId: string;
     userIds: string[];
@@ -146,6 +148,19 @@ const HRManagementPage: React.FC = () => {
     queryKey: ['/api/users'],
     staleTime: 5 * 60 * 1000,
   });
+
+  // ✅ NEW: Stores data for assignment dashboard
+  const { data: stores = [], isLoading: loadingStores } = useQuery<any[]>({
+    queryKey: ['/api/stores'],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Initialize selectedStore with first available store
+  useEffect(() => {
+    if (stores.length > 0 && !selectedStore) {
+      setSelectedStore(stores[0]);
+    }
+  }, [stores, selectedStore]);
 
   // ✅ UPDATED: Shifts data with authentication readiness  
   const { data: shifts = [], isLoading: loadingShifts } = useQuery<any[]>({
@@ -1312,23 +1327,19 @@ const HRManagementPage: React.FC = () => {
               <CardTitle>Assegnazione Turni</CardTitle>
               <CardDescription>Assegna turni alle risorse con controllo conflitti</CardDescription>
             </div>
-            <Button 
-              disabled
-              className="bg-gradient-to-r from-slate-400 to-slate-500 text-white cursor-not-allowed"
-              data-testid="button-assign-shifts-deprecated"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Funzionalità in Aggiornamento
-            </Button>
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <CheckCircle className="w-4 h-4 mr-1" />
+              Sistema Attivo
+            </Badge>
           </div>
         </CardHeader>
         <CardContent>
           <ShiftAssignmentDashboard
-            storeId=""
-            selectedWeek={new Date()}
+            storeId={selectedStore?.id || ""}
+            selectedWeek={selectedDate}
             onAssignShift={async (shiftId: string, employeeIds: string[]) => {
               try {
-                // TODO: Implement actual API call
+
                 const response = await apiRequest(`/api/hr/shifts/${shiftId}/assign`, {
                   method: 'POST',
                   body: JSON.stringify({ employeeIds })
@@ -1349,7 +1360,7 @@ const HRManagementPage: React.FC = () => {
             }}
             onUnassignShift={async (shiftId: string, employeeIds: string[]) => {
               try {
-                // TODO: Implement actual API call
+
                 const response = await apiRequest(`/api/hr/shifts/${shiftId}/unassign`, {
                   method: 'POST',
                   body: JSON.stringify({ employeeIds })

@@ -1,0 +1,89 @@
+🔧 [HR-QUERY-READINESS] Mode: development, TenantID: 00000000-0000-0000-0000-000000000001, Enabled: true
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=9690aaab:1097
+run @ @tanstack_react-query.js?v=9690aaab:795
+start @ @tanstack_react-query.js?v=9690aaab:838
+fetch @ @tanstack_react-query.js?v=9690aaab:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9690aaab:1639
+onSubscribe @ @tanstack_react-query.js?v=9690aaab:1335
+subscribe @ @tanstack_react-query.js?v=9690aaab:24
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9690aaab:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=9690aaab:1097
+run @ @tanstack_react-query.js?v=9690aaab:795
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+start @ @tanstack_react-query.js?v=9690aaab:838
+fetch @ @tanstack_react-query.js?v=9690aaab:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9690aaab:1639
+onSubscribe @ @tanstack_react-query.js?v=9690aaab:1335
+subscribe @ @tanstack_react-query.js?v=9690aaab:24
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9690aaab:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
+queryFn @ queryClient.ts:202
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=9690aaab:1097
+run @ @tanstack_react-query.js?v=9690aaab:795
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:820
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:816
+Promise.catch
+run @ @tanstack_react-query.js?v=9690aaab:799
+start @ @tanstack_react-query.js?v=9690aaab:838
+fetch @ @tanstack_react-query.js?v=9690aaab:1144
+executeFetch_fn @ @tanstack_react-query.js?v=9690aaab:1639
+onSubscribe @ @tanstack_react-query.js?v=9690aaab:1335
+subscribe @ @tanstack_react-query.js?v=9690aaab:24
+(anonymous) @ @tanstack_react-query.js?v=9690aaab:3298
+subscribeToStore @ chunk-ZHRYBLGQ.js?v=9690aaab:11984
+commitHookEffectListMount @ chunk-ZHRYBLGQ.js?v=9690aaab:16915
+commitPassiveMountOnFiber @ chunk-ZHRYBLGQ.js?v=9690aaab:18156
+commitPassiveMountEffects_complete @ chunk-ZHRYBLGQ.js?v=9690aaab:18129
+commitPassiveMountEffects_begin @ chunk-ZHRYBLGQ.js?v=9690aaab:18119
+commitPassiveMountEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:18109
+flushPassiveEffectsImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19490
+flushPassiveEffects @ chunk-ZHRYBLGQ.js?v=9690aaab:19447
+commitRootImpl @ chunk-ZHRYBLGQ.js?v=9690aaab:19416
+commitRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:19277
+performSyncWorkOnRoot @ chunk-ZHRYBLGQ.js?v=9690aaab:18895
+flushSyncCallbacks @ chunk-ZHRYBLGQ.js?v=9690aaab:9119
+(anonymous) @ chunk-ZHRYBLGQ.js?v=9690aaab:18627Understand this error
+queryClient.ts:202  GET https://990d2e08-e877-47ab-86e4-4ab1ec4a5b18-00-a7zlal1jz3uk.worf.replit.dev/api/hr/shift-assignments 500 (Internal Server Error)
