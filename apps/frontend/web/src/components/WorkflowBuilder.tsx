@@ -210,6 +210,14 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     [selectNode]
   );
 
+  // ✅ DOUBLE-CLICK TO CONFIGURE NODE
+  const onNodeDoubleClick = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      handleConfigClick(node.id);
+    },
+    [handleConfigClick]
+  );
+
   const onPaneClick = useCallback(() => {
     selectNode(null);
   }, [selectNode]);
@@ -682,6 +690,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onNodeDoubleClick={onNodeDoubleClick}
             onPaneClick={onPaneClick}
             onInit={setReactFlowInstance}
             onDrop={onDrop}
