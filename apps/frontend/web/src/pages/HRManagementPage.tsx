@@ -1278,11 +1278,7 @@ const HRManagementPage: React.FC = () => {
 
       {/* Shift Template Manager */}
       <Card className="backdrop-blur-md bg-white/10 border-white/20">
-        <CardHeader>
-          <CardTitle>Template Turni</CardTitle>
-          <CardDescription>Gestisci template ricorrenti per la generazione automatica dei turni</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <ShiftTemplateManager 
             templates={shifts.filter(s => s.templateId)} 
             storeId="" 
