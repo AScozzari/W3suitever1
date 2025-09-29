@@ -130,6 +130,288 @@ router.post('/shifts/:id/unassign', requirePermission('hr.shifts.manage'), async
   }
 });
 
+// ==================== BULK ASSIGNMENTS ====================
+
+// POST /api/hr/shifts/bulk-assign - Bulk assign multiple users to multiple shifts
+router.post('/shifts/bulk-assign', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { assignments } = req.body; // Array of { shiftId, employeeIds[] }
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!assignments || !Array.isArray(assignments) || assignments.length === 0) {
+      return res.status(400).json({ error: 'Assignments array is required' });
+    }
+
+    // Validate assignment structure
+    for (const assignment of assignments) {
+      if (!assignment.shiftId || !assignment.employeeIds || !Array.isArray(assignment.employeeIds)) {
+        return res.status(400).json({ 
+          error: 'Each assignment must have shiftId and employeeIds array' 
+        });
+      }
+    }
+
+    // Process bulk assignments using new storage function
+    const result = await hrStorage.bulkAssignShifts(tenantId, assignments);
+
+    res.json({
+      success: true,
+      totalAssignments: result.totalAssignments,
+      successfulAssignments: result.successful,
+      failedAssignments: result.failed,
+      conflicts: result.conflicts || []
+    });
+  } catch (error) {
+    console.error('Error processing bulk assignments:', error);
+    res.status(500).json({ error: 'Failed to process bulk assignments' });
+  }
+});
+
+// POST /api/hr/shifts/bulk-unassign - Bulk unassign multiple users from multiple shifts
+router.post('/shifts/bulk-unassign', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { assignments } = req.body; // Array of { shiftId, employeeIds[] }
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!assignments || !Array.isArray(assignments) || assignments.length === 0) {
+      return res.status(400).json({ error: 'Assignments array is required' });
+    }
+
+    // Process bulk unassignments using new storage function
+    const result = await hrStorage.bulkUnassignShifts(tenantId, assignments);
+
+    res.json({
+      success: true,
+      totalUnassignments: result.totalUnassignments,
+      successfulUnassignments: result.successful,
+      failedUnassignments: result.failed
+    });
+  } catch (error) {
+    console.error('Error processing bulk unassignments:', error);
+    res.status(500).json({ error: 'Failed to process bulk unassignments' });
+  }
+});
+
+// ==================== ENHANCED CONFLICT VALIDATION ====================
+
+// POST /api/hr/shifts/validate-assignments - Enhanced conflict validation for assignments
+router.post('/shifts/validate-assignments', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { assignments, options = {} } = req.body; // Array of { shiftId, employeeIds[] }
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!assignments || !Array.isArray(assignments)) {
+      return res.status(400).json({ error: 'Assignments array is required' });
+    }
+
+    // Enhanced validation using new storage function
+    const validation = await hrStorage.validateShiftAssignments(tenantId, assignments, options);
+
+    res.json({
+      success: true,
+      validationResults: validation.results,
+      conflicts: validation.conflicts,
+      warnings: validation.warnings,
+      recommendations: validation.recommendations,
+      isValid: validation.isValid,
+      summary: {
+        totalChecked: validation.totalChecked,
+        conflictsFound: validation.conflicts.length,
+        warningsFound: validation.warnings.length
+      }
+    });
+  } catch (error) {
+    console.error('Error validating assignments:', error);
+    res.status(500).json({ error: 'Failed to validate assignments' });
+  }
+});
+
+// ==================== SHIFT PATTERNS ====================
+
+// GET /api/hr/shift-patterns - Get recurring shift patterns
+router.get('/shift-patterns', requirePermission('hr.shifts.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { storeId, isActive = true } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    // Get shift patterns using new storage function
+    const patterns = await hrStorage.getShiftPatterns(tenantId, { 
+      storeId: storeId as string,
+      isActive: isActive === 'true'
+    });
+
+    res.json(patterns);
+  } catch (error) {
+    console.error('Error fetching shift patterns:', error);
+    res.status(500).json({ error: 'Failed to fetch shift patterns' });
+  }
+});
+
+// POST /api/hr/shift-patterns - Create recurring shift pattern
+router.post('/shift-patterns', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.user?.id;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    const patternData = {
+      ...req.body,
+      tenantId,
+      createdBy: userId,
+      createdAt: new Date()
+    };
+
+    // Create shift pattern using new storage function
+    const pattern = await hrStorage.createShiftPattern(tenantId, patternData);
+
+    res.json({
+      success: true,
+      pattern
+    });
+  } catch (error) {
+    console.error('Error creating shift pattern:', error);
+    res.status(500).json({ error: 'Failed to create shift pattern' });
+  }
+});
+
+// POST /api/hr/shift-patterns/:id/apply - Apply shift pattern to generate shifts
+router.post('/shift-patterns/:id/apply', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { id: patternId } = req.params;
+    const { startDate, endDate, storeId, options = {} } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!patternId || !startDate || !endDate) {
+      return res.status(400).json({ error: 'Pattern ID, start date, and end date are required' });
+    }
+
+    // Apply pattern to generate shifts using new storage function
+    const result = await hrStorage.applyShiftPattern(tenantId, patternId, {
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      storeId,
+      ...options
+    });
+
+    res.json({
+      success: true,
+      generatedShifts: result.shifts,
+      totalGenerated: result.totalGenerated,
+      conflicts: result.conflicts || [],
+      summary: result.summary
+    });
+  } catch (error) {
+    console.error('Error applying shift pattern:', error);
+    res.status(500).json({ error: 'Failed to apply shift pattern' });
+  }
+});
+
+// ==================== TIMBRATURE MATCHING ====================
+
+// POST /api/hr/timbrature/match-shifts - Match clock-in records with planned shifts
+router.post('/timbrature/match-shifts', requirePermission('hr.timbrature.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { startDate, endDate, storeId, employeeId, options = {} } = req.body;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    // Match timbrature with planned shifts using new storage function
+    const matching = await hrStorage.matchTimbratureWithShifts(tenantId, {
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      storeId,
+      employeeId,
+      ...options
+    });
+
+    res.json({
+      success: true,
+      matchingResults: matching.results,
+      discrepancies: matching.discrepancies,
+      unmatchedClockIns: matching.unmatchedClockIns,
+      missedShifts: matching.missedShifts,
+      compliance: {
+        totalShifts: matching.totalShifts,
+        matchedShifts: matching.matchedShifts,
+        complianceRate: matching.complianceRate,
+        onTimeRate: matching.onTimeRate
+      },
+      summary: matching.summary
+    });
+  } catch (error) {
+    console.error('Error matching timbrature with shifts:', error);
+    res.status(500).json({ error: 'Failed to match timbrature with shifts' });
+  }
+});
+
+// GET /api/hr/timbrature/compliance-report - Get compliance report for attendance
+router.get('/timbrature/compliance-report', requirePermission('hr.timbrature.read'), async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const { startDate, endDate, storeId, employeeId, reportType = 'detailed' } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    // Generate compliance report using new storage function
+    const report = await hrStorage.generateComplianceReport(tenantId, {
+      startDate: new Date(startDate as string),
+      endDate: new Date(endDate as string),
+      storeId: storeId as string,
+      employeeId: employeeId as string,
+      reportType: reportType as string
+    });
+
+    res.json({
+      success: true,
+      report,
+      generatedAt: new Date(),
+      period: {
+        startDate: startDate as string,
+        endDate: endDate as string
+      }
+    });
+  } catch (error) {
+    console.error('Error generating compliance report:', error);
+    res.status(500).json({ error: 'Failed to generate compliance report' });
+  }
+});
+
 // ==================== STAFF AVAILABILITY ====================
 
 // GET /api/hr/staff/availability - Get staff availability for date range

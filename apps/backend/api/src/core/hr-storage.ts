@@ -161,6 +161,57 @@ export interface IHRStorage {
   // Staff Availability
   getStaffAvailability(tenantId: string, storeId: string, date: Date): Promise<any[]>;
   updateStaffAvailability(userId: string, date: Date, available: boolean, reason?: string): Promise<void>;
+
+  // ==================== TASK 7 ENTERPRISE FEATURES ====================
+  
+  // Bulk Assignments
+  bulkAssignShifts(tenantId: string, assignments: Array<{shiftId: string, employeeIds: string[]}>): Promise<{
+    totalAssignments: number;
+    successful: number;
+    failed: number;
+    conflicts: any[];
+  }>;
+  
+  bulkUnassignShifts(tenantId: string, assignments: Array<{shiftId: string, employeeIds: string[]}>): Promise<{
+    totalUnassignments: number;
+    successful: number;
+    failed: number;
+  }>;
+
+  // Enhanced Conflict Validation
+  validateShiftAssignments(tenantId: string, assignments: Array<{shiftId: string, employeeIds: string[]}>, options?: any): Promise<{
+    results: any[];
+    conflicts: any[];
+    warnings: any[];
+    recommendations: any[];
+    isValid: boolean;
+    totalChecked: number;
+  }>;
+
+  // Shift Patterns
+  getShiftPatterns(tenantId: string, options?: {storeId?: string, isActive?: boolean}): Promise<any[]>;
+  createShiftPattern(tenantId: string, patternData: any): Promise<any>;
+  applyShiftPattern(tenantId: string, patternId: string, options: any): Promise<{
+    shifts: any[];
+    totalGenerated: number;
+    conflicts: any[];
+    summary: any;
+  }>;
+
+  // Timbrature Matching
+  matchTimbratureWithShifts(tenantId: string, options: any): Promise<{
+    results: any[];
+    discrepancies: any[];
+    unmatchedClockIns: any[];
+    missedShifts: any[];
+    totalShifts: number;
+    matchedShifts: number;
+    complianceRate: number;
+    onTimeRate: number;
+    summary: any;
+  }>;
+  
+  generateComplianceReport(tenantId: string, options: any): Promise<any>;
 }
 
 // Filter interfaces
@@ -1287,6 +1338,634 @@ export class HRStorage implements IHRStorage {
       .returning();
     
     return result[0];
+  }
+
+  // ==================== TASK 7 ENTERPRISE FEATURES IMPLEMENTATION ====================
+
+  // ==================== BULK ASSIGNMENTS ====================
+
+  async bulkAssignShifts(tenantId: string, assignments: Array<{shiftId: string, employeeIds: string[]}>): Promise<{
+    totalAssignments: number;
+    successful: number;
+    failed: number;
+    conflicts: any[];
+  }> {
+    await setTenantContext(tenantId);
+    
+    let totalAssignments = 0;
+    let successful = 0;
+    let failed = 0;
+    const conflicts: any[] = [];
+    
+    try {
+      // Process each assignment batch
+      for (const assignment of assignments) {
+        const { shiftId, employeeIds } = assignment;
+        totalAssignments += employeeIds.length;
+
+        // Validate shift exists
+        const shift = await db.select()
+          .from(shifts)
+          .where(and(
+            eq(shifts.id, shiftId),
+            eq(shifts.tenantId, tenantId)
+          ))
+          .limit(1);
+
+        if (shift.length === 0) {
+          failed += employeeIds.length;
+          conflicts.push({
+            type: 'shift_not_found',
+            shiftId,
+            employeeIds,
+            message: `Shift ${shiftId} not found`
+          });
+          continue;
+        }
+
+        // Process each employee assignment
+        for (const employeeId of employeeIds) {
+          try {
+            // Check for existing assignment
+            const existingAssignment = await db.select()
+              .from(userAssignments)
+              .where(and(
+                eq(userAssignments.userId, employeeId),
+                eq(userAssignments.shiftId, shiftId),
+                eq(userAssignments.tenantId, tenantId)
+              ))
+              .limit(1);
+
+            if (existingAssignment.length > 0) {
+              conflicts.push({
+                type: 'already_assigned',
+                shiftId,
+                employeeId,
+                message: `Employee ${employeeId} already assigned to shift ${shiftId}`
+              });
+              failed++;
+              continue;
+            }
+
+            // Create assignment
+            await db.insert(userAssignments).values({
+              id: sql`gen_random_uuid()`,
+              tenantId,
+              userId: employeeId,
+              shiftId,
+              assignedAt: new Date(),
+              status: 'active',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+
+            successful++;
+          } catch (error) {
+            console.error(`Error assigning employee ${employeeId} to shift ${shiftId}:`, error);
+            conflicts.push({
+              type: 'assignment_error',
+              shiftId,
+              employeeId,
+              message: `Failed to assign employee: ${error.message}`
+            });
+            failed++;
+          }
+        }
+      }
+
+      return {
+        totalAssignments,
+        successful,
+        failed,
+        conflicts
+      };
+    } catch (error) {
+      console.error('Error in bulk assignment:', error);
+      throw error;
+    }
+  }
+
+  async bulkUnassignShifts(tenantId: string, assignments: Array<{shiftId: string, employeeIds: string[]}>): Promise<{
+    totalUnassignments: number;
+    successful: number;
+    failed: number;
+  }> {
+    await setTenantContext(tenantId);
+    
+    let totalUnassignments = 0;
+    let successful = 0;
+    let failed = 0;
+    
+    try {
+      for (const assignment of assignments) {
+        const { shiftId, employeeIds } = assignment;
+        totalUnassignments += employeeIds.length;
+
+        for (const employeeId of employeeIds) {
+          try {
+            const result = await db.delete(userAssignments)
+              .where(and(
+                eq(userAssignments.userId, employeeId),
+                eq(userAssignments.shiftId, shiftId),
+                eq(userAssignments.tenantId, tenantId)
+              ));
+
+            successful++;
+          } catch (error) {
+            console.error(`Error unassigning employee ${employeeId} from shift ${shiftId}:`, error);
+            failed++;
+          }
+        }
+      }
+
+      return {
+        totalUnassignments,
+        successful,
+        failed
+      };
+    } catch (error) {
+      console.error('Error in bulk unassignment:', error);
+      throw error;
+    }
+  }
+
+  // ==================== ENHANCED CONFLICT VALIDATION ====================
+
+  async validateShiftAssignments(tenantId: string, assignments: Array<{shiftId: string, employeeIds: string[]}>, options: any = {}): Promise<{
+    results: any[];
+    conflicts: any[];
+    warnings: any[];
+    recommendations: any[];
+    isValid: boolean;
+    totalChecked: number;
+  }> {
+    await setTenantContext(tenantId);
+    
+    const results: any[] = [];
+    const conflicts: any[] = [];
+    const warnings: any[] = [];
+    const recommendations: any[] = [];
+    let totalChecked = 0;
+
+    try {
+      for (const assignment of assignments) {
+        const { shiftId, employeeIds } = assignment;
+        totalChecked += employeeIds.length;
+
+        // Get shift details
+        const shift = await db.select()
+          .from(shifts)
+          .where(and(
+            eq(shifts.id, shiftId),
+            eq(shifts.tenantId, tenantId)
+          ))
+          .limit(1);
+
+        if (shift.length === 0) {
+          conflicts.push({
+            type: 'shift_not_found',
+            severity: 'high',
+            shiftId,
+            message: `Shift ${shiftId} not found`
+          });
+          continue;
+        }
+
+        const shiftData = shift[0];
+
+        for (const employeeId of employeeIds) {
+          const validationResult = {
+            shiftId,
+            employeeId,
+            checks: [],
+            passed: true
+          };
+
+          // Check 1: Employee exists
+          const employee = await db.select()
+            .from(users)
+            .where(and(
+              eq(users.id, employeeId),
+              eq(users.tenantId, tenantId)
+            ))
+            .limit(1);
+
+          if (employee.length === 0) {
+            conflicts.push({
+              type: 'employee_not_found',
+              severity: 'high',
+              shiftId,
+              employeeId,
+              message: `Employee ${employeeId} not found`
+            });
+            validationResult.passed = false;
+            continue;
+          }
+
+          // Check 2: Time conflicts
+          const overlappingShifts = await db.select()
+            .from(shifts)
+            .leftJoin(userAssignments, eq(shifts.id, userAssignments.shiftId))
+            .where(and(
+              eq(shifts.tenantId, tenantId),
+              eq(userAssignments.userId, employeeId),
+              eq(shifts.date, shiftData.date),
+              or(
+                and(
+                  lte(shifts.startTime, shiftData.startTime),
+                  gte(shifts.endTime, shiftData.startTime)
+                ),
+                and(
+                  lte(shifts.startTime, shiftData.endTime),
+                  gte(shifts.endTime, shiftData.endTime)
+                )
+              )
+            ));
+
+          if (overlappingShifts.length > 0) {
+            conflicts.push({
+              type: 'time_conflict',
+              severity: 'high',
+              shiftId,
+              employeeId,
+              conflictingShifts: overlappingShifts.map(s => s.shifts.id),
+              message: `Time conflict with existing shifts`
+            });
+            validationResult.passed = false;
+          }
+
+          // Check 3: Weekly hour limits
+          const weekStart = new Date(shiftData.date);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+
+          const weeklyHours = await db.select()
+            .from(shifts)
+            .leftJoin(userAssignments, eq(shifts.id, userAssignments.shiftId))
+            .where(and(
+              eq(shifts.tenantId, tenantId),
+              eq(userAssignments.userId, employeeId),
+              between(shifts.date, weekStart.toISOString().split('T')[0], weekEnd.toISOString().split('T')[0])
+            ));
+
+          const currentWeeklyHours = weeklyHours.reduce((total, shift) => {
+            const startTime = new Date(`1970-01-01T${shift.shifts.startTime}`);
+            const endTime = new Date(`1970-01-01T${shift.shifts.endTime}`);
+            const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+            return total + hours;
+          }, 0);
+
+          const shiftHours = (() => {
+            const startTime = new Date(`1970-01-01T${shiftData.startTime}`);
+            const endTime = new Date(`1970-01-01T${shiftData.endTime}`);
+            return (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+          })();
+
+          if (currentWeeklyHours + shiftHours > 40) {
+            warnings.push({
+              type: 'weekly_limit_exceeded',
+              severity: 'medium',
+              shiftId,
+              employeeId,
+              currentHours: currentWeeklyHours,
+              additionalHours: shiftHours,
+              message: `Weekly hour limit may be exceeded`
+            });
+          }
+
+          validationResult.checks.push({
+            name: 'employee_exists',
+            passed: employee.length > 0
+          }, {
+            name: 'no_time_conflicts',
+            passed: overlappingShifts.length === 0
+          }, {
+            name: 'within_weekly_limits',
+            passed: currentWeeklyHours + shiftHours <= 40
+          });
+
+          results.push(validationResult);
+        }
+      }
+
+      // Generate recommendations
+      if (conflicts.length > 0) {
+        recommendations.push({
+          type: 'resolve_conflicts',
+          message: `${conflicts.length} conflicts found. Review and resolve before proceeding.`
+        });
+      }
+
+      if (warnings.length > 0) {
+        recommendations.push({
+          type: 'review_warnings',
+          message: `${warnings.length} warnings found. Consider reviewing workload distribution.`
+        });
+      }
+
+      return {
+        results,
+        conflicts,
+        warnings,
+        recommendations,
+        isValid: conflicts.length === 0,
+        totalChecked
+      };
+    } catch (error) {
+      console.error('Error validating assignments:', error);
+      throw error;
+    }
+  }
+
+  // ==================== SHIFT PATTERNS ====================
+
+  async getShiftPatterns(tenantId: string, options: {storeId?: string, isActive?: boolean} = {}): Promise<any[]> {
+    await setTenantContext(tenantId);
+    
+    // For now, return empty array since shift_patterns table doesn't exist yet
+    // This would require a new database table for shift patterns
+    console.log('[SHIFT_PATTERNS] Feature not yet implemented - requires shift_patterns table');
+    return [];
+  }
+
+  async createShiftPattern(tenantId: string, patternData: any): Promise<any> {
+    await setTenantContext(tenantId);
+    
+    // For now, return mock pattern since shift_patterns table doesn't exist yet
+    console.log('[SHIFT_PATTERNS] Feature not yet implemented - requires shift_patterns table');
+    return {
+      id: sql`gen_random_uuid()`,
+      ...patternData,
+      tenantId,
+      createdAt: new Date()
+    };
+  }
+
+  async applyShiftPattern(tenantId: string, patternId: string, options: any): Promise<{
+    shifts: any[];
+    totalGenerated: number;
+    conflicts: any[];
+    summary: any;
+  }> {
+    await setTenantContext(tenantId);
+    
+    // For now, return empty result since shift_patterns table doesn't exist yet
+    console.log('[SHIFT_PATTERNS] Feature not yet implemented - requires shift_patterns table');
+    return {
+      shifts: [],
+      totalGenerated: 0,
+      conflicts: [],
+      summary: {
+        message: 'Shift patterns feature requires additional database tables'
+      }
+    };
+  }
+
+  // ==================== TIMBRATURE MATCHING ====================
+
+  async matchTimbratureWithShifts(tenantId: string, options: any): Promise<{
+    results: any[];
+    discrepancies: any[];
+    unmatchedClockIns: any[];
+    missedShifts: any[];
+    totalShifts: number;
+    matchedShifts: number;
+    complianceRate: number;
+    onTimeRate: number;
+    summary: any;
+  }> {
+    await setTenantContext(tenantId);
+    
+    try {
+      const { startDate, endDate, storeId, employeeId } = options;
+      
+      // Get planned shifts in date range
+      const conditions = [
+        eq(shifts.tenantId, tenantId),
+        between(shifts.date, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0])
+      ];
+
+      if (storeId) {
+        conditions.push(eq(shifts.storeId, storeId));
+      }
+
+      const plannedShifts = await db.select()
+        .from(shifts)
+        .leftJoin(userAssignments, eq(shifts.id, userAssignments.shiftId))
+        .where(and(...conditions));
+
+      // Get time tracking entries in same date range
+      const timeEntries = await db.select()
+        .from(timeTracking)
+        .where(and(
+          eq(timeTracking.tenantId, tenantId),
+          between(timeTracking.clockInTime, startDate, endDate),
+          employeeId ? eq(timeTracking.userId, employeeId) : sql`true`
+        ));
+
+      const results: any[] = [];
+      const discrepancies: any[] = [];
+      const unmatchedClockIns: any[] = [];
+      const missedShifts: any[] = [];
+
+      let totalShifts = plannedShifts.length;
+      let matchedShifts = 0;
+      let onTimeShifts = 0;
+
+      // Match time entries with planned shifts
+      for (const shiftRecord of plannedShifts) {
+        const shift = shiftRecord.shifts;
+        const assignment = shiftRecord.user_assignments;
+
+        if (!assignment) continue; // Skip unassigned shifts
+
+        const shiftDate = shift.date;
+        const shiftStart = new Date(`${shiftDate}T${shift.startTime}`);
+        const shiftEnd = new Date(`${shiftDate}T${shift.endTime}`);
+
+        // Find matching time entries
+        const matchingEntries = timeEntries.filter(entry => {
+          const clockInDate = new Date(entry.clockInTime).toISOString().split('T')[0];
+          return clockInDate === shiftDate && entry.userId === assignment.userId;
+        });
+
+        if (matchingEntries.length === 0) {
+          missedShifts.push({
+            shiftId: shift.id,
+            employeeId: assignment.userId,
+            shiftDate,
+            shiftStart: shift.startTime,
+            shiftEnd: shift.endTime,
+            status: 'missed'
+          });
+        } else {
+          matchedShifts++;
+          const entry = matchingEntries[0];
+          const clockInTime = new Date(entry.clockInTime);
+          
+          // Check if on time (within 15 minutes)
+          const timeDifference = Math.abs(clockInTime.getTime() - shiftStart.getTime()) / (1000 * 60);
+          const isOnTime = timeDifference <= 15;
+          
+          if (isOnTime) {
+            onTimeShifts++;
+          }
+
+          const result = {
+            shiftId: shift.id,
+            employeeId: assignment.userId,
+            timeTrackingId: entry.id,
+            shiftStart: shift.startTime,
+            shiftEnd: shift.endTime,
+            clockInTime: entry.clockInTime,
+            clockOutTime: entry.clockOutTime,
+            isOnTime,
+            timeDifference: Math.round(timeDifference),
+            status: 'matched'
+          };
+
+          results.push(result);
+
+          // Check for discrepancies
+          if (!isOnTime) {
+            discrepancies.push({
+              type: 'late_arrival',
+              ...result,
+              message: `Employee arrived ${Math.round(timeDifference)} minutes ${clockInTime > shiftStart ? 'late' : 'early'}`
+            });
+          }
+
+          if (entry.clockOutTime) {
+            const clockOutTime = new Date(entry.clockOutTime);
+            const endTimeDifference = Math.abs(clockOutTime.getTime() - shiftEnd.getTime()) / (1000 * 60);
+            
+            if (endTimeDifference > 15) {
+              discrepancies.push({
+                type: 'early_departure',
+                ...result,
+                message: `Employee left ${Math.round(endTimeDifference)} minutes ${clockOutTime < shiftEnd ? 'early' : 'late'}`
+              });
+            }
+          }
+        }
+      }
+
+      // Find unmatched clock-ins
+      for (const entry of timeEntries) {
+        const entryDate = new Date(entry.clockInTime).toISOString().split('T')[0];
+        const hasMatchingShift = plannedShifts.some(shiftRecord => {
+          const shift = shiftRecord.shifts;
+          const assignment = shiftRecord.user_assignments;
+          return assignment && 
+                 shift.date === entryDate && 
+                 assignment.userId === entry.userId;
+        });
+
+        if (!hasMatchingShift) {
+          unmatchedClockIns.push({
+            timeTrackingId: entry.id,
+            employeeId: entry.userId,
+            clockInTime: entry.clockInTime,
+            clockOutTime: entry.clockOutTime,
+            date: entryDate,
+            status: 'unmatched'
+          });
+        }
+      }
+
+      const complianceRate = totalShifts > 0 ? (matchedShifts / totalShifts) * 100 : 0;
+      const onTimeRate = matchedShifts > 0 ? (onTimeShifts / matchedShifts) * 100 : 0;
+
+      return {
+        results,
+        discrepancies,
+        unmatchedClockIns,
+        missedShifts,
+        totalShifts,
+        matchedShifts,
+        complianceRate: Math.round(complianceRate * 100) / 100,
+        onTimeRate: Math.round(onTimeRate * 100) / 100,
+        summary: {
+          totalShifts,
+          matchedShifts,
+          missedShifts: missedShifts.length,
+          discrepancies: discrepancies.length,
+          unmatchedClockIns: unmatchedClockIns.length,
+          complianceRate,
+          onTimeRate
+        }
+      };
+    } catch (error) {
+      console.error('Error matching timbrature with shifts:', error);
+      throw error;
+    }
+  }
+
+  async generateComplianceReport(tenantId: string, options: any): Promise<any> {
+    await setTenantContext(tenantId);
+    
+    try {
+      const matchingResults = await this.matchTimbratureWithShifts(tenantId, options);
+      
+      const report = {
+        reportType: options.reportType || 'detailed',
+        period: {
+          startDate: options.startDate,
+          endDate: options.endDate
+        },
+        filters: {
+          storeId: options.storeId,
+          employeeId: options.employeeId
+        },
+        metrics: {
+          totalShifts: matchingResults.totalShifts,
+          matchedShifts: matchingResults.matchedShifts,
+          missedShifts: matchingResults.missedShifts.length,
+          complianceRate: matchingResults.complianceRate,
+          onTimeRate: matchingResults.onTimeRate,
+          discrepancyRate: matchingResults.totalShifts > 0 ? 
+            (matchingResults.discrepancies.length / matchingResults.totalShifts) * 100 : 0
+        },
+        breakdown: {
+          missedShifts: matchingResults.missedShifts,
+          lateArrivals: matchingResults.discrepancies.filter(d => d.type === 'late_arrival'),
+          earlyDepartures: matchingResults.discrepancies.filter(d => d.type === 'early_departure'),
+          unmatchedClockIns: matchingResults.unmatchedClockIns
+        },
+        recommendations: []
+      };
+
+      // Generate recommendations based on compliance
+      if (report.metrics.complianceRate < 90) {
+        report.recommendations.push({
+          type: 'attendance_improvement',
+          priority: 'high',
+          message: 'Attendance compliance is below 90%. Consider reviewing scheduling and communication.'
+        });
+      }
+
+      if (report.metrics.onTimeRate < 85) {
+        report.recommendations.push({
+          type: 'punctuality_improvement',
+          priority: 'medium',
+          message: 'On-time rate is below 85%. Consider implementing punctuality incentives.'
+        });
+      }
+
+      if (matchingResults.unmatchedClockIns.length > 0) {
+        report.recommendations.push({
+          type: 'unscheduled_work',
+          priority: 'medium',
+          message: `${matchingResults.unmatchedClockIns.length} unmatched clock-ins found. Review for unauthorized overtime.`
+        });
+      }
+
+      return report;
+    } catch (error) {
+      console.error('Error generating compliance report:', error);
+      throw error;
+    }
   }
 }
 
