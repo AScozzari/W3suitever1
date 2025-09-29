@@ -882,9 +882,10 @@ export default function ShiftAssignmentDashboard({
         </div>
 
         {/* Gantt Chart */}
-        <div className="relative bg-white rounded-lg border border-gray-200 overflow-x-auto">
-          {/* Timeline Header */}
-          <div className="sticky top-0 z-10 bg-white border-b">
+        <div className="w-full max-w-full overflow-x-auto">
+          <div className="relative bg-white rounded-lg border border-gray-200 min-w-[800px]">
+            {/* Timeline Header */}
+            <div className="sticky top-0 z-10 bg-white border-b">
             {/* Days Header */}
             <div className="flex border-b bg-gray-100">
               <div className="w-32 sm:w-40 lg:w-48 p-3 font-semibold border-r bg-white flex-shrink-0">Dipendenti</div>
@@ -1031,6 +1032,7 @@ export default function ShiftAssignmentDashboard({
               </div>
             ))}
           </div>
+        </div>
         </div>
       </div>
     );
