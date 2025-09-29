@@ -169,6 +169,13 @@ const HRManagementPage: React.FC = () => {
     staleTime: 2 * 60 * 1000,
   });
 
+  // ✅ NEW: Shift Templates data for template manager
+  const { data: shiftTemplates = [], isLoading: loadingShiftTemplates } = useQuery<any[]>({
+    queryKey: ['/api/hr/shift-templates'],
+    enabled: hrQueriesEnabled, // Wait for auth readiness
+    staleTime: 5 * 60 * 1000,
+  });
+
   // ✅ UPDATED: Documents data with authentication readiness
   const { data: documents = [], isLoading: loadingDocuments } = useQuery<HRDocument[]>({
     queryKey: ['/api/hr/documents'],
@@ -1295,7 +1302,7 @@ const HRManagementPage: React.FC = () => {
       <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">
         <CardContent className="pt-6 w-full max-w-full overflow-x-auto">
           <ShiftTemplateManager 
-            templates={shifts.filter(s => s.templateId)} 
+            templates={shiftTemplates} 
             storeId="" 
             onApplyTemplate={async (templateId, startDate, endDate) => {
               try {
