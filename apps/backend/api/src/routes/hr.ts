@@ -75,39 +75,51 @@ router.post('/shifts/apply-template', requirePermission('hr.shifts.manage'), asy
 
 // ==================== SHIFT ASSIGNMENT ====================
 
-// POST /api/hr/shifts/:id/assign - Assign user to specific shift
+// POST /api/hr/shifts/:id/assign - Assign user(s) to specific shift
 router.post('/shifts/:id/assign', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const { id: shiftId } = req.params;
-    const { userId } = req.body;
+    const { userId, employeeIds } = req.body;
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    if (!shiftId || !userId) {
-      return res.status(400).json({ error: 'Shift ID and User ID are required' });
+    // Support both single userId and multiple employeeIds
+    const userIds = employeeIds || (userId ? [userId] : []);
+    
+    if (!shiftId || !userIds.length) {
+      return res.status(400).json({ error: 'Shift ID and User ID(s) are required' });
     }
 
-    // Assign user to shift using existing storage function
-    const result = await hrStorage.assignUserToShift(tenantId, shiftId, userId);
+    // Handle multiple assignments
+    const results = [];
+    for (const uid of userIds) {
+      const result = await hrStorage.assignUserToShift(shiftId, uid);
+      results.push(result);
+    }
 
-    // Broadcast real-time update via WebSocket
+    // Broadcast real-time update via WebSocket for each assignment
     try {
-      await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_created', {
-        assignmentId: result.id,
-        shiftId,
-        employeeId: userId,
-        assignment: result
-      });
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const uid = userIds[i];
+        await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_created', {
+          assignmentId: result.id,
+          shiftId,
+          employeeId: result.employeeId || uid,
+          assignment: result
+        });
+      }
     } catch (wsError) {
       console.warn('WebSocket broadcast failed (non-blocking):', wsError);
     }
 
     res.json({
       success: true,
-      assignment: result
+      assignments: results,
+      totalAssigned: results.length
     });
   } catch (error) {
     console.error('Error assigning user to shift:', error);
@@ -115,39 +127,51 @@ router.post('/shifts/:id/assign', requirePermission('hr.shifts.manage'), async (
   }
 });
 
-// POST /api/hr/shifts/:id/unassign - Remove user from specific shift
+// POST /api/hr/shifts/:id/unassign - Remove user(s) from specific shift
 router.post('/shifts/:id/unassign', requirePermission('hr.shifts.manage'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.headers['x-tenant-id'] as string;
     const { id: shiftId } = req.params;
-    const { userId } = req.body;
+    const { userId, employeeIds } = req.body;
     
     if (!tenantId) {
       return res.status(400).json({ error: 'Tenant ID is required' });
     }
 
-    if (!shiftId || !userId) {
-      return res.status(400).json({ error: 'Shift ID and User ID are required' });
+    // Support both single userId and multiple employeeIds
+    const userIds = employeeIds || (userId ? [userId] : []);
+    
+    if (!shiftId || !userIds.length) {
+      return res.status(400).json({ error: 'Shift ID and User ID(s) are required' });
     }
 
-    // Remove user from shift using existing storage function
-    const result = await hrStorage.unassignUserFromShift(tenantId, shiftId, userId);
+    // Handle multiple unassignments
+    const results = [];
+    for (const uid of userIds) {
+      const result = await hrStorage.unassignUserFromShift(shiftId, uid);
+      results.push(result);
+    }
 
-    // Broadcast real-time update via WebSocket
+    // Broadcast real-time update via WebSocket for each unassignment
     try {
-      await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_deleted', {
-        assignmentId: result.id,
-        shiftId,
-        employeeId: userId,
-        assignment: result
-      });
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const uid = userIds[i];
+        await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_deleted', {
+          assignmentId: result.id,
+          shiftId,
+          employeeId: result.employeeId || uid,
+          assignment: result
+        });
+      }
     } catch (wsError) {
       console.warn('WebSocket broadcast failed (non-blocking):', wsError);
     }
 
     res.json({
       success: true,
-      assignment: result
+      assignments: results,
+      totalUnassigned: results.length
     });
   } catch (error) {
     console.error('Error unassigning user from shift:', error);
@@ -183,6 +207,21 @@ router.post('/shifts/bulk-assign', requirePermission('hr.shifts.manage'), async 
     // Process bulk assignments using new storage function
     const result = await hrStorage.bulkAssignShifts(tenantId, assignments);
 
+    // Broadcast real-time updates via WebSocket for successful assignments
+    try {
+      if (result.successful > 0) {
+        await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_created', {
+          bulk: true,
+          totalAssignments: result.totalAssignments,
+          successfulAssignments: result.successful,
+          failedAssignments: result.failed,
+          conflicts: result.conflicts || []
+        });
+      }
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
+
     res.json({
       success: true,
       totalAssignments: result.totalAssignments,
@@ -212,6 +251,20 @@ router.post('/shifts/bulk-unassign', requirePermission('hr.shifts.manage'), asyn
 
     // Process bulk unassignments using new storage function
     const result = await hrStorage.bulkUnassignShifts(tenantId, assignments);
+
+    // Broadcast real-time updates via WebSocket for successful unassignments
+    try {
+      if (result.successful > 0) {
+        await webSocketService.broadcastShiftUpdate(tenantId, 'assignment_deleted', {
+          bulk: true,
+          totalUnassignments: result.totalUnassignments,
+          successfulUnassignments: result.successful,
+          failedUnassignments: result.failed
+        });
+      }
+    } catch (wsError) {
+      console.warn('WebSocket broadcast failed (non-blocking):', wsError);
+    }
 
     res.json({
       success: true,

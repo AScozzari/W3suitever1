@@ -1,7 +1,6 @@
 // WebSocket Hook for Real-time Notifications
 import { useEffect, useRef, useState } from 'react';
 import { queryClient } from '@/lib/queryClient';
-import { useTenantContext } from '@/hooks/useTenantContext';
 
 interface WebSocketEvent {
   type: 'new_notification' | 'notification_read' | 'notification_update' | 'connection_established' | 'pong' | 
@@ -25,7 +24,7 @@ interface UseWebSocketOptions {
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const { enabled = true, userId = 'demo-user', onNotification, onConnectionChange, onShiftUpdate, onConflictUpdate } = options;
-  const { tenantId } = useTenantContext();
+  const tenantId = 'demo-tenant'; // TODO: Get from auth context when available
   
   const [isConnected, setIsConnected] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);

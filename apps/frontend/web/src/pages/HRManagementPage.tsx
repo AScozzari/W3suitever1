@@ -1381,10 +1381,23 @@ const HRManagementPage: React.FC = () => {
             }}
             onBulkAssign={async (assignments: { shiftId: string; employeeId: string }[]) => {
               try {
-                // TODO: Implement actual bulk API call
+                // Group assignments by shiftId to match backend API format
+                const groupedAssignments = assignments.reduce((acc, assignment) => {
+                  const existing = acc.find(item => item.shiftId === assignment.shiftId);
+                  if (existing) {
+                    existing.employeeIds.push(assignment.employeeId);
+                  } else {
+                    acc.push({
+                      shiftId: assignment.shiftId,
+                      employeeIds: [assignment.employeeId]
+                    });
+                  }
+                  return acc;
+                }, [] as { shiftId: string; employeeIds: string[] }[]);
+
                 const response = await apiRequest('/api/hr/shifts/bulk-assign', {
                   method: 'POST',
-                  body: JSON.stringify({ assignments })
+                  body: JSON.stringify({ assignments: groupedAssignments })
                 });
                 
                 // Refresh queries
