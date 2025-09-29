@@ -5,8 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, Copy, Edit, Trash, Plus, Clock, Users, RefreshCw } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CalendarIcon, Copy, Edit, Archive, Plus, Clock, Users, RefreshCw, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -109,18 +114,20 @@ export default function ShiftTemplateManager({
     }
   };
   
-  const handleDeleteTemplate = async (templateId: string) => {
+  const handleArchiveTemplate = async (templateId: string) => {
     setIsDeletingTemplate(templateId);
     try {
       const response = await fetch(`/api/hr/shift-templates/${templateId}`, {
-        method: 'DELETE'
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: false })
       });
       
-      if (!response.ok) throw new Error('Failed to delete template');
+      if (!response.ok) throw new Error('Failed to archive template');
       
       toast({
-        title: "Template eliminato",
-        description: "Il template è stato rimosso"
+        title: "Template archiviato",
+        description: "Il template è stato archiviato"
       });
       
       // Refresh page
@@ -128,111 +135,45 @@ export default function ShiftTemplateManager({
     } catch (error) {
       toast({
         title: "Errore",
-        description: "Impossibile eliminare il template",
+        description: "Impossibile archiviare il template",
         variant: "destructive"
       });
     } finally {
       setIsDeletingTemplate(null);
     }
   };
-  
-  const renderTemplateCard = (template: ShiftTemplate) => (
-    <Card key={template.id} className="relative" data-testid={`template-${template.id}`}>
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{template.name}</CardTitle>
-          <Badge variant={template.isActive ? "default" : "secondary"}>
-            {template.isActive ? 'Attivo' : 'Inattivo'}
-          </Badge>
-        </div>
-        {template.description && (
-          <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span>{template.defaultStartTime} - {template.defaultEndTime}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span>{template.defaultRequiredStaff} persone</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
-          </Badge>
-          {template.rules?.daysOfWeek && (
-            <div className="flex gap-1">
-              {template.rules.daysOfWeek.map(day => (
-                <Badge key={day} variant="secondary" className="text-xs">
-                  {DAYS_OF_WEEK.find(d => d.value === day)?.label}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        {template.defaultSkills && template.defaultSkills.length > 0 && (
-          <div className="flex gap-1 flex-wrap">
-            {template.defaultSkills.map(skill => (
-              <Badge key={skill} variant="outline" className="text-xs">
-                {skill}
-              </Badge>
-            ))}
-          </div>
-        )}
-        
-        <div className="flex gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSelectedTemplate(template);
-              setIsApplyModalOpen(true);
-            }}
-            disabled={isApplyingTemplate}
-            data-testid={`button-apply-${template.id}`}
-          >
-            <CalendarIcon className="h-4 w-4 mr-1" />
-            Applica
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            data-testid={`button-clone-${template.id}`}
-          >
-            <Copy className="h-4 w-4 mr-1" />
-            Clona
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEditTemplate(template)}
-            data-testid={`button-edit-${template.id}`}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteTemplate(template.id)}
-            disabled={isDeletingTemplate === template.id}
-            data-testid={`button-delete-${template.id}`}
-          >
-            {isDeletingTemplate === template.id ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash className="h-4 w-4 text-red-500" />
-            )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+
+  const handleDuplicateTemplate = async (template: ShiftTemplate) => {
+    try {
+      const duplicatedTemplate = {
+        ...template,
+        name: `${template.name} (Copia)`,
+        id: undefined // Remove ID to create new
+      };
+      
+      const response = await fetch('/api/hr/shift-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicatedTemplate)
+      });
+      
+      if (!response.ok) throw new Error('Failed to duplicate template');
+      
+      toast({
+        title: "Template duplicato",
+        description: "Il template è stato copiato con successo"
+      });
+      
+      // Refresh page
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile duplicare il template",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -254,38 +195,303 @@ export default function ShiftTemplateManager({
         </Button>
       </div>
       
-      {/* Template Categories */}
+      {/* Template Filters */}
       <Tabs defaultValue="all" className="w-full">
         <TabsList>
           <TabsTrigger value="all">Tutti</TabsTrigger>
-          <TabsTrigger value="daily">Giornalieri</TabsTrigger>
-          <TabsTrigger value="weekly">Settimanali</TabsTrigger>
-          <TabsTrigger value="monthly">Mensili</TabsTrigger>
-          <TabsTrigger value="seasonal">Stagionali</TabsTrigger>
+          <TabsTrigger value="active">Attivi</TabsTrigger>
+          <TabsTrigger value="archived">Archiviati</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.map(template => renderTemplateCard(template))}
-          </div>
+          <Card className="windtre-glass-panel border-white/20">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-200">
+                    <TableHead className="font-semibold text-gray-900">Nome</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Staff</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Stato</TableHead>
+                    <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {templates.map((template) => (
+                    <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50" data-testid={`template-row-${template.id}`}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-gray-900">{template.name}</div>
+                          {template.description && (
+                            <div className="text-sm text-gray-600">{template.description}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{template.defaultStartTime} - {template.defaultEndTime}</span>
+                          {template.defaultBreakMinutes && (
+                            <Badge variant="outline" className="text-xs ml-2">
+                              {template.defaultBreakMinutes}min pausa
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          {template.rules?.daysOfWeek?.map(day => (
+                            <Badge key={day} variant="secondary" className="text-xs">
+                              {DAYS_OF_WEEK.find(d => d.value === day)?.label}
+                            </Badge>
+                          )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{template.defaultRequiredStaff}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={template.isActive ? "default" : "secondary"}>
+                          {template.isActive ? 'Attivo' : 'Archiviato'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" data-testid={`button-actions-${template.id}`}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedTemplate(template);
+                              setIsApplyModalOpen(true);
+                            }}>
+                              <CalendarIcon className="h-4 w-4 mr-2" />
+                              Applica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicateTemplate(template)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleArchiveTemplate(template.id)}
+                              disabled={isDeletingTemplate === template.id}
+                            >
+                              {isDeletingTemplate === template.id ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Archive className="h-4 w-4 mr-2" />
+                              )}
+                              Archivia
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
         
-        <TabsContent value="daily" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.filter(t => t.pattern === 'daily').map(template => renderTemplateCard(template))}
-          </div>
+        <TabsContent value="active" className="mt-4">
+          <Card className="windtre-glass-panel border-white/20">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-200">
+                    <TableHead className="font-semibold text-gray-900">Nome</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Staff</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
+                    <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {templates.filter(t => t.isActive).map((template) => (
+                    <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50" data-testid={`template-row-${template.id}`}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-gray-900">{template.name}</div>
+                          {template.description && (
+                            <div className="text-sm text-gray-600">{template.description}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{template.defaultStartTime} - {template.defaultEndTime}</span>
+                          {template.defaultBreakMinutes && (
+                            <Badge variant="outline" className="text-xs ml-2">
+                              {template.defaultBreakMinutes}min pausa
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          {template.rules?.daysOfWeek?.map(day => (
+                            <Badge key={day} variant="secondary" className="text-xs">
+                              {DAYS_OF_WEEK.find(d => d.value === day)?.label}
+                            </Badge>
+                          )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{template.defaultRequiredStaff}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" data-testid={`button-actions-${template.id}`}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedTemplate(template);
+                              setIsApplyModalOpen(true);
+                            }}>
+                              <CalendarIcon className="h-4 w-4 mr-2" />
+                              Applica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicateTemplate(template)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleArchiveTemplate(template.id)}
+                              disabled={isDeletingTemplate === template.id}
+                            >
+                              {isDeletingTemplate === template.id ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Archive className="h-4 w-4 mr-2" />
+                              )}
+                              Archivia
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
         
-        <TabsContent value="weekly" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.filter(t => t.pattern === 'weekly').map(template => renderTemplateCard(template))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="monthly" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.filter(t => t.pattern === 'monthly').map(template => renderTemplateCard(template))}
-          </div>
+        <TabsContent value="archived" className="mt-4">
+          <Card className="windtre-glass-panel border-white/20">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-200">
+                    <TableHead className="font-semibold text-gray-900">Nome</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Staff</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
+                    <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {templates.filter(t => !t.isActive).map((template) => (
+                    <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50 opacity-75" data-testid={`template-row-${template.id}`}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-gray-900">{template.name}</div>
+                          {template.description && (
+                            <div className="text-sm text-gray-600">{template.description}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{template.defaultStartTime} - {template.defaultEndTime}</span>
+                          {template.defaultBreakMinutes && (
+                            <Badge variant="outline" className="text-xs ml-2">
+                              {template.defaultBreakMinutes}min pausa
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          {template.rules?.daysOfWeek?.map(day => (
+                            <Badge key={day} variant="secondary" className="text-xs">
+                              {DAYS_OF_WEEK.find(d => d.value === day)?.label}
+                            </Badge>
+                          )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{template.defaultRequiredStaff}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" data-testid={`button-actions-${template.id}`}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicateTemplate(template)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplica
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       
