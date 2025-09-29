@@ -1485,7 +1485,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
         )
       ))
       .groupBy(workflowTemplates.category)
-      .orderBy(sql`total_instances DESC`);
+      .orderBy(sql`totalInstances DESC`);
 
     // ⚡ Most Active Templates - Fixed SQL syntax  
     const activeTemplates = await db
@@ -1506,7 +1506,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
         )
       ))
       .groupBy(workflowTemplates.id, workflowTemplates.name, workflowTemplates.category)
-      .orderBy(sql`instances_count DESC`)
+      .orderBy(sql`instancesCount DESC`)
       .limit(10);
 
     // 🕒 Hourly Distribution - Fixed SQL syntax
