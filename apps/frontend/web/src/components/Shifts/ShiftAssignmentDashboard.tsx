@@ -209,10 +209,72 @@ export default function ShiftAssignmentDashboard({
 
   // ==================== DATA FETCHING ====================
 
-  // Get staff members
+  // Get staff members - using HR specific endpoint with real database data
   const { data: staffMembers = [], isLoading: staffLoading } = useQuery({
-    queryKey: ['/api/users'],
-    select: (users: any[]) => users.filter(user => user.storeId === storeId)
+    queryKey: ['/api/hr/employees', storeId],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/hr/employees', {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tenant-id': 'demo-tenant' // Use demo tenant for development
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch employees');
+        }
+        const employees = await response.json();
+        
+        // Transform to match expected interface and filter by store
+        return employees
+          .filter((emp: any) => !storeId || emp.storeId === storeId)
+          .map((emp: any) => ({
+            id: emp.id,
+            firstName: emp.firstName || 'Nome',
+            lastName: emp.lastName || 'Cognome', 
+            email: emp.email || 'email@example.com',
+            avatar: emp.profileImageUrl,
+            role: emp.role || emp.role_name || emp.position || 'Dipendente', // Use real role data
+            skills: emp.skills || [], // Will be enhanced later
+            weeklyHours: emp.weeklyHours || 40,
+            maxWeeklyHours: emp.maxWeeklyHours || 48,
+            availability: emp.status === 'active' ? 'available' : 'busy',
+            preferredShifts: emp.preferredShifts || [],
+            currentAssignments: emp.currentAssignments || [],
+            storeId: emp.storeId || emp.primary_store_id
+          }));
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+        // Fallback to users endpoint if HR endpoint fails
+        const response = await fetch('/api/users', {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tenant-id': 'demo-tenant'
+          }
+        });
+        if (!response.ok) return [];
+        const users = await response.json();
+        
+        return users
+          .filter((user: any) => !storeId || user.storeId === storeId)
+          .map((user: any) => ({
+            id: user.id,
+            firstName: user.firstName || 'Nome',
+            lastName: user.lastName || 'Cognome',
+            email: user.email || 'email@example.com', 
+            avatar: user.profileImageUrl,
+            role: user.role || user.role_name || user.position || 'Dipendente',
+            skills: [],
+            weeklyHours: 40,
+            maxWeeklyHours: 48,
+            availability: user.status === 'active' ? 'available' : 'busy',
+            preferredShifts: [],
+            currentAssignments: [],
+            storeId: user.storeId || user.primary_store_id
+          }));
+      }
+    },
+    enabled: true // Always enabled to load real data
   });
 
   // Get shifts for selected week
@@ -235,11 +297,18 @@ export default function ShiftAssignmentDashboard({
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   }, [weekStart]);
 
+  // Get unique roles from real staff data for filter dropdown
+  const availableRoles = useMemo(() => {
+    const roles = Array.from(new Set(staffMembers.map(staff => staff.role).filter(Boolean)));
+    return roles.sort();
+  }, [staffMembers]);
+
   const filteredStaff = useMemo(() => {
     return staffMembers.filter(staff => {
       const matchesSearch = searchQuery === '' || 
         `${staff.firstName} ${staff.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        staff.role.toLowerCase().includes(searchQuery.toLowerCase());
+        (staff.role && staff.role.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (staff.email && staff.email.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesRole = filterRole === 'all' || staff.role === filterRole;
       const matchesAvailability = filterAvailability === 'all' || staff.availability === filterAvailability;
@@ -1370,9 +1439,9 @@ export default function ShiftAssignmentDashboard({
               data-testid="select-filter-role"
             >
               <option value="all">Tutti i ruoli</option>
-              <option value="Cassiere">Cassiere</option>
-              <option value="Supervisore">Supervisore</option>
-              <option value="Magazziniere">Magazziniere</option>
+              {availableRoles.map(role => (
+                <option key={role} value={role}>{role}</option>
+              ))}
             </select>
           </div>
 
