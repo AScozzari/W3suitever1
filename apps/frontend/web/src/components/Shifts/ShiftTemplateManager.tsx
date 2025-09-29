@@ -209,7 +209,7 @@ export default function ShiftTemplateManager({
                     <TableHead className="font-semibold text-gray-900">Nome</TableHead>
                     <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
                     <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Staff</TableHead>
+
                     <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
                     <TableHead className="font-semibold text-gray-900">Stato</TableHead>
                     <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
@@ -246,12 +246,7 @@ export default function ShiftTemplateManager({
                           )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{template.defaultRequiredStaff}</span>
-                        </div>
-                      </TableCell>
+
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
@@ -316,7 +311,7 @@ export default function ShiftTemplateManager({
                     <TableHead className="font-semibold text-gray-900">Nome</TableHead>
                     <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
                     <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Staff</TableHead>
+
                     <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
                     <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
                   </TableRow>
@@ -352,15 +347,110 @@ export default function ShiftTemplateManager({
                           )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
                         </div>
                       </TableCell>
+
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" data-testid={`button-actions-${template.id}`}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedTemplate(template);
+                              setIsApplyModalOpen(true);
+                            }}>
+                              <CalendarIcon className="h-4 w-4 mr-2" />
+                              Applica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicateTemplate(template)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplica
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleArchiveTemplate(template.id)}
+                              disabled={isDeletingTemplate === template.id}
+                            >
+                              {isDeletingTemplate === template.id ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Archive className="h-4 w-4 mr-2" />
+                              )}
+                              Archivia
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="active" className="mt-4">
+          <Card className="windtre-glass-panel border-white/20">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-200">
+                    <TableHead className="font-semibold text-gray-900">Nome</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Stato</TableHead>
+                    <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {templates.filter(t => t.isActive).map((template) => (
+                    <TableRow key={template.id} className="border-gray-100 hover:bg-gray-50/50" data-testid={`template-row-${template.id}`}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-gray-900">{template.name}</div>
+                          {template.description && (
+                            <div className="text-sm text-gray-600">{template.description}</div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{template.defaultRequiredStaff}</span>
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{template.defaultStartTime} - {template.defaultEndTime}</span>
+                          {template.defaultBreakMinutes && (
+                            <Badge variant="outline" className="text-xs ml-2">
+                              {template.defaultBreakMinutes}min pausa
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          {template.rules?.daysOfWeek?.map(day => (
+                            <Badge key={day} variant="secondary" className="text-xs">
+                              {DAYS_OF_WEEK.find(d => d.value === day)?.label}
+                            </Badge>
+                          )) || <span className="text-sm text-gray-400">Tutti i giorni</span>}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default">
+                          Attivo
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -417,8 +507,8 @@ export default function ShiftTemplateManager({
                     <TableHead className="font-semibold text-gray-900">Nome</TableHead>
                     <TableHead className="font-semibold text-gray-900">Fasce Orarie</TableHead>
                     <TableHead className="font-semibold text-gray-900">Giorni</TableHead>
-                    <TableHead className="font-semibold text-gray-900">Staff</TableHead>
                     <TableHead className="font-semibold text-gray-900">Pattern</TableHead>
+                    <TableHead className="font-semibold text-gray-900">Stato</TableHead>
                     <TableHead className="font-semibold text-gray-900 w-24">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -454,14 +544,13 @@ export default function ShiftTemplateManager({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{template.defaultRequiredStaff}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {PATTERN_OPTIONS.find(p => p.value === template.pattern)?.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          Archiviato
                         </Badge>
                       </TableCell>
                       <TableCell>
