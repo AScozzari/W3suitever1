@@ -210,6 +210,13 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
     [selectNode]
   );
 
+  // ✅ NODE CONFIG HANDLER - Must be defined before use
+  const handleConfigClick = useCallback((nodeId: string) => {
+    setConfigNodeId(nodeId);
+    setShowConfigPanel(true);
+    console.log('🎛️ Opening config panel for node:', nodeId);
+  }, []);
+
   // ✅ DOUBLE-CLICK TO CONFIGURE NODE
   const onNodeDoubleClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
@@ -279,12 +286,6 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
   // ✅ NODE CONFIGURATION PANEL
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
-
-  const handleConfigClick = useCallback((nodeId: string) => {
-    setConfigNodeId(nodeId);
-    setShowConfigPanel(true);
-    console.log('🎛️ Opening config panel for node:', nodeId);
-  }, []);
 
   // 💾 SMART SAVE: CREATE vs UPDATE TEMPLATE
   const handleSaveWorkflow = () => {

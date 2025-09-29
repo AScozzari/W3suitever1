@@ -1447,7 +1447,7 @@ router.get('/analytics', rbacMiddleware, requirePermission('workflow.read_analyt
 
     await setTenantContext(tenantId);
 
-    // 📈 Performance Analytics - Fixed parameter binding
+    // 📈 Performance Analytics - Fixed column names to snake_case
     const performanceStats = await db.execute(sql`
       SELECT 
         DATE_TRUNC('day', we.started_at) as date,
