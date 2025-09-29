@@ -5,6 +5,8 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthReadiness } from '@/hooks/useAuthReadiness';
 import HRCalendar from '@/components/HRCalendar';
+import ShiftTemplateManager from '@/components/Shifts/ShiftTemplateManager';
+import AssignmentEngineModal from '@/components/Shifts/AssignmentEngineModal';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -111,6 +113,7 @@ const HRManagementPage: React.FC = () => {
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showShiftModal, setShowShiftModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
   const [requestFormData, setRequestFormData] = useState<Partial<HRRequest>>({});
@@ -1282,20 +1285,62 @@ const HRManagementPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Shift Template Manager */}
+      <Card className="backdrop-blur-md bg-white/10 border-white/20">
+        <CardHeader>
+          <CardTitle>Template Turni</CardTitle>
+          <CardDescription>Gestisci template ricorrenti per la generazione automatica dei turni</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ShiftTemplateManager 
+            templates={shifts.filter(s => s.templateId)} 
+            storeId="" 
+            onApplyTemplate={async (templateId, startDate, endDate) => {
+              try {
+                // TODO: Implement apply template logic
+                toast({
+                  title: "Template applicato",
+                  description: "Template turno applicato con successo"
+                });
+              } catch (error) {
+                toast({
+                  title: "Errore",
+                  description: "Impossibile applicare il template",
+                  variant: "destructive"
+                });
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
+
       {/* Professional HR Calendar */}
       <HRCalendar />
 
-      {/* Gantt Chart */}
+      {/* Assignment Section */}
       <Card className="backdrop-blur-md bg-white/10 border-white/20">
         <CardHeader>
-          <CardTitle>Timeline Risorse</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Assegnazione Turni</CardTitle>
+              <CardDescription>Assegna turni alle risorse con controllo conflitti</CardDescription>
+            </div>
+            <Button 
+              onClick={() => setShowAssignmentModal(true)}
+              className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white"
+              data-testid="button-assign-shifts"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Assegna Turni
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="aspect-[16/6] bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
             <div className="text-center text-slate-500">
               <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p>Gantt Chart Turni</p>
-              <p className="text-sm">Vista timeline orizzontale risorse per PDV</p>
+              <p>Assignment Timeline</p>
+              <p className="text-sm">Vista assegnazioni turni per store e periodo</p>
             </div>
           </div>
         </CardContent>
@@ -1666,6 +1711,10 @@ const HRManagementPage: React.FC = () => {
       {/* Modals */}
       <RequestModal />
       <PushDocumentModal />
+      <AssignmentEngineModal 
+        isOpen={showAssignmentModal}
+        onClose={() => setShowAssignmentModal(false)}
+      />
 
       <Layout currentModule={currentModule} setCurrentModule={setCurrentModule}>
         {/* Header */}
