@@ -1103,6 +1103,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register workflow management API routes with authentication and tenant middleware
   app.use('/api/workflows', workflowRoutes);
   
+  // ==================== EMPLOYEE SELF-SERVICE ROUTES ====================
+  // Employee endpoints for self-service functionality (no special permissions required)
+  
+  // GET /api/employee/my-shifts - Get shifts assigned to current user
+  app.get('/api/employee/my-shifts', async (req, res) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] as string;
+      const userId = req.user?.id;
+      
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant ID is required' });
+      }
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User authentication required' });
+      }
+      
+      // Get employee shifts using HR storage
+      const shifts = await hrStorage.getEmployeeShifts(tenantId, userId);
+      
+      res.json({ shifts });
+    } catch (error) {
+      console.error('Error fetching employee shifts:', error);
+      res.status(500).json({ error: 'Failed to fetch employee shifts' });
+    }
+  });
+  
   // ==================== HR MANAGEMENT ROUTES ====================
   // Register HR management API routes with authentication and tenant middleware
   app.use('/api/hr', tenantMiddleware, rbacMiddleware, hrRoutes);

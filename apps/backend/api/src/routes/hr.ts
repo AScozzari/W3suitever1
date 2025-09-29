@@ -412,6 +412,126 @@ router.get('/timbrature/compliance-report', requirePermission('hr.timbrature.rea
   }
 });
 
+// ==================== EMPLOYEE MY-SHIFTS (MyPortal Integration) ====================
+
+// GET /api/employee/my-shifts - Get shifts assigned to current employee (INVISIBLE INTEGRATION)
+router.get('/employee/my-shifts', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.headers['x-tenant-id'] as string;
+    const userId = req.user?.id;
+    const { startDate, endDate, storeId } = req.query;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User authentication required' });
+    }
+
+    // Get shifts assigned to the current employee
+    await setTenantContext(tenantId);
+    
+    const conditions = [
+      eq(shifts.tenantId, tenantId),
+      // Only get shifts assigned to current user
+      exists(
+        db.select()
+          .from(userAssignments)
+          .where(and(
+            eq(userAssignments.shiftId, shifts.id),
+            eq(userAssignments.userId, userId),
+            eq(userAssignments.tenantId, tenantId),
+            eq(userAssignments.status, 'active')
+          ))
+      )
+    ];
+
+    // Optional date filtering
+    if (startDate && endDate) {
+      conditions.push(
+        between(shifts.date, new Date(startDate as string), new Date(endDate as string))
+      );
+    }
+
+    // Optional store filtering
+    if (storeId) {
+      conditions.push(eq(shifts.storeId, storeId as string));
+    }
+
+    // Query shifts with store information and assignment details
+    const myShifts = await db.select({
+      // Shift details
+      id: shifts.id,
+      date: shifts.date,
+      startTime: shifts.startTime,
+      endTime: shifts.endTime,
+      title: shifts.title,
+      description: shifts.description,
+      breakMinutes: shifts.breakMinutes,
+      requiredStaff: shifts.requiredStaff,
+      // Store details
+      storeId: shifts.storeId,
+      storeName: stores.nome,
+      storeAddress: stores.indirizzo,
+      // Assignment details
+      assignmentId: userAssignments.id,
+      assignedAt: userAssignments.assignedAt,
+      role: userAssignments.role,
+      notes: userAssignments.notes,
+      status: userAssignments.status
+    })
+    .from(shifts)
+    .leftJoin(stores, eq(shifts.storeId, stores.id))
+    .leftJoin(userAssignments, and(
+      eq(userAssignments.shiftId, shifts.id),
+      eq(userAssignments.userId, userId),
+      eq(userAssignments.tenantId, tenantId)
+    ))
+    .where(and(...conditions))
+    .orderBy(shifts.date, shifts.startTime);
+
+    // Transform data for frontend consumption (MyPortal ShiftsCalendar format)
+    const transformedShifts = myShifts.map(shift => ({
+      id: shift.id,
+      date: shift.date,
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      storeId: shift.storeId,
+      storeName: shift.storeName || 'Store Non Specificato',
+      storeAddress: shift.storeAddress,
+      role: shift.role || 'Dipendente',
+      status: shift.status === 'active' ? 'confirmed' : 'scheduled',
+      title: shift.title,
+      description: shift.description,
+      notes: shift.notes,
+      breakMinutes: shift.breakMinutes,
+      assignedAt: shift.assignedAt,
+      // Additional metadata for MyPortal
+      assignmentId: shift.assignmentId,
+      requiredStaff: shift.requiredStaff
+    }));
+
+    res.json({
+      success: true,
+      shifts: transformedShifts,
+      total: transformedShifts.length,
+      employee: {
+        id: userId,
+        tenantId
+      },
+      filters: {
+        startDate: startDate as string,
+        endDate: endDate as string,
+        storeId: storeId as string
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching employee shifts:', error);
+    res.status(500).json({ error: 'Failed to fetch employee shifts' });
+  }
+});
+
 // ==================== STAFF AVAILABILITY ====================
 
 // GET /api/hr/staff/availability - Get staff availability for date range

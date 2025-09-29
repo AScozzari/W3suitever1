@@ -1,10 +1,14 @@
 // ShiftsCalendar.tsx - Calendario turni con view mese/giorno/settimana
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useHRQueryReadiness } from '@/hooks/useAuthReadiness';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -14,67 +18,32 @@ import {
   Eye,
   MapPin,
   Clock,
-  User
+  User,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 interface Shift {
   id: string;
-  date: Date;
+  date: Date | string;
   startTime: string;
   endTime: string;
   storeId: string;
   storeName: string;
+  storeAddress?: string;
   role: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   notes?: string;
+  title?: string;
+  description?: string;
+  breakMinutes?: number;
+  assignmentId?: string;
+  assignedAt?: Date | string;
+  requiredStaff?: number;
 }
-
-// Mock data turni utente
-const mockShifts: Shift[] = [
-  {
-    id: '1',
-    date: new Date(),
-    startTime: '08:30',
-    endTime: '17:30',
-    storeId: 'store-001',
-    storeName: 'WindTre Store Milano Centro',
-    role: 'Consulente Vendite',
-    status: 'confirmed'
-  },
-  {
-    id: '2',
-    date: addDays(new Date(), 1),
-    startTime: '09:00',
-    endTime: '18:00',
-    storeId: 'store-001',
-    storeName: 'WindTre Store Milano Centro',
-    role: 'Consulente Vendite',
-    status: 'scheduled'
-  },
-  {
-    id: '3',
-    date: addDays(new Date(), 2),
-    startTime: '14:00',
-    endTime: '22:00',
-    storeId: 'store-002',
-    storeName: 'WindTre Store Milano Porta Garibaldi',
-    role: 'Consulente Senior',
-    status: 'scheduled'
-  },
-  {
-    id: '4',
-    date: addDays(new Date(), 5),
-    startTime: '08:30',
-    endTime: '17:30',
-    storeId: 'store-001',
-    storeName: 'WindTre Store Milano Centro',
-    role: 'Consulente Vendite',
-    status: 'scheduled'
-  }
-];
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -86,7 +55,47 @@ interface ShiftsCalendarProps {
 export default function ShiftsCalendar({ userId, className }: ShiftsCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentView, setCurrentView] = useState<CalendarView>('month');
-  const [shifts] = useState<Shift[]>(mockShifts);
+  
+  // ✅ HR Authentication Readiness Hook
+  const { enabled: hrQueriesEnabled, loading: hrAuthLoading } = useHRQueryReadiness();
+  
+  // ✅ API Query for Employee Shifts - INVISIBLE INTEGRATION 
+  const { data: shiftsData, isLoading: shiftsLoading, error: shiftsError, refetch } = useQuery<{
+    success: boolean;
+    shifts: Shift[];
+    total: number;
+    employee: { id: string; tenantId: string };
+    filters: { startDate: string; endDate: string; storeId: string };
+  }>({
+    queryKey: ['/api/employee/my-shifts', { 
+      startDate: subMonths(selectedDate, 1).toISOString(), 
+      endDate: addMonths(selectedDate, 1).toISOString() 
+    }],
+    queryFn: () => {
+      const params = new URLSearchParams({
+        startDate: subMonths(selectedDate, 1).toISOString().split('T')[0],
+        endDate: addMonths(selectedDate, 1).toISOString().split('T')[0]
+      });
+      return apiRequest(`/api/employee/my-shifts?${params}`);
+    },
+    enabled: !!hrQueriesEnabled && !!userId,
+    staleTime: 2 * 60 * 1000, // 2 minutes - shifts change less frequently
+    refetchOnWindowFocus: false,
+  });
+
+  // Transform API data to component format
+  const shifts: Shift[] = useMemo(() => {
+    if (!shiftsData?.shifts) return [];
+    
+    return shiftsData.shifts.map(shift => ({
+      ...shift,
+      date: new Date(shift.date) // Ensure date is Date object
+    }));
+  }, [shiftsData]);
+
+  // Loading and error states
+  const isLoading = hrAuthLoading || shiftsLoading;
+  const hasError = !!shiftsError;
 
   // Helper per ottenere turni per una data specifica
   const getShiftsForDate = (date: Date): Shift[] => {
@@ -210,6 +219,48 @@ export default function ShiftsCalendar({ userId, className }: ShiftsCalendarProp
       </CardHeader>
 
       <CardContent>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-64 w-full" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Error State */}
+        {hasError && !isLoading && (
+          <div className="text-center py-12">
+            <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+            <h3 className="text-lg font-medium mb-2 text-gray-900">Errore nel caricamento turni</h3>
+            <p className="text-gray-500 mb-4">
+              Non è stato possibile caricare i tuoi turni. Riprova più tardi.
+            </p>
+            <Button 
+              onClick={() => refetch()} 
+              variant="outline"
+              className="gap-2"
+              data-testid="button-retry-shifts"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Riprova
+            </Button>
+          </div>
+        )}
+        
+        {/* Normal Content */}
+        {!isLoading && !hasError && (
         <div className="space-y-4">
           
           {/* Navigation Header */}
@@ -387,6 +438,7 @@ export default function ShiftsCalendar({ userId, className }: ShiftsCalendarProp
             </div>
           </div>
         </div>
+        )}
       </CardContent>
     </Card>
   );
