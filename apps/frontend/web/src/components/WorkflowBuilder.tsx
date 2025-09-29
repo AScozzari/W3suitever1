@@ -659,11 +659,15 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
           </div>
         </div>
 
-        {/* Canvas Zone - Responsive & Centered */}
+        {/* Canvas Zone - Fixed Size */}
         <div 
           ref={reactFlowWrapper}
-          className="flex-1 mx-auto my-4 border-2 border-gray-300 rounded-lg bg-gray-50 min-h-[600px] max-w-[1200px]"
-          style={{ backgroundColor: '#F9FAFB' }}
+          style={{ 
+            width: '800px',
+            height: '600px',
+            border: '2px solid #E5E7EB',
+            backgroundColor: '#F9FAFB'
+          }}
         >
           <ReactFlow
             nodes={nodes}
@@ -677,7 +681,7 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
-            className="w-full h-full"
+            style={{ width: '800px', height: '600px' }}
             data-testid="reactflow-canvas"
           >
             <Controls />
