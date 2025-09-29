@@ -233,24 +233,6 @@ export default function ShiftCalendar({
           </Button>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-emerald-100">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-1" />
-            Standard
-          </Badge>
-          <Badge variant="outline" className="bg-blue-100">
-            <div className="w-2 h-2 rounded-full bg-blue-500 mr-1" />
-            Part-Time
-          </Badge>
-          <Badge variant="outline" className="bg-purple-100">
-            <div className="w-2 h-2 rounded-full bg-purple-500 mr-1" />
-            Flessibile
-          </Badge>
-          <Badge variant="outline" className="bg-orange-100">
-            <div className="w-2 h-2 rounded-full bg-orange-500 mr-1" />
-            Straordinario
-          </Badge>
-        </div>
       </div>
       
       {/* Calendar Grid */}

@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import { Button } from '@/components/ui/button';
@@ -161,12 +160,6 @@ export default function HRCalendar({ className }: HRCalendarProps) {
     return mapped;
   }, [backendEvents]);
 
-  // Risorse per le viste resource (memoizzato per performance)
-  const calendarResources = useMemo(() => (employees as any[]).map((emp: any) => ({
-    id: emp.id,
-    title: `${emp.firstName} ${emp.lastName}`,
-    department: emp.department || 'N/A',
-  })), [employees]);
 
   // ✅ FASE 1.2: Colori per tutti i tipi di evento del calendario unificato
   function getEventColor(eventType: string) {
@@ -371,24 +364,11 @@ export default function HRCalendar({ className }: HRCalendarProps) {
                 >
                   Giorno
                 </Button>
-                <Button
-                  variant={currentView === 'resourceTimeGridWeek' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => changeView('resourceTimeGridWeek')}
-                  className="rounded-none"
-                  data-testid="view-resources"
-                >
-                  Risorse
-                </Button>
               </div>
             </div>
 
             {/* Professional Shift Legend */}
             <div className="flex items-center space-x-3">
-              <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700">Standard</Badge>
-              <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700">Flessibile</Badge>
-              <Badge className="bg-gradient-to-r from-purple-500 to-violet-600 text-white hover:from-purple-600 hover:to-violet-700">Part-Time</Badge>
-              <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700">Straordinario</Badge>
             </div>
           </div>
 
@@ -407,7 +387,6 @@ export default function HRCalendar({ className }: HRCalendarProps) {
                 plugins={[
                   dayGridPlugin,
                   timeGridPlugin,
-                  resourceTimeGridPlugin,
                   interactionPlugin,
                   listPlugin,
                 ]}
@@ -424,7 +403,6 @@ export default function HRCalendar({ className }: HRCalendarProps) {
                 weekNumbers={true}
                 weekNumberFormat={{ week: 'numeric' }}
                 events={calendarEvents}
-                resources={calendarResources}
                 editable={true}
                 droppable={true}
                 selectable={true}
@@ -442,13 +420,6 @@ export default function HRCalendar({ className }: HRCalendarProps) {
                 eventClick={handleEventClick}
                 eventDrop={handleEventDrop}
                 eventResize={handleEventDrop}
-                views={{
-                  resourceTimeGridWeek: {
-                    type: 'resourceTimeGrid',
-                    duration: { weeks: 1 },
-                    buttonText: 'Risorse Settimana',
-                  },
-                }}
                 eventContent={(arg) => {
                   const event = arg.event;
                   return (
