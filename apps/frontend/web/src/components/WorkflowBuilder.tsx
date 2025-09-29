@@ -646,6 +646,21 @@ function WorkflowBuilderContent({ templateId, initialCategory, onSave, onClose }
               
               <Separator orientation="vertical" className="h-6" />
               
+              {/* Configure Selected Node Button */}
+              {selectedNodeId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleConfigClick(selectedNodeId)}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  title="Configura nodo selezionato"
+                  data-testid="button-configure-node"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 size="sm"
