@@ -250,6 +250,16 @@ export default function ShiftAssignmentDashboard({
     queryKey: ['/api/hr/shift-assignments', storeId, format(weekStart, 'yyyy-MM-dd')]
   });
 
+  // ==================== UTILITY FUNCTIONS ====================
+
+  // Calculate shift hours - must be defined before useMemo that uses it
+  const calculateShiftHours = useCallback((startTime: string, endTime: string): number => {
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    const diffMs = end.getTime() - start.getTime();
+    return diffMs / (1000 * 60 * 60); // Convert to hours
+  }, []);
+
   // ==================== COMPUTED VALUES ====================
 
   const weekDays = useMemo(() => {
@@ -526,14 +536,6 @@ export default function ShiftAssignmentDashboard({
       });
     }
   }, [selectedShifts, selectedEmployees, onBulkAssign, toast]);
-
-  // Utility functions
-  const calculateShiftHours = useCallback((startTime: string, endTime: string): number => {
-    const start = new Date(`2000-01-01T${startTime}`);
-    const end = new Date(`2000-01-01T${endTime}`);
-    const diffMs = end.getTime() - start.getTime();
-    return diffMs / (1000 * 60 * 60); // Convert to hours
-  }, []);
 
   const handleViewEmployeeDetails = useCallback((employeeId: string) => {
     const employee = filteredStaff.find(e => e.id === employeeId);
