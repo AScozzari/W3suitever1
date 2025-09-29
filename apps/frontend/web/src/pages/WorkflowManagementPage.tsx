@@ -107,13 +107,17 @@ const WORKFLOW_ACTIONS = [
   { id: 'analyze-performance', name: 'Analyze Performance', description: 'Performance analytics', department: 'sales' }
 ];
 
-export default function WorkflowManagementPage() {
+interface WorkflowManagementPageProps {
+  defaultView?: 'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics';
+}
+
+export default function WorkflowManagementPage({ defaultView = 'dashboard' }: WorkflowManagementPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // 🎯 State management
   const [currentModule, setCurrentModule] = useState('workflow');
-  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'builder' | 'timeline' | 'teams' | 'analytics'>(defaultView);
   const [showDepartmentDialog, setShowDepartmentDialog] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<keyof typeof DEPARTMENTS | null>(null);
   const [builderView, setBuilderView] = useState<'dashboard' | 'editor'>('dashboard'); // NEW: Builder sub-view

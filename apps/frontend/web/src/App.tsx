@@ -52,15 +52,36 @@ function Router() {
   
   return (
     <Switch>
+      {/* 🎯 WORKFLOW DIRECT ACCESS - Smart redirect to tenant */}
+      <Route path="/workflows">
+        {() => {
+          console.log('[WORKFLOW-REDIRECT] 📍 Base workflows access');
+          const lastTenant = localStorage.getItem('currentTenant') || 'staging';
+          const targetUrl = `/${lastTenant}/workflows/dashboard`;
+          console.log(`[WORKFLOW-REDIRECT] 🔄 Redirecting to: ${targetUrl}`);
+          return <Redirect to={targetUrl} />;
+        }}
+      </Route>
+      
+      <Route path="/workflows/:view">
+        {(params) => {
+          console.log('[WORKFLOW-REDIRECT] 📍 Direct workflow access:', params);
+          const lastTenant = localStorage.getItem('currentTenant') || 'staging';
+          const targetUrl = `/${lastTenant}/workflows/${params.view}`;
+          console.log(`[WORKFLOW-REDIRECT] 🔄 Redirecting to: ${targetUrl}`);
+          return <Redirect to={targetUrl} />;
+        }}
+      </Route>
+      
       {/* 🎯 MAIN TENANT ROUTE - Gestisce automaticamente tutto */}
       <Route path="/:tenant/*?">
         {(params) => {
           console.log('[APP-ROUTER] 📍 Route matched with params:', params);
           const tenantSlug = params.tenant;
           
-          // Validation tenant slug
-          if (!tenantSlug || tenantSlug === '' || tenantSlug === 'api') {
-            console.warn('[APP-ROUTER] ❌ Invalid tenant slug:', tenantSlug);
+          // Validation tenant slug - Exclude reserved paths
+          if (!tenantSlug || tenantSlug === '' || tenantSlug === 'api' || tenantSlug === 'workflows') {
+            console.warn('[APP-ROUTER] ❌ Invalid tenant slug (reserved path):', tenantSlug);
             return <NotFound />;
           }
           

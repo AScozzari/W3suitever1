@@ -223,6 +223,44 @@ const TenantRoutes: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => {
         </AuthenticatedRoute>
       </Route>
       
+      {/* 🎯 WORKFLOW ROUTES - Direct access to workflow views */}
+      <Route path={`/${tenantSlug}/workflows/dashboard`}>
+        <AuthenticatedRoute>
+          <WorkflowManagementPage defaultView="dashboard" />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/workflows/analytics`}>
+        <AuthenticatedRoute>
+          <WorkflowManagementPage defaultView="analytics" />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/workflows/builder`}>
+        <AuthenticatedRoute>
+          <WorkflowManagementPage defaultView="builder" />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/workflows/timeline`}>
+        <AuthenticatedRoute>
+          <WorkflowManagementPage defaultView="timeline" />
+        </AuthenticatedRoute>
+      </Route>
+      
+      <Route path={`/${tenantSlug}/workflows/teams`}>
+        <AuthenticatedRoute>
+          <WorkflowManagementPage defaultView="teams" />
+        </AuthenticatedRoute>
+      </Route>
+      
+      {/* 🔄 LEGACY REDIRECT - workflow-management -> workflows/dashboard */}
+      <Route path={`/${tenantSlug}/workflows`}>
+        <AuthenticatedRoute>
+          <WorkflowManagementPage defaultView="dashboard" />
+        </AuthenticatedRoute>
+      </Route>
+      
       
       <Route path={`/${tenantSlug}/demo-fields`}>
         <AuthenticatedRoute>
