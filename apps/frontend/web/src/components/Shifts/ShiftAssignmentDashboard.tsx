@@ -115,6 +115,8 @@ export default function ShiftAssignmentDashboard({
   const [filterAvailability, setFilterAvailability] = useState<string>('all');
   const [showConflicts, setShowConflicts] = useState(true);
   const [draggedEmployee, setDraggedEmployee] = useState<string | null>(null);
+  const [draggedData, setDraggedData] = useState<any>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'gantt' | 'grid'>('gantt');
   
   const { toast } = useToast();
@@ -266,32 +268,113 @@ export default function ShiftAssignmentDashboard({
     }
   }, [filteredStaff, toast]);
 
-  // Enhanced Drag and Drop handlers
+  // Enhanced Drag and Drop with visual feedback
   const handleDragStart = useCallback((e: React.DragEvent, data: any) => {
+    let dragInfo: any;
+    
     if (typeof data === 'string') {
       // Legacy support for employee drag
+      dragInfo = { type: 'employee', employeeId: data };
       setDraggedEmployee(data);
-      e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'employee', employeeId: data }));
-    } else if (data.shiftId) {
+    } else if (data.shiftId && !data.employeeId) {
       // Dragging an unassigned shift
-      e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'shift', shiftId: data.shiftId }));
+      dragInfo = { type: 'shift', shiftId: data.shiftId };
     } else if (data.id && data.employeeId) {
       // Dragging an assignment
-      e.dataTransfer.setData('text/plain', JSON.stringify({ 
+      dragInfo = { 
         type: 'assignment', 
         assignmentId: data.id,
         shiftId: data.shiftId,
         employeeId: data.employeeId 
-      }));
+      };
     }
+    
+    setDraggedData(dragInfo);
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
     e.dataTransfer.effectAllowed = 'move';
+    
+    // Add visual drag feedback
+    const element = e.currentTarget as HTMLElement;
+    element.style.opacity = '0.5';
+    element.style.transform = 'scale(0.95)';
   }, []);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    // Reset visual feedback
+    const element = e.currentTarget as HTMLElement;
+    element.style.opacity = '1';
+    element.style.transform = 'scale(1)';
+    
+    // Reset drag state
+    setDraggedData(null);
+    setDraggedEmployee(null);
+    setDragOverTarget(null);
+  }, []);
+
+  const isValidDropTarget = useCallback((dragData: any, targetEmployeeId: string, targetDate: Date): { valid: boolean; reason?: string } => {
+    if (!dragData) return { valid: false, reason: 'Nessun dato di trascinamento' };
+    
+    const employee = filteredStaff.find(e => e.id === targetEmployeeId);
+    if (!employee) return { valid: false, reason: 'Dipendente non trovato' };
+    
+    if (dragData.type === 'shift') {
+      const shift = shifts.find(s => s.id === dragData.shiftId);
+      if (!shift) return { valid: false, reason: 'Turno non trovato' };
+      
+      // Check if employee already has a shift on this day
+      const existingAssignment = assignments.find(a => 
+        a.employeeId === targetEmployeeId && 
+        isSameDay(parseISO(a.date), targetDate)
+      );
+      
+      if (existingAssignment) {
+        return { valid: false, reason: 'Dipendente già assegnato in questo giorno' };
+      }
+      
+      // Check skill requirements
+      if (shift.requiredSkills && shift.requiredSkills.length > 0) {
+        const hasRequiredSkills = shift.requiredSkills.every(skill => 
+          employee.skills.includes(skill)
+        );
+        if (!hasRequiredSkills) {
+          return { valid: false, reason: 'Skills non compatibili' };
+        }
+      }
+      
+      // Check weekly hours
+      const employeeAssignments = assignments.filter(a => a.employeeId === targetEmployeeId);
+      const weeklyHours = employeeAssignments.reduce((total, assignment) => {
+        const s = shifts.find(sh => sh.id === assignment.shiftId);
+        if (!s) return total;
+        return total + calculateShiftHours(s.startTime, s.endTime);
+      }, 0);
+      
+      const shiftHours = calculateShiftHours(shift.startTime, shift.endTime);
+      if (weeklyHours + shiftHours > employee.maxWeeklyHours) {
+        return { valid: false, reason: 'Supererebbe le ore massime settimanali' };
+      }
+    }
+    
+    return { valid: true };
+  }, [filteredStaff, shifts, assignments, calculateShiftHours]);
 
   const handleGridDrop = useCallback(async (e: React.DragEvent, targetEmployeeId: string, targetDate: Date) => {
     e.preventDefault();
+    setDragOverTarget(null);
     
     try {
       const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+      
+      // Validate drop target
+      const validation = isValidDropTarget(dragData, targetEmployeeId, targetDate);
+      if (!validation.valid) {
+        toast({
+          title: "Operazione Non Valida",
+          description: validation.reason,
+          variant: "destructive"
+        });
+        return;
+      }
       
       if (dragData.type === 'shift') {
         // Assigning unassigned shift to employee
@@ -302,12 +385,14 @@ export default function ShiftAssignmentDashboard({
         });
       } else if (dragData.type === 'assignment') {
         // Moving assignment from one employee to another
-        await onUnassignShift(dragData.shiftId, [dragData.employeeId]);
-        await onAssignShift(dragData.shiftId, [targetEmployeeId]);
-        toast({
-          title: "Assegnazione Spostata",
-          description: "Assegnazione spostata con successo"
-        });
+        if (dragData.employeeId !== targetEmployeeId) {
+          await onUnassignShift(dragData.shiftId, [dragData.employeeId]);
+          await onAssignShift(dragData.shiftId, [targetEmployeeId]);
+          toast({
+            title: "Assegnazione Spostata",
+            description: "Assegnazione spostata con successo"
+          });
+        }
       }
     } catch (error) {
       console.error('Grid drop error:', error);
@@ -317,7 +402,27 @@ export default function ShiftAssignmentDashboard({
         variant: "destructive"
       });
     }
-  }, [onAssignShift, onUnassignShift, toast]);
+  }, [onAssignShift, onUnassignShift, toast, isValidDropTarget]);
+
+  const handleGridDragOver = useCallback((e: React.DragEvent, targetEmployeeId: string, targetDate: Date) => {
+    e.preventDefault();
+    
+    if (draggedData) {
+      const validation = isValidDropTarget(draggedData, targetEmployeeId, targetDate);
+      if (validation.valid) {
+        e.dataTransfer.dropEffect = 'move';
+        setDragOverTarget(`${targetEmployeeId}-${format(targetDate, 'yyyy-MM-dd')}`);
+      } else {
+        e.dataTransfer.dropEffect = 'none';
+        setDragOverTarget(null);
+      }
+    }
+  }, [draggedData, isValidDropTarget]);
+
+  const handleGridDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverTarget(null);
+  }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -617,9 +722,14 @@ export default function ShiftAssignmentDashboard({
                       return (
                         <td 
                           key={day.toISOString()} 
-                          className="border p-1 align-top"
+                          className={cn(
+                            "border p-1 align-top transition-colors",
+                            dragOverTarget === `${employee.id}-${format(day, 'yyyy-MM-dd')}` && 
+                            "bg-green-100 border-green-300 border-2"
+                          )}
                           onDrop={(e) => handleGridDrop(e, employee.id, day)}
-                          onDragOver={(e) => e.preventDefault()}
+                          onDragOver={(e) => handleGridDragOver(e, employee.id, day)}
+                          onDragLeave={handleGridDragLeave}
                           data-testid={`cell-${employee.id}-${format(day, 'yyyy-MM-dd')}`}
                         >
                           <div className="space-y-1 min-h-16">
@@ -635,10 +745,11 @@ export default function ShiftAssignmentDashboard({
                                   key={assignment.id}
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, assignment)}
+                                  onDragEnd={handleDragEnd}
                                   className={cn(
-                                    "text-xs p-1 rounded cursor-pointer border",
+                                    "text-xs p-1 rounded cursor-move border transition-all duration-200",
                                     SHIFT_STATUS_COLORS[status],
-                                    "text-white font-medium",
+                                    "text-white font-medium hover:shadow-lg",
                                     conflicts.length > 0 && "ring-1 ring-red-400",
                                     selectedShifts.has(shift.id) && "ring-1 ring-blue-400"
                                   )}
@@ -661,10 +772,18 @@ export default function ShiftAssignmentDashboard({
                               );
                             })}
                             
-                            {/* Drop Zone */}
+                            {/* Enhanced Drop Zone */}
                             {dayAssignments.length === 0 && (
-                              <div className="h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-xs text-gray-400">
-                                Trascina qui
+                              <div className={cn(
+                                "h-12 border-2 border-dashed rounded flex items-center justify-center text-xs transition-all duration-200",
+                                dragOverTarget === `${employee.id}-${format(day, 'yyyy-MM-dd')}` 
+                                  ? "border-green-400 bg-green-50 text-green-600" 
+                                  : "border-gray-300 text-gray-400 hover:border-gray-400"
+                              )}>
+                                {dragOverTarget === `${employee.id}-${format(day, 'yyyy-MM-dd')}` 
+                                  ? "Rilascia qui" 
+                                  : "Trascina qui"
+                                }
                               </div>
                             )}
                           </div>
@@ -743,8 +862,10 @@ export default function ShiftAssignmentDashboard({
                     key={shift.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, { shiftId: shift.id })}
+                    onDragEnd={handleDragEnd}
                     className={cn(
-                      "p-3 border rounded-lg cursor-move hover:shadow-md transition-shadow",
+                      "p-3 border rounded-lg cursor-move hover:shadow-md transition-all duration-200",
+                      "hover:scale-105 active:scale-95",
                       conflicts.length > 0 && "border-red-300 bg-red-50",
                       selectedShifts.has(shift.id) && "border-blue-500 bg-blue-50"
                     )}
