@@ -5,6 +5,7 @@ import { storage } from "./storage";
 // OAuth legacy system removed - using only OAuth2 enterprise
 import { setupOAuth2Server } from "./oauth2-server";
 import { workflowRoutes } from "../routes/workflows";
+import hrRoutes from "../routes/hr";
 import { dashboardService } from "./dashboard-service";
 import { tenantMiddleware, rbacMiddleware, requirePermission } from "../middleware/tenant";
 import { correlationMiddleware, logger, structuredLogger } from "./logger";
@@ -1101,6 +1102,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== WORKFLOW MANAGEMENT ROUTES ====================
   // Register workflow management API routes with authentication and tenant middleware
   app.use('/api/workflows', workflowRoutes);
+  
+  // ==================== HR MANAGEMENT ROUTES ====================
+  // Register HR management API routes with authentication and tenant middleware
+  app.use('/api/hr', tenantMiddleware, rbacMiddleware, hrRoutes);
 
   // ==================== PUBLIC ROUTES (NO AUTHENTICATION) ====================
 

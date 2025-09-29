@@ -112,7 +112,7 @@ const HRManagementPage: React.FC = () => {
   
   // State for various modals and forms
   const [showRequestModal, setShowRequestModal] = useState(false);
-  const [showShiftModal, setShowShiftModal] = useState(false);
+  // Removed showShiftModal - ShiftTemplateManager has its own modal
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showPushDocumentModal, setShowPushDocumentModal] = useState(false);
@@ -1275,14 +1275,6 @@ const HRManagementPage: React.FC = () => {
           <h2 className="text-2xl font-bold">Gestione Turni</h2>
           <p className="text-slate-600 dark:text-slate-400">Template e assegnazioni turni</p>
         </div>
-        <Button 
-          onClick={() => setShowShiftModal(true)}
-          className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
-          data-testid="button-create-shift"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nuovo Template
-        </Button>
       </div>
 
       {/* Shift Template Manager */}
