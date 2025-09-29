@@ -1382,10 +1382,10 @@ export default function ShiftAssignmentDashboard({
   };
 
   const renderControlPanel = () => (
-    <Card className="mb-6">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+    <Card className="mb-6 w-full max-w-full">
+      <CardHeader className="w-full max-w-full">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex-1 min-w-0">
             <CardTitle className="flex items-center">
               <Users className="w-5 h-5 mr-2" />
               Assignment Dashboard Enterprise
@@ -1394,7 +1394,7 @@ export default function ShiftAssignmentDashboard({
               Gestione avanzata assegnazioni con drag & drop e conflict detection
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <Button
               variant={showConflicts ? "default" : "outline"}
               size="sm"
@@ -1650,30 +1650,30 @@ export default function ShiftAssignmentDashboard({
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-6 w-full max-w-full">
         {renderControlPanel()}
         
         {viewMode === 'gantt' ? (
-          <Card>
-            <CardHeader>
+          <Card className="w-full max-w-full">
+            <CardHeader className="w-full max-w-full">
               <CardTitle className="flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
                 Vista Timeline Gantt - Settimana {format(selectedWeek, 'd MMM', { locale: it })}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="w-full max-w-full overflow-x-auto">
               {renderGanttTimeline()}
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardHeader>
+          <Card className="w-full max-w-full">
+            <CardHeader className="w-full max-w-full">
               <CardTitle className="flex items-center">
                 <Users className="w-5 h-5 mr-2" />
                 Vista Grid - Gestione Assegnazioni
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="w-full max-w-full overflow-x-auto">
               {renderGridView()}
             </CardContent>
           </Card>

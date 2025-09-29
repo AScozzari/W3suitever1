@@ -1283,7 +1283,7 @@ const HRManagementPage: React.FC = () => {
   // ==================== SHIFTS SECTION ====================
 
   const ShiftsSection = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestione Turni</h2>
@@ -1292,8 +1292,8 @@ const HRManagementPage: React.FC = () => {
       </div>
 
       {/* Shift Template Manager */}
-      <Card className="backdrop-blur-md bg-white/10 border-white/20">
-        <CardContent className="pt-6">
+      <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">
+        <CardContent className="pt-6 w-full max-w-full overflow-x-auto">
           <ShiftTemplateManager 
             templates={shifts.filter(s => s.templateId)} 
             storeId="" 
@@ -1320,20 +1320,20 @@ const HRManagementPage: React.FC = () => {
       <HRCalendar />
 
       {/* Assignment Section */}
-      <Card className="backdrop-blur-md bg-white/10 border-white/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
+      <Card className="backdrop-blur-md bg-white/10 border-white/20 w-full max-w-full">
+        <CardHeader className="w-full max-w-full">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <CardTitle>Assegnazione Turni</CardTitle>
               <CardDescription>Assegna turni alle risorse con controllo conflitti</CardDescription>
             </div>
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 flex-shrink-0">
               <CheckCircle className="w-4 h-4 mr-1" />
               Sistema Attivo
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full max-w-full overflow-x-auto p-0">
           <ShiftAssignmentDashboard
             storeId={selectedStore?.id || ""}
             selectedWeek={selectedDate}
@@ -2209,8 +2209,8 @@ const HRManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Content Area */}
-        <div>
+        {/* Content Area - Responsive to sidebar changes */}
+        <div className="w-full max-w-full overflow-x-auto">
           {renderContent()}
         </div>
       </Layout>
