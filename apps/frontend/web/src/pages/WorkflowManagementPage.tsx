@@ -130,6 +130,8 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [selectedTeamForWorkflows, setSelectedTeamForWorkflows] = useState<Team | null>(null);
   
   // 🎯 Real API hooks - ABILITATI
   const { data: templates = [], isLoading: templatesLoading, error: templatesError } = useWorkflowTemplates();
@@ -200,6 +202,16 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
   const handleEditTeam = (team: Team) => {
     setEditingTeam(team);
     setShowCreateTeamDialog(true);
+  };
+
+  const handleManageWorkflows = (team: Team) => {
+    setSelectedTeamForWorkflows(team);
+    setShowWorkflowModal(true);
+  };
+
+  const handleCloseWorkflowModal = () => {
+    setShowWorkflowModal(false);
+    setSelectedTeamForWorkflows(null);
   };
 
   const handleCreateTeam = () => {
@@ -1342,6 +1354,16 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  onClick={() => handleManageWorkflows(team)}
+                                  className="text-windtre-orange hover:bg-windtre-orange/10"
+                                  title="Manage Workflow Assignments"
+                                  data-testid={`button-workflows-team-${team.id}`}
+                                >
+                                  <Settings className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleEditTeam(team)}
                                   data-testid={`button-edit-team-${team.id}`}
                                 >
@@ -1371,6 +1393,178 @@ export default function WorkflowManagementPage({ defaultView = 'dashboard' }: Wo
                 onOpenChange={handleCloseTeamModal}
                 editTeam={editingTeam}
               />
+
+              {/* 🎯 Workflow Assignment Modal */}
+              <Dialog open={showWorkflowModal} onOpenChange={setShowWorkflowModal}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-windtre-orange">
+                      <Settings className="w-5 h-5" />
+                      Manage Workflow Assignments
+                    </DialogTitle>
+                    <DialogDescription>
+                      Configure workflow templates for <strong>{selectedTeamForWorkflows?.name}</strong> team departments
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {selectedTeamForWorkflows && (
+                    <div className="space-y-6">
+                      {/* Team Info */}
+                      <div className="p-4 bg-gradient-to-r from-windtre-purple/5 to-windtre-orange/5 rounded-lg border border-windtre-purple/20">
+                        <h4 className="text-sm font-medium text-windtre-purple mb-2">👥 Team Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-600">Team Name</p>
+                            <p className="font-medium">{selectedTeamForWorkflows.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Team Type</p>
+                            <Badge className={TEAM_TYPES[selectedTeamForWorkflows.teamType]?.color}>
+                              {TEAM_TYPES[selectedTeamForWorkflows.teamType]?.label}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <p className="text-sm text-gray-600 mb-2">Assigned Departments</p>
+                          <div className="flex flex-wrap gap-1">
+                            {(selectedTeamForWorkflows.assignedDepartments || []).map((dept) => {
+                              const deptInfo = DEPARTMENTS[dept];
+                              return (
+                                <Badge 
+                                  key={dept} 
+                                  variant="outline" 
+                                  className={`text-xs ${deptInfo?.textColor} border-current`}
+                                >
+                                  {deptInfo?.label}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Department Workflow Assignments */}
+                      {(selectedTeamForWorkflows.assignedDepartments || []).length === 0 ? (
+                        <div className="text-center p-8 bg-gray-50 rounded-lg">
+                          <Building2 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                          <p className="text-gray-500">No departments assigned to this team</p>
+                          <p className="text-sm text-gray-400 mt-1">Edit the team to assign departments first</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <h4 className="text-lg font-semibold flex items-center gap-2">
+                            <Workflow className="w-5 h-5 text-windtre-orange" />
+                            Workflow Template Assignments
+                          </h4>
+                          
+                          {(selectedTeamForWorkflows.assignedDepartments || []).map((department) => {
+                            const deptInfo = DEPARTMENTS[department];
+                            // Filter templates by department category
+                            const departmentTemplates = templates.filter(
+                              (template: any) => template.category === department || !template.category
+                            );
+                            
+                            return (
+                              <div key={department} className="border border-gray-200 rounded-lg p-4">
+                                <div className="flex items-center gap-3 mb-4">
+                                  {deptInfo && (
+                                    <div className={`p-2 rounded-lg ${deptInfo.color} opacity-20`}>
+                                      <deptInfo.icon className={`h-5 w-5 ${deptInfo.textColor}`} />
+                                    </div>
+                                  )}
+                                  <h5 className="text-lg font-semibold">{deptInfo?.label} Department</h5>
+                                  <Badge variant="outline" className="text-xs">
+                                    {departmentTemplates.length} templates available
+                                  </Badge>
+                                </div>
+
+                                {departmentTemplates.length === 0 ? (
+                                  <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                    <p className="text-sm text-gray-500">
+                                      No workflow templates available for {deptInfo?.label} department
+                                    </p>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="mt-2"
+                                      onClick={() => setActiveView('builder')}
+                                    >
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      Create Template
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3">
+                                    <p className="text-sm text-gray-600">
+                                      Select templates that this team should handle automatically for {deptInfo?.label} department requests:
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-3">
+                                      {departmentTemplates.map((template: any) => (
+                                        <div
+                                          key={template.id}
+                                          className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                              <div className="font-medium">{template.name}</div>
+                                              <div className="text-sm text-gray-600">{template.description}</div>
+                                              <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="outline" className="text-xs">
+                                                  {template.templateType || 'workflow'}
+                                                </Badge>
+                                                {template.category && (
+                                                  <Badge variant="outline" className="text-xs">
+                                                    {template.category}
+                                                  </Badge>
+                                                )}
+                                                <Badge variant="outline" className="text-xs text-blue-600">
+                                                  {template.instanceCount || 0} instances
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-windtre-orange border-windtre-orange hover:bg-windtre-orange/10"
+                                              >
+                                                <Plus className="w-4 h-4 mr-1" />
+                                                Assign
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Action Buttons */}
+                          <div className="flex justify-between pt-4 border-t">
+                            <Button
+                              variant="outline"
+                              onClick={handleCloseWorkflowModal}
+                              data-testid="button-cancel-workflow-assignments"
+                            >
+                              Close
+                            </Button>
+                            <Button
+                              className="bg-windtre-orange hover:bg-windtre-orange/90"
+                              data-testid="button-save-workflow-assignments"
+                            >
+                              <Settings className="w-4 h-4 mr-2" />
+                              Save Assignments
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 
