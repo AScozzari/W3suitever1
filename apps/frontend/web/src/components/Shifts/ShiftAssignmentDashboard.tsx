@@ -248,11 +248,76 @@ export default function ShiftAssignmentDashboard({
     }
   }, [selectedShifts, selectedEmployees, onBulkAssign, toast]);
 
-  // Drag and Drop handlers
-  const handleDragStart = useCallback((e: React.DragEvent, employeeId: string) => {
-    setDraggedEmployee(employeeId);
+  // Utility functions
+  const calculateShiftHours = useCallback((startTime: string, endTime: string): number => {
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    const diffMs = end.getTime() - start.getTime();
+    return diffMs / (1000 * 60 * 60); // Convert to hours
+  }, []);
+
+  const handleViewEmployeeDetails = useCallback((employeeId: string) => {
+    const employee = filteredStaff.find(e => e.id === employeeId);
+    if (employee) {
+      toast({
+        title: `${employee.firstName} ${employee.lastName}`,
+        description: `${employee.role} - Skills: ${employee.skills.join(', ')}`,
+      });
+    }
+  }, [filteredStaff, toast]);
+
+  // Enhanced Drag and Drop handlers
+  const handleDragStart = useCallback((e: React.DragEvent, data: any) => {
+    if (typeof data === 'string') {
+      // Legacy support for employee drag
+      setDraggedEmployee(data);
+      e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'employee', employeeId: data }));
+    } else if (data.shiftId) {
+      // Dragging an unassigned shift
+      e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'shift', shiftId: data.shiftId }));
+    } else if (data.id && data.employeeId) {
+      // Dragging an assignment
+      e.dataTransfer.setData('text/plain', JSON.stringify({ 
+        type: 'assignment', 
+        assignmentId: data.id,
+        shiftId: data.shiftId,
+        employeeId: data.employeeId 
+      }));
+    }
     e.dataTransfer.effectAllowed = 'move';
   }, []);
+
+  const handleGridDrop = useCallback(async (e: React.DragEvent, targetEmployeeId: string, targetDate: Date) => {
+    e.preventDefault();
+    
+    try {
+      const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+      
+      if (dragData.type === 'shift') {
+        // Assigning unassigned shift to employee
+        await onAssignShift(dragData.shiftId, [targetEmployeeId]);
+        toast({
+          title: "Turno Assegnato",
+          description: "Turno assegnato con successo al dipendente"
+        });
+      } else if (dragData.type === 'assignment') {
+        // Moving assignment from one employee to another
+        await onUnassignShift(dragData.shiftId, [dragData.employeeId]);
+        await onAssignShift(dragData.shiftId, [targetEmployeeId]);
+        toast({
+          title: "Assegnazione Spostata",
+          description: "Assegnazione spostata con successo"
+        });
+      }
+    } catch (error) {
+      console.error('Grid drop error:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile completare l'operazione",
+        variant: "destructive"
+      });
+    }
+  }, [onAssignShift, onUnassignShift, toast]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -438,6 +503,295 @@ export default function ShiftAssignmentDashboard({
     </div>
   );
 
+  const renderGridView = () => {
+    const weekDays = Array.from({ length: 7 }, (_, i) => 
+      addDays(startOfWeek(selectedWeek, { weekStartsOn: 1 }), i)
+    );
+
+    return (
+      <div className="space-y-4">
+        {/* Filter and Search Bar */}
+        <div className="flex flex-wrap gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex-1 min-w-64">
+            <Input
+              placeholder="Cerca dipendente, turno o skill..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+              data-testid="input-search-assignments"
+            />
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setSelectedShifts(new Set())}
+            data-testid="button-clear-selection"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Pulisci Selezione
+          </Button>
+          <Button 
+            onClick={handleBulkAssign}
+            disabled={selectedShifts.size === 0 || selectedEmployees.size === 0}
+            data-testid="button-bulk-assign"
+          >
+            <UserCheck className="w-4 h-4 mr-1" />
+            Assegna in Blocco ({selectedShifts.size})
+          </Button>
+        </div>
+
+        {/* Grid Table */}
+        <div className="overflow-auto border rounded-lg">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2 text-left font-semibold">Dipendente</th>
+                {weekDays.map(day => (
+                  <th key={day.toISOString()} className="border p-2 text-center font-semibold min-w-32">
+                    <div>{format(day, 'EEE', { locale: it })}</div>
+                    <div className="text-xs text-gray-500">{format(day, 'd MMM', { locale: it })}</div>
+                  </th>
+                ))}
+                <th className="border p-2 text-center font-semibold">Tot. Ore</th>
+                <th className="border p-2 text-center font-semibold">Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredStaff.map(employee => {
+                const employeeAssignments = assignments.filter(a => a.employeeId === employee.id);
+                const weeklyHours = employeeAssignments.reduce((total, assignment) => {
+                  const shift = shifts.find(s => s.id === assignment.shiftId);
+                  if (!shift) return total;
+                  const hours = calculateShiftHours(shift.startTime, shift.endTime);
+                  return total + hours;
+                }, 0);
+
+                return (
+                  <tr 
+                    key={employee.id} 
+                    className={cn(
+                      "hover:bg-gray-50",
+                      selectedEmployees.has(employee.id) && "bg-blue-50"
+                    )}
+                  >
+                    {/* Employee Info Column */}
+                    <td className="border p-2">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={selectedEmployees.has(employee.id)}
+                          onCheckedChange={(checked) => handleEmployeeSelection(employee.id, checked as boolean)}
+                          data-testid={`checkbox-employee-${employee.id}`}
+                        />
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={employee.avatar} alt={employee.firstName} />
+                          <AvatarFallback>
+                            {employee.firstName.charAt(0)}{employee.lastName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-sm">
+                            {employee.firstName} {employee.lastName}
+                          </div>
+                          <div className="text-xs text-gray-500">{employee.role}</div>
+                          <div className="flex gap-1 mt-1">
+                            {employee.skills.slice(0, 2).map(skill => (
+                              <Badge key={skill} variant="secondary" className="text-xs px-1 py-0">
+                                {skill}
+                              </Badge>
+                            ))}
+                            {employee.skills.length > 2 && (
+                              <Badge variant="outline" className="text-xs px-1 py-0">
+                                +{employee.skills.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Daily Assignment Columns */}
+                    {weekDays.map(day => {
+                      const dayAssignments = employeeAssignments.filter(assignment =>
+                        isSameDay(parseISO(assignment.date), day)
+                      );
+                      
+                      return (
+                        <td 
+                          key={day.toISOString()} 
+                          className="border p-1 align-top"
+                          onDrop={(e) => handleGridDrop(e, employee.id, day)}
+                          onDragOver={(e) => e.preventDefault()}
+                          data-testid={`cell-${employee.id}-${format(day, 'yyyy-MM-dd')}`}
+                        >
+                          <div className="space-y-1 min-h-16">
+                            {dayAssignments.map(assignment => {
+                              const shift = shifts.find(s => s.id === assignment.shiftId);
+                              if (!shift) return null;
+
+                              const status = getShiftStatus(shift);
+                              const conflicts = getShiftConflicts(shift.id);
+                              
+                              return (
+                                <div
+                                  key={assignment.id}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, assignment)}
+                                  className={cn(
+                                    "text-xs p-1 rounded cursor-pointer border",
+                                    SHIFT_STATUS_COLORS[status],
+                                    "text-white font-medium",
+                                    conflicts.length > 0 && "ring-1 ring-red-400",
+                                    selectedShifts.has(shift.id) && "ring-1 ring-blue-400"
+                                  )}
+                                  onClick={() => handleShiftSelection(shift.id, !selectedShifts.has(shift.id))}
+                                  data-testid={`grid-shift-${shift.id}`}
+                                >
+                                  <div className="truncate font-semibold">{shift.title}</div>
+                                  <div className="flex justify-between items-center">
+                                    <span>{assignment.startTime.slice(0,5)}-{assignment.endTime.slice(0,5)}</span>
+                                    {conflicts.length > 0 && (
+                                      <AlertTriangle className="w-3 h-3" />
+                                    )}
+                                  </div>
+                                  {assignment.status === 'pending' && (
+                                    <Badge variant="secondary" className="text-xs mt-1">
+                                      In Attesa
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Drop Zone */}
+                            {dayAssignments.length === 0 && (
+                              <div className="h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-xs text-gray-400">
+                                Trascina qui
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+
+                    {/* Weekly Hours Column */}
+                    <td className="border p-2 text-center">
+                      <div className={cn(
+                        "font-semibold",
+                        weeklyHours > employee.maxWeeklyHours ? "text-red-600" :
+                        weeklyHours > employee.maxWeeklyHours * 0.9 ? "text-orange-600" : "text-green-600"
+                      )}>
+                        {weeklyHours}h
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        /{employee.maxWeeklyHours}h
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                        <div 
+                          className={cn(
+                            "h-1 rounded-full",
+                            weeklyHours > employee.maxWeeklyHours ? "bg-red-500" :
+                            weeklyHours > employee.maxWeeklyHours * 0.9 ? "bg-orange-500" : "bg-green-500"
+                          )}
+                          style={{ width: `${Math.min(100, (weeklyHours / employee.maxWeeklyHours) * 100)}%` }}
+                        />
+                      </div>
+                    </td>
+
+                    {/* Actions Column */}
+                    <td className="border p-2 text-center">
+                      <div className="flex justify-center space-x-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEmployeeSelection(employee.id, !selectedEmployees.has(employee.id))}
+                          data-testid={`button-select-employee-${employee.id}`}
+                        >
+                          <UserCheck className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleViewEmployeeDetails(employee.id)}
+                          data-testid={`button-view-employee-${employee.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Unassigned Shifts Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2 text-orange-500" />
+              Turni Non Assegnati ({unassignedShifts.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {unassignedShifts.map(shift => {
+                const conflicts = getShiftConflicts(shift.id);
+                const status = getShiftStatus(shift);
+                
+                return (
+                  <div
+                    key={shift.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, { shiftId: shift.id })}
+                    className={cn(
+                      "p-3 border rounded-lg cursor-move hover:shadow-md transition-shadow",
+                      conflicts.length > 0 && "border-red-300 bg-red-50",
+                      selectedShifts.has(shift.id) && "border-blue-500 bg-blue-50"
+                    )}
+                    onClick={() => handleShiftSelection(shift.id, !selectedShifts.has(shift.id))}
+                    data-testid={`unassigned-shift-${shift.id}`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-sm truncate">{shift.title}</h4>
+                      <Badge className={cn("text-xs", SHIFT_STATUS_COLORS[status], "text-white")}>
+                        {shift.assignedStaff}/{shift.requiredStaff}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>📅 {format(parseISO(shift.date), 'd MMM yyyy', { locale: it })}</div>
+                      <div>🕒 {shift.startTime} - {shift.endTime}</div>
+                      {shift.requiredSkills && shift.requiredSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {shift.requiredSkills.map(skill => (
+                            <Badge key={skill} variant="outline" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {conflicts.length > 0 && (
+                      <div className="text-red-600 text-xs mt-2 flex items-center">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        {conflicts.length} conflitto/i
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {unassignedShifts.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                Tutti i turni sono stati assegnati!
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const renderControlPanel = () => (
     <Card className="mb-6">
       <CardHeader>
@@ -619,12 +973,13 @@ export default function ShiftAssignmentDashboard({
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Vista Grid (Implementazione futura)</CardTitle>
+              <CardTitle className="flex items-center">
+                <Users className="w-5 h-5 mr-2" />
+                Vista Grid - Gestione Assegnazioni
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                Vista grid in fase di sviluppo
-              </div>
+              {renderGridView()}
             </CardContent>
           </Card>
         )}
